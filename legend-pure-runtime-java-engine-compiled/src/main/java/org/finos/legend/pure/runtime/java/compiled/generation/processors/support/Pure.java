@@ -562,11 +562,11 @@ public class Pure
                         builder.append("'").append(name).append("'");
                     }
                     builder.append(" id: '").append(func.getName()).append("' yet");
-                    throw new PureExecutionException(builder.toString());
+                    throw new PureExecutionException(func.getSourceInformation(), builder.toString());
                 }
                 return foundFunc.execute(Lists.mutable.with(paramInstances), es);
             }
-            throw new PureExecutionException("Unknown function type:" + func.getClass().getName());
+            throw new PureExecutionException(func.getSourceInformation(), "Unknown function type:" + func.getClass().getName());
         }
         catch (RuntimeException e)
         {

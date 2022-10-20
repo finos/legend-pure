@@ -14,13 +14,11 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification;
 
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.set.mutable.UnifiedSet;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -134,23 +132,20 @@ public class ValueSpecificationProcessor
                 }
                 else
                 {
-                    final MutableSet<String> types = UnifiedSet.newSet();
-                    String listElements = values.collect(new Function<CoreInstance, String>()
+                    MutableSet<String> types = Sets.mutable.empty();
+                    String listElements = values.collect(c ->
                     {
-                        @Override
-                        public String valueOf(CoreInstance cls)
+                        CoreInstance cls = c;
+                        while (!processorSupport.instance_instanceOf(cls, M3Paths.Class))
                         {
-                            while (!processorSupport.instance_instanceOf(cls, M3Paths.Class))
-                            {
-                                // Class is wrapped in an InstanceValue
-                                cls = Instance.getValueForMetaPropertyToOneResolved(cls, M3Properties.values, processorSupport);
-                            }
-
-                            String type = TypeProcessor.fullyQualifiedJavaInterfaceNameForType(cls);
-                            types.add(type);
-                            String classifier = TypeProcessor.fullyQualifiedJavaInterfaceNameForType(processorSupport.getClassifier(cls));
-                            return "((" + classifier + "<? extends " + type + ">)((CompiledExecutionSupport)es).getMetadata(\"" + MetadataJavaPaths.buildMetadataKeyFromType(processorSupport.getClassifier(cls)) + "\",\"" + PackageableElement.getSystemPathForPackageableElement(cls, "::") + "\"))";
+                            // Class is wrapped in an InstanceValue
+                            cls = Instance.getValueForMetaPropertyToOneResolved(cls, M3Properties.values, processorSupport);
                         }
+
+                        String type = TypeProcessor.fullyQualifiedJavaInterfaceNameForType(cls);
+                        types.add(type);
+                        String classifier = TypeProcessor.fullyQualifiedJavaInterfaceNameForType(processorSupport.getClassifier(cls));
+                        return "((" + classifier + "<? extends " + type + ">)((CompiledExecutionSupport)es).getMetadata(\"" + MetadataJavaPaths.buildMetadataKeyFromType(processorSupport.getClassifier(cls)) + "\",\"" + PackageableElement.getSystemPathForPackageableElement(cls, "::") + "\"))";
                     }).makeString();
                     String typeString = (types.size() > 1) ? ("<" + TypeProcessor.typeToJavaObjectSingle(Instance.getValueForMetaPropertyToOneResolved(valueSpecification, M3Properties.genericType, processorSupport), true, processorSupport) + ">") : "";
                     return "Lists.mutable." + typeString + "with(" + listElements + ")";
@@ -172,27 +167,13 @@ public class ValueSpecificationProcessor
                 }
                 else
                 {
-                    return "Lists.mutable.<" + type + ">with(" + values.collect(new Function<CoreInstance, Object>()
-                    {
-                        @Override
-                        public Object valueOf(CoreInstance coreInstance)
-                        {
-                            return processValueSpecificationContent(topLevelElement, coreInstance, processorContext, processorSupport);
-                        }
-                    }).makeString(",") + ")";
+                    return "Lists.mutable.<" + type + ">with(" + values.collect(v -> processValueSpecificationContent(topLevelElement, v, processorContext, processorSupport)).makeString(",") + ")";
                 }
             }
             if (!Multiplicity.isToOne(Instance.getValueForMetaPropertyToOneResolved(valueSpecification, M3Properties.multiplicity, processorSupport), false))
             {
                 String type = TypeProcessor.typeToJavaObjectSingle(Instance.getValueForMetaPropertyToOneResolved(valueSpecification, M3Properties.genericType, processorSupport), true, processorSupport);
-                ListIterable processedValues = values.collect(new Function<CoreInstance, Object>()
-                {
-                    @Override
-                    public Object valueOf(CoreInstance coreInstance)
-                    {
-                        return processValueSpecificationContent(topLevelElement, coreInstance, processorContext, processorSupport);
-                    }
-                });
+                ListIterable<String> processedValues = values.collect(v -> processValueSpecificationContent(topLevelElement, v, processorContext, processorSupport));
                 return processedValues.size() > 1 ? "Lists.mutable.<" + type + ">with(" + processedValues.makeString(",") + ")" : processedValues.makeString(",");
             }
             if (Multiplicity.isToOne(Instance.getValueForMetaPropertyToOneResolved(valueSpecification, M3Properties.multiplicity, processorSupport), false))
@@ -289,30 +270,17 @@ public class ValueSpecificationProcessor
         return createFunctionForLambda(topLevelElement, function, true, processorSupport, processorContext);
     }
 
-    public static String createFunctionForLambda(CoreInstance topLevelElement, CoreInstance function, boolean registerLambdasInProcessorContext, final ProcessorSupport processorSupport, ProcessorContext processorContext)
+    public static String createFunctionForLambda(CoreInstance topLevelElement, CoreInstance function, boolean registerLambdasInProcessorContext, ProcessorSupport processorSupport, ProcessorContext processorContext)
     {
-        boolean notOpenVariables = !containsOpenVariablesLambda(function, processorContext);
+        boolean notOpenVariables = !containsOpenVariablesLambda(function);
 
         CoreInstance functionType = processorSupport.function_getFunctionType(function);
         ListIterable<? extends CoreInstance> params = functionType.getValueForMetaPropertyToMany(M3Properties.parameters);
 
-        boolean containsTypeParams = params.anySatisfy(new Predicate<CoreInstance>()
-        {
-            @Override
-            public boolean accept(CoreInstance coreInstance)
-            {
-                return !GenericType.isGenericTypeFullyConcrete(coreInstance.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport);
-            }
-        });
-        if (!containsTypeParams)
-        {
-            containsTypeParams = !GenericType.isGenericTypeConcrete(functionType.getValueForMetaPropertyToOne(M3Properties.returnType), processorSupport);
-        }
-
+        boolean fullyConcreteSignature = GenericType.isGenericTypeFullyConcrete(functionType.getValueForMetaPropertyToOne(M3Properties.returnType), processorSupport) && params.allSatisfy(p -> GenericType.isGenericTypeFullyConcrete(p.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
 
         String pureFunctionString;
-
-        if (!containsTypeParams && notOpenVariables && !processorContext.isInLineAllLambda())
+        if (fullyConcreteSignature && notOpenVariables && !processorContext.isInLineAllLambda())
         {
             String sourceId = IdBuilder.sourceToId(function.getSourceInformation());
             String functionId = processorContext.getIdBuilder().buildId(function);
@@ -341,7 +309,7 @@ public class ValueSpecificationProcessor
     {
         int paramCount = params.size();
         String type;
-        MutableList<String> typesParams = FastList.newList(paramCount + 1);
+        MutableList<String> typesParams = Lists.mutable.withInitialCapacity(paramCount + 1);
         String baseType = notOpenVariables ? "DefaultPureLambdaFunction" : "DefendedPureLambdaFunction";
         if (paramCount < 3)
         {
@@ -358,14 +326,7 @@ public class ValueSpecificationProcessor
         typesParams.add(TypeProcessor.typeToJavaObjectWithMul(functionType.getValueForMetaPropertyToOne(M3Properties.returnType), functionType.getValueForMetaPropertyToOne(M3Properties.returnMultiplicity), processorContext.getSupport()));
         String typeParamsStr = typesParams.makeString("<", ", ", ">");
 
-        String funcSignature = params.collect(new Function<CoreInstance, String>()
-        {
-            @Override
-            public String valueOf(CoreInstance coreInstance)
-            {
-                return "final " + TypeProcessor.typeToJavaObjectWithMul(coreInstance.getValueForMetaPropertyToOne(M3Properties.genericType), coreInstance.getValueForMetaPropertyToOne(M3Properties.multiplicity), processorContext.getSupport()) + " _" + coreInstance.getValueForMetaPropertyToOne(M3Properties.name).getName();
-            }
-        }).makeString(",");
+        String funcSignature = params.collect(p -> "final " + TypeProcessor.typeToJavaObjectWithMul(p.getValueForMetaPropertyToOne(M3Properties.genericType), p.getValueForMetaPropertyToOne(M3Properties.multiplicity), processorContext.getSupport()) + " _" + p.getValueForMetaPropertyToOne(M3Properties.name).getName()).makeString(",");
 
         String openVarsInitializer = "";
 
@@ -374,35 +335,24 @@ public class ValueSpecificationProcessor
             ListIterable<? extends CoreInstance> vars = function.getValueForMetaPropertyToMany(M3Properties.openVariables);
             if (vars.size() < 4)
             {
-                openVarsInitializer = "private MutableMap<String, Object> __vars = Maps.fixedSize.<String, Object>of(" + vars.collect(new Function<CoreInstance, Object>()
+                openVarsInitializer = "private MutableMap<String, Object> __vars = Maps.fixedSize.<String, Object>of(" + vars.collect(openVar ->
                 {
-                    @Override
-                    public String valueOf(CoreInstance openVar)
+                    String varName = openVar.getName();
+                    String value;
+                    if ("this".equals(varName) && Instance.instanceOf(topLevelElement, M3Paths.Class, processorContext.getSupport()))
                     {
-                        String varName = openVar.getName();
-                        String value;
-                        if ("this".equals(varName) && Instance.instanceOf(topLevelElement, M3Paths.Class, processorContext.getSupport()))
-                        {
-                            value = JavaPackageAndImportBuilder.buildImplClassNameFromType(topLevelElement) + ".this";
-                        }
-                        else
-                        {
-                            value = "_" + varName;
-                        }
-                        return "\"" + varName + "\"," + value;
+                        value = JavaPackageAndImportBuilder.buildImplClassNameFromType(topLevelElement) + ".this";
                     }
+                    else
+                    {
+                        value = "_" + varName;
+                    }
+                    return "\"" + varName + "\"," + value;
                 }).makeString(",") + ");\n";
             }
             else
             {
-                openVarsInitializer = "private MutableMap<String, Object> __vars = UnifiedMap.newMap(" + vars.size() + ");\n {" + vars.collect(new Function<CoreInstance, Object>()
-                {
-                    @Override
-                    public String valueOf(CoreInstance coreInstance)
-                    {
-                        return "__vars.put(\"" + coreInstance.getName() + "\"," + ("this".equals(coreInstance.getName()) ? JavaPackageAndImportBuilder.buildImplClassNameFromType(topLevelElement) + ".this" : "_" + coreInstance.getName()) + ")";
-                    }
-                }).makeString(";\n") + ";\n}";
+                openVarsInitializer = "private MutableMap<String, Object> __vars = UnifiedMap.newMap(" + vars.size() + ");\n {" + vars.collect(var -> "__vars.put(\"" + var.getName() + "\"," + ("this".equals(var.getName()) ? JavaPackageAndImportBuilder.buildImplClassNameFromType(topLevelElement) + ".this" : "_" + var.getName()) + ")").makeString(";\n") + ";\n}";
             }
         }
 
@@ -431,7 +381,13 @@ public class ValueSpecificationProcessor
                 "}\n";
     }
 
+    @Deprecated
     public static boolean containsOpenVariablesLambda(CoreInstance function, ProcessorContext processorContext)
+    {
+        return containsOpenVariablesLambda(function);
+    }
+
+    public static boolean containsOpenVariablesLambda(CoreInstance function)
     {
         return function.getValueForMetaPropertyToMany(M3Properties.openVariables).notEmpty();
     }
@@ -462,21 +418,10 @@ public class ValueSpecificationProcessor
             default:
             {
                 String type = TypeProcessor.typeToJavaObjectSingle(Instance.getValueForMetaPropertyToOneResolved(valueSpecification, M3Properties.genericType, support), true, support);
-                return "Lists.mutable.<" + type + ">with(" + instances.collect(new Function<CoreInstance, Object>()
-                {
-                    @Override
-                    public Object valueOf(CoreInstance coreInstance)
-                    {
-                        if (support.instance_instanceOf(coreInstance, M3Paths.ValueSpecification))
-                        {
-                            return processValueSpecification(topLevelElement, coreInstance, processorContext);
-                        }
-                        else
-                        {
-                            return JavaPurePrimitiveTypeMapping.convertPureCoreInstanceToJavaType(coreInstance, processorContext);
-                        }
-                    }
-                }).makeString(",") + ")";
+                return "Lists.mutable.<" + type + ">with(" + instances.collect(i -> support.instance_instanceOf(i, M3Paths.ValueSpecification) ?
+                        processValueSpecification(topLevelElement, i, processorContext) :
+                        JavaPurePrimitiveTypeMapping.convertPureCoreInstanceToJavaType(i, processorContext))
+                        .makeString(",") + ")";
             }
         }
     }

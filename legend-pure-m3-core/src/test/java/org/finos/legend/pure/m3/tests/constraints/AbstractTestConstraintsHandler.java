@@ -17,6 +17,7 @@ package org.finos.legend.pure.m3.tests.constraints;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -26,108 +27,93 @@ public abstract class AbstractTestConstraintsHandler extends AbstractPureTestWit
     @Test
     public void testClassDefaultConstraintHandler()
     {
-        try
-        {
-            compileTestSource("fromString.pure","Class Employee" +
-                    "[" +
-                    "   rule1 : $this.lastName->toOne()->length() < 10" +
-                    "]" +
-                    "{" +
-                    "   lastName:String[0..1];" +
-                    "}\n" +
-                    "function getterOverrideToMany(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]\n" +
-                    "{\n" +
-                    "  [];\n" +
-                    "}\n" +
-                    "\n" +
-                    "function getterOverrideToOne(o:Any[1], property:Property<Nil,Any|0..1>[1]):Any[0..1]\n" +
-                    "{\n" +
-                    "  [];\n" +
-                    "}\n" +
-                    "function testNew():Any[*] {\n" +
-                    "  let func = [];\n" +
-                    "  let r = dynamicNew(Employee,\n" +
-                    "                   [\n" +
-                    "                      ^KeyValue(key='lastName',value='1234567891000')\n" +
-                    "                   ],\n" +
-                    "                   getterOverrideToOne_Any_1__Property_1__Any_$0_1$_,\n" +
-                    "                   getterOverrideToMany_Any_1__Property_1__Any_MANY_,\n" +
-                    "                   '2'\n" +
-                    "                  )->cast(@Employee);\n" +
-                    "}\n");
-
-            this.compileAndExecute("testNew():Any[*]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[rule1] violated in the Class Employee", 13, 11, e);
-        }
+        compileTestSource("fromString.pure", "Class Employee\n" +
+                "[\n" +
+                "   rule1 : $this.lastName->toOne()->length() < 10\n" +
+                "]\n" +
+                "{\n" +
+                "   lastName:String[0..1];\n" +
+                "}\n" +
+                "function getterOverrideToMany(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]\n" +
+                "{\n" +
+                "  [];\n" +
+                "}\n" +
+                "\n" +
+                "function getterOverrideToOne(o:Any[1], property:Property<Nil,Any|0..1>[1]):Any[0..1]\n" +
+                "{\n" +
+                "  [];\n" +
+                "}\n" +
+                "function testNew():Any[*] {\n" +
+                "  let func = [];\n" +
+                "  let r = dynamicNew(Employee,\n" +
+                "                   [\n" +
+                "                      ^KeyValue(key='lastName',value='1234567891000')\n" +
+                "                   ],\n" +
+                "                   getterOverrideToOne_Any_1__Property_1__Any_$0_1$_,\n" +
+                "                   getterOverrideToMany_Any_1__Property_1__Any_MANY_,\n" +
+                "                   '2'\n" +
+                "                  )->cast(@Employee);\n" +
+                "}\n");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> compileAndExecute("testNew():Any[*]"));
+        assertOriginatingPureException(PureExecutionException.class, "Constraint :[rule1] violated in the Class Employee", 19, 11, e);
     }
 
     @Test
     public void testClassInvalidConstraintHandler()
     {
-        try
-        {
-            compileTestSource("fromString.pure","Class Employee" +
-                    "[" +
-                    "   rule1 : $this.lastName->toOne()->length() < 10" +
-                    "]" +
-                    "{" +
-                    "   lastName:String[0..1];" +
-                    "}\n" +
-                    "function getterOverrideToMany(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]\n" +
-                    "{\n" +
-                    "  [];\n" +
-                    "}\n" +
-                    "\n" +
-                    "function getterOverrideToOne(o:Any[1], property:Property<Nil,Any|0..1>[1]):Any[0..1]\n" +
-                    "{\n" +
-                    "  [];\n" +
-                    "}\n" +
-                    "function constraintsManager(o:Any[1]):Any[*]\n" +
-                    "{\n" +
-                    "  [$o,$o];\n" +
-                    "}\n" +
-                    "function testNew():Any[*] {\n" +
-                    "  let r = dynamicNew(Employee,\n" +
-                    "                   [\n" +
-                    "                      ^KeyValue(key='lastName',value='1234567891000')\n" +
-                    "                   ],\n" +
-                    "                   getterOverrideToOne_Any_1__Property_1__Any_$0_1$_,\n" +
-                    "                   getterOverrideToMany_Any_1__Property_1__Any_MANY_,\n" +
-                    "                   '2',\n" +
-                    "                   constraintsManager_Any_1__Any_MANY_\n" +
-                    "                  )->cast(@Employee);\n" +
-                    "}\n");
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure",
+                "Class Employee\n" +
+                        "[\n" +
+                        "   rule1 : $this.lastName->toOne()->length() < 10\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   lastName:String[0..1];\n" +
+                        "}\n" +
+                        "function getterOverrideToMany(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]\n" +
+                        "{\n" +
+                        "  [];\n" +
+                        "}\n" +
+                        "\n" +
+                        "function getterOverrideToOne(o:Any[1], property:Property<Nil,Any|0..1>[1]):Any[0..1]\n" +
+                        "{\n" +
+                        "  [];\n" +
+                        "}\n" +
+                        "function constraintsManager(o:Any[1]):Any[*]\n" +
+                        "{\n" +
+                        "  [$o,$o];\n" +
+                        "}\n" +
+                        "function testNew():Any[*] {\n" +
+                        "  let r = dynamicNew(Employee,\n" +
+                        "                   [\n" +
+                        "                      ^KeyValue(key='lastName',value='1234567891000')\n" +
+                        "                   ],\n" +
+                        "                   getterOverrideToOne_Any_1__Property_1__Any_$0_1$_,\n" +
+                        "                   getterOverrideToMany_Any_1__Property_1__Any_MANY_,\n" +
+                        "                   '2',\n" +
+                        "                   constraintsManager_Any_1__Any_MANY_\n" +
+                        "                  )->cast(@Employee);\n" +
+                        "}\n"));
 
-            this.compileAndExecute("testNew():Any[*]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureUnmatchedFunctionException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "dynamicNew(_:Class<Employee>[1],_:KeyValue[1],_:ConcreteFunctionDefinition<{Any[1], Property<Nil, Any|0..1>[1]->Any[0..1]}>[1],_:ConcreteFunctionDefinition<{Any[1], Property<Nil, Any|*>[1]->Any[*]}>[1],_:String[1],_:ConcreteFunctionDefinition<{Any[1]->Any[*]}>[1])\n" +
-                    PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_IMPORTED_MESSAGE +
-                    PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE +
-                    "\tmeta::pure::functions::lang::dynamicNew(Class[1], KeyValue[*]):Any[1]\n" +
-                    "\tmeta::pure::functions::lang::dynamicNew(Class[1], KeyValue[*], Function[0..1], Function[0..1], Any[0..1]):Any[1]\n" +
-                    "\tmeta::pure::functions::lang::dynamicNew(Class[1], KeyValue[*], Function[0..1], Function[0..1], Any[0..1], Function[0..1]):Any[1]\n" +
-                    "\tmeta::pure::functions::lang::dynamicNew(GenericType[1], KeyValue[*]):Any[1]\n" +
-                    "\tmeta::pure::functions::lang::dynamicNew(GenericType[1], KeyValue[*], Function[0..1], Function[0..1], Any[0..1]):Any[1]\n" +
-                    "\tmeta::pure::functions::lang::dynamicNew(GenericType[1], KeyValue[*], Function[0..1], Function[0..1], Any[0..1], Function[0..1]):Any[1]\n", 16, 11, e);
-        }
+        assertOriginatingPureException(PureUnmatchedFunctionException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "dynamicNew(_:Class<Employee>[1],_:KeyValue[1],_:ConcreteFunctionDefinition<{Any[1], Property<Nil, Any|0..1>[1]->Any[0..1]}>[1],_:ConcreteFunctionDefinition<{Any[1], Property<Nil, Any|*>[1]->Any[*]}>[1],_:String[1],_:ConcreteFunctionDefinition<{Any[1]->Any[*]}>[1])\n" +
+                PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_IMPORTED_MESSAGE +
+                PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE +
+                "\tmeta::pure::functions::lang::dynamicNew(Class[1], KeyValue[*]):Any[1]\n" +
+                "\tmeta::pure::functions::lang::dynamicNew(Class[1], KeyValue[*], Function[0..1], Function[0..1], Any[0..1]):Any[1]\n" +
+                "\tmeta::pure::functions::lang::dynamicNew(Class[1], KeyValue[*], Function[0..1], Function[0..1], Any[0..1], Function[0..1]):Any[1]\n" +
+                "\tmeta::pure::functions::lang::dynamicNew(GenericType[1], KeyValue[*]):Any[1]\n" +
+                "\tmeta::pure::functions::lang::dynamicNew(GenericType[1], KeyValue[*], Function[0..1], Function[0..1], Any[0..1]):Any[1]\n" +
+                "\tmeta::pure::functions::lang::dynamicNew(GenericType[1], KeyValue[*], Function[0..1], Function[0..1], Any[0..1], Function[0..1]):Any[1]\n", 22, 11, e);
     }
 
     @Test
     public void testClassConstraintHandler()
     {
-        compileTestSource("fromString.pure","Class Employee" +
-                "[" +
-                "   rule1 : $this.lastName->toOne()->length() < 10" +
-                "]" +
-                "{" +
-                "   lastName:String[0..1];" +
+        compileTestSource("fromString.pure", "Class Employee\n" +
+                "[\n" +
+                "   rule1 : $this.lastName->toOne()->length() < 10\n" +
+                "]\n" +
+                "{\n" +
+                "   lastName:String[0..1];\n" +
                 "}\n" +
                 "function getterOverrideToMany(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]\n" +
                 "{\n" +
@@ -161,12 +147,12 @@ public abstract class AbstractTestConstraintsHandler extends AbstractPureTestWit
     @Test
     public void testClassConstraintHandlerSignature()
     {
-        compileTestSource("fromString.pure","Class Employee" +
-                "[" +
-                "   rule1 : $this.lastName->toOne()->length() < 10" +
-                "]" +
-                "{" +
-                "   lastName:String[0..1];" +
+        compileTestSource("fromString.pure", "Class Employee\n" +
+                "[\n" +
+                "   rule1 : $this.lastName->toOne()->length() < 10\n" +
+                "]\n" +
+                "{\n" +
+                "   lastName:String[0..1];\n" +
                 "}\n" +
                 "function getterOverrideToMany(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]\n" +
                 "{\n" +
@@ -194,12 +180,12 @@ public abstract class AbstractTestConstraintsHandler extends AbstractPureTestWit
     @Test
     public void testClassConstraintHandlerNoException()
     {
-        compileTestSource("fromString.pure","Class Employee" +
-                "[" +
-                "   rule1 : $this.lastName->toOne()->length() < 10" +
-                "]" +
-                "{" +
-                "   lastName:String[0..1];" +
+        compileTestSource("fromString.pure", "Class Employee\n" +
+                "[\n" +
+                "   rule1 : $this.lastName->toOne()->length() < 10\n" +
+                "]\n" +
+                "{\n" +
+                "   lastName:String[0..1];\n" +
                 "}\n" +
                 "Class ConstraintResult" +
                 "{" +
@@ -249,15 +235,15 @@ public abstract class AbstractTestConstraintsHandler extends AbstractPureTestWit
     @Test
     public void testGenericTypeConstraintHandlerNoException()
     {
-        compileTestSource("fromString.pure","Class Employee" +
-                "[" +
-                "   rule1 : $this.lastName->toOne()->length() < 10," +
-                "   rule2: $this.lastName->toOne()->length() > 3" +
-                "]" +
-                "{" +
-                "   lastName:String[0..1];" +
+        compileTestSource("fromString.pure", "Class Employee\n" +
+                "[\n" +
+                "   rule1 : $this.lastName->toOne()->length() < 10,\n" +
+                "   rule2: $this.lastName->toOne()->length() > 3\n" +
+                "]\n" +
+                "{\n" +
+                "   lastName:String[0..1];\n" +
                 "}\n" +
-                "Class ConstraintResult" +
+                "Class ConstraintResult\n" +
                 "{" +
                 "   instance:Any[1];\n" +
                 "}\n" +
@@ -303,15 +289,15 @@ public abstract class AbstractTestConstraintsHandler extends AbstractPureTestWit
     @Test
     public void testGenericTypeConstraintHandlerCopyAfterDynamicNew()
     {
-        compileTestSource("fromString.pure","Class Employee" +
-                "[" +
-                "   rule1 : $this.lastName->toOne()->length() < 10" +
-                "]" +
-                "{" +
-                "   lastName:String[0..1];" +
+        compileTestSource("fromString.pure", "Class Employee\n" +
+                "[\n" +
+                "   rule1 : $this.lastName->toOne()->length() < 10\n" +
+                "]\n" +
+                "{\n" +
+                "   lastName:String[0..1];\n" +
                 "}\n" +
-                "Class ConstraintResult" +
-                "{" +
+                "Class ConstraintResult\n" +
+                "{\n" +
                 "   instance:Any[1];\n" +
                 "}\n" +
                 "function getterOverrideToMany(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]\n" +
@@ -352,15 +338,15 @@ public abstract class AbstractTestConstraintsHandler extends AbstractPureTestWit
     @Test
     public void testClassConstraintHandlerCopyAfterDynamicNew()
     {
-        compileTestSource("fromString.pure","Class Employee" +
-                "[" +
-                "   rule1 : $this.lastName->toOne()->length() < 10" +
-                "]" +
-                "{" +
-                "   lastName:String[0..1];" +
+        compileTestSource("fromString.pure", "Class Employee\n" +
+                "[\n" +
+                "   rule1 : $this.lastName->toOne()->length() < 10\n" +
+                "]\n" +
+                "{\n" +
+                "   lastName:String[0..1];\n" +
                 "}\n" +
-                "Class ConstraintResult" +
-                "{" +
+                "Class ConstraintResult\n" +
+                "{\n" +
                 "   instance:Any[1];\n" +
                 "}\n" +
                 "function getterOverrideToMany(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]\n" +
@@ -398,12 +384,12 @@ public abstract class AbstractTestConstraintsHandler extends AbstractPureTestWit
     @Test
     public void testEvaluateConstraint()
     {
-        compileTestSource("fromString.pure","Class Employee" +
-                "[" +
-                "   rule1 : $this.lastName->toOne()->length() < 10" +
-                "]" +
-                "{" +
-                "   lastName:String[0..1];" +
+        compileTestSource("fromString.pure", "Class Employee\n" +
+                "[\n" +
+                "   rule1 : $this.lastName->toOne()->length() < 10\n" +
+                "]\n" +
+                "{\n" +
+                "   lastName:String[0..1];\n" +
                 "}\n" +
                 "function getterOverrideToMany(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]\n" +
                 "{\n" +
@@ -439,7 +425,7 @@ public abstract class AbstractTestConstraintsHandler extends AbstractPureTestWit
     @Test
     public void testConstraintManagerWithExtendedConstraintGrammar()
     {
-        compileTestSource("fromString.pure","Class Position\n" +
+        compileTestSource("fromString.pure", "Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -501,7 +487,7 @@ public abstract class AbstractTestConstraintsHandler extends AbstractPureTestWit
     @Test
     public void testConstraintManager2WithExtendedConstraintGrammar()
     {
-        compileTestSource("fromString.pure","Class Position\n" +
+        compileTestSource("fromString.pure", "Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
