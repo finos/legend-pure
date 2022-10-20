@@ -561,7 +561,7 @@
             <dependency>
                 <groupId>org.eclipse.sisu</groupId>
                 <artifactId>org.eclipse.sisu.plexus</artifactId>
-                <version>0.3.4</version>
+                <version>0.3.5</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.codehaus.plexus</groupId>
