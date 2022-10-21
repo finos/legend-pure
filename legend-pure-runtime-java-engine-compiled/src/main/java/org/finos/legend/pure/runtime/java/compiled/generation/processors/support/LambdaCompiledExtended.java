@@ -20,7 +20,4 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 public interface LambdaCompiledExtended extends LambdaFunction<Object>
 {
     SharedPureFunction<Object> pureFunction();
-    LambdaCompiledExtended lambdaFunction(LambdaFunction<Object> l);
-    LambdaCompiledExtended pureFunction(SharedPureFunction<Object> l);
-
 }

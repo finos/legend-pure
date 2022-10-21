@@ -78,11 +78,11 @@ public class UnitImplProcessor
 
                 "public org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction<? extends java.lang.Object> _conversionFunction(final ExecutionSupport es)\n" +
                 "    {\n" +
-                "        return new PureCompiledLambda().lambdaFunction(\n" +
+                "        return new PureCompiledLambda((\n" +
                 "((CompiledExecutionSupport)es).getMetadataAccessor().getLambdaFunction(\"" + processorContext.getIdBuilder().buildId(func) + "\")\n" +
-                ").pureFunction(\n" +
+                "), (\n" +
                 ValueSpecificationProcessor.createFunctionForLambda(unit, func, true, processorSupport, processorContext) + "\n" +
-                ")\n" +
+                "))\n" +
                 ";\n" +
                 "    }\n";
     }

@@ -46,9 +46,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.meta.Compilatio
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Tag;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.*;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
@@ -394,38 +392,40 @@ public class Pure
             if (Reactivator.canReactivateWithoutJavaCompilation(lambda, es, getOpenVariables(func, bridge), bridge))
             {
                 PureMap openVariablesMap = getOpenVariables(func, bridge);
-                return DynamicPureLambdaFunctionImpl.createPureLambdaFunction(lambda, openVariablesMap.getMap(), bridge);
+                return DynamicPureFunctionImpl.createPureFunction(lambda, openVariablesMap.getMap(), bridge);
             }
             return ((LambdaCompiledExtended) CompiledSupport.dynamicallyBuildLambdaFunction(func, es)).pureFunction();
         }
         if (func instanceof ConcreteFunctionDefinition)
         {
-            return ((CompiledExecutionSupport) es).getFunctionCache().getIfAbsentPutJavaFunctionForPureFunction(func, () ->
-                    {
-                        try
+            if(func.getSourceInformation() != null) {
+                return ((CompiledExecutionSupport) es).getFunctionCache().getIfAbsentPutJavaFunctionForPureFunction(func, () ->
                         {
-                            RichIterable<? extends VariableExpression> params = ((FunctionType) func._classifierGenericType()._typeArguments().getFirst()._rawType())._parameters();
-                            Class<?>[] paramClasses = new Class[params.size() + 1];
-                            int index = 0;
-                            for (VariableExpression o : params)
-                            {
-                                paramClasses[index] = pureTypeToJavaClassForExecution(o, bridge, es);
-                                index++;
+                            try {
+                                RichIterable<? extends VariableExpression> params = ((FunctionType) func._classifierGenericType()._typeArguments().getFirst()._rawType())._parameters();
+                                Class<?>[] paramClasses = new Class[params.size() + 1];
+                                int index = 0;
+                                for (VariableExpression o : params) {
+                                    paramClasses[index] = pureTypeToJavaClassForExecution(o, bridge, es);
+                                    index++;
+                                }
+                                paramClasses[params.size()] = ExecutionSupport.class;
+                                Method method = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation())).getMethod(FunctionProcessor.functionNameToJava(func), paramClasses);
+                                return new JavaMethodWithParamsSharedPureFunction(method, paramClasses, func.getSourceInformation());
+                            } catch (RuntimeException e) {
+                                throw e;
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
                             }
-                            paramClasses[params.size()] = ExecutionSupport.class;
-                            Method method = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation())).getMethod(FunctionProcessor.functionNameToJava(func), paramClasses);
-                            return new JavaMethodWithParamsSharedPureFunction(method, paramClasses, func.getSourceInformation());
                         }
-                        catch (RuntimeException e)
-                        {
-                            throw e;
-                        }
-                        catch (Exception e)
-                        {
-                            throw new RuntimeException(e);
-                        }
-                    }
-            );
+                );
+            } else {
+                PureMap openVars = new PureMap(Maps.mutable.empty());
+                if (Reactivator.canReactivateWithoutJavaCompilation(func, es, openVars, bridge))
+                {
+                    return DynamicPureFunctionImpl.createPureFunction((FunctionDefinition<?>)func, openVars.getMap(), bridge);
+                }
+            }
         }
 
         MutableMap<String, SharedPureFunction<?>> functions;
@@ -461,23 +461,27 @@ public class Pure
         }
         if (func instanceof ConcreteFunctionDefinition)
         {
-            JavaMethodWithParamsSharedPureFunction<?> p = (JavaMethodWithParamsSharedPureFunction<?>) getSharedPureFunction(func, bridge, es);
-            Class<?>[] paramClasses = p.getParametersTypes();
-            int l = paramClasses.length;
-            MutableList<Object> paramInstances = FastList.newList();
-            for (int i = 0; i < (l - 1); i++)
-            {
-                if (instances[i] instanceof RichIterable && paramClasses[i] != RichIterable.class)
+            SharedPureFunction<?> pureFunc = getSharedPureFunction(func, bridge, es);
+            if (pureFunc instanceof JavaMethodWithParamsSharedPureFunction) {
+                JavaMethodWithParamsSharedPureFunction<?> p = (JavaMethodWithParamsSharedPureFunction<?>) pureFunc;
+                Class<?>[] paramClasses = p.getParametersTypes();
+                int l = paramClasses.length;
+                MutableList<Object> paramInstances = FastList.newList();
+                for (int i = 0; i < (l - 1); i++)
                 {
-                    paramInstances.add(CompiledSupport.toOne(((RichIterable<?>) instances[i]), null));
+                    if (instances[i] instanceof RichIterable && paramClasses[i] != RichIterable.class)
+                    {
+                        paramInstances.add(CompiledSupport.toOne(((RichIterable<?>) instances[i]), null));
+                    }
+                    else
+                    {
+                        paramInstances.add(instances[i]);
+                    }
                 }
-                else
-                {
-                    paramInstances.add(instances[i]);
-                }
+                return p.execute(paramInstances, es);
+            } else {
+                pureFunc.execute(Lists.fixedSize.with(instances), es);
             }
-            paramInstances.add(es);
-            return p.execute(paramInstances, es);
         }
         if (func instanceof LambdaFunction)
         {
@@ -502,10 +506,6 @@ public class Pure
 
     public static Object _evaluateToMany(ExecutionSupport es, Bridge bridge, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, ListIterable<?> paramInputs)
     {
-        if (func instanceof LambdaCompiledExtended)
-        {
-            return ((LambdaCompiledExtended) func).pureFunction().execute(paramInputs, es);
-        }
         if (func instanceof Property)
         {
             try
@@ -542,13 +542,9 @@ public class Pure
                 return CompiledSupport.executeMethod(o.getClass(), func._functionName(), func, Arrays.copyOfRange(paramClasses, 1, paramClasses.length),
                     o, Arrays.copyOfRange(paramInstances, 1, paramInstances.length), es);
             }
-            if (func instanceof ConcreteFunctionDefinition)
+            if (func instanceof NativeFunction || func instanceof LambdaFunction || func instanceof ConcreteFunctionDefinition)
             {
-                return CompiledSupport.executeFunction(func, paramClasses, paramInstances, es);
-            }
-            if (func instanceof NativeFunction || func instanceof LambdaFunction)
-            {
-                SharedPureFunction<?> foundFunc = getNativeOrLambdaFunction(es, func);
+                SharedPureFunction<?> foundFunc = findSharedPureFunction(func, bridge, es);
                 if (foundFunc == null)
                 {
                     StringBuilder builder = new StringBuilder("Can't execute ").append(func).append(" | name: ");
@@ -658,21 +654,30 @@ public class Pure
         return profile._p_stereotypes().detect(st -> stereotype.equals(st._value()));
     }
 
-    public static PureMap getOpenVariables(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge bridge)
-    {
+    public static PureMap getOpenVariables(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge bridge) {
         MutableMap<String, Object> map = Maps.mutable.empty();
-        //In the case of LambdaFunction_Impl, we do not need to concern with OpenVariables
-        if (func instanceof LambdaCompiledExtended)
-        {
-            SharedPureFunction<?> pureFunction = ((LambdaCompiledExtended) func).pureFunction();
-            if (pureFunction instanceof PureLambdaFunction)
-            {
-                MutableMap<String, Object> __vars = ((PureLambdaFunction<?>) pureFunction).getOpenVariables();
-                if (__vars != null)
-                {
-                    __vars.forEachKeyValue((key, value) -> map.put(key, bridge.buildList()._valuesAddAll(CompiledSupport.toPureCollection(value))));
+        if (func instanceof LambdaFunction) {
+            //In the case of LambdaFunction_Impl, we do not need to concern with OpenVariables
+            //(Is this because you can't dynamically create an instance of LambdaFunction_Impl with
+            //any open variables?)
+            if (func instanceof LambdaCompiledExtended) {
+                SharedPureFunction<?> pureFunction = ((LambdaCompiledExtended) func).pureFunction();
+                if (pureFunction instanceof PureLambdaFunction) {
+                    MutableMap<String, Object> __vars = ((PureLambdaFunction<?>) pureFunction).getOpenVariables();
+                    if (__vars != null) {
+                        __vars.forEachKeyValue((key, value) -> map.put(key, bridge.buildList()._valuesAddAll(CompiledSupport.toPureCollection(value))));
+                    }
                 }
+            } else if (func instanceof PureLambdaFunction) {
+                map.putAll(((PureLambdaFunction) func).getOpenVariables());
             }
+            // This can be helpful for debugging, but perhaps should actually
+            // be checked inside 'evaluate' on a lambda instead?
+            // else if (!((LambdaFunction) func)._openVariables().isEmpty()) {
+            //     throw new PureExecutionException("Can't resolve open variables [" + String.join(",", ((LambdaFunction) func)._openVariables().toList().sortThis())
+            //            + "] for lambda implementation: " + func.getClass().getName()
+            //             + " (source: " + String.valueOf(func.getSourceInformation()) + ")");
+            // }
         }
         return new PureMap(map);
     }

@@ -15,6 +15,8 @@
 package org.finos.legend.pure.runtime.java.compiled.metadata;
 
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -24,18 +26,22 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.Collections;
 
 public final class JavaMethodWithParamsSharedPureFunction<R> implements SharedPureFunction<R>
 {
     private final Method method;
     private final Class<?>[] paramClasses;
     private final SourceInformation sourceInformation;
+    private final boolean appendExecutionSupportParameter;
 
     public JavaMethodWithParamsSharedPureFunction(Method method, Class<?>[] paramClasses, SourceInformation sourceInformation)
     {
         this.method = method;
         this.paramClasses = paramClasses;
         this.sourceInformation = sourceInformation;
+        this.appendExecutionSupportParameter = (this.paramClasses.length > 0 && (this.paramClasses[paramClasses.length - 1] == ExecutionSupport.class));
     }
 
     public Class<?>[] getParametersTypes()
@@ -49,7 +55,8 @@ public final class JavaMethodWithParamsSharedPureFunction<R> implements SharedPu
     {
         try
         {
-            return (R) this.method.invoke(null, vars.toArray());
+            ListIterable<?> argValues = this.appendExecutionSupportParameter ? Lists.mutable.<Object>withAll(vars).with(es) : vars;
+            return (R) this.method.invoke(null, argValues.toArray());
         }
         catch (IllegalArgumentException e)
         {

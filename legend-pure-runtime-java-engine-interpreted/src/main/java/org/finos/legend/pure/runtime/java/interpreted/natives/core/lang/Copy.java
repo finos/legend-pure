@@ -23,24 +23,17 @@ import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.set.mutable.UnifiedSet;
-import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.*;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
-import org.finos.legend.pure.runtime.java.interpreted.Executor;
-import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
+import org.finos.legend.pure.runtime.java.interpreted.*;
 import org.finos.legend.pure.runtime.java.interpreted.natives.core.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.core.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.natives.core.constraints.DefaultConstraintHandler;
@@ -73,7 +66,7 @@ public class Copy extends NativeFunction
         instantiationContext.push(sourceClassifier);
 
         // TODO should we start a repository transaction here?
-        final CoreInstance newInstance = this.repository.newEphemeralAnonymousCoreInstance(null, sourceClassifier);
+        CoreInstance newInstance = this.repository.newEphemeralAnonymousCoreInstance(null, sourceClassifier);
 
         ListIterable<? extends CoreInstance> keyValues = (params.size() > 2) ? Instance.getValueForMetaPropertyToManyResolved(params.get(2), M3Properties.values, processorSupport) : Lists.immutable.<CoreInstance>with();
 
