@@ -87,10 +87,12 @@
 
         <!-- Dependency version -->
         <antlr.version>4.8-1</antlr.version>
+        <apache.maven.version>3.8.6</apache.maven.version>
         <commons-lang.version>3.5</commons-lang.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-io.version>2.7</commons-io.version>
         <commons-csv.version>1.5</commons-csv.version>
+        <commons-text.version>1.10.0</commons-text.version>
         <tomcat-dbcp.version>10.0.4</tomcat-dbcp.version>
         <slf4j.version>1.7.25</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
@@ -111,7 +113,7 @@
         <jaxrs.version>2.0.1</jaxrs.version>
         <swagger.annotation.version>1.5.20</swagger.annotation.version>
         <javax.servlet.version>3.1.0</javax.servlet.version>
-        <snakeyaml.version>1.26</snakeyaml.version>
+        <snakeyaml.version>1.33</snakeyaml.version>
         <guava.version>30.0-jre</guava.version>
         <h2.version>1.4.197</h2.version>
     </properties>
@@ -527,8 +529,23 @@
             <!-- Maven Plugin -->
             <dependency>
                 <groupId>org.apache.maven</groupId>
+                <artifactId>maven-core</artifactId>
+                <version>${apache.maven.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.codehaus.plexus</groupId>
+                        <artifactId>plexus-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.plexus</groupId>
+                        <artifactId>plexus-component-annotations</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
                 <artifactId>maven-plugin-api</artifactId>
-                <version>3.6.3</version>
+                <version>${apache.maven.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven.plugin-tools</groupId>
@@ -544,7 +561,7 @@
             <dependency>
                 <groupId>org.eclipse.sisu</groupId>
                 <artifactId>org.eclipse.sisu.plexus</artifactId>
-                <version>0.3.4</version>
+                <version>0.3.5</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.codehaus.plexus</groupId>
@@ -568,6 +585,11 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons-lang.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>${commons-text.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.tomcat</groupId>
