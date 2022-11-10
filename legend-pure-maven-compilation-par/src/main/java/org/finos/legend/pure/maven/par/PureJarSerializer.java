@@ -18,14 +18,11 @@ import org.apache.maven.plugin.logging.Log;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.partition.PartitionIterable;
-import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Sets;
-import org.finos.legend.pure.configuration.PureRepositoriesExternal;
+import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.AbstractRepositoryCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.EmptyCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
@@ -49,66 +46,74 @@ public class PureJarSerializer
 {
     public static final String ARCHIVE_FILE_EXTENSION = "par";
 
+    @Deprecated
     public static void writePureRepositoryJars(Path outputDirectory, Path sourceDirectory, String platformVersion, Iterable<CodeRepository> repositories, Log log) throws IOException
     {
-        writePureRepositoryJars(outputDirectory, sourceDirectory, platformVersion, Sets.immutable.withAll(repositories), log);
+        CodeRepositorySet resolvedRepositories = CodeRepositorySet.newBuilder()
+                .withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories())
+                .build()
+                .subset(LazyIterate.collect(repositories, CodeRepository::getName));
+        writePureRepositoryJars(outputDirectory, sourceDirectory, platformVersion, resolvedRepositories, log);
     }
 
-    private static void writePureRepositoryJars(Path outputDirectory, Path sourceDirectory, String platformVersion, RichIterable<CodeRepository> repositories, Log log) throws IOException
+    public static void writePureRepositoryJars(Path outputDirectory, Path sourceDirectory, String platformVersion, CodeRepositorySet repositories, Log log) throws IOException
     {
-        SetIterable<CodeRepository> repositoriesForCompilation = PureCodeStorage.getRepositoryDependencies(PureRepositoriesExternal.repositories(), repositories);
+        writePureRepositoryJars(outputDirectory, sourceDirectory, platformVersion, repositories, Thread.currentThread().getContextClassLoader(), log);
+    }
+
+    public static void writePureRepositoryJars(Path outputDirectory, Path sourceDirectory, String platformVersion, CodeRepositorySet repositories, ClassLoader classLoader, Log log) throws IOException
+    {
         PureRuntime runtime;
         RichIterable<CodeRepository> repositoriesToSerialize;
-
-        if (null == sourceDirectory)
+        if (sourceDirectory == null)
         {
             log.info("    *Building code storage leveraging the class loader (as sourceDirectory is not specified)");
-            ClassLoaderCodeStorage cs = new ClassLoaderCodeStorage(repositoriesForCompilation);
+            ClassLoaderCodeStorage cs = new ClassLoaderCodeStorage(classLoader, repositories.getRepositories());
             log.info("      " + cs.getRepositories().collect(CodeRepository::getName) + " - " + cs.getUserFiles().size() + " files");
             MutableCodeStorage codeStorage = new PureCodeStorage(null, cs);
 
             Message message = getMessage(log, "      ");
             log.info("    *Starting file compilation");
             runtime = new PureRuntimeBuilder(codeStorage).setTransactionalByDefault(false).buildAndInitialize(message);
-            repositoriesToSerialize = repositoriesForCompilation;
+            repositoriesToSerialize = repositories.getRepositories();
             log.info("      -> Finished compilation");
         }
         else
         {
-            log.info("    *Building code storage leveraging the sourceDirectory "+sourceDirectory);
+            log.info("    *Building code storage leveraging the sourceDirectory " + sourceDirectory);
 
-            PartitionIterable<CodeRepository> partition = repositories.partition(r -> Files.exists(sourceDirectory.resolve(r.getName())));
-            RichIterable<CodeRepository> repositoriesWithSource = partition.getSelected();
-            RichIterable<CodeRepository> repositoriesWithoutSource = partition.getRejected();
+            MutableList<CodeRepository> repositoriesWithSource = Lists.mutable.empty();
+            MutableList<CodeRepository> repositoriesWithoutSource = Lists.mutable.empty();
+            repositories.getRepositories().forEach(r -> (Files.exists(sourceDirectory.resolve(r.getName())) ? repositoriesWithSource : repositoriesWithoutSource).add(r));
 
             // Code Storages
-            MutableList<AbstractRepositoryCodeStorage> codeStoragesFromSource = Lists.mutable.withAll(repositoriesWithSource.collect(r -> new MutableFSCodeStorage(r, sourceDirectory.resolve(r.getName()))));
-            MutableList<AbstractRepositoryCodeStorage> allCodeStorage = Lists.mutable.withAll(codeStoragesFromSource).withAll(repositoriesWithoutSource.collect(EmptyCodeStorage::new));
-            log.info("    *Loading the following repo from PARs: "+repositoriesWithoutSource.collect(CodeRepository::getName));
+            MutableList<RepositoryCodeStorage> codeStoragesFromSource = repositoriesWithSource.collect(r -> new MutableFSCodeStorage(r, sourceDirectory.resolve(r.getName())));
+            MutableList<RepositoryCodeStorage> allCodeStorage = Lists.mutable.withAll(codeStoragesFromSource).with(new ClassLoaderCodeStorage(classLoader, repositoriesWithoutSource));
+            log.info("    *Loading the following repo from PARs: " + repositoriesWithoutSource.collect(CodeRepository::getName));
 
             // Build the runtime
             MutableCodeStorage codeStorage = new PureCodeStorage(sourceDirectory, allCodeStorage.toArray(new RepositoryCodeStorage[0]));
             runtime = new PureRuntimeBuilder(codeStorage).setTransactionalByDefault(false).build();
 
             // Load the PARS
-            MutableList<String> namesOfRepoWithoutAvailableSource = repositoriesWithoutSource.collect(CodeRepository::getName).toList();
             Message message = getMessage(log, "    ");
-            PureRepositoryJarLibrary jarLibrary = SimplePureRepositoryJarLibrary.newLibrary(GraphLoader.findJars(namesOfRepoWithoutAvailableSource, PureJarSerializer.class.getClassLoader(), message));
-            final GraphLoader loader = new GraphLoader(runtime.getModelRepository(), runtime.getContext(), runtime.getIncrementalCompiler().getParserLibrary(), runtime.getIncrementalCompiler().getDslLibrary(), runtime.getSourceRegistry(), runtime.getURLPatternLibrary(), jarLibrary);
+            PureRepositoryJarLibrary jarLibrary = SimplePureRepositoryJarLibrary.newLibrary(GraphLoader.findJars(repositoriesWithoutSource.collect(CodeRepository::getName), classLoader, message));
+            GraphLoader loader = new GraphLoader(runtime.getModelRepository(), runtime.getContext(), runtime.getIncrementalCompiler().getParserLibrary(), runtime.getIncrementalCompiler().getDslLibrary(), runtime.getSourceRegistry(), runtime.getURLPatternLibrary(), jarLibrary);
             loader.loadAll(message);
 
             // Compile Sources
             log.info("    *Starting file compilation");
             codeStoragesFromSource.forEach(r -> log.info("      " + r.getRepositories().collect(CodeRepository::getName) + " - " + r.getUserFiles().size() + " files (from: " + ((FSCodeStorage) r).getRoot() + ")"));
-            for (CodeRepository repository : repositoriesWithSource)
+            repositoriesWithSource.forEach(repository ->
             {
                 Path path = sourceDirectory.resolve(repository.getName());
                 log.info("      Compiling repository '" + repository.getName() + "' in " + path);
                 MutableFSCodeStorage fs = new MutableFSCodeStorage(repository, path);
-                log.info("        Found " + fs.getUserFiles().size() + " files");
-                runtime.loadAndCompile(new PureCodeStorage(sourceDirectory, fs).getUserFiles());
+                RichIterable<String> filesToCompile = fs.getUserFiles();
+                log.info("        Found " + filesToCompile.size() + " files");
+                runtime.loadAndCompile(filesToCompile);
                 log.info("        -> Finished compiling repository '" + repository.getName() + "'");
-            }
+            });
 
             repositoriesToSerialize = repositoriesWithSource;
             log.info("      -> Finished compilation");
@@ -119,7 +124,7 @@ public class PureJarSerializer
         for (String repositoryName : repositoriesToSerialize.collect(CodeRepository::getName))
         {
             Path outputFile = outputDirectory.resolve("pure-" + repositoryName + "." + ARCHIVE_FILE_EXTENSION);
-            log.info("      Writing "+outputFile);
+            log.info("      Writing " + outputFile);
             try (OutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(outputFile)))
             {
                 BinaryModelRepositorySerializer.serialize(outputStream, platformVersion, null, repositoryName, runtime);

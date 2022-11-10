@@ -22,14 +22,15 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.ListIterate;
-import org.finos.legend.pure.configuration.PureRepositoriesExternal;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
@@ -112,10 +113,9 @@ public class PureCompiledJarMojo extends AbstractMojo
         {
             Thread.currentThread().setContextClassLoader(buildClassLoader(this.project, savedClassLoader));
 
-            PureRepositoriesExternal.refresh();
-
-            ListIterable<CodeRepository> resolvedRepositories = resolveRepositories();
-            getLog().info(resolvedRepositories.asLazy().collect(CodeRepository::getName).makeString("  Resolved repositories: ", ", ", ""));
+            CodeRepositorySet allRepositories = getAllRepositories();
+            MutableSet<String> selectedRepositories = getSelectedRepositories(allRepositories);
+            getLog().info(selectedRepositories.makeString("  Resolved repositories: ", ", ", ""));
 
             Path distributedMetadataDirectory;
             if (!this.generateMetadata)
@@ -150,7 +150,7 @@ public class PureCompiledJarMojo extends AbstractMojo
             // Generate metadata and Java sources
             long startGenerating = System.nanoTime();
             getLog().info("  Start generating Java classes");
-            Generate generate = generate(startGenerating, resolvedRepositories, distributedMetadataDirectory, codegenDirectory);
+            Generate generate = generate(startGenerating, allRepositories, selectedRepositories, distributedMetadataDirectory, codegenDirectory);
             getLog().info(String.format("  Finished generating Java classes (%.9fs)", durationSinceInSeconds(startGenerating)));
 
             // Compile Java sources
@@ -197,28 +197,44 @@ public class PureCompiledJarMojo extends AbstractMojo
         getLog().info(String.format("    Finished %s (%.9fs)", step, durationSinceInSeconds(stepStart)));
     }
 
-    private ListIterable<CodeRepository> resolveRepositories()
+    private CodeRepositorySet getAllRepositories()
     {
-        if ((this.extraRepositories != null) && !this.extraRepositories.isEmpty())
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        CodeRepositorySet.Builder builder = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true));
+        if (this.extraRepositories != null)
         {
-            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            PureRepositoriesExternal.addRepositories(Iterate.collect(this.extraRepositories, r -> GenericCodeRepository.build(classLoader, r), Lists.mutable.withInitialCapacity(this.extraRepositories.size())));
+            this.extraRepositories.forEach(r -> builder.addCodeRepository(GenericCodeRepository.build(classLoader, r)));
         }
-
-        MutableList<CodeRepository> selectedRepos = (this.repositories == null) ?
-                PureRepositoriesExternal.repositories().toList() :
-                Iterate.collect(this.repositories, PureRepositoriesExternal::getRepository, Lists.mutable.withInitialCapacity(this.repositories.size()));
-        if ((this.excludedRepositories != null) && !this.excludedRepositories.isEmpty())
-        {
-            selectedRepos.removeIf(r -> this.excludedRepositories.contains(r.getName()));
-        }
-        return selectedRepos;
+        return builder.build();
     }
 
-    private Generate generate(long start, ListIterable<CodeRepository> resolvedRepositories, Path distributedMetadataDirectory, Path codegenDirectory) throws MojoExecutionException
+    private MutableSet<String> getSelectedRepositories(CodeRepositorySet allRepositories)
+    {
+        MutableSet<String> selected;
+        if ((this.repositories == null) || this.repositories.isEmpty())
+        {
+            selected = allRepositories.getRepositoryNames().toSet();
+        }
+        else
+        {
+            selected = Sets.mutable.withAll(this.repositories);
+            MutableList<String> missing = selected.reject(allRepositories::hasRepository, Lists.mutable.empty());
+            if (missing.notEmpty())
+            {
+                throw new RuntimeException(missing.sortThis().makeString("Unknown repositories: \"", "\", \"", "\""));
+            }
+        }
+        if (this.excludedRepositories != null)
+        {
+            selected.removeAll(this.excludedRepositories);
+        }
+        return selected;
+    }
+
+    private Generate generate(long start, CodeRepositorySet allRepositories, SetIterable<String> selectedRepositories, Path distributedMetadataDirectory, Path codegenDirectory) throws MojoExecutionException
     {
         // Initialize runtime
-        PureRuntime runtime = initializeRuntime(start, resolvedRepositories);
+        PureRuntime runtime = initializeRuntime(start, allRepositories, selectedRepositories);
 
         // Possibly write distributed metadata
         if (this.generateMetadata)
@@ -232,7 +248,7 @@ public class PureCompiledJarMojo extends AbstractMojo
                 }
                 case modular:
                 {
-                    generateModularMetadata(start, runtime, resolvedRepositories, distributedMetadataDirectory);
+                    generateModularMetadata(start, runtime, selectedRepositories, distributedMetadataDirectory);
                     break;
                 }
                 default:
@@ -258,7 +274,7 @@ public class PureCompiledJarMojo extends AbstractMojo
                 }
                 case modular:
                 {
-                    generate = generator.generateOnly(resolvedRepositories.collect(CodeRepository::getName), true, this.generateSources, codegenDirectory);
+                    generate = generator.generateOnly(selectedRepositories, true, this.generateSources, codegenDirectory);
                     break;
                 }
                 default:
@@ -275,12 +291,12 @@ public class PureCompiledJarMojo extends AbstractMojo
         return generate;
     }
 
-    private PureRuntime initializeRuntime(long start, RichIterable<CodeRepository> resolvedRepositories) throws MojoExecutionException
+    private PureRuntime initializeRuntime(long start, CodeRepositorySet allRepositories, Iterable<String> selectedRepositories) throws MojoExecutionException
     {
         try
         {
             getLog().info("  Beginning Pure initialization");
-            SetIterable<CodeRepository> repositoriesForCompilation = PureCodeStorage.getRepositoryDependencies(PureRepositoriesExternal.repositories(), resolvedRepositories);
+            RichIterable<CodeRepository> repositoriesForCompilation = allRepositories.subset(selectedRepositories).getRepositories();
 
             // Initialize from PAR files cache
             PureCodeStorage codeStorage = new PureCodeStorage(null, new ClassLoaderCodeStorage(Thread.currentThread().getContextClassLoader(), repositoriesForCompilation));
@@ -327,15 +343,15 @@ public class PureCompiledJarMojo extends AbstractMojo
         }
     }
 
-    private void generateModularMetadata(long start, PureRuntime runtime, ListIterable<CodeRepository> resolvedRepositories, Path distributedMetadataDirectory) throws MojoExecutionException
+    private void generateModularMetadata(long start, PureRuntime runtime, Iterable<String> repositoriesForMetadata, Path distributedMetadataDirectory) throws MojoExecutionException
     {
         String writeMetadataStep = "writing distributed Pure metadata";
         long writeMetadataStart = startStep(writeMetadataStep);
         try
         {
-            for (CodeRepository repository : resolvedRepositories)
+            for (String repository : repositoriesForMetadata)
             {
-                generateModularMetadata(start, runtime, repository.getName(), distributedMetadataDirectory);
+                generateModularMetadata(start, runtime, repository, distributedMetadataDirectory);
             }
             completeStep(writeMetadataStep, writeMetadataStart);
         }

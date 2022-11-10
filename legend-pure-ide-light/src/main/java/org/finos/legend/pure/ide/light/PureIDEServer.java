@@ -21,13 +21,8 @@ import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.federecio.dropwizard.swagger.SwaggerResource;
-import java.util.EnumSet;
-import javax.servlet.DispatcherType;
-import javax.servlet.FilterRegistration;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
-import org.finos.legend.pure.configuration.PureRepositoriesExternal;
 import org.finos.legend.pure.ide.light.api.Activities;
 import org.finos.legend.pure.ide.light.api.FileManagement;
 import org.finos.legend.pure.ide.light.api.LifeCycle;
@@ -40,8 +35,14 @@ import org.finos.legend.pure.ide.light.api.find.FindInSources;
 import org.finos.legend.pure.ide.light.api.find.FindPureFile;
 import org.finos.legend.pure.ide.light.session.PureSession;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+
+import java.util.EnumSet;
+import javax.servlet.DispatcherType;
+import javax.servlet.FilterRegistration;
 
 public abstract class PureIDEServer extends Application<ServerConfiguration>
 {
@@ -115,12 +116,12 @@ public abstract class PureIDEServer extends Application<ServerConfiguration>
     {
         MutableList<RepositoryCodeStorage> fromIde = this.buildRepositories(sourceLocationConfiguration);
 
-        MutableSet<CodeRepository> fromClassPath = PureRepositoriesExternal
-                .repositories()
-                .toSet()
-                .withoutAll(fromIde.flatCollect(RepositoryCodeStorage::getRepositories));
+        CodeRepositorySet repositorySet = CodeRepositorySet.newBuilder()
+                .withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories())
+                .withoutCodeRepositories(fromIde.asLazy().flatCollect(RepositoryCodeStorage::getRepositories).collect(CodeRepository::getName))
+                .build();
 
-        return fromIde.with(new ClassLoaderCodeStorage(fromClassPath));
+        return fromIde.with(new ClassLoaderCodeStorage(repositorySet.getRepositories()));
     }
 
     public PureSession getPureSession()

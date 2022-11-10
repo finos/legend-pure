@@ -102,11 +102,15 @@ public class GenericCodeRepository extends CodeRepository
         }
         try (Reader reader = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8)))
         {
-            return build(reader);
+            return buildFromReader(reader);
         }
         catch (IOException e)
         {
             throw new UncheckedIOException("Error loading code repository definition from resource \"" + resourcePath + "\" (" + url + ")", e);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Error loading code repository definition from resource \"" + resourcePath + "\" (" + url + ")", e);
         }
     }
 
@@ -119,11 +123,31 @@ public class GenericCodeRepository extends CodeRepository
     {
         try (Reader reader = Files.newBufferedReader(specFile, StandardCharsets.UTF_8))
         {
-            return build(reader);
+            return buildFromReader(reader);
         }
         catch (IOException e)
         {
             throw new UncheckedIOException("Error loading code repository specification from " + specFile, e);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Error loading code repository specification from " + specFile, e);
+        }
+    }
+
+    public static GenericCodeRepository build(URL url)
+    {
+        try (Reader reader = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8)))
+        {
+            return buildFromReader(reader);
+        }
+        catch (IOException e)
+        {
+            throw new UncheckedIOException("Error loading code repository definition from URL " + url, e);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Error loading code repository definition from URL " + url, e);
         }
     }
 
@@ -131,25 +155,7 @@ public class GenericCodeRepository extends CodeRepository
     {
         try (Reader reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(inputStream), StandardCharsets.UTF_8)))
         {
-            return build(reader);
-        }
-        catch (IOException e)
-        {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    public static GenericCodeRepository build(Reader reader)
-    {
-        JSONObject spec = loadResource(Objects.requireNonNull(reader));
-        return build(getName(spec), getPattern(spec), getDependencies(spec));
-    }
-
-    private static JSONObject loadResource(Reader reader)
-    {
-        try
-        {
-            return (JSONObject) new JSONParser().parse(reader);
+            return buildFromReader(reader);
         }
         catch (IOException e)
         {
@@ -159,6 +165,33 @@ public class GenericCodeRepository extends CodeRepository
         {
             throw new RuntimeException(e);
         }
+    }
+
+    public static GenericCodeRepository build(Reader reader)
+    {
+        try
+        {
+            return buildFromReader(reader);
+        }
+        catch (IOException e)
+        {
+            throw new UncheckedIOException(e);
+        }
+        catch (ParseException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static GenericCodeRepository buildFromReader(Reader reader) throws IOException, ParseException
+    {
+        JSONObject spec = loadResource(Objects.requireNonNull(reader));
+        return build(getName(spec), getPattern(spec), getDependencies(spec));
+    }
+
+    private static JSONObject loadResource(Reader reader) throws IOException, ParseException
+    {
+        return (JSONObject) new JSONParser().parse(reader);
     }
 
     private static String getName(JSONObject obj)

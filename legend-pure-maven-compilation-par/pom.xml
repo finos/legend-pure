@@ -91,11 +91,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-configuration-external</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.eclipse.collections</groupId>
             <artifactId>eclipse-collections-api</artifactId>
         </dependency>
