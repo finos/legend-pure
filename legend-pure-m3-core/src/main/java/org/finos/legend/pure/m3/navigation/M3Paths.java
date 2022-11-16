@@ -61,6 +61,7 @@ public class M3Paths
     public static final String Float = ModelRepository.FLOAT_TYPE_NAME;
     public static final String Function = "meta::pure::metamodel::function::Function";
     public static final String FunctionDefinition = "meta::pure::metamodel::function::FunctionDefinition";
+    public static final String PackageableFunction = "meta::pure::metamodel::function::PackageableFunction";
     public static final String FunctionExpression = "meta::pure::metamodel::valuespecification::FunctionExpression";
     public static final String FunctionType = "meta::pure::metamodel::type::FunctionType";
     public static final String Generalization = "meta::pure::metamodel::relationship::Generalization";

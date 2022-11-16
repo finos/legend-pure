@@ -385,18 +385,6 @@ public class LambdaWithContext implements LambdaFunction<CoreInstance>
     }
 
     @Override
-    public RichIterable<? extends Constraint> _preConstraints()
-    {
-        return this.lambda._preConstraints();
-    }
-
-    @Override
-    public RichIterable<? extends Constraint> _postConstraints()
-    {
-        return this.lambda._postConstraints();
-    }
-
-    @Override
     public RichIterable<? extends FunctionExpression> _applications()
     {
         return this.lambda._applications();
@@ -406,107 +394,6 @@ public class LambdaWithContext implements LambdaFunction<CoreInstance>
     public LambdaWithContext _functionName(String value)
     {
         this.lambda._functionName(value);
-        return this;
-    }
-
-    @Override
-    public LambdaWithContext _preConstraints(RichIterable<? extends Constraint> values)
-    {
-        this.lambda._preConstraints(values);
-        return this;
-    }
-
-    @Override
-    public LambdaWithContext _preConstraintsAdd(Constraint value)
-    {
-        this.lambda._preConstraintsAdd(value);
-        return this;
-    }
-
-    @Override
-    public LambdaWithContext _applications(RichIterable<? extends FunctionExpression> values)
-    {
-        this.lambda._applications(values);
-        return this;
-    }
-
-    @Override
-    public LambdaWithContext _postConstraints(RichIterable<? extends Constraint> values)
-    {
-        this.lambda._postConstraints(values);
-        return this;
-    }
-
-    @Override
-    public Package _package()
-    {
-        return this.lambda._package();
-    }
-
-    @Override
-    public RichIterable<? extends ReferenceUsage> _referenceUsages()
-    {
-        return this.lambda._referenceUsages();
-    }
-
-    @Override
-    public LambdaWithContext _package(Package value)
-    {
-        this.lambda._package(value);
-        return this;
-    }
-
-    @Override
-    public LambdaWithContext _referenceUsages(RichIterable<? extends ReferenceUsage> values)
-    {
-        this.lambda._referenceUsages(values);
-        return this;
-    }
-
-    @Override
-    public String _name()
-    {
-        return this.lambda._name();
-    }
-
-    @Override
-    public LambdaWithContext _nameRemove()
-    {
-        this.lambda._nameRemove();
-        return this;
-    }
-
-    @Override
-    public LambdaWithContext _name(String value)
-    {
-        this.lambda._name(value);
-        return this;
-    }
-
-    @Override
-    public RichIterable<? extends Stereotype> _stereotypes()
-    {
-        return this.lambda._stereotypes();
-    }
-
-    @Override
-    public LambdaWithContext _stereotypes(RichIterable<? extends Stereotype> values)
-    {
-        this.lambda._stereotypes(values);
-        return this;
-    }
-
-    @Override
-    public LambdaWithContext _stereotypesRemove()
-    {
-        this.lambda._stereotypesRemove();
-        return this;
-    }
-
-    @Override
-    public LambdaWithContext _stereotypesCoreInstance(RichIterable<? extends CoreInstance> values)
-    {
-        this.lambda._stereotypesCoreInstance(values);
         return this;
     }
 
@@ -537,19 +424,6 @@ public class LambdaWithContext implements LambdaFunction<CoreInstance>
     }
 
     @Override
-    public RichIterable<? extends TaggedValue> _taggedValues()
-    {
-        return this.lambda._taggedValues();
-    }
-
-    @Override
-    public LambdaWithContext _taggedValues(RichIterable<? extends TaggedValue> values)
-    {
-        this.lambda._taggedValues(values);
-        return this;
-    }
-
-    @Override
     public RichIterable<? extends String> _openVariables()
     {
         return this.lambda._openVariables();
@@ -570,22 +444,9 @@ public class LambdaWithContext implements LambdaFunction<CoreInstance>
     }
 
     @Override
-    public RichIterable<? extends CoreInstance> _stereotypesCoreInstance()
-    {
-        return this.lambda._stereotypesCoreInstance();
-    }
-
-    @Override
     public LambdaWithContext _functionNameRemove()
     {
         this.lambda._functionNameRemove();
-        return this;
-    }
-
-    @Override
-    public LambdaWithContext _preConstraintsRemove()
-    {
-        this.lambda._preConstraintsRemove();
         return this;
     }
 
@@ -604,20 +465,6 @@ public class LambdaWithContext implements LambdaFunction<CoreInstance>
     }
 
     @Override
-    public LambdaWithContext _taggedValuesRemove()
-    {
-        this.lambda._taggedValuesRemove();
-        return this;
-    }
-
-    @Override
-    public LambdaWithContext _packageRemove()
-    {
-        this.lambda._packageRemove();
-        return this;
-    }
-
-    @Override
     public LambdaFunction<CoreInstance> _expressionSequenceRemove()
     {
         this.lambda._expressionSequenceRemove();
@@ -625,23 +472,9 @@ public class LambdaWithContext implements LambdaFunction<CoreInstance>
     }
 
     @Override
-    public LambdaFunction<CoreInstance> _postConstraintsRemove()
-    {
-        this.lambda._postConstraintsRemove();
-        return this;
-    }
-
-    @Override
     public LambdaFunction<CoreInstance> _applicationsRemove()
     {
         this.lambda._applicationsRemove();
-        return this;
-    }
-
-    @Override
-    public LambdaFunction<CoreInstance> _referenceUsagesRemove()
-    {
-        this.lambda._referenceUsagesRemove();
         return this;
     }
 
@@ -660,37 +493,9 @@ public class LambdaWithContext implements LambdaFunction<CoreInstance>
     }
 
     @Override
-    public LambdaFunction<CoreInstance> _postConstraintsAdd(Constraint value)
-    {
-        this.lambda._postConstraintsAdd(value);
-        return this;
-    }
-
-    @Override
     public LambdaFunction<CoreInstance> _applicationsAdd(FunctionExpression value)
     {
         this.lambda._applicationsAdd(value);
-        return this;
-    }
-
-    @Override
-    public LambdaFunction<CoreInstance> _referenceUsagesAdd(ReferenceUsage value)
-    {
-        this.lambda._referenceUsagesAdd(value);
-        return this;
-    }
-
-    @Override
-    public LambdaFunction<CoreInstance> _stereotypesAdd(Stereotype value)
-    {
-        this.lambda._stereotypesAdd(value);
-        return this;
-    }
-
-    @Override
-    public LambdaFunction<CoreInstance> _taggedValuesAdd(TaggedValue value)
-    {
-        this.lambda._taggedValuesAdd(value);
         return this;
     }
 
@@ -723,13 +528,6 @@ public class LambdaWithContext implements LambdaFunction<CoreInstance>
     }
 
     @Override
-    public LambdaFunction<CoreInstance> _applicationsAddAll(RichIterable<? extends FunctionExpression> values)
-    {
-        this.lambda._applicationsAddAll(values);
-        return this;
-    }
-
-    @Override
     public LambdaFunction<CoreInstance> _applicationsRemove(FunctionExpression value)
     {
         this.lambda._applicationsRemove(value);
@@ -737,109 +535,81 @@ public class LambdaWithContext implements LambdaFunction<CoreInstance>
     }
 
     @Override
-    public LambdaFunction<CoreInstance> _postConstraintsAddAll(RichIterable<? extends Constraint> values)
+    public LambdaFunction<CoreInstance> _applications(RichIterable<? extends FunctionExpression> values)
     {
-        this.lambda._postConstraintsAddAll(values);
+        this.lambda._applications(values);
         return this;
     }
 
     @Override
-    public LambdaFunction<CoreInstance> _postConstraintsRemove(Constraint value)
+    public LambdaFunction<CoreInstance> _applicationsAddAll(RichIterable<? extends FunctionExpression> values)
     {
-        this.lambda._postConstraintsRemove(value);
+        this.lambda._applicationsAddAll(values);
         return this;
     }
 
     @Override
-    public LambdaFunction<CoreInstance> _preConstraintsAddAll(RichIterable<? extends Constraint> values)
+    public String _name()
     {
-        this.lambda._preConstraintsAddAll(values);
+        return this.lambda._name();
+    }
+
+    @Override
+    public LambdaFunction<CoreInstance> _name(String value)
+    {
+        this.lambda._name(value);
         return this;
     }
 
     @Override
-    public LambdaFunction<CoreInstance> _preConstraintsRemove(Constraint value)
+    public LambdaFunction<CoreInstance> _nameRemove()
     {
-        this.lambda._preConstraintsRemove(value);
+        this.lambda._nameRemove();
         return this;
     }
 
     @Override
-    public LambdaFunction<CoreInstance> _referenceUsagesAddAll(RichIterable<? extends ReferenceUsage> values)
+    public RichIterable<? extends ReferenceUsage> _referenceUsages()
     {
-        this.lambda._referenceUsagesAddAll(values);
-        return this;
+        return lambda._referenceUsages();
+    }
+
+    public LambdaFunction _referenceUsages(RichIterable values)
+    {
+        return lambda._referenceUsages(values);
     }
 
     @Override
-    public LambdaFunction<CoreInstance> _referenceUsagesRemove(ReferenceUsage value)
+    public LambdaFunction _referenceUsagesRemove()
     {
-        this.lambda._referenceUsagesRemove(value);
-        return this;
+        return lambda._referenceUsagesRemove();
     }
 
     @Override
-    public LambdaFunction<CoreInstance> _stereotypesAddAll(RichIterable<? extends Stereotype> values)
+    public LambdaFunction _referenceUsagesAdd(ReferenceUsage value)
     {
-        this.lambda._stereotypesAddAll(values);
-        return this;
+        return lambda._referenceUsagesAdd(value);
+    }
+
+    public LambdaFunction _referenceUsagesAddAll(RichIterable values)
+    {
+        return lambda._referenceUsagesAddAll(values);
     }
 
     @Override
-    public LambdaFunction<CoreInstance> _stereotypesRemove(Stereotype value)
+    public LambdaFunction _referenceUsagesRemove(ReferenceUsage value)
     {
-        this.lambda._stereotypesRemove(value);
-        return this;
-    }
-
-    @Override
-    public LambdaFunction<CoreInstance> _taggedValuesAddAll(RichIterable<? extends TaggedValue> values)
-    {
-        this.lambda._taggedValuesAddAll(values);
-        return this;
-    }
-
-    @Override
-    public LambdaFunction<CoreInstance> _taggedValuesRemove(TaggedValue value)
-    {
-        this.lambda._taggedValuesRemove(value);
-        return this;
-    }
-
-    @Override
-    public LambdaFunction<CoreInstance> _stereotypesAddCoreInstance(CoreInstance value)
-    {
-        this.lambda._stereotypesAddCoreInstance(value);
-        return this;
-    }
-
-    @Override
-    public LambdaFunction<CoreInstance> _stereotypesAddAllCoreInstance(RichIterable<? extends CoreInstance> values)
-    {
-        this.lambda._stereotypesAddAllCoreInstance(values);
-        return this;
-    }
-
-    @Override
-    public LambdaFunction<CoreInstance> _stereotypesRemoveCoreInstance(CoreInstance value)
-    {
-        this.lambda._stereotypesRemoveCoreInstance(value);
-        return this;
+        return lambda._referenceUsagesRemove(value);
     }
 
     @Override
     public LambdaFunction<CoreInstance> copy()
     {
         LambdaFunction<CoreInstance> copy = new LambdaWithContext(this.lambda, this.variableContext);
-        copy._package(this._package());
-        copy._preConstraints(this._preConstraints());
         copy._referenceUsages(this._referenceUsages());
-        copy._postConstraints(this._postConstraints());
-        copy._name(this._name());
         copy._openVariables(this._openVariables());
+        copy._name(this._name());
         copy._functionName(this._functionName());
-        copy._taggedValues(this._taggedValues());
-        copy._stereotypes(this._stereotypes());
         copy._applications(this._applications());
         copy._expressionSequence(this._expressionSequence());
         copy._classifierGenericType(this._classifierGenericType());

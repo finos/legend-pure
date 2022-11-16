@@ -46,6 +46,7 @@ import org.finos.legend.pure.m3.compiler.unload.unbind.UnbindState;
 import org.finos.legend.pure.m3.compiler.visibility.Visibility;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
@@ -879,7 +880,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             SetIterable<String> alreadyImportedPackages = functionExpressionImportGroup._imports().collect(ImportAccessor::_path, Sets.mutable.empty());
             PartitionSet<CoreInstance> partition = possibleFunctions.partition(f ->
             {
-                Package functionPackage = ((Function<?>) f)._package();
+                Package functionPackage = ((PackageableFunction<?>) f)._package();
                 return (functionPackage._package() == null) || alreadyImportedPackages.contains(PackageableElement.getUserPathForPackageableElement(functionPackage));
             });
             SetIterable<CoreInstance> possibleFunctionsWithPackageNotImported = partition.getRejected();
@@ -930,7 +931,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
         {
             if (Visibility.isVisibleInSource(function, (functionExpressionSourceInformation == null) ? null : functionExpressionSourceInformation.getSourceId(), processorState.getCodeStorage().getAllRepositories(), processorSupport))
             {
-                CoreInstance pkg = ((Function<?>) function)._package();
+                CoreInstance pkg = ((PackageableFunction<?>) function)._package();
                 StringBuilder packageName = new StringBuilder();
                 if ((pkg != null) && !M3Paths.Root.equals(pkg.getName()))
                 {

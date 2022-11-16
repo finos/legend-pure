@@ -21,6 +21,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.compiler.visibility.AccessLevel;
 import org.finos.legend.pure.m3.compiler.visibility.Visibility;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -601,35 +602,35 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
                 "    $s\n" +
                 "}");
 
-        Function<?> privateFunc = (Function<?>) runtime.getFunction("pkg1::privateFunc(String[1], String[1]):String[1]");
+        PackageableFunction<?> privateFunc = (PackageableFunction<?>) runtime.getFunction("pkg1::privateFunc(String[1], String[1]):String[1]");
         Assert.assertNotNull(privateFunc);
         Assert.assertSame(AccessLevel.PRIVATE, AccessLevel.getAccessLevel(privateFunc, context, processorSupport));
 
-        Function<?> protectedFunc = (Function<?>) runtime.getFunction("pkg1::protectedFunc(String[1], String[1]):String[1]");
+        PackageableFunction<?> protectedFunc = (PackageableFunction<?>) runtime.getFunction("pkg1::protectedFunc(String[1], String[1]):String[1]");
         Assert.assertNotNull(protectedFunc);
         Assert.assertSame(AccessLevel.PROTECTED, AccessLevel.getAccessLevel(protectedFunc, context, processorSupport));
 
-        Function<?> publicFunc1 = (Function<?>) runtime.getFunction("pkg1::publicFunc1(String[1]):String[1]");
+        PackageableFunction<?> publicFunc1 = (PackageableFunction<?>) runtime.getFunction("pkg1::publicFunc1(String[1]):String[1]");
         Assert.assertNotNull(publicFunc1);
         Assert.assertSame(AccessLevel.PUBLIC, AccessLevel.getAccessLevel(publicFunc1, context, processorSupport));
 
-        Function<?> publicFunc2 = (Function<?>) runtime.getFunction("pkg1::sub::publicFunc2(String[1]):String[1]");
+        PackageableFunction<?> publicFunc2 = (PackageableFunction<?>) runtime.getFunction("pkg1::sub::publicFunc2(String[1]):String[1]");
         Assert.assertNotNull(publicFunc2);
         Assert.assertSame(AccessLevel.PUBLIC, AccessLevel.getAccessLevel(publicFunc2, context, processorSupport));
 
-        Function<?> publicFunc3 = (Function<?>) runtime.getFunction("pkg2::publicFunc3(String[1]):String[1]");
+        PackageableFunction<?> publicFunc3 = (PackageableFunction<?>) runtime.getFunction("pkg2::publicFunc3(String[1]):String[1]");
         Assert.assertNotNull(publicFunc3);
         Assert.assertSame(AccessLevel.PUBLIC, AccessLevel.getAccessLevel(publicFunc3, context, processorSupport));
 
-        Function<?> extFunc1 = (Function<?>) runtime.getFunction("pkg1::extFunc1(String[1]):String[1]");
+        PackageableFunction<?> extFunc1 = (PackageableFunction<?>) runtime.getFunction("pkg1::extFunc1(String[1]):String[1]");
         Assert.assertNotNull(extFunc1);
         Assert.assertSame(AccessLevel.EXTERNALIZABLE, AccessLevel.getAccessLevel(extFunc1, context, processorSupport));
 
-        Function<?> extFunc2 = (Function<?>) runtime.getFunction("pkg1::sub::extFunc2(String[1]):String[1]");
+        PackageableFunction<?> extFunc2 = (PackageableFunction<?>) runtime.getFunction("pkg1::sub::extFunc2(String[1]):String[1]");
         Assert.assertNotNull(extFunc2);
         Assert.assertSame(AccessLevel.EXTERNALIZABLE, AccessLevel.getAccessLevel(extFunc2, context, processorSupport));
 
-        Function<?> extFunc3 = (Function<?>) runtime.getFunction("pkg2::extFunc3(String[1]):String[1]");
+        PackageableFunction<?> extFunc3 = (PackageableFunction<?>) runtime.getFunction("pkg2::extFunc3(String[1]):String[1]");
         Assert.assertNotNull(extFunc3);
         Assert.assertSame(AccessLevel.EXTERNALIZABLE, AccessLevel.getAccessLevel(extFunc3, context, processorSupport));
 

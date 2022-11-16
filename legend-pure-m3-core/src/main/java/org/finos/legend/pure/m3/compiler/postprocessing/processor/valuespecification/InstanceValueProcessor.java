@@ -108,7 +108,7 @@ public class InstanceValueProcessor extends Processor<InstanceValue>
             values.forEachWithIndex((value, i) ->
             {
                 //TODO use java instanceof operator once we sort out issue PURE-3418 with Path object being SimpleCoreInstance
-                if (Instance.instanceOf(value, M3Paths.PackageableElement, processorSupport))
+                if (Instance.instanceOf(value, M3Paths.PackageableElement, processorSupport) || Instance.instanceOf(value, M3Paths.Function, processorSupport))
                 {
                     addReferenceUsage(instance, value, M3Properties.values, i, repository, processorSupport);
                 }

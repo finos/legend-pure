@@ -24,6 +24,7 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.api.tuple.Pair;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
@@ -152,7 +153,7 @@ public class FunctionExpressionMatcher
     private static RichIterable<Function<?>> getFunctionsWithMatchingName(String functionName, ListIterable<String> functionPackage, FunctionExpression functionExpression, ProcessorSupport processorSupport)
     {
         SetIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement> packages = getValidPackages(functionPackage, functionExpression, processorSupport);
-        return processorSupport.function_getFunctionsForName(functionName).collectIf(f -> packages.contains(((Function<?>) f)._package()), f -> (Function<?>) f, Lists.mutable.empty());
+        return processorSupport.function_getFunctionsForName(functionName).collectIf(f -> packages.contains(((PackageableFunction<?>) f)._package()), f -> (Function<?>) f, Lists.mutable.empty());
     }
 
     private static SetIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement> getValidPackages(ListIterable<String> functionPackage, FunctionExpression functionExpression, ProcessorSupport processorSupport)

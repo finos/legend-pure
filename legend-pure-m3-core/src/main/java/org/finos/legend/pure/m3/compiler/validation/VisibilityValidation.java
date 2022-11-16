@@ -18,6 +18,7 @@ import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.visibility.Visibility;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotatedElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Annotation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.ElementWithStereotypes;
@@ -52,9 +53,9 @@ public class VisibilityValidation
 {
     public static void validateFunctionDefinition(FunctionDefinition<?> function, Context context, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
     {
-        Package pkg = function._package();
-        if (pkg != null)
+        if (function instanceof PackageableFunction)
         {
+            Package pkg = ((PackageableFunction)function)._package();
             SourceInformation sourceInfo = function.getSourceInformation();
             validateFunctionDefinition(function, pkg, (sourceInfo == null) ? null : sourceInfo.getSourceId(), context, validatorState, processorSupport);
         }
@@ -118,7 +119,10 @@ public class VisibilityValidation
         function._expressionSequence().forEach(e -> validateValueSpecification(e, pkg, sourceId, context, validatorState, processorSupport));
 
         // Check annotations
-        validateAnnotatedElement(function, sourceId, validatorState, processorSupport);
+        if (function instanceof AnnotatedElement)
+        {
+            validateAnnotatedElement((AnnotatedElement)function, sourceId, validatorState, processorSupport);
+        }
     }
 
     private static void validateClass(Class<?> cls, CoreInstance pkg, String sourceId, Context context, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
@@ -229,9 +233,9 @@ public class VisibilityValidation
                 {
                     validateRootGraphFetchTree(value, pkg, sourceId, context, validatorState, processorSupport);
                 }
-                else if (value instanceof Function)
+                else if (value instanceof PackageableFunction)
                 {
-                    validatePackageAndSourceVisibility(valueSpec, pkg, sourceId, context, validatorState, processorSupport, (Function<?>) value);
+                    validatePackageAndSourceVisibility(valueSpec, pkg, sourceId, context, validatorState, processorSupport, (PackageableFunction<?>) value);
                 }
                 else if (value instanceof ValueSpecification)
                 {
@@ -284,7 +288,10 @@ public class VisibilityValidation
     private static void validateFunctionExpression(FunctionExpression expression, CoreInstance pkg, String sourceId, Context context, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
     {
         Function<?> function = (Function<?>) ImportStub.withImportStubByPass(expression._funcCoreInstance(), processorSupport);
-        validatePackageAndSourceVisibility(expression, pkg, sourceId, context, validatorState, processorSupport, function);
+        if (function instanceof PackageableFunction)
+        {
+            validatePackageAndSourceVisibility(expression, pkg, sourceId, context, validatorState, processorSupport, (PackageableFunction<?>)function);
+        }
         expression._parametersValues().forEach(pv -> validateValueSpecification(pv, pkg, sourceId, context, validatorState, processorSupport));
     }
 

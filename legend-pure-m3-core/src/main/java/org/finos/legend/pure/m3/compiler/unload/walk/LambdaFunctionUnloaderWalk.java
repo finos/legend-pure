@@ -1,4 +1,4 @@
-// Copyright 2020 Goldman Sachs
+// Copyright 2022 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,34 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m3.compiler.unload.unbind;
+package org.finos.legend.pure.m3.compiler.unload.walk;
 
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.constraint.Constraint;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.ReferenceUsage;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class FunctionDefinitionUnbind implements MatchRunner<FunctionDefinition<CoreInstance>>
+public class LambdaFunctionUnloaderWalk implements MatchRunner<LambdaFunction<CoreInstance>>
 {
     @Override
     public String getClassName()
     {
-        return M3Paths.FunctionDefinition;
+        return M3Paths.LambdaFunction;
     }
 
     @Override
-    public void run(FunctionDefinition<CoreInstance> functionDefinition, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
+    public void run(LambdaFunction<CoreInstance> function, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
-        for (ValueSpecification valueSpecification : functionDefinition._expressionSequence())
+        for (ReferenceUsage referenceUsage : function._referenceUsages())
         {
-            matcher.fullMatch(valueSpecification, state);
+            matcher.fullMatch(referenceUsage._ownerCoreInstance(), state);
         }
     }
 }

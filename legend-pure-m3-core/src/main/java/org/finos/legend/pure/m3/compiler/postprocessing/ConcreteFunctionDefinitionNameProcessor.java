@@ -18,6 +18,7 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.coreinstance.Package;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
@@ -35,7 +36,7 @@ import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class ConcreteFunctionDefinitionNameProcessor
 {
-    public static void process(Function<?> function, ModelRepository repository, ProcessorSupport processorSupport) throws PureCompilationException
+    public static void process(PackageableFunction<?> function, ModelRepository repository, ProcessorSupport processorSupport) throws PureCompilationException
     {
         Package parent = function._package();
         if (parent != null)

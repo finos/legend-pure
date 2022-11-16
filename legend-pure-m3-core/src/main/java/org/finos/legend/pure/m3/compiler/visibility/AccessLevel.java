@@ -18,10 +18,10 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.ElementWithStereotypes;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
@@ -72,7 +72,7 @@ public enum AccessLevel
      * @param processorSupport processor support
      * @return whether the instance has an explicit access level
      */
-    public static boolean hasExplicitAccessLevel(Function<?> instance, ProcessorSupport processorSupport)
+    public static boolean hasExplicitAccessLevel(PackageableFunction<?> instance, ProcessorSupport processorSupport)
     {
         ListIterable<? extends Stereotype> stereotypes = (ListIterable<? extends Stereotype>) ImportStub.withImportStubByPasses((ListIterable<? extends CoreInstance>) instance._stereotypesCoreInstance(), processorSupport);
         if (stereotypes.notEmpty())

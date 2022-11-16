@@ -16,7 +16,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.ReferenceUsage;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotatedElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Annotation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
@@ -120,9 +120,9 @@ class DistributedBinaryRepositorySerializer extends DistributedBinaryGraphSerial
         {
             return new ProfileUpdate((Profile) element);
         }
-        if (element instanceof Function)
+        if (element instanceof PackageableFunction)
         {
-            return new PackageableFunctionUpdate<>((Function<?>) element);
+            return new PackageableFunctionUpdate<>((PackageableFunction<?>) element);
         }
         return new PackageableElementUpdate<>(element);
     }
@@ -491,7 +491,7 @@ class DistributedBinaryRepositorySerializer extends DistributedBinaryGraphSerial
         }
     }
 
-    private class PackageableFunctionUpdate<F extends PackageableElement&Function<?>> extends PackageableElementUpdate<F>
+    private class PackageableFunctionUpdate<F extends PackageableFunction<?>> extends PackageableElementUpdate<F>
     {
         private final MutableSet<FunctionExpression> applications = Sets.mutable.empty();
 
