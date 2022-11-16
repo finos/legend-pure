@@ -24,6 +24,8 @@ public abstract class AbstractTestToOne extends PureExpressionTest
     {
         assertExpressionRaisesPureException("Cannot cast a collection of size 0 to multiplicity [1]", 3, 13, "[]->toOne()");
         assertExpressionRaisesPureException("Cannot cast a collection of size 3 to multiplicity [1]", 3, 26, "['a', 'b', 'c']->toOne()");
+        assertExpressionRaisesPureException("Something wrong", 3, 13, "[]->toOne('Something wrong')");
+        assertExpressionRaisesPureException("Something wrong", 3, 26, "['a', 'b', 'c']->toOne('Something wrong')");
     }
 
     @Test

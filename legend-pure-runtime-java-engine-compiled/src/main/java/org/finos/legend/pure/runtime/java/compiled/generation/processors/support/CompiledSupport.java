@@ -386,11 +386,31 @@ public class CompiledSupport
         return object.hashCode();
     }
 
+    public static <T> T toOneWithAssert(T object, String message, SourceInformation sourceInformation)
+    {
+        return toOne(object, message, sourceInformation);
+    }
+
+    public static <T> T toOneWithAssert(RichIterable<? extends T> objects, String message, SourceInformation sourceInformation)
+    {
+        return toOne(objects, message, sourceInformation);
+    }
+
     public static <T> T toOne(T object, SourceInformation sourceInformation)
+    {
+        return toOne(object, null, sourceInformation);
+    }
+
+    public static <T> T toOne(RichIterable<? extends T> objects, SourceInformation sourceInformation)
+    {
+        return toOne(objects, null, sourceInformation);
+    }
+
+    private static <T> T toOne(T object, String message, SourceInformation sourceInformation)
     {
         if (object == null)
         {
-            throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size 0 to multiplicity [1]");
+            throw new PureExecutionException(sourceInformation, message != null ? message : "Cannot cast a collection of size 0 to multiplicity [1]");
         }
         if (object instanceof RichIterable)
         {
@@ -399,12 +419,11 @@ public class CompiledSupport
         return object;
     }
 
-    public static <T> T toOne(RichIterable<? extends T> objects, SourceInformation sourceInformation)
+    private static <T> T toOne(RichIterable<? extends T> objects, String message, SourceInformation sourceInformation)
     {
         if (objects == null || objects.size() != 1)
         {
-            throw new PureExecutionException(sourceInformation,
-                    "Cannot cast a collection of size " + (objects == null ? 0 : objects.size()) + " to multiplicity [1]");
+            throw new PureExecutionException(sourceInformation, message != null ? message : "Cannot cast a collection of size " + (objects == null ? 0 : objects.size()) + " to multiplicity [1]");
         }
         return objects.getAny();
     }
@@ -446,18 +465,38 @@ public class CompiledSupport
         return collection.toList().reverseThis();
     }
 
+    public static <T> RichIterable<T> toOneManyWithAssert(T object, String message, SourceInformation sourceInformation)
+    {
+        return toOneMany(object, message, sourceInformation);
+    }
+
+    public static <T> RichIterable<T> toOneManyWithAssert(RichIterable<T> objects, String message, SourceInformation sourceInformation)
+    {
+        return toOneMany(objects, message, sourceInformation);
+    }
+
     public static <T> RichIterable<T> toOneMany(T object, SourceInformation sourceInformation)
+    {
+        return toOneMany(object, null, sourceInformation);
+    }
+
+    public static <T> RichIterable<T> toOneMany(RichIterable<T> objects, SourceInformation sourceInformation)
+    {
+        return toOneMany(objects, null, sourceInformation);
+    }
+
+    private static <T> RichIterable<T> toOneMany(T object, String message, SourceInformation sourceInformation)
     {
         if (object == null)
         {
-            throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size 0 to multiplicity [1..*]");
+            throw new PureExecutionException(sourceInformation, message != null ? message: "Cannot cast a collection of size 0 to multiplicity [1..*]");
         }
         // TODO remove this hack
         if (object instanceof RichIterable)
         {
             if (((RichIterable<?>)object).isEmpty())
             {
-                throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size 0 to multiplicity [1..*]");
+                throw new PureExecutionException(sourceInformation, message != null ? message: "Cannot cast a collection of size 0 to multiplicity [1..*]");
             }
             return (RichIterable<T>)object;
         }
@@ -466,18 +505,18 @@ public class CompiledSupport
         {
             if (Iterate.isEmpty((Iterable<?>)object))
             {
-                throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size 0 to multiplicity [1..*]");
+                throw new PureExecutionException(sourceInformation, message != null ? message: "Cannot cast a collection of size 0 to multiplicity [1..*]");
             }
             return toPureCollection((Iterable<T>)object);
         }
         return Lists.immutable.with(object);
     }
 
-    public static <T> RichIterable<T> toOneMany(RichIterable<T> objects, SourceInformation sourceInformation)
+    private static <T> RichIterable<T> toOneMany(RichIterable<T> objects, String message, SourceInformation sourceInformation)
     {
         if (Iterate.isEmpty(objects))
         {
-            throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size 0 to multiplicity [1..*]");
+            throw new PureExecutionException(sourceInformation, message != null ? message: "Cannot cast a collection of size 0 to multiplicity [1..*]");
         }
         return objects;
     }

@@ -46,6 +46,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.core.meta.*;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.core.multiplicity.ToOne;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.core.multiplicity.ToOneMany;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.core.multiplicity.ToOneManyWithAssert;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.core.multiplicity.ToOneWithAssert;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.core.runtime.CurrentUserId;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.core.runtime.Guid;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.core.runtime.IsOptionSet;
@@ -347,7 +349,9 @@ public class NativeFunctionProcessor
 
         //Multiplicity
         registerNative(map, new ToOne());
+        registerNative(map, new ToOneWithAssert());
         registerNative(map, new ToOneMany());
+        registerNative(map, new ToOneManyWithAssert());
 
         //Runtime
         registerNative(map, new CurrentUserId());

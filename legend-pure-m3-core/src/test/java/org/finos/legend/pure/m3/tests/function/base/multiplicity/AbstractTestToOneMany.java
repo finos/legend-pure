@@ -23,6 +23,7 @@ public abstract class AbstractTestToOneMany extends PureExpressionTest
     public void testToOneManyError()
     {
         assertExpressionRaisesPureException("Cannot cast a collection of size 0 to multiplicity [1..*]", 3, 13, "[]->toOneMany(); 1;");
+        assertExpressionRaisesPureException("Something wrong", 3, 13, "[]->toOneMany('Something wrong'); 1;");
     }
 
     @Test
