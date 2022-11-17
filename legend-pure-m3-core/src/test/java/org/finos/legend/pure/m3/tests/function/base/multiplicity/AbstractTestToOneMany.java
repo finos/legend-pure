@@ -49,4 +49,16 @@ public abstract class AbstractTestToOneMany extends PureExpressionTest
                         "}\n");
         this.execute("test():Boolean[1]");
     }
+
+    @Test
+    public void testWithMessage()
+    {
+        compileTestSource("fromString.pure",
+                "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   assert([1] == [1]->toOneMany(), |'');\n" +
+                        "   assert([1,2,3] == [1,2,3]->toOneMany('Something wrong'), |'');\n" +
+                        "}\n");
+        this.execute("test():Boolean[1]");
+    }
 }

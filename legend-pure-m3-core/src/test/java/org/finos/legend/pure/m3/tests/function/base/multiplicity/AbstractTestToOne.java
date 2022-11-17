@@ -49,4 +49,15 @@ public abstract class AbstractTestToOne extends PureExpressionTest
                         "}\n");
         this.execute("test():Boolean[1]");
     }
+
+    @Test
+    public void testWithMessage()
+    {
+        compileTestSource("fromString.pure",
+                "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   assert(1 == [1]->toOne('Something wrong'), |'');\n" +
+                        "}\n");
+        this.execute("test():Boolean[1]");
+    }
 }

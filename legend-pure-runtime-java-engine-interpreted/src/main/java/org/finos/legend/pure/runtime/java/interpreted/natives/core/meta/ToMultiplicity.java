@@ -35,12 +35,10 @@ import java.util.Stack;
 abstract class ToMultiplicity extends NativeFunction
 {
     protected final ModelRepository repository;
-    protected final boolean supportAssertion;
 
-    protected ToMultiplicity(ModelRepository repository, boolean supportAssertion)
+    protected ToMultiplicity(ModelRepository repository)
     {
         this.repository = repository;
-        this.supportAssertion = supportAssertion;
     }
 
     @Override
@@ -58,7 +56,7 @@ abstract class ToMultiplicity extends NativeFunction
         if (!Multiplicity.isValid(returnMultiplicity, values.size()))
         {
             String errorMessage = null;
-            if (this.supportAssertion)
+            if (params.size() >= 2)
             {
                 errorMessage = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport).getName();
             }

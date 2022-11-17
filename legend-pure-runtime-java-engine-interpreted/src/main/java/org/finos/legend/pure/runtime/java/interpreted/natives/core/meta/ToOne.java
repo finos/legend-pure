@@ -21,9 +21,9 @@ import org.finos.legend.pure.m4.ModelRepository;
 
 public class ToOne extends ToMultiplicity
 {
-    public ToOne(ModelRepository repository, boolean supportAssertion)
+    public ToOne(ModelRepository repository)
     {
-        super(repository, supportAssertion);
+        super(repository);
     }
 
     @Override

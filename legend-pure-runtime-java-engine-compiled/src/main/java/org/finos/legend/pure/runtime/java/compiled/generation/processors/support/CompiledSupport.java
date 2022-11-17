@@ -386,27 +386,17 @@ public class CompiledSupport
         return object.hashCode();
     }
 
-    public static <T> T toOneWithAssert(T object, String message, SourceInformation sourceInformation)
-    {
-        return toOne(object, message, sourceInformation);
-    }
-
-    public static <T> T toOneWithAssert(RichIterable<? extends T> objects, String message, SourceInformation sourceInformation)
-    {
-        return toOne(objects, message, sourceInformation);
-    }
-
     public static <T> T toOne(T object, SourceInformation sourceInformation)
     {
-        return toOne(object, null, sourceInformation);
+        return toOneWithMessage(object, null, sourceInformation);
     }
 
     public static <T> T toOne(RichIterable<? extends T> objects, SourceInformation sourceInformation)
     {
-        return toOne(objects, null, sourceInformation);
+        return toOneWithMessage(objects, null, sourceInformation);
     }
 
-    private static <T> T toOne(T object, String message, SourceInformation sourceInformation)
+    public static <T> T toOneWithMessage(T object, String message, SourceInformation sourceInformation)
     {
         if (object == null)
         {
@@ -419,7 +409,7 @@ public class CompiledSupport
         return object;
     }
 
-    private static <T> T toOne(RichIterable<? extends T> objects, String message, SourceInformation sourceInformation)
+    public static <T> T toOneWithMessage(RichIterable<? extends T> objects, String message, SourceInformation sourceInformation)
     {
         if (objects == null || objects.size() != 1)
         {
@@ -465,27 +455,17 @@ public class CompiledSupport
         return collection.toList().reverseThis();
     }
 
-    public static <T> RichIterable<T> toOneManyWithAssert(T object, String message, SourceInformation sourceInformation)
-    {
-        return toOneMany(object, message, sourceInformation);
-    }
-
-    public static <T> RichIterable<T> toOneManyWithAssert(RichIterable<T> objects, String message, SourceInformation sourceInformation)
-    {
-        return toOneMany(objects, message, sourceInformation);
-    }
-
     public static <T> RichIterable<T> toOneMany(T object, SourceInformation sourceInformation)
     {
-        return toOneMany(object, null, sourceInformation);
+        return toOneManyWithMessage(object, null, sourceInformation);
     }
 
     public static <T> RichIterable<T> toOneMany(RichIterable<T> objects, SourceInformation sourceInformation)
     {
-        return toOneMany(objects, null, sourceInformation);
+        return toOneManyWithMessage(objects, null, sourceInformation);
     }
 
-    private static <T> RichIterable<T> toOneMany(T object, String message, SourceInformation sourceInformation)
+    public static <T> RichIterable<T> toOneManyWithMessage(T object, String message, SourceInformation sourceInformation)
     {
         if (object == null)
         {
@@ -512,7 +492,7 @@ public class CompiledSupport
         return Lists.immutable.with(object);
     }
 
-    private static <T> RichIterable<T> toOneMany(RichIterable<T> objects, String message, SourceInformation sourceInformation)
+    public static <T> RichIterable<T> toOneManyWithMessage(RichIterable<T> objects, String message, SourceInformation sourceInformation)
     {
         if (Iterate.isEmpty(objects))
         {

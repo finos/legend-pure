@@ -1,4 +1,4 @@
-// Copyright 2020 Goldman Sachs
+// Copyright 2022 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
-public class ToOneManyWithAssert extends AbstractNativeFunctionGeneric
+
+public class ToOneWithMessage extends AbstractNativeFunctionGeneric
 {
-    public ToOneManyWithAssert()
+    public ToOneWithMessage()
     {
-        super(getMethod(CompiledSupport.class, "toOneManyWithAssert", Object.class, String.class, SourceInformation.class),
-                true, false, false, "toOneMany_T_MANY__String_1__T_$1_MANY$_");
+        super(getMethod(CompiledSupport.class, "toOneWithMessage", Object.class, String.class, SourceInformation.class), true, false, false, "toOne_T_MANY__String_1__T_1_");
     }
 }
