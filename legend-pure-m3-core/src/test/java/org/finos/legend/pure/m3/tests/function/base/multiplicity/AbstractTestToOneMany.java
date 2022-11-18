@@ -23,6 +23,7 @@ public abstract class AbstractTestToOneMany extends PureExpressionTest
     public void testToOneManyError()
     {
         assertExpressionRaisesPureException("Cannot cast a collection of size 0 to multiplicity [1..*]", 3, 13, "[]->toOneMany(); 1;");
+        assertExpressionRaisesPureException("Something wrong", 3, 13, "[]->toOneMany('Something wrong'); 1;");
     }
 
     @Test
@@ -45,6 +46,18 @@ public abstract class AbstractTestToOneMany extends PureExpressionTest
                         "{\n" +
                         "   assert([1] == toOneMany_T_MANY__T_$1_MANY$_->eval([1]), |'');\n" +
                         "   assert([1,2,3] == toOneMany_T_MANY__T_$1_MANY$_->eval([1,2,3]), |'');\n" +
+                        "}\n");
+        this.execute("test():Boolean[1]");
+    }
+
+    @Test
+    public void testWithMessage()
+    {
+        compileTestSource("fromString.pure",
+                "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   assert([1] == [1]->toOneMany(), |'');\n" +
+                        "   assert([1,2,3] == [1,2,3]->toOneMany('Something wrong'), |'');\n" +
                         "}\n");
         this.execute("test():Boolean[1]");
     }

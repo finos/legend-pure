@@ -16,14 +16,14 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.core.meta;
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.core.InstantiationContext;
@@ -55,7 +55,12 @@ abstract class ToMultiplicity extends NativeFunction
         ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(param, M3Properties.values, processorSupport);
         if (!Multiplicity.isValid(returnMultiplicity, values.size()))
         {
-            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Cannot cast a collection of size " + values.size() + " to multiplicity " + Multiplicity.print(returnMultiplicity));
+            String errorMessage = null;
+            if (params.size() >= 2)
+            {
+                errorMessage = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport).getName();
+            }
+            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), errorMessage != null ? errorMessage : "Cannot cast a collection of size " + values.size() + " to multiplicity " + Multiplicity.print(returnMultiplicity));
         }
 
         CoreInstance result = this.repository.newAnonymousCoreInstance(param.getSourceInformation(), processorSupport.getClassifier(param));

@@ -62,6 +62,7 @@ native function meta::pure::functions::collection::filter<T>(value:T[*], func:Fu
 // Return the first element of the collection, or nothing if the collection is empty
 native function meta::pure::functions::collection::first<T>(set:T[*]):T[0..1];
 native function meta::pure::functions::multiplicity::toOneMany<T>(values:T[*]):T[1..*];
+native function meta::pure::functions::multiplicity::toOneMany<T>(values:T[*], message: String[1]):T[1..*];
 //--------------------------------------
 
 native function meta::pure::functions::meta::extractEnumValue<T>(enum:Enumeration<T>[1], value:String[1]):T[1];
@@ -92,6 +93,8 @@ function meta::pure::functions::collection::isNotEmpty(p:Any[0..1]):Boolean[1]
 }
 
 native function meta::pure::functions::multiplicity::toOne<T>(values:T[*]):T[1];
+
+native function meta::pure::functions::multiplicity::toOne<T>(values:T[*], message: String[1]): T[1];
 
 function meta::pure::functions::boolean::lessThan(left:Number[0..1], right:Number[0..1]):Boolean[1]
 {

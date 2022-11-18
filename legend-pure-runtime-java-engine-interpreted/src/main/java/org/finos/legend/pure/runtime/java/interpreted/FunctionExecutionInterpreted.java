@@ -324,7 +324,9 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.nativeFunctions.put("indexOf_String_1__String_1__Integer_1_", indexOf);
         this.nativeFunctions.put("indexOf_String_1__String_1__Integer_1__Integer_1_", indexOf);
         this.nativeFunctions.put("toOne_T_MANY__T_1_", new ToOne(repository));
+        this.nativeFunctions.put("toOne_T_MANY__String_1__T_1_", new ToOne(repository));
         this.nativeFunctions.put("toOneMany_T_MANY__T_$1_MANY$_", new ToOneMany(repository));
+        this.nativeFunctions.put("toOneMany_T_MANY__String_1__T_$1_MANY$_", new ToOneMany(repository));
         this.nativeFunctions.put("readFile_String_1__String_$0_1$_", new ReadFile(repository, storage));
 
         this.nativeFunctions.put("reverse_T_m__T_m_", new Reverse());
