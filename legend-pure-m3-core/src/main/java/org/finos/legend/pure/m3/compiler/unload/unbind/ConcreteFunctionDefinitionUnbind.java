@@ -14,16 +14,17 @@
 
 package org.finos.legend.pure.m3.compiler.unload.unbind;
 
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class ConcreteFunctionDefinitionUnbind implements MatchRunner<ConcreteFunctionDefinition>
+public class ConcreteFunctionDefinitionUnbind implements MatchRunner<ConcreteFunctionDefinition<CoreInstance>>
 {
     @Override
     public String getClassName()
@@ -32,7 +33,7 @@ public class ConcreteFunctionDefinitionUnbind implements MatchRunner<ConcreteFun
     }
 
     @Override
-    public void run(ConcreteFunctionDefinition functionDefinition, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
+    public void run(ConcreteFunctionDefinition<CoreInstance> functionDefinition, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
         ((UnbindState)state).getURLPatternLibrary().deregister(functionDefinition);
     }

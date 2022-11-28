@@ -55,6 +55,7 @@ import org.finos.legend.pure.m3.compiler.unload.unbind.EnumerationUnbind;
 import org.finos.legend.pure.m3.compiler.unload.unbind.FunctionDefinitionUnbind;
 import org.finos.legend.pure.m3.compiler.unload.unbind.InstanceValueUnbind;
 import org.finos.legend.pure.m3.compiler.unload.unbind.LambdaFunctionUnbind;
+import org.finos.legend.pure.m3.compiler.unload.unbind.PackageableFunctionUnbind;
 import org.finos.legend.pure.m3.compiler.unload.unbind.SimpleFunctionExpressionUnbind;
 import org.finos.legend.pure.m3.compiler.unload.unbind.TypeUnbind;
 import org.finos.legend.pure.m3.compiler.unload.unbind.UnitUnbind;
@@ -73,6 +74,7 @@ import org.finos.legend.pure.m3.compiler.unload.walk.GeneralizationUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.unload.walk.GenericTypeUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.unload.walk.InstanceValueSpecificationContextUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.unload.walk.KeyValueValueSpecificationContextUnloaderWalk;
+import org.finos.legend.pure.m3.compiler.unload.walk.LambdaFunctionUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.unload.walk.MeasureUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.unload.walk.NativeFunctionUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.unload.walk.PackageableElementUnloaderWalk;
@@ -96,6 +98,7 @@ import org.finos.legend.pure.m3.compiler.validation.validator.FunctionExpression
 import org.finos.legend.pure.m3.compiler.validation.validator.GenericTypeValidator;
 import org.finos.legend.pure.m3.compiler.validation.validator.InstanceValueValidator;
 import org.finos.legend.pure.m3.compiler.validation.validator.PackageValidator;
+import org.finos.legend.pure.m3.compiler.validation.validator.PackageableFunctionValidator;
 import org.finos.legend.pure.m3.compiler.validation.validator.ProfileValidator;
 import org.finos.legend.pure.m3.compiler.validation.validator.PropertyValidator;
 import org.finos.legend.pure.m3.compiler.validation.validator.RepositoryPackageValidator;
@@ -459,6 +462,7 @@ public class M3AntlrParser implements Parser
                 new AbstractPropertyUnloaderWalk(),
                 new PropertyUnloaderWalk(),
                 new FunctionUnloaderWalk(),
+                new LambdaFunctionUnloaderWalk(),
                 new NativeFunctionUnloaderWalk(),
 
                 new RootRouteNodeUnloaderWalk(),
@@ -484,6 +488,7 @@ public class M3AntlrParser implements Parser
                 new AssociationUnbind(),
                 new ConcreteFunctionDefinitionUnbind(),
                 new FunctionDefinitionUnbind(),
+                new PackageableFunctionUnbind(),
                 new LambdaFunctionUnbind(),
                 new AbstractPropertyUnbind(),
                 new ValueSpecificationUnbind(),
@@ -507,6 +512,7 @@ public class M3AntlrParser implements Parser
                 new AssociationValidator(),
                 new PropertyValidator(),
                 new FunctionDefinitionValidator(),
+                new PackageableFunctionValidator(),
                 new ValueSpecificationValidator(),
                 new FunctionExpressionValidator(),
                 new InstanceValueValidator(),

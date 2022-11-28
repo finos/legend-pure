@@ -91,9 +91,6 @@ public class FunctionDefinitionValidator implements MatchRunner<FunctionDefiniti
         validateEqualityFunctions(functionDefinition);
         validateFunctionDefinitionReturnType(functionDefinition, functionType, processorSupport);
         VisibilityValidation.validateFunctionDefinition(functionDefinition, context, validatorState, processorSupport);
-        ElementWithConstraintsValidator.validateConstraints(functionDefinition, functionDefinition._preConstraints(), state);
-        ElementWithConstraintsValidator.validateConstraints(functionDefinition, functionDefinition._postConstraints(), state);
-
     }
 
     public static void validateFunctionReturnType(Function function, FunctionType functionType, ProcessorSupport processorSupport) throws PureCompilationException

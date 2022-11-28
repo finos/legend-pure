@@ -20,7 +20,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.compiler.visibility.AccessLevel;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -1555,11 +1555,11 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
                 "    pkg::privateFunc($s, ' from public')\n" +
                 "}");
 
-        Function<?> privateFunc = (Function<?>) runtime.getFunction("pkg::privateFunc(String[1], String[1]):String[1]");
+        PackageableFunction<?> privateFunc = (PackageableFunction<?>) runtime.getFunction("pkg::privateFunc(String[1], String[1]):String[1]");
         Assert.assertNotNull(privateFunc);
         Assert.assertTrue(AccessLevel.hasExplicitAccessLevel(privateFunc, processorSupport));
 
-        Function<?> publicFunc = (Function<?>) runtime.getFunction("pkg::publicFunc(String[1]):String[1]");
+        PackageableFunction<?> publicFunc = (PackageableFunction<?>) runtime.getFunction("pkg::publicFunc(String[1]):String[1]");
         Assert.assertNotNull(publicFunc);
         Assert.assertFalse(AccessLevel.hasExplicitAccessLevel(publicFunc, processorSupport));
     }
@@ -1594,23 +1594,23 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
                 "  $s + ' (from externalizable)'\n" +
                 "}");
 
-        Function<?> privateFunc = (Function<?>) runtime.getFunction("pkg::privateFunc(String[1], String[1]):String[1]");
+        PackageableFunction<?> privateFunc = (PackageableFunction<?>) runtime.getFunction("pkg::privateFunc(String[1], String[1]):String[1]");
         Assert.assertNotNull(privateFunc);
         Assert.assertEquals(ImportStub.withImportStubByPasses((ListIterable<? extends CoreInstance>) privateFunc._stereotypesCoreInstance(), processorSupport), AccessLevel.getAccessLevelStereotypes(privateFunc, processorSupport));
 
-        Function<?> protectedFunc = (Function<?>) runtime.getFunction("pkg::protectedFunc(String[1], String[1]):String[1]");
+        PackageableFunction<?> protectedFunc = (PackageableFunction<?>) runtime.getFunction("pkg::protectedFunc(String[1], String[1]):String[1]");
         Assert.assertNotNull(protectedFunc);
         Assert.assertEquals(ImportStub.withImportStubByPasses((ListIterable<? extends CoreInstance>) protectedFunc._stereotypesCoreInstance(), processorSupport), AccessLevel.getAccessLevelStereotypes(protectedFunc, processorSupport));
 
-        Function<?> explicitPublicFunc = (Function<?>) runtime.getFunction("pkg::explicitPublicFunc(String[1]):String[1]");
+        PackageableFunction<?> explicitPublicFunc = (PackageableFunction<?>) runtime.getFunction("pkg::explicitPublicFunc(String[1]):String[1]");
         Assert.assertNotNull(explicitPublicFunc);
         Assert.assertEquals(ImportStub.withImportStubByPasses((ListIterable<? extends CoreInstance>) explicitPublicFunc._stereotypesCoreInstance(), processorSupport), AccessLevel.getAccessLevelStereotypes(explicitPublicFunc, processorSupport));
 
-        Function<?> implicitPublicFunc = (Function<?>) runtime.getFunction("pkg::implicitPublicFunc(String[1]):String[1]");
+        PackageableFunction<?> implicitPublicFunc = (PackageableFunction<?>) runtime.getFunction("pkg::implicitPublicFunc(String[1]):String[1]");
         Assert.assertNotNull(implicitPublicFunc);
         Assert.assertEquals(Lists.immutable.with(), AccessLevel.getAccessLevelStereotypes(implicitPublicFunc, processorSupport));
 
-        Function<?> externalizableFunc = (Function<?>) runtime.getFunction("pkg::externalizableFunc(String[1]):String[1]");
+        PackageableFunction<?> externalizableFunc = (PackageableFunction<?>) runtime.getFunction("pkg::externalizableFunc(String[1]):String[1]");
         Assert.assertNotNull(externalizableFunc);
         Assert.assertEquals(ImportStub.withImportStubByPasses((ListIterable<? extends CoreInstance>) externalizableFunc._stereotypesCoreInstance(), processorSupport), AccessLevel.getAccessLevelStereotypes(externalizableFunc, processorSupport));
     }
@@ -1645,23 +1645,23 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
                 "  $s + ' (from externalizable)'\n" +
                 "}");
 
-        Function<?> privateFunc = (Function<?>) runtime.getFunction("pkg::privateFunc(String[1], String[1]):String[1]");
+        PackageableFunction<?> privateFunc = (PackageableFunction<?>) runtime.getFunction("pkg::privateFunc(String[1], String[1]):String[1]");
         Assert.assertNotNull(privateFunc);
         Assert.assertSame(AccessLevel.PRIVATE, AccessLevel.getAccessLevel(privateFunc, context, processorSupport));
 
-        Function<?> protectedFunc = (Function<?>) runtime.getFunction("pkg::protectedFunc(String[1], String[1]):String[1]");
+        PackageableFunction<?> protectedFunc = (PackageableFunction<?>) runtime.getFunction("pkg::protectedFunc(String[1], String[1]):String[1]");
         Assert.assertNotNull(protectedFunc);
         Assert.assertSame(AccessLevel.PROTECTED, AccessLevel.getAccessLevel(protectedFunc, context, processorSupport));
 
-        Function<?> explicitPublicFunc = (Function<?>) runtime.getFunction("pkg::explicitPublicFunc(String[1]):String[1]");
+        PackageableFunction<?> explicitPublicFunc = (PackageableFunction<?>) runtime.getFunction("pkg::explicitPublicFunc(String[1]):String[1]");
         Assert.assertNotNull(explicitPublicFunc);
         Assert.assertSame(AccessLevel.PUBLIC, AccessLevel.getAccessLevel(explicitPublicFunc, context, processorSupport));
 
-        Function<?> implicitPublicFunc = (Function<?>) runtime.getFunction("pkg::implicitPublicFunc(String[1]):String[1]");
+        PackageableFunction<?> implicitPublicFunc = (PackageableFunction<?>) runtime.getFunction("pkg::implicitPublicFunc(String[1]):String[1]");
         Assert.assertNotNull(implicitPublicFunc);
         Assert.assertSame(AccessLevel.PUBLIC, AccessLevel.getAccessLevel(implicitPublicFunc, context, processorSupport));
 
-        Function<?> externalizableFunc = (Function<?>) runtime.getFunction("pkg::externalizableFunc(String[1]):String[1]");
+        PackageableFunction<?> externalizableFunc = (PackageableFunction<?>) runtime.getFunction("pkg::externalizableFunc(String[1]):String[1]");
         Assert.assertNotNull(externalizableFunc);
         Assert.assertSame(AccessLevel.EXTERNALIZABLE, AccessLevel.getAccessLevel(externalizableFunc, context, processorSupport));
     }

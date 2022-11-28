@@ -26,8 +26,8 @@ import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.Mi
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningPropertyProcessor;
 import org.finos.legend.pure.m3.compiler.validation.validator.GenericTypeValidator;
 import org.finos.legend.pure.m3.coreinstance.Package;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.AssociationProjection;
@@ -155,7 +155,7 @@ public class PostProcessor
         {
             if (functionTypesButProperty.contains(coreInstance.getClassifier()))
             {
-                ConcreteFunctionDefinitionNameProcessor.process((Function<?>) coreInstance, modelRepository, processorSupport);
+                ConcreteFunctionDefinitionNameProcessor.process((PackageableFunction<?>) coreInstance, modelRepository, processorSupport);
                 context.update(coreInstance);
             }
         });

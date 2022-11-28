@@ -25,6 +25,7 @@ import org.finos.legend.pure.m3.compiler.postprocessing.inference.TypeInference;
 import org.finos.legend.pure.m3.compiler.validation.validator.FunctionDefinitionValidator;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.constraint.Constraint;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
@@ -125,15 +126,18 @@ public class FunctionDefinitionProcessor extends Processor<FunctionDefinition<?>
 
         state.getVariableContext().buildAndRegister("return", functionType._returnType(), functionType._returnMultiplicity(), processorSupport);
 
-        RichIterable<? extends Constraint> constraints = functionDefinition._preConstraints();
-        if (constraints.notEmpty())
+        if (functionDefinition instanceof PackageableFunction)
         {
-            processConstraints(functionDefinition, constraints.toList(), matcher, state, processorSupport);
-        }
-        RichIterable<? extends Constraint> postConstraints = functionDefinition._postConstraints();
-        if (postConstraints.notEmpty())
-        {
-            processConstraints(functionDefinition, postConstraints.toList(), matcher, state, processorSupport);
+            RichIterable<? extends Constraint> constraints = ((PackageableFunction)functionDefinition)._preConstraints();
+            if (constraints.notEmpty())
+            {
+                processConstraints(functionDefinition, constraints.toList(), matcher, state, processorSupport);
+            }
+            RichIterable<? extends Constraint> postConstraints = ((PackageableFunction)functionDefinition)._postConstraints();
+            if (postConstraints.notEmpty())
+            {
+                processConstraints(functionDefinition, postConstraints.toList(), matcher, state, processorSupport);
+            }
         }
 
         state.getObserver().finishedProcessingFunction(functionType);

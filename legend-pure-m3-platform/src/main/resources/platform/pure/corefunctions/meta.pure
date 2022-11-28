@@ -95,6 +95,16 @@ native function meta::pure::functions::meta::sourceInformation(node:Any[1]):Sour
 
 native function meta::pure::functions::meta::isSourceReadOnly(node:String[1]):Boolean[1];
 
+function meta::pure::functions::meta::elementToPath(element:Function<Any>[1]):String[1]
+{
+    $element->match(
+        [
+            p : PackageableElement[1] | $p->elementToPath('::'),
+            p : AbstractProperty<Any>[1] | $p.name->toOne()
+        ]
+    )
+}
+
 function meta::pure::functions::meta::elementToPath(element:Type[1]):String[1]
 {
     $element->cast(@PackageableElement)->elementToPath('::')

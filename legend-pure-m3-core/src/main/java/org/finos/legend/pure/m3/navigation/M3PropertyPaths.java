@@ -53,6 +53,7 @@ public class M3PropertyPaths
     public static final ImmutableList<String> rawType = makePropertyPath(M3Paths.GenericType, M3Properties.rawType);
     public static final ImmutableList<String> referenceUsages_GenericType = makePropertyPath(M3Paths.GenericType, M3Properties.referenceUsages);
     public static final ImmutableList<String> referenceUsages_PackageableElement = makePropertyPath(M3Paths.PackageableElement, M3Properties.referenceUsages);
+    public static final ImmutableList<String> referenceUsages_Function = makePropertyPath(M3Paths.Function, M3Properties.referenceUsages);
     public static final ImmutableList<String> specializations = makePropertyPath(M3Paths.Type, M3Properties.specializations);
     public static final ImmutableList<String> specific = makePropertyPath(M3Paths.Generalization, M3Properties.specific);
     public static final ImmutableList<String> typeArguments = makePropertyPath(M3Paths.GenericType, M3Properties.typeArguments);
@@ -68,6 +69,7 @@ public class M3PropertyPaths
             qualifiedPropertiesFromAssociations,
             referenceUsages_GenericType,
             referenceUsages_PackageableElement,
+            referenceUsages_Function,
             specializations
     );
 
