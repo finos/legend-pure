@@ -35,9 +35,7 @@ import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.OutputStream;
 
-@Api(
-    tags = {"Concepts"}
-)
+@Api(tags = "Concepts")
 @Path("/")
 public class Concept
 {

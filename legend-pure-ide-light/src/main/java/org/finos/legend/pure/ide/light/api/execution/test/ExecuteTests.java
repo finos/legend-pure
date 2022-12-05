@@ -38,9 +38,7 @@ import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@Api(
-        tags = {"Execute Tests"}
-)
+@Api(tags = "Execute Tests")
 @Path("/")
 public class ExecuteTests
 {
@@ -164,7 +162,8 @@ public class ExecuteTests
         try
         {
             return Integer.parseInt(idString);
-        } catch (NumberFormatException e)
+        }
+        catch (NumberFormatException e)
         {
             throw new RuntimeException("Invalid test runner id: " + idString);
         }

@@ -32,6 +32,8 @@
 
     <properties>
         <skip.yarn>false</skip.yarn>
+
+        <pure-ide.web-application.version>8.17.0</pure-ide.web-application.version>
     </properties>
 
     <build>
@@ -42,41 +44,22 @@
         </resources>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>1.6.0</version>
+                <groupId>com.googlecode.maven-download-plugin</groupId>
+                <artifactId>download-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>yarn-install</id>
+                        <id>download-web-content</id>
                         <phase>initialize</phase>
-                        <configuration>
-                            <executable>yarn</executable>
-                            <arguments>
-                                <argument>install</argument>
-                            </arguments>
-                            <workingDirectory>src/main/web</workingDirectory>
-                            <skip>${skip.yarn}</skip>
-                        </configuration>
                         <goals>
-                            <goal>exec</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>build-web-application</id>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <executable>yarn</executable>
-                            <arguments>
-                                <argument>build:ci</argument>
-                            </arguments>
-                            <workingDirectory>src/main/web</workingDirectory>
-                            <skip>${skip.yarn}</skip>
-                        </configuration>
-                        <goals>
-                            <goal>exec</goal>
+                            <goal>wget</goal>
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <url>https://registry.npmjs.org/@finos/legend-application-pure-ide-deployment/-/legend-application-pure-ide-deployment-${pure-ide.web-application.version}.tgz</url>
+                    <unpack>true</unpack>
+                    <outputDirectory>${project.build.directory}/web-content</outputDirectory>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -106,7 +89,7 @@
                             <outputDirectory>${project.build.directory}/classes/web</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>${project.basedir}/src/main/web/packages/legend-pure-ide-deployment/dist</directory>
+                                    <directory>${project.build.directory}/web-content/package/dist</directory>
                                 </resource>
                             </resources>
                         </configuration>

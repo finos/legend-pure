@@ -28,9 +28,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 
-@Api(
-        tags = {"LifeCycle"}
-)
+@Api(tags = "LifeCycle")
 @Path("/")
 public class LifeCycle
 {
@@ -51,7 +49,7 @@ public class LifeCycle
         {
             if (pureRuntime.isFullyInitialized())
             {
-                outStream.write(("{\"cached\":false, \"datamarts\": ["+ pureSession.getPureRuntime().getCodeStorage().getAllRepositories().collect(s -> "\""+s.getName()+"\"").makeString(",")+"]}").getBytes());
+                outStream.write(("{\"cached\":false, \"datamarts\": [" + pureSession.getPureRuntime().getCodeStorage().getAllRepositories().collect(s -> "\"" + s.getName() + "\"").makeString(",") + "]}").getBytes());
                 outStream.close();
                 return;
             }
@@ -64,7 +62,7 @@ public class LifeCycle
                 outStream.write((pureRuntime.getCache().getCacheState().isCached() + "}").getBytes());
                 outStream.close();
             }
-            catch (IOException |RuntimeException|Error e)
+            catch (IOException | RuntimeException | Error e)
             {
                 //e.printStackTrace();
                 pureSession.getPureRuntime().getCache().deleteCache();

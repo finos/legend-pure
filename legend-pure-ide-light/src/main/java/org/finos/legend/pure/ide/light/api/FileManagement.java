@@ -45,9 +45,7 @@ import java.io.IOException;
 import java.util.Comparator;
 import java.util.Iterator;
 
-@Api(
-        tags = {"File Management"}
-)
+@Api(tags = "File Management")
 @Path("/")
 public class FileManagement
 {
@@ -85,8 +83,8 @@ public class FileManagement
         {
             try
             {
-                pureSession.getPureRuntime().delete("/"+filePath);
-                outStream.write(("{\"cached\":"+false+"}").getBytes());
+                pureSession.getPureRuntime().delete("/" + filePath);
+                outStream.write(("{\"cached\":" + false + "}").getBytes());
                 outStream.close();
             }
             catch (RuntimeException e)
@@ -106,8 +104,8 @@ public class FileManagement
         {
             try
             {
-                pureSession.getPureRuntime().create("/"+filePath);
-                outStream.write(("{\"cached\":"+false+"}").getBytes());
+                pureSession.getPureRuntime().create("/" + filePath);
+                outStream.write(("{\"cached\":" + false + "}").getBytes());
                 outStream.close();
             }
             catch (RuntimeException e)
@@ -127,8 +125,8 @@ public class FileManagement
         {
             try
             {
-                pureSession.getCodeStorage().createFolder("/"+filePath);
-                outStream.write(("{\"cached\":"+false+"}").getBytes());
+                pureSession.getCodeStorage().createFolder("/" + filePath);
+                outStream.write(("{\"cached\":" + false + "}").getBytes());
                 outStream.close();
             }
             catch (RuntimeException e)
@@ -193,7 +191,8 @@ public class FileManagement
             try
             {
                 content = codeStorage.getContentAsBytes(filePath);
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 StringBuilder message = new StringBuilder("Error accessing resource \"");
                 message.append(filePath);
