@@ -147,7 +147,7 @@ public class M3Paths
 
     // Routing
     public static final String RoutedValueSpecification = "meta::pure::router::RoutedValueSpecification";
-    public static final String ClusteredValueSpecification = "meta::pure::router::clustering::ClusteredValueSpecification";
+    public static final String ClusteredValueSpecification = "meta::pure::router::metamodel::clustering::ClusteredValueSpecification";
 
     // Diagram
     public static final String Diagram = "meta::pure::diagram::Diagram";
