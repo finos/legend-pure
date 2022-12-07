@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.serialization.runtime;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.predicate.Predicate;
@@ -49,11 +50,14 @@ import org.finos.legend.pure.m3.serialization.runtime.navigation.NavigationHandl
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Source
 {
+    private static final int SEARCH_TEXT_PREVIEW_CHARACTER_LIMIT = 25;
     public static final Function<Source, String> SOURCE_ID = Source::getId;
     public static final Function<Source, ListIterable<CoreInstance>> SOURCE_NEW_INSTANCES = Source::getNewInstances;
     public static final Predicate<Source> IS_COMPILED = Source::isCompiled;
@@ -450,10 +454,16 @@ public class Source
         Matcher lines = LINE_PATTERN.matcher(this.content);
         for (int i = 0; lines.find(); i++)
         {
+            String line = lines.group();
             Matcher matcher = pattern.matcher(lines.group());
             while (matcher.find())
             {
-                results.add(new SourceCoordinates(this.id, i + 1, matcher.start() + 1, i + 1, matcher.end() + 1, ""));
+                results.add(new SourceCoordinates(this.id, i + 1, matcher.start() + 1, i + 1, matcher.end(),
+                        new SourceCoordinates.Preview(
+                                StringUtils.stripStart(line.substring(Math.max(0, matcher.start() - SEARCH_TEXT_PREVIEW_CHARACTER_LIMIT), matcher.start()), null),
+                                line.substring(matcher.start(), matcher.end()),
+                                StringUtils.stripEnd(line.substring(matcher.end(), Math.min(line.length(), matcher.end() + SEARCH_TEXT_PREVIEW_CHARACTER_LIMIT)), null)
+                        )));
             }
         }
         return results;
@@ -484,7 +494,12 @@ public class Source
             String line = lines.group();
             for (int index = line.indexOf(string); index != -1; index = line.indexOf(string, index + 1))
             {
-                results.add(new SourceCoordinates(this.id, i + 1, index + 1, i + 1, index + length + 1));
+                results.add(new SourceCoordinates(this.id, i + 1, index + 1, i + 1, index + length,
+                        new SourceCoordinates.Preview(
+                                StringUtils.stripStart(line.substring(Math.max(0, index - SEARCH_TEXT_PREVIEW_CHARACTER_LIMIT), index), null),
+                                line.substring(index, index + length),
+                                StringUtils.stripEnd(line.substring(index + length, Math.min(line.length(), index + length + SEARCH_TEXT_PREVIEW_CHARACTER_LIMIT)), null)
+                        )));
             }
         }
         return results;
@@ -498,10 +513,16 @@ public class Source
         int length = lowerCase.length();
         for (int i = 0; lines.find(); i++)
         {
-            String line = lines.group().toLowerCase();
+            String originalLine = lines.group();
+            String line = originalLine.toLowerCase();
             for (int index = line.indexOf(lowerCase); index != -1; index = line.indexOf(lowerCase, index + 1))
             {
-                results.add(new SourceCoordinates(this.id, i + 1, index + 1, i + 1, index + length + 1));
+                results.add(new SourceCoordinates(this.id, i + 1, index + 1, i + 1, index + length,
+                        new SourceCoordinates.Preview(
+                                StringUtils.stripStart(originalLine.substring(Math.max(0, index - SEARCH_TEXT_PREVIEW_CHARACTER_LIMIT), index), null),
+                                originalLine.substring(index, index + length),
+                                StringUtils.stripEnd(originalLine.substring(index + length, Math.min(line.length(), index + length + SEARCH_TEXT_PREVIEW_CHARACTER_LIMIT)), null)
+                        )));
             }
         }
         return results;
@@ -528,6 +549,68 @@ public class Source
         {
             return (ConcreteFunctionDefinition<?>) this.newInstances.detect(e -> isElementAtPoint(e, line, column) && (e instanceof ConcreteFunctionDefinition));
         }
+    }
+
+    public SourceCoordinates.Preview getPreviewTextWithCoordinates(int startLine, int startColumn, int endLine, int endColumn)
+    {
+        if (StringIterate.isEmpty(this.content))
+        {
+            return null;
+        }
+
+        Matcher linesMatcher = LINE_PATTERN.matcher(this.content);
+        List<String> lines = new ArrayList<>();
+        while (linesMatcher.find())
+        {
+            lines.add(linesMatcher.group());
+        }
+
+        if (startLine < 1 ||
+                endLine < 1 ||
+                startLine > lines.size() ||
+                endLine > lines.size() ||
+                startLine > endLine ||
+                (startLine == endLine && startColumn > endColumn) ||
+                startColumn < 1 ||
+                endColumn < 1 ||
+                startColumn > lines.get(startLine - 1).length() ||
+                endColumn > lines.get(endLine - 1).length()
+        )
+        {
+            throw new IllegalArgumentException("Invalid source coordinates");
+        }
+
+        String beforeText = "";
+        String foundText = "";
+        String afterText = "";
+
+        for (int i = 0; i < lines.size(); i++)
+        {
+            String line = lines.get(i);
+            if (i == startLine - 1)
+            {
+                beforeText = StringUtils.stripStart(line.substring(Math.max(0, startColumn - 1 - SEARCH_TEXT_PREVIEW_CHARACTER_LIMIT), startColumn - 1), null);
+                foundText += line.substring(startColumn - 1, line.length());
+                if (startLine == endLine)
+                {
+                    foundText = line.substring(startColumn - 1, endColumn);
+                    afterText = StringUtils.stripEnd(line.substring(endColumn, Math.min(line.length(), endColumn + SEARCH_TEXT_PREVIEW_CHARACTER_LIMIT)), null);
+                    break;
+                }
+            }
+            else if (i > startLine - 1 && i < endLine - 1)
+            {
+                foundText += "\n" + line;
+            }
+            else if (i == endLine - 1)
+            {
+                foundText += "\n" + line.substring(0, endColumn);
+                afterText = StringUtils.stripEnd(line.substring(endColumn, Math.min(line.length(), endColumn + SEARCH_TEXT_PREVIEW_CHARACTER_LIMIT)), null);
+                break;
+            }
+        }
+
+        return new SourceCoordinates.Preview(beforeText, foundText, afterText);
     }
 
     private boolean isElementAtPoint(CoreInstance element, int line, int column)

@@ -1,17 +1,3 @@
-// Copyright 2020 Goldman Sachs
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package org.finos.legend.pure.ide.light.api.find;
 
 import io.swagger.annotations.Api;
@@ -30,59 +16,29 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.regex.Pattern;
+import java.util.List;
 
 @Api(tags = "Find")
 @Path("/")
-public class FindInSources
+public class FindTextPreview
 {
-    private static final String STRING_PARAM = "string";
-    private static final String REGEX_PARAM = "regex";
-    private static final String SOURCE_REGEX_PARAM = "sourceRegex";
-    private static final String CASE_SENSITIVE_PARAM = "caseSensitive";
-    private static final String MAX_RESULTS_PARAM = "limit";
-
     private PureSession session;
 
-    public FindInSources(PureSession session)
+    public FindTextPreview(PureSession session)
     {
         this.session = session;
     }
 
     @GET
-    @Path("findInSources")
-    public Response findInSources(@Context HttpServletRequest request, @Context HttpServletResponse response) throws IOException
+    @Path("getTextPreview")
+    public Response getTextPreview(@Context HttpServletRequest request, List<SourceCoordinates> coordinates, @Context HttpServletResponse response) throws IOException
     {
         return Response.ok((StreamingOutput) outputStream ->
         {
-            String string = request.getParameter(STRING_PARAM);
-            boolean regex = Boolean.valueOf(String.valueOf(request.getParameter(REGEX_PARAM)));
-            String sourceRegex = request.getParameter(SOURCE_REGEX_PARAM);
-            String caseSensitiveString = request.getParameter(CASE_SENSITIVE_PARAM);
-            int limit = request.getParameter(MAX_RESULTS_PARAM) != null ? Integer.valueOf(request.getParameter(MAX_RESULTS_PARAM)) : Integer.MAX_VALUE;
-            boolean caseSensitive = (caseSensitiveString == null) ? true : Boolean.valueOf(caseSensitiveString);
-
-            if (string == null)
-            {
-                throw new RuntimeException("Must specify search parameters: " + STRING_PARAM);
-            }
-
-            RichIterable<SourceCoordinates> results;
             try
             {
-                Pattern sourcePattern = getSourcePattern(sourceRegex);
-                if (regex)
-                {
-                    Pattern pattern = Pattern.compile(string, caseSensitive ? 0 : Pattern.CASE_INSENSITIVE);
-                    results = session.getPureRuntime().getSourceRegistry().find(pattern, sourcePattern);
-                }
-                else
-                {
-                    results = session.getPureRuntime().getSourceRegistry().find(string, caseSensitive, sourcePattern);
-                }
-
                 response.setContentType("application/json");
-                writeResultsJSON(outputStream, results, limit);
+                writeResultsJSON(outputStream, session.getPureRuntime().getSourceRegistry().getPreviewTextWithCoordinates(coordinates));
             }
             catch (IOException | RuntimeException | Error e)
             {
@@ -91,12 +47,7 @@ public class FindInSources
         }).build();
     }
 
-    private Pattern getSourcePattern(String sourceRegex)
-    {
-        return (sourceRegex == null) ? null : Pattern.compile(sourceRegex);
-    }
-
-    private int writeResultsJSON(OutputStream stream, RichIterable<SourceCoordinates> results, int limit) throws IOException
+    private int writeResultsJSON(OutputStream stream, RichIterable<SourceCoordinates> results) throws IOException
     {
         stream.write("[".getBytes());
         int count = 0;
@@ -130,20 +81,12 @@ public class FindInSources
                     }
                     writeSourceCoordinatesJSON(stream, sourceCoordinates);
                     count++;
-                    if (count > limit)
-                    {
-                        break;
-                    }
                 }
                 stream.write("]}".getBytes());
-                if (count > limit)
-                {
-                    break;
-                }
             }
         }
         stream.write("]".getBytes());
-        return count > limit ? limit : count;
+        return count;
     }
 
     private void writeSourceCoordinatesJSON(OutputStream stream, SourceCoordinates sourceCoordinates) throws IOException
