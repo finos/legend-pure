@@ -305,7 +305,26 @@ public class Source
 
             else if (found instanceof FunctionExpression)
             {
-                found = found.getValueForMetaPropertyToOne(M3Properties.func);
+                CoreInstance func = found.getValueForMetaPropertyToOne(M3Properties.func);
+                // enum instance
+                if ("extractEnumValue_Enumeration_1__String_1__T_1_".equals(func.getName()))
+                {
+                    CoreInstance enumType = found.getValueForMetaPropertyToOne(M3Properties.genericType).getValueForMetaPropertyToOne(M3Properties.rawType);
+                    try
+                    {
+                        String enumValue = found.getValueForMetaPropertyToMany(M3Properties.parametersValues).get(1).getValueForMetaPropertyToOne(M3Properties.values).getName();
+                        found = enumType.getValueInValueForMetaPropertyToMany(M3Properties.values, enumValue);
+                    }
+                    catch (Exception ignore)
+                    {
+                        // with best effort, show the enumeration instead
+                        found = enumType;
+                    }
+                }
+                else
+                {
+                    found = func;
+                }
             }
 
             else if (found instanceof GrammarInfoStub)
@@ -370,7 +389,8 @@ public class Source
                     // NOTE: here, we check for function expression first
                     // which is a bias in favor of function and property usage
                     // TODO find a better way to do this
-                    return results.maxBy(result -> {
+                    return results.maxBy(result ->
+                    {
                         if (result instanceof FunctionExpression)
                         {
                             return 3;
@@ -433,7 +453,7 @@ public class Source
             Matcher matcher = pattern.matcher(lines.group());
             while (matcher.find())
             {
-                results.add(new SourceCoordinates(this.id, i + 1, matcher.start() + 1, i + 1, matcher.end() + 1));
+                results.add(new SourceCoordinates(this.id, i + 1, matcher.start() + 1, i + 1, matcher.end() + 1, ""));
             }
         }
         return results;
