@@ -34,6 +34,7 @@ import org.finos.legend.pure.ide.light.api.execution.test.ExecuteTests;
 import org.finos.legend.pure.ide.light.api.find.FindInSources;
 import org.finos.legend.pure.ide.light.api.find.FindPureFile;
 import org.finos.legend.pure.ide.light.api.find.FindTextPreview;
+import org.finos.legend.pure.ide.light.api.source.UpdateSource;
 import org.finos.legend.pure.ide.light.session.PureSession;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
@@ -87,6 +88,8 @@ public abstract class PureIDEServer extends Application<ServerConfiguration>
         environment.jersey().register(new FindInSources(pureSession));
         environment.jersey().register(new FindPureFile(pureSession));
         environment.jersey().register(new FindTextPreview((pureSession)));
+
+        environment.jersey().register(new UpdateSource(pureSession));
 
         environment.jersey().register(new Activities(pureSession));
         environment.jersey().register(new FileManagement(pureSession));

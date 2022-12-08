@@ -1,15 +1,28 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package org.finos.legend.pure.ide.light.api.find;
 
 import io.swagger.annotations.Api;
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.multimap.Multimap;
 import org.finos.legend.pure.ide.light.session.PureSession;
 import org.finos.legend.pure.m3.serialization.runtime.SourceCoordinates;
 import org.json.simple.JSONValue;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
@@ -29,8 +42,8 @@ public class FindTextPreview
         this.session = session;
     }
 
-    @GET
-    @Path("getTextPreview")
+    @POST
+    @Path("getTextSearchPreview")
     public Response getTextPreview(@Context HttpServletRequest request, List<SourceCoordinates> coordinates, @Context HttpServletResponse response) throws IOException
     {
         return Response.ok((StreamingOutput) outputStream ->
@@ -47,51 +60,33 @@ public class FindTextPreview
         }).build();
     }
 
-    private int writeResultsJSON(OutputStream stream, RichIterable<SourceCoordinates> results) throws IOException
+    private void writeResultsJSON(OutputStream stream, RichIterable<SourceCoordinates> results) throws IOException
     {
         stream.write("[".getBytes());
-        int count = 0;
         if (results.notEmpty())
         {
-            Multimap<String, SourceCoordinates> indexBySource = results.groupBy(SourceCoordinates.SOURCE_ID);
-            boolean first = true;
-            for (String sourceId : indexBySource.keysView().toSortedList())
+            boolean firstSC = true;
+            for (SourceCoordinates sourceCoordinates : results)
             {
-                if (first)
+                if (firstSC)
                 {
-                    first = false;
-                    stream.write("{\"sourceId\":\"".getBytes());
+                    firstSC = false;
                 }
                 else
                 {
-                    stream.write(",{\"sourceId\":\"".getBytes());
+                    stream.write(",".getBytes());
                 }
-                stream.write(JSONValue.escape(sourceId).getBytes());
-                stream.write("\",\"coordinates\":[".getBytes());
-                boolean firstSC = true;
-                for (SourceCoordinates sourceCoordinates : indexBySource.get(sourceId))
-                {
-                    if (firstSC)
-                    {
-                        firstSC = false;
-                    }
-                    else
-                    {
-                        stream.write(",".getBytes());
-                    }
-                    writeSourceCoordinatesJSON(stream, sourceCoordinates);
-                    count++;
-                }
-                stream.write("]}".getBytes());
+                writeSourceCoordinatesJSON(stream, sourceCoordinates);
             }
         }
         stream.write("]".getBytes());
-        return count;
     }
 
     private void writeSourceCoordinatesJSON(OutputStream stream, SourceCoordinates sourceCoordinates) throws IOException
     {
-        stream.write("{\"startLine\":".getBytes());
+        stream.write("{\"sourceId\":\"".getBytes());
+        stream.write(sourceCoordinates.getSourceId().getBytes());
+        stream.write("\",\"startLine\":".getBytes());
         stream.write(Integer.toString(sourceCoordinates.getStartLine()).getBytes());
         stream.write(",\"startColumn\":".getBytes());
         stream.write(Integer.toString(sourceCoordinates.getStartColumn()).getBytes());
