@@ -33,6 +33,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 
 public class FSCodeStorage extends AbstractSingleRepositoryCodeStorage
 {
@@ -261,6 +262,24 @@ public class FSCodeStorage extends AbstractSingleRepositoryCodeStorage
         protected FSCodeStorageNode(Path path)
         {
             this.path = path;
+        }
+
+        @Override
+        public boolean hasChildren()
+        {
+            if (Files.isDirectory(path))
+            {
+                try (Stream<Path> entries = Files.list(path))
+                {
+                    return entries.findFirst().isPresent();
+                }
+                catch (Exception ex)
+                {
+                    // do nothing
+                }
+            }
+
+            return false;
         }
 
         @Override

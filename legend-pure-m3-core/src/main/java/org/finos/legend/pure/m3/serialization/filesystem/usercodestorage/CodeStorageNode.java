@@ -69,4 +69,8 @@ public interface CodeStorageNode
     String getName();
     String getPath();
     CodeStorageNodeStatus getStatus();
+    public default boolean hasChildren()
+    {
+        return false;
+    }
 }

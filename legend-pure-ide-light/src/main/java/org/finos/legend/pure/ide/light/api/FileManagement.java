@@ -273,7 +273,7 @@ public class FileManagement
         builder.append(path);
         builder.append("\",\"path\":\"").append(path).append("\",\"file\":\"false\"},\"text\":\"");
         builder.append(directory.getName());
-        builder.append("\",\"state\":\"closed\",\"children\":true}");
+        builder.append("\",\"state\":\"closed\",\"children\":").append(directory.hasChildren()).append("}");
     }
 
     private void writeFileNode(StringBuilder builder, MutableCodeStorage codeStorage, String path, CodeStorageNode file)

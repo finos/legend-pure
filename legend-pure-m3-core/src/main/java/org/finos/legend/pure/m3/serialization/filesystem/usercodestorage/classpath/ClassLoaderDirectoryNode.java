@@ -36,6 +36,12 @@ class ClassLoaderDirectoryNode extends ClassLoaderCodeStorageNode
         return true;
     }
 
+    @Override
+    public boolean hasChildren()
+    {
+        return !this.childNodes.isEmpty();
+    }
+
     void initializeChildren(RichIterable<ClassLoaderCodeStorageNode> allNodes)
     {
         if (this.childNodes == null)
