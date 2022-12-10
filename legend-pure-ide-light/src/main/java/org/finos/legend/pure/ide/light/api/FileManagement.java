@@ -19,7 +19,6 @@ import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.ide.light.helpers.response.ExceptionTranslation;
-import org.finos.legend.pure.ide.light.helpers.response.IDEResponse;
 import org.finos.legend.pure.ide.light.session.PureSession;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
@@ -34,7 +33,9 @@ import org.json.simple.JSONValue;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
@@ -44,6 +45,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.regex.Pattern;
 
 @Api(tags = "File Management")
 @Path("/")
@@ -75,74 +77,121 @@ public class FileManagement
         }
     };
 
-    @GET
+    @DELETE
     @Path("deleteFile/{filePath:.+}")
     public Response deleteFile(@PathParam("filePath") String filePath, @Context HttpServletRequest request, @Context HttpServletResponse response)
     {
-        return Response.ok((StreamingOutput) outStream ->
+        try
         {
-            try
+            pureSession.getPureRuntime().delete("/" + filePath);
+            return Response.ok((StreamingOutput) outputStream ->
             {
-                pureSession.getPureRuntime().delete("/" + filePath);
-                outStream.write(("{\"cached\":" + false + "}").getBytes());
-                outStream.close();
-            }
-            catch (RuntimeException e)
+                outputStream.write(("{\"cached\":" + false + "}").getBytes());
+                outputStream.close();
+            }).build();
+        }
+        catch (Exception e)
+        {
+            return Response.status(Response.Status.BAD_REQUEST).entity((StreamingOutput) outputStream ->
             {
-                IDEResponse exceptionResponse = ExceptionTranslation.buildExceptionMessage(pureSession, e, new ByteArrayOutputStream());
-                outStream.write(JSONValue.escape("\n" + exceptionResponse.getText()).getBytes());
-                outStream.write("\"".getBytes());
-            }
-        }).build();
+                outputStream.write(("\"" + JSONValue.escape(ExceptionTranslation.buildExceptionMessage(pureSession, e, new ByteArrayOutputStream()).getText()) + "\"").getBytes());
+                outputStream.close();
+            }).build();
+        }
     }
 
-    @GET
+    @POST
     @Path("newFile/{filePath:.+}")
     public Response newFile(@PathParam("filePath") String filePath, @Context HttpServletRequest request, @Context HttpServletResponse response)
     {
-        return Response.ok((StreamingOutput) outStream ->
+        try
         {
-            try
+            pureSession.getPureRuntime().create("/" + filePath);
+
+            return Response.ok((StreamingOutput) outputStream ->
             {
-                pureSession.getPureRuntime().create("/" + filePath);
-                outStream.write(("{\"cached\":" + false + "}").getBytes());
-                outStream.close();
-            }
-            catch (RuntimeException e)
+                outputStream.write(("{\"cached\":" + false + "}").getBytes());
+                outputStream.close();
+            }).build();
+        }
+        catch (Exception e)
+        {
+            return Response.status(Response.Status.BAD_REQUEST).entity((StreamingOutput) outputStream ->
             {
-                IDEResponse exceptionResponse = ExceptionTranslation.buildExceptionMessage(pureSession, e, new ByteArrayOutputStream());
-                outStream.write(JSONValue.escape("\n" + exceptionResponse.getText()).getBytes());
-                outStream.write("\"".getBytes());
-            }
-        }).build();
+                outputStream.write(("\"" + JSONValue.escape(ExceptionTranslation.buildExceptionMessage(pureSession, e, new ByteArrayOutputStream()).getText()) + "\"").getBytes());
+                outputStream.close();
+            }).build();
+        }
     }
 
-    @GET
+    @POST
     @Path("newFolder/{filePath:.+}")
     public Response newFolder(@PathParam("filePath") String filePath, @Context HttpServletRequest request, @Context HttpServletResponse response)
     {
-        return Response.ok((StreamingOutput) outStream ->
+        try
         {
-            try
+            pureSession.getCodeStorage().createFolder("/" + filePath);
+
+            return Response.ok((StreamingOutput) outputStream ->
             {
-                pureSession.getCodeStorage().createFolder("/" + filePath);
-                outStream.write(("{\"cached\":" + false + "}").getBytes());
-                outStream.close();
-            }
-            catch (RuntimeException e)
+                outputStream.write(("{\"cached\":" + false + "}").getBytes());
+                outputStream.close();
+            }).build();
+        }
+        catch (Exception e)
+        {
+            return Response.status(Response.Status.BAD_REQUEST).entity((StreamingOutput) outputStream ->
             {
-                IDEResponse exceptionResponse = ExceptionTranslation.buildExceptionMessage(pureSession, e, new ByteArrayOutputStream());
-                outStream.write(JSONValue.escape("\n" + exceptionResponse.getText()).getBytes());
-                outStream.write("\"".getBytes());
+                outputStream.write(("\"" + JSONValue.escape(ExceptionTranslation.buildExceptionMessage(pureSession, e, new ByteArrayOutputStream()).getText()) + "\"").getBytes());
+                outputStream.close();
+            }).build();
+        }
+    }
+
+    @POST
+    @Path("renameFile")
+    public Response renameFile(RenameFileInput input, @Context HttpServletRequest request, @Context HttpServletResponse response)
+    {
+        try
+        {
+            String oldPath = input.oldPath;
+            String newPath = input.newPath;
+
+            final Pattern FILE_NAME_PATTERN = Pattern.compile("/?([a-zA-z0-9_]+/)*[a-zA-z0-9_]+(\\.[a-zA-z0-9_]+)*");
+
+            if (oldPath == null || !FILE_NAME_PATTERN.matcher(oldPath).matches())
+            {
+                throw new IllegalArgumentException("Can't rename file: invalid old path");
             }
-        }).build();
+
+            if (newPath == null || !FILE_NAME_PATTERN.matcher(newPath).matches())
+            {
+                throw new IllegalArgumentException("Can't rename file: invalid new path");
+            }
+
+            this.pureSession.getPureRuntime().move(oldPath, newPath);
+
+            return Response.ok((StreamingOutput) outputStream ->
+            {
+                outputStream.write(("{\"oldPath\":\"" + JSONValue.escape(oldPath) + "\",\"newPath\":\"" + JSONObject.escape(newPath) + "\"}").getBytes());
+                outputStream.close();
+            }).build();
+        }
+        catch (Exception e)
+        {
+            return Response.status(Response.Status.BAD_REQUEST).entity((StreamingOutput) outputStream ->
+            {
+                outputStream.write(("\"" + JSONValue.escape(ExceptionTranslation.buildExceptionMessage(pureSession, e, new ByteArrayOutputStream()).getText()) + "\"").getBytes());
+                outputStream.close();
+            }).build();
+        }
     }
 
     @GET
     @Path("dir")
     public Response dir(@Context HttpServletRequest request, @Context HttpServletResponse response)
     {
-        return Response.ok((StreamingOutput) outStream ->
+        try
         {
             response.setContentType("application/json");
             String path = request.getParameter("parameters");
@@ -170,17 +219,28 @@ public class FileManagement
                 }
             }
             json.append(']');
-            outStream.write(json.toString().getBytes(), 0, json.length());
-            outStream.close();
 
-        }).build();
+            return Response.ok((StreamingOutput) outputStream ->
+            {
+                outputStream.write(json.toString().getBytes(), 0, json.length());
+                outputStream.close();
+            }).build();
+        }
+        catch (Exception e)
+        {
+            return Response.status(Response.Status.BAD_REQUEST).entity((StreamingOutput) outputStream ->
+            {
+                outputStream.write(("\"" + JSONValue.escape(ExceptionTranslation.buildExceptionMessage(pureSession, e, new ByteArrayOutputStream()).getText()) + "\"").getBytes());
+                outputStream.close();
+            }).build();
+        }
     }
 
     @GET
     @Path("fileAsJson/{filePath:.+}")
     public Response fileAsJson(@PathParam("filePath") String filePath)
     {
-        return Response.ok((StreamingOutput) outStream ->
+        try
         {
             CodeStorage codeStorage = pureSession.getCodeStorage();
             if (codeStorage == null)
@@ -208,9 +268,21 @@ public class FileManagement
             {
                 throw new IOException("Could not find resource \"" + filePath + "\"");
             }
-            outStream.write(this.transformContent(content));
-            outStream.close();
-        }).build();
+
+            return Response.ok((StreamingOutput) outputStream ->
+            {
+                outputStream.write(this.transformContent(content));
+                outputStream.close();
+            }).build();
+        }
+        catch (Exception e)
+        {
+            return Response.status(Response.Status.BAD_REQUEST).entity((StreamingOutput) outputStream ->
+            {
+                outputStream.write(("\"" + JSONValue.escape(ExceptionTranslation.buildExceptionMessage(pureSession, e, new ByteArrayOutputStream()).getText()) + "\"").getBytes());
+                outputStream.close();
+            }).build();
+        }
     }
 
     private byte[] transformContent(byte[] content)
@@ -297,4 +369,10 @@ public class FileManagement
         builder.append("\",\"icon\":\"/ide/pure/icons/filesystem/txt.png\"}");
     }
 
+
+    public static class RenameFileInput
+    {
+        public String oldPath;
+        public String newPath;
+    }
 }
