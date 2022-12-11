@@ -16,6 +16,7 @@ package org.finos.legend.pure.m3.serialization.runtime;
 
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.EnumInstance;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.After;
@@ -38,7 +39,7 @@ public class TestSourceNavigation extends AbstractPureTestWithCoreCompiledPlatfo
     }
 
     @Test
-    public void testNavigateForProperty()
+    public void testNavigateForPropertyReference()
     {
         Source source = runtime.createInMemorySource(
                 "test.pure",
@@ -95,6 +96,49 @@ public class TestSourceNavigation extends AbstractPureTestWithCoreCompiledPlatfo
     }
 
     @Test
+    public void testNavigateForClassOrAssociationProperty()
+    {
+        Source source = runtime.createInMemorySource(
+                "test.pure",
+                "Class model::C1 {\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class model::C2 {\n" +
+                        "  name: String[1];\n" +
+                        "  al(){''}: String[1];  \n" +
+                        "}\n" +
+                        "\n" +
+                        "Association model::Assoc\n" +
+                        "{\n" +
+                        "  prop3: model::C2[1];\n" +
+                        "  prop2: model::C1[1];\n" +
+                        "}"
+        );
+        runtime.compile();
+
+        CoreInstance found = source.navigate(5, 3, processorSupport);
+        Assert.assertTrue(found instanceof Property);
+        Assert.assertEquals("name", ((Property<?, ?>) found)._name());
+        Assert.assertEquals("test.pure", found.getSourceInformation().getSourceId());
+        Assert.assertEquals(5, found.getSourceInformation().getLine());
+        Assert.assertEquals(3, found.getSourceInformation().getColumn());
+
+        found = source.navigate(6, 3, processorSupport);
+        Assert.assertTrue(found instanceof QualifiedProperty);
+        Assert.assertEquals("al", ((QualifiedProperty<?>) found)._name());
+        Assert.assertEquals("test.pure", found.getSourceInformation().getSourceId());
+        Assert.assertEquals(6, found.getSourceInformation().getLine());
+        Assert.assertEquals(3, found.getSourceInformation().getColumn());
+
+        found = source.navigate(11, 3, processorSupport);
+        Assert.assertTrue(found instanceof Property);
+        Assert.assertEquals("prop3", ((Property<?, ?>) found)._name());
+        Assert.assertEquals("test.pure", found.getSourceInformation().getSourceId());
+        Assert.assertEquals(11, found.getSourceInformation().getLine());
+        Assert.assertEquals(3, found.getSourceInformation().getColumn());
+    }
+
+    @Test
     public void testNavigateEnumValue()
     {
         Source source = runtime.createInMemorySource(
@@ -120,49 +164,49 @@ public class TestSourceNavigation extends AbstractPureTestWithCoreCompiledPlatfo
         Assert.assertEquals(3, found.getSourceInformation().getColumn());
     }
 
-    @Test
-    public void testNavigateVariable()
-    {
-
-        Source source = runtime.createInMemorySource(
-                "test.pure",
-                "function doSomething(param: String[1]): Any[*]\n" +
-                        "{\n" +
-                        "  let var = 1;\n" +
-                        "  $var->toString();\n" +
-                        "  let var_lambda1 = var: String[1]|$var->toString();\n" +
-                        "  let var_lambda2 = {x: String[1]| let var = 1; $var->toString();};\n" +
-                        "  let var_lambda3 = {x: String[1]| $var->toString();};\n" +
-                        "  $param->toString();\n" +
-                        "  let param_lambda1 = param: String[1]|$param->toString();\n" +
-                        "  let param_lambda2 = {x: String[1]| let param = 1; $param->toString();};\n" +
-                        "  let param_lambda3 = {x: String[1]| $param->toString();};\n" +
-                        "  let param_lambda4 = {x: String[1]| [1,2,3]->map(y|$param->toString());};\n" +
-                        "}"
-        );
-
-        runtime.compile();
-
+//    @Test
+//    public void testNavigateVariable()
+//    {
+//
 //        Source source = runtime.createInMemorySource(
 //                "test.pure",
 //                "function doSomething(param: String[1]): Any[*]\n" +
 //                        "{\n" +
 //                        "  let var = 1;\n" +
 //                        "  $var->toString();\n" +
+//                        "  let var_lambda1 = var: String[1]|$var->toString();\n" +
+//                        "  let var_lambda2 = {x: String[1]| let var = 1; $var->toString();};\n" +
+//                        "  let var_lambda3 = {x: String[1]| $var->toString();};\n" +
 //                        "  $param->toString();\n" +
+//                        "  let param_lambda1 = param: String[1]|$param->toString();\n" +
+//                        "  let param_lambda2 = {x: String[1]| let param = 1; $param->toString();};\n" +
+//                        "  let param_lambda3 = {x: String[1]| $param->toString();};\n" +
+//                        "  let param_lambda4 = {x: String[1]| [1,2,3]->map(y|$param->toString());};\n" +
 //                        "}"
 //        );
+//
 //        runtime.compile();
-
-        // variable
-//        CoreInstance found = source.navigate(4, 4, processorSupport);
-//        CoreInstance found = source.navigate(3, 7, processorSupport);
-
-        // parameter
-//        CoreInstance found = source.navigate(5, 4, processorSupport);
-//        CoreInstance found = source.navigate(11, 44, processorSupport);
-//        CoreInstance found = source.navigate(11, 44, processorSupport);
-        CoreInstance found = source.navigate(5, 37, processorSupport);
-        System.out.println("");
-    }
+//
+////        Source source = runtime.createInMemorySource(
+////                "test.pure",
+////                "function doSomething(param: String[1]): Any[*]\n" +
+////                        "{\n" +
+////                        "  let var = 1;\n" +
+////                        "  $var->toString();\n" +
+////                        "  $param->toString();\n" +
+////                        "}"
+////        );
+////        runtime.compile();
+//
+//        // variable
+////        CoreInstance found = source.navigate(4, 4, processorSupport);
+////        CoreInstance found = source.navigate(3, 7, processorSupport);
+//
+//        // parameter
+////        CoreInstance found = source.navigate(5, 4, processorSupport);
+////        CoreInstance found = source.navigate(11, 44, processorSupport);
+////        CoreInstance found = source.navigate(11, 44, processorSupport);
+//        CoreInstance found = source.navigate(5, 37, processorSupport);
+//        System.out.println("");
+//    }
 }
