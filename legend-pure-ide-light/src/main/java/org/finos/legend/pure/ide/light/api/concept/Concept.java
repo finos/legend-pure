@@ -57,8 +57,8 @@ public class Concept
     }
 
     @GET
-    @Path("getConceptPath")
-    public Response getConceptPath(@Context HttpServletRequest request, @Context HttpServletResponse response)
+    @Path("getConceptInfo")
+    public Response getConceptInfo(@Context HttpServletRequest request, @Context HttpServletResponse response)
     {
         return Response.ok((StreamingOutput) outputStream ->
         {
@@ -80,19 +80,19 @@ public class Concept
                         String path = PackageableElement.getUserPathForPackageableElement(found);
                         CoreInstance owner = Instance.getValueForMetaPropertyToOneResolved(found, M3Properties.owner, session.getPureRuntime().getProcessorSupport());
                         String ownerPath = PackageableElement.getUserPathForPackageableElement(owner);
-                        outputStream.write(("{\"path\": \"" + path + "\" , \"owner\" : \"" + ownerPath + "\"}").getBytes());
+                        outputStream.write(("{\"path\":\"" + path + "\",\"owner\":\"" + ownerPath + "\",\"type\":\"property\"}").getBytes());
                     }
                     else if (Instance.instanceOf(found, M3Paths.Enum, session.getPureRuntime().getProcessorSupport()))
                     {
                         String path = PackageableElement.getUserPathForPackageableElement(found);
                         CoreInstance owner = found.getClassifier();
                         String ownerPath = PackageableElement.getUserPathForPackageableElement(owner);
-                        outputStream.write(("{\"path\": \"" + path + "\" , \"owner\" : \"" + ownerPath + "\" , \"type\" : \"enum\"}").getBytes());
+                        outputStream.write(("{\"path\":\"" + path + "\",\"owner\":\"" + ownerPath + "\",\"type\":\"enum\"}").getBytes());
                     }
                     else
                     {
                         String path = PackageableElement.getUserPathForPackageableElement(found);
-                        outputStream.write(("{\"path\": \"" + path + "\"}").getBytes());
+                        outputStream.write(("{\"path\":\"" + path + "\"}").getBytes());
                     }
                 }
                 else

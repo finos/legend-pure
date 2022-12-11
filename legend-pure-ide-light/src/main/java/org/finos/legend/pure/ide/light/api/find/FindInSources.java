@@ -42,7 +42,7 @@ public class FindInSources
     private static final String CASE_SENSITIVE_PARAM = "caseSensitive";
     private static final String MAX_RESULTS_PARAM = "limit";
 
-    private PureSession session;
+    private final PureSession session;
 
     public FindInSources(PureSession session)
     {

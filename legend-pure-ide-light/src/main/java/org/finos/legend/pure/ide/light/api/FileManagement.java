@@ -36,6 +36,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
@@ -51,11 +52,11 @@ import java.util.regex.Pattern;
 @Path("/")
 public class FileManagement
 {
-    private PureSession pureSession;
+    private final PureSession session;
 
-    public FileManagement(PureSession pureSession)
+    public FileManagement(PureSession session)
     {
-        this.pureSession = pureSession;
+        this.session = session;
     }
 
 
@@ -83,7 +84,7 @@ public class FileManagement
     {
         try
         {
-            pureSession.getPureRuntime().delete("/" + filePath);
+            session.getPureRuntime().delete("/" + filePath);
             return Response.ok((StreamingOutput) outputStream ->
             {
                 outputStream.write(("{\"cached\":" + false + "}").getBytes());
@@ -94,7 +95,7 @@ public class FileManagement
         {
             return Response.status(Response.Status.BAD_REQUEST).entity((StreamingOutput) outputStream ->
             {
-                outputStream.write(("\"" + JSONValue.escape(ExceptionTranslation.buildExceptionMessage(pureSession, e, new ByteArrayOutputStream()).getText()) + "\"").getBytes());
+                outputStream.write(("\"" + JSONValue.escape(ExceptionTranslation.buildExceptionMessage(session, e, new ByteArrayOutputStream()).getText()) + "\"").getBytes());
                 outputStream.close();
             }).build();
         }
@@ -106,7 +107,7 @@ public class FileManagement
     {
         try
         {
-            pureSession.getPureRuntime().create("/" + filePath);
+            session.getPureRuntime().create("/" + filePath);
 
             return Response.ok((StreamingOutput) outputStream ->
             {
@@ -118,7 +119,7 @@ public class FileManagement
         {
             return Response.status(Response.Status.BAD_REQUEST).entity((StreamingOutput) outputStream ->
             {
-                outputStream.write(("\"" + JSONValue.escape(ExceptionTranslation.buildExceptionMessage(pureSession, e, new ByteArrayOutputStream()).getText()) + "\"").getBytes());
+                outputStream.write(("\"" + JSONValue.escape(ExceptionTranslation.buildExceptionMessage(session, e, new ByteArrayOutputStream()).getText()) + "\"").getBytes());
                 outputStream.close();
             }).build();
         }
@@ -130,7 +131,7 @@ public class FileManagement
     {
         try
         {
-            pureSession.getCodeStorage().createFolder("/" + filePath);
+            session.getCodeStorage().createFolder("/" + filePath);
 
             return Response.ok((StreamingOutput) outputStream ->
             {
@@ -142,13 +143,13 @@ public class FileManagement
         {
             return Response.status(Response.Status.BAD_REQUEST).entity((StreamingOutput) outputStream ->
             {
-                outputStream.write(("\"" + JSONValue.escape(ExceptionTranslation.buildExceptionMessage(pureSession, e, new ByteArrayOutputStream()).getText()) + "\"").getBytes());
+                outputStream.write(("\"" + JSONValue.escape(ExceptionTranslation.buildExceptionMessage(session, e, new ByteArrayOutputStream()).getText()) + "\"").getBytes());
                 outputStream.close();
             }).build();
         }
     }
 
-    @POST
+    @PUT
     @Path("renameFile")
     public Response renameFile(RenameFileInput input, @Context HttpServletRequest request, @Context HttpServletResponse response)
     {
@@ -169,7 +170,7 @@ public class FileManagement
                 throw new IllegalArgumentException("Can't rename file: invalid new path");
             }
 
-            this.pureSession.getPureRuntime().move(oldPath, newPath);
+            this.session.getPureRuntime().move(oldPath, newPath);
 
             return Response.ok((StreamingOutput) outputStream ->
             {
@@ -181,7 +182,7 @@ public class FileManagement
         {
             return Response.status(Response.Status.BAD_REQUEST).entity((StreamingOutput) outputStream ->
             {
-                outputStream.write(("\"" + JSONValue.escape(ExceptionTranslation.buildExceptionMessage(pureSession, e, new ByteArrayOutputStream()).getText()) + "\"").getBytes());
+                outputStream.write(("\"" + JSONValue.escape(ExceptionTranslation.buildExceptionMessage(session, e, new ByteArrayOutputStream()).getText()) + "\"").getBytes());
                 outputStream.close();
             }).build();
         }
@@ -196,7 +197,7 @@ public class FileManagement
             response.setContentType("application/json");
             String path = request.getParameter("parameters");
             StringBuilder json = new StringBuilder("[");
-            MutableList<CodeStorageNode> nodes = LazyIterate.reject(pureSession.getCodeStorage().getFiles(path), IGNORED_NODE).toSortedList(NODE_COMPARATOR);
+            MutableList<CodeStorageNode> nodes = LazyIterate.reject(session.getCodeStorage().getFiles(path), IGNORED_NODE).toSortedList(NODE_COMPARATOR);
             if ("/".equals(path))
             {
                 nodes.sortThis((o1, o2) ->
@@ -209,7 +210,7 @@ public class FileManagement
             ;
             if (nodes.notEmpty())
             {
-                MutableCodeStorage codeStorage = pureSession.getCodeStorage();
+                MutableCodeStorage codeStorage = session.getCodeStorage();
                 Iterator<CodeStorageNode> iterator = nodes.iterator();
                 writeNode(json, codeStorage, path, iterator.next());
                 while (iterator.hasNext())
@@ -230,7 +231,7 @@ public class FileManagement
         {
             return Response.status(Response.Status.BAD_REQUEST).entity((StreamingOutput) outputStream ->
             {
-                outputStream.write(("\"" + JSONValue.escape(ExceptionTranslation.buildExceptionMessage(pureSession, e, new ByteArrayOutputStream()).getText()) + "\"").getBytes());
+                outputStream.write(("\"" + JSONValue.escape(ExceptionTranslation.buildExceptionMessage(session, e, new ByteArrayOutputStream()).getText()) + "\"").getBytes());
                 outputStream.close();
             }).build();
         }
@@ -242,7 +243,7 @@ public class FileManagement
     {
         try
         {
-            CodeStorage codeStorage = pureSession.getCodeStorage();
+            CodeStorage codeStorage = session.getCodeStorage();
             if (codeStorage == null)
             {
                 throw new RuntimeException("Cannot find code storage");
@@ -279,7 +280,7 @@ public class FileManagement
         {
             return Response.status(Response.Status.BAD_REQUEST).entity((StreamingOutput) outputStream ->
             {
-                outputStream.write(("\"" + JSONValue.escape(ExceptionTranslation.buildExceptionMessage(pureSession, e, new ByteArrayOutputStream()).getText()) + "\"").getBytes());
+                outputStream.write(("\"" + JSONValue.escape(ExceptionTranslation.buildExceptionMessage(session, e, new ByteArrayOutputStream()).getText()) + "\"").getBytes());
                 outputStream.close();
             }).build();
         }

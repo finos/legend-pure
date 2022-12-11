@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
 @Path("/")
 public class FindPureFile
 {
-    private PureSession session;
+    private final PureSession session;
 
     public FindPureFile(PureSession session)
     {
@@ -48,7 +48,7 @@ public class FindPureFile
         return Response.ok((StreamingOutput) outputStream ->
         {
             String fileName = request.getParameter("file");
-            boolean isRegex = Boolean.valueOf(String.valueOf(request.getParameter("regex")));
+            boolean isRegex = Boolean.parseBoolean(String.valueOf(request.getParameter("regex")));
 
             try
             {
@@ -62,7 +62,7 @@ public class FindPureFile
                     @Override
                     public void value(String name)
                     {
-                        sb.append("\"" + name + "\"").append(",");
+                        sb.append("\"").append(name).append("\"").append(",");
                     }
                 });
                 if (!fileMatches.isEmpty())

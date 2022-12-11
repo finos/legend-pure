@@ -14,8 +14,11 @@
 
 package org.finos.legend.pure.ide.light.api.source;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.Api;
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.multimap.Multimap;
 import org.eclipse.collections.api.set.MutableSet;
@@ -28,7 +31,7 @@ import org.json.simple.JSONValue;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
@@ -50,7 +53,7 @@ public class UpdateSource
         this.session = session;
     }
 
-    @POST
+    @PUT
     @Path("updateSource")
     public Response updateSource(@Context HttpServletRequest request, List<UpdateSourceInput> updateInputs, @Context HttpServletResponse response) throws IOException
     {
@@ -162,5 +165,69 @@ public class UpdateSource
             outStream.write("}".getBytes());
             outStream.close();
         }).build();
+    }
+
+    public static class UpdateSourceInput
+    {
+        public static final Function<UpdateSourceInput, String> PATH = new Function<UpdateSourceInput, String>()
+        {
+            @Override
+            public String valueOf(UpdateSourceInput input)
+            {
+                return input.getPath();
+            }
+        };
+
+        private final String path;
+        private final int line;
+        private final int column;
+        private final String message;
+        private final boolean add;
+
+        UpdateSourceInput(String path, int line, int column, String message, boolean add)
+        {
+            this.path = path;
+            this.line = line;
+            this.column = column;
+            this.message = message;
+            this.add = add;
+        }
+
+        @JsonCreator
+        public static UpdateSourceInput newInput(
+                @JsonProperty("path") String path,
+                @JsonProperty("line") int line,
+                @JsonProperty("column") int column,
+                @JsonProperty("message") String message,
+                @JsonProperty("add") boolean add
+        )
+        {
+            return new UpdateSourceInput(path, line, column, message, add);
+        }
+
+        public String getPath()
+        {
+            return path;
+        }
+
+        public int getLine()
+        {
+            return line;
+        }
+
+        public int getColumn()
+        {
+            return column;
+        }
+
+        public String getMessage()
+        {
+            return message;
+        }
+
+        public boolean isAdd()
+        {
+            return add;
+        }
     }
 }

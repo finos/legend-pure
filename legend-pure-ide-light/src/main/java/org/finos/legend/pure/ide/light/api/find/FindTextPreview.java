@@ -35,7 +35,7 @@ import java.util.List;
 @Path("/")
 public class FindTextPreview
 {
-    private PureSession session;
+    private final PureSession session;
 
     public FindTextPreview(PureSession session)
     {

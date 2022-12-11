@@ -52,7 +52,7 @@ public class GetConcept implements SimpleFunction
             {
                 compilationError = e;
                 compilationErrorText = JSONValue.escape(ExceptionTranslation.pureExceptionToJson(pureSession, compilationError, null).getText());
-                //check if target file was compiled even if the whole compilation failed.
+                // check if target file was compiled even if the whole compilation failed.
                 if (!src.isCompiled())
                 {
                     throw e;

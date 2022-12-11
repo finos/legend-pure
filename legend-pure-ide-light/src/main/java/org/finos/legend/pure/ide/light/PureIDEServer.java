@@ -28,6 +28,7 @@ import org.finos.legend.pure.ide.light.api.FileManagement;
 import org.finos.legend.pure.ide.light.api.LifeCycle;
 import org.finos.legend.pure.ide.light.api.Service;
 import org.finos.legend.pure.ide.light.api.concept.Concept;
+import org.finos.legend.pure.ide.light.api.concept.RenameConcept;
 import org.finos.legend.pure.ide.light.api.execution.function.Execute;
 import org.finos.legend.pure.ide.light.api.execution.go.ExecuteGo;
 import org.finos.legend.pure.ide.light.api.execution.test.ExecuteTests;
@@ -80,6 +81,7 @@ public abstract class PureIDEServer extends Application<ServerConfiguration>
         this.pureSession = new PureSession(configuration.sourceLocationConfiguration, this.getRepositories(configuration.sourceLocationConfiguration));
 
         environment.jersey().register(new Concept(pureSession));
+        environment.jersey().register(new RenameConcept(pureSession));
 
         environment.jersey().register(new Execute(pureSession));
         environment.jersey().register(new ExecuteGo(pureSession));
