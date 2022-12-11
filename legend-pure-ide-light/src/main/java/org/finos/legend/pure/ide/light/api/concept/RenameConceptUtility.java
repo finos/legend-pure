@@ -35,18 +35,18 @@ public class RenameConceptUtility
         return entries.select(new Predicate<AbstractRenameConceptEntry>()
         {
             @Override
-            public boolean accept(AbstractRenameConceptEntry replaceEdit)
+            public boolean accept(AbstractRenameConceptEntry entry)
             {
-                if (replaceEdit.getConceptColumnIndex() < 0 || replaceEdit.getConceptColumnIndex() >= sourceCodeLines[replaceEdit.getConceptLineIndex()].length())
+                if (entry.getConceptColumnIndex() < 0 || entry.getConceptColumnIndex() >= sourceCodeLines[entry.getConceptLineIndex()].length())
                 {
                     return false;
                 }
-                Matcher matcher = IDENTIFIER_REGEX.matcher(sourceCodeLines[replaceEdit.getConceptLineIndex()].substring(replaceEdit.getConceptColumnIndex()));
+                Matcher matcher = IDENTIFIER_REGEX.matcher(sourceCodeLines[entry.getConceptLineIndex()].substring(entry.getConceptColumnIndex()));
                 if (matcher.find())
                 {
                     String identifierAtThisPoint = matcher.group(1);
-                    boolean isExactMatch = identifierAtThisPoint.equals(replaceEdit.getConceptName());
-                    boolean isSignatureOfOriginal = CONCRETE_FUNCTION_DEFINITION.equals(replaceEdit.getConceptType()) && identifierAtThisPoint.startsWith(replaceEdit.getConceptName()) && SIGNATURE_SUFFIX_REGEX.matcher(identifierAtThisPoint.substring(replaceEdit.getConceptName().length())).matches();
+                    boolean isExactMatch = identifierAtThisPoint.equals(entry.getConceptName());
+                    boolean isSignatureOfOriginal = CONCRETE_FUNCTION_DEFINITION.equals(entry.getConceptType()) && identifierAtThisPoint.startsWith(entry.getConceptName()) && SIGNATURE_SUFFIX_REGEX.matcher(identifierAtThisPoint.substring(entry.getConceptName().length())).matches();
                     return isExactMatch || isSignatureOfOriginal;
                 }
                 return false;
@@ -64,9 +64,9 @@ public class RenameConceptUtility
             int columnIndex = 0;
             while (counter < entries.size() && entries.get(counter).getReplaceLineIndex() == lineIndex)
             {
-                AbstractRenameConceptEntry replaceEdit = entries.get(counter);
-                stringBuilder.append(sourceCodeLines[lineIndex], columnIndex, replaceEdit.getReplaceColumnIndex()).append(replaceEdit.getNewReplaceString());
-                columnIndex = replaceEdit.getReplaceColumnIndex() + replaceEdit.getOriginalReplaceString().length();
+                AbstractRenameConceptEntry entry = entries.get(counter);
+                stringBuilder.append(sourceCodeLines[lineIndex], columnIndex, entry.getReplaceColumnIndex()).append(entry.getNewReplaceString());
+                columnIndex = entry.getReplaceColumnIndex() + entry.getOriginalReplaceString().length();
                 counter++;
             }
             stringBuilder.append(sourceCodeLines[lineIndex].substring(columnIndex)).append("\n");
