@@ -30,7 +30,7 @@ public class RenameConceptUtility
     {
     }
 
-    public static MutableList<? extends AbstractRenameConceptEntry> removeInvalidReplaceConceptEntry(final String[] sourceCodeLines, MutableList<? extends AbstractRenameConceptEntry> entries)
+    public static MutableList<? extends AbstractRenameConceptEntry> removeInvalidReplaceConceptEntries(final String[] sourceCodeLines, MutableList<? extends AbstractRenameConceptEntry> entries)
     {
         return entries.select(new Predicate<AbstractRenameConceptEntry>()
         {
@@ -72,5 +72,12 @@ public class RenameConceptUtility
             stringBuilder.append(sourceCodeLines[lineIndex].substring(columnIndex)).append("\n");
         }
         return stringBuilder.substring(0, stringBuilder.length() - 1);
+    }
+
+    public static class RenameConceptInputSourceInformation
+    {
+        public String sourceId;
+        public int line;
+        public int column;
     }
 }

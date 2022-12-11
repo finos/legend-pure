@@ -28,6 +28,7 @@ import org.finos.legend.pure.ide.light.api.FileManagement;
 import org.finos.legend.pure.ide.light.api.LifeCycle;
 import org.finos.legend.pure.ide.light.api.Service;
 import org.finos.legend.pure.ide.light.api.concept.Concept;
+import org.finos.legend.pure.ide.light.api.concept.MovePackageableElements;
 import org.finos.legend.pure.ide.light.api.concept.RenameConcept;
 import org.finos.legend.pure.ide.light.api.execution.function.Execute;
 import org.finos.legend.pure.ide.light.api.execution.go.ExecuteGo;
@@ -43,9 +44,9 @@ import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeReposito
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 
-import java.util.EnumSet;
 import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
+import java.util.EnumSet;
 
 public abstract class PureIDEServer extends Application<ServerConfiguration>
 {
@@ -82,6 +83,7 @@ public abstract class PureIDEServer extends Application<ServerConfiguration>
 
         environment.jersey().register(new Concept(pureSession));
         environment.jersey().register(new RenameConcept(pureSession));
+        environment.jersey().register(new MovePackageableElements(pureSession));
 
         environment.jersey().register(new Execute(pureSession));
         environment.jersey().register(new ExecuteGo(pureSession));

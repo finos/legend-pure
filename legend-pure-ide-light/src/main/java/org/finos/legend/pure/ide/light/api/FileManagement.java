@@ -52,6 +52,8 @@ import java.util.regex.Pattern;
 @Path("/")
 public class FileManagement
 {
+    private static final Pattern FILE_NAME_PATTERN = Pattern.compile("/?([a-zA-z0-9_]+/)*[a-zA-z0-9_]+(\\.[a-zA-z0-9_]+)*");
+
     private final PureSession session;
 
     public FileManagement(PureSession session)
@@ -158,16 +160,13 @@ public class FileManagement
             String oldPath = input.oldPath;
             String newPath = input.newPath;
 
-            final Pattern FILE_NAME_PATTERN = Pattern.compile("/?([a-zA-z0-9_]+/)*[a-zA-z0-9_]+(\\.[a-zA-z0-9_]+)*");
-
             if (oldPath == null || !FILE_NAME_PATTERN.matcher(oldPath).matches())
             {
-                throw new IllegalArgumentException("Can't rename file: invalid old path");
+                throw new IllegalArgumentException("Invalid old path");
             }
-
             if (newPath == null || !FILE_NAME_PATTERN.matcher(newPath).matches())
             {
-                throw new IllegalArgumentException("Can't rename file: invalid new path");
+                throw new IllegalArgumentException("Invalid new path");
             }
 
             this.session.getPureRuntime().move(oldPath, newPath);

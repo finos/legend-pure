@@ -8,7 +8,6 @@ import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.ide.light.helpers.response.ExceptionTranslation;
 import org.finos.legend.pure.ide.light.session.PureSession;
-import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.json.simple.JSONValue;
 
 import javax.servlet.http.HttpServletRequest;
@@ -39,7 +38,7 @@ public class RenameConcept
         try
         {
             MutableListMultimap<String, RenameConceptEntry> entryIndex = Multimaps.mutable.list.empty();
-            for (RenameConceptInputSourceInformation sourceInformation : input.sourceInformations)
+            for (RenameConceptUtility.RenameConceptInputSourceInformation sourceInformation : input.sourceInformations)
             {
                 entryIndex.add(
                         Tuples.pair(
@@ -64,7 +63,7 @@ public class RenameConcept
                 public void value(String sourceId, Iterable<RenameConceptEntry> entry)
                 {
                     String[] originalSourceCodeLines = session.getPureRuntime().getSourceById(sourceId).getContent().split("\n", -1);
-                    session.getPureRuntime().modify(sourceId, RenameConceptUtility.replace(originalSourceCodeLines, RenameConceptUtility.removeInvalidReplaceConceptEntry(originalSourceCodeLines, (MutableList<? extends AbstractRenameConceptEntry>) entry)));
+                    session.getPureRuntime().modify(sourceId, RenameConceptUtility.replace(originalSourceCodeLines, RenameConceptUtility.removeInvalidReplaceConceptEntries(originalSourceCodeLines, (MutableList<? extends AbstractRenameConceptEntry>) entry)));
                 }
             });
 
@@ -85,13 +84,6 @@ public class RenameConcept
         public String oldName;
         public String newName;
         public String pureType;
-        public List<RenameConceptInputSourceInformation> sourceInformations;
-    }
-
-    public static class RenameConceptInputSourceInformation
-    {
-        public String sourceId;
-        public int line;
-        public int column;
+        public List<RenameConceptUtility.RenameConceptInputSourceInformation> sourceInformations;
     }
 }
