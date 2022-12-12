@@ -164,49 +164,95 @@ public class TestSourceNavigation extends AbstractPureTestWithCoreCompiledPlatfo
         Assert.assertEquals(3, found.getSourceInformation().getColumn());
     }
 
-//    @Test
-//    public void testNavigateVariable()
-//    {
-//
-//        Source source = runtime.createInMemorySource(
-//                "test.pure",
-//                "function doSomething(param: String[1]): Any[*]\n" +
-//                        "{\n" +
-//                        "  let var = 1;\n" +
-//                        "  $var->toString();\n" +
-//                        "  let var_lambda1 = var: String[1]|$var->toString();\n" +
-//                        "  let var_lambda2 = {x: String[1]| let var = 1; $var->toString();};\n" +
-//                        "  let var_lambda3 = {x: String[1]| $var->toString();};\n" +
-//                        "  $param->toString();\n" +
-//                        "  let param_lambda1 = param: String[1]|$param->toString();\n" +
-//                        "  let param_lambda2 = {x: String[1]| let param = 1; $param->toString();};\n" +
-//                        "  let param_lambda3 = {x: String[1]| $param->toString();};\n" +
-//                        "  let param_lambda4 = {x: String[1]| [1,2,3]->map(y|$param->toString());};\n" +
-//                        "}"
-//        );
-//
-//        runtime.compile();
-//
-////        Source source = runtime.createInMemorySource(
-////                "test.pure",
-////                "function doSomething(param: String[1]): Any[*]\n" +
-////                        "{\n" +
-////                        "  let var = 1;\n" +
-////                        "  $var->toString();\n" +
-////                        "  $param->toString();\n" +
-////                        "}"
-////        );
-////        runtime.compile();
-//
-//        // variable
-////        CoreInstance found = source.navigate(4, 4, processorSupport);
-////        CoreInstance found = source.navigate(3, 7, processorSupport);
-//
-//        // parameter
-////        CoreInstance found = source.navigate(5, 4, processorSupport);
-////        CoreInstance found = source.navigate(11, 44, processorSupport);
-////        CoreInstance found = source.navigate(11, 44, processorSupport);
-//        CoreInstance found = source.navigate(5, 37, processorSupport);
-//        System.out.println("");
-//    }
+    @Test
+    public void testNavigateVariableAndParameter()
+    {
+        Source source = runtime.createInMemorySource(
+                "test.pure",
+                "function doSomething(param: String[1]): Any[*]\n" +
+                        "{\n" +
+                        "  let var = 1;\n" +
+                        "  $var->toString();\n" +
+                        "  let var_lambda1 = var: String[1]|$var->toString();\n" +
+                        "  let var_lambda2 = {x: String[1]| let var = 1; $var->toString();};\n" +
+                        "  let var_lambda3 = {x: String[1]| $var->toString();};\n" +
+                        "  $param->toString();\n" +
+                        "  let param_lambda1 = param: String[1]|$param->toString();\n" +
+                        "  let param_lambda2 = {x: String[1]| let param = 1; $param->toString();};\n" +
+                        "  let param_lambda3 = {x: String[1]| $param->toString();};\n" +
+                        "  let param_lambda4 = {x: String[1]| [1,2,3]->map(y|$param->toString());};\n" +
+                        "}"
+        );
+
+        runtime.compile();
+        CoreInstance found = source.navigate(3, 7, processorSupport);
+        Assert.assertEquals("test.pure", found.getSourceInformation().getSourceId());
+        Assert.assertEquals(3, found.getSourceInformation().getLine());
+        Assert.assertEquals(7, found.getSourceInformation().getColumn());
+
+        found = source.navigate(4, 4, processorSupport);
+        Assert.assertEquals("test.pure", found.getSourceInformation().getSourceId());
+        Assert.assertEquals(3, found.getSourceInformation().getLine());
+        Assert.assertEquals(7, found.getSourceInformation().getColumn());
+
+        found = source.navigate(5, 21, processorSupport);
+        Assert.assertEquals("test.pure", found.getSourceInformation().getSourceId());
+        Assert.assertEquals(5, found.getSourceInformation().getLine());
+        Assert.assertEquals(21, found.getSourceInformation().getColumn());
+
+        found = source.navigate(5, 37, processorSupport);
+        Assert.assertEquals("test.pure", found.getSourceInformation().getSourceId());
+        Assert.assertEquals(5, found.getSourceInformation().getLine());
+        Assert.assertEquals(21, found.getSourceInformation().getColumn());
+
+        found = source.navigate(6, 40, processorSupport);
+        Assert.assertEquals("test.pure", found.getSourceInformation().getSourceId());
+        Assert.assertEquals(6, found.getSourceInformation().getLine());
+        Assert.assertEquals(40, found.getSourceInformation().getColumn());
+
+        found = source.navigate(6, 50, processorSupport);
+        Assert.assertEquals("test.pure", found.getSourceInformation().getSourceId());
+        Assert.assertEquals(6, found.getSourceInformation().getLine());
+        Assert.assertEquals(40, found.getSourceInformation().getColumn());
+
+        found = source.navigate(7, 37, processorSupport);
+        Assert.assertEquals("test.pure", found.getSourceInformation().getSourceId());
+        Assert.assertEquals(3, found.getSourceInformation().getLine());
+        Assert.assertEquals(7, found.getSourceInformation().getColumn());
+
+        found = source.navigate(8, 4, processorSupport);
+        Assert.assertEquals("test.pure", found.getSourceInformation().getSourceId());
+        Assert.assertEquals(1, found.getSourceInformation().getLine());
+        Assert.assertEquals(22, found.getSourceInformation().getColumn());
+
+        found = source.navigate(9, 23, processorSupport);
+        Assert.assertEquals("test.pure", found.getSourceInformation().getSourceId());
+        Assert.assertEquals(9, found.getSourceInformation().getLine());
+        Assert.assertEquals(23, found.getSourceInformation().getColumn());
+
+        found = source.navigate(9, 41, processorSupport);
+        Assert.assertEquals("test.pure", found.getSourceInformation().getSourceId());
+        Assert.assertEquals(9, found.getSourceInformation().getLine());
+        Assert.assertEquals(23, found.getSourceInformation().getColumn());
+
+        found = source.navigate(10, 42, processorSupport);
+        Assert.assertEquals("test.pure", found.getSourceInformation().getSourceId());
+        Assert.assertEquals(10, found.getSourceInformation().getLine());
+        Assert.assertEquals(42, found.getSourceInformation().getColumn());
+
+        found = source.navigate(10, 54, processorSupport);
+        Assert.assertEquals("test.pure", found.getSourceInformation().getSourceId());
+        Assert.assertEquals(10, found.getSourceInformation().getLine());
+        Assert.assertEquals(42, found.getSourceInformation().getColumn());
+
+        found = source.navigate(11, 39, processorSupport);
+        Assert.assertEquals("test.pure", found.getSourceInformation().getSourceId());
+        Assert.assertEquals(1, found.getSourceInformation().getLine());
+        Assert.assertEquals(22, found.getSourceInformation().getColumn());
+
+        found = source.navigate(12, 54, processorSupport);
+        Assert.assertEquals("test.pure", found.getSourceInformation().getSourceId());
+        Assert.assertEquals(1, found.getSourceInformation().getLine());
+        Assert.assertEquals(22, found.getSourceInformation().getColumn());
+    }
 }

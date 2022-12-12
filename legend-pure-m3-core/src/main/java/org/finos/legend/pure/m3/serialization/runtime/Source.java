@@ -34,11 +34,16 @@ import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.utility.StringIterate;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValueInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.SimpleFunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpressionInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.tools.GrammarInfoStub;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
@@ -292,6 +297,11 @@ public class Source
                 found = found.getValueForMetaPropertyToOne(M3Properties.rawType);
             }
 
+            else if (found instanceof VariableExpression)
+            {
+                found = resolveVariableOrParameter(line, column, (VariableExpression) found);
+            }
+
             else if (found instanceof InstanceValue)
             {
                 if (!Type.isPrimitiveType(found.getValueForMetaPropertyToOne(M3Properties.genericType).getValueForMetaPropertyToOne(M3Properties.rawType), processorSupport))
@@ -348,6 +358,58 @@ public class Source
         }
 
         return ImportStub.withImportStubByPass(found, processorSupport);
+    }
+
+    private CoreInstance resolveVariableOrParameter(int line, int column, VariableExpression variable)
+    {
+        String varName = variable._name();
+        // NOTE: here we are only interested in lamba functions (i.e. function type) and a single concrete function definition
+        // we then sort them by how close their scope is to the position of selection, the logic here is that the closer
+        // the lambda function is to the position, the closer its scope and thus if a match in parameter/variable name is found
+        // in that scope would finish our lookup
+        ListIterable<CoreInstance> functionsOrLambdas = findRawElementsAt(line, column)
+                .select(entry -> entry instanceof LambdaFunctionInstance || entry instanceof ConcreteFunctionDefinition).toList().sortThisBy(entry ->
+                {
+                    // NOTE: here we consider factor of 10000 is rather safe in order to
+                    // put more weight on line-proximity (over column-proximity)
+                    // unless the line gets really long.
+                    // TODO: find a better way to do this
+                    int LINE_SCORE_FACTOR = 10000;
+                    return Math.abs(entry.getSourceInformation().getStartLine() - line) * LINE_SCORE_FACTOR +
+                            Math.abs(entry.getSourceInformation().getEndLine() - line) * LINE_SCORE_FACTOR +
+                            Math.abs(entry.getSourceInformation().getStartColumn() - column) +
+                            Math.abs(entry.getSourceInformation().getEndColumn() - column);
+                });
+        for (CoreInstance fn : functionsOrLambdas)
+        {
+            // scan for the let expressions then follows by the parameters
+            RichIterable<InstanceValueInstance> letVars = fn.getValueForMetaPropertyToMany(M3Properties.expressionSequence)
+                    .select(expression -> expression instanceof SimpleFunctionExpression && ((SimpleFunctionExpression) expression)._functionName().equals("letFunction"))
+                    .collect(expression -> ((SimpleFunctionExpression) expression)._parametersValues().toList().getFirst())
+                    // NOTE: make sure to only consider let statements prior to the call
+                    .select(letVar -> letVar.getSourceInformation().getEndLine() < line || (letVar.getSourceInformation().getEndLine() == line && letVar.getSourceInformation().getEndColumn() < column))
+                    .selectInstancesOf(InstanceValueInstance.class);
+            for (InstanceValueInstance var : letVars)
+            {
+                if (varName.equals(var.getValueForMetaPropertyToOne(M3Properties.values).getName()))
+                {
+                    return var;
+                }
+            }
+            RichIterable<VariableExpressionInstance> params = fn.getValueForMetaPropertyToOne(M3Properties.classifierGenericType)
+                    .getValueForMetaPropertyToOne(M3Properties.typeArguments)
+                    .getValueForMetaPropertyToOne(M3Properties.rawType)
+                    .getValueForMetaPropertyToMany(M3Properties.parameters)
+                    .selectInstancesOf(VariableExpressionInstance.class);
+            for (VariableExpressionInstance var : params)
+            {
+                if (varName.equals(var._name()))
+                {
+                    return var;
+                }
+            }
+        }
+        return variable;
     }
 
     @Deprecated
@@ -417,35 +479,6 @@ public class Source
                 }
             }
         }
-    }
-
-    // TODO find a better way to do this
-    private static int compareFoundElements(CoreInstance element1, CoreInstance element2)
-    {
-        if (element1 == element2)
-        {
-            return 0;
-        }
-
-        if (element1 instanceof ValueSpecification)
-        {
-            return (element2 instanceof ValueSpecification) ? 0 : -1;
-        }
-        if (element2 instanceof ValueSpecification)
-        {
-            return 1;
-        }
-
-        if (element1 instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub)
-        {
-            return (element2 instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub) ? 0 : -1;
-        }
-        if (element2 instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub)
-        {
-            return 1;
-        }
-
-        return 0;
     }
 
     public RichIterable<SourceCoordinates> find(Pattern pattern)
