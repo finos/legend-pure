@@ -33,7 +33,7 @@
     <properties>
         <skip.yarn>false</skip.yarn>
 
-        <pure-ide.web-application.version>8.21.0</pure-ide.web-application.version>
+        <pure-ide.web-application.version>8.23.0</pure-ide.web-application.version>
     </properties>
 
     <profiles>
