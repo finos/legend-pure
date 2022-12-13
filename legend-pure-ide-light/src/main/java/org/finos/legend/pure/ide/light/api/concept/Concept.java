@@ -112,6 +112,6 @@ public class Concept
 
     private void writeErrorResponse(OutputStream outStream, String file, String line, String column) throws IOException
     {
-        outStream.write(("{\"error\":true, \"text\":\"Cannot find source for file: " + file + " line: " + line + " col: " + column + "\"").getBytes());
+        outStream.write(("{\"error\":true,\"text\":\"Cannot find source for file: " + file + " line: " + line + " col: " + column + "\"}").getBytes());
     }
 }

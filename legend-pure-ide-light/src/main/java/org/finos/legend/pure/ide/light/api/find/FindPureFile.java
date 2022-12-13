@@ -82,6 +82,6 @@ public class FindPureFile
 
     private void writeErrorResponse(OutputStream outStream, String file) throws IOException
     {
-        outStream.write(("{\"error\":true, \"text\":\"Cannot find source file: " + file + "\"").getBytes());
+        outStream.write(("{\"error\":true,\"text\":\"Cannot find source file: " + file + "\"}").getBytes());
     }
 }

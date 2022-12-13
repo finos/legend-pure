@@ -68,7 +68,7 @@ public class GetConcept implements SimpleFunction
             SourceInformation sourceInfo = found.getSourceInformation();
             if (null == sourceInfo)
             {
-                outputStream.write(("{\"error\":true, \"text\":\"" + (null == compilationError ? "Navigation is not supported yet for this element!" : compilationErrorText) + "\"").getBytes());
+                outputStream.write(("{\"error\":true,\"text\":\"" + (null == compilationError ? "Navigation is not supported yet for this element!" : compilationErrorText) + "\"").getBytes());
                 outputStream.write((",\"compiler\":\"\"").getBytes());
                 outputStream.write((",\"cached\":" + pureRuntime.getCache().getCacheState().isCached()).getBytes());
                 if (null != compilationError)
@@ -93,7 +93,7 @@ public class GetConcept implements SimpleFunction
         }
         else
         {
-            outputStream.write(("{\"error\":true, \"text\":\"" + (null == compilationError ? "Navigation is not supported yet for this element!" : compilationErrorText) + "\"").getBytes());
+            outputStream.write(("{\"error\":true,\"text\":\"" + (null == compilationError ? "Navigation is not supported yet for this element!" : compilationErrorText) + "\"").getBytes());
             outputStream.write((",\"compiler\":\"\"").getBytes());
             if (null != compilationError)
             {
