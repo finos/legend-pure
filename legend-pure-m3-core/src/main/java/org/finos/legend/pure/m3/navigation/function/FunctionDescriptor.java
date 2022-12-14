@@ -173,6 +173,70 @@ public class FunctionDescriptor
         Multiplicity.print(appendable, multiplicity, true);
     }
 
+    public static <T extends Appendable> T prettyWriteFunctionDescriptor(T appendable, CoreInstance function, ProcessorSupport processorSupport)
+    {
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+
+        // Write function name
+        CoreInstance functionName = function.getValueForMetaPropertyToOne(M3Properties.functionName);
+        if (functionName == null)
+        {
+            throw new IllegalArgumentException("Anonymous functions do not have descriptors");
+        }
+        safeAppendable.append(PrimitiveUtilities.getStringValue(functionName));
+
+        CoreInstance functionType = processorSupport.function_getFunctionType(function);
+
+        // Write generics
+        ListIterable<? extends CoreInstance> typeParameters = functionType.getValueForMetaPropertyToMany(M3Properties.typeParameters);
+        if (typeParameters.notEmpty())
+        {
+            safeAppendable.append("<");
+            safeAppendable.append(typeParameters.collect(typeParameter -> typeParameter.getValueForMetaPropertyToOne(M3Properties.name).getName()).makeString(","));
+            ListIterable<? extends CoreInstance> multiplicityParameters = functionType.getValueForMetaPropertyToMany(M3Properties.multiplicityParameters);
+            if (multiplicityParameters.notEmpty())
+            {
+                safeAppendable.append("|");
+                safeAppendable.append(multiplicityParameters.collect(multiplicityParameter -> multiplicityParameter.getValueForMetaPropertyToOne(M3Properties.values).getName()).makeString(","));
+            }
+            safeAppendable.append(">");
+        }
+
+        // Write parameter types and multiplicities
+
+        safeAppendable.append('(');
+        ListIterable<? extends CoreInstance> parameters = functionType.getValueForMetaPropertyToMany(M3Properties.parameters);
+        if (parameters.notEmpty())
+        {
+            boolean first = true;
+            for (CoreInstance parameter : parameters)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    safeAppendable.append(", ");
+                }
+
+                safeAppendable.append(parameter.getValueForMetaPropertyToOne(M3Properties.name).getName());
+                safeAppendable.append(": ");
+                CoreInstance parameterType = Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.genericType, processorSupport);
+                CoreInstance parameterMultiplicity = Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.multiplicity, processorSupport);
+                writeDescriptorTypeAndMultiplicity(safeAppendable, parameterType, parameterMultiplicity, processorSupport);
+            }
+        }
+        safeAppendable.append(')');
+
+        // Write return type and multiplicity
+        safeAppendable.append(": ");
+        CoreInstance returnType = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnType, processorSupport);
+        CoreInstance returnMultiplicity = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, processorSupport);
+        writeDescriptorTypeAndMultiplicity(safeAppendable, returnType, returnMultiplicity, processorSupport);
+        return appendable;
+    }
+
     /**
      * Get a function by its descriptor.  Returns null if there is
      * no such function.

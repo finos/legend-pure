@@ -41,7 +41,7 @@ import java.io.OutputStream;
 @Path("/")
 public class Concept
 {
-    private PureSession session;
+    private final PureSession session;
 
     public Concept(PureSession session)
     {

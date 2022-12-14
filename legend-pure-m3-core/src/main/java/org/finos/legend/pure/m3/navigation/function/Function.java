@@ -94,4 +94,14 @@ public class Function
     {
         return FunctionDescriptor.writeFunctionDescriptor(appendable, function, processorSupport);
     }
+
+    public static String prettyPrint(CoreInstance function, ProcessorSupport processorSupport)
+    {
+        return prettyPrint(new StringBuilder(128), function, processorSupport).toString();
+    }
+
+    private static <T extends Appendable> T prettyPrint(T appendable, CoreInstance function, ProcessorSupport processorSupport)
+    {
+        return FunctionDescriptor.prettyWriteFunctionDescriptor(appendable, function, processorSupport);
+    }
 }
