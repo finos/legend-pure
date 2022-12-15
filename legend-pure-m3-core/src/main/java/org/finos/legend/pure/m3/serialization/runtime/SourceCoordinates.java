@@ -19,6 +19,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.impl.block.factory.Comparators;
 
+import java.util.Objects;
+
 public class SourceCoordinates
 {
     public static final Function<SourceCoordinates, String> SOURCE_ID = new Function<SourceCoordinates, String>()
@@ -159,10 +161,7 @@ public class SourceCoordinates
         @Override
         public int hashCode()
         {
-            int hash = this.beforeText.hashCode();
-            hash = 31 * hash + this.foundText.hashCode();
-            hash = 31 * hash + this.afterText.hashCode();
-            return hash;
+            return Objects.hash(this.beforeText, this.foundText, this.afterText);
         }
 
         @Override
@@ -174,9 +173,9 @@ public class SourceCoordinates
             }
 
             Preview otherPv = (Preview) other;
-            return Comparators.nullSafeEquals(this.beforeText, otherPv.beforeText) &&
-                    Comparators.nullSafeEquals(this.foundText, otherPv.foundText) &&
-                    Comparators.nullSafeEquals(this.afterText, otherPv.afterText);
+            return Objects.equals(this.beforeText, otherPv.beforeText) &&
+                    Objects.equals(this.foundText, otherPv.foundText) &&
+                    Objects.equals(this.afterText, otherPv.afterText);
         }
 
         public String getBeforeText()

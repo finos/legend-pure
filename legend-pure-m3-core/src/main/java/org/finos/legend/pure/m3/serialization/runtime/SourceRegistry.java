@@ -130,10 +130,10 @@ public class SourceRegistry
         return results;
     }
 
-    public RichIterable<SourceCoordinates> getPreviewTextWithCoordinates(List<SourceCoordinates> coordinates)
+    public RichIterable<SourceCoordinates> getPreviewTextWithCoordinates(Iterable<SourceCoordinates> coordinates)
     {
         MutableList<SourceCoordinates> results = Lists.mutable.empty();
-        ListIterate.forEach(coordinates, coordinate ->
+        coordinates.forEach(coordinate ->
         {
             Source source = this.sourcesById.get(coordinate.getSourceId());
             if (source == null)

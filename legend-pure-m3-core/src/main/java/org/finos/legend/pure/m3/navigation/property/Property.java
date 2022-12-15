@@ -28,7 +28,6 @@ import org.finos.legend.pure.m3.navigation.function.Function;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.generictype.GenericTypeWithXArguments;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
-import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
@@ -151,26 +150,5 @@ public class Property
             return values;
         }
         return Lists.immutable.empty();
-    }
-
-    public static ListIterable<CoreInstance> getAllProperties(CoreInstance cls, ProcessorSupport processorSupport)
-    {
-        MutableList<CoreInstance> props = Lists.mutable.empty();
-        props = props.withAll(cls.getValueForMetaPropertyToMany(M3Properties.properties))
-                .withAll(cls.getValueForMetaPropertyToMany(M3Properties.propertiesFromAssociations))
-                .withAll(cls.getValueForMetaPropertyToMany(M3Properties.qualifiedProperties))
-                .withAll(cls.getValueForMetaPropertyToMany(M3Properties.qualifiedPropertiesFromAssociations));
-
-        ListIterable<CoreInstance> generalizations = Type.getGeneralizationResolutionOrder(cls, processorSupport);
-        // NOTE: exclude Any type
-        generalizations = generalizations.subList(0, generalizations.size() - 1);
-        for (CoreInstance generalization : generalizations)
-        {
-            props = props.withAll(generalization.getValueForMetaPropertyToMany(M3Properties.properties))
-                    .withAll(generalization.getValueForMetaPropertyToMany(M3Properties.propertiesFromAssociations))
-                    .withAll(generalization.getValueForMetaPropertyToMany(M3Properties.qualifiedProperties))
-                    .withAll(generalization.getValueForMetaPropertyToMany(M3Properties.qualifiedPropertiesFromAssociations));
-        }
-        return props.distinct();
     }
 }

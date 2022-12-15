@@ -368,7 +368,7 @@ public class Source
         // the lambda function is to the position, the closer its scope and thus if a match in parameter/variable name is found
         // in that scope would finish our lookup
         ListIterable<CoreInstance> functionsOrLambdas = findRawElementsAt(line, column)
-                .select(entry -> entry instanceof LambdaFunctionInstance || entry instanceof ConcreteFunctionDefinition).toList().sortThisBy(entry ->
+                .select(entry -> entry instanceof LambdaFunctionInstance || entry instanceof ConcreteFunctionDefinition, Lists.mutable.empty()).sortThisBy(entry ->
                 {
                     // NOTE: here we consider factor of 10000 is rather safe in order to
                     // put more weight on line-proximity (over column-proximity)
@@ -384,7 +384,7 @@ public class Source
         {
             // scan for the let expressions then follows by the parameters
             RichIterable<InstanceValueInstance> letVars = fn.getValueForMetaPropertyToMany(M3Properties.expressionSequence)
-                    .select(expression -> expression instanceof SimpleFunctionExpression && ((SimpleFunctionExpression) expression)._functionName().equals("letFunction"))
+                    .select(expression -> expression instanceof SimpleFunctionExpression && "letFunction".equals(((SimpleFunctionExpression) expression)._functionName()))
                     .collect(expression -> ((SimpleFunctionExpression) expression)._parametersValues().toList().getFirst())
                     // NOTE: make sure to only consider let statements prior to the call
                     .select(letVar -> letVar.getSourceInformation().getEndLine() < line || (letVar.getSourceInformation().getEndLine() == line && letVar.getSourceInformation().getEndColumn() < column))
@@ -596,23 +596,18 @@ public class Source
             return null;
         }
 
-        Matcher linesMatcher = LINE_PATTERN.matcher(this.content);
-        List<String> lines = new ArrayList<>();
-        while (linesMatcher.find())
-        {
-            lines.add(linesMatcher.group());
-        }
+        String[] lines = this.content.split("\\R");
 
         if (startLine < 1 ||
                 endLine < 1 ||
-                startLine > lines.size() ||
-                endLine > lines.size() ||
+                startLine > lines.length ||
+                endLine > lines.length ||
                 startLine > endLine ||
                 (startLine == endLine && startColumn > endColumn) ||
                 startColumn < 1 ||
                 endColumn < 1 ||
-                startColumn > lines.get(startLine - 1).length() ||
-                endColumn > lines.get(endLine - 1).length()
+                startColumn > lines[startLine - 1].length() ||
+                endColumn > lines[endLine - 1].length()
         )
         {
             throw new IllegalArgumentException("Invalid source coordinates");
@@ -622,13 +617,13 @@ public class Source
         String foundText = "";
         String afterText = "";
 
-        for (int i = 0; i < lines.size(); i++)
+        for (int i = 0; i < lines.length; i++)
         {
-            String line = lines.get(i);
+            String line = lines[i];
             if (i == startLine - 1)
             {
                 beforeText = StringUtils.stripStart(line.substring(Math.max(0, startColumn - 1 - SEARCH_TEXT_PREVIEW_CHARACTER_LIMIT), startColumn - 1), null);
-                foundText += line.substring(startColumn - 1, line.length());
+                foundText += line.substring(startColumn - 1);
                 if (startLine == endLine)
                 {
                     foundText = line.substring(startColumn - 1, endColumn);

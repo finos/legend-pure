@@ -15,6 +15,7 @@
 package org.finos.legend.pure.m3.tests.elements._class;
 
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.navigation._class._Class;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -23,12 +24,14 @@ import org.junit.Test;
 public class TestClass extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("fromString.pure");
     }
 
@@ -330,4 +333,44 @@ public class TestClass extends AbstractPureTestWithCoreCompiledPlatform
                 "        Hello instance String", this.runtime.getCoreInstance("instance").printWithoutDebug(""));
     }
 
+    @Test
+    public void testGetProperties()
+    {
+        compileTestSource("test.pure",
+                "Class test::A extends test::C {\n" +
+                        "  propA: String[1];\n" +
+                        "  qpropA(){''}: String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class test::B {\n" +
+                        "  propB: String[1];\n" +
+                        "  qpropB(){''}: String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class test::C {\n" +
+                        "  propC: String[1];\n" +
+                        "  qpropC(){''}: String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class test::D {\n" +
+                        "  propD: String[1];\n" +
+                        "  qpropD(){''}: String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Association test::AB\n" +
+                        "{\n" +
+                        "  propAB_A: test::A[1];\n" +
+                        "  propAB_B: test::B[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Association test::CD\n" +
+                        "{\n" +
+                        "  propCD_C: test::C[1];\n" +
+                        "  propCD_D: test::D[1];\n" +
+                        "}");
+
+        Assert.assertEquals(_Class.getAllProperties(runtime.getCoreInstance("test::A"), runtime.getProcessorSupport()).size(), 8);
+        Assert.assertEquals(_Class.getQualifiedProperties(runtime.getCoreInstance("test::A"), runtime.getProcessorSupport()).size(), 2);
+        Assert.assertEquals(_Class.getSimpleProperties(runtime.getCoreInstance("test::A"), runtime.getProcessorSupport()).size(), 6);
+    }
 }

@@ -15,6 +15,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeratio
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.function.Function;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -99,7 +100,7 @@ public class Suggestion
                         CoreInstance child = children.get(i);
                         String pureName = child instanceof PackageableFunction ? child.getValueForMetaPropertyToOne(M3Properties.functionName).getName() : child.getValueForMetaPropertyToOne(M3Properties.name).getName();
                         String text = child instanceof PackageableFunction ? Function.prettyPrint(child, processorSupport) : child.getValueForMetaPropertyToOne(M3Properties.name).getName();
-                        MutableList<Property> requiredClassProperties = child instanceof Class ? org.finos.legend.pure.m3.navigation.property.Property.getAllProperties(child, processorSupport)
+                        MutableList<Property> requiredClassProperties = child instanceof Class ? _Class.getSimpleProperties(child, processorSupport)
                                 // NOTE: make sure to only consider required (non-qualified) properties: i.e. multiplicity lower bound != 0
                                 .selectInstancesOf(Property.class).select(prop ->
                                         {
@@ -200,7 +201,7 @@ public class Suggestion
                     CoreInstance child = children.get(i);
                     String pureName = child instanceof PackageableFunction ? child.getValueForMetaPropertyToOne(M3Properties.functionName).getName() : child.getValueForMetaPropertyToOne(M3Properties.name).getName();
                     String text = child instanceof PackageableFunction ? Function.prettyPrint(child, processorSupport) : child.getValueForMetaPropertyToOne(M3Properties.name).getName();
-                    MutableList<Property> requiredClassProperties = child instanceof Class ? org.finos.legend.pure.m3.navigation.property.Property.getAllProperties(child, processorSupport)
+                    MutableList<Property> requiredClassProperties = child instanceof Class ? _Class.getSimpleProperties(child, processorSupport)
                             // NOTE: make sure to only consider required (non-qualified) properties: i.e. multiplicity lower bound != 0
                             .selectInstancesOf(Property.class).select(prop ->
                                     {
@@ -289,7 +290,7 @@ public class Suggestion
                     {
                         if (el instanceof Class)
                         {
-                            return org.finos.legend.pure.m3.navigation.property.Property.getAllProperties(el, processorSupport).collect(property -> new AttributeSuggestion(
+                            return _Class.getAllProperties(el, processorSupport).collect(property -> new AttributeSuggestion(
                                     property.getClassifier().getName(),
                                     property.getValueForMetaPropertyToOne(M3Properties.name).getName(),
                                     el.getClassifier().getName(),
@@ -400,7 +401,7 @@ public class Suggestion
                 for (int i = 0; i < classes.size(); i++)
                 {
                     Class<?> cls = classes.get(i);
-                    MutableList<Property> requiredClassProperties = org.finos.legend.pure.m3.navigation.property.Property.getAllProperties(cls, processorSupport)
+                    MutableList<Property> requiredClassProperties = _Class.getSimpleProperties(cls, processorSupport)
                             // NOTE: make sure to only consider required (non-qualified) properties: i.e. multiplicity lower bound != 0
                             .selectInstancesOf(Property.class).select(prop ->
                                     {
