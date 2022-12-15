@@ -290,7 +290,7 @@ public class Suggestion
                     {
                         if (el instanceof Class)
                         {
-                            return _Class.getAllProperties(el, processorSupport).collect(property -> new AttributeSuggestion(
+                            return _Class.computePropertiesByName(el, Lists.mutable.withAll(_Class.SIMPLE_PROPERTIES_PROPERTIES).withAll(_Class.QUALIFIED_PROPERTIES_PROPERTIES), processorSupport).collect(property -> new AttributeSuggestion(
                                     property.getClassifier().getName(),
                                     property.getValueForMetaPropertyToOne(M3Properties.name).getName(),
                                     el.getClassifier().getName(),

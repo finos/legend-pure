@@ -369,7 +369,6 @@ public class TestClass extends AbstractPureTestWithCoreCompiledPlatform
                         "  propCD_D: test::D[1];\n" +
                         "}");
 
-        Assert.assertEquals(_Class.getAllProperties(runtime.getCoreInstance("test::A"), runtime.getProcessorSupport()).size(), 8);
         Assert.assertEquals(_Class.getQualifiedProperties(runtime.getCoreInstance("test::A"), runtime.getProcessorSupport()).size(), 2);
         Assert.assertEquals(_Class.getSimpleProperties(runtime.getCoreInstance("test::A"), runtime.getProcessorSupport()).size(), 6);
     }

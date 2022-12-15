@@ -110,11 +110,7 @@ public class Function
 
         // Write function name
         CoreInstance functionName = function.getValueForMetaPropertyToOne(M3Properties.functionName);
-        if (functionName == null)
-        {
-            throw new IllegalArgumentException("Anonymous functions do not have descriptors");
-        }
-        safeAppendable.append(PrimitiveUtilities.getStringValue(functionName));
+        safeAppendable.append(functionName != null ? PrimitiveUtilities.getStringValue(functionName) : "_ANONYMOUS_FN_");
 
         CoreInstance functionType = processorSupport.function_getFunctionType(function);
 
@@ -122,13 +118,11 @@ public class Function
         ListIterable<? extends CoreInstance> typeParameters = functionType.getValueForMetaPropertyToMany(M3Properties.typeParameters);
         if (typeParameters.notEmpty())
         {
-            safeAppendable.append("<");
-            safeAppendable.append(typeParameters.collect(typeParameter -> typeParameter.getValueForMetaPropertyToOne(M3Properties.name).getName()).makeString(","));
+            typeParameters.collect(typeParameter -> typeParameter.getValueForMetaPropertyToOne(M3Properties.name).getName()).appendString(safeAppendable, "<", ",", "");
             ListIterable<? extends CoreInstance> multiplicityParameters = functionType.getValueForMetaPropertyToMany(M3Properties.multiplicityParameters);
             if (multiplicityParameters.notEmpty())
             {
-                safeAppendable.append("|");
-                safeAppendable.append(multiplicityParameters.collect(multiplicityParameter -> multiplicityParameter.getValueForMetaPropertyToOne(M3Properties.values).getName()).makeString(","));
+                multiplicityParameters.asLazy().collect(multiplicityParameter -> multiplicityParameter.getValueForMetaPropertyToOne(M3Properties.values).getName()).appendString(safeAppendable, "|", ",", "");
             }
             safeAppendable.append(">");
         }

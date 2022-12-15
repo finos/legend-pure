@@ -304,7 +304,7 @@ public class FileManagement
             }
             else
             {
-                writeDirectoryNode(builder, fullPath, node);
+                writeDirectoryNode(builder, fullPath, codeStorage, node);
             }
         }
         else
@@ -339,13 +339,13 @@ public class FileManagement
         }
     }
 
-    private void writeDirectoryNode(StringBuilder builder, String path, CodeStorageNode directory)
+    private void writeDirectoryNode(StringBuilder builder, String path, MutableCodeStorage codeStorage, CodeStorageNode directory)
     {
         builder.append("{\"li_attr\":{\"id\":\"file_");
         builder.append(path);
         builder.append("\",\"path\":\"").append(path).append("\",\"file\":\"false\"},\"text\":\"");
         builder.append(directory.getName());
-        builder.append("\",\"state\":\"closed\",\"children\":").append(directory.hasChildren()).append("}");
+        builder.append("\",\"state\":\"closed\",\"children\":").append(codeStorage.isEmptyFolder(path)).append("}");
     }
 
     private void writeFileNode(StringBuilder builder, MutableCodeStorage codeStorage, String path, CodeStorageNode file)

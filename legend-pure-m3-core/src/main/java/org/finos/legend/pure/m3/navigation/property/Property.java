@@ -142,7 +142,7 @@ public class Property
         {
             CoreInstance expressionSequence = defaultValue.getValueForMetaPropertyToOne(M3Properties.functionDefinition).getValueForMetaPropertyToOne(M3Properties.expressionSequence);
             ListIterable<? extends CoreInstance> values = expressionSequence.getValueForMetaPropertyToMany(M3Properties.values);
-            if (values.size() == 0)
+            if (values.isEmpty())
             {
                 values = Lists.immutable.with(expressionSequence);
             }

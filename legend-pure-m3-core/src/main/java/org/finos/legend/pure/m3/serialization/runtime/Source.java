@@ -56,8 +56,6 @@ import org.finos.legend.pure.m3.serialization.runtime.navigation.NavigationHandl
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -368,18 +366,10 @@ public class Source
         // the lambda function is to the position, the closer its scope and thus if a match in parameter/variable name is found
         // in that scope would finish our lookup
         ListIterable<CoreInstance> functionsOrLambdas = findRawElementsAt(line, column)
-                .select(entry -> entry instanceof LambdaFunctionInstance || entry instanceof ConcreteFunctionDefinition, Lists.mutable.empty()).sortThisBy(entry ->
-                {
-                    // NOTE: here we consider factor of 10000 is rather safe in order to
-                    // put more weight on line-proximity (over column-proximity)
-                    // unless the line gets really long.
-                    // TODO: find a better way to do this
-                    int LINE_SCORE_FACTOR = 10000;
-                    return Math.abs(entry.getSourceInformation().getStartLine() - line) * LINE_SCORE_FACTOR +
-                            Math.abs(entry.getSourceInformation().getEndLine() - line) * LINE_SCORE_FACTOR +
-                            Math.abs(entry.getSourceInformation().getStartColumn() - column) +
-                            Math.abs(entry.getSourceInformation().getEndColumn() - column);
-                });
+                .select(entry -> entry instanceof LambdaFunctionInstance || entry instanceof ConcreteFunctionDefinition, Lists.mutable.empty())
+                // NOTE: since the position made up of the line and column is guaranteed to be within the specified source informations
+                // we now just need to find the narrowest source information hence the comparator used
+                .sortThis((entry1, entry2) -> Source.compareSourceInformation(entry1.getSourceInformation(), entry2.getSourceInformation()));
         for (CoreInstance fn : functionsOrLambdas)
         {
             // scan for the let expressions then follows by the parameters
@@ -434,18 +424,9 @@ public class Source
             default:
             {
                 Multimap<SourceInformation, CoreInstance> elementsBySourceInfo = elements.groupBy(CoreInstance::getSourceInformation);
-                SourceInformation minSourceInfo = elementsBySourceInfo.keysView().minBy(sourceInformation ->
-                {
-                    // NOTE: here we consider factor of 10000 is rather safe in order to
-                    // put more weight on line-proximity (over column-proximity)
-                    // unless the line gets really long.
-                    // TODO: find a better way to do this
-                    int LINE_SCORE_FACTOR = 10000;
-                    return Math.abs(sourceInformation.getStartLine() - line) * LINE_SCORE_FACTOR +
-                            Math.abs(sourceInformation.getEndLine() - line) * LINE_SCORE_FACTOR +
-                            Math.abs(sourceInformation.getStartColumn() - column) +
-                            Math.abs(sourceInformation.getEndColumn() - column);
-                });
+                // NOTE: since the position made up of the line and column is guaranteed to be within the specified source informations
+                // we now just need to find the narrowest source information hence the comparator used
+                SourceInformation minSourceInfo = elementsBySourceInfo.keysView().min(Source::compareSourceInformation);
                 RichIterable<CoreInstance> results = elementsBySourceInfo.get(minSourceInfo);
                 if (results.size() == 1)
                 {
@@ -479,6 +460,58 @@ public class Source
                 }
             }
         }
+    }
+
+    /**
+     * Attempt to find the narrower source information range
+     * without going through the source and do character counting
+     * as that's expensive
+     */
+    private static int compareSourceInformation(SourceInformation s1, SourceInformation s2)
+    {
+        if (s1 == s2)
+        {
+            return 0;
+        }
+
+        int startLine1 = s1.getStartLine();
+        int startLine2 = s2.getStartLine();
+        if (startLine1 != startLine2)
+        {
+            return startLine2 - startLine1;
+        }
+
+        int startColumn1 = s1.getStartColumn();
+        int startColumn2 = s2.getStartColumn();
+        if (startColumn1 != startColumn2)
+        {
+            return startColumn2 - startColumn1;
+        }
+
+        int endLine1 = s1.getEndLine();
+        int endLine2 = s2.getEndLine();
+        if (endLine1 != endLine2)
+        {
+            return endLine1 - endLine2;
+        }
+
+        int endColumn1 = s1.getEndColumn();
+        int endColumn2 = s2.getEndColumn();
+        if (endColumn1 != endColumn2)
+        {
+            return endColumn1 - endColumn2;
+        }
+
+        int line1 = s1.getLine();
+        int line2 = s2.getLine();
+        if (line1 != line2)
+        {
+            return line1 - line2;
+        }
+
+        int column1 = s1.getColumn();
+        int column2 = s2.getColumn();
+        return column1 - column2;
     }
 
     public RichIterable<SourceCoordinates> find(Pattern pattern)

@@ -45,18 +45,6 @@ public class _Class
     public static final ImmutableList<String> ALL_PROPERTIES_PROPERTIES = SIMPLE_PROPERTIES_PROPERTIES.newWithAll(QUALIFIED_PROPERTIES_PROPERTIES).newWithAll(ORIGINAL_MILESTONED_PROPERTIES);
 
     /**
-     * Get all the properties (simple and qualified) for the given class, including
-     * those from associations and those inherited from superclasses.
-     *
-     * @param classifier class
-     * @return properties
-     */
-    public static RichIterable<CoreInstance> getAllProperties(CoreInstance classifier, ProcessorSupport processorSupport)
-    {
-        return computePropertiesByName(classifier, ALL_PROPERTIES_PROPERTIES, processorSupport);
-    }
-
-    /**
      * Get the simple properties for the given class, including
      * those from associations and those inherited from superclasses.
      *

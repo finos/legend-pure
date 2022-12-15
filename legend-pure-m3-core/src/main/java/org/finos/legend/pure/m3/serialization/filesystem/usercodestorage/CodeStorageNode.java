@@ -66,11 +66,10 @@ public interface CodeStorageNode
     };
 
     boolean isDirectory();
+
     String getName();
+
     String getPath();
+
     CodeStorageNodeStatus getStatus();
-    public default boolean hasChildren()
-    {
-        return false;
-    }
 }
