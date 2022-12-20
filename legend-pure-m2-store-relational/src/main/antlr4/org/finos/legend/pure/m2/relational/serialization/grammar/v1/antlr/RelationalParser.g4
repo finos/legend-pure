@@ -7,11 +7,23 @@ options
     tokenVocab = RelationalLexer;
 }
 
-definition: DATABASE qualifiedName
+definition: (dbDefinition | dynaFunction) (dbDefinition | dynaFunction)*
+;
+
+dbDefinition: DATABASE qualifiedName
             GROUP_OPEN
               include*
               (schema | table | join |filter | multiGrainFilter | view)*
             GROUP_CLOSE
+;
+
+dynaFunction: DYNA_FUNCTION qualifiedName
+              GROUP_OPEN
+              (dynaFunctionParam (COMMA dynaFunctionParam)*)?
+              GROUP_CLOSE ARROW identifier
+;
+
+dynaFunctionParam: identifier identifier (OPT | ARR | CONST)*
 ;
 
 include: INCLUDE qualifiedName

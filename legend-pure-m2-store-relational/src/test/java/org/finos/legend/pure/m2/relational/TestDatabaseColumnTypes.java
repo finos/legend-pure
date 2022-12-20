@@ -331,4 +331,15 @@ public class TestDatabaseColumnTypes extends AbstractPureRelationalTestWithCoreC
         Assert.assertEquals(scale, PrimitiveUtilities.getIntegerValue(db.getValueForMetaPropertyToMany(M2RelationalProperties.schemas).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.tables).getFirst().getValueForMetaPropertyToMany(M2RelationalProperties.columns).getFirst().getValueForMetaPropertyToOne("type").getValueForMetaPropertyToMany("scale").getFirst()));
     }
 
+    @Test
+    public void testDynaFunction()
+    {
+        String dynaDef = "###Relational\n " +
+                "DynaFunction abcde(p1 Float, p2 Integer Const) -> String\n";
+        this.runtime.createInMemorySource("sourceId.pure", dynaDef);
+        this.runtime.compile();
+
+        CoreInstance abcde = processorSupport.package_getByUserPath("abcde");
+        Assert.assertEquals(2, abcde.getValueForMetaPropertyToMany("parameterSpecifications").size());
+    }
 }
