@@ -44,6 +44,17 @@ public class _Class
     public static final ImmutableList<String> ORIGINAL_MILESTONED_PROPERTIES = Lists.immutable.with(M3Properties.originalMilestonedProperties);
     public static final ImmutableList<String> ALL_PROPERTIES_PROPERTIES = SIMPLE_PROPERTIES_PROPERTIES.newWithAll(QUALIFIED_PROPERTIES_PROPERTIES).newWithAll(ORIGINAL_MILESTONED_PROPERTIES);
 
+    /**
+     * Get the simple properties for the given class, including
+     * those from associations and those inherited from superclasses.
+     *
+     * @param classifier class
+     * @return simple properties
+     */
+    public static RichIterable<CoreInstance> getSimpleProperties(CoreInstance classifier, ProcessorSupport processorSupport)
+    {
+        return computePropertiesByName(classifier, SIMPLE_PROPERTIES_PROPERTIES, processorSupport);
+    }
 
     /**
      * Get the qualified properties for the given class, including
@@ -75,7 +86,7 @@ public class _Class
     {
         MutableList<QualifiedProperty<?>> result = Lists.mutable.empty();
         LazyIterate.flatCollect(Type.getGeneralizationResolutionOrder(classifier, processorSupport),
-                t -> LazyIterate.flatCollect(QUALIFIED_PROPERTIES_PROPERTIES, p -> Instance.getValueForMetaPropertyToManyResolved(t, p, processorSupport)))
+                        t -> LazyIterate.flatCollect(QUALIFIED_PROPERTIES_PROPERTIES, p -> Instance.getValueForMetaPropertyToManyResolved(t, p, processorSupport)))
                 .select(qp -> propertyName.equals(qp.getValueForMetaPropertyToOne(M3Properties.name).getName()))
                 .forEach(qp -> result.add((QualifiedProperty<?>) qp));
         return result;
@@ -84,7 +95,7 @@ public class _Class
     public static QualifiedProperty<?> findQualifiedPropertyWithNoExplicitArgsUsingGeneralization(CoreInstance classifier, String propertyName, ProcessorSupport processorSupport)
     {
         return (QualifiedProperty<?>) LazyIterate.flatCollect(Type.getGeneralizationResolutionOrder(classifier, processorSupport),
-                t -> LazyIterate.flatCollect(QUALIFIED_PROPERTIES_PROPERTIES, p -> Instance.getValueForMetaPropertyToManyResolved(t, p, processorSupport)))
+                        t -> LazyIterate.flatCollect(QUALIFIED_PROPERTIES_PROPERTIES, p -> Instance.getValueForMetaPropertyToManyResolved(t, p, processorSupport)))
                 .detect(qp -> propertyName.equals(qp.getValueForMetaPropertyToOne(M3Properties.name).getName()) &&
                         processorSupport.function_getFunctionType(qp).getValueForMetaPropertyToMany(M3Properties.parameters).size() == 1);
     }

@@ -17,5 +17,5 @@
 
 function go():Any[*]
 {
-    print('ok');
+  print('ok');
 }

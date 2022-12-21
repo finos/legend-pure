@@ -215,9 +215,9 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
         builder.append(')');
 
         // Label
-        DiagramAntlrParser.GeneralizationViewPropertyContext lablePropertyContext = propertyContext(generalizationViewPropertyContexts, IS_GENERALIZATIONVIEW_LABEL_PROPERTY, "lable", generalizationViewContext.diagramIdentifier());
+        DiagramAntlrParser.GeneralizationViewPropertyContext labelPropertyContext = propertyContext(generalizationViewPropertyContexts, IS_GENERALIZATIONVIEW_LABEL_PROPERTY, "label", generalizationViewContext.diagramIdentifier());
         builder.append(", label=");
-        builder.append(lablePropertyContext.STRING().getText());
+        builder.append(labelPropertyContext.STRING().getText());
 
         // Source
         // NOTE: we put the id string here and convert it to a TypeView in post-processing
@@ -311,9 +311,9 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
         builder.append(')');
 
         // Label
-        DiagramAntlrParser.PropertyViewPropertyContext lablePropertyContext = propertyContext(propertyViewPropertyContexts, IS_PROPERTYVIEW_LABEL_PROPERTY, "lable", propertyViewContext.diagramIdentifier());
+        DiagramAntlrParser.PropertyViewPropertyContext labelPropertyContext = propertyContext(propertyViewPropertyContexts, IS_PROPERTYVIEW_LABEL_PROPERTY, "label", propertyViewContext.diagramIdentifier());
         builder.append(", label=");
-        builder.append(lablePropertyContext.STRING().getText());
+        builder.append(labelPropertyContext.STRING().getText());
 
         // Source
         // NOTE: we put the id string here and convert it to a TypeView in post-processing

@@ -66,7 +66,10 @@ public interface CodeStorageNode
     };
 
     boolean isDirectory();
+
     String getName();
+
     String getPath();
+
     CodeStorageNodeStatus getStatus();
 }

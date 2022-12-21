@@ -16,12 +16,12 @@ package org.finos.legend.pure.ide.light.api.execution.function;
 
 import io.swagger.annotations.Api;
 import org.eclipse.collections.impl.utility.MapIterate;
-import org.finos.legend.pure.ide.light.session.PureSession;
 import org.finos.legend.pure.ide.light.api.execution.function.manager.ContentType;
 import org.finos.legend.pure.ide.light.api.execution.function.manager.ExecutionManager;
 import org.finos.legend.pure.ide.light.api.execution.function.manager.ExecutionRequest;
 import org.finos.legend.pure.ide.light.api.execution.function.manager.HttpServletResponseWriter;
 import org.finos.legend.pure.ide.light.helpers.JSONResponseTools;
+import org.finos.legend.pure.ide.light.session.PureSession;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 
@@ -34,9 +34,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.util.Map;
 
-@Api(
-        tags = {"Execute"}
-        )
+@Api(tags = "Execute")
 @Path("/")
 public class Execute
 {
@@ -81,10 +79,12 @@ public class Execute
                 {
                     executionManager.execute(new ExecutionRequest(requestParams), new HttpServletResponseWriter(response), ContentType.text);
                 }
-            } catch (IllegalArgumentException e)
+            }
+            catch (IllegalArgumentException e)
             {
                 JSONResponseTools.sendJSONErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, e, false);
-            } catch (RuntimeException | Error e)
+            }
+            catch (RuntimeException | Error e)
             {
                 if (e instanceof Error)
                 {

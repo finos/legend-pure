@@ -14,8 +14,12 @@
 
 package org.finos.legend.pure.m3.serialization.runtime;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.impl.block.factory.Comparators;
+
+import java.util.Objects;
 
 public class SourceCoordinates
 {
@@ -34,6 +38,8 @@ public class SourceCoordinates
     private final int endLine;
     private final int endColumn;
 
+    private final Preview preview;
+
     SourceCoordinates(String sourceId, int startLine, int startColumn, int endLine, int endColumn)
     {
         this.sourceId = sourceId;
@@ -41,6 +47,29 @@ public class SourceCoordinates
         this.startColumn = startColumn;
         this.endLine = endLine;
         this.endColumn = endColumn;
+        this.preview = null;
+    }
+
+    SourceCoordinates(String sourceId, int startLine, int startColumn, int endLine, int endColumn, Preview preview)
+    {
+        this.sourceId = sourceId;
+        this.startLine = startLine;
+        this.startColumn = startColumn;
+        this.endLine = endLine;
+        this.endColumn = endColumn;
+        this.preview = preview;
+    }
+
+    @JsonCreator
+    public static SourceCoordinates newSourceCoordinates(
+            @JsonProperty("sourceId") String sourceId,
+            @JsonProperty("startLine") int startLine,
+            @JsonProperty("startColumn") int startColumn,
+            @JsonProperty("endLine") int endLine,
+            @JsonProperty("endColumn") int endColumn
+    )
+    {
+        return new SourceCoordinates(sourceId, startLine, startColumn, endLine, endColumn);
     }
 
     @Override
@@ -62,7 +91,7 @@ public class SourceCoordinates
             return false;
         }
 
-        SourceCoordinates otherSC = (SourceCoordinates)other;
+        SourceCoordinates otherSC = (SourceCoordinates) other;
         return Comparators.nullSafeEquals(this.sourceId, otherSC.sourceId) &&
                 (this.startLine == otherSC.startLine) &&
                 (this.startColumn == otherSC.startColumn) &&
@@ -99,5 +128,69 @@ public class SourceCoordinates
     public int getEndColumn()
     {
         return this.endColumn;
+    }
+
+    public Preview getPreview()
+    {
+        return this.preview;
+    }
+
+    public static class Preview
+    {
+        private final String beforeText;
+        private final String afterText;
+        private final String foundText;
+
+        public Preview(String beforeText, String foundText, String afterText)
+        {
+            this.beforeText = beforeText;
+            this.afterText = afterText;
+            this.foundText = foundText;
+        }
+
+        @JsonCreator
+        public static Preview newPreview(
+                @JsonProperty("beforeText") String beforeText,
+                @JsonProperty("foundText") String foundText,
+                @JsonProperty("afterText") String afterText
+        )
+        {
+            return new Preview(beforeText, foundText, afterText);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(this.beforeText, this.foundText, this.afterText);
+        }
+
+        @Override
+        public boolean equals(Object other)
+        {
+            if (!(other instanceof Preview))
+            {
+                return false;
+            }
+
+            Preview otherPv = (Preview) other;
+            return Objects.equals(this.beforeText, otherPv.beforeText) &&
+                    Objects.equals(this.foundText, otherPv.foundText) &&
+                    Objects.equals(this.afterText, otherPv.afterText);
+        }
+
+        public String getBeforeText()
+        {
+            return this.beforeText;
+        }
+
+        public String getAfterText()
+        {
+            return this.afterText;
+        }
+
+        public String getFoundText()
+        {
+            return this.foundText;
+        }
     }
 }

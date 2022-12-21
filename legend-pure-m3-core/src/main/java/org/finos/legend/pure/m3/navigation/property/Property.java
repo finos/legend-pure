@@ -17,18 +17,18 @@ package org.finos.legend.pure.m3.navigation.property;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.factory.Lists;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.function.Function;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.generictype.GenericTypeWithXArguments;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.tools.ListHelper;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public class Property
@@ -129,7 +129,8 @@ public class Property
 
     public static CoreInstance getDefaultValueExpression(CoreInstance defaultValue)
     {
-        if(defaultValue != null) {
+        if (defaultValue != null)
+        {
             return defaultValue.getValueForMetaPropertyToOne(M3Properties.functionDefinition).getValueForMetaPropertyToOne(M3Properties.expressionSequence);
         }
         return null;
@@ -137,10 +138,12 @@ public class Property
 
     public static ListIterable<? extends CoreInstance> getDefaultValue(CoreInstance defaultValue)
     {
-        if(defaultValue != null) {
+        if (defaultValue != null)
+        {
             CoreInstance expressionSequence = defaultValue.getValueForMetaPropertyToOne(M3Properties.functionDefinition).getValueForMetaPropertyToOne(M3Properties.expressionSequence);
             ListIterable<? extends CoreInstance> values = expressionSequence.getValueForMetaPropertyToMany(M3Properties.values);
-            if (values.size() == 0) {
+            if (values.isEmpty())
+            {
                 values = Lists.immutable.with(expressionSequence);
             }
 

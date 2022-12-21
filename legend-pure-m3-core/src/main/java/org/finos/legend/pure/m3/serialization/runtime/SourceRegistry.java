@@ -20,6 +20,7 @@ import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.ConcurrentMutableMap;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
+import org.eclipse.collections.impl.utility.ListIterate;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
@@ -27,6 +28,7 @@ import org.finos.legend.pure.m3.serialization.runtime.navigation.NavigationHandl
 import org.finos.legend.pure.m4.serialization.Writer;
 
 import java.io.OutputStream;
+import java.util.List;
 import java.util.regex.Pattern;
 
 public class SourceRegistry
@@ -125,6 +127,28 @@ public class SourceRegistry
                 }
             });
         }
+        return results;
+    }
+
+    public RichIterable<SourceCoordinates> getPreviewTextWithCoordinates(Iterable<SourceCoordinates> coordinates)
+    {
+        MutableList<SourceCoordinates> results = Lists.mutable.empty();
+        coordinates.forEach(coordinate ->
+        {
+            Source source = this.sourcesById.get(coordinate.getSourceId());
+            if (source == null)
+            {
+                return;
+            }
+            results.add(new SourceCoordinates(
+                    coordinate.getSourceId(),
+                    coordinate.getStartLine(),
+                    coordinate.getStartColumn(),
+                    coordinate.getEndLine(),
+                    coordinate.getEndColumn(),
+                    source.getPreviewTextWithCoordinates(coordinate.getStartLine(), coordinate.getStartColumn(), coordinate.getEndLine(), coordinate.getEndColumn())
+            ));
+        });
         return results;
     }
 

@@ -1396,7 +1396,7 @@ public class AntlrContextToM3CoreInstance
         genericTypeInstanceTa._rawTypeCoreInstance(signature);
         genericTypeInstance._typeArguments(Lists.mutable.<GenericType>of(genericTypeInstanceTa));
 
-        LambdaFunctionInstance lambdaFunction = LambdaFunctionInstance.createPersistent(this.repository, lambdaContext.getLambdaFunctionUniqueName(), this.sourceInformation.getPureSourceInformation(lambdaStartToken));
+        LambdaFunctionInstance lambdaFunction = LambdaFunctionInstance.createPersistent(this.repository, lambdaContext.getLambdaFunctionUniqueName(), this.sourceInformation.getPureSourceInformation(lambdaStartToken, lambdaStartToken, ctx.getStop()));
         lambdaFunction._classifierGenericType(genericTypeInstance);
         lambdaFunction._expressionSequence(block);
 
@@ -3715,9 +3715,9 @@ public class AntlrContextToM3CoreInstance
                 null);
     }
 
-    public TemporaryPureMergeOperationFunctionSpecification mergeOperationSpecification(CombinedExpressionContext ctx,  LambdaContext lambdaContext, ImportGroup importId)
+    public TemporaryPureMergeOperationFunctionSpecification mergeOperationSpecification(CombinedExpressionContext ctx, LambdaContext lambdaContext, ImportGroup importId)
     {
-         CoreInstance expression = this.combinedExpression(ctx, "", FastList.<String>newList(), lambdaContext, "", true, importId, true);
+        CoreInstance expression = this.combinedExpression(ctx, "", FastList.<String>newList(), lambdaContext, "", true, importId, true);
         return TemporaryPureMergeOperationFunctionSpecification.build(
                 this.sourceInformation.getPureSourceInformation(ctx.getStart()),
                 expression);

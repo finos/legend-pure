@@ -30,12 +30,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.Serializable;
 import java.util.regex.Pattern;
 
-@Api(
-        tags = {"Find"}
-)
+@Api(tags = "Find")
 @Path("/")
 public class FindInSources
 {
@@ -45,7 +42,7 @@ public class FindInSources
     private static final String CASE_SENSITIVE_PARAM = "caseSensitive";
     private static final String MAX_RESULTS_PARAM = "limit";
 
-    private PureSession session;
+    private final PureSession session;
 
     public FindInSources(PureSession session)
     {
@@ -57,41 +54,41 @@ public class FindInSources
     public Response findInSources(@Context HttpServletRequest request, @Context HttpServletResponse response) throws IOException
     {
         return Response.ok((StreamingOutput) outputStream ->
+        {
+            String string = request.getParameter(STRING_PARAM);
+            boolean regex = Boolean.valueOf(String.valueOf(request.getParameter(REGEX_PARAM)));
+            String sourceRegex = request.getParameter(SOURCE_REGEX_PARAM);
+            String caseSensitiveString = request.getParameter(CASE_SENSITIVE_PARAM);
+            int limit = request.getParameter(MAX_RESULTS_PARAM) != null ? Integer.valueOf(request.getParameter(MAX_RESULTS_PARAM)) : Integer.MAX_VALUE;
+            boolean caseSensitive = (caseSensitiveString == null) ? true : Boolean.valueOf(caseSensitiveString);
+
+            if (string == null)
+            {
+                throw new RuntimeException("Must specify search parameters: " + STRING_PARAM);
+            }
+
+            RichIterable<SourceCoordinates> results;
+            try
+            {
+                Pattern sourcePattern = getSourcePattern(sourceRegex);
+                if (regex)
                 {
-                    String string = request.getParameter(STRING_PARAM);
-                    boolean regex = Boolean.valueOf(String.valueOf(request.getParameter(REGEX_PARAM)));
-                    String sourceRegex = request.getParameter(SOURCE_REGEX_PARAM);
-                    String caseSensitiveString = request.getParameter(CASE_SENSITIVE_PARAM);
-                    int limit = request.getParameter(MAX_RESULTS_PARAM) != null ? Integer.valueOf(request.getParameter(MAX_RESULTS_PARAM)) : Integer.MAX_VALUE;
-                    boolean caseSensitive = (caseSensitiveString == null) ? true : Boolean.valueOf(caseSensitiveString);
+                    Pattern pattern = Pattern.compile(string, caseSensitive ? 0 : Pattern.CASE_INSENSITIVE);
+                    results = session.getPureRuntime().getSourceRegistry().find(pattern, sourcePattern);
+                }
+                else
+                {
+                    results = session.getPureRuntime().getSourceRegistry().find(string, caseSensitive, sourcePattern);
+                }
 
-                    if (string == null)
-                    {
-                        throw new RuntimeException("Must specify search parameters: " + STRING_PARAM);
-                    }
-
-                    RichIterable<SourceCoordinates> results;
-                    try
-                    {
-                        Pattern sourcePattern = getSourcePattern(sourceRegex);
-                        if (regex)
-                        {
-                            Pattern pattern = Pattern.compile(string, caseSensitive ? 0 : Pattern.CASE_INSENSITIVE);
-                            results = session.getPureRuntime().getSourceRegistry().find(pattern, sourcePattern);
-                        }
-                        else
-                        {
-                            results = session.getPureRuntime().getSourceRegistry().find(string, caseSensitive, sourcePattern);
-                        }
-
-                        response.setContentType("application/json");
-                        writeResultsJSON(outputStream, results, limit);
-                    }
-                    catch (IOException | RuntimeException | Error e)
-                    {
-                        throw e;
-                    }
-                }).build();
+                response.setContentType("application/json");
+                writeResultsJSON(outputStream, results, limit);
+            }
+            catch (IOException | RuntimeException | Error e)
+            {
+                throw e;
+            }
+        }).build();
     }
 
     private Pattern getSourcePattern(String sourceRegex)
@@ -159,7 +156,22 @@ public class FindInSources
         stream.write(Integer.toString(sourceCoordinates.getEndLine()).getBytes());
         stream.write(",\"endColumn\":".getBytes());
         stream.write(Integer.toString(sourceCoordinates.getEndColumn()).getBytes());
+        if (sourceCoordinates.getPreview() != null)
+        {
+            stream.write(",\"preview\":".getBytes());
+            writePreviewJSON(stream, sourceCoordinates.getPreview());
+        }
         stream.write("}".getBytes());
     }
 
+    private void writePreviewJSON(OutputStream stream, SourceCoordinates.Preview preview) throws IOException
+    {
+        stream.write("{\"before\":\"".getBytes());
+        stream.write(JSONValue.escape(preview.getBeforeText()).getBytes());
+        stream.write("\",\"found\":\"".getBytes());
+        stream.write(JSONValue.escape(preview.getFoundText()).getBytes());
+        stream.write("\",\"after\":\"".getBytes());
+        stream.write(JSONValue.escape(preview.getAfterText()).getBytes());
+        stream.write("\"}".getBytes());
+    }
 }

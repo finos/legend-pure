@@ -52,7 +52,7 @@ public class GetConcept implements SimpleFunction
             {
                 compilationError = e;
                 compilationErrorText = JSONValue.escape(ExceptionTranslation.pureExceptionToJson(pureSession, compilationError, null).getText());
-                //check if target file was compiled even if the whole compilation failed.
+                // check if target file was compiled even if the whole compilation failed.
                 if (!src.isCompiled())
                 {
                     throw e;
@@ -68,7 +68,7 @@ public class GetConcept implements SimpleFunction
             SourceInformation sourceInfo = found.getSourceInformation();
             if (null == sourceInfo)
             {
-                outputStream.write(("{\"error\":true, \"text\":\"" + (null == compilationError ? "Navigation is not supported yet for this element!" : compilationErrorText) + "\"").getBytes());
+                outputStream.write(("{\"error\":true,\"text\":\"" + (null == compilationError ? "Navigation is not supported yet for this element!" : compilationErrorText) + "\"").getBytes());
                 outputStream.write((",\"compiler\":\"\"").getBytes());
                 outputStream.write((",\"cached\":" + pureRuntime.getCache().getCacheState().isCached()).getBytes());
                 if (null != compilationError)
@@ -93,7 +93,7 @@ public class GetConcept implements SimpleFunction
         }
         else
         {
-            outputStream.write(("{\"error\":true, \"text\":\"" + (null == compilationError ? "Navigation is not supported yet for this element!" : compilationErrorText) + "\"").getBytes());
+            outputStream.write(("{\"error\":true,\"text\":\"" + (null == compilationError ? "Navigation is not supported yet for this element!" : compilationErrorText) + "\"").getBytes());
             outputStream.write((",\"compiler\":\"\"").getBytes());
             if (null != compilationError)
             {

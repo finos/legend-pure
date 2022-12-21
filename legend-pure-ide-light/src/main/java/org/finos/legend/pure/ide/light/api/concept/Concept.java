@@ -16,6 +16,8 @@ package org.finos.legend.pure.ide.light.api.concept;
 
 import io.swagger.annotations.Api;
 import org.finos.legend.pure.ide.light.session.PureSession;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedPropertyInstance;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -35,13 +37,11 @@ import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.OutputStream;
 
-@Api(
-    tags = {"Concepts"}
-)
+@Api(tags = "Concepts")
 @Path("/")
 public class Concept
 {
-    private PureSession session;
+    private final PureSession session;
 
     public Concept(PureSession session)
     {
@@ -59,8 +59,8 @@ public class Concept
     }
 
     @GET
-    @Path("getConceptPath")
-    public Response getConceptPath(@Context HttpServletRequest request, @Context HttpServletResponse response)
+    @Path("getConceptInfo")
+    public Response getConceptInfo(@Context HttpServletRequest request, @Context HttpServletResponse response)
     {
         return Response.ok((StreamingOutput) outputStream ->
         {
@@ -82,19 +82,19 @@ public class Concept
                         String path = PackageableElement.getUserPathForPackageableElement(found);
                         CoreInstance owner = Instance.getValueForMetaPropertyToOneResolved(found, M3Properties.owner, session.getPureRuntime().getProcessorSupport());
                         String ownerPath = PackageableElement.getUserPathForPackageableElement(owner);
-                        outputStream.write(("{\"path\": \"" + path + "\" , \"owner\" : \"" + ownerPath + "\"}").getBytes());
+                        outputStream.write(("{\"path\":\"" + path + "\",\"pureName\":\"" + found.getValueForMetaPropertyToOne(M3Properties.name).getName() + "\",\"owner\":\"" + ownerPath + "\",\"pureType\":\"" + (found instanceof QualifiedPropertyInstance ? "QualifiedProperty" : "Property") + "\"}").getBytes());
                     }
                     else if (Instance.instanceOf(found, M3Paths.Enum, session.getPureRuntime().getProcessorSupport()))
                     {
                         String path = PackageableElement.getUserPathForPackageableElement(found);
                         CoreInstance owner = found.getClassifier();
                         String ownerPath = PackageableElement.getUserPathForPackageableElement(owner);
-                        outputStream.write(("{\"path\": \"" + path + "\" , \"owner\" : \"" + ownerPath + "\" , \"type\" : \"enum\"}").getBytes());
+                        outputStream.write(("{\"path\":\"" + path + "\",\"pureName\":\"" + found.getName() + "\",\"owner\":\"" + ownerPath + "\",\"pureType\":\"Enum\"}").getBytes());
                     }
                     else
                     {
                         String path = PackageableElement.getUserPathForPackageableElement(found);
-                        outputStream.write(("{\"path\": \"" + path + "\"}").getBytes());
+                        outputStream.write(("{\"path\":\"" + path + "\",\"pureName\":\"" + (found instanceof ConcreteFunctionDefinition ? found.getValueForMetaPropertyToOne(M3Properties.functionName).getName() : found.getName()) + "\",\"pureType\":\"" + found.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToOne(M3Properties.rawType).getName() + "\"}").getBytes());
                     }
                 }
                 else
@@ -112,6 +112,6 @@ public class Concept
 
     private void writeErrorResponse(OutputStream outStream, String file, String line, String column) throws IOException
     {
-        outStream.write(("{\"error\":true, \"text\":\"Cannot find source for file: " + file + " line: " + line + " col: " + column + "\"").getBytes());
+        outStream.write(("{\"error\":true,\"text\":\"Cannot find source for file: " + file + " line: " + line + " col: " + column + "\"}").getBytes());
     }
 }

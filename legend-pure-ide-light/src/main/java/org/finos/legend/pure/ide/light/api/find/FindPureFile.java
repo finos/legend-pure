@@ -30,13 +30,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.regex.Pattern;
 
-@Api(
-        tags = {"Find"}
-)
+@Api(tags = "Find")
 @Path("/")
 public class FindPureFile
 {
-    private PureSession session;
+    private final PureSession session;
 
     public FindPureFile(PureSession session)
     {
@@ -50,7 +48,7 @@ public class FindPureFile
         return Response.ok((StreamingOutput) outputStream ->
         {
             String fileName = request.getParameter("file");
-            boolean isRegex = Boolean.valueOf(String.valueOf(request.getParameter("regex")));
+            boolean isRegex = Boolean.parseBoolean(String.valueOf(request.getParameter("regex")));
 
             try
             {
@@ -64,7 +62,7 @@ public class FindPureFile
                     @Override
                     public void value(String name)
                     {
-                        sb.append("\"" + name + "\"").append(",");
+                        sb.append("\"").append(name).append("\"").append(",");
                     }
                 });
                 if (!fileMatches.isEmpty())
@@ -84,6 +82,6 @@ public class FindPureFile
 
     private void writeErrorResponse(OutputStream outStream, String file) throws IOException
     {
-        outStream.write(("{\"error\":true, \"text\":\"Cannot find source file: " + file + "\"").getBytes());
+        outStream.write(("{\"error\":true,\"text\":\"Cannot find source file: " + file + "\"}").getBytes());
     }
 }

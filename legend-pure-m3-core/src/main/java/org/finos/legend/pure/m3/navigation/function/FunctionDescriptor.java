@@ -151,7 +151,7 @@ public class FunctionDescriptor
         return appendable;
     }
 
-    private static void writeDescriptorTypeAndMultiplicity(SafeAppendable appendable, CoreInstance genericType, CoreInstance multiplicity, ProcessorSupport processorSupport)
+    static void writeDescriptorTypeAndMultiplicity(SafeAppendable appendable, CoreInstance genericType, CoreInstance multiplicity, ProcessorSupport processorSupport)
     {
         if (GenericType.isGenericTypeConcrete(genericType))
         {

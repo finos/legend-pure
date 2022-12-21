@@ -28,9 +28,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.PrintWriter;
 
-@Api(
-        tags = {"Activities"}
-)
+@Api(tags = "Activities")
 @Path("/")
 public class Activities
 {

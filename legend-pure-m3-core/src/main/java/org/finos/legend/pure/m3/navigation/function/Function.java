@@ -15,16 +15,20 @@
 package org.finos.legend.pure.m3.navigation.function;
 
 import org.eclipse.collections.api.list.ListIterable;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.generictype.GenericType;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.exception.PureException;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
+
+import static org.finos.legend.pure.m3.navigation.function.FunctionDescriptor.writeDescriptorTypeAndMultiplicity;
 
 public class Function
 {
@@ -93,5 +97,68 @@ public class Function
     public static <T extends Appendable> T print(T appendable, CoreInstance function, ProcessorSupport processorSupport)
     {
         return FunctionDescriptor.writeFunctionDescriptor(appendable, function, processorSupport);
+    }
+
+    public static String prettyPrint(CoreInstance function, ProcessorSupport processorSupport)
+    {
+        return prettyPrint(new StringBuilder(128), function, processorSupport).toString();
+    }
+
+    private static <T extends Appendable> T prettyPrint(T appendable, CoreInstance function, ProcessorSupport processorSupport)
+    {
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+
+        // Write function name
+        CoreInstance functionName = function.getValueForMetaPropertyToOne(M3Properties.functionName);
+        safeAppendable.append(functionName != null ? PrimitiveUtilities.getStringValue(functionName) : "_ANONYMOUS_FN_");
+
+        CoreInstance functionType = processorSupport.function_getFunctionType(function);
+
+        // Write generics
+        ListIterable<? extends CoreInstance> typeParameters = functionType.getValueForMetaPropertyToMany(M3Properties.typeParameters);
+        if (typeParameters.notEmpty())
+        {
+            typeParameters.collect(typeParameter -> typeParameter.getValueForMetaPropertyToOne(M3Properties.name).getName()).appendString(safeAppendable, "<", ",", "");
+            ListIterable<? extends CoreInstance> multiplicityParameters = functionType.getValueForMetaPropertyToMany(M3Properties.multiplicityParameters);
+            if (multiplicityParameters.notEmpty())
+            {
+                multiplicityParameters.asLazy().collect(multiplicityParameter -> multiplicityParameter.getValueForMetaPropertyToOne(M3Properties.values).getName()).appendString(safeAppendable, "|", ",", "");
+            }
+            safeAppendable.append(">");
+        }
+
+        // Write parameter types and multiplicities
+
+        safeAppendable.append('(');
+        ListIterable<? extends CoreInstance> parameters = functionType.getValueForMetaPropertyToMany(M3Properties.parameters);
+        if (parameters.notEmpty())
+        {
+            boolean first = true;
+            for (CoreInstance parameter : parameters)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    safeAppendable.append(", ");
+                }
+
+                safeAppendable.append(parameter.getValueForMetaPropertyToOne(M3Properties.name).getName());
+                safeAppendable.append(": ");
+                CoreInstance parameterType = Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.genericType, processorSupport);
+                CoreInstance parameterMultiplicity = Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.multiplicity, processorSupport);
+                writeDescriptorTypeAndMultiplicity(safeAppendable, parameterType, parameterMultiplicity, processorSupport);
+            }
+        }
+        safeAppendable.append(')');
+
+        // Write return type and multiplicity
+        safeAppendable.append(": ");
+        CoreInstance returnType = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnType, processorSupport);
+        CoreInstance returnMultiplicity = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, processorSupport);
+        writeDescriptorTypeAndMultiplicity(safeAppendable, returnType, returnMultiplicity, processorSupport);
+        return appendable;
     }
 }

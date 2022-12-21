@@ -25,9 +25,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
-@Api(
-        tags = {"Execute"}
-)
+@Api(tags = "Execute")
 @Path("/")
 public class ExecuteGo
 {

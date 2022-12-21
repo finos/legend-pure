@@ -14,11 +14,11 @@
 
 package org.finos.legend.pure.m3.tests.property;
 
-import org.finos.legend.pure.m3.navigation.property.Property;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.After;
 import org.junit.Assert;
@@ -28,12 +28,14 @@ import org.junit.Test;
 public class TestProperty extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("fromString.pure");
     }
 
@@ -41,7 +43,7 @@ public class TestProperty extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testGetPath()
     {
-        compileTestSource("fromString.pure","import test::*;\n" +
+        compileTestSource("fromString.pure", "import test::*;\n" +
                 "Class test::A\n" +
                 "{\n" +
                 "   prop1 : String[1];\n" +
@@ -90,7 +92,7 @@ public class TestProperty extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testGetSourceType()
     {
-        compileTestSource("fromString.pure","import test::*;\n" +
+        compileTestSource("fromString.pure", "import test::*;\n" +
                 "Class test::A\n" +
                 "{\n" +
                 "   prop1 : String[1];\n" +
