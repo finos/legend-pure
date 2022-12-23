@@ -98,7 +98,7 @@ public class DatabaseProcessor extends Processor<Database>
     {
         for (CoreInstance db : database._includesCoreInstance())
         {
-            Database resolvedDb = (Database)ImportStub.withImportStubByPass(db, processorSupport);
+            Database resolvedDb = (Database) ImportStub.withImportStubByPass(db, processorSupport);
             PostProcessor.processElement(matcher, resolvedDb, state, processorSupport);
         }
 
@@ -110,10 +110,10 @@ public class DatabaseProcessor extends Processor<Database>
             schema._databaseCoreInstance(database);
             RichIterable<? extends CoreInstance> tables = schema._tables();
             RichIterable<? extends CoreInstance> views = schema._views();
-            checkForDuplicatesByName(LazyIterate.concatenate((Iterable<CoreInstance>)tables, (Iterable<CoreInstance>)views), (Function<NamedRelation, String>) NamedRelation::_name, DEFAULT_SCHEMA_NAME.equals(schema._name()) ? "database" : "schema");
+            checkForDuplicatesByName(LazyIterate.concatenate((Iterable<CoreInstance>) tables, (Iterable<CoreInstance>) views), (Function<NamedRelation, String>) NamedRelation::_name, DEFAULT_SCHEMA_NAME.equals(schema._name()) ? "database" : "schema");
             for (CoreInstance table : tables)
             {
-                ((Table)table)._schema(schema);
+                ((Table) table)._schema(schema);
                 processTable(table, matcher, state, processorSupport);
             }
         }
@@ -160,7 +160,7 @@ public class DatabaseProcessor extends Processor<Database>
     private static <T extends CoreInstance> void checkForDuplicatesByName(RichIterable<? extends CoreInstance> instances, Function<T, String> nameFn, String scope)
     {
         MutableMap<String, CoreInstance> instancesByName = UnifiedMap.newMap(instances.size());
-        for (T instance : (RichIterable<T>)instances)
+        for (T instance : (RichIterable<T>) instances)
         {
             String name = nameFn.valueOf(instance);
             CoreInstance other = instancesByName.put(name, instance);
@@ -184,7 +184,7 @@ public class DatabaseProcessor extends Processor<Database>
 
         if (table instanceof Table)
         {
-            MutableList<Column> primaryKey = (MutableList<Column>)((Table)table)._primaryKey().toList();
+            MutableList<Column> primaryKey = (MutableList<Column>) ((Table) table)._primaryKey().toList();
             for (int i = 0; i < primaryKey.size(); i++)
             {
                 CoreInstance key = primaryKey.get(i);
@@ -194,59 +194,59 @@ public class DatabaseProcessor extends Processor<Database>
                     Column column = columnsByName.get(columnName);
                     if (column == null)
                     {
-                        throw new PureCompilationException(table.getSourceInformation(), "Could not find column " + columnName + " in table " + ((NamedRelation)table)._name());
+                        throw new PureCompilationException(table.getSourceInformation(), "Could not find column " + columnName + " in table " + ((NamedRelation) table)._name());
                     }
                     primaryKey.set(i, column);
                 }
             }
-            ((Table)table)._primaryKey(primaryKey);
+            ((Table) table)._primaryKey(primaryKey);
         }
 
         if (table instanceof Relation)
         {
-            Relation relation = (Relation)table;
-            relation._setColumnsCoreInstance(relation._columns().collect(relationalOperationElement -> (Column)relationalOperationElement));
+            Relation relation = (Relation) table;
+            relation._setColumnsCoreInstance(relation._columns().collect(relationalOperationElement -> (Column) relationalOperationElement));
         }
         processTableMilestoning(table, columnsByName, matcher, processorState, processorSupport);
     }
 
     public static MapIterable<String, Column> processColumnsForTableOrView(CoreInstance tableOrView)
     {
-        ListIterable<? extends RelationalOperationElement> columns = FastList.newList();
         if (tableOrView instanceof Relation)
         {
-            columns = ((Relation)tableOrView)._columns().toList();
-        }
-        MutableMap<String, Column> columnsByName = UnifiedMap.newMap(columns.size());
-        for (RelationalOperationElement column : columns)
-        {
-            if (!(column instanceof Column))
+            ListIterable<? extends RelationalOperationElement> columns = ((Relation) tableOrView)._columns().toList();
+            MutableMap<String, Column> columnsByName = UnifiedMap.newMap(columns.size());
+            for (RelationalOperationElement column : columns)
             {
-                throw new PureCompilationException(column.getSourceInformation(), "Expected an instance of " + M2RelationalPaths.Column + ", found " + PackageableElement.getUserPathForPackageableElement(column.getClassifier()));
+                if (!(column instanceof Column))
+                {
+                    throw new PureCompilationException(column.getSourceInformation(), "Expected an instance of " + M2RelationalPaths.Column + ", found " + PackageableElement.getUserPathForPackageableElement(column.getClassifier()));
+                }
+                String columnName = ((Column) column)._name();
+                RelationalOperationElement old = columnsByName.put(columnName, (Column) column);
+                if (old != null)
+                {
+                    throw new PureCompilationException(column.getSourceInformation(), "Multiple columns named '" + columnName + "' found in " + tableOrView.getClassifier().getName().toLowerCase() + " " + (tableOrView.getValueForMetaPropertyToOne(M3Properties.name).getName()));
+                }
+                ((Column) column)._owner((Relation) tableOrView);
             }
-            String columnName = ((Column)column)._name();
-            RelationalOperationElement old = columnsByName.put(columnName, (Column)column);
-            if (old != null)
-            {
-                throw new PureCompilationException(column.getSourceInformation(), "Multiple columns named '" + columnName + "' found in " + tableOrView.getClassifier().getName().toLowerCase() + " " + ((NamedRelation)tableOrView)._name());
-            }
-            ((Column)column)._owner((Relation)tableOrView);
+            return columnsByName;
         }
-        return columnsByName;
+        return UnifiedMap.newMap();
     }
 
     private static void processTableMilestoning(CoreInstance tableCoreInstance, MapIterable<String, Column> columnsByName, Matcher matcher, ProcessorState processorState, ProcessorSupport processorSupport)
     {
         if (tableCoreInstance instanceof Table)
         {
-            Table table = (Table)tableCoreInstance;
+            Table table = (Table) tableCoreInstance;
             for (Milestoning milestoningInfo : table._milestoning())
             {
                 milestoningInfo._owner(table);
 
                 if (milestoningInfo instanceof BusinessMilestoning)
                 {
-                    BusinessMilestoning businessMilestoning = (BusinessMilestoning)milestoningInfo;
+                    BusinessMilestoning businessMilestoning = (BusinessMilestoning) milestoningInfo;
 
                     if (processorSupport.instance_instanceOf(businessMilestoning._from(), M3Paths.String))
                     {
@@ -264,7 +264,7 @@ public class DatabaseProcessor extends Processor<Database>
                 }
                 else if (milestoningInfo instanceof BusinessSnapshotMilestoning)
                 {
-                    BusinessSnapshotMilestoning businessSnapshotMilestoning = (BusinessSnapshotMilestoning)milestoningInfo;
+                    BusinessSnapshotMilestoning businessSnapshotMilestoning = (BusinessSnapshotMilestoning) milestoningInfo;
                     if (processorSupport.instance_instanceOf(businessSnapshotMilestoning._snapshotDate(), M3Paths.String))
                     {
                         String snapshotDateColumnName = businessSnapshotMilestoning._snapshotDate().getName();
@@ -278,7 +278,7 @@ public class DatabaseProcessor extends Processor<Database>
                 }
                 else if (milestoningInfo instanceof ProcessingMilestoning)
                 {
-                    ProcessingMilestoning processingMilestoning = (ProcessingMilestoning)milestoningInfo;
+                    ProcessingMilestoning processingMilestoning = (ProcessingMilestoning) milestoningInfo;
 
                     if (processorSupport.instance_instanceOf(processingMilestoning._in(), M3Paths.String))
                     {
@@ -332,16 +332,16 @@ public class DatabaseProcessor extends Processor<Database>
         MutableList<TableAliasColumn> selfJoinTargets = Lists.mutable.empty();
         scanOperation(operation, tableByAliasBySchema, selfJoinTargets, defaultDb, repository, processorSupport, true);
 
-        Class<?> tableAliasClass = (Class<?>)processorSupport.package_getByUserPath(M2RelationalPaths.TableAlias);
+        Class<?> tableAliasClass = (Class<?>) processorSupport.package_getByUserPath(M2RelationalPaths.TableAlias);
 
         MutableList<TableAlias> tableAliases = Lists.mutable.empty();
         for (MutableMap<String, CoreInstance> schemaTableByAlias : tableByAliasBySchema)
         {
             schemaTableByAlias.forEachKeyValue((alias, table) ->
             {
-                TableAlias tableAlias = (TableAlias)repository.newAnonymousCoreInstance(join.getSourceInformation(), tableAliasClass);
+                TableAlias tableAlias = (TableAlias) repository.newAnonymousCoreInstance(join.getSourceInformation(), tableAliasClass);
                 tableAlias._name(repository.newStringCoreInstance_cached(alias).getName());
-                tableAlias._relationalElement((RelationalOperationElement)table);
+                tableAlias._relationalElement((RelationalOperationElement) table);
                 tableAliases.add(tableAlias);
             });
         }
@@ -361,7 +361,7 @@ public class DatabaseProcessor extends Processor<Database>
             String existingAliasName = existingAlias._name();
             RelationalOperationElement existingRelationalElement = existingAlias._relationalElement();
 
-            TableAlias tableAlias = (TableAlias)repository.newAnonymousCoreInstance(existingAlias.getSourceInformation(), tableAliasClass);
+            TableAlias tableAlias = (TableAlias) repository.newAnonymousCoreInstance(existingAlias.getSourceInformation(), tableAliasClass);
             tableAlias._name(repository.newStringCoreInstance_cached("t_" + existingAliasName).getName());
             tableAlias._relationalElement(existingRelationalElement);
             tableAliases.add(tableAlias);
@@ -375,11 +375,11 @@ public class DatabaseProcessor extends Processor<Database>
                 Column col = null;
                 if (existingRelationalElement instanceof Relation)
                 {
-                    col = (Column)((Relation)existingRelationalElement)._columns().selectWith(COLUMN_NAME_PREDICATE, columnName).toList().getFirst();
+                    col = (Column) ((Relation) existingRelationalElement)._columns().selectWith(COLUMN_NAME_PREDICATE, columnName).toList().getFirst();
                 }
                 if (col == null)
                 {
-                    throw new PureCompilationException(selfJoinTarget.getSourceInformation(), "The column '" + columnName + "' can't be found in the table '" + ((NamedRelation)existingRelationalElement)._name() + "'");
+                    throw new PureCompilationException(selfJoinTarget.getSourceInformation(), "The column '" + columnName + "' can't be found in the table '" + ((NamedRelation) existingRelationalElement)._name() + "'");
                 }
                 selfJoinTarget._column(col);
             }
@@ -405,20 +405,20 @@ public class DatabaseProcessor extends Processor<Database>
     {
         if (element instanceof TableAliasColumn)
         {
-            processTableAliasColumn((TableAliasColumn)element, tableByAliasBySchema, selfJoinTarget, defaultDb, repository, processorSupport, isJoin);
+            processTableAliasColumn((TableAliasColumn) element, tableByAliasBySchema, selfJoinTarget, defaultDb, repository, processorSupport, isJoin);
         }
         else if (element instanceof BinaryOperation)
         {
-            scanOperation(((BinaryOperation)element)._left(), tableByAliasBySchema, selfJoinTarget, defaultDb, repository, processorSupport, isJoin);
-            scanOperation(((BinaryOperation)element)._right(), tableByAliasBySchema, selfJoinTarget, defaultDb, repository, processorSupport, isJoin);
+            scanOperation(((BinaryOperation) element)._left(), tableByAliasBySchema, selfJoinTarget, defaultDb, repository, processorSupport, isJoin);
+            scanOperation(((BinaryOperation) element)._right(), tableByAliasBySchema, selfJoinTarget, defaultDb, repository, processorSupport, isJoin);
         }
         else if (element instanceof UnaryOperation)
         {
-            scanOperation(((UnaryOperation)element)._nested(), tableByAliasBySchema, selfJoinTarget, defaultDb, repository, processorSupport, isJoin);
+            scanOperation(((UnaryOperation) element)._nested(), tableByAliasBySchema, selfJoinTarget, defaultDb, repository, processorSupport, isJoin);
         }
         else if (element instanceof DynaFunction)
         {
-            for (RelationalOperationElement param : ((DynaFunction)element)._parameters())
+            for (RelationalOperationElement param : ((DynaFunction) element)._parameters())
             {
                 scanOperation(param, tableByAliasBySchema, selfJoinTarget, defaultDb, repository, processorSupport, isJoin);
             }
@@ -427,16 +427,16 @@ public class DatabaseProcessor extends Processor<Database>
 
     private static <U, V> Pair<U, V> newPair(Class<?> type1, Class<?> type2, ModelRepository repository, ProcessorSupport processorSupport)
     {
-        Pair<U, V> pair = (Pair<U, V>)repository.newAnonymousCoreInstance(null, processorSupport.package_getByUserPath(M3Paths.Pair));
+        Pair<U, V> pair = (Pair<U, V>) repository.newAnonymousCoreInstance(null, processorSupport.package_getByUserPath(M3Paths.Pair));
 
         // Generics
         Class<?> genericTypeType = (Class<?>) processorSupport.package_getByUserPath(M3Paths.GenericType);
-        GenericType classifierGenericType = (GenericType)repository.newAnonymousCoreInstance(null, genericTypeType);
+        GenericType classifierGenericType = (GenericType) repository.newAnonymousCoreInstance(null, genericTypeType);
         classifierGenericType._rawTypeCoreInstance(processorSupport.package_getByUserPath(M3Paths.Pair));
 
-        GenericType typeArgument = (GenericType)repository.newAnonymousCoreInstance(null, processorSupport.package_getByUserPath(M3Paths.GenericType));
+        GenericType typeArgument = (GenericType) repository.newAnonymousCoreInstance(null, processorSupport.package_getByUserPath(M3Paths.GenericType));
         typeArgument._rawTypeCoreInstance(type1);
-        GenericType typeArgument2 = (GenericType)repository.newAnonymousCoreInstance(null, processorSupport.package_getByUserPath(M3Paths.GenericType));
+        GenericType typeArgument2 = (GenericType) repository.newAnonymousCoreInstance(null, processorSupport.package_getByUserPath(M3Paths.GenericType));
         typeArgument2._rawTypeCoreInstance(type2);
         classifierGenericType._typeArguments(Lists.immutable.of(typeArgument, typeArgument2));
 
@@ -464,7 +464,7 @@ public class DatabaseProcessor extends Processor<Database>
         else
         {
             TableAlias tableAlias = tableAliasColumn._alias();
-            Database database = (Database)ImportStub.withImportStubByPass(tableAlias._databaseCoreInstance(), processorSupport);
+            Database database = (Database) ImportStub.withImportStubByPass(tableAlias._databaseCoreInstance(), processorSupport);
             if (database == null)
             {
                 if (defaultDb == null)
@@ -495,17 +495,17 @@ public class DatabaseProcessor extends Processor<Database>
                     tableByAliasBySchema.getIfAbsentPut(schemaName, Functions0.<String, CoreInstance>newUnifiedMap()).put(alias, table);
                 }
             }
-            tableAlias._relationalElement((RelationalOperationElement)table);
+            tableAlias._relationalElement((RelationalOperationElement) table);
 
             String columnName = tableAliasColumn._columnName();
             Column col = null;
             if (table instanceof Relation)
             {
-                col = (Column)((Relation)table)._columns().selectWith(COLUMN_NAME_PREDICATE, columnName).toList().getFirst();
+                col = (Column) ((Relation) table)._columns().selectWith(COLUMN_NAME_PREDICATE, columnName).toList().getFirst();
             }
             if (col == null)
             {
-                throw new PureCompilationException(tableAliasColumn.getSourceInformation(), "The column '" + columnName + "' can't be found in the table '" + ((NamedRelation)table)._name() + "'");
+                throw new PureCompilationException(tableAliasColumn.getSourceInformation(), "The column '" + columnName + "' can't be found in the table '" + ((NamedRelation) table)._name() + "'");
             }
             tableAliasColumn._column(col);
 
@@ -542,7 +542,7 @@ public class DatabaseProcessor extends Processor<Database>
             }
             for (CoreInstance includedDB : ImportStub.withImportStubByPasses(database._includesCoreInstance().toList(), processorSupport))
             {
-                if (schemaExists(visited, (Database)includedDB, schemaName, processorSupport))
+                if (schemaExists(visited, (Database) includedDB, schemaName, processorSupport))
                 {
                     return true;
                 }
@@ -593,7 +593,7 @@ public class DatabaseProcessor extends Processor<Database>
                 {
                     return filter;
                 }
-                ListIterable<? extends Database> includes = (ListIterable<? extends Database>)ImportStub.withImportStubByPasses(database._includesCoreInstance().toList(), processorSupport);
+                ListIterable<? extends Database> includes = (ListIterable<? extends Database>) ImportStub.withImportStubByPasses(database._includesCoreInstance().toList(), processorSupport);
                 Iterate.addAllIterable(includes, databases);
             }
         }

@@ -413,7 +413,10 @@ public class IncrementalCompiler_New extends IncrementalCompiler
     {
         try
         {
-            transaction.rollback();
+            if (transaction != null)
+            {
+                transaction.rollback();
+            }
             this.toProcess.union(repoTransactionInstances).forEach(this.context::update);
         }
         catch (Throwable ignore)

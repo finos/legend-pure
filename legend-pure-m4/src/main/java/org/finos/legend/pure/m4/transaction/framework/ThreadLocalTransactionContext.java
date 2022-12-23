@@ -41,6 +41,7 @@ public abstract class ThreadLocalTransactionContext implements AutoCloseable
         }
     }
 
+    @SuppressWarnings("checkstyle:NoFinalizer")
     @Override
     public void finalize()
     {

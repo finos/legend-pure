@@ -97,7 +97,7 @@ public class Loader
         }
 
         @Override
-        public PureException getCause()
+        public synchronized PureException getCause()
         {
             return (PureException) super.getCause();
         }
@@ -105,7 +105,7 @@ public class Loader
         private static String generateMessage(PureException e, String code)
         {
             String space = "      ";
-            return e + " in\n" + space + code.replace("\n","\n" + space);
+            return e + " in\n" + space + code.replace("\n", "\n" + space);
         }
     }
 }

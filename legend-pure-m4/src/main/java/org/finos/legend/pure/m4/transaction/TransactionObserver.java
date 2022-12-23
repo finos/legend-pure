@@ -14,15 +14,12 @@
 
 package org.finos.legend.pure.m4.transaction;
 
-
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.eclipse.collections.api.RichIterable;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public interface TransactionObserver
 {
     void added(RichIterable<CoreInstance> instances);
 
     void modified(RichIterable<CoreInstance> instances);
-
-
 }
