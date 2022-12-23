@@ -358,6 +358,15 @@ public class Source
         return ImportStub.withImportStubByPass(found, processorSupport);
     }
 
+    public ListIterable<CoreInstance> findFunctionsOrLambasAt(int line, int column)
+    {
+        return findRawElementsAt(line, column)
+                .select(entry -> entry instanceof LambdaFunctionInstance || entry instanceof ConcreteFunctionDefinition, Lists.mutable.empty())
+                // NOTE: since the position made up of the line and column is guaranteed to be within the specified source informations
+                // we now just need to find the narrowest source information hence the comparator used
+                .sortThis((entry1, entry2) -> Source.compareSourceInformation(entry1.getSourceInformation(), entry2.getSourceInformation()));
+    }
+
     private CoreInstance resolveVariableOrParameter(int line, int column, VariableExpression variable)
     {
         String varName = variable._name();
@@ -365,11 +374,7 @@ public class Source
         // we then sort them by how close their scope is to the position of selection, the logic here is that the closer
         // the lambda function is to the position, the closer its scope and thus if a match in parameter/variable name is found
         // in that scope would finish our lookup
-        ListIterable<CoreInstance> functionsOrLambdas = findRawElementsAt(line, column)
-                .select(entry -> entry instanceof LambdaFunctionInstance || entry instanceof ConcreteFunctionDefinition, Lists.mutable.empty())
-                // NOTE: since the position made up of the line and column is guaranteed to be within the specified source informations
-                // we now just need to find the narrowest source information hence the comparator used
-                .sortThis((entry1, entry2) -> Source.compareSourceInformation(entry1.getSourceInformation(), entry2.getSourceInformation()));
+        ListIterable<CoreInstance> functionsOrLambdas = findFunctionsOrLambasAt(line, column);
         for (CoreInstance fn : functionsOrLambdas)
         {
             // scan for the let expressions then follows by the parameters

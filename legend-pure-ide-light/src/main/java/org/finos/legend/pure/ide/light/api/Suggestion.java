@@ -1,6 +1,7 @@
 package org.finos.legend.pure.ide.light.api;
 
 import io.swagger.annotations.Api;
+import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.factory.Lists;
@@ -12,12 +13,16 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Packag
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValueInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.SimpleFunctionExpression;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpressionInstance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.function.Function;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
+import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.json.simple.JSONValue;
 
@@ -29,9 +34,12 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Api(tags = "Suggestion")
 @Path("/")
@@ -455,5 +463,80 @@ public class Suggestion
     public static class ClassSuggestionInput
     {
         public List<String> importPaths;
+    }
+
+    @POST
+    @Path("suggestion/variable")
+    public Response getSuggestionsForVariable(@Context HttpServletRequest request,
+                                              VariableSuggestionInput input,
+                                              @Context HttpServletResponse response)
+    {
+        PureRuntime runtime = this.session.getPureRuntime();
+
+        try
+        {
+            Source source = runtime.getSourceById(input.sourceId);
+            ListIterable<CoreInstance> functionsOrLambdas = source.findFunctionsOrLambasAt(input.line, input.column);
+            Set<String> varNames = new HashSet<>();
+
+            for (CoreInstance fn : functionsOrLambdas)
+            {
+                // scan for the let expressions then follows by the parameters
+                RichIterable<InstanceValueInstance> letVars = fn.getValueForMetaPropertyToMany(M3Properties.expressionSequence)
+                        .select(expression -> expression instanceof SimpleFunctionExpression && "letFunction".equals(((SimpleFunctionExpression) expression)._functionName()))
+                        .collect(expression -> ((SimpleFunctionExpression) expression)._parametersValues().toList().getFirst())
+                        // NOTE: make sure to only consider let statements prior to the call
+                        .select(letVar -> letVar.getSourceInformation().getEndLine() < input.line || (letVar.getSourceInformation().getEndLine() == input.line && letVar.getSourceInformation().getEndColumn() < input.column))
+                        .selectInstancesOf(InstanceValueInstance.class);
+                for (InstanceValueInstance var : letVars)
+                {
+                    varNames.add(var.getValueForMetaPropertyToOne(M3Properties.values).getName());
+                }
+                RichIterable<VariableExpressionInstance> params = fn.getValueForMetaPropertyToOne(M3Properties.classifierGenericType)
+                        .getValueForMetaPropertyToOne(M3Properties.typeArguments)
+                        .getValueForMetaPropertyToOne(M3Properties.rawType)
+                        .getValueForMetaPropertyToMany(M3Properties.parameters)
+                        .selectInstancesOf(VariableExpressionInstance.class);
+                for (VariableExpressionInstance var : params)
+                {
+                    varNames.add(var._name());
+                }
+            }
+            List<String> suggestions = new ArrayList<>(varNames);
+
+            return Response.ok((StreamingOutput) outputStream ->
+            {
+                outputStream.write("[".getBytes());
+                for (int i = 0; i < suggestions.size(); i++)
+                {
+                    String varName = suggestions.get(i);
+                    outputStream.write("{\"name\":\"".getBytes());
+                    outputStream.write(JSONValue.escape(varName).getBytes());
+                    outputStream.write("\"}".getBytes());
+
+                    if (i != suggestions.size() - 1)
+                    {
+                        outputStream.write(",".getBytes());
+                    }
+                }
+                outputStream.write("]".getBytes());
+                outputStream.close();
+            }).build();
+        }
+        catch (Exception e)
+        {
+            return Response.status(Response.Status.BAD_REQUEST).entity((StreamingOutput) outputStream ->
+            {
+                outputStream.write(("\"" + JSONValue.escape(ExceptionTranslation.buildExceptionMessage(session, e, new ByteArrayOutputStream()).getText()) + "\"").getBytes());
+                outputStream.close();
+            }).build();
+        }
+    }
+
+    public static class VariableSuggestionInput
+    {
+        public String sourceId;
+        public int line;
+        public int column;
     }
 }
