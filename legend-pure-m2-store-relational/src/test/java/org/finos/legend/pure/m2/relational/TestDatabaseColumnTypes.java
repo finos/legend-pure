@@ -335,11 +335,13 @@ public class TestDatabaseColumnTypes extends AbstractPureRelationalTestWithCoreC
     public void testDynaFunction()
     {
         String dynaDef = "###Relational\n " +
-                "DynaFunction abcde(p1 Float, p2 Integer Const) -> String\n";
+                "DynaFunction abcde" +
+                "   dynaName :: (p1 Float Arr, p2 Integer Const, p3 String, p4 Any Opt) or (p5 Bit Arr...) -> String" +
+                "   ~restrict $p2 is '0' or '1' or '2'\n";
         this.runtime.createInMemorySource("sourceId.pure", dynaDef);
         this.runtime.compile();
 
         CoreInstance abcde = processorSupport.package_getByUserPath("abcde");
-        Assert.assertEquals(2, abcde.getValueForMetaPropertyToMany("parameterSpecifications").size());
+        Assert.assertEquals(2, abcde.getValueForMetaPropertyToMany("signatures").size());
     }
 }

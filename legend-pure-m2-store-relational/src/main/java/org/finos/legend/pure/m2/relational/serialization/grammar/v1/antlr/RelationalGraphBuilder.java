@@ -14,6 +14,9 @@
 
 package org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr;
 
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.impl.utility.ListIterate;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.IRelationalParser;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.AssociationMappingContext;
@@ -29,11 +32,14 @@ import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.Relati
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.DefinitionContext;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.DynaFunctionContext;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.DynaFunctionParamContext;
+import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.DynaFunctionRestrictionContext;
+import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.DynaSignatureContext;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.FilterContext;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.FilterMappingBlockContext;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.FilterMappingJoinSequenceContext;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.FilterViewBlockContext;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.FunctionArgumentContext;
+import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.IdentifierContext;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.IncludeContext;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.JoinColWithDbOrConstantContext;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.JoinColWithDbOrConstantsContext;
@@ -99,6 +105,7 @@ import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParserBaseVisitor<String>
 {
@@ -1306,11 +1313,24 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
     @Override
     public String visitDynaFunction(DynaFunctionContext ctx)
     {
-        return "^meta::relational::metamodel::DynaFunctionSpecification " + ctx.qualifiedName().identifier().getText() + sourceInformation.getPureSourceInformation(ctx.DYNA_FUNCTION().getSymbol(), ctx.qualifiedName().identifier().getStart(), ctx.identifier().getStop()).toM4String() +
+        Set<String> constParams = ListIterate.flatCollect(ctx.dynaSignature(), DynaSignatureContext::dynaFunctionParam).select(p -> p.CONST(0) != null).collect(p -> p.identifier(0).getText()).toSet();
+        Token endToken = ListIterate.flatCollect(ctx.dynaFunctionRestriction(), DynaFunctionRestrictionContext::STRING).getLastOptional().map(TerminalNode::getSymbol).orElse(ctx.identifier().getStop());
+
+        return "^meta::relational::metamodel::DynaFunctionSpecification " + ctx.qualifiedName().identifier().getText() + sourceInformation.getPureSourceInformation(ctx.DYNA_FUNCTION().getSymbol(), ctx.qualifiedName().identifier().getStart(), endToken).toM4String() +
                 (ctx.qualifiedName().packagePath() != null ? "@" + ctx.qualifiedName().packagePath().getText().substring(0, ctx.qualifiedName().packagePath().getText().length() - 2) : "") + "(name='" + ctx.qualifiedName().identifier().getText() + "', " +
                 "package=" + (ctx.qualifiedName().packagePath() == null ? "::" : ctx.qualifiedName().packagePath().getText().substring(0, ctx.qualifiedName().packagePath().getText().length() - 2)) + ", " +
-                "parameterSpecifications = " + ListIterate.collect(ctx.dynaFunctionParam(), this::visitDynaFunctionParam).makeString("[", ", ", "]") + ", " +
-                "returnType=meta::relational::metamodel::DynaFunctionType." + ctx.identifier().getText() + ")";
+                "signatures=" + ListIterate.collect(ctx.dynaSignature(), this::visitDynaSignature).makeString("[", ", ", "]") + ", " +
+                "constantParameterRestrictions=" + ListIterate.collect(ctx.dynaFunctionRestriction(), r -> visitDynaFunctionRestriction(r, constParams)).makeString("[", ", ", "]") + ", " +
+                "dynaName='" + ctx.VALID_STRING().getText() + "', " +
+                "returnType=" + getDynaFunctionType(ctx.identifier()) + ")";
+    }
+
+    @Override
+    public String visitDynaSignature(DynaSignatureContext ctx)
+    {
+        return "^meta::relational::metamodel::DynaFunctionSignature(" +
+                "parameterSpecifications=" + ListIterate.collect(ctx.dynaFunctionParam(), this::visitDynaFunctionParam).makeString("[", ", ", "]") + ", " +
+                "isLastParamRepeated=" + (ctx.DOTDOTDOT() == null ? "false" : "true") + ")";
     }
 
     @Override
@@ -1320,6 +1340,36 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
                 "isArray=" + (ctx.ARR(0) == null ? "false" : "true") + ", " +
                 "isOptional=" + (ctx.OPT(0) == null ? "false" : "true") + ", " +
                 "isConstant=" + (ctx.CONST(0) == null ? "false" : "true") + ", " +
-                "type=meta::relational::metamodel::DynaFunctionType." + ctx.identifier(1).getText() + ")";
+                "type=" + getDynaFunctionType(ctx.identifier(1)) + ")";
+    }
+
+    private static final Set<String> DYNA_FUNCTION_TYPES = Sets.mutable.of("Integer", "Float", "Numeric", "String", "Date", "Timestamp", "Bit", "Any");
+
+    private String getDynaFunctionType(IdentifierContext typeCtx)
+    {
+        if (DYNA_FUNCTION_TYPES.contains(typeCtx.getText()))
+        {
+            return "meta::relational::metamodel::DynaFunctionType." + typeCtx.getText();
+        }
+        throw new PureParserException(sourceInformation.getPureSourceInformation(typeCtx.getStart()), "The dyna function type (" + typeCtx.getText() + ") is not recognized. Valid types are: " + DYNA_FUNCTION_TYPES);
+    }
+
+    public String visitDynaFunctionRestriction(DynaFunctionRestrictionContext ctx, Set<String> constParams)
+    {
+        if (constParams.contains(ctx.identifier().getText()))
+        {
+            constParams.remove(ctx.identifier().getText());
+            return visitDynaFunctionRestriction(ctx);
+        }
+        throw new PureParserException(sourceInformation.getPureSourceInformation(ctx.identifier().getStart()), "The identifier (" + ctx.identifier().getText() + ") is not recognized as a const param, or it has already been restricted before.");
+    }
+
+    @Override
+    public String visitDynaFunctionRestriction(DynaFunctionRestrictionContext ctx)
+    {
+        return "^meta::relational::metamodel::ConstantParameterRestriction(" +
+                "name='" + ctx.identifier().getText() + "', " +
+                "isRegex=" + (ctx.MATCHES() == null ? "false" : "true") + ", " +
+                "values=" + ListIterate.collect(ctx.STRING(), ParseTree::getText).makeString("[", ", ", "]") + ")";
     }
 }

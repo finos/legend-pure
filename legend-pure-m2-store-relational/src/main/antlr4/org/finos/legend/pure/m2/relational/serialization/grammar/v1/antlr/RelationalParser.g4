@@ -18,12 +18,19 @@ dbDefinition: DATABASE qualifiedName
 ;
 
 dynaFunction: DYNA_FUNCTION qualifiedName
-              GROUP_OPEN
-              (dynaFunctionParam (COMMA dynaFunctionParam)*)?
-              GROUP_CLOSE ARROW identifier
+              VALID_STRING PATH_SEPARATOR dynaSignature (OR dynaSignature)* ARROW identifier
+              dynaFunctionRestriction*
+;
+
+dynaSignature: GROUP_OPEN
+               (dynaFunctionParam (COMMA dynaFunctionParam)* DOTDOTDOT?)?
+               GROUP_CLOSE
 ;
 
 dynaFunctionParam: identifier identifier (OPT | ARR | CONST)*
+;
+
+dynaFunctionRestriction: RESTRICT DOLLAR identifier (IS | MATCHES) STRING (OR STRING)*
 ;
 
 include: INCLUDE qualifiedName

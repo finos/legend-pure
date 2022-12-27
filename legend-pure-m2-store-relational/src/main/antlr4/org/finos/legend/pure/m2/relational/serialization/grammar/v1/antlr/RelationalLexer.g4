@@ -50,3 +50,7 @@ DYNA_FUNCTION : 'DynaFunction' ;
 OPT: 'Opt' ;
 ARR: 'Arr' ;
 CONST: 'Const' ;
+RESTRICT: '~restrict' ;
+IS: 'is' ;
+MATCHES: 'matches' ;
+DOTDOTDOT: '...' ;
