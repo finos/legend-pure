@@ -1321,7 +1321,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
                 "package=" + (ctx.qualifiedName().packagePath() == null ? "::" : ctx.qualifiedName().packagePath().getText().substring(0, ctx.qualifiedName().packagePath().getText().length() - 2)) + ", " +
                 "signatures=" + ListIterate.collect(ctx.dynaSignature(), this::visitDynaSignature).makeString("[", ", ", "]") + ", " +
                 "constantParameterRestrictions=" + ListIterate.collect(ctx.dynaFunctionRestriction(), r -> visitDynaFunctionRestriction(r, constParams)).makeString("[", ", ", "]") + ", " +
-                "dynaName='" + ctx.VALID_STRING().getText() + "', " +
+                "dynaName='" + (ctx.VALID_STRING() == null ? (ctx.AND() == null ? "or" : "and") : ctx.VALID_STRING().getText()) + "', " +
                 "returnType=" + getDynaFunctionType(ctx.identifier()) + ")";
     }
 

@@ -18,7 +18,7 @@ dbDefinition: DATABASE qualifiedName
 ;
 
 dynaFunction: DYNA_FUNCTION qualifiedName
-              VALID_STRING PATH_SEPARATOR dynaSignature (OR dynaSignature)* ARROW identifier
+              (VALID_STRING | AND | OR) PATH_SEPARATOR dynaSignature (OR dynaSignature)* ARROW identifier
               dynaFunctionRestriction*
 ;
 
