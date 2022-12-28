@@ -1343,7 +1343,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
                 "type=" + getDynaFunctionType(ctx.identifier(1)) + ")";
     }
 
-    private static final Set<String> DYNA_FUNCTION_TYPES = Sets.mutable.of("Integer", "Float", "Numeric", "String", "Date", "Timestamp", "Bit", "Any");
+    private static final Set<String> DYNA_FUNCTION_TYPES = Sets.mutable.of("Bit", "Integer", "Float", "String", "Date", "Timestamp", "Any");
 
     private String getDynaFunctionType(IdentifierContext typeCtx)
     {
