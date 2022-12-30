@@ -1313,7 +1313,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
     @Override
     public String visitDynaFunction(DynaFunctionContext ctx)
     {
-        Set<String> constParams = ListIterate.flatCollect(ctx.dynaSignature(), DynaSignatureContext::dynaFunctionParam).select(p -> p.CONST(0) != null).collect(p -> p.identifier(0).getText()).toSet();
+        Set<String> constParams = ListIterate.flatCollect(ctx.dynaSignature(), DynaSignatureContext::dynaFunctionParam).select(p -> p.CONST() != null).collect(p -> p.identifier(0).getText()).toSet();
         Token endToken = ListIterate.flatCollect(ctx.dynaFunctionRestriction(), DynaFunctionRestrictionContext::STRING).getLastOptional().map(TerminalNode::getSymbol).orElse(ctx.identifier().getStop());
 
         return "^meta::relational::metamodel::DynaFunctionSpecification " + ctx.qualifiedName().identifier().getText() + sourceInformation.getPureSourceInformation(ctx.DYNA_FUNCTION().getSymbol(), ctx.qualifiedName().identifier().getStart(), endToken).toM4String() +
@@ -1321,7 +1321,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
                 "package=" + (ctx.qualifiedName().packagePath() == null ? "::" : ctx.qualifiedName().packagePath().getText().substring(0, ctx.qualifiedName().packagePath().getText().length() - 2)) + ", " +
                 "signatures=" + ListIterate.collect(ctx.dynaSignature(), this::visitDynaSignature).makeString("[", ", ", "]") + ", " +
                 "constantParameterRestrictions=" + ListIterate.collect(ctx.dynaFunctionRestriction(), r -> visitDynaFunctionRestriction(r, constParams)).makeString("[", ", ", "]") + ", " +
-                "dynaName='" + (ctx.VALID_STRING() == null ? (ctx.AND() == null ? "or" : "and") : ctx.VALID_STRING().getText()) + "', " +
+                "dynaName='" + (ctx.VALID_STRING() == null ? (ctx.AND() == null ? (ctx.OR() == null ? ctx.qualifiedName().identifier().getText() : "or") : "and") : ctx.VALID_STRING().getText()) + "', " +
                 "returnType=" + getDynaFunctionType(ctx.identifier()) + ")";
     }
 
@@ -1337,13 +1337,12 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
     public String visitDynaFunctionParam(DynaFunctionParamContext ctx)
     {
         return "^meta::relational::metamodel::DynaFunctionParameterSpecification(name='" + ctx.identifier(0).getText() + "', " +
-                "isArray=" + (ctx.ARR(0) == null ? "false" : "true") + ", " +
-                "isOptional=" + (ctx.OPT(0) == null ? "false" : "true") + ", " +
-                "isConstant=" + (ctx.CONST(0) == null ? "false" : "true") + ", " +
+                "isArray=" + (ctx.ARR() == null ? "false" : "true") + ", " +
+                "isConstant=" + (ctx.CONST() == null ? "false" : "true") + ", " +
                 "type=" + getDynaFunctionType(ctx.identifier(1)) + ")";
     }
 
-    private static final Set<String> DYNA_FUNCTION_TYPES = Sets.mutable.of("Bit", "Integer", "Float", "String", "Date", "Timestamp", "Any");
+    private static final Set<String> DYNA_FUNCTION_TYPES = Sets.mutable.of("Bit", "Integer", "Float", "String", "Date", "DateTime", "Any");
 
     private String getDynaFunctionType(IdentifierContext typeCtx)
     {

@@ -47,7 +47,6 @@ TARGET : '{target}' ;
 VIEW : 'View' ;
 
 DYNA_FUNCTION : 'DynaFunction' ;
-OPT: 'Opt' ;
 ARR: 'Arr' ;
 CONST: 'Const' ;
 RESTRICT: '~restrict' ;

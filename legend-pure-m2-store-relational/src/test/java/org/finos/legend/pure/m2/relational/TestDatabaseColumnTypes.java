@@ -336,7 +336,7 @@ public class TestDatabaseColumnTypes extends AbstractPureRelationalTestWithCoreC
     {
         String dynaDef = "###Relational\n " +
                 "DynaFunction abcde" +
-                "   dynaName :: (p1 Float Arr, p2 Integer Const, p3 String, p4 Any Opt) or (p5 Bit Arr...) -> String" +
+                "   dynaName :: (p1 Float Arr, p2 Integer Const, p3 String, p4 Any) or (p5 Bit...) -> String" +
                 "   ~restrict $p2 is '0' or '1' or '2'\n";
         this.runtime.createInMemorySource("sourceId.pure", dynaDef);
         this.runtime.compile();

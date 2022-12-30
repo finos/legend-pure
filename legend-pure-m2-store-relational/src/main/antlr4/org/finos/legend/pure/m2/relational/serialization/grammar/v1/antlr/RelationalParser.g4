@@ -18,7 +18,7 @@ dbDefinition: DATABASE qualifiedName
 ;
 
 dynaFunction: DYNA_FUNCTION qualifiedName
-              (VALID_STRING | AND | OR) PATH_SEPARATOR dynaSignature (OR dynaSignature)* ARROW identifier
+              (VALID_STRING | AND | OR)? PATH_SEPARATOR dynaSignature (OR dynaSignature)* ARROW identifier
               dynaFunctionRestriction*
 ;
 
@@ -27,7 +27,7 @@ dynaSignature: GROUP_OPEN
                GROUP_CLOSE
 ;
 
-dynaFunctionParam: identifier identifier (OPT | ARR | CONST)*
+dynaFunctionParam: identifier identifier (ARR | CONST)?
 ;
 
 dynaFunctionRestriction: RESTRICT DOLLAR identifier (IS | MATCHES) STRING (OR STRING)*

@@ -380,7 +380,6 @@ Class meta::relational::metamodel::DynaFunctionParameterSpecification
     name: String[1];
     type: meta::relational::metamodel::DynaFunctionType[1];
     isArray: Boolean[1];
-    isOptional: Boolean[1];
     isConstant: Boolean[1];
 }
 
@@ -393,7 +392,7 @@ Class meta::relational::metamodel::ConstantParameterRestriction
 
 Enum meta::relational::metamodel::DynaFunctionType
 {
-    Bit, Integer, Float, String, Date, Timestamp, Any
+    Bit, Integer, Float, String, Date, DateTime, Any
 }
 
 Class meta::relational::metamodel::operation::JoinStrings extends Operation
