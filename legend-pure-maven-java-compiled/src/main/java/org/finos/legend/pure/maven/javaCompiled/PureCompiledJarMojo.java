@@ -203,7 +203,7 @@ public class PureCompiledJarMojo extends AbstractMojo
         CodeRepositorySet.Builder builder = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true));
         if (this.extraRepositories != null)
         {
-            this.extraRepositories.forEach(r -> builder.addCodeRepository(GenericCodeRepository.build(classLoader, r)));
+            this.extraRepositories.forEach(r -> builder.addCodeRepository(getExtraRepository(classLoader, r)));
         }
         return builder.build();
     }
@@ -446,5 +446,32 @@ public class PureCompiledJarMojo extends AbstractMojo
         }).toArray(new URL[0]);
         getLog().info("    Project classLoader URLs " + Arrays.toString(urlsForClassLoader));
         return new URLClassLoader(urlsForClassLoader, parent);
+    }
+
+    private GenericCodeRepository getExtraRepository(ClassLoader classLoader, String extraRepository)
+    {
+        // First check if this is a resource
+        URL url = classLoader.getResource(extraRepository);
+        if (url != null)
+        {
+            try
+            {
+                return GenericCodeRepository.build(url);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException("Error loading extra repository \"" + extraRepository + "\" from resource " + url, e);
+            }
+        }
+
+        // If it's not a resource, assume it is a file path
+        try
+        {
+            return GenericCodeRepository.build(Paths.get(extraRepository));
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Error loading extra repository \"" + extraRepository + "\"", e);
+        }
     }
 }
