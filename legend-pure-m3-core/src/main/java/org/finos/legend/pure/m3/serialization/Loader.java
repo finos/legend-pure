@@ -97,7 +97,7 @@ public class Loader
         }
 
         @Override
-        public synchronized PureException getCause()
+        public PureException getCause()
         {
             return (PureException) super.getCause();
         }
