@@ -23,8 +23,8 @@ import java.util.regex.Pattern;
 public class RenameConceptUtility
 {
     private static final String CONCRETE_FUNCTION_DEFINITION = "ConcreteFunctionDefinition";
-    private static final Pattern IDENTIFIER_REGEX = Pattern.compile("^([a-zA-Z0-9_][a-zA-Z0-9_$]*)");
-    private static final Pattern SIGNATURE_SUFFIX_REGEX = Pattern.compile("_[a-zA-Z0-9_$]+_");
+    private static final Pattern IDENTIFIER_REGEX = Pattern.compile("^([\\w_][\\w_$]*)");
+    private static final Pattern SIGNATURE_SUFFIX_REGEX = Pattern.compile("_[\\w_$]+_");
 
     private RenameConceptUtility()
     {
