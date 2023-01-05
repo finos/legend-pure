@@ -228,7 +228,7 @@ public class DatabaseProcessor extends Processor<Database>
                 {
                     throw new PureCompilationException(column.getSourceInformation(), "Multiple columns named '" + columnName + "' found in " +
                             (tableOrView instanceof NamedRelation
-                                    ? (tableOrView.getClassifier().getName().toLowerCase() + " " + tableOrView.getValueForMetaPropertyToOne(M3Properties.name).getName())
+                                    ? (tableOrView.getClassifier().getName().toLowerCase() + " " + ((NamedRelation) tableOrView)._name())
                                     : "relation"));
                 }
                 ((Column) column)._owner((Relation) tableOrView);
