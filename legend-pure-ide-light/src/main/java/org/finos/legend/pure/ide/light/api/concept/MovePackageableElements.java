@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 @Path("/")
 public class MovePackageableElements
 {
-    private static final Pattern PACKAGE_PATH_PATTERN = Pattern.compile("[\\w_][\\w_$]*(::[\\w_][\\w_$]*)*");
+    private static final Pattern PACKAGE_PATH_PATTERN = Pattern.compile("\\w[\\w$]*(::\\w[\\w$]*)*");
 
     private final PureSession session;
 
