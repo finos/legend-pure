@@ -226,13 +226,16 @@ public class DatabaseProcessor extends Processor<Database>
                 RelationalOperationElement old = columnsByName.put(columnName, (Column) column);
                 if (old != null)
                 {
-                    throw new PureCompilationException(column.getSourceInformation(), "Multiple columns named '" + columnName + "' found in " + tableOrView.getClassifier().getName().toLowerCase() + " " + (tableOrView.getValueForMetaPropertyToOne(M3Properties.name).getName()));
+                    throw new PureCompilationException(column.getSourceInformation(), "Multiple columns named '" + columnName + "' found in " +
+                            (tableOrView instanceof NamedRelation
+                                    ? (tableOrView.getClassifier().getName().toLowerCase() + " " + tableOrView.getValueForMetaPropertyToOne(M3Properties.name).getName())
+                                    : "relation"));
                 }
                 ((Column) column)._owner((Relation) tableOrView);
             }
             return columnsByName;
         }
-        return UnifiedMap.newMap();
+        return Maps.immutable.empty();
     }
 
     private static void processTableMilestoning(CoreInstance tableCoreInstance, MapIterable<String, Column> columnsByName, Matcher matcher, ProcessorState processorState, ProcessorSupport processorSupport)
