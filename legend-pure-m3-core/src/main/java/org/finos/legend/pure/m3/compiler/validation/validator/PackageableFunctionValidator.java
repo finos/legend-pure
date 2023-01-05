@@ -15,7 +15,6 @@
 package org.finos.legend.pure.m3.compiler.validation.validator;
 
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.compiler.validation.ValidatorState;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
@@ -36,7 +35,7 @@ public class PackageableFunctionValidator implements MatchRunner<PackageableFunc
     @Override
     public void run(PackageableFunction<CoreInstance> functionDefinition, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
-        ElementWithConstraintsValidator.validateConstraints(functionDefinition, functionDefinition._preConstraints(), state);
-        ElementWithConstraintsValidator.validateConstraints(functionDefinition, functionDefinition._postConstraints(), state);
+        ElementWithConstraintsValidator.validateConstraints(functionDefinition, functionDefinition._preConstraints(), state, matcher);
+        ElementWithConstraintsValidator.validateConstraints(functionDefinition, functionDefinition._postConstraints(), state, matcher);
     }
 }

@@ -180,4 +180,66 @@ public class TestNestedCollection extends AbstractPureTestWithCoreCompiledPlatfo
                         "}"));
         assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: 0..1", "fromString.pure", 4, 12, e);
     }
+
+    @Test
+    public void testCollectionInClassConstraint()
+    {
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure",
+                "Class TestClass\n" +
+                        "[\n" +
+                        "  nonEmpty: length($this.name + $this.optionalName) > 0\n" +
+                        "]\n" +
+                        "{\n" +
+                        "    name : String[1];\n" +
+                        "    optionalName : String[0..1];\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: 0..1", "fromString.pure", 3, 39, e);
+    }
+
+    @Test
+    public void testCollectionInFunctionPreConstraint()
+    {
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure",
+                "function testFn(name:String[1], optionalName:String[0..1]):String[1]\n" +
+                        "[\n" +
+                        "  nonEmpty: length($name + $optionalName) > 0\n" +
+                        "]\n" +
+                        "{\n" +
+                        "    $name + if($optionalName->isEmpty(), |'', |' ' + $optionalName->toOne());\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: 0..1", "fromString.pure", 3, 29, e);
+    }
+
+    @Test
+    public void testCollectionInFunctionPostConstraint()
+    {
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure",
+                "function testFn(name:String[1], optionalName:String[0..1]):String[1]\n" +
+                        "[\n" +
+                        "  nonEmpty: size([$return, $optionalName]) > 0\n" +
+                        "]\n" +
+                        "{\n" +
+                        "    $name + if($optionalName->isEmpty(), |'', |' ' + $optionalName->toOne());\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: 0..1", "fromString.pure", 3, 29, e);
+    }
+
+    @Test
+    public void testCollectionInConstraintMessageFn()
+    {
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure",
+                "Class TestClass\n" +
+                        "[\n" +
+                        "  nonEmpty\n" +
+                        "  (\n" +
+                        "      ~function : ($this.name->length() > 0) || (!$this.optionalName->isEmpty() && ($this.optionalName->toOne()->length() > 0))\n" +
+                        "      ~message  : 'name (' + $this.name + ') or optionalName (' + $this.optionalName + ') must be non-empty'\n" +
+                        "  )\n" +
+                        "]\n" +
+                        "{\n" +
+                        "    name : String[1];\n" +
+                        "    optionalName : String[0..1];\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: 0..1", "fromString.pure", 6, 73, e);
+    }
 }
