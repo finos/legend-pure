@@ -24,204 +24,160 @@ import org.junit.Test;
 public class TestNestedCollection extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("fromString.pure");
+        runtime.compile();
     }
 
     @Test
     public void testCollectionWithNoNesting()
     {
-        compileTestSource("fromString.pure", "function test():String[*]\n" +
-                                                   "{\n" +
-                                                   "    let a = ['a', 'b', 'c', 'd'];\n" +
-                                                   "}\n");
+        compileTestSource("fromString.pure",
+                "function test():String[*]\n" +
+                        "{\n" +
+                        "    let a = ['a', 'b', 'c', 'd'];\n" +
+                        "}\n");
         // Expect no compilation exception
     }
 
     @Test
     public void testCollectionWithDirectNesting()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "function test():String[*]\n" +
-                    "{\n" +
-                    "    let a = ['e', 'f', ['g', 'h']];\n" +
-                    "}\n");
-            Assert.fail("Expected a compilation exception, got none");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: 2", "fromString.pure", 3, 24, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure",
+                "function test():String[*]\n" +
+                        "{\n" +
+                        "    let a = ['e', 'f', ['g', 'h']];\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: 2", "fromString.pure", 3, 24, e);
     }
 
     @Test
     public void testCollectionWithIllusoryNesting()
     {
-        compileTestSource("fromString.pure", "function test():String[*]\n" +
-                                                   "{\n" +
-                                                   "    let a = ['i', ['j']];\n" +
-                                                   "}\n");
+        compileTestSource("fromString.pure",
+                "function test():String[*]\n" +
+                        "{\n" +
+                        "    let a = ['i', ['j']];\n" +
+                        "}\n");
         // Expect no compilation exception
     }
 
     @Test
     public void testCollectionWithNonCollectionVariableExpression()
     {
-        compileTestSource("fromString.pure", "function test():String[*]\n" +
-                                                   "{\n" +
-                                                   "    let x = 'k';" +
-                                                   "    let a = [$x, 'l'];\n" +
-                                                   "}\n");
+        compileTestSource("fromString.pure",
+                "function test():String[*]\n" +
+                        "{\n" +
+                        "    let x = 'k';" +
+                        "    let a = [$x, 'l'];\n" +
+                        "}\n");
         // Expect no compilation exception
     }
 
     @Test
     public void testCollectionWithCollectionVariableExpression()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "function test():String[*]\n" +
-                    "{\n" +
-                    "    let x = ['m', 'n'];\n" +
-                    "    let a = [$x, 'o', 'p'];\n" +
-                    "}\n");
-            Assert.fail("Expected a compilation exception, got none");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: 2", "fromString.pure", 4, 15, 4, 15, 4, 15, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure",
+                "function test():String[*]\n" +
+                        "{\n" +
+                        "    let x = ['m', 'n'];\n" +
+                        "    let a = [$x, 'o', 'p'];\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: 2", "fromString.pure", 4, 15, 4, 15, 4, 15, e);
     }
 
     @Test
     public void testCollectionWithCollectionVariableExpressionFromFunction()
     {
-        try
-        {
-            runtime.createInMemorySource("fromString.pure", "function test():String[*]\n" +
-                    "{\n" +
-                    "    let x = 'm, n'->split(', ');\n" +
-                    "    let a = [$x, 'o', 'p'];\n" +
-                    "}\n");
-            runtime.compile();
-            Assert.fail("Expected a compilation exception, got none");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: *", "fromString.pure", 4, 15, 4, 15, 4, 15, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure",
+                "function test():String[*]\n" +
+                        "{\n" +
+                        "    let x = 'm, n'->split(', ');\n" +
+                        "    let a = [$x, 'o', 'p'];\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: *", "fromString.pure", 4, 15, 4, 15, 4, 15, e);
     }
 
     @Test
     public void testCollectionWithNonCollectionFunctionExpression()
     {
-        runtime.createInMemorySource("fromString.pure", "function test():String[*]\n" +
-                                                   "{\n" +
-                                                   "    let a = [trim('q'), 'r'];\n" +
-                                                   "}\n");
-        runtime.compile();
+        compileTestSource("fromString.pure",
+                "function test():String[*]\n" +
+                        "{\n" +
+                        "    let a = [trim('q'), 'r'];\n" +
+                        "}\n");
         // Expect no compilation exception
     }
 
     @Test
     public void testCollectionWithCollectionFunctionExpression()
     {
-        try
-        {
-            runtime.createInMemorySource("fromString.pure", "function test():String[*]\n" +
-                    "{\n" +
-                    "    let a = [split('s', ', '), 't', 'u'];\n" +
-                    "}\n");
-            runtime.compile();
-            Assert.fail("Expected a compilation exception, got none");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: *", "fromString.pure", 3, 14, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure",
+                "function test():String[*]\n" +
+                        "{\n" +
+                        "    let a = [split('s', ', '), 't', 'u'];\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: *", "fromString.pure", 3, 14, e);
     }
 
     @Test
     public void testCollectionWithZeroOneExpression()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "function test(x:String[0..1]):String[*]\n" +
-                    "{\n" +
-                    "    ['a', $x, 'c'];\n" +
-                    "}");
-            Assert.fail("Expected a compilation exception, got none");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: 0..1", "fromString.pure", 3, 12, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure",
+                "function test(x:String[0..1]):String[*]\n" +
+                        "{\n" +
+                        "    ['a', $x, 'c'];\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: 0..1", "fromString.pure", 3, 12, e);
     }
 
     @Test
     public void testCollectionWithZeroOneWrappedInCollection()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "function test():String[*]\n" +
-                    "{\n" +
-                    "    let a = [[['a', 'b']->first()], 't', 'u'];\n" +
-                    "}\n");
-            Assert.fail("Expected a compilation exception, got none");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: 0..1", "fromString.pure", 3, 14, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure",
+                "function test():String[*]\n" +
+                        "{\n" +
+                        "    let a = [[['a', 'b']->first()], 't', 'u'];\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: 0..1", "fromString.pure", 3, 14, e);
     }
 
 
     @Test
     public void testCollectionWithZeroOneExpressionReturnedFromFunction()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "function test(x:String[0..1]):String[*]\n" +
-                    "{\n" +
-                    "    ['a', doSomething(), 'c'];\n" +
-                    "}" +
-                    "function doSomething():String[0..1]\n" +
-                                        "{\n" +
-                                        "    [];\n" +
-                                        "}");
-            Assert.fail("Expected a compilation exception, got none");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: 0..1", "fromString.pure", 3, 11, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure",
+                "function test(x:String[0..1]):String[*]\n" +
+                        "{\n" +
+                        "    ['a', doSomething(), 'c'];\n" +
+                        "}" +
+                        "function doSomething():String[0..1]\n" +
+                        "{\n" +
+                        "    [];\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: 0..1", "fromString.pure", 3, 11, e);
     }
 
     @Test
     public void testCollectionWithZeroOneExpressionReturnedFromFunctionWithLet()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "function test(x:String[0..1]):String[*]\n" +
-                    "{\n" +
-                    "    let a = [doSomething()];\n" +
-                    "    ['a', $a];\n" +
-                    "}" +
-                    "function doSomething():String[0..1]\n" +
-                                        "{\n" +
-                                        "    [];\n" +
-                                        "}");
-            Assert.fail("Expected a compilation exception, got none");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: 0..1", "fromString.pure", 4, 12, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure",
+                "function test(x:String[0..1]):String[*]\n" +
+                        "{\n" +
+                        "    let a = [doSomething()];\n" +
+                        "    ['a', $a];\n" +
+                        "}" +
+                        "function doSomething():String[0..1]\n" +
+                        "{\n" +
+                        "    [];\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: 0..1", "fromString.pure", 4, 12, e);
     }
 }
