@@ -1531,6 +1531,67 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
         assertPureException(PureExecutionException.class, "Constraint :[superPeopleHaveNoDuplicates] violated in the Class SuperPeople, Message: test", "/test/repro.pure", 45, 4, 45, 4, 45, 128, e);
     }
 
+    @Test
+    public void testConstraintInClassWithTypeParameters()
+    {
+        compileTestSource("/test/repro.pure",
+                "Class ClassWrapper<T|m>\n" +
+                        "[\n" +
+                        "   notAny: $this.classes->forAll(c | $c != Any)\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   classes: Class<T>[m];\n" +
+                        "}\n" +
+                        "\n" +
+                        "function testSucceed():Any[*]\n" +
+                        "{\n" +
+                        "    ^ClassWrapper<Type|1>(classes=Type);\n" +
+                        "}\n" +
+                        "\n" +
+                        "function testFail():Any[*]\n" +
+                        "{\n" +
+                        "    ^ClassWrapper<Any|2>(classes=[Type, Any]);\n" +
+                        "}\n"
+        );
+        execute("testSucceed():Any[*]");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testFail():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[notAny] violated in the Class ClassWrapper", "/test/repro.pure", 16, 5, 16, 5, 16, 45, e);
+    }
+
+    @Test
+    public void testConstraintInFunctionWithTypeParameters()
+    {
+        compileTestSource("/test/repro.pure",
+                "function myFunction<T>(col:T[*], toRemove:Any[*]):T[*]\n" +
+                        "[\n" +
+                        "   notEmptyBefore: $col->size() > 0,\n" +
+                        "   notEmptyAfter: $return->size() > 0\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   $col->filter(x | !$toRemove->exists(y | $x == $y));\n" +
+                        "}\n" +
+                        "\n" +
+                        "function testSucceed():Any[*]\n" +
+                        "{\n" +
+                        "   myFunction([1, 2, 3], [4, 5, 6]);\n" +
+                        "}\n" +
+                        "\n" +
+                        "function testFailPre():Any[*]\n" +
+                        "{\n" +
+                        "   myFunction([], [4, 5, 6]);\n" +
+                        "}\n" +
+                        "function testFailPost():Any[*]\n" +
+                        "{\n" +
+                        "   myFunction([1, 2, 3], [1, 2, 3]);\n" +
+                        "}\n"
+        );
+        execute("testSucceed():Any[*]");
+        PureExecutionException ePre = Assert.assertThrows(PureExecutionException.class, () -> execute("testFailPre():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint (PRE):[notEmptyBefore] violated. (Function:myFunction_T_MANY__Any_MANY__T_MANY_)", "/test/repro.pure", 17, 4, 17, 4, 17, 13, ePre);
+        PureExecutionException ePost = Assert.assertThrows(PureExecutionException.class, () -> execute("testFailPost():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint (POST):[notEmptyAfter] violated. (Function:myFunction_T_MANY__Any_MANY__T_MANY_)", "/test/repro.pure", 21, 4, 21, 4, 21, 13, ePost);
+    }
+
     protected static MutableCodeStorage getCodeStorage()
     {
         CodeRepository platform = CodeRepository.newPlatformCodeRepository();

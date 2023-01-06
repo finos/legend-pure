@@ -351,8 +351,7 @@ public class Multiplicity
     }
 
     /**
-     * Create a new non-concrete multiplicity instance with the given
-     * parameter name.
+     * Create a new non-concrete multiplicity instance with the given parameter name.
      *
      * @param parameterName    multiplicity parameter name
      * @param processorSupport processor support
@@ -360,7 +359,20 @@ public class Multiplicity
      */
     public static CoreInstance newMultiplicity(String parameterName, ProcessorSupport processorSupport)
     {
-        CoreInstance newMultiplicity = processorSupport.newAnonymousCoreInstance(null, M3Paths.Multiplicity);
+        return newMultiplicity(parameterName, null, processorSupport);
+    }
+
+    /**
+     * Create a new non-concrete multiplicity instance with the given parameter name.
+     *
+     * @param parameterName     multiplicity parameter name
+     * @param sourceInformation source information
+     * @param processorSupport  processor support
+     * @return new non-concrete multiplicity
+     */
+    public static CoreInstance newMultiplicity(String parameterName, SourceInformation sourceInformation, ProcessorSupport processorSupport)
+    {
+        CoreInstance newMultiplicity = processorSupport.newAnonymousCoreInstance(sourceInformation, M3Paths.Multiplicity);
         Instance.addValueToProperty(newMultiplicity, M3Properties.multiplicityParameter, processorSupport.newCoreInstance(parameterName, M3Paths.String, null), processorSupport);
         return newMultiplicity;
     }
