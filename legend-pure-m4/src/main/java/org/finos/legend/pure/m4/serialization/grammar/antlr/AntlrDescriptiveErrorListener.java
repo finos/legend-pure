@@ -14,8 +14,10 @@
 
 package org.finos.legend.pure.m4.serialization.grammar.antlr;
 
+import org.antlr.v4.runtime.BaseErrorListener;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.antlr.v4.runtime.*;
 
 public class AntlrDescriptiveErrorListener extends BaseErrorListener
 {

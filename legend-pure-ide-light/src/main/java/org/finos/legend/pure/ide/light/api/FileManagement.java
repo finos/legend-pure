@@ -52,7 +52,7 @@ import java.util.regex.Pattern;
 @Path("/")
 public class FileManagement
 {
-    private static final Pattern FILE_NAME_PATTERN = Pattern.compile("/?([a-zA-z0-9_]+/)*[a-zA-z0-9_]+(\\.[a-zA-z0-9_]+)*");
+    private static final Pattern FILE_NAME_PATTERN = Pattern.compile("/?+(\\w+/)*+\\w+(\\.\\w++)*+");
 
     private final PureSession session;
 

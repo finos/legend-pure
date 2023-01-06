@@ -41,12 +41,6 @@ public abstract class ThreadLocalTransactionContext implements AutoCloseable
         }
     }
 
-    @Override
-    public void finalize()
-    {
-        close();
-    }
-
     /**
      * Perform whatever actions are necessary for closing.
      * This will only be called once.

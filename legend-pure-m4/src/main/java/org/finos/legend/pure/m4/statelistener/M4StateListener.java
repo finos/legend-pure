@@ -20,11 +20,14 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 public interface M4StateListener
 {
     void startParsingM4(String fileLocation);
+
     void finishedParsingM4(String fileLocation);
 
     void startParsingClassM4(String fileLocation);
+
     void finishedParsingClassM4(String fileLocation);
 
     void startRepositorySimpleValidation();
+
     void finishedRepositorySimpleValidation(SetIterable<? extends CoreInstance> visitedNodes);
 }
