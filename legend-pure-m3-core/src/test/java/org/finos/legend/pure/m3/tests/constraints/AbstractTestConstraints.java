@@ -1592,6 +1592,41 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
         assertPureException(PureExecutionException.class, "Constraint (POST):[notEmptyAfter] violated. (Function:myFunction_T_MANY__Any_MANY__T_MANY_)", "/test/repro.pure", 21, 4, 21, 4, 21, 13, ePost);
     }
 
+    @Test
+    public void testConstraintInClassWithMilestoning()
+    {
+        compileTestSource("/test/repro.pure",
+                "Class <<temporal.businesstemporal>> MyClass\n" +
+                        "[\n" +
+                        "   differentName: $this.others($this.businessDate)->forAll(o | $o.name != $this.name)\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   name: String[1];\n" +
+                        "   others: OtherClass[*];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class <<temporal.businesstemporal>> OtherClass\n" +
+                        "{\n" +
+                        "   name: String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "function testSucceed():Any[*]\n" +
+                        "{\n" +
+                        "    let bd = %2023-01-11;\n" +
+                        "    ^MyClass(name='me', businessDate=$bd, othersAllVersions=^OtherClass(name='you', businessDate=$bd));\n" +
+                        "}\n" +
+                        "\n" +
+                        "function testFail():Any[*]\n" +
+                        "{\n" +
+                        "    let bd = %2023-01-11;\n" +
+                        "    ^MyClass(name='me', businessDate=$bd, othersAllVersions=[^OtherClass(name='you', businessDate=$bd), ^OtherClass(name='me', businessDate=$bd)]);\n" +
+                        "}\n"
+        );
+        execute("testSucceed():Any[*]");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testFail():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[differentName] violated in the Class MyClass", "/test/repro.pure", 24, 5, 24, 5, 24, 146, e);
+    }
+
     protected static MutableCodeStorage getCodeStorage()
     {
         CodeRepository platform = CodeRepository.newPlatformCodeRepository();
