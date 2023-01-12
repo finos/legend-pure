@@ -2416,7 +2416,7 @@ public class AntlrContextToM3CoreInstance
                     multParameters.add(mult);
 
                 }
-                classInstance._multiplicityParameters(this.processMultiplicityParametersInstance(multiplicityParameterNames));
+                classInstance._multiplicityParameters(this.multParamsToInstanceValues(multiplicityParameterNames));
                 classifierGTTA._multiplicityArguments(multParameters);
             }
 
@@ -2523,13 +2523,16 @@ public class AntlrContextToM3CoreInstance
                     GenericType thisParamType = (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(owner, this.processorSupport);
                     if (typeParameterNames.notEmpty())
                     {
-                        MutableList<GenericType> typeArgs = typeParameterNames.collect(n -> GenericTypeInstance.createPersistent(this.repository)._typeParameter(TypeParameterInstance.createPersistent(this.repository, n)));
+                        MutableList<TypeParameter> typeParameters = typeParameterNames.collect(n -> TypeParameterInstance.createPersistent(this.repository, n));
+                        Instance.setValuesForProperty(messageFunctionType, M3Properties.typeParameters, typeParameters, this.processorSupport);
+                        MutableList<GenericType> typeArgs = typeParameters.collect(tp -> GenericTypeInstance.createPersistent(this.repository)._typeParameter(tp));
                         thisParamType._typeArguments(typeArgs);
                     }
                     if (multiplicityParameterNames.notEmpty())
                     {
-                        MutableList<Multiplicity> multParameters = multiplicityParameterNames.collect(n -> MultiplicityInstance.createPersistent(this.repository, null, null)._multiplicityParameter(n));
-                        thisParamType._multiplicityArguments(multParameters);
+                        Instance.setValuesForProperty(messageFunctionType, M3Properties.multiplicityParameters, multParamsToInstanceValues(multiplicityParameterNames), this.processorSupport);
+                        MutableList<Multiplicity> multArgs = multiplicityParameterNames.collect(n -> MultiplicityInstance.createPersistent(this.repository, null, null)._multiplicityParameter(n));
+                        thisParamType._multiplicityArguments(multArgs);
                     }
 
                     CoreInstance param = VariableExpressionInstance.createPersistent(this.repository, messageSourceInformation, thisParamType, this.pureOne, "this");
@@ -2562,11 +2565,14 @@ public class AntlrContextToM3CoreInstance
             GenericType thisParamType = (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(owner, this.processorSupport);
             if (typeParameterNames.notEmpty())
             {
-                MutableList<GenericType> typeArgs = typeParameterNames.collect(n -> GenericTypeInstance.createPersistent(this.repository)._typeParameter(TypeParameterInstance.createPersistent(this.repository, n)));
+                MutableList<TypeParameter> typeParameters = typeParameterNames.collect(n -> TypeParameterInstance.createPersistent(this.repository, n));
+                Instance.setValuesForProperty(functionType, M3Properties.typeParameters, typeParameters, this.processorSupport);
+                MutableList<GenericType> typeArgs = typeParameters.collect(tp -> GenericTypeInstance.createPersistent(this.repository)._typeParameter(tp));
                 thisParamType._typeArguments(typeArgs);
             }
             if (multiplicityParameterNames.notEmpty())
             {
+                Instance.setValuesForProperty(functionType, M3Properties.multiplicityParameters, multParamsToInstanceValues(multiplicityParameterNames), this.processorSupport);
                 MutableList<Multiplicity> multParameters = multiplicityParameterNames.collect(n -> MultiplicityInstance.createPersistent(this.repository, null, null)._multiplicityParameter(n));
                 thisParamType._multiplicityArguments(multParameters);
             }
@@ -3134,7 +3140,7 @@ public class AntlrContextToM3CoreInstance
         }
         if (multiplicityParametersNames.notEmpty())
         {
-            ft._multiplicityParameters(this.processMultiplicityParametersInstance(multiplicityParametersNames));
+            ft._multiplicityParameters(this.multParamsToInstanceValues(multiplicityParametersNames));
         }
         if (vars.notEmpty())
         {
@@ -3143,21 +3149,11 @@ public class AntlrContextToM3CoreInstance
         return ft;
     }
 
-    private ListIterable<InstanceValue> processMultiplicityParametersInstance(MutableList<String> multParameters)
+    private ListIterable<InstanceValue> multParamsToInstanceValues(ListIterable<String> multParameters)
     {
-        MutableList<InstanceValue> result = Lists.mutable.of();
-        for (String multParameter : multParameters)
-        {
-            InstanceValueInstance iv = InstanceValueInstance.createPersistent(this.repository, null, null);
-            iv._values(Lists.mutable.of(this.repository.newStringCoreInstance_cached(multParameter)));
-            GenericTypeInstance gt = GenericTypeInstance.createPersistent(this.repository);
-            Type ti = (Type) this.processorSupport.package_getByUserPath("String");
-            gt._rawTypeCoreInstance(ti);
-            iv._genericType(gt);
-            iv._multiplicity(this.getPureOne());
-            result.add(iv);
-        }
-        return result;
+        Type stringType = (Type) this.processorSupport.package_getByUserPath(M3Paths.String);
+        Multiplicity pureOne = getPureOne();
+        return multParameters.collect(multParameter -> InstanceValueInstance.createPersistent(this.repository, GenericTypeInstance.createPersistent(this.repository)._rawTypeCoreInstance(stringType), pureOne)._values(Lists.mutable.of(this.repository.newStringCoreInstance_cached(multParameter))));
     }
 
     private ListIterable<TypeParameter> processTypeParametersInstance(ModelRepository repository, MutableList<String> typeParameters)

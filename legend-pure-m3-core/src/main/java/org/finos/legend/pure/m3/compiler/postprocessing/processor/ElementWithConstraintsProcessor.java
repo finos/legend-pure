@@ -51,10 +51,17 @@ public class ElementWithConstraintsProcessor extends Processor<ElementWithConstr
                 FunctionDefinition<?> constraintFn = constraint._functionDefinition();
                 try (ProcessorState.VariableContextScope ignore = state.withNewVariableContext())
                 {
-                    registerParams(constraintFn, state.getVariableContext(), processorSupport);
-                    ValueSpecification constraintFnExpressionSequence = constraintFn._expressionSequence().getOnly();
-                    PostProcessor.processElement(matcher, constraintFnExpressionSequence, state, processorSupport);
-                    addConstraintUsageContext(constraintFnExpressionSequence, instance, i++, processorSupport);
+                    startProcessing(constraintFn, state, processorSupport);
+                    try
+                    {
+                        ValueSpecification constraintFnExpressionSequence = constraintFn._expressionSequence().getOnly();
+                        PostProcessor.processElement(matcher, constraintFnExpressionSequence, state, processorSupport);
+                        addConstraintUsageContext(constraintFnExpressionSequence, instance, i++, processorSupport);
+                    }
+                    finally
+                    {
+                        finishProcessing(constraintFn, state, processorSupport);
+                    }
                 }
 
                 if (constraint._messageFunction() != null)
@@ -62,10 +69,17 @@ public class ElementWithConstraintsProcessor extends Processor<ElementWithConstr
                     FunctionDefinition<?> constraintMessage = constraint._messageFunction();
                     try (ProcessorState.VariableContextScope ignore = state.withNewVariableContext())
                     {
-                        registerParams(constraintFn, state.getVariableContext(), processorSupport);
-                        ValueSpecification constraintMessageExpressionSequence = constraintMessage._expressionSequence().getOnly();
-                        PostProcessor.processElement(matcher, constraintMessageExpressionSequence, state, processorSupport);
-                        addConstraintUsageContext(constraintMessageExpressionSequence, instance, i++, processorSupport);
+                        startProcessing(constraintMessage, state, processorSupport);
+                        try
+                        {
+                            ValueSpecification constraintMessageExpressionSequence = constraintMessage._expressionSequence().getOnly();
+                            PostProcessor.processElement(matcher, constraintMessageExpressionSequence, state, processorSupport);
+                            addConstraintUsageContext(constraintMessageExpressionSequence, instance, i++, processorSupport);
+                        }
+                        finally
+                        {
+                            finishProcessing(constraintMessage, state, processorSupport);
+                        }
                     }
                 }
             }
@@ -83,9 +97,10 @@ public class ElementWithConstraintsProcessor extends Processor<ElementWithConstr
         }
     }
 
-    private void registerParams(FunctionDefinition<?> functionDefinition, VariableContext variableContext, ProcessorSupport processorSupport)
+    private void startProcessing(FunctionDefinition<?> functionDefinition, ProcessorState state, ProcessorSupport processorSupport)
     {
         FunctionType functionType = (FunctionType) processorSupport.function_getFunctionType(functionDefinition);
+        VariableContext variableContext = state.getVariableContext();
         functionType._parameters().forEach(var ->
         {
             try
@@ -97,6 +112,12 @@ public class ElementWithConstraintsProcessor extends Processor<ElementWithConstr
                 throw new PureCompilationException(functionDefinition.getSourceInformation(), e.getMessage());
             }
         });
+        state.newTypeInferenceContext(functionType);
+    }
+
+    private void finishProcessing(FunctionDefinition<?> functionDefinition, ProcessorState state, ProcessorSupport processorSupport)
+    {
+        state.deleteTypeInferenceContext();
     }
 
     @Override

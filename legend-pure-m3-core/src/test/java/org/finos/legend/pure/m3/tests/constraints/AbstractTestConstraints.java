@@ -1559,6 +1559,33 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     }
 
     @Test
+    public void testConstraintInClassWithTypeParameters2()
+    {
+        compileTestSource("/test/repro.pure",
+                "Class Wrapper<T>\n" +
+                        "[\n" +
+                        "   notEmpty: $this.values->size() > 0\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   values: T[*];\n" +
+                        "}\n" +
+                        "\n" +
+                        "function testSucceed():Any[*]\n" +
+                        "{\n" +
+                        "    ^Wrapper<Integer>(values=1);\n" +
+                        "}\n" +
+                        "\n" +
+                        "function testFail():Any[*]\n" +
+                        "{\n" +
+                        "    ^Wrapper<Any>(values=[]);\n" +
+                        "}\n"
+        );
+        execute("testSucceed():Any[*]");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testFail():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[notEmpty] violated in the Class Wrapper", "/test/repro.pure", 16, 5, 16, 5, 16, 28, e);
+    }
+
+    @Test
     public void testConstraintInFunctionWithTypeParameters()
     {
         compileTestSource("/test/repro.pure",
