@@ -25,6 +25,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImpo
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.SourceInfoProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 
 public class New extends AbstractNative
@@ -56,6 +57,19 @@ public class New extends AbstractNative
                     + InstantiationHelpers.buildGenericType(genericType, processorContext) + ")" : "") + (_Class.computeConstraintsInHierarchy(_class, processorSupport).isEmpty() ? "" : "._validate(false, " + SourceInfoProcessor.sourceInfoToString(functionExpression.getSourceInformation()) + ", es)")
                     + InstantiationHelpers.manageDefaultValues(this::formatDefaultValueString, Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), false, processorContext).makeString("");
         }
+    }
+
+    @Override
+    public String buildBody()
+    {
+        return "new PureFunction2<" + FullJavaPaths.Class + ", String, Object>()\n" +
+                "        {\n" +
+                "            @Override\n" +
+                "            public Object value(" + FullJavaPaths.Class + " clazz, String name, ExecutionSupport es)\n" +
+                "            {\n" +
+                "                return CoreGen.newObject(clazz, name, Lists.immutable.empty(), es);\n" +
+                "            }\n" +
+                "        }";
     }
 
     private String formatDefaultValueString(String methodName, String value)
