@@ -76,6 +76,15 @@ public interface CodeStorage
     boolean isVersioned(String path);
 
     /**
+     * Return whether the given file or directory is
+     * immutable.
+     *
+     * @param path file or directory path
+     * @return whether path is immutable
+     */
+    boolean isImmutable(String path);
+
+    /**
      * Get the current revision number of the given file
      * or directory.  Returns -1 if the file or directory
      * is not under version control.

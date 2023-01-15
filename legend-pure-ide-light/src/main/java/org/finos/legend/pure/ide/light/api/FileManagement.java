@@ -271,7 +271,7 @@ public class FileManagement
 
             return Response.ok((StreamingOutput) outputStream ->
             {
-                outputStream.write(this.transformContent(content));
+                outputStream.write(this.transformContent(content, codeStorage.isImmutable(filePath)));
                 outputStream.close();
             }).build();
         }
@@ -285,10 +285,11 @@ public class FileManagement
         }
     }
 
-    private byte[] transformContent(byte[] content)
+    private byte[] transformContent(byte[] content, boolean isImmutable)
     {
         JSONObject object = new JSONObject();
         object.put("content", new String(content));
+        object.put("RO", isImmutable);
         return object.toJSONString().getBytes();
     }
 
@@ -319,7 +320,9 @@ public class FileManagement
         String repoName = codeStorage.getRepoName(path);
         builder.append("{\"li_attr\":{\"id\":\"file_");
         builder.append(path);
-        builder.append("\",\"path\":\"" + path + "\",\"file\":\"false\",\"repo\":\"true\"},\"text\":\"");
+        builder.append("\",\"path\":\"").append(path).append("\",\"file\":\"false\",\"repo\":\"true\"");
+        builder.append(",\"RO\":").append(codeStorage.isImmutable(path));
+        builder.append("},\"text\":\"");
         builder.append(repo.getName());
         if (currentRevision >= 0)
         {
@@ -331,7 +334,6 @@ public class FileManagement
             builder.append(Version.SERVER);
             builder.append(')');
             builder.append("\",\"icon\":\"/ide/pure/icons/wrench.png\",\"state\":\"closed\",\"children\":true}");
-
         }
         else
         {
@@ -343,7 +345,9 @@ public class FileManagement
     {
         builder.append("{\"li_attr\":{\"id\":\"file_");
         builder.append(path);
-        builder.append("\",\"path\":\"").append(path).append("\",\"file\":\"false\"},\"text\":\"");
+        builder.append("\",\"path\":\"").append(path).append("\",\"file\":\"false\"");
+        builder.append(",\"RO\":").append(codeStorage.isImmutable(path));
+        builder.append("},\"text\":\"");
         builder.append(directory.getName());
         builder.append("\",\"state\":\"closed\",\"children\":").append(!codeStorage.isEmptyFolder(path)).append("}");
     }
@@ -353,17 +357,15 @@ public class FileManagement
         builder.append("{\"li_attr\":{\"id\":\"file_");
         builder.append(path);
         builder.append("\",\"path\":\"").append(path).append("\",\"file\":\"true\"");
+        builder.append(",\"RO\":").append(codeStorage.isImmutable(path));
 
-        if (PlatformCodeRepository.NAME.equals(codeStorage.getRepoName(path)))
-        {
-            builder.append(",\"RO\":\"true\""); // TODO can we replace this with an actual boolean?
-        }
-        else if (file.getStatus() != CodeStorageNodeStatus.NORMAL)
+        if (file.getStatus() != CodeStorageNodeStatus.NORMAL)
         {
             builder.append(",\"statusType\":\"");
             builder.append(file.getStatus());
             builder.append('"');
         }
+
         builder.append("},\"text\":\"");
         builder.append(file.getName());
         builder.append("\",\"icon\":\"/ide/pure/icons/filesystem/txt.png\"}");

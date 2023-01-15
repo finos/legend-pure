@@ -41,6 +41,7 @@ import org.finos.legend.pure.m3.serialization.filesystem.repository.ScratchCodeR
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNodeStatus;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.ImmutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
@@ -440,6 +441,13 @@ public class PureCodeStorage implements MutableCodeStorage
     {
         RepositoryCodeStorage codeStorage = getCodeStorage(path);
         return (codeStorage instanceof VersionControlledCodeStorage) && ((VersionControlledCodeStorage) codeStorage).isVersioned(path);
+    }
+
+    @Override
+    public boolean isImmutable(String path)
+    {
+        RepositoryCodeStorage codeStorage = getCodeStorage(path);
+        return codeStorage instanceof ImmutableRepositoryCodeStorage;
     }
 
     @Override
