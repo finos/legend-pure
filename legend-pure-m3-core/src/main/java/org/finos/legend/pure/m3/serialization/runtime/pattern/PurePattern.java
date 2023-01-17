@@ -75,6 +75,11 @@ public class PurePattern
     {
         return this.pattern.pattern();
     }
+    
+    public List<String> getUrlArguments()
+    {
+        return this.urlArguments;
+    }
 
     public Pair<CoreInstance, Map<String, String[]>> execute(String url, ProcessorSupport processorSupport, Map<String, String[]> params)
     {
