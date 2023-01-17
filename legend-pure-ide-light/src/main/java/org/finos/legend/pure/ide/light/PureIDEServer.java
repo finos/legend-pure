@@ -41,13 +41,14 @@ import org.finos.legend.pure.ide.light.api.source.UpdateSource;
 import org.finos.legend.pure.ide.light.session.PureSession;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 
 import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
 import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
 
 public abstract class PureIDEServer extends Application<ServerConfiguration>
 {
@@ -127,13 +128,12 @@ public abstract class PureIDEServer extends Application<ServerConfiguration>
     private MutableList<RepositoryCodeStorage> getRepositories(SourceLocationConfiguration sourceLocationConfiguration)
     {
         MutableList<RepositoryCodeStorage> fromIde = this.buildRepositories(sourceLocationConfiguration);
-
-        CodeRepositorySet repositorySet = CodeRepositorySet.newBuilder()
-                .withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories())
-                .withoutCodeRepositories(fromIde.asLazy().flatCollect(RepositoryCodeStorage::getRepositories).collect(CodeRepository::getName))
-                .build();
-
-        return fromIde.with(new ClassLoaderCodeStorage(repositorySet.getRepositories()));
+        Set<String> fromIdeName = fromIde.flatCollect(RepositoryCodeStorage::getRepositories).collect(CodeRepository::getName).toSet();
+        List<CodeRepository> fromClasspath = CodeRepositoryProviderHelper.findCodeRepositories()
+                .toList()
+                .with(CodeRepository.newPlatformCodeRepository())
+                .reject(x -> fromIdeName.contains(x.getName()));
+        return fromIde.with(new ClassLoaderCodeStorage(fromClasspath));
     }
 
     public PureSession getPureSession()
