@@ -54,7 +54,7 @@ public class URLPatternLibrary
 {
     static final Comparator<PurePattern> URLPatternComparator = URLPatternLibrary::comparePatterns;
 
-    private static final Pattern PATTERN_PARSING_PATTERN = Pattern.compile("([^{]+)|\\{([a-zA-Z_0-9]+)(:(([^}]+)))?\\}");
+    public static final Pattern PATTERN_PARSING_PATTERN = Pattern.compile("([^{]+)|\\{([a-zA-Z_0-9]+)(:(([^}]+)))?\\}");
 
     private State mainState = new State();
     private final URLPatternLibraryTransactionManager transactionManager = new URLPatternLibraryTransactionManager();
