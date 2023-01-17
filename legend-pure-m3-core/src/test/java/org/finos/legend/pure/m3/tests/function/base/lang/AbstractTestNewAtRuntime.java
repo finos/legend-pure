@@ -368,6 +368,23 @@ public abstract class AbstractTestNewAtRuntime extends AbstractPureTestWithCoreC
     }
 
     @Test
+    public void testNewWithoutKeyExpressions()
+    {
+        String source =
+                "Class A\n" +
+                "{" +
+                "   prop1:String[*];\n" +
+                "}\n" +
+                "function test::testFn():Any[*] " +
+                "{" +
+                "   let lambda = {| ^A()};\n" +
+                "   $lambda.expressionSequence->toOne()->meta::pure::functions::meta::reactivate(meta::pure::functions::collection::newMap([])->cast(@Map<String, List<Any>>));" +
+                "}\n";
+        compileTestSource("fromString.pure", source);
+        compileAndExecute("test::testFn():Any[*]");
+    }
+
+    @Test
     public abstract void testNewWithInheritenceAndOverriddenAssociationEndWithReverseOneToOneProperty();
 
     @Test

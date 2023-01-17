@@ -264,6 +264,12 @@ public class Reactivator
                     paramValues.set(0, Lists.fixedSize.of(sfe._genericType()._rawType()));
                     break;
                 }
+                case "new_Class_1__String_1__T_1_":
+                {
+                    //Have to get the first param from the generic type
+                    paramValues.set(0, Lists.fixedSize.of(sfe._genericType()._rawType()));
+                    break;
+                }
                 case "cast_Any_m__T_1__T_m_":
                 {
                     //Have to get the second param from the generic type
