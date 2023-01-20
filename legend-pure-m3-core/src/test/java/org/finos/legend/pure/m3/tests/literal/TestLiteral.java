@@ -16,8 +16,6 @@ package org.finos.legend.pure.m3.tests.literal;
 
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -25,18 +23,20 @@ import org.junit.Test;
 public class TestLiteral extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @Test
     public void testLiteralList()
     {
-        compileTestSource("fromString.pure", "function testMany():String[*]\n" +
-                                                   "{\n" +
-                                                   "    let a = ['z','k']\n" +
-                                                   "}\n");
-        CoreInstance func = this.runtime.getFunction("testMany():String[*]");
+        compileTestSource("fromString.pure",
+                "function testMany():String[*]\n" +
+                        "{\n" +
+                        "    let a = ['z','k']\n" +
+                        "}\n");
+        CoreInstance func = runtime.getFunction("testMany():String[*]");
         Assert.assertEquals("testMany__String_MANY_ instance ConcreteFunctionDefinition\n" +
                             "    classifierGenericType(Property):\n" +
                             "        Anonymous_StripedId instance GenericType\n" +

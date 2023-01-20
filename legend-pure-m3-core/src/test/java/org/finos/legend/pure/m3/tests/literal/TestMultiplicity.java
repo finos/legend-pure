@@ -14,14 +14,12 @@
 
 package org.finos.legend.pure.m3.tests.literal;
 
-import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.test.Verify;
+import org.eclipse.collections.api.RichIterable;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
+import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -30,28 +28,31 @@ import org.junit.Test;
 public class TestMultiplicity extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("fromString.pure");
     }
 
     @Test
     public void testSingleLiteralMultiplicity()
     {
-        compileTestSource("fromString.pure","function test::testFn():Any[*]\n" +
-                "{\n" +
-                "  1\n" +
-                "}");
-        ConcreteFunctionDefinition testFn = (ConcreteFunctionDefinition)this.runtime.getFunction("test::testFn():Any[*]");
+        compileTestSource("fromString.pure",
+                "function test::testFn():Any[*]\n" +
+                        "{\n" +
+                        "  1\n" +
+                        "}");
+        ConcreteFunctionDefinition<?> testFn = (ConcreteFunctionDefinition<?>) runtime.getFunction("test::testFn():Any[*]");
         Assert.assertNotNull(testFn);
 
-        ListIterable<ValueSpecification> expressions = (ListIterable<ValueSpecification>)testFn._expressionSequence();
-        Verify.assertSize(1, expressions);
-        ValueSpecification expression = expressions.get(0);
+        RichIterable<? extends ValueSpecification> expressions = testFn._expressionSequence();
+        Assert.assertEquals(1, expressions.size());
+        ValueSpecification expression = expressions.getAny();
         CoreInstance multiplicity = expression._multiplicity();
         Assert.assertEquals(1, Multiplicity.multiplicityLowerBoundToInt(multiplicity));
         Assert.assertEquals(1, Multiplicity.multiplicityUpperBoundToInt(multiplicity));
@@ -60,16 +61,17 @@ public class TestMultiplicity extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testLiteralCollectionMultiplicity()
     {
-        compileTestSource("fromString.pure","function test::testFn():Any[*]\n" +
-                "{\n" +
-                "  [1, 2, 3]\n" +
-                "}");
-        ConcreteFunctionDefinition testFn = (ConcreteFunctionDefinition)this.runtime.getFunction("test::testFn():Any[*]");
+        compileTestSource("fromString.pure",
+                "function test::testFn():Any[*]\n" +
+                        "{\n" +
+                        "  [1, 2, 3]\n" +
+                        "}");
+        ConcreteFunctionDefinition<?> testFn = (ConcreteFunctionDefinition<?>) runtime.getFunction("test::testFn():Any[*]");
         Assert.assertNotNull(testFn);
 
-        ListIterable<ValueSpecification> expressions = (ListIterable<ValueSpecification>)testFn._expressionSequence();
-        Verify.assertSize(1, expressions);
-        ValueSpecification expression = expressions.get(0);
+        RichIterable<? extends ValueSpecification> expressions = testFn._expressionSequence();
+        Assert.assertEquals(1, expressions.size());
+        ValueSpecification expression = expressions.getAny();
         CoreInstance multiplicity = expression._multiplicity();
         Assert.assertEquals(3, Multiplicity.multiplicityLowerBoundToInt(multiplicity));
         Assert.assertEquals(3, Multiplicity.multiplicityUpperBoundToInt(multiplicity));
@@ -78,16 +80,16 @@ public class TestMultiplicity extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testSingleFunctionExpressionMultiplicity()
     {
-        compileTestSource("fromString.pure","function test::testFn():Any[*]\n" +
+        compileTestSource("fromString.pure", "function test::testFn():Any[*]\n" +
                 "{\n" +
                 "  [1, 2, 3]->first();\n" +
                 "}");
-        ConcreteFunctionDefinition testFn = (ConcreteFunctionDefinition)this.runtime.getFunction("test::testFn():Any[*]");
+        ConcreteFunctionDefinition<?> testFn = (ConcreteFunctionDefinition<?>) runtime.getFunction("test::testFn():Any[*]");
         Assert.assertNotNull(testFn);
 
-        ListIterable<ValueSpecification> expressions = (ListIterable<ValueSpecification>)testFn._expressionSequence();
-        Verify.assertSize(1, expressions);
-        ValueSpecification expression = expressions.get(0);
+        RichIterable<? extends ValueSpecification> expressions = testFn._expressionSequence();
+        Assert.assertEquals(1, expressions.size());
+        ValueSpecification expression = expressions.getAny();
         CoreInstance multiplicity = expression._multiplicity();
         Assert.assertEquals(0, Multiplicity.multiplicityLowerBoundToInt(multiplicity));
         Assert.assertEquals(1, Multiplicity.multiplicityUpperBoundToInt(multiplicity));
@@ -96,16 +98,16 @@ public class TestMultiplicity extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testSingleFunctionExpressionCollectionMultiplicity()
     {
-        compileTestSource("fromString.pure","function test::testFn():Any[*]\n" +
+        compileTestSource("fromString.pure", "function test::testFn():Any[*]\n" +
                 "{\n" +
                 "  [[1, 2, 3]->first()];\n" +
                 "}");
-        ConcreteFunctionDefinition testFn = (ConcreteFunctionDefinition)this.runtime.getFunction("test::testFn():Any[*]");
+        ConcreteFunctionDefinition<?> testFn = (ConcreteFunctionDefinition<?>) runtime.getFunction("test::testFn():Any[*]");
         Assert.assertNotNull(testFn);
 
-        ListIterable<ValueSpecification> expressions = (ListIterable<ValueSpecification>)testFn._expressionSequence();
-        Verify.assertSize(1, expressions);
-        ValueSpecification expression = expressions.get(0);
+        RichIterable<? extends ValueSpecification> expressions = testFn._expressionSequence();
+        Assert.assertEquals(1, expressions.size());
+        ValueSpecification expression = expressions.getAny();
         CoreInstance multiplicity = expression._multiplicity();
         Assert.assertEquals(0, Multiplicity.multiplicityLowerBoundToInt(multiplicity));
         Assert.assertEquals(1, Multiplicity.multiplicityUpperBoundToInt(multiplicity));

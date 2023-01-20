@@ -15,12 +15,11 @@
 package org.finos.legend.pure.m3.tests.literal;
 
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -40,15 +39,7 @@ public class TestInstanceCollectionType extends AbstractPureTestWithCoreCompiled
     public void cleanRuntime()
     {
         runtime.delete("fromString.pure");
-
-        try
-        {
-            runtime.compile();
-        }
-        catch (PureCompilationException e)
-        {
-            setUp();
-        }
+        runtime.compile();
     }
 
     @Test
@@ -204,16 +195,11 @@ public class TestInstanceCollectionType extends AbstractPureTestWithCoreCompiled
 
     private void assertValueSpecificationGenericType(String expectedGenericTypeString, String valueSpecificationString)
     {
-        assertValueSpecificationGenericType(null, expectedGenericTypeString, valueSpecificationString);
-    }
-
-    private void assertValueSpecificationGenericType(String message, String expectedGenericTypeString, String valueSpecificationString)
-    {
         String functionDescriptor = "test::" + UUID.randomUUID().toString().replace('-', '_') + "():Any[*]";
         compileTestSource("sourceId.pure", "import test::*;\nfunction " + functionDescriptor + "\n{\n" + valueSpecificationString + "\n}\n");
         FunctionDefinition<?> function = (FunctionDefinition<?>) runtime.getFunction(functionDescriptor);
-        ValueSpecification valueSpecification = function._expressionSequence().getFirst();
-        assertGenericTypesEqual((message == null) ? valueSpecificationString : message, expectedGenericTypeString, valueSpecification._genericType());
+        ValueSpecification valueSpecification = function._expressionSequence().getAny();
+        assertGenericTypesEqual(valueSpecificationString, expectedGenericTypeString, valueSpecification._genericType());
         runtime.delete("sourceId.pure");
     }
 

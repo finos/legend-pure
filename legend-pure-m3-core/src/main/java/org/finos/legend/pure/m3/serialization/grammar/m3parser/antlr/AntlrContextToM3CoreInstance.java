@@ -33,7 +33,6 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.list.mutable.ListAdapter;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.eclipse.collections.impl.utility.Iterate;
@@ -387,7 +386,7 @@ public class AntlrContextToM3CoreInstance
             {
                 if (this.hasImportChanged)
                 {
-                    result = this.measureParser(dCtx, importId, this.addLines);
+                    result = this.measureParser(dCtx, importId);
                 }
                 else
                 {
@@ -441,12 +440,12 @@ public class AntlrContextToM3CoreInstance
                         }
                         else
                         {
-                            result = this.measureParser(dCtx, importId, this.addLines);
+                            result = this.measureParser(dCtx, importId);
                         }
                     }
                     else
                     {
-                        result = this.measureParser(dCtx, importId, this.addLines);
+                        result = this.measureParser(dCtx, importId);
                     }
                 }
                 MeasureInstance mI = (MeasureInstance) result;
@@ -2065,7 +2064,7 @@ public class AntlrContextToM3CoreInstance
      * Parses the measure given its definition context.
      * Returns the parsed measure as a CoreInstance.
      */
-    private CoreInstance measureParser(org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MeasureDefinitionContext ctx, ImportGroup importId, boolean addLines) throws PureParserException
+    private CoreInstance measureParser(org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MeasureDefinitionContext ctx, ImportGroup importId) throws PureParserException
     {
         UnitInstance canonicalUnit;
         MutableList<UnitInstance> nonCanonicalUnits;
@@ -2083,8 +2082,6 @@ public class AntlrContextToM3CoreInstance
         PackageInstance packageInstance = this.buildPackage(ctx.qualifiedName().packagePath());
         measureInstance._package(packageInstance);
         packageInstance._childrenAdd(measureInstance);
-
-        String fullName = this.getQualifiedNameString(ctx.qualifiedName());
 
         measureInstance.setSourceInformation(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop()));
 
@@ -2172,7 +2169,7 @@ public class AntlrContextToM3CoreInstance
             MutableList<UnitInstance> nonConvertibleUnits = Lists.mutable.empty();
             for (org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.NonConvertibleMeasureExprContext ncctx : ctx.measureBody().nonConvertibleMeasureExpr())
             {
-                UnitInstance currentUnit = this.nonConvertibleUnitParser(ncctx, importId, measureInstance, ctx);
+                UnitInstance currentUnit = this.nonConvertibleUnitParser(ncctx, measureInstance, ctx);
                 nonConvertibleUnits.add(currentUnit);
             }
             measureInstance._canonicalUnit(nonConvertibleUnits.get(0));
@@ -2272,7 +2269,7 @@ public class AntlrContextToM3CoreInstance
         lambdaFunctionInstance._classifierGenericType(genericTypeInstance);
         signature._functionAdd(lambdaFunctionInstance);
 
-        ListIterable<ValueSpecification> block = this.codeBlock(ctx.unitExpr().codeBlock(), typeParametersNames, importId, lambdaContext, addLines, tabs(6));
+        ListIterable<ValueSpecification> block = this.codeBlock(ctx.unitExpr().codeBlock(), typeParametersNames, importId, lambdaContext, this.addLines, tabs(6));
         lambdaFunctionInstance._expressionSequence(block);
 
         unitInstance._conversionFunction(lambdaFunctionInstance);
@@ -2280,7 +2277,7 @@ public class AntlrContextToM3CoreInstance
         return unitInstance;
     }
 
-    private UnitInstance nonConvertibleUnitParser(org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.NonConvertibleMeasureExprContext ctx, ImportGroup importId, MeasureInstance measureInstance, org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MeasureDefinitionContext mctx) throws PureParserException
+    private UnitInstance nonConvertibleUnitParser(org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.NonConvertibleMeasureExprContext ctx, MeasureInstance measureInstance, org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MeasureDefinitionContext mctx) throws PureParserException
     {
         UnitInstance unitInstance;
         MutableList<GenericType> superTypesGenericTypes = Lists.mutable.empty();
@@ -2366,7 +2363,7 @@ public class AntlrContextToM3CoreInstance
             ownerType = ImportStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().identifier().getStart()), fullName, importId);
 
             LambdaContext lambdaContext = new LambdaContext(fullName.replace("::", "_"));
-            MutableList<Constraint> constraints = this.constraints(classInstance, ctx.constraints(), importId, lambdaContext, addLines);
+            MutableList<Constraint> constraints = constraints(classInstance, ctx.constraints(), typeParameterNames, multiplicityParameterNames, importId, lambdaContext, addLines);
             this.propertyParser(ctx.classBody().properties(), properties, qualifiedProperties, typeParameterNames, multiplicityParameterNames, ownerType, importId, 0);
             classInstance.setSourceInformation(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop()));
 
@@ -2419,7 +2416,7 @@ public class AntlrContextToM3CoreInstance
                     multParameters.add(mult);
 
                 }
-                classInstance._multiplicityParameters(this.processMultiplicityParametersInstance(multiplicityParameterNames));
+                classInstance._multiplicityParameters(this.multParamsToInstanceValues(multiplicityParameterNames));
                 classifierGTTA._multiplicityArguments(multParameters);
             }
 
@@ -2464,23 +2461,17 @@ public class AntlrContextToM3CoreInstance
     }
 
 
-    private MutableList<Constraint> constraints(CoreInstance owner, ConstraintsContext ctx, ImportGroup importId, LambdaContext lambdaContext, boolean addLines)
+    private MutableList<Constraint> constraints(CoreInstance owner, ConstraintsContext ctx, MutableList<String> typeParameterNames, MutableList<String> multParameterNames, ImportGroup importId, LambdaContext lambdaContext, boolean addLines)
     {
         MutableList<Constraint> constraints = Lists.mutable.empty();
         if (ctx != null)
         {
-            int i = 0;
-
-            for (ConstraintContext cCtx : ctx.constraint())
-            {
-                constraints.add(this.constraint(owner, cCtx, i, importId, lambdaContext, addLines, false));
-                i++;
-            }
+            ListIterate.forEachWithIndex(ctx.constraint(), (cCtx, i) -> constraints.add(constraint(owner, cCtx, i, typeParameterNames, multParameterNames, importId, lambdaContext, addLines, false)));
         }
         return constraints;
     }
 
-    private Constraint constraint(CoreInstance owner, ConstraintContext ctx, int position, ImportGroup importId, LambdaContext lambdaContext, boolean addLines, boolean postConstraint)
+    private Constraint constraint(CoreInstance owner, ConstraintContext ctx, int position, MutableList<String> typeParameterNames, MutableList<String> multiplicityParameterNames, ImportGroup importId, LambdaContext lambdaContext, boolean addLines, boolean postConstraint)
     {
         String constraintName;
         String constraintOwner = null;
@@ -2529,7 +2520,22 @@ public class AntlrContextToM3CoreInstance
                     SourceInformation messageSourceInformation = messageFunction.getSourceInformation();
 
                     CoreInstance messageFunctionType = this.repository.newAnonymousCoreInstance(messageSourceInformation, this.processorSupport.package_getByUserPath(M3Paths.FunctionType), true);
-                    CoreInstance param = VariableExpressionInstance.createPersistent(this.repository, messageSourceInformation, (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(owner, this.processorSupport), this.pureOne, "this");
+                    GenericType thisParamType = (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(owner, this.processorSupport);
+                    if (typeParameterNames.notEmpty())
+                    {
+                        MutableList<TypeParameter> typeParameters = typeParameterNames.collect(n -> TypeParameterInstance.createPersistent(this.repository, n));
+                        Instance.setValuesForProperty(messageFunctionType, M3Properties.typeParameters, typeParameters, this.processorSupport);
+                        MutableList<GenericType> typeArgs = typeParameters.collect(tp -> GenericTypeInstance.createPersistent(this.repository)._typeParameter(tp));
+                        thisParamType._typeArguments(typeArgs);
+                    }
+                    if (multiplicityParameterNames.notEmpty())
+                    {
+                        Instance.setValuesForProperty(messageFunctionType, M3Properties.multiplicityParameters, multParamsToInstanceValues(multiplicityParameterNames), this.processorSupport);
+                        MutableList<Multiplicity> multArgs = multiplicityParameterNames.collect(n -> MultiplicityInstance.createPersistent(this.repository, null, null)._multiplicityParameter(n));
+                        thisParamType._multiplicityArguments(multArgs);
+                    }
+
+                    CoreInstance param = VariableExpressionInstance.createPersistent(this.repository, messageSourceInformation, thisParamType, this.pureOne, "this");
                     Instance.addValueToProperty(messageFunctionType, M3Properties.parameters, param, this.processorSupport);
                     Instance.setValueForProperty(messageFunctionType, M3Properties.returnMultiplicity, this.getPureOne(), this.processorSupport);
                     Instance.setValueForProperty(messageFunctionType, M3Properties.returnType, org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(this.processorSupport.package_getByUserPath(M3Paths.String), this.processorSupport), this.processorSupport);
@@ -2556,7 +2562,21 @@ public class AntlrContextToM3CoreInstance
         CoreInstance functionType = this.repository.newAnonymousCoreInstance(functionSourceInformation, this.processorSupport.package_getByUserPath(M3Paths.FunctionType), true);
         if (this.processorSupport.instance_instanceOf(owner, M3Paths.ElementWithConstraints))
         {
-            CoreInstance param = VariableExpressionInstance.createPersistent(this.repository, functionSourceInformation, (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(owner, this.processorSupport), this.pureOne, "this");
+            GenericType thisParamType = (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(owner, this.processorSupport);
+            if (typeParameterNames.notEmpty())
+            {
+                MutableList<TypeParameter> typeParameters = typeParameterNames.collect(n -> TypeParameterInstance.createPersistent(this.repository, n));
+                Instance.setValuesForProperty(functionType, M3Properties.typeParameters, typeParameters, this.processorSupport);
+                MutableList<GenericType> typeArgs = typeParameters.collect(tp -> GenericTypeInstance.createPersistent(this.repository)._typeParameter(tp));
+                thisParamType._typeArguments(typeArgs);
+            }
+            if (multiplicityParameterNames.notEmpty())
+            {
+                Instance.setValuesForProperty(functionType, M3Properties.multiplicityParameters, multParamsToInstanceValues(multiplicityParameterNames), this.processorSupport);
+                MutableList<Multiplicity> multParameters = multiplicityParameterNames.collect(n -> MultiplicityInstance.createPersistent(this.repository, null, null)._multiplicityParameter(n));
+                thisParamType._multiplicityArguments(multParameters);
+            }
+            CoreInstance param = VariableExpressionInstance.createPersistent(this.repository, functionSourceInformation, thisParamType, this.pureOne, "this");
             Instance.addValueToProperty(functionType, M3Properties.parameters, param, this.processorSupport);
         }
 
@@ -2564,7 +2584,7 @@ public class AntlrContextToM3CoreInstance
         {
             FunctionType ft = (FunctionType) this.processorSupport.function_getFunctionType(owner);
             MutableList<CoreInstance> params = Lists.mutable.empty();
-            params.addAll(Instance.getValueForMetaPropertyToManyResolved(ft, M3Properties.parameters, this.processorSupport).toList());
+            params.addAllIterable(Instance.getValueForMetaPropertyToManyResolved(ft, M3Properties.parameters, this.processorSupport));
             if (postConstraint)
             {
                 CoreInstance returnParam = VariableExpressionInstance.createPersistent(this.repository, functionSourceInformation, (GenericType) ft.getValueForMetaPropertyToOne(M3Properties.returnType), (Multiplicity) ft.getValueForMetaPropertyToOne(M3Properties.returnMultiplicity), "return");
@@ -2644,7 +2664,7 @@ public class AntlrContextToM3CoreInstance
         GeneralizationInstance generalizationInstance = GeneralizationInstance.createPersistent(this.repository, superType, projection);
         projection._generalizations(Lists.mutable.<Generalization>of(generalizationInstance));
         String fullName = this.getQualifiedNameString(ctx.qualifiedName());
-        MutableList<Constraint> constraints = this.constraints(projection, ctx.constraints(), importId, new LambdaContext(fullName.replace("::", "_")), addLines);
+        MutableList<Constraint> constraints = constraints(projection, ctx.constraints(), Lists.fixedSize.empty(), Lists.fixedSize.empty(), importId, new LambdaContext(fullName.replace("::", "_")), addLines);
 
         if (Iterate.notEmpty(stereotypes))
         {
@@ -3042,11 +3062,11 @@ public class AntlrContextToM3CoreInstance
                 }
                 if (cCtx.simpleConstraint().combinedExpression().getText().contains("$return"))
                 {
-                    postConstraints.add(this.constraint(functionDefinition, cCtx, i, importId, lambdaContext, addLines, true));
+                    postConstraints.add(this.constraint(functionDefinition, cCtx, i, Lists.fixedSize.empty(), Lists.fixedSize.empty(), importId, lambdaContext, addLines, true));
                 }
                 else
                 {
-                    preConstraints.add(this.constraint(functionDefinition, cCtx, i, importId, lambdaContext, addLines, false));
+                    preConstraints.add(this.constraint(functionDefinition, cCtx, i, Lists.fixedSize.empty(), Lists.fixedSize.empty(), importId, lambdaContext, addLines, false));
                 }
             });
         }
@@ -3120,7 +3140,7 @@ public class AntlrContextToM3CoreInstance
         }
         if (multiplicityParametersNames.notEmpty())
         {
-            ft._multiplicityParameters(this.processMultiplicityParametersInstance(multiplicityParametersNames));
+            ft._multiplicityParameters(this.multParamsToInstanceValues(multiplicityParametersNames));
         }
         if (vars.notEmpty())
         {
@@ -3129,24 +3149,14 @@ public class AntlrContextToM3CoreInstance
         return ft;
     }
 
-    private ListIterable<InstanceValue> processMultiplicityParametersInstance(MutableList<String> multParameters)
+    private ListIterable<InstanceValue> multParamsToInstanceValues(ListIterable<String> multParameters)
     {
-        MutableList<InstanceValue> result = Lists.mutable.of();
-        for (String multParameter : multParameters)
-        {
-            InstanceValueInstance iv = InstanceValueInstance.createPersistent(this.repository, null, null);
-            iv._values(Lists.mutable.of(this.repository.newStringCoreInstance_cached(multParameter)));
-            GenericTypeInstance gt = GenericTypeInstance.createPersistent(this.repository);
-            Type ti = (Type) this.processorSupport.package_getByUserPath("String");
-            gt._rawTypeCoreInstance(ti);
-            iv._genericType(gt);
-            iv._multiplicity(this.getPureOne());
-            result.add(iv);
-        }
-        return result;
+        Type stringType = (Type) this.processorSupport.package_getByUserPath(M3Paths.String);
+        Multiplicity pureOne = getPureOne();
+        return multParameters.collect(multParameter -> InstanceValueInstance.createPersistent(this.repository, GenericTypeInstance.createPersistent(this.repository)._rawTypeCoreInstance(stringType), pureOne)._values(Lists.mutable.of(this.repository.newStringCoreInstance_cached(multParameter))));
     }
 
-    private ListIterable<TypeParameter> processTypeParametersInstance(final ModelRepository repository, MutableList<String> typeParameters)
+    private ListIterable<TypeParameter> processTypeParametersInstance(ModelRepository repository, MutableList<String> typeParameters)
     {
         return typeParameters.collect(tp -> TypeParameterInstance.createPersistent(repository, tp));
     }
@@ -3275,9 +3285,7 @@ public class AntlrContextToM3CoreInstance
     {
         LambdaFunction<?> defaultValueFunctionLambda = null;
 
-        DefaultValueExpressionContext expression = ctx.defaultValueExpression();
-
-        ++this.functionCounter;
+        this.functionCounter++;
         LambdaContext lambdaContext = new LambdaContext(propertyName + "_defaultValue_" + this.functionCounter);
 
         DefaultValueInstance defaultValueInstance = DefaultValueInstance.createPersistent(this.repository,
@@ -3608,10 +3616,8 @@ public class AntlrContextToM3CoreInstance
 
     public TemporaryPurePropertyMapping mappingLine(MappingLineContext ctx, LambdaContext lambdaContext, String cl, ImportGroup importId)
     {
-        String sourceMappingId = null;
-        String targetMappingId = null;
-        Pair<String, SourceInformation> enumerationMappingInformation = null;
-
+        String sourceMappingId;
+        String targetMappingId;
         if (ctx.sourceAndTargetMappingId() != null)
         {
             SourceAndTargetMappingIdContext sctx = ctx.sourceAndTargetMappingId();
@@ -3622,16 +3628,27 @@ public class AntlrContextToM3CoreInstance
             }
             else
             {
+                sourceMappingId = null;
                 targetMappingId = sctx.sourceId().qualifiedName().getText();
             }
         }
+        else
+        {
+            sourceMappingId = null;
+            targetMappingId = null;
+        }
 
+        Pair<String, SourceInformation> enumerationMappingInformation;
         if (ctx.ENUMERATION_MAPPING() != null)
         {
             IdentifierContext identifier = ctx.identifier();
             String enumerationMappingName = identifier.getText();
             SourceInformation enumerationMappingReferenceSourceInformation = this.sourceInformation.getPureSourceInformation(identifier.getStart(), identifier.getStart(), identifier.getStop());
             enumerationMappingInformation = Tuples.pair(enumerationMappingName, enumerationMappingReferenceSourceInformation);
+        }
+        else
+        {
+            enumerationMappingInformation = null;
         }
 
         return TemporaryPurePropertyMapping.build(
@@ -3717,7 +3734,7 @@ public class AntlrContextToM3CoreInstance
 
     public TemporaryPureMergeOperationFunctionSpecification mergeOperationSpecification(CombinedExpressionContext ctx, LambdaContext lambdaContext, ImportGroup importId)
     {
-        CoreInstance expression = this.combinedExpression(ctx, "", FastList.<String>newList(), lambdaContext, "", true, importId, true);
+        CoreInstance expression = this.combinedExpression(ctx, "", Lists.mutable.empty(), lambdaContext, "", true, importId, true);
         return TemporaryPureMergeOperationFunctionSpecification.build(
                 this.sourceInformation.getPureSourceInformation(ctx.getStart()),
                 expression);
