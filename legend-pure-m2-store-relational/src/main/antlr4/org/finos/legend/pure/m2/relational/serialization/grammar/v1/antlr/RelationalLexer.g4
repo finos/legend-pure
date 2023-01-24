@@ -46,3 +46,10 @@ TABLE : 'Table' ;
 TARGET : '{target}' ;
 VIEW : 'View' ;
 
+DYNA_FUNCTION : 'DynaFunction' ;
+ARR: 'Arr' ;
+CONST: 'Const' ;
+RESTRICT: '~restrict' ;
+IS: 'is' ;
+MATCHES: 'matches' ;
+DOTDOTDOT: '...' ;
