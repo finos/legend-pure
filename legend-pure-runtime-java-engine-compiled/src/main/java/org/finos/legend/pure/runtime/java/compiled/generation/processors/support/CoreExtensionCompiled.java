@@ -174,7 +174,7 @@ public class CoreExtensionCompiled extends BaseCompiledExtension
                                 "        return Pure.canReactivateWithoutJavaCompilation(valueSpecification, es, new PureMap(UnifiedMap.newMap()), bridge);\n" +
                                 "    }\n" +
                                 "\n" +
-                                "    public static boolean canReactivateWithoutJavaCompilation(ValueSpecification valueSpecification, ExecutionSupport es, PureMap lambdaOpenVariablesMap)\n" +
+                                "    public static boolean canReactivateWithoutJavaCompilation(ValueSpecification valueSpecification, PureMap lambdaOpenVariablesMap, ExecutionSupport es)\n" +
                                 "    {\n" +
                                 "        return Pure.canReactivateWithoutJavaCompilation(valueSpecification, es, lambdaOpenVariablesMap, bridge);\n" +
                                 "    }\n" +

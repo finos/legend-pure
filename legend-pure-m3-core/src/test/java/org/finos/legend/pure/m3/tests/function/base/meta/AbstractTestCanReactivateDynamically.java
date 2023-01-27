@@ -52,4 +52,25 @@ public abstract class AbstractTestCanReactivateDynamically extends AbstractPureT
         this.execute("test():Boolean[1]");
     }
 
+    @Test
+    public void testNonReactivatableFunction()
+    {
+        compileTestSource("fromString.pure",
+                "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   assert(false == canReactivateDynamically_ValueSpecification_1__Boolean_1_->eval({s:String[1]|$s}->evaluateAndDeactivate().expressionSequence->toOne()), |'');\n" +
+                        "}\n");
+        this.execute("test():Boolean[1]");
+    }
+
+    @Test
+    public void testSimpleFuncExpressionReactivationInScopeOfParams()
+    {
+        compileTestSource("fromString.pure",
+                "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   assert(true == canReactivateDynamically_ValueSpecification_1__Map_1__Boolean_1_->eval({s:String[1]|$s}->evaluateAndDeactivate().expressionSequence->toOne(), newMap(^Pair<String, List<Any>>(first = 's', second = ^List<Any>(values = 'dummy')))), |'');\n" +
+                        "}\n");
+        this.execute("test():Boolean[1]");
+    }
 }

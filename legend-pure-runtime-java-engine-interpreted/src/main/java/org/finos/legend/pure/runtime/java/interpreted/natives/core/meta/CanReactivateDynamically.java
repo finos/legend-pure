@@ -16,13 +16,13 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.core.meta;
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
+import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.core.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.core.NativeFunction;
@@ -32,17 +32,24 @@ import java.util.Stack;
 
 public class CanReactivateDynamically extends NativeFunction
 {
-    private final ModelRepository repository;
+    private final FunctionExecutionInterpreted functionExecution;
 
-    public CanReactivateDynamically(ModelRepository repository)
+    public CanReactivateDynamically(FunctionExecutionInterpreted functionExecution)
     {
-        this.repository = repository;
+        this.functionExecution = functionExecution;
     }
 
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
-       // return repository.newBooleanCoreInstance(true);
-        return ValueSpecificationBootstrap.newBooleanLiteral(repository, true, processorSupport);
+        try
+        {
+            new Reactivate(this.functionExecution).execute(params, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport, context, processorSupport);
+            return ValueSpecificationBootstrap.newBooleanLiteral(this.functionExecution.getPureRuntime().getModelRepository(), true, processorSupport);
+        }
+        catch (PureExecutionException e)
+        {
+            return ValueSpecificationBootstrap.newBooleanLiteral(this.functionExecution.getPureRuntime().getModelRepository(), false, processorSupport);
+        }
     }
 }
