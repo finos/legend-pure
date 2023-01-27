@@ -70,7 +70,7 @@ public class PureRuntime
     private static final String M3_PURE = "/platform/pure/m3.pure";
     private static final String LANG_PURE = "/platform/pure/corefunctions/lang.pure";
 
-    private final URLPatternLibrary patternLibrary = new URLPatternLibrary();
+    private final URLPatternLibrary patternLibrary;
 
     private boolean forceImmutable = false;
 
@@ -94,6 +94,15 @@ public class PureRuntime
                 PureRuntimeStatus pureRuntimeStatus, Message message, CoreInstanceFactoryRegistry factoryRegistryOverride, ForkJoinPool incrementalCompilerForkJoinPool,
                 boolean isTransactionByDefault, boolean useFastCompiler, ExecutedTestTracker executedTestTracker, RuntimeOptions options)
     {
+        this(codeStorage, cache, pureRuntimeStatus, message, factoryRegistryOverride, incrementalCompilerForkJoinPool,
+                isTransactionByDefault, useFastCompiler, executedTestTracker, options, null);
+    }
+
+    PureRuntime(MutableCodeStorage codeStorage, PureGraphCache cache,
+                PureRuntimeStatus pureRuntimeStatus, Message message, CoreInstanceFactoryRegistry factoryRegistryOverride, ForkJoinPool incrementalCompilerForkJoinPool,
+                boolean isTransactionByDefault, boolean useFastCompiler, ExecutedTestTracker executedTestTracker, RuntimeOptions options, URLPatternLibrary patternLibrary)
+    {
+        this.patternLibrary = patternLibrary == null? new URLPatternLibrary() : patternLibrary;
         this.pureRuntimeStatus = pureRuntimeStatus;
         this.cache = cache;
         this.cache.setPureRuntime(this);

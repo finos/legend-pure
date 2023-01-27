@@ -20,6 +20,7 @@ import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.cache.PureGraphCache;
 import org.finos.legend.pure.m3.serialization.runtime.cache.VoidPureGraphCache;
+import org.finos.legend.pure.m3.serialization.runtime.pattern.URLPatternLibrary;
 
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Function;
@@ -40,6 +41,7 @@ public class PureRuntimeBuilder
     private boolean useFastCompiler = true;
     private ExecutedTestTracker executedTestTracker;
     private RuntimeOptions options = RuntimeOptions.systemPropertyOptions("pure.options.");
+    private URLPatternLibrary patternLibrary;
 
     public PureRuntimeBuilder(MutableCodeStorage codeStorage)
     {
@@ -76,6 +78,12 @@ public class PureRuntimeBuilder
         return this;
     }
 
+    public PureRuntimeBuilder withURLPatternLibrary(URLPatternLibrary patternLibrary)
+    {
+        this.patternLibrary = patternLibrary;
+        return this;
+    }
+
     public PureRuntimeBuilder withIncrementalCompilerForkJoinPool(ForkJoinPool forkJoinPool)
     {
         this.incrementalCompilerForkJoinPool = forkJoinPool;
@@ -109,7 +117,7 @@ public class PureRuntimeBuilder
 
     public PureRuntime build()
     {
-        PureRuntime runtime = new PureRuntime(this.codeStorage, this.cache, this.pureRuntimeStatus, this.message, this.factoryRegistryOverride, this.incrementalCompilerForkJoinPool, this.isTransactionalByDefault, this.useFastCompiler, this.executedTestTracker, this.options);
+        PureRuntime runtime = new PureRuntime(this.codeStorage, this.cache, this.pureRuntimeStatus, this.message, this.factoryRegistryOverride, this.incrementalCompilerForkJoinPool, this.isTransactionalByDefault, this.useFastCompiler, this.executedTestTracker, this.options, this.patternLibrary);
         this.compilerEventHandlerFactoryFunctions.forEach(factory -> runtime.getIncrementalCompiler().addCompilerEventHandler(factory.apply(runtime)));
         return runtime;
     }

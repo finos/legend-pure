@@ -25,6 +25,7 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpa
 import org.finos.legend.pure.m3.serialization.runtime.IncrementalCompiler.IncrementalCompilerTransaction;
 import org.finos.legend.pure.m3.serialization.runtime.cache.CompressedMemoryPureGraphCache;
 import org.finos.legend.pure.m3.serialization.runtime.cache.PureGraphCache;
+import org.finos.legend.pure.m3.serialization.runtime.pattern.URLPatternLibrary;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.transaction.framework.ThreadLocalTransactionContext;
@@ -33,6 +34,10 @@ import org.junit.Test;
 
 import java.nio.file.Paths;
 
+class TestClass extends URLPatternLibrary
+{
+    public boolean child = true;
+}
 public class TestPureRuntime
 {
     @Test
@@ -159,6 +164,15 @@ public class TestPureRuntime
         Source testBad = runtime.getSourceById("testBad.pure");
         Assert.assertNotNull(testBad);
         Assert.assertFalse(testBad.isCompiled());
+    }
+
+    @Test
+    public void testURLPatternLibraryIsSet()
+    {
+        PureRuntime runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository())))
+                .withURLPatternLibrary(new TestClass())
+                .build();
+        Assert.assertTrue(runtime.getURLPatternLibrary() instanceof TestClass);
     }
 
     private static class FunctionAccessor implements Runnable
