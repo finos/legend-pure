@@ -58,7 +58,53 @@ public abstract class AbstractTestCanReactivateDynamically extends AbstractPureT
         compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
-                        "   assert(false == canReactivateDynamically_ValueSpecification_1__Boolean_1_->eval({s:String[1]|$s}->evaluateAndDeactivate().expressionSequence->toOne()), |'');\n" +
+                        "   assert(false == canReactivateDynamically({s:String[1]|$s}->evaluateAndDeactivate().expressionSequence->toOne()), |'');\n" +
+                        "}\n");
+        this.execute("test():Boolean[1]");
+    }
+
+    @Test
+    public void testNonReactivatableNestedFunction()
+    {
+        compileTestSource("fromString.pure",
+                "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   assert(false == canReactivateDynamically({s:String[1]|$s + 'hi'}->evaluateAndDeactivate().expressionSequence->toOne()), |'');\n" +
+                        "}\n");
+        this.execute("test():Boolean[1]");
+
+        runtime.delete("fromString.pure");
+        compileTestSource("fromString.pure",
+                "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   assert(false == canReactivateDynamically({s:Any[1]|instanceOf($s, String) && true}->evaluateAndDeactivate().expressionSequence->toOne()), |'');\n" +
+                        "}\n");
+        this.execute("test():Boolean[1]");
+
+        runtime.delete("fromString.pure");
+        compileTestSource("fromString.pure",
+                "Class A\n" +
+                        "{\n" +
+                        "   prop: B[1];\n" +
+                        "}\n" +
+                        "Class B\n" +
+                        "{\n" +
+                        "   prop: String[1];\n" +
+                        "}\n" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   assert(false == canReactivateDynamically({s:String[1]|^A(prop = ^B(prop = $s))}->evaluateAndDeactivate().expressionSequence->toOne()), |'');\n" +
+                        "}\n");
+        this.execute("test():Boolean[1]");
+    }
+
+    @Test
+    public void testNonReactivatableNestedFunctionWithSomeVariablesMissing()
+    {
+        compileTestSource("fromString.pure",
+                "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   assert(false == canReactivateDynamically({s:String[1], y:String[1]|$s + $y}->evaluateAndDeactivate().expressionSequence->toOne(), newMap(^Pair<String, List<Any>>(first = 's', second = ^List<Any>(values = 'dummy')))), |'');\n" +
                         "}\n");
         this.execute("test():Boolean[1]");
     }
@@ -69,7 +115,50 @@ public abstract class AbstractTestCanReactivateDynamically extends AbstractPureT
         compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
-                        "   assert(true == canReactivateDynamically_ValueSpecification_1__Map_1__Boolean_1_->eval({s:String[1]|$s}->evaluateAndDeactivate().expressionSequence->toOne(), newMap(^Pair<String, List<Any>>(first = 's', second = ^List<Any>(values = 'dummy')))), |'');\n" +
+                        "   assert(canReactivateDynamically({s:String[1]|$s}->evaluateAndDeactivate().expressionSequence->toOne(), newMap(^Pair<String, List<Any>>(first = 's', second = ^List<Any>(values = 'dummy')))), |'');\n" +
+                        "}\n");
+        this.execute("test():Boolean[1]");
+    }
+
+    @Test
+    public void testNestedFuncExpressionReactivationInScopeOfParams()
+    {
+        compileTestSource("fromString.pure",
+                "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   assert(canReactivateDynamically({s:String[1]|$s + 'hi'}->evaluateAndDeactivate().expressionSequence->toOne(), newMap(^Pair<String, List<Any>>(first = 's', second = ^List<Any>(values = 'dummy')))), |'');\n" +
+                        "}\n");
+        this.execute("test():Boolean[1]");
+
+        runtime.delete("fromString.pure");
+        compileTestSource("fromString.pure",
+                "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   assert(canReactivateDynamically({s:String[1], y:String[1]|$s + $y}->evaluateAndDeactivate().expressionSequence->toOne(), newMap([^Pair<String, List<Any>>(first = 's', second = ^List<Any>(values = 'dummy')), ^Pair<String, List<Any>>(first = 'y', second = ^List<Any>(values = 'dummy'))])), |'');\n" +
+                        "}\n");
+        this.execute("test():Boolean[1]");
+
+        runtime.delete("fromString.pure");
+        compileTestSource("fromString.pure",
+                "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   assert(canReactivateDynamically({s:Any[1]|instanceOf($s, String) && true}->evaluateAndDeactivate().expressionSequence->toOne(), newMap(^Pair<String, List<Any>>(first = 's', second = ^List<Any>(values = 'dummy')))), |'');\n" +
+                        "}\n");
+        this.execute("test():Boolean[1]");
+
+        runtime.delete("fromString.pure");
+        compileTestSource("fromString.pure",
+                "Class A\n" +
+                        "{\n" +
+                        "   prop: B[1];" +
+                        "}\n" +
+                        "Class B\n" +
+                        "{\n" +
+                        "   prop: String[1];" +
+                        "}\n" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   assert(canReactivateDynamically({s:String[1]|^A(prop = ^B(prop = $s))}->evaluateAndDeactivate().expressionSequence->toOne(), newMap(^Pair<String, List<Any>>(first = 's', second = ^List<Any>(values = 'dummy')))), |'');\n" +
                         "}\n");
         this.execute("test():Boolean[1]");
     }

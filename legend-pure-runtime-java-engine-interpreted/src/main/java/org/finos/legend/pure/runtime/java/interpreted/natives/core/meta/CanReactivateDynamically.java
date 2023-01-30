@@ -44,7 +44,7 @@ public class CanReactivateDynamically extends NativeFunction
     {
         try
         {
-            new Reactivate(this.functionExecution).execute(params, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport, context, processorSupport);
+            ReactivateHelper.execute(this.functionExecution, params, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport, context, processorSupport);
             return ValueSpecificationBootstrap.newBooleanLiteral(this.functionExecution.getPureRuntime().getModelRepository(), true, processorSupport);
         }
         catch (PureExecutionException e)
