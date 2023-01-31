@@ -299,7 +299,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.nativeFunctions.put("subTypeOf_Type_1__Type_1__Boolean_1_", new SubTypeOf(repository));
         this.nativeFunctions.put("deactivate_Any_MANY__ValueSpecification_1_", new Deactivate());
         this.nativeFunctions.put("reactivate_ValueSpecification_1__Map_1__Any_MANY_", new Reactivate(this));
-        this.nativeFunctions.put("canReactivateDynamically_ValueSpecification_1__Boolean_1_", new CanReactivateDynamically(repository));
+        this.nativeFunctions.put("canReactivateDynamically_ValueSpecification_1__Map_1__Boolean_1_", new CanReactivateDynamically(this));
         this.nativeFunctions.put("evaluateAndDeactivate_T_m__T_m_", new EvaluateAndDeactivate());
         this.nativeFunctions.put("toString_Any_1__String_1_", new ToString(repository, this));
         this.nativeFunctions.put("mutateAdd_T_1__String_1__Any_MANY__T_1_", new MutateAdd());

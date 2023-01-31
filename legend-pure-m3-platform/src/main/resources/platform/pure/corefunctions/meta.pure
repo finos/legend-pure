@@ -76,7 +76,12 @@ native function meta::pure::functions::meta::deactivate(var:Any[*]):ValueSpecifi
 
 native function meta::pure::functions::meta::reactivate(vs:ValueSpecification[1], vars:Map<String, List<Any>>[1]):Any[*];
 
-native function meta::pure::functions::meta::canReactivateDynamically(vs:ValueSpecification[1]):Boolean[1];
+function meta::pure::functions::meta::canReactivateDynamically(vs:ValueSpecification[1]):Boolean[1]
+{
+    canReactivateDynamically($vs, ^Map<String, List<Any>>())
+}
+
+native function meta::pure::functions::meta::canReactivateDynamically(vs:ValueSpecification[1], vars:Map<String, List<Any>>[1]):Boolean[1];
 
 native function meta::pure::functions::meta::evaluateAndDeactivate<T|m>(var:T[m]):T[m];
 

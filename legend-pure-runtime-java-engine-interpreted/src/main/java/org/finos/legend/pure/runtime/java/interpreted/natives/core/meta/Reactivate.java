@@ -48,33 +48,6 @@ public class Reactivate extends NativeFunction
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
-        MapIterable<CoreInstance, CoreInstance> openVariablesMap = ((MapCoreInstance)Instance.getValueForMetaPropertyToManyResolved(params.get(1), M3Properties.values, processorSupport).getFirst()).getMap();
-        RichIterable<Pair<CoreInstance, CoreInstance>> openVariables = openVariablesMap.keyValuesView();
-        VariableContext newVarContext = VariableContext.newVariableContext();
-
-        for (Pair<CoreInstance, CoreInstance> pair: openVariables)
-        {
-            try
-            {
-                String name = pair.getOne().getName();
-                //todo: Should not need to do this, but there seem to be duplicates in the open variables
-                if (newVarContext.getValue(name) == null)
-                {
-                    CoreInstance list = pair.getTwo();
-                    CoreInstance inst = processorSupport.newEphemeralAnonymousCoreInstance(M3Paths.InstanceValue);
-                    Instance.addValueToProperty(inst, M3Properties.genericType, list.getValueForMetaPropertyToOne(M3Properties.genericType) , processorSupport);
-                    Instance.addValueToProperty(inst, M3Properties.multiplicity, list.getValueForMetaPropertyToOne(M3Properties.multiplicity), processorSupport);
-                    Instance.addValueToProperty(inst, M3Properties.values, list.getValueForMetaPropertyToMany(M3Properties.values), processorSupport);
-                    newVarContext.registerValue(name, inst);
-                }
-            }
-            catch (VariableContext.VariableNameConflictException e)
-            {
-                throw new PureExecutionException(e);
-            }
-        }
-
-        return this.functionExecution.executeValueSpecification(params.get(0).getValueForMetaPropertyToOne(M3Properties.values),
-                resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, newVarContext, profiler, instantiationContext, executionSupport);
+        return ReactivateHelper.execute(this.functionExecution, params, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport, context, processorSupport);
     }
 }

@@ -23,7 +23,11 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.*;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
@@ -86,6 +90,11 @@ public class Reactivator
                 if (o instanceof Function)
                 {
                     return canReactivateWithoutJavaCompilationImpl((Function<?>) o, es, false, lambdaOpenVariablesMap, bridge);
+                }
+                if (o instanceof KeyExpression)
+                {
+                    return canReactivateWithoutJavaCompilationImpl(((KeyExpression) o)._key(), es, false, lambdaOpenVariablesMap, bridge) &&
+                            canReactivateWithoutJavaCompilationImpl(((KeyExpression) o)._expression(), es, false, lambdaOpenVariablesMap, bridge);
                 }
                 return true;
             });

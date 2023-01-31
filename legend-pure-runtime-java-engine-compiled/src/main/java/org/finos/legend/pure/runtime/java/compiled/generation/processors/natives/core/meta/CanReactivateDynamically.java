@@ -17,12 +17,13 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.native
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;
 
 public class CanReactivateDynamically extends AbstractNativeFunctionGeneric
 {
     public CanReactivateDynamically()
     {
-        super("CoreGen.canReactivateWithoutJavaCompilation",new Class[]{ValueSpecification.class, ExecutionSupport.class},
-                false, true, false, "canReactivateDynamically_ValueSpecification_1__Boolean_1_");
+        super("CoreGen.canReactivateWithoutJavaCompilation",new Class[]{ValueSpecification.class, PureMap.class, ExecutionSupport.class},
+                false, true, false, "canReactivateDynamically_ValueSpecification_1__Map_1__Boolean_1_");
     }
 }
