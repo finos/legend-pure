@@ -14,9 +14,9 @@
 
 package org.finos.legend.pure.m3.tests.incremental._class;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
-import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -25,12 +25,14 @@ import org.junit.Test;
 public class TestPureRuntimeClass_AsPointer extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("sourceId.pure");
         runtime.delete("userId.pure");
     }
@@ -40,7 +42,7 @@ public class TestPureRuntimeClass_AsPointer extends AbstractPureTestWithCoreComp
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
                         .createInMemorySource("userId.pure", "function f():Class<Any>[1]{A}" +
-                                "function test():Boolean[1]{assert(Class == f()->genericType().rawType, |'')}")
+                                "function test():Boolean[1]{assert(Class == f()->genericType().rawType, |'')}" )
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
@@ -55,7 +57,7 @@ public class TestPureRuntimeClass_AsPointer extends AbstractPureTestWithCoreComp
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
                         .createInMemorySource("userId.pure", "function f():Class<Any>[*]{[A,A]}" +
-                                "function test():Boolean[1]{assert(Class == f()->genericType().rawType, |'')}")
+                                "function test():Boolean[1]{assert(Class == f()->genericType().rawType, |'')}" )
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
@@ -71,6 +73,7 @@ public class TestPureRuntimeClass_AsPointer extends AbstractPureTestWithCoreComp
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
                         .createInMemorySource("userId.pure", "function f():Class<Any>[1]{A}" +
                                 "function test():Boolean[1]{assert(Class == f()->genericType().rawType, |'')}")
+
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
@@ -96,18 +99,18 @@ public class TestPureRuntimeClass_AsPointer extends AbstractPureTestWithCoreComp
                 this.runtime, this.functionExecution, this.getAdditionalVerifiers());
 
         Assert.assertEquals("A instance Class\n" +
-                            "    classifierGenericType(Property):\n" +
-                            "        Anonymous_StripedId instance GenericType\n" +
-                            "            [... >0]\n" +
-                            "    generalizations(Property):\n" +
-                            "        Anonymous_StripedId instance Generalization\n" +
-                            "            [... >0]\n" +
-                            "    name(Property):\n" +
-                            "        A instance String\n" +
-                            "    package(Property):\n" +
-                            "        Root instance Package\n" +
-                            "    referenceUsages(Property):\n" +
-                            "        Anonymous_StripedId instance ReferenceUsage\n" +
-                            "            [... >0]", this.runtime.getCoreInstance("A").printWithoutDebug("", 0));
+                "    classifierGenericType(Property):\n" +
+                "        Anonymous_StripedId instance GenericType\n" +
+                "            [... >0]\n" +
+                "    generalizations(Property):\n" +
+                "        Anonymous_StripedId instance Generalization\n" +
+                "            [... >0]\n" +
+                "    name(Property):\n" +
+                "        A instance String\n" +
+                "    package(Property):\n" +
+                "        Root instance Package\n" +
+                "    referenceUsages(Property):\n" +
+                "        Anonymous_StripedId instance ReferenceUsage\n" +
+                "            [... >0]", this.runtime.getCoreInstance("A").printWithoutDebug("", 0));
     }
 }

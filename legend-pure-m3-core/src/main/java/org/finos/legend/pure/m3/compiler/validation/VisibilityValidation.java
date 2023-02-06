@@ -18,7 +18,6 @@ import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.visibility.Visibility;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotatedElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Annotation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.ElementWithStereotypes;
@@ -27,7 +26,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Tag;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
@@ -38,16 +37,18 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecificat
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+
+import java.util.Objects;
 
 public class VisibilityValidation
 {
@@ -186,7 +187,7 @@ public class VisibilityValidation
         validateAnnotatedElement(association, sourceId, validatorState, processorSupport);
     }
 
-    private static void validateGenericType(GenericType genericType, CoreInstance pkg, String sourceId, Context context, ValidatorState validatorState, ProcessorSupport processorSupport, boolean checkSourceVisibility) throws PureCompilationException
+    public static void validateGenericType(GenericType genericType, CoreInstance pkg, String sourceId, Context context, ValidatorState validatorState, ProcessorSupport processorSupport, boolean checkSourceVisibility) throws PureCompilationException
     {
         if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(genericType))
         {
@@ -225,14 +226,6 @@ public class VisibilityValidation
                 {
                     validateFunctionDefinition((LambdaFunction<?>) value, pkg, sourceId, context, validatorState, processorSupport);
                 }
-                else if (Instance.instanceOf(value, M3Paths.Path, processorSupport))
-                {
-                    validatePath(value, pkg, sourceId, context, validatorState, processorSupport);
-                }
-                else if (Instance.instanceOf(value, M3Paths.RootGraphFetchTree, processorSupport))
-                {
-                    validateRootGraphFetchTree(value, pkg, sourceId, context, validatorState, processorSupport);
-                }
                 else if (value instanceof PackageableFunction)
                 {
                     validatePackageAndSourceVisibility(valueSpec, pkg, sourceId, context, validatorState, processorSupport, (PackageableFunction<?>) value);
@@ -257,6 +250,7 @@ public class VisibilityValidation
                         throwRepoVisibilityException(valueSpec.getSourceInformation(), value, sourceId, processorSupport);
                     }
                 }
+                validatorState.getInlineDSLLibrary().getInlineDSLs().collect(InlineDSL::getVisibilityValidator).select(Objects::nonNull).forEach(p->p.validate(value, pkg, sourceId, context, validatorState, processorSupport));
             });
         }
     }
@@ -273,7 +267,7 @@ public class VisibilityValidation
         }
     }
 
-    private static void validatePackageAndSourceVisibility(SourceInformation sourceInformationForError, CoreInstance pkg, String sourceId, Context context, ValidatorState validatorState, ProcessorSupport processorSupport, ElementWithStereotypes value)
+    public static void validatePackageAndSourceVisibility(SourceInformation sourceInformationForError, CoreInstance pkg, String sourceId, Context context, ValidatorState validatorState, ProcessorSupport processorSupport, ElementWithStereotypes value)
     {
         if (!Visibility.isVisibleInPackage(value, pkg, context, processorSupport))
         {
@@ -293,31 +287,6 @@ public class VisibilityValidation
             validatePackageAndSourceVisibility(expression, pkg, sourceId, context, validatorState, processorSupport, (PackageableFunction<?>)function);
         }
         expression._parametersValues().forEach(pv -> validateValueSpecification(pv, pkg, sourceId, context, validatorState, processorSupport));
-    }
-
-    //TODO: move to m2-path
-    private static void validatePath(CoreInstance path, CoreInstance pkg, String sourceId, Context context, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
-    {
-        validateGenericType((GenericType) Instance.getValueForMetaPropertyToOneResolved(path, M3Properties.start, processorSupport), pkg, sourceId, context, validatorState, processorSupport, true);
-        // TODO consider validating the parameters of the Path
-    }
-
-    //TODO: move to m2-graph
-    private static void validateRootGraphFetchTree(CoreInstance rootTree, CoreInstance pkg, String sourceId, Context context, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
-    {
-        validatePackageAndSourceVisibility(rootTree.getValueForMetaPropertyToOne(M3Properties._class).getSourceInformation(), pkg, sourceId, context, validatorState, processorSupport, (Class<?>) Instance.getValueForMetaPropertyToOneResolved(rootTree, M3Properties._class, processorSupport));
-        Instance.getValueForMetaPropertyToManyResolved(rootTree, "subTrees", processorSupport).forEach(subTree -> validatePropertyGraphFetchTree(subTree, pkg, sourceId, context, validatorState, processorSupport));
-    }
-
-    private static void validatePropertyGraphFetchTree(CoreInstance propertyTree, CoreInstance pkg, String sourceId, Context context, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
-    {
-        validatePackageAndSourceVisibility(propertyTree.getValueForMetaPropertyToOne(M3Properties.property).getSourceInformation(), pkg, sourceId, context, validatorState, processorSupport, (AbstractProperty<?>) Instance.getValueForMetaPropertyToOneResolved(propertyTree, M3Properties.property, processorSupport));
-        CoreInstance subTypeClass = Instance.getValueForMetaPropertyToOneResolved(propertyTree, "subType", processorSupport);
-        if (subTypeClass != null)
-        {
-            validatePackageAndSourceVisibility(propertyTree.getValueForMetaPropertyToOne("subType").getSourceInformation(), pkg, sourceId, context, validatorState, processorSupport, (Class<?>) subTypeClass);
-        }
-        Instance.getValueForMetaPropertyToManyResolved(propertyTree, "subTrees", processorSupport).forEach(subTree -> validatePropertyGraphFetchTree(subTree, pkg, sourceId, context, validatorState, processorSupport));
     }
 
     private static void throwAccessException(SourceInformation sourceInfo, CoreInstance element, CoreInstance pkg, ProcessorSupport processorSupport) throws PureCompilationException

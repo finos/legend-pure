@@ -18,8 +18,9 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.impl.factory.Sets;
 import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
+import org.finos.legend.pure.m3.navigation._package._Package;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
@@ -58,5 +59,11 @@ public class WalkerState extends MatcherState
     public SetIterable<CoreInstance> getInstances()
     {
         return this.instances.asUnmodifiable();
+    }
+
+    @Override
+    public InlineDSLLibrary getInlineDSLLibrary()
+    {
+        throw new RuntimeException("Not supported here.");
     }
 }

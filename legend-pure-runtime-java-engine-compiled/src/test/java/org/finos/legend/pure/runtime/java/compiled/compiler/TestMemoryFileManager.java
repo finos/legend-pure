@@ -17,10 +17,12 @@ package org.finos.legend.pure.runtime.java.compiled.compiler;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.test.Verify;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiled;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistry;
+import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -39,20 +41,24 @@ public class TestMemoryFileManager extends AbstractPureTestWithCoreCompiled
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getFunctionExecution());
+        setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
     }
 
     @Test
     public void testLoadClassesFromZipInputStream() throws IOException
     {
         compileTestSource("Class Person\n" +
-                          "{\n" +
-                          "   lastName:String[1];\n" +
-                          "}\n" +
-                          "function testPrint():Nil[0]\n" +
-                          "{\n" +
-                          "    print(Person,3);\n" +
-                          "}\n");
+                "{\n" +
+                "   lastName:String[1];\n" +
+                "}\n" +
+                "function testPrint():Nil[0]\n" +
+                "{\n" +
+                "    s(Person);\n" +
+                "}\n" +
+                "function s(a:Any[1]):Nil[0]" +
+                "{" +
+                "   []" +
+                "}");
 
         PureJavaCompiler compiler = ((FunctionExecutionCompiled) functionExecution).getJavaCompiler();
         MutableMap<URI, ClassJavaSource> expectedSourcesByURI = compiler.getFileManager().getAllClassJavaSources(true).groupByUniqueKey(SimpleJavaFileObject::toUri, Maps.mutable.empty());

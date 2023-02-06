@@ -42,9 +42,11 @@
                         <configuration>
                             <visitor>true</visitor>
                             <listener>true</listener>
+                            <treatWarningsAsErrors>true</treatWarningsAsErrors> <!-- DO NOT CHANGE THIS -->
                             <libDirectory>
                                 src/main/antlr4/org/finos/legend/pure/m4/serialization/grammar/core
                             </libDirectory>
+                            <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>

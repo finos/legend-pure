@@ -14,16 +14,15 @@
 
 package org.finos.legend.pure.runtime.java.compiled.modeling._class;
 
-import org.finos.legend.pure.generated.CoreJavaModelFactoryRegistry;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.test.Verify;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
-import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -32,8 +31,9 @@ import org.junit.Test;
 public class TestClassPropertyNames extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution(), getFactoryRegistryOverride());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
     }
 
     @After
@@ -45,7 +45,7 @@ public class TestClassPropertyNames extends AbstractPureTestWithCoreCompiled
     @Test
     public void testClassWithJavaKeywordProperty()
     {
-        compileTestSource("fromString.pure","Class test::TestClass\n" +
+        compileTestSource("fromString.pure", "Class test::TestClass\n" +
                 "{\n" +
                 "  case : String[1];\n" +
                 "}\n" +
@@ -53,13 +53,13 @@ public class TestClassPropertyNames extends AbstractPureTestWithCoreCompiled
                 "function test::testFn():Boolean[1]\n" +
                 "{\n" +
                 "  let t = ^test::TestClass(case='abc');\n" +
-                "  assert('abc' == $t.case, |'');\n" +
+                "  'abc' == $t.case;\n" +
                 "}\n");
         CoreInstance testFn = this.runtime.getFunction("test::testFn():Boolean[1]");
         Assert.assertNotNull(testFn);
         CoreInstance result = this.functionExecution.start(testFn, Lists.immutable.<CoreInstance>empty());
         Assert.assertTrue(result instanceof InstanceValue);
-        RichIterable<?> values = ((InstanceValue)result)._values();
+        RichIterable<?> values = ((InstanceValue) result)._values();
         Verify.assertSize(1, values);
         Object value = values.getFirst();
         Assert.assertEquals(Boolean.TRUE, value);
@@ -68,7 +68,7 @@ public class TestClassPropertyNames extends AbstractPureTestWithCoreCompiled
     @Test
     public void testClassWithJavaKeywordQualifiedProperty()
     {
-        compileTestSource("fromString.pure","Class test::TestClass\n" +
+        compileTestSource("fromString.pure", "Class test::TestClass\n" +
                 "{\n" +
                 "  case()\n" +
                 "  {\n" +
@@ -79,13 +79,13 @@ public class TestClassPropertyNames extends AbstractPureTestWithCoreCompiled
                 "function test::testFn():Boolean[1]\n" +
                 "{\n" +
                 "  let t = ^test::TestClass();\n" +
-                "  assert('abc' == $t.case, |'');\n" +
+                "  'abc' == $t.case;\n" +
                 "}\n");
         CoreInstance testFn = this.runtime.getFunction("test::testFn():Boolean[1]");
         Assert.assertNotNull(testFn);
         CoreInstance result = this.functionExecution.start(testFn, Lists.immutable.<CoreInstance>empty());
         Assert.assertTrue(result instanceof InstanceValue);
-        RichIterable<?> values = ((InstanceValue)result)._values();
+        RichIterable<?> values = ((InstanceValue) result)._values();
         Verify.assertSize(1, values);
         Object value = values.getFirst();
         Assert.assertEquals(Boolean.TRUE, value);
@@ -96,8 +96,5 @@ public class TestClassPropertyNames extends AbstractPureTestWithCoreCompiled
         return new FunctionExecutionCompiledBuilder().build();
     }
 
-    protected static CoreInstanceFactoryRegistry getFactoryRegistryOverride()
-    {
-        return CoreJavaModelFactoryRegistry.REGISTRY;
-    }
+
 }

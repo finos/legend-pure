@@ -30,6 +30,6 @@ public class LogActivities extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return String.format("org.finos.legend.pure.runtime.java.extension.store.relational.RelationalNativeImplementation.logActivities(%s, es)", transformedParams.get(0));
+        return String.format("RelationalGen.logActivities(%s, es)", transformedParams.get(0));
     }
 }

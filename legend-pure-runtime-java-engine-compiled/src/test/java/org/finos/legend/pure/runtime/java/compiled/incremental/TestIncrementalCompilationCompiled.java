@@ -16,12 +16,13 @@ package org.finos.legend.pure.runtime.java.compiled.incremental;
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.factory.Lists;
-import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.incremental.AbstractTestIncrementalCompilation;
 import org.finos.legend.pure.runtime.java.compiled.CompiledClassloaderStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.CompiledMetadataStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
 import org.junit.BeforeClass;
 
 public class TestIncrementalCompilationCompiled extends AbstractTestIncrementalCompilation
@@ -29,7 +30,7 @@ public class TestIncrementalCompilationCompiled extends AbstractTestIncrementalC
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getFunctionExecution(), getCodeStorage());
+        setUpRuntime(getFunctionExecution(), getCodeStorage(), JavaModelFactoryRegistryLoader.loader());
     }
 
     protected static FunctionExecution getFunctionExecution()

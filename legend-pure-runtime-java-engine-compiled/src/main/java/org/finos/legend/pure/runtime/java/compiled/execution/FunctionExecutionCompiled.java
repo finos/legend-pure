@@ -35,21 +35,14 @@ import org.finos.legend.pure.m3.execution.Console;
 import org.finos.legend.pure.m3.execution.ExecutionPlatform;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.execution.OutputWriter;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
+import org.finos.legend.pure.m3.navigation.*;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.serialization.PureRuntimeEventHandler;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
 import org.finos.legend.pure.m3.serialization.grammar.CoreInstanceFactoriesRegistry;
-import org.finos.legend.pure.m3.serialization.runtime.Message;
-import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
-import org.finos.legend.pure.m3.serialization.runtime.RepositoryComparator;
-import org.finos.legend.pure.m3.serialization.runtime.Source;
-import org.finos.legend.pure.m3.serialization.runtime.SourceRegistry;
+import org.finos.legend.pure.m3.serialization.runtime.*;
 import org.finos.legend.pure.m3.statelistener.ExecutionActivityListener;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -125,14 +118,22 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
         this.context = runtime.getContext();
         this.sourceRegistry = runtime.getSourceRegistry();
         this.javaCompilerEventHandler = new JavaCompilerEventHandler(runtime, message, this.includePureStackTrace, this.javaCompilerEventObserver, this.extensions);
-        this.metadataCompilerEventHandler = new MetadataEagerCompilerEventHandler(runtime.getModelRepository(), (MetadataEventObserver)this.javaCompilerEventObserver, message, runtime.getProcessorSupport());
+        this.metadataCompilerEventHandler = new MetadataEagerCompilerEventHandler(runtime.getModelRepository(), (MetadataEventObserver) this.javaCompilerEventObserver, message, runtime.getProcessorSupport());
 
         runtime.addEventHandler(this);
         runtime.getIncrementalCompiler().addCompilerEventHandler(this.javaCompilerEventHandler);
         runtime.getIncrementalCompiler().addCompilerEventHandler(this.metadataCompilerEventHandler);
+
         initializeFromRuntimeState();
 
         this.extraSupportedTypes = runtime.getIncrementalCompiler().getParserLibrary().getParsers().flatCollect(CoreInstanceFactoriesRegistry::getCoreInstanceFactoriesRegistry).flatCollect(CoreInstanceFactoryRegistry::allManagedTypes).toSet();
+
+        CodeRepositorySet codeRepositorySet = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(Thread.currentThread().getContextClassLoader(), true)).build();
+        this.extensions.forEach(c -> {if (!(codeRepositorySet.hasRepository(c.getRelatedRepository())))
+            {
+                throw new RuntimeException("The repository "+c.getRelatedRepository()+" related to the extension "+c.getClass().getSimpleName()+" can't be found");
+            }
+        });
     }
 
     @Override
@@ -157,14 +158,14 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
     public CoreInstance start(CoreInstance functionDefinition, ListIterable<? extends CoreInstance> arguments)
     {
         CompiledExecutionSupport executionSupport = new CompiledExecutionSupport(this.javaCompilerEventHandler.getJavaCompileState(),
-                (CompiledProcessorSupport)this.getProcessorSupport(), this.sourceRegistry, this.runtime.getCodeStorage(),
+                (CompiledProcessorSupport) this.getProcessorSupport(), this.sourceRegistry, this.runtime.getCodeStorage(),
                 this.runtime.getIncrementalCompiler(), this.executionActivityListener, this.consoleCompiled,
-                this.javaCompilerEventHandler.getFunctionCache(), this.javaCompilerEventHandler.getClassCache(), this.metadataCompilerEventHandler, this.extraSupportedTypes, this.runtime.getOptions());
+                this.javaCompilerEventHandler.getFunctionCache(), this.javaCompilerEventHandler.getClassCache(), this.metadataCompilerEventHandler, this.extraSupportedTypes, this.extensions, this.runtime.getOptions());
         Exception exception = null;
         try
         {
             Object result = this.executeFunction(functionDefinition, arguments, executionSupport);
-            return convertResult(result, this.javaCompilerEventHandler.getJavaCompiler().getClassLoader(), this.metadataCompilerEventHandler.getMetadata(),  this.extraSupportedTypes);
+            return convertResult(result, this.javaCompilerEventHandler.getJavaCompiler().getClassLoader(), this.metadataCompilerEventHandler.getMetadata(), this.extraSupportedTypes);
         }
         catch (PureExecutionException ex)
         {
@@ -181,9 +182,9 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
     public void start(CoreInstance func, ListIterable<? extends CoreInstance> arguments, OutputStream outputStream, OutputWriter writer)
     {
         CompiledExecutionSupport executionSupport = new CompiledExecutionSupport(this.javaCompilerEventHandler.getJavaCompileState(),
-                (CompiledProcessorSupport)this.getProcessorSupport(), this.sourceRegistry, this.runtime.getCodeStorage(),
+                (CompiledProcessorSupport) this.getProcessorSupport(), this.sourceRegistry, this.runtime.getCodeStorage(),
                 this.runtime.getIncrementalCompiler(), this.executionActivityListener, this.consoleCompiled,
-                this.javaCompilerEventHandler.getFunctionCache(), this.javaCompilerEventHandler.getClassCache(), this.metadataCompilerEventHandler, this.extraSupportedTypes, this.runtime.getOptions());
+                this.javaCompilerEventHandler.getFunctionCache(), this.javaCompilerEventHandler.getClassCache(), this.metadataCompilerEventHandler, this.extraSupportedTypes, this.extensions, this.runtime.getOptions());
 
         Exception exception = null;
         try
@@ -256,10 +257,10 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
         final ProcessorSupport compiledProcessorSupport = new CompiledProcessorSupport(classLoader, metadata, extraSupportedTypes);
         if (result instanceof RichIterable<?>)
         {
-            RichIterable<?> iterable = (RichIterable<?>)result;
+            RichIterable<?> iterable = (RichIterable<?>) result;
             if (iterable.isEmpty())
             {
-                return ValueSpecificationBootstrap.wrapValueSpecification((CoreInstance)null, true, compiledProcessorSupport);
+                return ValueSpecificationBootstrap.wrapValueSpecification((CoreInstance) null, true, compiledProcessorSupport);
             }
             //Optimized check to see if the list is size 1
             else if (CompiledSupport.isEmpty(CompiledSupport.tail(iterable)))
@@ -267,7 +268,7 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
                 Object first = Iterate.getFirst(iterable);
                 if (first instanceof CoreInstance)
                 {
-                    return ValueSpecificationBootstrap.wrapValueSpecification((CoreInstance)first, true, compiledProcessorSupport);
+                    return ValueSpecificationBootstrap.wrapValueSpecification((CoreInstance) first, true, compiledProcessorSupport);
                 }
                 else
                 {
@@ -283,11 +284,11 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
                     {
                         if (object instanceof CoreInstance)
                         {
-                            return (CoreInstance)object;
+                            return (CoreInstance) object;
                         }
                         else if (object instanceof String)
                         {
-                            return compiledProcessorSupport.newCoreInstance((String)object, M3Paths.String, null);
+                            return compiledProcessorSupport.newCoreInstance((String) object, M3Paths.String, null);
                         }
                         else if (object instanceof Boolean)
                         {
@@ -295,7 +296,7 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
                         }
                         else if (object instanceof PureDate)
                         {
-                            PureDate date = (PureDate)object;
+                            PureDate date = (PureDate) object;
                             String type = date.hasHour() ? M3Paths.DateTime : M3Paths.StrictDate;
                             return compiledProcessorSupport.newCoreInstance(object.toString(), type, null);
                         }
@@ -318,7 +319,7 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
         }
         else if (result instanceof CoreInstance)
         {
-            return ValueSpecificationBootstrap.wrapValueSpecification((CoreInstance)result, true, compiledProcessorSupport);
+            return ValueSpecificationBootstrap.wrapValueSpecification((CoreInstance) result, true, compiledProcessorSupport);
         }
         else
         {
@@ -332,7 +333,7 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
         {
             Class instanceValueClass = classLoader.loadClass(FullJavaPaths.InstanceValue_Impl);
             Object instanceValueObject = instanceValueClass.getConstructor(String.class).newInstance("ID");
-            MutableList _values = (MutableList)instanceValueClass.getDeclaredField("_values").get(instanceValueObject);
+            MutableList _values = (MutableList) instanceValueClass.getDeclaredField("_values").get(instanceValueObject);
             _values.add(first);
 
             CoreInstance type = getType(first, metadata);
@@ -344,7 +345,7 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
             Class valSpecClass = classLoader.loadClass(FullJavaPaths.ValueSpecification_Impl);
             valSpecClass.getDeclaredField("_genericType").set(instanceValueObject, genericTypeObject);
 
-            return (CoreInstance)instanceValueObject;
+            return (CoreInstance) instanceValueObject;
         }
         catch (Exception e)
         {
@@ -405,7 +406,7 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
                 paramClasses[i] = CompiledSupport.convertFunctionTypeStringToClass(t, cl);
                 if (val instanceof MutableList)
                 {
-                    MutableList valList = (MutableList)val;
+                    MutableList valList = (MutableList) val;
                     if (valList.size() != 1)
                     {
                         throw new RuntimeException("Expected exactly one value, found " + valList.size());
@@ -419,7 +420,7 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
                 paramClasses[i] = CompiledSupport.loadClass(className, cl);
                 if (val instanceof MutableList)
                 {
-                    MutableList valList = (MutableList)val;
+                    MutableList valList = (MutableList) val;
                     switch (valList.size())
                     {
                         case 0:
@@ -494,7 +495,7 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
     {
         if (getRuntime().getCache() instanceof PreCompiledPureGraphCache)
         {
-            PreCompiledPureGraphCache graphCache = (PreCompiledPureGraphCache)getRuntime().getCache();
+            PreCompiledPureGraphCache graphCache = (PreCompiledPureGraphCache) getRuntime().getCache();
             MemoryClassLoader classLoader = this.javaCompilerEventHandler.getJavaCompiler().getCoreClassLoader();
             graphCache.prepareClassLoader(classLoader);
             this.metadataCompilerEventHandler.buildFullMetadata();

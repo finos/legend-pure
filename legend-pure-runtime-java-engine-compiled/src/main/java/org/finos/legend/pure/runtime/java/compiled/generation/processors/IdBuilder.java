@@ -33,6 +33,8 @@ import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
+import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtensionLoader;
 
 import java.util.Map;
 import java.util.Objects;
@@ -146,14 +148,6 @@ public class IdBuilder
     {
         String name = lambda.getName();
         return ModelRepository.isAnonymousInstanceName(name) ? null : name;
-    }
-
-    // Path
-
-    private static String buildIdForPath(CoreInstance path)
-    {
-        SourceInformation sourceInfo = path.getSourceInformation();
-        return sourceInfo.getMessage();
     }
 
     // Annotation
@@ -332,9 +326,9 @@ public class IdBuilder
             addIdBuilder(M3Paths.Enum, CoreInstance::getName);
             addIdBuilder(M3Paths.LambdaFunction, IdBuilder::buildIdForLambdaFunction);
             addIdBuilder(M3Paths.PackageableElement, IdBuilder::buildIdForPackageableElement);
-            addIdBuilder(M3Paths.Path, IdBuilder::buildIdForPath);
             addIdBuilder(M3Paths.Property, IdBuilder::buildIdForProperty);
             addIdBuilder(M3Paths.QualifiedProperty, IdBuilder::buildIdForQualifiedProperty);
+            CompiledExtensionLoader.extensions().flatCollect(x -> x.getExtraIdBuilders(this.processorSupport)).forEach(x -> addIdBuilder(x.getOne(), x.getTwo()));
         }
     }
 

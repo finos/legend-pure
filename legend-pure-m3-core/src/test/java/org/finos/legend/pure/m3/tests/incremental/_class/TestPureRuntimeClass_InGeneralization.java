@@ -14,10 +14,10 @@
 
 package org.finos.legend.pure.m3.tests.incremental._class;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
-import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
-import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.tools.test.ToFix;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -27,12 +27,14 @@ import org.junit.Test;
 public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("sourceId.pure");
         runtime.delete("userId.pure");
         runtime.delete("other.pure");
@@ -82,7 +84,7 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class B{}")
                         .createInMemorySource("userId.pure", "Class A extends B{}" +
-                                "function test():Boolean[1]{assert('A' == A->id(), |'');}")
+                                "function test():Boolean[1]{assert('A' == A->id(), |'');}" )
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
@@ -181,7 +183,7 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
                                 "Class C extends D{}" +
                                 "Class A extends B{}" +
                                 "function myFunc():D[1]{^A()}" +
-                                "function test():Boolean[1]{assert(A == myFunc()->genericType().rawType, |'')}")
+                                "function test():Boolean[1]{assert(A == myFunc()->genericType().rawType, |'')}" )
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
@@ -192,5 +194,4 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
                         .compile(),
                 this.runtime, this.functionExecution, this.getAdditionalVerifiers());
     }
-
 }

@@ -29,6 +29,6 @@ public class FetchDbPrimaryKeysMetaData extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return "org.finos.legend.pure.runtime.java.extension.store.relational.compiled.RelationalGen.fetchDbMetaData(" + transformedParams.get(0) + ", new org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.FetchDbPrimaryKeysMetaDataFunction(" + transformedParams.get(1) + "," + transformedParams.get(2) + "), Maps.immutable.<String, Function<ListIterable<Object>, String>>empty(),es)";
+        return "org.finos.legend.pure.generated.RelationalGen.fetchDbMetaData(" + transformedParams.get(0) + ", new org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.FetchDbPrimaryKeysMetaDataFunction(" + transformedParams.get(1) + "," + transformedParams.get(2) + "), Maps.immutable.<String, Function<ListIterable<Object>, String>>empty(),es)";
     }
 }

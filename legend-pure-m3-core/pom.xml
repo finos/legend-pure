@@ -32,6 +32,27 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>default-compile</id>
+                        <phase>process-classes</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                </configuration>
+            </plugin>
+            <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
                     <execution>
@@ -63,8 +84,12 @@
                         <configuration>
                             <visitor>true</visitor>
                             <listener>true</listener>
-                            <excludes><exclude>**/org/finos/legend/pure/m3/serialization/grammar/m3parser/antlr/core</exclude></excludes>
+                            <treatWarningsAsErrors>true</treatWarningsAsErrors> <!-- DO NOT CHANGE THIS -->
+                            <excludes>
+                                <exclude>**/org/finos/legend/pure/m3/serialization/grammar/m3parser/antlr/core/*</exclude>
+                            </excludes>
                             <libDirectory>target/antlr</libDirectory>
+                            <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
@@ -98,35 +123,56 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>Generate M3 Support Classes</id>
                         <phase>generate-sources</phase>
                         <goals>
                             <goal>java</goal>
                         </goals>
+                        <configuration>
+                            <mainClass>org.finos.legend.pure.m3.bootstrap.generator.CoreInstanceGenerator</mainClass>
+                            <arguments>
+                                <argument>${project.build.directory}/generated-sources/</argument>
+                                <argument>${project.basedir}/src/main/resources</argument>
+                                <argument>/platform/pure/grammar/m3.pure</argument>
+                            </arguments>
+                        </configuration>
                     </execution>
-                </executions>
-                <configuration>
-                    <mainClass>org.finos.legend.pure.m3.bootstrap.generator.CoreInstanceGenerator</mainClass>
-                    <arguments>
-                        <argument>${project.build.directory}/generated-sources/</argument>
-                        <argument>${project.basedir}/src/main/resources</argument>
-                        <argument>/platform/pure/m3.pure</argument>
-                    </arguments>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <executions>
                     <execution>
-                        <id>add-source</id>
-                        <phase>initialize</phase>
+                        <id>Generate Other Support Classes</id>
+                        <phase>compile</phase>
                         <goals>
-                            <goal>add-source</goal>
+                            <goal>java</goal>
                         </goals>
                         <configuration>
-                            <sources>
-                                <source>${project.basedir}/target/generated-sources/</source>
-                            </sources>
+                            <mainClass>org.finos.legend.pure.m3.generator.bootstrap.M3CoreInstanceGenerator</mainClass>
+                            <additionalClasspathElements>
+                                <additionalClasspathElement>${project.basedir}/src/main/resources
+                                </additionalClasspathElement>
+                            </additionalClasspathElements>
+                            <arguments>
+                                <argument>${project.build.directory}/generated-sources/</argument>
+                                <argument>M3Platform</argument>
+                                <argument>
+                                    /platform/pure/grammar/milestoning.pure,
+                                    /platform/pure/routing.pure,
+                                    /platform/pure/anonymousCollections.pure
+                                </argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>Generate PAR</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>org.finos.legend.pure.m3.generator.par.PureJarGenerator</mainClass>
+                            <arguments>
+                                <argument>${project.version}</argument>
+                                <argument>platform</argument>
+                                <argument>${project.build.outputDirectory}</argument>
+                            </arguments>
                         </configuration>
                     </execution>
                 </executions>
@@ -225,7 +271,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.collections</groupId>

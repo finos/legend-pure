@@ -1,0 +1,490 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::profiles::*;
+import meta::pure::mapping::*;
+
+import meta::relational::mapping::*;
+
+import meta::relational::metamodel::*;
+import meta::relational::metamodel::datatype::*;
+import meta::relational::metamodel::execute::*;
+import meta::relational::metamodel::join::*;
+import meta::relational::metamodel::operation::*;
+import meta::relational::metamodel::relation::*;
+
+import meta::relational::runtime::*;
+
+Class meta::relational::metamodel::Database extends meta::pure::store::set::SetBasedStore
+{
+    schemas : Schema[*];
+    joins : Join[*];
+    filters : Filter[*];
+}
+
+Class meta::relational::metamodel::Schema extends meta::pure::store::set::Namespace
+{
+    name : String[1];
+    database : Database[1];
+    tables : Table[*];
+    views : View[*];
+}
+
+Class meta::relational::metamodel::relation::Relation extends meta::relational::metamodel::RelationalOperationElement, meta::pure::store::set::SetRelation
+{
+   columns : RelationalOperationElement[*];
+}
+
+Class meta::relational::metamodel::relation::NamedRelation extends meta::relational::metamodel::relation::Relation
+{
+   name : String[1];
+}
+
+Class meta::relational::metamodel::relation::Milestoning
+{
+    owner : Relation[0..1];
+}
+
+Class meta::relational::metamodel::relation::TemporalMilestoning extends Milestoning
+{
+    infinityDate : Date[0..1];
+}
+
+Class meta::relational::metamodel::relation::ProcessingMilestoning extends TemporalMilestoning
+{
+   in : Column[1];
+   out : Column[1];
+   outIsInclusive : Boolean[1];
+}
+
+Class meta::relational::metamodel::relation::BusinessMilestoning extends TemporalMilestoning
+{
+   from : Column[1];
+   thru : Column[1];
+   thruIsInclusive : Boolean[1];
+}
+
+Class meta::relational::metamodel::relation::BusinessSnapshotMilestoning extends TemporalMilestoning
+{
+   snapshotDate : Column[1];
+}
+
+Class meta::relational::metamodel::relation::Table extends NamedRelation
+{
+   schema : Schema[1];
+   primaryKey : Column[*];
+   milestoning : Milestoning[*];
+   temporaryTable : Boolean[0..1];
+}
+
+Class meta::relational::metamodel::RelationalMappingSpecification
+{
+    userDefinedPrimaryKey : Boolean[1];
+    filter : FilterMapping[0..1];
+    distinct : Boolean[0..1];
+    groupBy : GroupByMapping[0..1];
+    mainTableAlias : TableAlias[1];
+}
+
+Class meta::relational::metamodel::relation::View extends NamedRelation, RelationalMappingSpecification
+{
+    schema : Schema[1];
+    primaryKey : Column[*];
+    columnMappings : ColumnMapping[*];
+}
+
+Class meta::relational::mapping::ColumnMapping
+{
+    columnName : String[1];
+    relationalOperationElement : RelationalOperationElement[1];
+}
+
+Class meta::relational::metamodel::join::RelationalTreeNode extends TreeNode
+{
+    alias : TableAlias[1];
+}
+
+Class meta::relational::metamodel::join::RootJoinTreeNode extends RelationalTreeNode, Relation
+{
+}
+
+Class meta::relational::metamodel::join::JoinTreeNode extends RelationalTreeNode
+{
+   setMappingOwner : PropertyMappingsImplementation[0..1];
+   database : Database[1];
+   joinName : String[1];
+   join : Join[1];
+   joinType : JoinType[0..1];
+   lateral : Boolean[0..1];
+}
+
+Enum meta::relational::metamodel::join::JoinType
+{
+   INNER,
+   LEFT_OUTER,
+   RIGHT_OUTER
+}
+
+Class meta::relational::metamodel::Filter
+{
+    name : String[1];
+    database : Database[0..1];
+    operation : Operation[1];
+}
+
+Class meta::relational::metamodel::join::Join
+{
+    name : String[1];
+    database : Database[0..1];
+    target : TableAlias[0..1];
+    aliases : Pair<TableAlias,TableAlias>[*];
+    operation : Operation[1];
+}
+
+Class meta::relational::metamodel::operation::Function extends meta::relational::metamodel::RelationalOperationElement
+{
+}
+
+Class meta::relational::metamodel::operation::Operation extends meta::relational::metamodel::operation::Function
+{
+}
+
+Class meta::relational::metamodel::Alias extends meta::relational::metamodel::RelationalOperationElement
+{
+   <<equality.Key>> name : String[1];
+   <<equality.Key>> relationalElement : RelationalOperationElement[1];
+}
+
+Class meta::relational::metamodel::SQLQuery extends meta::relational::metamodel::RelationalOperationElement
+{
+}
+
+Class meta::relational::metamodel::TableAlias extends Alias
+{
+   setMappingOwner : PropertyMappingsImplementation[0..1];
+
+   database : Database[0..1];
+   schema : String[0..1];
+   relation(){$this.relationalElement->cast(@Relation)}:Relation[1];
+}
+
+Class meta::relational::metamodel::Column extends meta::relational::metamodel::RelationalOperationElement, meta::pure::store::set::SetColumn
+{
+   <<equality.Key>> name : String[1];
+   <<equality.Key>> type : meta::relational::metamodel::datatype::DataType[1];
+   nullable : Boolean[0..1];
+   owner : Relation[0..1];
+}
+
+Class meta::relational::metamodel::datatype::DataType
+{
+}
+
+Class meta::relational::metamodel::datatype::CoreDataType extends meta::relational::metamodel::datatype::DataType
+{
+}
+
+Class meta::relational::metamodel::datatype::DbSpecificDataType extends meta::relational::metamodel::datatype::DataType
+{
+    coreDataType: meta::relational::metamodel::datatype::CoreDataType[1];
+    dbSpecificSql: String[1];
+}
+
+Class meta::relational::metamodel::RelationalOperationElement
+{
+}
+
+Class meta::relational::metamodel::relation::SelectSQLQuery extends Relation, SQLQuery
+{
+   distinct : Boolean[0..1];
+   data : RootJoinTreeNode[0..1];
+   filteringOperation : RelationalOperationElement[*];
+   groupBy : RelationalOperationElement[*];
+   havingOperation : RelationalOperationElement[*];
+   orderBy : OrderBy[*];
+   fromRow : meta::relational::metamodel::Literal[0..1];
+   toRow : meta::relational::metamodel::Literal[0..1];
+   leftSideOfFilter : RelationalTreeNode[0..1];
+   savedFilteringOperation : Pair<RelationalTreeNode, RelationalOperationElement>[*];
+   extraFilteringOperation : RelationalOperationElement[*];
+   preIsolationCurrentTreeNode : RelationalTreeNode[0..1];
+}
+
+Class meta::relational::metamodel::relation::ViewSelectSQLQuery extends Table{
+   selectSQLQuery : SelectSQLQuery[1];
+   view : View[1];
+}
+
+Class meta::relational::metamodel::relation::TdsSelectSqlQuery extends SelectSQLQuery, RelationalTds
+{
+}
+
+Class meta::relational::metamodel::relation::TableTds extends RelationalTds
+{
+}
+
+Class meta::relational::metamodel::relation::SemiStructuredArrayFlatten extends Relation
+{
+   navigation : RelationalOperationElement[1];
+}
+
+Class meta::relational::metamodel::relation::SemiStructuredArrayFlattenOutput extends RelationalOperationElement
+{
+   tableAliasColumn : TableAliasColumn[1];
+   returnType       : Type[0..1];
+}
+
+Class
+{doc.doc = 'Indicates that the filter is a filter on the grain of a multi-grain table (data warehousing). The grain filter can be ignored when joining to a multi-grain table using the primary key'}
+meta::relational::metamodel::MultiGrainFilter extends Filter
+{
+}
+
+Class meta::relational::metamodel::operation::BinaryOperation extends Operation
+{
+    <<equality.Key>> left:RelationalOperationElement[1];
+    <<equality.Key>> right:RelationalOperationElement[1];
+}
+
+Class meta::relational::metamodel::operation::UnaryOperation extends Operation
+{
+    <<equality.Key>> nested:RelationalOperationElement[1];
+}
+
+Class meta::relational::metamodel::operation::VariableArityOperation extends Operation
+{
+    <<equality.Key>> args:RelationalOperationElement[*];
+}
+
+Class meta::relational::metamodel::DynaFunction extends Operation
+{
+    <<equality.Key>> name : String[1];
+    <<equality.Key>> parameters : RelationalOperationElement[*];
+}
+
+
+Class meta::relational::metamodel::operation::JoinStrings extends Operation
+{
+    strings:RelationalOperationElement[*];
+    prefix:RelationalOperationElement[0..1];
+    separator:RelationalOperationElement[0..1];
+    suffix:RelationalOperationElement[0..1];
+}
+
+Class meta::relational::metamodel::operation::ArithmeticOperation extends Operation
+{
+}
+
+Class meta::relational::metamodel::operation::VariableArithmeticOperation extends ArithmeticOperation, VariableArityOperation
+{
+}
+
+Class meta::relational::metamodel::operation::SemiStructuredObjectNavigation extends Operation
+{
+   operand     : RelationalOperationElement[1];
+   contentType : String[0..1];
+   returnType  : Type[0..1];
+}
+
+Class meta::relational::metamodel::operation::SemiStructuredPropertyAccess extends SemiStructuredObjectNavigation
+{
+   property : RelationalOperationElement[1];
+   index    : RelationalOperationElement[0..1];
+}
+
+Class meta::relational::metamodel::operation::SemiStructuredArrayElementAccess extends SemiStructuredObjectNavigation
+{
+   index : RelationalOperationElement[1];
+}
+
+Class meta::relational::metamodel::ColumnName extends meta::relational::metamodel::RelationalOperationElement
+{
+    <<equality.Key>> name : String[1];
+}
+
+Class meta::relational::metamodel::RelationalTds
+{
+    paths: Pair<String, PathInformation>[*];
+}
+
+Class meta::relational::metamodel::PathInformation
+{
+   propertyMapping : meta::pure::mapping::PropertyMapping[0..1];
+   type : Type[1];
+   documentation : String[0..1];
+   relationalType : meta::relational::metamodel::datatype::DataType[0..1];
+}
+
+Class meta::relational::metamodel::TableAliasColumn extends meta::relational::metamodel::RelationalOperationElement
+{
+   setMappingOwner : PropertyMappingsImplementation[0..1];
+
+   columnName : String[0..1];
+
+   <<equality.Key>> alias : TableAlias[1];
+   <<equality.Key>> column : Column[1];
+}
+
+Class meta::relational::metamodel::RelationalOperationElementWithJoin extends meta::relational::metamodel::RelationalOperationElement
+{
+    relationalOperationElement : RelationalOperationElement[0..1];
+    joinTreeNode : JoinTreeNode[0..1];
+}
+
+Class meta::relational::metamodel::datatype::BigInt extends meta::relational::metamodel::datatype::CoreDataType
+{
+}
+
+Class meta::relational::metamodel::datatype::SmallInt extends meta::relational::metamodel::datatype::CoreDataType
+{
+}
+
+Class meta::relational::metamodel::datatype::TinyInt extends meta::relational::metamodel::datatype::CoreDataType
+{
+}
+
+Class meta::relational::metamodel::datatype::Integer extends meta::relational::metamodel::datatype::CoreDataType
+{
+}
+
+Class meta::relational::metamodel::datatype::Float extends meta::relational::metamodel::datatype::CoreDataType
+{
+}
+
+Class meta::relational::metamodel::datatype::Double extends meta::relational::metamodel::datatype::CoreDataType
+{
+}
+
+Class meta::relational::metamodel::datatype::Varchar extends meta::relational::metamodel::datatype::CoreDataType
+{
+    size: Integer[1];
+}
+
+Class meta::relational::metamodel::datatype::Char extends meta::relational::metamodel::datatype::CoreDataType
+{
+    size: Integer[1];
+}
+
+Class meta::relational::metamodel::datatype::Varbinary extends meta::relational::metamodel::datatype::CoreDataType
+{
+    size: Integer[1];
+}
+
+Class meta::relational::metamodel::datatype::Decimal extends meta::relational::metamodel::datatype::CoreDataType
+{
+    precision : Integer[1];
+    scale     : Integer[1];
+}
+
+Class meta::relational::metamodel::datatype::Numeric extends meta::relational::metamodel::datatype::CoreDataType
+{
+    precision : Integer[1];
+    scale     : Integer[1];
+}
+
+Class meta::relational::metamodel::datatype::Timestamp extends meta::relational::metamodel::datatype::CoreDataType
+{
+}
+
+Class meta::relational::metamodel::datatype::Date extends meta::relational::metamodel::datatype::CoreDataType
+{
+}
+
+Class meta::relational::metamodel::datatype::Distinct extends meta::relational::metamodel::datatype::CoreDataType
+{
+}
+
+Class meta::relational::metamodel::datatype::Other extends meta::relational::metamodel::datatype::CoreDataType
+{
+}
+
+Class meta::relational::metamodel::datatype::Bit extends meta::relational::metamodel::datatype::CoreDataType
+{
+}
+
+Class meta::relational::metamodel::datatype::Binary extends meta::relational::metamodel::datatype::CoreDataType
+{
+   size:Integer[1];
+}
+
+Class meta::relational::metamodel::datatype::Real extends meta::relational::metamodel::datatype::CoreDataType
+{
+}
+
+Class meta::relational::metamodel::datatype::Array extends meta::relational::metamodel::datatype::CoreDataType
+{
+}
+
+Class meta::relational::metamodel::datatype::SemiStructured extends meta::relational::metamodel::datatype::CoreDataType
+{
+}
+
+
+Class meta::relational::metamodel::Literal extends meta::relational::metamodel::RelationalOperationElement
+{
+   <<equality.Key>> value:Any[1];
+}
+
+Class meta::relational::metamodel::LiteralList extends meta::relational::metamodel::RelationalOperationElement
+{
+   <<equality.Key>> values:Literal[*];
+}
+
+
+
+
+
+
+
+
+Class meta::relational::metamodel::SQLNull
+{
+   //Used to make sure that any two SQLNull instances are equal
+   <<equality.Key>> key:Nil[0];
+   toString()
+   {
+      'SQLNull'
+   }:String[1];
+}
+
+Class meta::relational::metamodel::OrderBy
+{
+    column : RelationalOperationElement[1];
+    direction : SortDirection[1];
+}
+
+Enum meta::relational::metamodel::SortDirection
+{
+    ASC, DESC
+}
+
+Class meta::relational::metamodel::WindowColumn extends meta::relational::metamodel::RelationalOperationElement
+{
+
+   <<equality.Key>> columnName : String[1];
+
+   <<equality.Key>> window: meta::relational::metamodel::Window[1];
+
+   <<equality.Key>>  func: DynaFunction[1];
+
+}
+
+Class meta::relational::metamodel::Window extends meta::relational::metamodel::RelationalOperationElement
+{
+   <<equality.Key>> partition: RelationalOperationElement[*];
+
+   <<equality.Key>> sortBy: RelationalOperationElement [*];
+
+   sortDirection: meta::relational::metamodel::SortDirection[0..1] ;
+}

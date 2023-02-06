@@ -14,9 +14,9 @@
 
 package org.finos.legend.pure.m3.tests.incremental;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
-import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.After;
 import org.junit.Assert;
@@ -26,12 +26,14 @@ import org.junit.Test;
 public class TestGraphStability extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("sourceId.pure");
         runtime.delete("userId.pure");
         runtime.delete("other.pure");
@@ -67,8 +69,8 @@ public class TestGraphStability extends AbstractPureTestWithCoreCompiledPlatform
     public void testPureRuntimeFunctionWithBody()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder()
-                .createInMemorySource("other.pure", "function testPkg::ok():Nil[0]{[]}")
-                .createInMemorySource("sourceId.pure", "function testPkg::test():Nil[0]{testPkg::ok()}")
+                        .createInMemorySource("other.pure", "function testPkg::ok():Nil[0]{[]}")
+                        .createInMemorySource("sourceId.pure", "function testPkg::test():Nil[0]{testPkg::ok()}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
@@ -83,11 +85,13 @@ public class TestGraphStability extends AbstractPureTestWithCoreCompiledPlatform
     public void testPureRuntimeFunctionWithComplexBody()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder()
-                        .createInMemorySource("sourceId.pure", "function testPkg::test():Nil[0]{let i=1;['aaa','bbb']->at($i);[];}")
+                        .createInMemorySource("sourceId.pure", "function testPkg::test():Nil[0]{let i=1;['aaa','bbb']->at($i);[];}"
+                        )
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
-                        .createInMemorySource("sourceId.pure", "function testPkg::test():Nil[0]{let i = 1;['aaa','bbb']->at($i);[];}")
+                        .createInMemorySource("sourceId.pure", "function testPkg::test():Nil[0]{let i = 1;['aaa','bbb']->at($i);[];}"
+                        )
                         .compile(),
                 this.runtime, this.functionExecution, this.getAdditionalVerifiers());
 

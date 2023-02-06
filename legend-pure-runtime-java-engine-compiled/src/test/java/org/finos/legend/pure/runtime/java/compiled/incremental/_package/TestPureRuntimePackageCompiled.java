@@ -17,11 +17,12 @@ package org.finos.legend.pure.runtime.java.compiled.incremental._package;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Lists;
-import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.incremental._package.TestPureRuntimePackage;
 import org.finos.legend.pure.runtime.java.compiled.CompiledClassloaderStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
 import org.junit.After;
 import org.junit.BeforeClass;
 
@@ -29,7 +30,7 @@ public class TestPureRuntimePackageCompiled extends TestPureRuntimePackage
 {
     @BeforeClass
     public static void setUp() {
-        setUpRuntime(getFunctionExecution(), getExtra());
+        setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
     }
 
     @After
@@ -46,10 +47,5 @@ public class TestPureRuntimePackageCompiled extends TestPureRuntimePackage
     protected ListIterable<RuntimeVerifier.FunctionExecutionStateVerifier> getAdditionalVerifiers()
     {
         return Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of(new CompiledClassloaderStateVerifier());
-    }
-
-    public static Pair<String, String> getExtra()
-    {
-        return null;
     }
 }

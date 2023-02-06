@@ -15,11 +15,22 @@
 package org.finos.legend.pure.runtime.java.interpreted.extension;
 
 import org.eclipse.collections.api.block.function.Function2;
+import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.tuple.Pair;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.NativeFunction;
+import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
+import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
+import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
+import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
+
+import java.util.Stack;
 
 public class BaseInterpretedExtension implements InterpretedExtension
 {
@@ -34,5 +45,11 @@ public class BaseInterpretedExtension implements InterpretedExtension
     public MutableList<Pair<String, Function2<FunctionExecutionInterpreted, ModelRepository, NativeFunction>>> getExtraNatives()
     {
         return this.extraNatives;
+    }
+
+    @Override
+    public CoreInstance getExtraFunctionExecution(Function<CoreInstance> function, ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, ProcessorSupport processorSupport, FunctionExecutionInterpreted interpreted)
+    {
+        return null;
     }
 }

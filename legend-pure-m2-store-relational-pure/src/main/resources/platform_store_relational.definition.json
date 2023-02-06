@@ -1,0 +1,5 @@
+{
+  "name" : "platform_store_relational",
+  "pattern" : "(meta::relational|meta::pure::functions::io)(::.*)?",
+  "dependencies" : ["platform","platform_functions","platform_dsl_mapping"]
+}

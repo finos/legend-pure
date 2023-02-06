@@ -1,0 +1,138 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::mapping::*;
+import meta::pure::store::*;
+import meta::pure::mapping::aggregationAware::*;
+
+function meta::pure::mapping::superMapping(_this:PropertyMappingsImplementation[1]):PropertyMappingsImplementation[0..1]
+{
+   if ($_this.superSetImplementationId->isEmpty(),
+       | [],
+       | let superMapping = $_this.parent->classMappingById($_this.superSetImplementationId->toOne());
+         if($superMapping->isEmpty(),
+            | [],
+            | $superMapping->toOne()->cast(@PropertyMappingsImplementation)
+         );
+   );
+}
+
+function meta::pure::mapping::allPropertyMappings(_this:PropertyMappingsImplementation[1]):PropertyMapping[*]
+{
+   let _thisPropertyMappings = $_this.propertyMappings;
+   let superMapping = $_this->superMapping();
+   if ($superMapping->isEmpty(),
+       | $_thisPropertyMappings,
+       | let inheritedPropertyMappings = $superMapping->map(x|$x->allPropertyMappings())->filter(pm | !$pm.property.name->isEmpty() && !$_thisPropertyMappings.property.name->contains($pm.property.name->toOne()));
+         $_thisPropertyMappings->concatenate($inheritedPropertyMappings)->removeDuplicates();
+   );
+}
+
+function meta::pure::mapping::inlineEmbeddedProperty(_this:InlineEmbeddedSetImplementation[1], propertyName:String[1]):PropertyMapping[*]
+{
+    if ($_this.owner->isEmpty()
+             ,| []
+             ,| let propertyMappings = $_this.owner->toOne()->propertyMappingsByPropertyName($_this.property.name->toOne())->filter(pm | !$pm->instanceOf(EmbeddedSetImplementation));
+                  if ($propertyMappings->isEmpty()
+                  ,| let cm = $_this.parent->_classMappingByIdRecursive($_this.inlineSetImplementationId);
+                     let result = $cm->cast(@InstanceSetImplementation)->map(x|$x->propertyMappingsByPropertyName($propertyName));
+                     assertEquals(1, $result->size(), 'Inline embedded mapping for property '+ $propertyName+ ' has more than one root mapping is, not supported yet! : ' + $result.sourceSetImplementationId->joinStrings(','));
+                     let from =  $result->at(0);
+                     ^$from(owner = $_this.owner, sourceSetImplementationId = $_this.sourceSetImplementationId);
+                  ,|  $propertyMappings);
+    )
+}
+
+function meta::pure::mapping::_propertyMappingsByPropertyName(i:PropertyMappingsImplementation[1], s:String[1]):PropertyMapping[*]
+{
+    $i->allPropertyMappings()->filter(pm|$pm.property.name == $s)
+}
+
+function meta::pure::mapping::propertyMappingsByPropertyName(_this:PropertyMappingsImplementation[1], s:String[1]):PropertyMapping[*]
+{
+    $_this->match(
+        [
+            d : OtherwiseEmbeddedSetImplementation[1] | $d->propertyMappingsByPropertyName($s),
+            z : EmbeddedSetImplementation[1] | $z->propertyMappingsByPropertyName($s),
+            x : AggregationAwareSetImplementation[1] | $x.mainSetImplementation->propertyMappingsByPropertyName($s),
+            i : InstanceSetImplementation[1] | $i->_propertyMappingsByPropertyName($s)
+        ]
+    );
+}
+
+function meta::pure::mapping::propertyMappingsByPropertyName(i:InstanceSetImplementation[1], propertyName:String[1]):meta::pure::mapping::PropertyMapping[*]
+{
+   $i->match(
+        [
+            e:EmbeddedSetImplementation[1]| $e->propertyMappingsByPropertyName($propertyName),
+            a:InstanceSetImplementation[1]| $a->_propertyMappingsByPropertyName($propertyName)
+        ]
+   );
+}
+
+function meta::pure::mapping::propertyMappingsByPropertyName(_this:OtherwiseEmbeddedSetImplementation[1], s:String[1]):PropertyMapping[*]
+{
+    $_this->allPropertyMappings()->concatenate($_this.otherwisePropertyMapping)->filter(pm|$pm.property.name == $s)
+}
+
+function meta::pure::mapping::propertyMappingsByPropertyName(_this:AggregationAwareSetImplementation[1], s:String[1]):PropertyMapping[*]
+{
+    $_this.mainSetImplementation->propertyMappingsByPropertyName($s)
+}
+
+function meta::pure::mapping::propertyMappingsByPropertyName(i:EmbeddedSetImplementation[1],propertyName:String[1]):PropertyMapping[*]
+{
+   let propertyMapping = $i->match(
+                                 [
+                                    o:OtherwiseEmbeddedSetImplementation[1] | $o->propertyMappingsByPropertyName($propertyName),
+                                    a:InstanceSetImplementation[1] | $a->_propertyMappingsByPropertyName($propertyName)
+                                 ]
+                          );
+   if($propertyMapping->isEmpty(),
+        | $i->match(
+                [
+                    i:InlineEmbeddedSetImplementation[1] | $i->inlineEmbeddedProperty($propertyName),
+                    o:OtherwiseEmbeddedSetImplementation[1] | $o.parent->_classMappingByIdRecursive($o.otherwisePropertyMapping.targetSetImplementationId)->cast(@InstanceSetImplementation)->map(z|$z->propertyMappingsByPropertyName($propertyName));,
+                    e:EmbeddedSetImplementation[1] |
+                            let mapping = $e.parent;
+                            let sourceInfo = $mapping->sourceInformation();
+                            if ($sourceInfo->isEmpty(),
+                                | fail('Cannot find a mapping for property \'' + $propertyName + '\' in an embedded mapping for class ' + $e.class->elementToPath() + ' in the mapping ' + $mapping->elementToPath()),
+                                | let si = $sourceInfo->toOne();
+                                  fail('Cannot find a mapping for property \'' + $propertyName + '\' in an embedded mapping for class ' + $e.class->elementToPath() + ' in the mapping ' + $mapping->elementToPath() + ' (source:'+ $si.source + ' line:' + $si.line->toString() + ' col:' + $si.column->toString() + ')');
+                            );
+                            [];
+                ]
+            ),
+        | $propertyMapping
+   );
+}
+
+function meta::pure::mapping::propertyMappingByPropertyNameAndTargetId(_this:PropertyMappingsImplementation[1], s:String[1], targetId:String[1]):PropertyMapping[0..1]
+{
+    $_this->allPropertyMappings()->filter(pm|$pm.property.name == $s && $pm.targetSetImplementationId == $targetId)->first()
+}
+
+function meta::pure::mapping::propertyMappingByPropertyNameAndTargetIdWithInlineResolution(i:InstanceSetImplementation[1], s:String[1], targetId:String[1]):meta::pure::mapping::PropertyMapping[0..1]
+{
+   //In the case of ->subType() routing will identify the root class mapping for the target type, in this instance the property mapping needs to be resolved by the inlineSetImplementationId
+   let resolvedPropertyMappings = $i->allPropertyMappings()->fold({pm, a| let matchByTargetId = if($pm.property.name == $s && $pm.targetSetImplementationId == $targetId,|list($pm->concatenate($a.first.values)),|$a.first);
+
+                                                                         let matchByInlineId = $pm->match([i:InlineEmbeddedSetImplementation[1] | if($i.property.name == $s && $targetId == $i.inlineSetImplementationId,|list($i->concatenate($a.second.values)),|$a.second),
+                                                                                                                           p:PropertyMapping[1] | $a.second]);
+
+                                                                         pair($matchByTargetId, $matchByInlineId);
+                                                                 }, pair(list([]),list([]))->cast(@Pair<List<PropertyMapping>,List<PropertyMapping>>));
+   $resolvedPropertyMappings.first.values->first()->concatenate($resolvedPropertyMappings.second.values->first())->first();
+}

@@ -34,6 +34,6 @@ public final class ContractsCodeRepository extends SVNCodeRepository
             return true;
         }
 
-        return (other instanceof ContractsCodeRepository) || CodeRepositoryProviderHelper.isCoreRepository(other) || (other instanceof SystemCodeRepository) || (other instanceof PlatformCodeRepository);
+        return (other instanceof ContractsCodeRepository) || CodeRepositoryProviderHelper.isCoreRepository(other) || (other instanceof SystemCodeRepository) || (other != null && other.getName().startsWith("platform"));
     }
 }

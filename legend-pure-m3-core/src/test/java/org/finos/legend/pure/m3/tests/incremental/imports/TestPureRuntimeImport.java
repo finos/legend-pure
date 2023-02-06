@@ -14,10 +14,9 @@
 
 package org.finos.legend.pure.m3.tests.incremental.imports;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
-import org.finos.legend.pure.m3.RuntimeVerifier;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -42,7 +41,7 @@ public class TestPureRuntimeImport extends AbstractPureTestWithCoreCompiledPlatf
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "import my::a::*;\n" +
                         "import my::a::b::*;\n" +
                         "function testPkg::test(inputs:meta::pure::metamodel::function::Function<Any>[*]):Any[*]{" +
-                        "$inputs->filter(f | $f->functionReturnType().rawType == B)->map(f | $f->cast(@meta::pure::metamodel::function::Function<{->B[1]}>)->eval());" +
+                        "$inputs->filter(f | $f->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).returnType.rawType == B)->map(f | $f->cast(@meta::pure::metamodel::function::Function<{->B[1]}>)->eval());" +
                         "}" +
                         "function my::a::b::test():Any[*]{let b = ^B()}")
                         .createInMemorySource("other.pure", "import my::a::*;\n" +

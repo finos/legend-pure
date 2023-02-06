@@ -16,7 +16,7 @@ package org.finos.legend.pure.m3.tests.generictype;
 
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.eclipse.collections.api.map.MapIterable;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.Instance;

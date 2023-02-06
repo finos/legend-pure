@@ -1,0 +1,42 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::graphFetch::*;
+import meta::pure::graphFetch::execution::*;
+
+Class meta::pure::graphFetch::GraphFetchTree
+{
+   subTrees : GraphFetchTree[*];
+}
+
+Class meta::pure::graphFetch::RootGraphFetchTree<T> extends GraphFetchTree, PackageableElement
+{
+   class : Class<T>[1];
+}
+
+Class meta::pure::graphFetch::PropertyGraphFetchTree extends GraphFetchTree
+{
+   property : AbstractProperty<Any>[1];
+   parameters : ValueSpecification[*];
+   alias : String[0..1];
+   subType : Class<Any>[0..1];
+   
+   isPrimitive(){
+      $this.property.genericType.rawType->toOne()->instanceOf(PrimitiveType) || $this.property.genericType.rawType->toOne()->instanceOf(Enumeration)
+   }:Boolean[1];
+
+   isQualifiedProperty(){
+      $this.property->instanceOf(QualifiedProperty)
+   }:Boolean[1];
+}

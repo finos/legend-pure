@@ -18,7 +18,7 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.compiler.visibility.AccessLevel;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -1474,10 +1474,14 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     {
         PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
                 "/test/testSource.pure",
-                "function <<access.externalizable>> pkg1::extFunc(primitiveParam:String[1], nonPrimitiveParam:List<String>[0..1]):String[*]\n" +
+                "function <<access.externalizable>> pkg1::extFunc(primitiveParam:String[1], nonPrimitiveParam:test::List<String>[0..1]):String[*]\n" +
                         "{\n" +
                         "  []\n" +
-                        "}\n"));
+                        "}\n" +
+                        "Class test::List<T>\n" +
+                        "{\n" +
+                        "    <<equality.Key>> values : T[*];\n" +
+                        "}"));
         assertPureException(PureCompilationException.class, "Functions with access level externalizable may only have primitive types or 'Maps' as parameter types; found List<String> for the type of parameter 'nonPrimitiveParam'", "/test/testSource.pure", 1, 1, 1, 42, 4, 1, e);
     }
 
@@ -1498,10 +1502,11 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     {
         PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
                 "/test/testSource.pure",
-                "function <<access.externalizable>> pkg1::extFunc(toOneParam:String[1]):List<String>[1]\n" +
+                "function <<access.externalizable>> pkg1::extFunc(toOneParam:String[1]):test::List<String>[1]\n" +
                         "{\n" +
-                        "  ^List<String>(values=$toOneParam)\n" +
-                        "}\n"));
+                        "  ^test::List<String>(values=$toOneParam)\n" +
+                        "}\n" +
+                        "Class test::List<T>{values:T[*];}"));
         assertPureException(PureCompilationException.class, "Functions with access level externalizable may only have primitive types as return types; found List<String>", "/test/testSource.pure", 1, 1, 1, 42, 4, 1, e);
     }
 

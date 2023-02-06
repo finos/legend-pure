@@ -1,0 +1,38 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+native function meta::pure::functions::date::monthNumber(d:Date[1]):Integer[1];
+
+function <<test.Test>> meta::pure::functions::date::tests::testMonthNumber():Boolean[1]
+{
+    assertEquals(4, %2015-04->monthNumber());
+    assertEquals(4, %2015-04-15->monthNumber());
+    assertEquals(4, %2015-04-15T17->monthNumber());
+    assertEquals(4, %2015-04-15T17:09->monthNumber());
+    assertEquals(4, %2015-04-15T17:09:21->monthNumber());
+    assertEquals(4, %2015-04-15T17:09:21.398->monthNumber());
+
+    assertEquals(1, %2015-01->monthNumber());
+    assertEquals(2, %2015-02->monthNumber());
+    assertEquals(3, %2015-03->monthNumber());
+    assertEquals(4, %2015-04->monthNumber());
+    assertEquals(5, %2015-05->monthNumber());
+    assertEquals(6, %2015-06->monthNumber());
+    assertEquals(7, %2015-07->monthNumber());
+    assertEquals(8, %2015-08->monthNumber());
+    assertEquals(9, %2015-09->monthNumber());
+    assertEquals(10, %2015-10->monthNumber());
+    assertEquals(11, %2015-11->monthNumber());
+    assertEquals(12, %2015-12->monthNumber());
+}

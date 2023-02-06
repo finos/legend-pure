@@ -20,7 +20,7 @@ import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.test.Verify;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.imports.Imports;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
@@ -58,7 +58,7 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getExtra());
+        setUpRuntime(getExtra(), false);
     }
 
     @Test
@@ -86,7 +86,7 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
                 expectedDefinitionIndex.put(PackageableElement.getUserPathForPackageableElement(importGroup), binaryPath);
             }
         }
-        String m3BinaryPath = PureRepositoryJarTools.purePathToBinaryPath("/platform/pure/m3.pure");
+        String m3BinaryPath = PureRepositoryJarTools.purePathToBinaryPath("/platform/pure/grammar/m3.pure");
         for (String instancePath : Lists.mutable.with("meta", "meta::pure", "meta::pure::functions", "meta::pure::functions::lang", "meta::pure::metamodel", "meta::pure::metamodel::constraint", "meta::pure::metamodel::extension", "meta::pure::metamodel::function", "meta::pure::metamodel::function::property", "meta::pure::metamodel::import", "meta::pure::metamodel::multiplicity", "meta::pure::metamodel::relationship", "meta::pure::metamodel::treepath", "meta::pure::metamodel::type", "meta::pure::metamodel::type::generics", "meta::pure::metamodel::valuespecification", "meta::pure::router", "meta::pure::tools", "system", "system::imports", "meta::pure::test"))
         {
             expectedDefinitionIndex.put(instancePath, m3BinaryPath);

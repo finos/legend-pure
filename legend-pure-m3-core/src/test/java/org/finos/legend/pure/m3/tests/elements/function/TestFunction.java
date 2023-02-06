@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.m3.tests.elements.function;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.Printer;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
@@ -61,13 +61,13 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
         {
             compileTestSource("fromString.pure","function myFunc():String[1]\n" +
                     "{\n" +
-                    "    ^ErrorType(name = 'ok');\n" +
+                    "    ^XErrorType(name = 'ok');\n" +
                     "}\n");
             Assert.fail();
         }
         catch (Exception e)
         {
-            assertPureException(PureCompilationException.class, "ErrorType has not been defined!", 3, 6, e);
+            assertPureException(PureCompilationException.class, "XErrorType has not been defined!", 3, 6, e);
         }
     }
 

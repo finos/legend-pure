@@ -113,7 +113,7 @@ public abstract class IncrementalCompiler implements SourceEventHandler
         this.urlPatternLibrary = urlPatternLibrary;
         this.dslLibrary = new InlineDSLLibrary(inlineDSLs);
 
-        RichIterable<? extends Parser> allParsers = Lists.mutable.<Parser>with(new M3AntlrParser(this.dslLibrary)).withAll(parsers);
+        RichIterable<? extends Parser> allParsers = Lists.mutable.withAll(parsers);
         RichIterable<CoreInstanceFactoryRegistry> registries =
                 factoryRegistryOverride != null ?
                         Lists.fixedSize.of(factoryRegistryOverride) :

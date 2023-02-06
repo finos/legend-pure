@@ -1,0 +1,63 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::functions::meta::tests::model::*;
+
+Class meta::pure::functions::meta::tests::model::CC_EntityWithAddress
+{
+    address : CC_Address[0..1];
+}
+
+Class meta::pure::functions::meta::tests::model::CC_Person extends CC_EntityWithAddress
+{
+    firstName : String[1];
+    lastName : String[1];
+    locations : CC_Location[*];
+}
+
+Class meta::pure::functions::meta::tests::model::CC_GeographicEntity
+{
+    type : meta::pure::functions::meta::tests::model::CC_GeographicEntityType[1];
+}
+
+Enum meta::pure::functions::meta::tests::model::CC_GeographicEntityType
+{
+    CITY,
+    COUNTRY,
+    REGION
+}
+
+Class meta::pure::functions::meta::tests::model::CC_Address extends meta::pure::functions::meta::tests::model::CC_GeographicEntity
+{
+    name : String[1];
+    street : String[0..1];
+    comments : String[0..1];
+}
+
+Class meta::pure::functions::meta::tests::model::CC_Location extends CC_GeographicEntity
+{
+    place : String[1];
+    censusdate: Date[0..1];
+}
+
+Class meta::pure::functions::meta::tests::model::CC_List<T>
+{
+    values : T[*];
+}
+
+Association meta::pure::functions::meta::tests::model::AddressLocation
+{
+    location : CC_Location[0..1];
+    addresses: CC_Address[*];
+}

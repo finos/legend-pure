@@ -15,22 +15,28 @@
 package org.finos.legend.pure.runtime.java.compiled;
 
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.function.base.lang.AbstractTestNewInferenceAtRuntime;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
 import org.junit.After;
 import org.junit.BeforeClass;
 
 public class TestNewInferenceCompiled extends AbstractTestNewInferenceAtRuntime
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution());
+    public static void setUp()
+    {
+        AbstractPureTestWithCoreCompiled.setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
     }
+
     @After
-    public void clearRuntime() {
-        runtime.delete("fromString.pure");
+    public void clearRuntime()
+    {
+        AbstractPureTestWithCoreCompiled.runtime.delete("fromString.pure");
     }
-     protected static FunctionExecution getFunctionExecution()
+
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

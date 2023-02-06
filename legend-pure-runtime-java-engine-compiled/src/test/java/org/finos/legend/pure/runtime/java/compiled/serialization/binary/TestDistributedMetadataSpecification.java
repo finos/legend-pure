@@ -2,6 +2,7 @@ package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.impl.utility.ListIterate;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -16,6 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Set;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
@@ -102,7 +104,7 @@ public class TestDistributedMetadataSpecification
     @Test
     public void testLoadMetadata_CurrentClassLoader()
     {
-        Assert.assertEquals(Collections.emptyList(), DistributedMetadataSpecification.loadAllSpecifications(Thread.currentThread().getContextClassLoader()));
+        Assert.assertEquals(Collections.emptyList(), ListIterate.select(DistributedMetadataSpecification.loadAllSpecifications(Thread.currentThread().getContextClassLoader()), x -> !x.getName().equals("platform")));
 
         RuntimeException e = Assert.assertThrows(RuntimeException.class, () -> DistributedMetadataSpecification.loadSpecifications(Thread.currentThread().getContextClassLoader(), "non_existent"));
         Assert.assertEquals("Cannot find metadata \"non_existent\" (resource name \"metadata/specs/non_existent.json\")", e.getMessage());
@@ -122,7 +124,7 @@ public class TestDistributedMetadataSpecification
 
         try (URLClassLoader classLoader = new URLClassLoader(new URL[]{dir1.toUri().toURL(), dir2.toUri().toURL()}))
         {
-            Assert.assertEquals(Sets.mutable.withAll(dir1Metadata).withAll(dir2Metadata), Sets.mutable.withAll(DistributedMetadataSpecification.loadAllSpecifications(classLoader)));
+            Assert.assertEquals(Sets.mutable.withAll(dir1Metadata).withAll(dir2Metadata), Sets.mutable.withAll(DistributedMetadataSpecification.loadAllSpecifications(classLoader)).select(r -> !r.getName().equals("platform")));
 
             Assert.assertEquals(Lists.mutable.with(DistributedMetadataSpecification.newSpecification("abc")), DistributedMetadataSpecification.loadSpecifications(classLoader, "abc"));
 
@@ -166,7 +168,7 @@ public class TestDistributedMetadataSpecification
 
         try (URLClassLoader classLoader = new URLClassLoader(new URL[]{jar1.toUri().toURL(), jar2.toUri().toURL()}))
         {
-            Assert.assertEquals(Sets.mutable.withAll(jar1Metadata).withAll(jar2Metadata), Sets.mutable.withAll(DistributedMetadataSpecification.loadAllSpecifications(classLoader)));
+            Assert.assertEquals(Sets.mutable.withAll(jar1Metadata).withAll(jar2Metadata), Sets.mutable.withAll(DistributedMetadataSpecification.loadAllSpecifications(classLoader)).select(r -> !r.getName().equals("platform")));
 
             Assert.assertEquals(Lists.mutable.with(DistributedMetadataSpecification.newSpecification("abc")), DistributedMetadataSpecification.loadSpecifications(classLoader, "abc"));
 

@@ -16,9 +16,9 @@ package org.finos.legend.pure.m3.tests.incremental._class;
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.impl.factory.Lists;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
-import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -27,12 +27,14 @@ import org.junit.Test;
 public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("sourceId.pure");
         runtime.delete("sourceId2.pure");
         runtime.delete("userId.pure");
@@ -146,7 +148,9 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
                                 "function go():Boolean[1]\n" +
                                 "{\n" +
                                 "   assert(1 == test__Nil_0_->functionType().returnType.referenceUsages->size(), |'');\n" +
-                                "}")
+                                "}"
+
+                        )
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
@@ -159,7 +163,8 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
                                 "function go():Boolean[1]\n" +
                                 "{\n" +
                                 "   assert(1 == test__Nil_0_->functionType().returnType.referenceUsages->size(), |'');\n" +
-                                "}")
+                                "}"
+                        )
                         .compile(),
                 this.runtime, this.functionExecution, this.getAdditionalVerifiers());
 
@@ -300,5 +305,4 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
     {
         return Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of();
     }
-
 }

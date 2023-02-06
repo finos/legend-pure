@@ -1,0 +1,76 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::functions::meta::tests::model::*;
+import meta::pure::functions::meta::tests::evaluateAndDeactivate::*;
+
+native function meta::pure::functions::meta::deactivate(var:Any[*]):ValueSpecification[1];
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::meta::tests::deactivate::testDeactivateFunctionToOne():Boolean[1]
+{
+    let f = CC_Person.all()->filter(p | $p.lastName == 'Doe')->first()->deactivate();
+    assertEquals('first', $f->cast(@SimpleFunctionExpression).func.functionName);
+    assertEq(1, $f->cast(@SimpleFunctionExpression).parametersValues->size());
+}
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::meta::tests::deactivate::testDeactivateFunctionToMany():Boolean[1]
+{
+    let f = CC_Person.all()->filter(p | $p.lastName == 'Doe')->deactivate();
+    assertEquals('filter', $f->cast(@SimpleFunctionExpression).func.functionName);
+    assertEq(2, $f->cast(@SimpleFunctionExpression).parametersValues->size());
+}
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::meta::tests::deactivate::testDeactivateVariableOne():Boolean[1]
+{
+    let a = 5;
+    let b = $a->deactivate();
+    assertEquals('a', $b->cast(@VariableExpression).name);
+}
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::meta::tests::deactivate::testDeactivateVariableMany():Boolean[1]
+{
+    let a = 5;
+    let b = 7;
+    let z = [$a, $b]->deactivate();
+    assertEq('a,b', $z->cast(@InstanceValue).values->map(v | $v->cast(@VariableExpression).name)->joinStrings(','));
+}
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::meta::tests::deactivate::testInstanceValueTypeAfterDeactivation():Boolean[1]
+{
+    let f = [^CC_Person(firstName='d', lastName='a'), ^CC_Person(firstName='d',lastName='b'), ^CC_Person(firstName='d',lastName='c')]->map(p | $p.lastName)->deactivate()->cast(@FunctionExpression);
+    assertSameElements(['InstanceValue', 'InstanceValue'], $f.parametersValues->map(p | $p->genericType().rawType->toOne()->id()));
+}
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::meta::tests::evaluateAndDeactivate::testEvaluateAndDeactivateSelect():Boolean[1]
+{
+   let a = [f(1),f(2)]->deactivate();
+   let result = $a->cast(@InstanceValue).values->filter(s|$s->cast(@SimpleFunctionExpression).functionName == 'f')->map(r|$r);
+   assertNotContains($result->map(c|$c->instanceOf(SimpleFunctionExpression)), false);
+}
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::collection::tests::evaluateAndDeactivate::map::testMapWithFunctionToOne():Boolean[1]
+{
+    let f = [^CC_Person(firstName='a', lastName='a'), ^CC_Person(firstName='b', lastName='b'), ^CC_Person(firstName='c', lastName='c')]->map(p | $p.lastName)->deactivate()->cast(@FunctionExpression);
+    assertSameElements(['a', 'b', 'c'], $f.func->evaluate($f.parametersValues->map(p | ^List<Any>(values=$p->reactivate()))));
+}
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::collection::tests::evaluateAndDeactivate::map::testMapWithFunctionToMany():Boolean[1]
+{
+    let f = [
+                ^CC_Person(firstName='Fabrice', lastName='Smith', locations=[^CC_Location(place='Paris', type=CC_GeographicEntityType.CITY), ^CC_Location(place='San Francisco', type=CC_GeographicEntityType.CITY)]),
+                ^CC_Person(firstName='David', lastName='Roe', locations=^CC_Location(place='Hoboken', type=CC_GeographicEntityType.CITY))
+            ]
+            ->map(p | $p.locations.place)->deactivate()->cast(@FunctionExpression);
+    assertSameElements(['Paris', 'Hoboken', 'San Francisco'], $f.func->evaluate($f.parametersValues->map(v | ^List<Any>(values=$v->reactivate()))));
+}

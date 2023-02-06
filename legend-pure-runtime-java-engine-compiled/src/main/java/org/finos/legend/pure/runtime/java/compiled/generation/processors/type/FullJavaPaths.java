@@ -59,7 +59,6 @@ public class FullJavaPaths
     public static final String PackageableMultiplicity = JavaPackageAndImportBuilder.buildInterfaceReferenceFromUserPath(M3Paths.PackageableMultiplicity);
     public static final String Pair = JavaPackageAndImportBuilder.buildInterfaceReferenceFromUserPath(M3Paths.Pair);
     public static final String Pair_Impl = JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath(M3Paths.Pair);
-    public static final String List = JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath(M3Paths.List);
     public static final String PrimitiveType = JavaPackageAndImportBuilder.buildInterfaceReferenceFromUserPath(M3Paths.PrimitiveType);
     public static final String Property = JavaPackageAndImportBuilder.buildInterfaceReferenceFromUserPath(M3Paths.Property);
     public static final String Property_Impl = JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath(M3Paths.Property);
@@ -74,6 +73,8 @@ public class FullJavaPaths
 
     public static final String Unit = JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath(M3Paths.Unit);
     public static final String ValueSpecification_Impl = JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath(M3Paths.ValueSpecification);
+
+    public static final String List = JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath(M3Paths.List);
 
     private FullJavaPaths()
     {

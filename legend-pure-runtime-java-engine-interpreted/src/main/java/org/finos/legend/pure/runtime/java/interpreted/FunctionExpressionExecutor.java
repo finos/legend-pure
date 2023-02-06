@@ -34,7 +34,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecificat
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpressionCoreInstanceWrapper;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.InstantiationContext;
+import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
 import java.util.Stack;
@@ -76,7 +76,7 @@ class FunctionExpressionExecutor implements Executor
             parameters = newParams;
         }
 
-        resolvedTypeParameters.push(this.resolveTypeParamsFromParent(resolvedTypeParameters, localResolvedTypeParameters, functionExpressionToUseInStack, processorSupport));
+        resolvedTypeParameters.push(this.resolveTypeParamsFromParent(resolvedTypeParameters, resolvedMultiplicityParameters, localResolvedTypeParameters, functionExpressionToUseInStack, processorSupport));
         resolvedMultiplicityParameters.push(this.resolveMultiplicityParametersFromParent(resolvedMultiplicityParameters, localResolvedMultiplicityParameters, functionExpressionToUseInStack));
         CoreInstance result = functionExecutionInterpreted.executeFunction(true, function, parameters, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, instance, profiler, instantiationContext, executionSupport);
 
@@ -136,9 +136,9 @@ class FunctionExpressionExecutor implements Executor
         }
     }
 
-    private MutableMap<String, CoreInstance> resolveTypeParamsFromParent(Stack<MutableMap<String, CoreInstance>> stack, MutableMap<String, CoreInstance> typeParameters, CoreInstance functionExpressionToUseInStack, ProcessorSupport processorSupport)
+    private MutableMap<String, CoreInstance> resolveTypeParamsFromParent(Stack<MutableMap<String, CoreInstance>> stackType, Stack<MutableMap<String, CoreInstance>> stackMul, MutableMap<String, CoreInstance> typeParameters, CoreInstance functionExpressionToUseInStack, ProcessorSupport processorSupport)
     {
-        if (typeParameters.isEmpty() || stack.isEmpty())
+        if (typeParameters.isEmpty() || stackType.isEmpty())
         {
             return typeParameters;
         }
@@ -147,11 +147,11 @@ class FunctionExpressionExecutor implements Executor
         for (String key : typeParameters.keysView())
         {
             CoreInstance ci = typeParameters.get(key);
-            int size = stack.size() - 1;
+            int size = stackType.size() - 1;
             // Look in the stack until we find the value
             while (size >= 0 && !GenericType.isGenericTypeFullyConcrete(ci, processorSupport))
             {
-                ci = GenericType.makeTypeArgumentAsConcreteAsPossible(GenericType.copyGenericType(typeParameters.get(key), false, processorSupport), stack.get(size).asUnmodifiable(), Maps.immutable.<String, CoreInstance>of(), processorSupport);
+                ci = GenericType.makeTypeArgumentAsConcreteAsPossible(GenericType.copyGenericType(typeParameters.get(key), false, processorSupport), stackType.get(size).asUnmodifiable(), stackMul.get(size).asUnmodifiable(), processorSupport);
                 size--;
             }
             if (!GenericType.isGenericTypeFullyConcrete(ci, processorSupport))

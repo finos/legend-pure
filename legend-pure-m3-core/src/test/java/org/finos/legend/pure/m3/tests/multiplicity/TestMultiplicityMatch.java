@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.m3.tests.multiplicity;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.generictype.match.NullMatchBehavior;
 import org.finos.legend.pure.m3.navigation.generictype.match.ParameterMatchBehavior;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;

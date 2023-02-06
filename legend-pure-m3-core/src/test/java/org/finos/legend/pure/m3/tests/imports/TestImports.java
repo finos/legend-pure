@@ -18,7 +18,7 @@ import org.finos.legend.pure.m3.navigation.imports.Imports;
 import org.eclipse.collections.api.block.predicate.Predicate2;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.impl.test.Verify;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -44,7 +44,7 @@ public class TestImports extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testGetImportGroupsForSource()
     {
-        String sourceId = "/platform/pure/graph.pure";
+        String sourceId = "/platform/pure/anonymousCollections.pure";
         Source source = this.runtime.getSourceById(sourceId);
         Assert.assertNotNull("Could not find source: " + sourceId, source);
 
@@ -56,7 +56,7 @@ public class TestImports extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testIsImportGroupForSource()
     {
-        String sourceId = "/platform/pure/graph.pure";
+        String sourceId = "/platform/pure/anonymousCollections.pure";
         Source source = this.runtime.getSourceById(sourceId);
         Assert.assertNotNull("Could not find source: " + sourceId, source);
 
@@ -84,7 +84,7 @@ public class TestImports extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testGetImportGroupBaseName()
     {
-        String sourceId = "/platform/pure/graph.pure";
+        String sourceId = "/platform/pure/anonymousCollections.pure";
         Source source = this.runtime.getSourceById(sourceId);
         Assert.assertNotNull("Could not find source: " + sourceId, source);
 

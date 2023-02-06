@@ -20,8 +20,8 @@ import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
 import org.finos.legend.pure.m3.serialization.grammar.CoreInstanceFactoriesRegistry;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public interface InlineDSL extends CoreInstanceFactoriesRegistry
 {
@@ -37,4 +37,9 @@ public interface InlineDSL extends CoreInstanceFactoriesRegistry
     RichIterable<MatchRunner> getValidators();
     RichIterable<MatchRunner> getUnLoadWalkers();
     RichIterable<MatchRunner> getUnLoadUnbinders();
+
+    VisibilityValidator getVisibilityValidator();
+
+    MilestoningDatesVarNamesExtractor getMilestoningDatesVarNamesExtractor();
+
 }

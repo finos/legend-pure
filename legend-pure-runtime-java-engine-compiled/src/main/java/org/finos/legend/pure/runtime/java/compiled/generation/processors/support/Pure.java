@@ -25,11 +25,11 @@ import org.eclipse.collections.api.block.function.Function0;
 import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.block.procedure.checked.CheckedProcedure;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.list.mutable.FastList;
@@ -40,29 +40,22 @@ import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.StringIterate;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.TreeNode;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyValue;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.meta.CompilationFailure;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.meta.CompilationResult;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.ModelElementAccessor;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Tag;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.*;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.Path;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.PropertyPathElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ConstraintsOverride;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ElementOverride;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Nil;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.*;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.router.RoutedValueSpecification;
@@ -74,19 +67,13 @@ import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.DateTime;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.*;
 import org.finos.legend.pure.runtime.java.compiled.compiler.PureDynamicReactivateException;
-import org.finos.legend.pure.runtime.java.compiled.delta.CodeBlockDeltaCompiler;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.FunctionProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureFunction1;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureFunction2;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureLambdaFunction;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureEqualsHashingStrategy;
@@ -98,30 +85,49 @@ import org.finos.legend.pure.runtime.java.shared.hash.HashType;
 import org.finos.legend.pure.runtime.java.shared.hash.HashingUtil;
 import org.json.simple.JSONObject;
 
+import java.lang.Class;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Pure
 {
+    public static String elementToPath(PackageableElement element, String separator)
+    {
+        MutableList<PackageableElement> elements = Lists.mutable.empty();
+        elements(element, elements);
+        return elements.toReversed().subList(1, elements.size()).collect(ModelElementAccessor::_name).makeString(separator);
+    }
+
+    private static void elements(PackageableElement element, List<PackageableElement> elements)
+    {
+        elements.add(element);
+        if (element._package() != null)
+        {
+            elements(element._package(), elements);
+        }
+    }
+
+
+    public static final boolean isToOne(Multiplicity multiplicity)
+    {
+        return multiplicity._lowerBound()._value() == 1L && hasToOneUpperBound(multiplicity);
+    }
+
+    public static final boolean hasToOneUpperBound(Multiplicity multiplicity)
+    {
+        return multiplicity._upperBound() != null && multiplicity._upperBound()._value() != null && multiplicity._upperBound()._value() == 1L;
+    }
+
     private static final ExecutorService traceAsyncExecutor = Executors.newCachedThreadPool(new ThreadFactory()
     {
         private final ThreadGroup group = System.getSecurityManager() == null
-            ? Thread.currentThread().getThreadGroup()
-            : System.getSecurityManager().getThreadGroup();
+                ? Thread.currentThread().getThreadGroup()
+                : System.getSecurityManager().getThreadGroup();
         private final AtomicInteger threadNumber = new AtomicInteger(1);
 
         @Override
@@ -164,7 +170,9 @@ public class Pure
         throw new PureExecutionException("Can't find the property '" + propertyName + "' in the class '" + className + "'");
     }
 
-    public static Object alloyTest(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function alloyTest, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function regular, Bridge bridge)
+    public static Object alloyTest(ExecutionSupport
+                                           es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function
+                                           alloyTest, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function regular, Bridge bridge)
     {
         String host = System.getProperty("alloy.test.server.host");
         long port = System.getProperty("alloy.test.server.port") == null ? -1 : Long.parseLong(System.getProperty("alloy.test.server.port"));
@@ -177,7 +185,9 @@ public class Pure
         return host != null ? evaluate(es, alloyTest, bridge, clientVersion, serverVersion, host, port) : evaluate(es, regular, bridge);
     }
 
-    public static Object legendTest(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function alloyTest, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function regular, Bridge bridge)
+    public static Object legendTest(ExecutionSupport
+                                            es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function
+                                            alloyTest, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function regular, Bridge bridge)
     {
         String host = System.getProperty("legend.test.server.host");
         long port = System.getProperty("legend.test.server.port") == null ? -1 : Long.parseLong(System.getProperty("legend.test.server.port"));
@@ -211,7 +221,10 @@ public class Pure
         return enumeration._values().detect(e -> name.equals(((Enum) e)._name()));
     }
 
-    public static org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType safeGetGenericType(Object val, final MetadataAccessor ma, Function0<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType> genericTypeBuilder, final ProcessorSupport processorSupport)
+    public static org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType safeGetGenericType
+            (Object val, final MetadataAccessor ma, Function0<
+                    org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType> genericTypeBuilder,
+             final ProcessorSupport processorSupport)
     {
         if (val == null)
         {
@@ -330,7 +343,9 @@ public class Pure
         }
     }
 
-    public static SharedPureFunction<?> getSharedPureFunction(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge bridge, ExecutionSupport es)
+    public static SharedPureFunction<?> getSharedPureFunction
+            (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge
+                    bridge, ExecutionSupport es)
     {
         SharedPureFunction<?> foundFunc = findSharedPureFunction(func, bridge, es);
         if (foundFunc == null)
@@ -340,43 +355,23 @@ public class Pure
         return foundFunc;
     }
 
-    public static SharedPureFunction<?> findSharedPureFunction(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge bridge, ExecutionSupport es)
+    public static SharedPureFunction<?> findSharedPureFunction
+            (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge
+                    bridge, ExecutionSupport es)
     {
+        ImmutableList<PureFunction1<Object, Object>> extra = ((CompiledExecutionSupport) es).getCompiledExtensions().collect(x -> x.getExtraFunctionEvaluation(func, bridge, es)).select(Objects::nonNull).toImmutable();
+        if (extra.size() == 1)
+        {
+            return extra.get(0);
+        }
+        if (extra.size() > 1)
+        {
+            throw new RuntimeException("Error");
+        }
         if (func instanceof Property)
         {
             Type srcType = func._classifierGenericType()._typeArguments().getFirst()._rawType();
             return ((CompiledExecutionSupport) es).getFunctionCache().getIfAbsentPutFunctionForClassProperty(srcType, func, ((CompiledExecutionSupport) es).getClassLoader());
-        }
-        if (func instanceof Path)
-        {
-            return new PureFunction1<Object, Object>()
-            {
-
-                @Override
-                public Object execute(ListIterable vars, ExecutionSupport es)
-                {
-                    return value(vars.getFirst(), es);
-                }
-
-                @Override
-                public Object value(Object o, ExecutionSupport es)
-                {
-                    RichIterable<?> result = ((Path<?, ?>) func)._path().injectInto(CompiledSupport.toPureCollection(o), (mutableList, path) ->
-                    {
-                        if (!(path instanceof PropertyPathElement))
-                        {
-                            throw new PureExecutionException("Only PropertyPathElement is supported yet!");
-                        }
-                        return mutableList.flatCollect(instance ->
-                        {
-                            MutableList<Object> parameters = ((PropertyPathElement) path)._parameters().collect(o1 -> o1 instanceof InstanceValue ? ((InstanceValue) o1)._values() : null, Lists.mutable.with(instance));
-                            return CompiledSupport.toPureCollection(evaluate(es, ((PropertyPathElement) path)._property(), bridge, parameters.toArray()));
-                        });
-                    });
-                    Multiplicity mult = func._classifierGenericType()._multiplicityArguments().getFirst();
-                    return bridge.hasToOneUpperBound(mult, es) ? result.getFirst() : result;
-                }
-            };
         }
         if (func instanceof LambdaCompiledExtended)
         {
@@ -398,32 +393,41 @@ public class Pure
         }
         if (func instanceof ConcreteFunctionDefinition)
         {
-            if(func.getSourceInformation() != null) {
+            if (func.getSourceInformation() != null)
+            {
                 return ((CompiledExecutionSupport) es).getFunctionCache().getIfAbsentPutJavaFunctionForPureFunction(func, () ->
                         {
-                            try {
+                            try
+                            {
                                 RichIterable<? extends VariableExpression> params = ((FunctionType) func._classifierGenericType()._typeArguments().getFirst()._rawType())._parameters();
                                 Class<?>[] paramClasses = new Class[params.size() + 1];
                                 int index = 0;
-                                for (VariableExpression o : params) {
+                                for (VariableExpression o : params)
+                                {
                                     paramClasses[index] = pureTypeToJavaClassForExecution(o, bridge, es);
                                     index++;
                                 }
                                 paramClasses[params.size()] = ExecutionSupport.class;
                                 Method method = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation())).getMethod(FunctionProcessor.functionNameToJava(func), paramClasses);
                                 return new JavaMethodWithParamsSharedPureFunction(method, paramClasses, func.getSourceInformation());
-                            } catch (RuntimeException e) {
+                            }
+                            catch (RuntimeException e)
+                            {
                                 throw e;
-                            } catch (Exception e) {
+                            }
+                            catch (Exception e)
+                            {
                                 throw new RuntimeException(e);
                             }
                         }
                 );
-            } else {
+            }
+            else
+            {
                 PureMap openVars = new PureMap(Maps.mutable.empty());
                 if (Reactivator.canReactivateWithoutJavaCompilation(func, es, openVars, bridge))
                 {
-                    return DynamicPureFunctionImpl.createPureFunction((FunctionDefinition<?>)func, openVars.getMap(), bridge);
+                    return DynamicPureFunctionImpl.createPureFunction((FunctionDefinition<?>) func, openVars.getMap(), bridge);
                 }
             }
         }
@@ -445,24 +449,16 @@ public class Pure
         return functions.get(func.getName());
     }
 
-    public static Object evaluate(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge bridge, Object... instances)
+    public static Object evaluate(ExecutionSupport es,
+                                  org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func,
+                                  Bridge bridge,
+                                  Object... instances)
     {
-        if (func instanceof Property)
-        {
-            return getSharedPureFunction(func, bridge, es).execute(FastList.newListWith(instances[0]), es);
-        }
-        if (func instanceof Path)
-        {
-            return getSharedPureFunction(func, bridge, es).execute(FastList.newListWith(instances[0]), es);
-        }
-        if (func instanceof LambdaCompiledExtended)
-        {
-            return getSharedPureFunction(func, bridge, es).execute(Lists.fixedSize.with(instances), es);
-        }
         if (func instanceof ConcreteFunctionDefinition)
         {
             SharedPureFunction<?> pureFunc = getSharedPureFunction(func, bridge, es);
-            if (pureFunc instanceof JavaMethodWithParamsSharedPureFunction) {
+            if (pureFunc instanceof JavaMethodWithParamsSharedPureFunction)
+            {
                 JavaMethodWithParamsSharedPureFunction<?> p = (JavaMethodWithParamsSharedPureFunction<?>) pureFunc;
                 Class<?>[] paramClasses = p.getParametersTypes();
                 int l = paramClasses.length;
@@ -479,32 +475,19 @@ public class Pure
                     }
                 }
                 return p.execute(paramInstances, es);
-            } else {
+            }
+            else
+            {
                 pureFunc.execute(Lists.fixedSize.with(instances), es);
             }
-        }
-        if (func instanceof LambdaFunction)
-        {
-            return getSharedPureFunction(func, bridge, es).execute(Lists.fixedSize.with(instances), es);
         }
         SharedPureFunction<?> reflectiveNative = getSharedPureFunction(func, bridge, es);
         return reflectiveNative.execute(instances == null ? Lists.mutable.empty() : FastList.newListWith(instances), es);
     }
 
-    public static Object evaluateToMany(ExecutionSupport es, Bridge bridge, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function func, RichIterable<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List> instances)
-    {
-        MutableList<Object> inputs = Lists.mutable.of();
-        if (instances != null)
-        {
-            for (Object obj : instances)
-            {
-                inputs.add(((org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List) obj)._values());
-            }
-        }
-        return _evaluateToMany(es, bridge, func, inputs);
-    }
-
-    public static Object _evaluateToMany(ExecutionSupport es, Bridge bridge, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, ListIterable<?> paramInputs)
+    public static Object _evaluateToMany(ExecutionSupport es, Bridge
+            bridge, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, ListIterable<?>
+                                                 paramInputs)
     {
         if (func instanceof Property)
         {
@@ -540,7 +523,7 @@ public class Pure
             {
                 Object o = ((RichIterable<?>) paramInputs.getFirst()).getFirst();
                 return CompiledSupport.executeMethod(o.getClass(), func._functionName(), func, Arrays.copyOfRange(paramClasses, 1, paramClasses.length),
-                    o, Arrays.copyOfRange(paramInstances, 1, paramInstances.length), es);
+                        o, Arrays.copyOfRange(paramInstances, 1, paramInstances.length), es);
             }
             if (func instanceof NativeFunction || func instanceof LambdaFunction || func instanceof ConcreteFunctionDefinition)
             {
@@ -574,7 +557,8 @@ public class Pure
         }
     }
 
-    private static SharedPureFunction<?> getNativeOrLambdaFunction(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func)
+    private static SharedPureFunction<?> getNativeOrLambdaFunction(ExecutionSupport
+                                                                           es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func)
     {
         return ((CompiledExecutionSupport) es).getFunctionCache().getIfAbsentPutJavaFunctionForPureFunction(func, () ->
         {
@@ -595,7 +579,8 @@ public class Pure
         });
     }
 
-    public static boolean canFindNativeOrLambdaFunction(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func)
+    public static boolean canFindNativeOrLambdaFunction(ExecutionSupport
+                                                                es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func)
     {
         try
         {
@@ -612,7 +597,8 @@ public class Pure
         return list.detect(e -> id.equals(((CoreInstance) e).getName()));
     }
 
-    public static org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class<?> genericTypeClass(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType)
+    public static org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class<?> genericTypeClass
+            (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType)
     {
         Type t = genericType._rawType();
         if (t instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class)
@@ -627,23 +613,6 @@ public class Pure
         return (obj instanceof Any) ? ((Any) obj).getName() : String.valueOf(obj);
     }
 
-    public static <U, V> RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>> zip(Object l1, Object l2, Function0<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>> pairBuilder)
-    {
-        return zip((RichIterable<? extends U>) l1, (RichIterable<? extends V>) l2, pairBuilder);
-    }
-
-    public static <U, V> RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>> zip(RichIterable<? extends U> l1, RichIterable<? extends V> l2, Function0<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>> pairBuilder)
-    {
-        return l1 == null || l2 == null ? FastList.<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>>newList() : l1.zip(l2).collect(new Function<Pair<? extends U, ? extends V>, org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>>()
-        {
-            @Override
-            public org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V> valueOf(Pair<? extends U, ? extends V> pair)
-            {
-                return pairBuilder.value()._first(pair.getOne())._second(pair.getTwo());
-            }
-        });
-    }
-
     public static Tag tag(Profile profile, String tag)
     {
         return profile._p_tags().detect(t -> tag.equals(t._value()));
@@ -654,21 +623,29 @@ public class Pure
         return profile._p_stereotypes().detect(st -> stereotype.equals(st._value()));
     }
 
-    public static PureMap getOpenVariables(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge bridge) {
+    public static PureMap getOpenVariables
+            (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge bridge)
+    {
         MutableMap<String, Object> map = Maps.mutable.empty();
-        if (func instanceof LambdaFunction) {
+        if (func instanceof LambdaFunction)
+        {
             //In the case of LambdaFunction_Impl, we do not need to concern with OpenVariables
             //(Is this because you can't dynamically create an instance of LambdaFunction_Impl with
             //any open variables?)
-            if (func instanceof LambdaCompiledExtended) {
+            if (func instanceof LambdaCompiledExtended)
+            {
                 SharedPureFunction<?> pureFunction = ((LambdaCompiledExtended) func).pureFunction();
-                if (pureFunction instanceof PureLambdaFunction) {
+                if (pureFunction instanceof PureLambdaFunction)
+                {
                     MutableMap<String, Object> __vars = ((PureLambdaFunction<?>) pureFunction).getOpenVariables();
-                    if (__vars != null) {
+                    if (__vars != null)
+                    {
                         __vars.forEachKeyValue((key, value) -> map.put(key, bridge.buildList()._valuesAddAll(CompiledSupport.toPureCollection(value))));
                     }
                 }
-            } else if (func instanceof PureLambdaFunction) {
+            }
+            else if (func instanceof PureLambdaFunction)
+            {
                 map.putAll(((PureLambdaFunction) func).getOpenVariables());
             }
             // This can be helpful for debugging, but perhaps should actually
@@ -701,21 +678,14 @@ public class Pure
         return CompiledSupport.validate(goDeep, returnObject, si, es);
     }
 
-    public static Object newObject(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType, RichIterable<? extends KeyValue> root_meta_pure_functions_lang_keyExpressions, ElementOverride override, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function getterToOne, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function getterToMany, Object payload, PureFunction2 getterToOneExec, PureFunction2 getterToManyExec, ExecutionSupport es)
-    {
-        return newObject((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class) genericType._rawType(), root_meta_pure_functions_lang_keyExpressions, override, getterToOne, getterToMany, payload, getterToOneExec, getterToManyExec, es);
-    }
-
-    public static Object newObject(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class aClass, RichIterable<? extends KeyValue> root_meta_pure_functions_lang_keyExpressions, ElementOverride override, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function getterToOne, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function getterToMany, Object payload, PureFunction2 getterToOneExec, PureFunction2 getterToManyExec, ExecutionSupport es)
-    {
-        return CompiledSupport.newObject(aClass, root_meta_pure_functions_lang_keyExpressions, override, getterToOne, getterToMany, payload, getterToOneExec, getterToManyExec, es);
-    }
-
-    public static Object newObject(Bridge bridge, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class aClass, String name, RichIterable<? extends KeyExpression> root_meta_pure_functions_lang_keyExpressions, final ExecutionSupport es)
+    public static Object newObject(Bridge
+                                           bridge, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class aClass, String
+                                           name, RichIterable<? extends KeyExpression> root_meta_pure_functions_lang_keyExpressions,
+                                   final ExecutionSupport es)
     {
         try
         {
-            final Class<?> c = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.platformJavaPackage() + ".Root_" + bridge.elementToPath(aClass, "_", es) + "_Impl");
+            final Class<?> c = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.platformJavaPackage() + ".Root_" + Pure.elementToPath(aClass, "_") + "_Impl");
             final Any result = (Any) c.getConstructor(String.class).newInstance(name);
             root_meta_pure_functions_lang_keyExpressions.forEach(new CheckedProcedure<KeyExpression>()
             {
@@ -744,7 +714,8 @@ public class Pure
     }
 
 
-    public static Iterable<ListIterable<?>> collectIterable(LazyIterable iterable, final ListIterable<String> columnTypes)
+    public static Iterable<ListIterable<?>> collectIterable(LazyIterable iterable,
+                                                            final ListIterable<String> columnTypes)
     {
         return iterable.collect(new Function<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List<?>, ListIterable<?>>()
         {
@@ -787,7 +758,8 @@ public class Pure
         return result;
     }
 
-    public static void replaceTreeNodeCopy(TreeNode instance, TreeNode result, TreeNode targetNode, TreeNode subTree)
+    public static void replaceTreeNodeCopy(TreeNode instance, TreeNode result, TreeNode targetNode, TreeNode
+            subTree)
     {
         result._childrenData(FastList.newList());
 
@@ -820,7 +792,8 @@ public class Pure
         }
         catch (Exception e)
         {
-            if (obj instanceof CoreInstance) {
+            if (obj instanceof CoreInstance)
+            {
                 return Instance.instanceOf((CoreInstance) obj, type, ((CompiledExecutionSupport) es).getProcessorSupport());
             }
             throw e;
@@ -887,7 +860,8 @@ public class Pure
         return numberMatchesMultiplicity(1, lowerBound, upperBound) && javaClass.isInstance(obj);
     }
 
-    public static boolean matchesEnumeration(Object obj, String enumerationSystemPath, int lowerBound, int upperBound)
+    public static boolean matchesEnumeration(Object obj, String enumerationSystemPath, int lowerBound,
+                                             int upperBound)
     {
         if (obj == null)
         {
@@ -917,11 +891,12 @@ public class Pure
         return (lowerBound <= number) && ((upperBound < 0) || (number <= upperBound));
     }
 
-    private static Class<?> pureTypeToJavaClassForExecution(ValueSpecification vs, Bridge bridge, ExecutionSupport es)
+    private static Class<?> pureTypeToJavaClassForExecution(ValueSpecification vs, Bridge bridge, ExecutionSupport
+            es)
     {
         org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gt = vs._genericType();
         Multiplicity m = vs._multiplicity();
-        boolean isToOneOrZeroToOne = bridge.hasToOneUpperBound(m, es);
+        boolean isToOneOrZeroToOne = Pure.hasToOneUpperBound(m);
 
         if (!isToOneOrZeroToOne)
         {
@@ -933,7 +908,7 @@ public class Pure
         }
         else
         {
-            return pureTypeToJavaClassForExecution(gt._rawType(), bridge.isToOne(m, es), es);
+            return pureTypeToJavaClassForExecution(gt._rawType(), Pure.isToOne(m), es);
         }
     }
 
@@ -942,7 +917,8 @@ public class Pure
         return pureTypeToJavaClass(_class, false, es);
     }
 
-    private static Class<?> pureTypeToJavaClassForExecution(Type _class, boolean useJavaPrimitives, ExecutionSupport es)
+    private static Class<?> pureTypeToJavaClassForExecution(Type _class, boolean useJavaPrimitives, ExecutionSupport
+            es)
     {
         Class<?> clazz = pureTypeToJavaClass(_class, useJavaPrimitives, es);
         return clazz == Any.class || clazz == Nil.class ? Object.class : clazz;
@@ -1050,72 +1026,23 @@ public class Pure
         return (theSuperTypeClass == Any.class) || theSuperTypeClass.isAssignableFrom(theSubTypeClass);
     }
 
-    public static CompilationResult compileCodeBlock(String source, Function0<CompilationResult> resultBuilder, Function0<CompilationFailure> failureBuilder, Function0<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.meta.SourceInformation> srcInfoBuilder, ExecutionSupport es)
-    {
-        CompilationResult result = null;
-        if (source != null)
-        {
-            CodeBlockDeltaCompiler.CompilationResult compilationResult = CodeBlockDeltaCompiler.compileCodeBlock(source, ((CompiledExecutionSupport) es));
-            result = convertCompilationResult(compilationResult, resultBuilder, failureBuilder, srcInfoBuilder);
-        }
-        return result;
-    }
-
-    public static RichIterable<CompilationResult> compileCodeBlocks(RichIterable<? extends String> sources, Function0<CompilationResult> resultBuilder, Function0<CompilationFailure> failureBuilder, Function0<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.meta.SourceInformation> srcInfoBuilder, ExecutionSupport es)
-    {
-        RichIterable<CodeBlockDeltaCompiler.CompilationResult> compilationResults = CodeBlockDeltaCompiler.compileCodeBlocks(sources, ((CompiledExecutionSupport) es));
-        MutableList<CompilationResult> results = FastList.newList(sources.size());
-
-        for (CodeBlockDeltaCompiler.CompilationResult compilationResult : compilationResults)
-        {
-            results.add(convertCompilationResult(compilationResult, resultBuilder, failureBuilder, srcInfoBuilder));
-        }
-        return results;
-    }
-
-    private static org.finos.legend.pure.m3.coreinstance.meta.pure.functions.meta.CompilationResult convertCompilationResult(CodeBlockDeltaCompiler.CompilationResult compilationResult, Function0<CompilationResult> resultBuilder, Function0<CompilationFailure> failureBuilder, Function0<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.meta.SourceInformation> srcInfoBuilder)
-    {
-        org.finos.legend.pure.m3.coreinstance.meta.pure.functions.meta.CompilationResult result = resultBuilder.value();
-
-        if (compilationResult.getFailureMessage() != null)
-        {
-            CompilationFailure failure = failureBuilder.value();
-            failure._message(compilationResult.getFailureMessage());
-
-            SourceInformation si = compilationResult.getFailureSourceInformation();
-
-            if (si != null)
-            {
-                org.finos.legend.pure.m3.coreinstance.meta.pure.functions.meta.SourceInformation sourceInformation = srcInfoBuilder.value();
-                sourceInformation._column(si.getColumn());
-                sourceInformation._line(si.getLine());
-                sourceInformation._endColumn(si.getEndColumn());
-                sourceInformation._endLine(si.getEndLine());
-                sourceInformation._startColumn(si.getStartColumn());
-                sourceInformation._startLine(si.getStartLine());
-                failure._sourceInformation(sourceInformation);
-            }
-            result._failure(failure);
-        }
-        else
-        {
-            ConcreteFunctionDefinition<?> cfd = (ConcreteFunctionDefinition<?>) compilationResult.getResult();
-            result._result(cfd._expressionSequence().getFirst());
-        }
-        return result;
-    }
-
-    public static Object dynamicMatchWith(Object obj, RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>> funcs, Object var, Bridge bridge, ExecutionSupport es)
+    public static Object dynamicMatchWith(Object
+                                                  obj, RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>>
+                                                  funcs, Object var, Bridge bridge, ExecutionSupport es)
     {
         return dynamicMatch(obj, funcs, var, true, bridge, es);
     }
 
-    public static Object dynamicMatch(Object obj, RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>> funcs, Bridge bridge, ExecutionSupport es)
+    public static Object dynamicMatch(Object
+                                              obj, RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>>
+                                              funcs, Bridge bridge, ExecutionSupport es)
     {
         return dynamicMatch(obj, funcs, null, false, bridge, es);
     }
 
-    public static Object dynamicMatch(Object obj, RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>> funcs, Object var, boolean isMatchWith, Bridge bridge, ExecutionSupport es)
+    public static Object dynamicMatch(Object
+                                              obj, RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>>
+                                              funcs, Object var, boolean isMatchWith, Bridge bridge, ExecutionSupport es)
     {
         for (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> f : funcs)
         {
@@ -1131,12 +1058,16 @@ public class Pure
         return null;
     }
 
-    public static <T> RichIterable<T> removeDuplicates(T item, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> keyFn, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> eqlFn)
+    public static <
+            T> RichIterable<T> removeDuplicates(T item, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> keyFn, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>
+            eqlFn)
     {
         return (item == null) ? Lists.immutable.empty() : Lists.immutable.with(item);
     }
 
-    public static <T, V> RichIterable<T> removeDuplicates(RichIterable<T> list, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> keyFn, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> eqlFn, Bridge bridge, ExecutionSupport es)
+    public static <
+            T, V> RichIterable<T> removeDuplicates(RichIterable<T> list, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> keyFn, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>
+            eqlFn, Bridge bridge, ExecutionSupport es)
     {
         if (list == null)
         {
@@ -1192,7 +1123,9 @@ public class Pure
         return results;
     }
 
-    private static <T> boolean removeDuplicatesContains(RichIterable<T> list, T item, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function eqlFn, Bridge bridge, ExecutionSupport es)
+    private static <T> boolean removeDuplicatesContains(RichIterable<T> list, T
+            item, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function eqlFn, Bridge
+                                                                bridge, ExecutionSupport es)
     {
         for (T element : list)
         {
@@ -1215,7 +1148,8 @@ public class Pure
         return new PureMap(map);
     }
 
-    public static PureMap newMap(org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair p, ExecutionSupport es)
+    public static PureMap newMap(org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair
+                                         p, ExecutionSupport es)
     {
         MutableMap<Object, Object> map = UnifiedMapWithHashingStrategy.newMap(PureEqualsHashingStrategy.HASHING_STRATEGY);
         if (p != null)
@@ -1236,7 +1170,8 @@ public class Pure
         return new PureMap(map);
     }
 
-    public static PureMap newMap(org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair pair, Property property, ExecutionSupport es)
+    public static PureMap newMap(org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair
+                                         pair, Property property, ExecutionSupport es)
     {
         MutableMap<Object, Object> map = UnifiedMapWithHashingStrategy.newMap(new PropertyHashingStrategy(property, es));
         if (pair != null)
@@ -1269,7 +1204,8 @@ public class Pure
         return new PureMap(newOne);
     }
 
-    public static PureMap putAllPairs(PureMap pureMap, org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair pair)
+    public static PureMap putAllPairs(PureMap
+                                              pureMap, org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair pair)
     {
         Map map = pureMap.getMap();
         MutableMap newOne = map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : new UnifiedMap(map);
@@ -1297,7 +1233,8 @@ public class Pure
         return new PureMap(newOne);
     }
 
-    public static PureMap replaceAll(PureMap pureMap, org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair pair)
+    public static PureMap replaceAll(PureMap
+                                             pureMap, org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair pair)
     {
         Map map = pureMap.getMap();
         MutableMap newOne = map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy(((UnifiedMapWithHashingStrategy) map).hashingStrategy()) : new UnifiedMap();
@@ -1305,49 +1242,50 @@ public class Pure
         return new PureMap(newOne);
     }
 
-    private static class PropertyHashingStrategy implements HashingStrategy
+private static class PropertyHashingStrategy implements HashingStrategy
+{
+    RichIterable<Property> properties;
+    ExecutionSupport es;
+    Bridge bridge;
+
+    PropertyHashingStrategy(RichIterable<Property> properties, Bridge bridge, ExecutionSupport es)
     {
-        RichIterable<Property> properties;
-        ExecutionSupport es;
-        Bridge bridge;
-
-        PropertyHashingStrategy(RichIterable<Property> properties, Bridge bridge, ExecutionSupport es)
-        {
-            this.properties = properties;
-            this.bridge = bridge;
-            this.es = es;
-        }
-
-        PropertyHashingStrategy(Property property, ExecutionSupport es)
-        {
-            this.properties = FastList.newListWith(property);
-            this.es = es;
-        }
-
-        @Override
-        public int computeHashCode(Object o)
-        {
-            int hashCode = 0;
-            for (Property value : this.properties)
-            {
-                hashCode = (31 * hashCode) + CompiledSupport.safeHashCode(evaluate(this.es, value, bridge, o));
-            }
-            return hashCode;
-        }
-
-        @Override
-        public boolean equals(Object o, Object e1)
-        {
-            for (Property value : this.properties)
-            {
-                if (!evaluate(this.es, value, bridge, o).equals(evaluate(this.es, value, bridge, e1)))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
+        this.properties = properties;
+        this.bridge = bridge;
+        this.es = es;
     }
+
+    PropertyHashingStrategy(Property property, ExecutionSupport es)
+    {
+        this.properties = FastList.newListWith(property);
+        this.es = es;
+    }
+
+    @Override
+    public int computeHashCode(Object o)
+    {
+        int hashCode = 0;
+        for (Property value : this.properties)
+        {
+            hashCode = (31 * hashCode) + CompiledSupport.safeHashCode(evaluate(this.es, value, bridge, o));
+        }
+        return hashCode;
+    }
+
+    @Override
+    public boolean equals(Object o, Object e1)
+    {
+        for (Property value : this.properties)
+        {
+            if (!evaluate(this.es, value, bridge, o).equals(evaluate(this.es, value, bridge, e1)))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+}
 
     public static Object reactivate(final ValueSpecification valueSpecification,
                                     final PureMap lambdaOpenVariablesMap,
@@ -1390,25 +1328,27 @@ public class Pure
     }
 
     public static boolean canReactivateWithoutJavaCompilation(
-        final ValueSpecification valueSpecification,
-        final ExecutionSupport es,
-        Bridge bridge
+            final ValueSpecification valueSpecification,
+            final ExecutionSupport es,
+            Bridge bridge
     )
     {
         return canReactivateWithoutJavaCompilation(valueSpecification, es, new PureMap(UnifiedMap.newMap()), bridge);
     }
 
     public static boolean canReactivateWithoutJavaCompilation(
-        final ValueSpecification valueSpecification,
-        final ExecutionSupport es,
-        final PureMap lambdaOpenVariablesMap,
-        Bridge bridge
+            final ValueSpecification valueSpecification,
+            final ExecutionSupport es,
+            final PureMap lambdaOpenVariablesMap,
+            Bridge bridge
     )
     {
         return Reactivator.canReactivateWithoutJavaCompilation(valueSpecification, es, lambdaOpenVariablesMap, bridge);
     }
 
-    public static org.finos.legend.pure.m3.coreinstance.Package buildPackageIfNonExistent(final org.finos.legend.pure.m3.coreinstance.Package pack, final ListIterable<String> path, SourceInformation si, Function<String, org.finos.legend.pure.m3.coreinstance.Package> packageBuilder)
+    public static org.finos.legend.pure.m3.coreinstance.Package buildPackageIfNonExistent(
+            final org.finos.legend.pure.m3.coreinstance.Package pack, final ListIterable<String> path, SourceInformation
+            si, Function<String, org.finos.legend.pure.m3.coreinstance.Package> packageBuilder)
     {
         if (path.size() >= 1)
         {
@@ -1430,7 +1370,8 @@ public class Pure
         return pack;
     }
 
-    public static Class fromJsonResolveType(JSONObject jsonObject, String pureType, Class typeFromClassMetaData, MetadataAccessor md, String typeKey, ClassLoader classLoader)
+    public static Class fromJsonResolveType(JSONObject jsonObject, String pureType, Class
+            typeFromClassMetaData, MetadataAccessor md, String typeKey, ClassLoader classLoader)
     {
         String targetTypeName = (String) jsonObject.get(typeKey);
         if (targetTypeName != null)

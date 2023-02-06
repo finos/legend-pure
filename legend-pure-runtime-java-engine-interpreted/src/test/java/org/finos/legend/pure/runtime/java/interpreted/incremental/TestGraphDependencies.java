@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.incremental;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.junit.Ignore;
 import org.junit.Test;
 

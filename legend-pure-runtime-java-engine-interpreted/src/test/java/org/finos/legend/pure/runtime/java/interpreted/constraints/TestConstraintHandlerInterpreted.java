@@ -14,14 +14,13 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.constraints;
 
-import org.finos.legend.pure.m3.tests.constraints.AbstractTestConstraintsHandler;
+import org.finos.legend.pure.m3.tests.function.base.lang.AbstractTestDynamicNewConstraintsHandler;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.After;
 import org.junit.BeforeClass;
 
-public class TestConstraintHandlerInterpreted extends AbstractTestConstraintsHandler
+public class TestConstraintHandlerInterpreted extends AbstractTestDynamicNewConstraintsHandler
 {
     @BeforeClass
     public static void setUp() {

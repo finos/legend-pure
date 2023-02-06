@@ -123,16 +123,7 @@ public class M3Paths
     public static final String ZeroMany = "meta::pure::metamodel::multiplicity::ZeroMany";
     public static final String ZeroOne = "meta::pure::metamodel::multiplicity::ZeroOne";
 
-    // GRAPH
-    public static final String RootGraphFetchTree = "meta::pure::graphFetch::RootGraphFetchTree";
-
-    // PATH
-    public static final String CastPathElement = "meta::pure::metamodel::path::CastPathElement";
-    public static final String Path = "meta::pure::metamodel::path::Path";
-    public static final String PathElement = "meta::pure::metamodel::path::PathElement";
-    public static final String PropertyPathElement = "meta::pure::metamodel::path::PropertyPathElement";
-
-    // Milestoning
+     // Milestoning
     public static final String Milestoning = "meta::pure::profiles::milestoning";
 
     // Equality
@@ -149,23 +140,15 @@ public class M3Paths
     public static final String RoutedValueSpecification = "meta::pure::router::RoutedValueSpecification";
     public static final String ClusteredValueSpecification = "meta::pure::router::metamodel::clustering::ClusteredValueSpecification";
 
-    // Diagram
-    public static final String Diagram = "meta::pure::diagram::Diagram";
-    public static final String TypeView = "meta::pure::diagram::TypeView";
-    public static final String PropertyView = "meta::pure::diagram::PropertyView";
-    public static final String AssociationView = "meta::pure::diagram::AssociationView";
 
     // Service
     public static final String service = "meta::pure::service::service";
     public static final String ServiceResult = "meta::pure::service::ServiceResult";
 
     // Collections
-    public static final String ValueHolder = "meta::pure::functions::collection::ValueHolder";
     public static final String TreeNode = "meta::pure::functions::collection::TreeNode";
     public static final String Pair = "meta::pure::functions::collection::Pair";
-    public static final String List = "meta::pure::functions::collection::List";
     public static final String Map = "meta::pure::functions::collection::Map";
-    public static final String MapStats = "meta::pure::functions::collection::MapStats";
-
+    public static final String List = "meta::pure::functions::collection::List";
 
 }

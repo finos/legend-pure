@@ -17,13 +17,13 @@ package org.finos.legend.pure.runtime.java.compiled.generation;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.impl.factory.Sets;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
-import org.finos.legend.pure.m3.coreinstance.GraphCoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.M3CoreInstanceFactoryRegistry;
-import org.finos.legend.pure.m3.coreinstance.PathCoreInstanceFactoryRegistry;
-import org.finos.legend.pure.m3.coreinstance.PlatformCoreInstanceFactoryRegistry;
+import org.finos.legend.pure.m3.coreinstance.M3PlatformCoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
+import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtensionLoader;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.ClassImplProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.ClassLazyImplProcessor;
 
@@ -37,12 +37,10 @@ public class JavaPackageAndImportBuilder
     private static final String CODE_GEN_PACKAGE_PREFIX = CODE_GEN_PACKAGE_NAME + ".";
     private static final String BASE_PACKAGE_FOLDER = CODE_GEN_PACKAGE_NAME.replace('.', '/');
 
-    private static final SetIterable<String> M3_CLASSES = Sets.mutable
+    public final static SetIterable<String> M3_CLASSES = Sets.mutable
             .withAll(M3CoreInstanceFactoryRegistry.ALL_PATHS)
-            .withAll(PathCoreInstanceFactoryRegistry.ALL_PATHS)
-            .withAll(GraphCoreInstanceFactoryRegistry.ALL_PATHS)
-            .withAll(PlatformCoreInstanceFactoryRegistry.ALL_PATHS);
-
+            .withAll(M3PlatformCoreInstanceFactoryRegistry.ALL_PATHS)
+            .withAll(CompiledExtensionLoader.extensions().flatCollect(CompiledExtension::getExtraCorePath));
 
     private JavaPackageAndImportBuilder()
     {

@@ -25,16 +25,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.SetIterable;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.compiler.postprocessing.processor.AnnotatedElementProcessor;
-import org.finos.legend.pure.m3.compiler.postprocessing.processor.AssociationProcessor;
-import org.finos.legend.pure.m3.compiler.postprocessing.processor.ClassProcessor;
-import org.finos.legend.pure.m3.compiler.postprocessing.processor.ElementWithConstraintsProcessor;
-import org.finos.legend.pure.m3.compiler.postprocessing.processor.EnumerationProcessor;
-import org.finos.legend.pure.m3.compiler.postprocessing.processor.FunctionDefinitionProcessor;
-import org.finos.legend.pure.m3.compiler.postprocessing.processor.LambdaFunctionProcessor;
-import org.finos.legend.pure.m3.compiler.postprocessing.processor.PropertyOwnerProcessor;
-import org.finos.legend.pure.m3.compiler.postprocessing.processor.PropertyProcessor;
-import org.finos.legend.pure.m3.compiler.postprocessing.processor.UnitProcessor;
+import org.finos.legend.pure.m3.compiler.postprocessing.processor.*;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.projection.ClassProjectionProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.projection.ClassProjectionUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.projection.ClassProjectionValidator;
@@ -42,69 +33,9 @@ import org.finos.legend.pure.m3.compiler.postprocessing.processor.valuespecifica
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.valuespecification.InstanceValueProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.valuespecification.KeyExpressionProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.valuespecification.VariableExpressionProcessor;
-import org.finos.legend.pure.m3.compiler.unload.unbind.AbstractPropertyUnbind;
-import org.finos.legend.pure.m3.compiler.unload.unbind.AnyUnbind;
-import org.finos.legend.pure.m3.compiler.unload.unbind.AssociationUnbind;
-import org.finos.legend.pure.m3.compiler.unload.unbind.ClassProjectionUnbind;
-import org.finos.legend.pure.m3.compiler.unload.unbind.ClassUnbind;
-import org.finos.legend.pure.m3.compiler.unload.unbind.ConcreteFunctionDefinitionUnbind;
-import org.finos.legend.pure.m3.compiler.unload.unbind.ElementWithConstraintsUnbind;
-import org.finos.legend.pure.m3.compiler.unload.unbind.ElementWithStereotypesUnbind;
-import org.finos.legend.pure.m3.compiler.unload.unbind.ElementWithTaggedValuesUnbind;
-import org.finos.legend.pure.m3.compiler.unload.unbind.EnumerationUnbind;
-import org.finos.legend.pure.m3.compiler.unload.unbind.FunctionDefinitionUnbind;
-import org.finos.legend.pure.m3.compiler.unload.unbind.InstanceValueUnbind;
-import org.finos.legend.pure.m3.compiler.unload.unbind.LambdaFunctionUnbind;
-import org.finos.legend.pure.m3.compiler.unload.unbind.PackageableFunctionUnbind;
-import org.finos.legend.pure.m3.compiler.unload.unbind.SimpleFunctionExpressionUnbind;
-import org.finos.legend.pure.m3.compiler.unload.unbind.TypeUnbind;
-import org.finos.legend.pure.m3.compiler.unload.unbind.UnitUnbind;
-import org.finos.legend.pure.m3.compiler.unload.unbind.ValueSpecificationUnbind;
-import org.finos.legend.pure.m3.compiler.unload.walk.AbstractPropertyUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.AssociationUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.ClassConstraintValueSpecificationContextUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.ClassUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.ConcreteFunctionDefinitionUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.EnumUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.EnumerationUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.ExpressionSequenceValueSpecificationContextUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.FunctionTypeUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.FunctionUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.GeneralizationUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.GenericTypeUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.InstanceValueSpecificationContextUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.KeyValueValueSpecificationContextUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.LambdaFunctionUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.MeasureUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.NativeFunctionUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.PackageableElementUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.ParameterValueSpecificationContextUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.ProfileUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.PropertyUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.TypeUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.UnitUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.ValueSpecificationUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.VariableExpressionUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.validation.validator.AbstractPropertyValidator;
-import org.finos.legend.pure.m3.compiler.validation.validator.AccessLevelValidator;
-import org.finos.legend.pure.m3.compiler.validation.validator.AssociationValidator;
-import org.finos.legend.pure.m3.compiler.validation.validator.ClassValidator;
-import org.finos.legend.pure.m3.compiler.validation.validator.ElementWithConstraintsValidator;
-import org.finos.legend.pure.m3.compiler.validation.validator.ElementWithStereotypesValidator;
-import org.finos.legend.pure.m3.compiler.validation.validator.ElementWithTaggedValueValidator;
-import org.finos.legend.pure.m3.compiler.validation.validator.EnumerationValidator;
-import org.finos.legend.pure.m3.compiler.validation.validator.FunctionDefinitionValidator;
-import org.finos.legend.pure.m3.compiler.validation.validator.FunctionExpressionValidator;
-import org.finos.legend.pure.m3.compiler.validation.validator.GenericTypeValidator;
-import org.finos.legend.pure.m3.compiler.validation.validator.InstanceValueValidator;
-import org.finos.legend.pure.m3.compiler.validation.validator.PackageValidator;
-import org.finos.legend.pure.m3.compiler.validation.validator.PackageableFunctionValidator;
-import org.finos.legend.pure.m3.compiler.validation.validator.ProfileValidator;
-import org.finos.legend.pure.m3.compiler.validation.validator.PropertyValidator;
-import org.finos.legend.pure.m3.compiler.validation.validator.RepositoryPackageValidator;
-import org.finos.legend.pure.m3.compiler.validation.validator.TaggedValueValidator;
-import org.finos.legend.pure.m3.compiler.validation.validator.TypeValidator;
-import org.finos.legend.pure.m3.compiler.validation.validator.ValueSpecificationValidator;
+import org.finos.legend.pure.m3.compiler.unload.unbind.*;
+import org.finos.legend.pure.m3.compiler.unload.walk.*;
+import org.finos.legend.pure.m3.compiler.validation.validator.*;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.M3CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
@@ -119,20 +50,10 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.treepath.NewPropertyRouteNodeFunctionDefinitionUnloaderWalk;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.treepath.PropertyRouteNodeUnloaderWalk;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.treepath.RootRouteNodePostProcessor;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.treepath.RootRouteNodeUnbind;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.treepath.RootRouteNodeUnloaderWalk;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.treepath.RootRouteNodeValidator;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.treepath.RouteNodePropertyStubUnloaderWalk;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.treepath.*;
+import org.finos.legend.pure.m3.serialization.runtime.ParserService;
 import org.finos.legend.pure.m3.serialization.runtime.SourceState;
-import org.finos.legend.pure.m3.serialization.runtime.binary.reference.EnumReferenceSerializer;
-import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ExternalReferenceSerializer;
-import org.finos.legend.pure.m3.serialization.runtime.binary.reference.PropertyReferenceSerializer;
-import org.finos.legend.pure.m3.serialization.runtime.binary.reference.QualifiedPropertyReferenceSerializer;
-import org.finos.legend.pure.m3.serialization.runtime.binary.reference.StereotypeReferenceSerializer;
-import org.finos.legend.pure.m3.serialization.runtime.binary.reference.TagReferenceSerializer;
+import org.finos.legend.pure.m3.serialization.runtime.binary.reference.*;
 import org.finos.legend.pure.m3.serialization.runtime.navigation.NavigationHandler;
 import org.finos.legend.pure.m3.statelistener.M3M4StateListener;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
@@ -142,6 +63,8 @@ import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrDescriptiveErro
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureAntlrErrorStrategy;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
+
+import java.lang.reflect.Field;
 
 public class M3AntlrParser implements Parser
 {
@@ -153,7 +76,7 @@ public class M3AntlrParser implements Parser
 
     public M3AntlrParser()
     {
-        this(true, null);
+        this(true, new InlineDSLLibrary(new ParserService().inlineDSLs()));
     }
 
     public M3AntlrParser(boolean useImportStubsInInstanceParser)
@@ -195,13 +118,15 @@ public class M3AntlrParser implements Parser
             org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser parser = initAntlrParser(useFastParser, code, sourceInformation);
             final M3AntlrTreeWalker visitor = new M3AntlrTreeWalker(sourceInformation, this.inlineDSLLibrary, repository, coreInstancesResult, listener, context, null, count, this.useImportStubsInInstanceParser, addLines, oldState);
             visitor.visit(parser.definition());
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
                 //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 this.parseDefinition(false, code, sourceName, repository, coreInstancesResult, listener, context, count, addLines, oldState);
-            } else
+            }
+            else
             {
                 throw e;
             }
@@ -221,13 +146,15 @@ public class M3AntlrParser implements Parser
             org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser parser = initAntlrParser(useFastParser, code, sourceInformation);
             M3AntlrTreeWalker visitor = new M3AntlrTreeWalker(sourceInformation, this.inlineDSLLibrary, repository, null, null, context, importId, 0, null);
             return visitor.visit(parser.type());
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
                 //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 return this.parseType(false, code, fileName, offsetLine, offsetColumn, importId, repository, context);
-            } else
+            }
+            else
             {
                 throw e;
             }
@@ -242,13 +169,15 @@ public class M3AntlrParser implements Parser
             org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser parser = initAntlrParser(useFastParser, code, sourceInformation);
             M3AntlrTreeWalker visitor = new M3AntlrTreeWalker(sourceInformation, this.inlineDSLLibrary, repository, null, null, context, importId, 0, null);
             return visitor.visit(parser.instance());
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
                 //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 return this.parseInstance(false, code, fileName, offsetLine, offsetColumn, importId, repository, context);
-            } else
+            }
+            else
             {
                 throw e;
             }
@@ -268,13 +197,15 @@ public class M3AntlrParser implements Parser
             org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser parser = initAntlrParser(useFastParser, code, sourceInformation);
             M3AntlrPropertiesWalker visitor = new M3AntlrPropertiesWalker(sourceInformation, this.inlineDSLLibrary, repository, context, importId, properties, qualifiedProperties, typeOwner, startingQualifiedPropertyIndex);
             visitor.visit(parser.properties());
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
                 //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 this.parseProperties(false, code, fileName, properties, qualifiedProperties, typeOwner, importId, addLines, repository, context, startingQualifiedPropertyIndex);
-            } else
+            }
+            else
             {
                 throw e;
             }
@@ -289,13 +220,15 @@ public class M3AntlrParser implements Parser
             org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser parser = initAntlrParser(useFastParser, code, sourceInformation);
             M3AntlrTreeWalker visitor = new M3AntlrTreeWalker(sourceInformation, this.inlineDSLLibrary, repository, null, null, context, importId, 0, null);
             return visitor.visit(parser.treePath());
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
                 //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 return this.parseTreePath(false, code, fileName, offsetLine, offsetColumn, importId, repository, context);
-            } else
+            }
+            else
             {
                 throw e;
             }
@@ -320,33 +253,33 @@ public class M3AntlrParser implements Parser
     public String parseMapping(String content, String id, String extendsId, String setSourceInfo, boolean root, String classPath, String classSourceInfo, String mappingPath, String sourceName, int offset, String importId, ModelRepository repository, Context context) throws PureParserException
     {
         M3ProcessorSupport processorSupport = new M3ProcessorSupport(context, repository);
-        String mappingName = mappingPath.replace("::","_");
-        String classMappingName = classPath.replace("::","_");
+        String mappingName = mappingPath.replace("::", "_");
+        String classMappingName = classPath.replace("::", "_");
         AntlrContextToM3CoreInstance.LambdaContext lambdaContext = new AntlrContextToM3CoreInstance.LambdaContext(mappingName + '_' + classMappingName + (id == null ? "" : '_' + id));
         TemporaryPureSetImplementation arg = parseMappingInfo(content, classPath, lambdaContext, sourceName, offset, importId, repository, processorSupport, context);
 
-        return "^meta::pure::mapping::modelToModel::PureInstanceSetImplementation"+ setSourceInfo+ "(\n" +
-                        (id == null ? "" : "id = '" + id + "',\n") +
-                        "   root = " + root + ",\n" +
-                        (arg._class==null ? "" : "   srcClass = " + process(arg._class, processorSupport) + ",\n") +
-                        (arg.filter==null ? "" : "   filter = ^meta::pure::metamodel::function::LambdaFunction " + lambdaContext.getLambdaFunctionUniqueName() + ' ' + arg.filter.getSourceInformation().toM4String() + " (classifierGenericType=^meta::pure::metamodel::type::generics::GenericType " + arg.filter.getSourceInformation().toM4String() + " (rawType=meta::pure::metamodel::function::LambdaFunction, typeArguments=^meta::pure::metamodel::type::generics::GenericType " + arg.filter.getSourceInformation().toM4String() + " (rawType = ^meta::pure::metamodel::type::FunctionType " + arg.filter.getSourceInformation().toM4String() + " ()))," +
-                                "                                                                          expressionSequence=" + process(arg.filter, processorSupport) + "),") +
-                        "   class = ^meta::pure::metamodel::import::ImportStub " + classSourceInfo + " (idOrPath='" + classPath + "', importGroup=system::imports::" + importId + "),\n" +
-                        "   parent= ^meta::pure::metamodel::import::ImportStub(idOrPath='" + mappingPath + "', importGroup=system::imports::" + importId + "),\n" +
-                        "   propertyMappings=[" + arg.propertyMappings.collect(temporaryPurePropertyMapping ->
-                                "^meta::pure::mapping::modelToModel::PurePropertyMapping " + temporaryPurePropertyMapping.sourceInformation.toM4String() + " (property='" + temporaryPurePropertyMapping.property + "'," +
-                                "        explodeProperty = " + temporaryPurePropertyMapping.explodeProperty + "," +
-                                "        localMappingProperty = " + temporaryPurePropertyMapping.localMappingProperty + "," +
+        return "^meta::pure::mapping::modelToModel::PureInstanceSetImplementation" + setSourceInfo + "(\n" +
+                (id == null ? "" : "id = '" + id + "',\n") +
+                "   root = " + root + ",\n" +
+                (arg._class == null ? "" : "   srcClass = " + process(arg._class, processorSupport) + ",\n") +
+                (arg.filter == null ? "" : "   filter = ^meta::pure::metamodel::function::LambdaFunction " + lambdaContext.getLambdaFunctionUniqueName() + ' ' + arg.filter.getSourceInformation().toM4String() + " (classifierGenericType=^meta::pure::metamodel::type::generics::GenericType " + arg.filter.getSourceInformation().toM4String() + " (rawType=meta::pure::metamodel::function::LambdaFunction, typeArguments=^meta::pure::metamodel::type::generics::GenericType " + arg.filter.getSourceInformation().toM4String() + " (rawType = ^meta::pure::metamodel::type::FunctionType " + arg.filter.getSourceInformation().toM4String() + " ()))," +
+                        "                                                                          expressionSequence=" + process(arg.filter, processorSupport) + "),") +
+                "   class = ^meta::pure::metamodel::import::ImportStub " + classSourceInfo + " (idOrPath='" + classPath + "', importGroup=system::imports::" + importId + "),\n" +
+                "   parent= ^meta::pure::metamodel::import::ImportStub(idOrPath='" + mappingPath + "', importGroup=system::imports::" + importId + "),\n" +
+                "   propertyMappings=[" + arg.propertyMappings.collect(temporaryPurePropertyMapping ->
+                "^meta::pure::mapping::modelToModel::PurePropertyMapping " + temporaryPurePropertyMapping.sourceInformation.toM4String() + " (property='" + temporaryPurePropertyMapping.property + "'," +
+                        "        explodeProperty = " + temporaryPurePropertyMapping.explodeProperty + "," +
+                        "        localMappingProperty = " + temporaryPurePropertyMapping.localMappingProperty + "," +
 
-                                (temporaryPurePropertyMapping.localMappingPropertyType == null ? "" : "        localMappingPropertyType = " + process(temporaryPurePropertyMapping.localMappingPropertyType._rawTypeCoreInstance(), processorSupport) + ",\n") +
-                                (temporaryPurePropertyMapping.localMappingPropertyMultiplicity == null ? "" : "        localMappingPropertyMultiplicity = " + process(temporaryPurePropertyMapping.localMappingPropertyMultiplicity, processorSupport) + ",") +
-                                (temporaryPurePropertyMapping.targetMappingId == null ? "" : "                                         targetSetImplementationId='" + temporaryPurePropertyMapping.targetMappingId + "',") +
-                                (temporaryPurePropertyMapping.enumerationMappingInformation == null ? "" : "transformer=^meta::pure::tools::GrammarInfoStub" + temporaryPurePropertyMapping.enumerationMappingInformation.getTwo().toM4String() + "(value='" + mappingPath + "," + temporaryPurePropertyMapping.enumerationMappingInformation.getOne() + "'),") +
-                                "                                         transform=^meta::pure::metamodel::function::LambdaFunction " + lambdaContext.getLambdaFunctionUniqueName() + ' ' + temporaryPurePropertyMapping.expression.getSourceInformation().toM4String() + " (" +
-                                "                                                           classifierGenericType=^meta::pure::metamodel::type::generics::GenericType " + temporaryPurePropertyMapping.expression.getSourceInformation().toM4String() + " (rawType=meta::pure::metamodel::function::LambdaFunction, typeArguments=^meta::pure::metamodel::type::generics::GenericType " + temporaryPurePropertyMapping.expression.getSourceInformation().toM4String() + " (rawType = ^meta::pure::metamodel::type::FunctionType " + temporaryPurePropertyMapping.expression.getSourceInformation().toM4String() + " ()))," +
-                                "                                                           expressionSequence=" + process(temporaryPurePropertyMapping.expression, processorSupport) + ")" +
-                                "                                                      )\n").makeString(",")+"]\n"+
-                        ")";
+                        (temporaryPurePropertyMapping.localMappingPropertyType == null ? "" : "        localMappingPropertyType = " + process(temporaryPurePropertyMapping.localMappingPropertyType._rawTypeCoreInstance(), processorSupport) + ",\n") +
+                        (temporaryPurePropertyMapping.localMappingPropertyMultiplicity == null ? "" : "        localMappingPropertyMultiplicity = " + process(temporaryPurePropertyMapping.localMappingPropertyMultiplicity, processorSupport) + ",") +
+                        (temporaryPurePropertyMapping.targetMappingId == null ? "" : "                                         targetSetImplementationId='" + temporaryPurePropertyMapping.targetMappingId + "',") +
+                        (temporaryPurePropertyMapping.enumerationMappingInformation == null ? "" : "transformer=^meta::pure::tools::GrammarInfoStub" + temporaryPurePropertyMapping.enumerationMappingInformation.getTwo().toM4String() + "(value='" + mappingPath + "," + temporaryPurePropertyMapping.enumerationMappingInformation.getOne() + "'),") +
+                        "                                         transform=^meta::pure::metamodel::function::LambdaFunction " + lambdaContext.getLambdaFunctionUniqueName() + ' ' + temporaryPurePropertyMapping.expression.getSourceInformation().toM4String() + " (" +
+                        "                                                           classifierGenericType=^meta::pure::metamodel::type::generics::GenericType " + temporaryPurePropertyMapping.expression.getSourceInformation().toM4String() + " (rawType=meta::pure::metamodel::function::LambdaFunction, typeArguments=^meta::pure::metamodel::type::generics::GenericType " + temporaryPurePropertyMapping.expression.getSourceInformation().toM4String() + " (rawType = ^meta::pure::metamodel::type::FunctionType " + temporaryPurePropertyMapping.expression.getSourceInformation().toM4String() + " ()))," +
+                        "                                                           expressionSequence=" + process(temporaryPurePropertyMapping.expression, processorSupport) + ")" +
+                        "                                                      )\n").makeString(",") + "]\n" +
+                ")";
     }
 
     public TemporaryPureAggregateSpecification parseAggregateSpecification(String content, AntlrContextToM3CoreInstance.LambdaContext lambdaContext, String sourceName, int offset, String importId, int index, ModelRepository repository, ProcessorSupport processorSupport, Context context)
@@ -357,6 +290,7 @@ public class M3AntlrParser implements Parser
         M3AntlrTreeWalker visitor = new M3AntlrTreeWalker(null, sourceInformation, this.inlineDSLLibrary, repository, null, null, context, grp, 0, null);
         return visitor.walkAggregateSpecification(parser.aggregateSpecification(), lambdaContext, index);
     }
+
     public TemporaryPureMergeOperationFunctionSpecification parseMergeSpecification(String content, AntlrContextToM3CoreInstance.LambdaContext lambdaContext, String sourceName, int offset, String importId, ModelRepository repository, ProcessorSupport processorSupport, Context context)
     {
         AntlrSourceInformation sourceInformation = new AntlrSourceInformation(offset, 0, sourceName, true);
@@ -365,6 +299,7 @@ public class M3AntlrParser implements Parser
         M3AntlrTreeWalker visitor = new M3AntlrTreeWalker(null, sourceInformation, this.inlineDSLLibrary, repository, null, null, context, grp, 0, null);
         return visitor.walkMergeOperationSpecification(parser.combinedExpression(), lambdaContext);
     }
+
     @Deprecated
     public static String process(CoreInstance ci, Context context, ProcessorSupport processorSupport)
     {
@@ -548,6 +483,21 @@ public class M3AntlrParser implements Parser
     @Override
     public RichIterable<CoreInstanceFactoryRegistry> getCoreInstanceFactoriesRegistry()
     {
+        try
+        {
+            Class cl = Class.forName("org.finos.legend.pure.m3.coreinstance.M3PlatformCoreInstanceFactoryRegistry");
+            Field field = cl.getField("REGISTRY");
+            CoreInstanceFactoryRegistry reg = (CoreInstanceFactoryRegistry) field.get(null);
+            if (reg != null)
+            {
+                return Lists.immutable.with(M3CoreInstanceFactoryRegistry.REGISTRY, reg);
+            }
+        }
+        catch (Exception e)
+        {
+            //e.printStackTrace();
+        }
+
         return Lists.immutable.with(M3CoreInstanceFactoryRegistry.REGISTRY);
     }
 

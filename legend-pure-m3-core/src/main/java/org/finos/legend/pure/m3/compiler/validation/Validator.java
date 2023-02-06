@@ -71,7 +71,7 @@ public class Validator
             matcher.addMatchIfTypeIsKnown(validator);
         }
 
-        ValidatorState validatorState = new ValidatorState(validationType, codeStorage, processorSupport);
+        ValidatorState validatorState = new ValidatorState(validationType, codeStorage, inlineDSLLibrary, processorSupport);
         for (CoreInstance instance : newInstancesConsolidated)
         {
             validate(instance, validatorState, matcher, processorSupport);

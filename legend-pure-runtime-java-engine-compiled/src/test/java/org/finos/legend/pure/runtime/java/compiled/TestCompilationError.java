@@ -14,11 +14,12 @@
 
 package org.finos.legend.pure.runtime.java.compiled;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tools.ThrowableTools;
 import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompileException;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.junit.*;
 
@@ -26,8 +27,9 @@ import org.junit.*;
 public class TestCompilationError extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
     }
 
     @Ignore
@@ -37,7 +39,7 @@ public class TestCompilationError extends AbstractPureTestWithCoreCompiled
         try
         {
             compileTestSource("testSource.pure",
-                            "Class MyClass<T|m>\n" +
+                    "Class MyClass<T|m>\n" +
                             "{\n" +
                             "    values:T[m];\n" +
                             "}\n" +
@@ -61,7 +63,7 @@ public class TestCompilationError extends AbstractPureTestWithCoreCompiled
         }
     }
 
-     protected static FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

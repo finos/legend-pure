@@ -15,10 +15,11 @@
 package org.finos.legend.pure.m3.tests.incremental.function;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.factory.Lists;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
-import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.eclipse.collections.api.list.MutableList;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
@@ -37,9 +38,12 @@ public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompile
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
-        return Lists.immutable.with(CodeRepository.newPlatformCodeRepository(),
-                GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME),
-                GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system"));
+        MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
+        CodeRepository system = GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME, "platform_functions");
+        CodeRepository test = GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system", "platform_functions");
+        repositories.add(system);
+        repositories.add(test);
+        return repositories;
     }
 
     @After
@@ -56,11 +60,11 @@ public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompile
     public void testPureRuntimeFunctionAllClass()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{version : Integer[1];}")
-                        .createInMemorySource("userId.pure", "function go():Nil[0]{print(A.all(),1);}")
+                        .createInMemorySource("userId.pure", "function go():Any[*]{A.all();}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
-                        .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 28)
+                        .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 22)
                         .createInMemorySource("sourceId.pure", "Class A{version : Integer[1];}")
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
@@ -74,11 +78,14 @@ public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompile
                 "   tags : [Contract, DataSet, ValidationRule];\n" +
                 "}\n" +
                 "\n" +
-                "function {PR1.Contract='eee'} go():Nil[0]\n" +
+                "function {PR1.Contract='eee'} go():Any[*]\n" +
                 "{\n" +
-                "   print(ConcreteFunctionDefinition.all()->filter(f|!$f.name->isEmpty() && isContract($f)).name,3);\n" +
+                "   ConcreteFunctionDefinition.all()->filter(f|!$f.name->isEmpty() && isContract($f)).name;\n" +
                 "}\n" +
-                "\n" +
+                "function meta::pure::functions::meta::tag(profile:Profile[1], str:String[1]):Tag[1]" +
+                "{" +
+                "   $profile.p_tags->at(0);" +
+                "}\n" +
                 "function isContract(f:ConcreteFunctionDefinition<Any>[1]):Boolean[1]\n" +
                 "{\n" +
                 "   $f.taggedValues->filter(t|$t.tag == PR1->tag('Contract'))->size() > 0;\n" +
@@ -98,9 +105,9 @@ public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompile
     {
         String source = "Class U{}" +
                 "Class T{val:U[*];}\n" +
-                "function go():Nil[0]\n" +
+                "function go():Any[*]\n" +
                 "{\n" +
-                "   print(ConcreteFunctionDefinition.all()->map(c|^T(val=[1,2]->map(c|^U()))),1);\n" +
+                "   ConcreteFunctionDefinition.all()->map(c|^T(val=[1,2]->map(c|^U())));\n" +
                 "}\n";
 
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", source)

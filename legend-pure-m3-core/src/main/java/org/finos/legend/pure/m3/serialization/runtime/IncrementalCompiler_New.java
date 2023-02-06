@@ -254,7 +254,7 @@ public class IncrementalCompiler_New extends IncrementalCompiler
 
             // Total Unbind set is ( generated here + obtained through call - non retained )
             MutableSet<CoreInstance> hereUnbind = toUnbindWithinRepo.union(oldButNotNew).union(instancesToUnbind.toSet());
-            Unbinder.process(hereUnbind, this.modelRepository, this.library, this.dslLibrary, this.context, this.processorSupport, new UnbindState(this.context, this.urlPatternLibrary, this.processorSupport), this.message);
+            Unbinder.process(hereUnbind, this.modelRepository, this.library, this.dslLibrary, this.context, this.processorSupport, new UnbindState(this.context, this.urlPatternLibrary, this.dslLibrary, this.processorSupport), this.message);
 
             // Invalidate the unbound instances
             if (hereUnbind.notEmpty())

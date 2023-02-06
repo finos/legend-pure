@@ -15,10 +15,9 @@
 package org.finos.legend.pure.m3.tests.function.base.meta;
 
 import org.eclipse.collections.api.list.ListIterable;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
-import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
-import org.finos.legend.pure.m3.RuntimeVerifier;
-import org.junit.Before;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.Test;
 
 public abstract class AbstractTestCompileValueSpecification extends AbstractPureTestWithCoreCompiled
@@ -175,21 +174,14 @@ public abstract class AbstractTestCompileValueSpecification extends AbstractPure
     @Test
     public void testExecuteLambdaWithPrint()
     {
-        this.testExecuteCodeBlockIsStable("print(|1); 'Something';", "Something");
+        this.testExecuteCodeBlockIsStable("print(|1, 1); 'Something';", "Something");
     }
 
     private void testExecuteCodeBlockIsStable(String codeBlock, String expectedResult)
     {
         String escapedCode = codeBlock.replace("'", "\\\'").replace("\n", "");
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("exec1.pure", EXECUTE_CODE_BLOCK)
-                .createInMemorySource("source1.pure", "function meta::pure::functions::io::print(param:Any[*]):Nil[0]\n" +
-                        "{\n" +
-                        "    print($param, 1);\n" +
-                        "}\n" +
-                        "function meta::pure::functions::meta::reactivate(vs:ValueSpecification[1]):Any[*]\n" +
-                        "{\n" +
-                        "   meta::pure::functions::meta::reactivate($vs, ^Map<String, List<Any>>());\n" +
-                        "}\n" +
+                .createInMemorySource("source1.pure",
                         "function doSomething():Any[*]\n{ " + codeBlock + "}")
                 .createInMemorySource("source2.pure", "function testOutsideCompileValSpec():Any[*]\n{ assert('" + expectedResult + "' == doSomething(), |'');}")
                 .createInMemorySource("source3.pure", "function test():Any[*]\n{ assert('" + expectedResult + "' == apps::pure::api::execution::compileAndExecuteCodeBlock('" + escapedCode + "'), |'');}").compile()

@@ -15,7 +15,7 @@
 package org.finos.legend.pure.runtime.java.interpreted;
 
 import org.finos.legend.pure.m3.execution.FunctionExecution;
-import org.finos.legend.pure.m3.tests.function.base.measure.AbstractTestMeasure;
+import org.finos.legend.pure.m3.tests.AbstractTestMeasure;
 import org.junit.BeforeClass;
 
 public class TestMeasureInterpreted extends AbstractTestMeasure

@@ -20,7 +20,7 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.test.Verify;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.execution.test.AssertFailTestStatus;
@@ -94,7 +94,7 @@ public class TestTestRunner extends AbstractPureTestWithCoreCompiled
         TestRunner testRunner = new TestRunner("::",  this.runtime, this.functionExecution, callback, false);
         testRunner.run();
 
-        Assert.assertEquals(Sets.immutable.with("a::b::c::test__Boolean_1_", "a::b::d::test__Nil_0_", "a::b::test__Boolean_1_"), callback.getTests().collect(this.getPath));
+        Assert.assertEquals(Sets.immutable.with("a::b::c::test__Boolean_1_", "a::b::d::test__Nil_0_", "a::b::test__Boolean_1_"), callback.getTests().collect(this.getPath).select(c->!c.startsWith("meta")));
 
         MutableList<CallBackGroup> groups = callback.getGroups().sortThisBy(this.getCallBackGroupPath);
 
@@ -185,7 +185,7 @@ public class TestTestRunner extends AbstractPureTestWithCoreCompiled
         TestRunner testRunner = new TestRunner("::",  this.runtime, this.functionExecution, callback, false);
         testRunner.run();
 
-        Assert.assertEquals(Sets.immutable.with("a::b::d::test__Nil_0_", "a::b::test__Boolean_1_"), callback.getTests().collect(this.getPath));
+        Assert.assertEquals(Sets.immutable.with("a::b::d::test__Nil_0_", "a::b::test__Boolean_1_"), callback.getTests().collect(this.getPath).select(c->!c.startsWith("meta")));
 
         MutableList<CallBackGroup> groups = callback.getGroups().sortThisBy(this.getCallBackGroupPath);
 

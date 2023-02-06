@@ -14,13 +14,11 @@
 
 package org.finos.legend.pure.m3.tests;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.PackageCoreInstanceWrapper;
 import org.finos.legend.pure.m3.coreinstance.PackageInstance;
 import org.finos.legend.pure.m4.coreinstance.indexing.IDIndex;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecifications;
-import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

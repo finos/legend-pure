@@ -16,7 +16,7 @@ package org.finos.legend.pure.m3.tests.function.base.runtime;
 
 import org.eclipse.collections.api.map.primitive.ObjectBooleanMap;
 import org.eclipse.collections.impl.factory.primitive.ObjectBooleanMaps;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.serialization.runtime.RuntimeOptions;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;

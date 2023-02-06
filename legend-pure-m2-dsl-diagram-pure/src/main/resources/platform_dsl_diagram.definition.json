@@ -1,0 +1,7 @@
+{
+  "name": "platform_dsl_diagram",
+  "pattern": "(meta::pure::diagram)(::.*)?",
+  "dependencies": [
+    "platform"
+  ]
+}

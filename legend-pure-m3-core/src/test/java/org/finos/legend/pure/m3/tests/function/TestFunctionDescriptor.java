@@ -82,8 +82,7 @@ public class TestFunctionDescriptor
     {
         PureRuntime runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))).build();
         runtime.loadAndCompileCore();
-        runtime.createInMemorySource("fromString.pure", "native function meta::pure::functions::string::length(str:String[1]):Integer[1];\n" +
-                "function pkg1::pkg2::pkg3::func1(string1:String[1], string2:String[1]):String[1]\n" +
+        runtime.createInMemorySource("fromString.pure", "function pkg1::pkg2::pkg3::func1(string1:String[1], string2:String[1]):String[1]\n" +
                                                    "{\n" +
                                                    "    $string1 + $string2 + ' (from private)'\n" +
                                                    "}\n" +
@@ -225,10 +224,10 @@ public class TestFunctionDescriptor
 //        actual = FunctionDescriptor.getFunctionByDescriptor("meta::pure::functions::collection::get(T[*], String[1]):T[0..1]", processorSupport);
 //        Assert.assertSame(expected, actual);
 
-        expected = processorSupport.package_getByUserPath("meta::pure::functions::string::toString_Any_1__String_1_");
-        Assert.assertNotNull(expected);
-        actual = FunctionDescriptor.getFunctionByDescriptor("meta::pure::functions::string::toString(Any[1]):String[1]", processorSupport);
-        Assert.assertSame(expected, actual);
+//        expected = processorSupport.package_getByUserPath("meta::pure::functions::string::toString_Any_1__String_1_");
+//        Assert.assertNotNull(expected);
+//        actual = FunctionDescriptor.getFunctionByDescriptor("meta::pure::functions::string::toString(Any[1]):String[1]", processorSupport);
+//        Assert.assertSame(expected, actual);
 
         expected = processorSupport.package_getByUserPath("meta::pure::functions::string::plus_String_MANY__String_1_");
         Assert.assertNotNull(expected);

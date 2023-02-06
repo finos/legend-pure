@@ -290,7 +290,7 @@ public class ProjectionUtil
             }
             processedMap.put(valueSpecification, copy);
 
-            Unbinder.process(Sets.immutable.with(copy), modelRepository, state.getParserLibrary(), state.getInlineDSLLibrary(), context, processorSupport, new UnbindState(context, state.getURLPatternLibrary(), processorSupport), state.getMessage());
+            Unbinder.process(Sets.immutable.with(copy), modelRepository, state.getParserLibrary(), state.getInlineDSLLibrary(), context, processorSupport, new UnbindState(context, state.getURLPatternLibrary(), state.getInlineDSLLibrary(), processorSupport), state.getMessage());
         }
         return copy;
     }
@@ -365,7 +365,7 @@ public class ProjectionUtil
             }
             processedMap.put(function, copy);
 
-            Unbinder.process(Sets.immutable.with(copy), modelRepository, state.getParserLibrary(), state.getInlineDSLLibrary(), context, processorSupport, new UnbindState(context, state.getURLPatternLibrary(), processorSupport), state.getMessage());
+            Unbinder.process(Sets.immutable.with(copy), modelRepository, state.getParserLibrary(), state.getInlineDSLLibrary(), context, processorSupport, new UnbindState(context, state.getURLPatternLibrary(), state.getInlineDSLLibrary(), processorSupport), state.getMessage());
         }
         return copy;
     }

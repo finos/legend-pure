@@ -17,12 +17,13 @@ package org.finos.legend.pure.runtime.java.compiled.incremental.function;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Lists;
-import org.finos.legend.pure.m3.RuntimeVerifier.FunctionExecutionStateVerifier;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier.FunctionExecutionStateVerifier;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.incremental.function.TestPureRuntimeFunction_Constraint;
 import org.finos.legend.pure.runtime.java.compiled.CompiledClassloaderStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.CompiledMetadataStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -30,7 +31,7 @@ public class TestPureRuntimeFunction_ConstraintCompiled extends TestPureRuntimeF
 {
     @BeforeClass
     public static void setUp() {
-        setUpRuntime(getFunctionExecution(), getExtra());
+        setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
     }
 
     @Override
@@ -49,10 +50,5 @@ public class TestPureRuntimeFunction_ConstraintCompiled extends TestPureRuntimeF
     protected ListIterable<FunctionExecutionStateVerifier> getAdditionalVerifiers()
     {
         return Lists.fixedSize.of(new CompiledMetadataStateVerifier(), new CompiledClassloaderStateVerifier());
-    }
-
-    public static Pair<String, String> getExtra()
-    {
-        return null;
     }
 }

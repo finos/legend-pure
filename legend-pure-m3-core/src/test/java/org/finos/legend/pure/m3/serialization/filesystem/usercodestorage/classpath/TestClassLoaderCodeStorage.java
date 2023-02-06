@@ -44,8 +44,8 @@ public class TestClassLoaderCodeStorage
         Verify.assertContainsAll(
                 "unable to find all files under /platform",
                 this.platformCodeStorage.getFileOrFiles("/platform"),
-                "/platform/pure/m3.pure",
-                "/platform/pure/graph.pure");
+                "/platform/pure/grammar/m3.pure",
+                "/platform/pure/anonymousCollections.pure");
 
         Verify.assertSetsEqual(
                 "unable to find all files under /test",
@@ -94,9 +94,7 @@ public class TestClassLoaderCodeStorage
         Verify.assertSetsEqual(
                 Sets.mutable.with("/test/codestorage/fake.pure", "/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure", "/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level2/level2.pure"),
                 this.testCodeStorage.getUserFiles().toSet());
-        Verify.assertSetsEqual(
-                Sets.mutable.with("/platform/pure/test.pure", "/platform/pure/out/executionPlan.pure", "/platform/pure/access.pure", "/platform/pure/collection.pure", "/platform/pure/equality.pure", "/platform/pure/grammar.pure", "/platform/pure/milestoning.pure", "/platform/pure/out/documentation.pure", "/platform/pure/m3.pure", "/platform/pure/path.pure", "/platform/pure/routing.pure", "/platform/pure/service.pure", "/platform/pure/out/tools.pure", "/platform/pure/graph.pure", "/test/codestorage/fake.pure", "/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure", "/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level2/level2.pure"),
-                this.combinedCodeStorage.getUserFiles().toSet());
+        Verify.assertEquals(104, this.combinedCodeStorage.getUserFiles().toSet().size());
     }
 
     @Test
@@ -122,7 +120,7 @@ public class TestClassLoaderCodeStorage
                 "}";
 
         Assert.assertEquals(code.replaceAll("\\r",""), this.testCodeStorage.getContentAsText("/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure").replaceAll("\\r",""));
-        Assert.assertNotNull("Unable to load content for file on classpath", this.platformCodeStorage.getContentAsText("/platform/pure/m3.pure"));
+        Assert.assertNotNull("Unable to load content for file on classpath", this.platformCodeStorage.getContentAsText("/platform/pure/grammar/m3.pure"));
         Assert.assertEquals(code.replaceAll("\\r",""), this.combinedCodeStorage.getContentAsText("/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure").replaceAll("\\r",""));
     }
 

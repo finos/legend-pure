@@ -43,14 +43,9 @@ import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
 import org.finos.legend.pure.m3.coreinstance.BaseCoreInstance;
 import org.finos.legend.pure.m3.coreinstance.Package;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.io.http.HTTPResponse;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.io.http.URL;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ElementOverride;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.GetterOverride;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
@@ -70,18 +65,9 @@ import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.DateTime;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.Year;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.YearMonth;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.*;
 import org.finos.legend.pure.m4.exception.PureException;
-import org.finos.legend.pure.runtime.java.compiled.compiler.MemoryClassLoader;
-import org.finos.legend.pure.runtime.java.compiled.compiler.MemoryFileManager;
-import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompileException;
-import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompiler;
-import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
+import org.finos.legend.pure.runtime.java.compiled.compiler.*;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledProcessorSupport;
 import org.finos.legend.pure.runtime.java.compiled.execution.ConsoleCompiled;
@@ -91,12 +77,9 @@ import org.finos.legend.pure.runtime.java.compiled.generation.JavaSourceCodeGene
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.FunctionProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.GetterOverrideExecutor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.JavaCompiledCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ReflectiveCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ValCoreInstance;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureFunction2;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureFunction2Wrapper;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureEqualsHashingStrategy;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;
@@ -104,19 +87,16 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.Fu
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.ClassProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification.ValueSpecificationProcessor;
-import org.finos.legend.pure.runtime.java.compiled.metadata.ClassCache;
 import org.finos.legend.pure.runtime.java.compiled.metadata.JavaMethodWithParamsSharedPureFunction;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataAccessor;
 import org.finos.legend.pure.runtime.java.shared.cipher.AESCipherUtil;
-import org.finos.legend.pure.runtime.java.shared.http.HttpMethod;
-import org.finos.legend.pure.runtime.java.shared.http.URLScheme;
-import org.finos.legend.pure.runtime.java.shared.http.HttpRawHelper;
 import org.finos.legend.pure.runtime.java.shared.identity.IdentityManager;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import java.lang.reflect.Constructor;
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -125,23 +105,7 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.TimeZone;
-import java.util.UUID;
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
+import java.util.*;
 
 public class CompiledSupport
 {
@@ -3158,59 +3122,6 @@ public class CompiledSupport
         return FunctionDescriptor.isValidFunctionDescriptor(possiblyFunctionDescriptor);
     }
 
-    public static Object newObject(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class<?> aClass, RichIterable<? extends KeyValue> keyExpressions, ElementOverride override, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function getterToOne, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function getterToMany, Object payload, PureFunction2 getterToOneExec, PureFunction2 getterToManyExec, ExecutionSupport es)
-    {
-        ClassCache classCache = ((CompiledExecutionSupport)es).getClassCache();
-        Constructor<?> constructor = classCache.getIfAbsentPutConstructorForType(aClass);
-        Any result;
-        try
-        {
-            result = (Any) constructor.newInstance("");
-        }
-        catch (InvocationTargetException | InstantiationException | IllegalAccessException e)
-        {
-            Throwable cause = (e instanceof InvocationTargetException) ? e.getCause() : e;
-            StringBuilder builder = new StringBuilder("Error instantiating ");
-            PackageableElement.writeUserPathForPackageableElement(builder, aClass);
-            String eMessage = cause.getMessage();
-            if (eMessage != null)
-            {
-                builder.append(": ").append(eMessage);
-            }
-            throw new RuntimeException(builder.toString(), cause);
-        }
-        keyExpressions.forEach(keyValue ->
-        {
-            Method m = classCache.getIfAbsentPutPropertySetterMethodForType(aClass, keyValue._key());
-            try
-            {
-                m.invoke(result, keyValue._value());
-            }
-            catch (InvocationTargetException | IllegalAccessException e)
-            {
-                Throwable cause = (e instanceof InvocationTargetException) ? e.getCause() : e;
-                StringBuilder builder = new StringBuilder("Error setting property '").append(keyValue._key()).append("' for instance of ");
-                PackageableElement.writeUserPathForPackageableElement(builder, aClass);
-                String eMessage = cause.getMessage();
-                if (eMessage != null)
-                {
-                    builder.append(": ").append(eMessage);
-                }
-                throw new RuntimeException(builder.toString(), cause);
-            }
-        });
-        PureFunction2Wrapper getterToOneExecFunc = getterToOneExec == null ? null : new PureFunction2Wrapper(getterToOneExec, es);
-        PureFunction2Wrapper getterToManyExecFunc = getterToManyExec == null ? null : new PureFunction2Wrapper(getterToManyExec, es);
-        ElementOverride elementOverride = override;
-        if (override instanceof GetterOverride)
-        {
-            elementOverride = ((GetterOverride)elementOverride)._getterOverrideToOne(getterToOne)._getterOverrideToMany(getterToMany)._hiddenPayload(payload);
-            ((GetterOverrideExecutor)elementOverride).__getterOverrideToOneExec(getterToOneExecFunc);
-            ((GetterOverrideExecutor)elementOverride).__getterOverrideToManyExec(getterToManyExecFunc);
-        }
-        result._elementOverride(elementOverride);
-        return result;
-    }
 
     public static String encrypt(String value, String key)
     {
@@ -3251,13 +3162,4 @@ public class CompiledSupport
         }
     }
 
-    public static HTTPResponse executeHttpRaw(URL url, Object method, String mimeType, String body, ExecutionSupport executionSupport)
-    {
-        URLScheme scheme = URLScheme.http;
-        if (url._scheme() != null)
-        {
-            scheme = URLScheme.valueOf(url._scheme()._name());
-        }
-        return (HTTPResponse)HttpRawHelper.toHttpResponseInstance(HttpRawHelper.executeHttpService(scheme, url._host(), (int)url._port(), url._path(), HttpMethod.valueOf(((Enum)method)._name()), mimeType, body), ((CompiledExecutionSupport)executionSupport).getProcessorSupport());
-    }
 }

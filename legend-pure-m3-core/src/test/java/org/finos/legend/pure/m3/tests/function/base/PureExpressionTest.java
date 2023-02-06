@@ -17,7 +17,7 @@ package org.finos.legend.pure.m3.tests.function.base;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.impl.utility.ArrayIterate;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;

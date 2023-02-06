@@ -1,0 +1,87 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::functions::lang::tests::model::*;
+
+native function meta::pure::functions::lang::evaluate(func:Function<Any>[1], params:List<Any>[*]):Any[*];
+
+
+function <<test.Test>> meta::pure::functions::lang::tests::evaluate::testEvaluateOne():Boolean[1]
+{
+    let p = ^LA_Person(firstName='name', lastName='name');
+    assertEquals('name', LA_Person.properties->filter(p|$p.name == 'lastName')->toOne()->eval($p));
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::evaluate::testEvaluateInheritance():Boolean[1]
+{
+    let f = {p:LA_GeographicEntity[1] | $p.type};
+    assertEquals(LA_GeographicEntityType.CITY, $f->eval(^LA_Address(type=LA_GeographicEntityType.CITY, name='Jersey City')));
+}
+
+function <<test.Test>>   meta::pure::functions::lang::tests::evaluate::testEvaluateAnyWithMultiplicities():Boolean[1]
+{
+    let f = {s:String[1], p:String[*] | $s + ' // ' + $p->joinStrings(',')};
+    assertEquals(['ok // ok1'], $f->evaluate([^List<String>(values='ok'), ^List<String>(values='ok1')]));
+    assertEquals(['ok // ok1,ok2'], $f->evaluate([^List<String>(values='ok'), ^List<String>(values=['ok1', 'ok2'])]));
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::eval::testEvalOne():Boolean[1]
+{
+    let address = ^LA_Address(name='Hoboken, NJ', type=LA_GeographicEntityType.CITY);
+    assertEquals('Hoboken, NJ', {a | $a.name}->eval($address));
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::evaluate::testEvaluateWithNoParams():Boolean[1]
+{
+   let f = { | 'Something' + ' else'};
+   assertEquals('Something else', $f->evaluate([]));
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::evaluate::testEvaluateQualifier():Boolean[1]
+{
+    let p = ^LA_Person(firstName='Joe', lastName='Bloggs');
+    assertEquals('Joe Bloggs', LA_Person.qualifiedProperties->filter(p | $p.name == 'name')->toOne()->evaluate(^List<Any>(values=$p)));
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::evaluate::testEvaluateQualifierWithParam():Boolean[1]
+{
+    let p = ^LA_Person(firstName='Joe', lastName='Bloggs');
+    assertEquals('Mr Joe Bloggs', LA_Person.qualifiedProperties->filter(p | $p.name == 'nameWithTitle')->toOne()->evaluate([^List<Any>(values=$p), ^List<Any>(values='Mr')]));
+}
+
+function <<test.Test>> meta::pure::functions::math::tests::evaluate::minus::testReflectiveExecution():Boolean[1]
+{
+
+   assertEq(1, meta::pure::functions::math::minus_Integer_MANY__Integer_1_->eval([3,2]));
+   assertEq(2, meta::pure::functions::math::minus_Integer_MANY__Integer_1_->evaluate(^List<Integer>(values=[5,3]))->cast(@Integer)->toOne());
+
+   assertEq(1.0, meta::pure::functions::math::minus_Float_MANY__Float_1_->eval([3.0,2.0]));
+   assertEq(2.0, meta::pure::functions::math::minus_Float_MANY__Float_1_->evaluate(^List<Float>(values=[5.0,3.0]))->cast(@Float)->toOne());
+
+   assertEq(100, meta::pure::functions::math::minus_Number_MANY__Number_1_->eval([300,200]));
+   assertEq(22, meta::pure::functions::math::minus_Number_MANY__Number_1_->evaluate(^List<Number>(values=[55,33]))->cast(@Number)->toOne());
+}
+
+function <<test.Test>> meta::pure::functions::math::tests::evaluate::divide::testNumberDivide():Boolean[1]
+{
+    let f = {a:Number[1], b:Number[1] | $a / $b};
+    assertEq(1.75, $f->eval(3.5, 2));
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::evaluate::plus::testPlusInLambda():Boolean[1]
+{
+    let hoboken = ^LA_Location(place='Hoboken, NJ', type=LA_GeographicEntityType.CITY);
+    let jc = ^LA_Location(place='Jersey City, NJ', type=LA_GeographicEntityType.CITY);
+    assertEq('Hoboken, NJ; Jersey City, NJ', {x, y | $x.place + '; ' + $y.place}->eval($hoboken, $jc));
+}

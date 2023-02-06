@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.m3.tests.incremental;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;

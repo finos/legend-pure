@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.m3.tests.validation;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.compiler.validation.ValidationType;
 import org.finos.legend.pure.m3.serialization.Loader;
 import org.finos.legend.pure.m3.statelistener.VoidM3M4StateListener;

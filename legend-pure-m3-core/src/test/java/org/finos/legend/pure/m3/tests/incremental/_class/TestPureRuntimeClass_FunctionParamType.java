@@ -16,10 +16,10 @@ package org.finos.legend.pure.m3.tests.incremental._class;
 
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.impl.factory.Maps;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
-import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -49,7 +49,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{name:String[1];}")
                         .createInMemorySource("userId.pure", "function f(c:A[0]):A[0]{$c}" +
-                                "function test():Boolean[1]{assert(f([])->isEmpty(),|'')}")
+                                "function test():Boolean[1]{assert(f([])->isEmpty(),|'')}" )
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
@@ -64,7 +64,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
                         .createInMemorySource("userId.pure", "function f(c:A[0]):A[0]{$c}" +
-                                "function test():Boolean[1]{assert(f([])->isEmpty(),|'')}")
+                                "function test():Boolean[1]{assert(f([])->isEmpty(),|'')}" )
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
@@ -95,7 +95,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
     public void testPureRuntimeClassAsLambdaParameterError() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
-                        .createInMemorySource("userId.pure", "function test():Nil[0]{f({a:A[1]|[]->cast(@A)}->eval(^A()));}")
+                        .createInMemorySource("userId.pure", "function test():Nil[0]{f({a:A[1]|[]->cast(@A)}->eval(^A()));}" )
                         .createInMemorySource("other.pure", "function f(a:A[*]):Nil[0]{[];}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
@@ -114,7 +114,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
     public void testPureRuntimeClassAsLambdaParameterAndReturn() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
-                        .createInMemorySource("userId.pure", "function test():Nil[0]{f({a:A[1]|[]->cast(@A)}->eval(^A()));}")
+                        .createInMemorySource("userId.pure", "function test():Nil[0]{f({a:A[1]|[]->cast(@A)}->eval(^A()));}" )
                         .createInMemorySource("other.pure", "function f(a:A[*]):Nil[0]{[];}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
@@ -147,7 +147,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
     public void testPureRuntimeClassAsLambdaParameterWithFuncInside() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
-                        .createInMemorySource("userId.pure", "function test():Nil[0]{^A()->match(a:A[1]|f($a));}")
+                        .createInMemorySource("userId.pure", "function test():Nil[0]{^A()->match(a:A[1]|f($a));}" )
                         .createInMemorySource("other.pure", "function f(a:A[1]):Nil[0]{[];}")
                         .compile(),
                 new RuntimeTestScriptBuilder()

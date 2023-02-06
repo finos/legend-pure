@@ -14,10 +14,10 @@
 
 package org.finos.legend.pure.m3.bootstrap.generator;
 
+import org.eclipse.collections.impl.factory.Sets;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.serialization.grammar.M4Parser;
 import org.finos.legend.pure.m4.statelistener.VoidM4StateListener;
-import org.eclipse.collections.impl.factory.Lists;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -56,12 +56,12 @@ public class CoreInstanceGenerator
         }
         catch (IOException e)
         {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
         ModelRepository repository = new ModelRepository();
         new M4Parser().parse(m3Source, this.pathToM3, repository, new VoidM4StateListener());
         repository.validate(new VoidM4StateListener());
         M3ToJavaGenerator m3ToJavaGenerator = new M3ToJavaGenerator(this.outputDir, "M3", true);
-        m3ToJavaGenerator.generate(repository, Lists.fixedSize.of(this.pathToM3));
+        m3ToJavaGenerator.generate(repository, Sets.fixedSize.of(this.pathToM3), null);
     }
 }

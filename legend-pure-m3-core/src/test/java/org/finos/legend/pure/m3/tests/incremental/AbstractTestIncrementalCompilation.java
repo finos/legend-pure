@@ -16,9 +16,9 @@ package org.finos.legend.pure.m3.tests.incremental;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
-import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
-import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.TestCodeRepositoryWithDependencies;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
@@ -32,12 +32,17 @@ public abstract class AbstractTestIncrementalCompilation extends AbstractPureTes
 {
     protected static MutableCodeStorage getCodeStorage()
     {
-        CodeRepository platform = CodeRepository.newPlatformCodeRepository();
-        CodeRepository core = new TestCodeRepositoryWithDependencies("core", null, platform);
+        MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
+        CodeRepository platform = repositories.detect(x -> x.getName().equals("platform"));
+        CodeRepository core = new TestCodeRepositoryWithDependencies("x_core", null, platform);
         CodeRepository system = new TestCodeRepositoryWithDependencies("system", null, platform, core);
         CodeRepository model = new TestCodeRepositoryWithDependencies("model", null, platform, core, system);
         CodeRepository other = new TestCodeRepositoryWithDependencies("datamart_other", null, platform, core, system, model);
-        return new PureCodeStorage(null, new ClassLoaderCodeStorage(platform, core, system, model, other));
+        repositories.add(core);
+        repositories.add(system);
+        repositories.add(model);
+        repositories.add(other);
+        return new PureCodeStorage(null, new ClassLoaderCodeStorage(repositories));
     }
 
     @After
@@ -429,8 +434,8 @@ public abstract class AbstractTestIncrementalCompilation extends AbstractPureTes
                                 "}")
                         .createInMemorySource("sourceId2.pure", "function myFunc2():Any[*]\n" +
                                 "{\n" +
-                                "   print('inside myFunc2', 1);\n" +
-                                "   print('Parse error test', 1);\n" +
+                                "   'inside myFunc2';\n" +
+                                "   'Parse error test';\n" +
                                 "}")
                         .createInMemorySource("sourceId3.pure", "function start():Any[*]\n" +
                                 "{\n" +
@@ -439,14 +444,14 @@ public abstract class AbstractTestIncrementalCompilation extends AbstractPureTes
                         .executeFunction("start():Any[*]"),
                 new RuntimeTestScriptBuilder().updateSource("sourceId2.pure", "function myFunc2():Any[*]\n" +
                                 "{\n" +
-                                "   print('inside myFunc2', 1)\n" +
-                                "   print('Parse error test', 1);\n" +
+                                "   'inside myFunc2'\n" +
+                                "   'Parse error test';\n" +
                                 "}")
-                        .compileWithExpectedParserFailureAndAssertions("expected: '}' found: 'print'", "sourceId2.pure", 4, 4, Lists.mutable.with("myFunc1__Any_MANY_", "start__Any_MANY_"), Lists.mutable.empty(), Lists.mutable.with("myFunc2__Any_MANY_"))
+                        .compileWithExpectedParserFailureAndAssertions("expected: '}' found: ''Parse error test''", "sourceId2.pure", 4, 4, Lists.mutable.with("myFunc1__Any_MANY_", "start__Any_MANY_"), Lists.mutable.empty(), Lists.mutable.with("myFunc2__Any_MANY_"))
                         .updateSource("sourceId2.pure", "function myFunc2():Any[*]\n" +
                                 "{\n" +
-                                "   print('inside myFunc2', 1);\n" +
-                                "   print('Parse error test', 1);\n" +
+                                "   'inside myFunc2';\n" +
+                                "   'Parse error test';\n" +
                                 "}")
                         .executeFunction("start():Any[*]"),
                 runtime, functionExecution, this.getAdditionalVerifiers());

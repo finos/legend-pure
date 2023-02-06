@@ -23,7 +23,7 @@ import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.test.Verify;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -39,12 +39,14 @@ import org.junit.Test;
 public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("file.pure");
         runtime.delete("projection.pure");
         runtime.delete("model.pure");
@@ -737,31 +739,31 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testProjectionWithQualifiedPropertyInclude()
     {
-         this.runtime.createInMemorySource("projection.pure" , "import meta::pure::tests::model::simple::*;" +
-                 "import meta::pure::tests::model::simple::projection::*;\n" +
-                 "native function average(s:Number[*]):Float[1];\n" +
-                 "native function sum(s:Integer[*]):Integer[1];\n" +
-                 "Class meta::pure::tests::model::simple::projection::FirmProjection projects\n" +
-                 "meta::pure::tests::model::simple::Firm\n" +
-                 "{\n" +
-                 "   +[legalName,sumEmployeesAge]\n" +
-                 "}\n" +
-                 "\n" +
-                 "Class meta::pure::tests::model::simple::projection::PersonProjection projects\n" +
-                 "meta::pure::tests::model::simple::Person\n" +
-                 "{\n" +
-                 "   +[firstName, lastName, age, name()]\n" +
-                 "   >employerName [$this.firm.legalName]\n" +
-                 "}\n" +
-                 "\n" +
-                 "" +
-                 "Class meta::pure::tests::model::simple::projection::AddressProjection projects\n" +
-                 "Address\n" +
-                 "{\n" +
-                 "   *\n" +
-                 "}\n" +
-                 "\n" +
-                 "Association meta::pure::tests::model::simple::projection::EmploymentProjection projects Employment<FirmProjection, PersonProjection> \n");
+        this.runtime.createInMemorySource("projection.pure", "import meta::pure::tests::model::simple::*;" +
+                "import meta::pure::tests::model::simple::projection::*;\n" +
+                "native function average(s:Number[*]):Float[1];\n" +
+                "native function sum(s:Integer[*]):Integer[1];\n" +
+                "Class meta::pure::tests::model::simple::projection::FirmProjection projects\n" +
+                "meta::pure::tests::model::simple::Firm\n" +
+                "{\n" +
+                "   +[legalName,sumEmployeesAge]\n" +
+                "}\n" +
+                "\n" +
+                "Class meta::pure::tests::model::simple::projection::PersonProjection projects\n" +
+                "meta::pure::tests::model::simple::Person\n" +
+                "{\n" +
+                "   +[firstName, lastName, age, name()]\n" +
+                "   >employerName [$this.firm.legalName]\n" +
+                "}\n" +
+                "\n" +
+                "" +
+                "Class meta::pure::tests::model::simple::projection::AddressProjection projects\n" +
+                "Address\n" +
+                "{\n" +
+                "   *\n" +
+                "}\n" +
+                "\n" +
+                "Association meta::pure::tests::model::simple::projection::EmploymentProjection projects Employment<FirmProjection, PersonProjection> \n");
         this.runtime.createInMemorySource("model.pure", testModel);
         this.runtime.compile();
         CoreInstance projection = this.runtime.getCoreInstance("meta::pure::tests::model::simple::projection::PersonProjection");

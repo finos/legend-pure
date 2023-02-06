@@ -1,0 +1,313 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::relational::metamodel::execute::*;
+import meta::relational::runtime::*;
+import meta::relational::metamodel::relation::*;
+import meta::relational::metamodel::*;
+import meta::relational::metamodel::datatype::*;
+import meta::relational::mapping::*;
+import meta::relational::metamodel::*;
+import meta::relational::metamodel::join::*;
+import meta::pure::mapping::*;
+
+native function meta::relational::metamodel::execute::executeInDb(sql:String[1], databaseConnection:DatabaseConnection[1], timeOutInSeconds:Integer[1], fetchSize:Integer[1]):ResultSet[1];
+
+native function meta::relational::metamodel::execute::loadCsvToDbTable(filePath:String[1], table:Table[1], databaseConnection:DatabaseConnection[1], numberOfRows:Integer[0..1]):Nil[0];
+
+native function meta::relational::metamodel::execute::loadValuesToDbTable(tableData:List<List<Any>>[*], table:Table[1], databaseConnection:DatabaseConnection[1]):Nil[0];
+
+native function meta::relational::metamodel::execute::loadValuesToDbTable(tableData:List<List<Any>>[1], table:Table[1], databaseConnection:DatabaseConnection[1]):Nil[0];
+
+native function meta::relational::metamodel::execute::fetchDbTablesMetaData(databaseConnection:DatabaseConnection[1], schemaPattern:String[0..1], tablePattern:String[0..1]):ResultSet[1];
+
+native function meta::relational::metamodel::execute::fetchDbColumnsMetaData(databaseConnection:DatabaseConnection[1], schemaPattern:String[0..1], tablePattern:String[0..1], columnPattern:String[0..1]):ResultSet[1];
+
+native function meta::relational::metamodel::execute::fetchDbSchemasMetaData(databaseConnection:DatabaseConnection[1], schemaPattern:String[0..1]):ResultSet[1];
+
+native function meta::relational::metamodel::execute::fetchDbPrimaryKeysMetaData(databaseConnection:DatabaseConnection[1], schemaPattern:String[0..1], tableName:String[1]):ResultSet[1];
+
+native function meta::relational::metamodel::execute::fetchDbImportedKeysMetaData(databaseConnection:DatabaseConnection[1], schemaPattern:String[0..1], tableName:String[1]):ResultSet[1];
+
+native function meta::relational::metamodel::execute::createTempTable(tableName:String[1], cols:Column[*], sql:meta::pure::metamodel::function::Function<{String[1], Column[*], DatabaseType[1]->String[1]}>[1], databaseConnection:DatabaseConnection[1]):Nil[0];
+
+native function meta::relational::metamodel::execute::createTempTable(tableName:String[1], cols:Column[*], sql:meta::pure::metamodel::function::Function<{String[1], Column[*], DatabaseType[1]->String[1]}>[1], relyOnFinallyForCleanup:Boolean[1], databaseConnection:DatabaseConnection[1]):Nil[0];
+
+native function meta::relational::metamodel::execute::dropTempTable(tableName:String[1], databaseConnection:DatabaseConnection[1]):Nil[0];
+
+Class meta::relational::metamodel::execute::ResultSet
+{
+    executionTimeInNanoSecond: Integer[1];
+    connectionAcquisitionTimeInNanoSecond: Integer[1];
+    executionPlanInformation : String[0..1];
+    columnNames : String[*];
+    rows : Row[*];
+
+    dataSource : meta::relational::runtime::DataSource[0..1];
+}
+
+Class meta::relational::metamodel::execute::Row
+{
+    values : Any[*];
+    parent : ResultSet[1];
+    value(name:String[1]){$this.values->at($this.parent.columnNames->indexOf($name));}:Any[1];
+}
+
+function meta::relational::metamodel::datatype::dataTypeToSqlText(type: meta::relational::metamodel::datatype::DataType[1]):String[1]
+{
+    $type->match([
+        i : meta::relational::metamodel::datatype::Integer[1] | 'INT',
+        f : meta::relational::metamodel::datatype::Float[1] | 'FLOAT',
+        v : meta::relational::metamodel::datatype::Varchar[1] | format('VARCHAR(%d)', $v.size),
+        c : meta::relational::metamodel::datatype::Char[1] | format('CHAR(%d)', $c.size),
+        d : meta::relational::metamodel::datatype::Decimal[1] | format('DECIMAL(%d, %d)', [$d.precision, $d.scale]),
+        t : meta::relational::metamodel::datatype::Timestamp[1] | 'TIMESTAMP',
+        d : meta::relational::metamodel::datatype::Date[1] | 'DATE',
+        b : meta::relational::metamodel::datatype::BigInt[1] | 'BIGINT',
+        s : meta::relational::metamodel::datatype::SmallInt[1] | 'SMALLINT',
+        t : meta::relational::metamodel::datatype::TinyInt[1] | 'TINYINT',
+        d : meta::relational::metamodel::datatype::Double[1] | 'DOUBLE',
+        n : meta::relational::metamodel::datatype::Numeric[1] | format('NUMERIC(%d, %d)', [$n.precision, $n.scale]),
+        d : meta::relational::metamodel::datatype::Distinct[1] | 'DISTINCT',
+        o : meta::relational::metamodel::datatype::Other[1] | 'OTHER',
+        b : meta::relational::metamodel::datatype::Bit[1] | 'BIT',
+        b : meta::relational::metamodel::datatype::Binary[1] | format('BINARY(%d)', $b.size),
+        r : meta::relational::metamodel::datatype::Real[1] | 'REAL',
+        a : meta::relational::metamodel::datatype::Array[1] | 'ARRAY',
+        v : meta::relational::metamodel::datatype::Varbinary[1] | format('VARBINARY(%d)', $v.size),
+        s : meta::relational::metamodel::datatype::SemiStructured[1] | 'SEMISTRUCTURED',
+        d : meta::relational::metamodel::datatype::DbSpecificDataType[1] | $d.dbSpecificSql
+    ]);
+}
+
+function meta::relational::metamodel::datatype::dataTypeToCompatiblePureType(type: meta::relational::metamodel::datatype::DataType[1]):Type[1]
+{
+    $type->match([
+        i : meta::relational::metamodel::datatype::Integer[1] | Integer,
+        f : meta::relational::metamodel::datatype::Float[1] | Float,
+        v : meta::relational::metamodel::datatype::Varchar[1] | String,
+        c : meta::relational::metamodel::datatype::Char[1] | String,
+        d : meta::relational::metamodel::datatype::Decimal[1] | Float,
+        t : meta::relational::metamodel::datatype::Timestamp[1] | DateTime,
+        d : meta::relational::metamodel::datatype::Date[1] | StrictDate,
+        b : meta::relational::metamodel::datatype::BigInt[1] | Integer,
+        s : meta::relational::metamodel::datatype::SmallInt[1] | Integer,
+        s : meta::relational::metamodel::datatype::TinyInt[1] | Integer,
+        d : meta::relational::metamodel::datatype::Double[1] | Float,
+        n : meta::relational::metamodel::datatype::Numeric[1] | Float,
+        d : meta::relational::metamodel::datatype::Distinct[1] | String,
+        o : meta::relational::metamodel::datatype::Other[1] | String,
+        b : meta::relational::metamodel::datatype::Bit[1] | Boolean,
+        r : meta::relational::metamodel::datatype::Real[1] | Float,
+        s : meta::relational::metamodel::datatype::SemiStructured[1] | String,
+        d : meta::relational::metamodel::datatype::DbSpecificDataType[1] | $d.coreDataType->dataTypeToCompatiblePureType()
+    ]);
+}
+
+function meta::relational::metamodel::datatype::pureTypeForDbColumn(column : meta::relational::metamodel::Column[1]):Type[1]
+{
+    $column.type->dataTypeToCompatiblePureType();
+}
+
+Class meta::relational::mapping::RelationalActivity extends meta::pure::mapping::Activity
+{
+   sql : String[1];
+   executionTimeInNanoSecond : Integer[0..1];
+   sqlGenerationTimeInNanoSecond : Integer[0..1];
+   connectionAcquisitionTimeInNanoSecond : Integer[0..1];
+   executionPlanInformation : String[0..1];
+   dataSource : meta::relational::runtime::DataSource[0..1];
+}
+
+
+
+
+
+function meta::relational::mapping::resolveFilter(_this:RootRelationalInstanceSetImplementation[1]):FilterMapping[0..1]
+{
+    if ($_this.filter->isEmpty(),
+        | let superMapping = $_this->superMapping()->cast(@RootRelationalInstanceSetImplementation);
+          if ($superMapping->isEmpty(),
+              | [],
+              | $superMapping->map(x|$x->resolveFilter())
+          );,
+        | $_this.filter
+    );
+}
+
+function meta::relational::mapping::resolveGroupBy(_this:RootRelationalInstanceSetImplementation[1]):GroupByMapping[0..1]
+{
+    if ($_this.groupBy->isEmpty(),
+        | let superMapping = $_this->superMapping()->cast(@RootRelationalInstanceSetImplementation);
+          if ($superMapping->isEmpty(),
+              | [],
+              | $superMapping->map(x|$x->resolveGroupBy())
+          );,
+        | $_this.groupBy
+    );
+}
+
+function meta::relational::mapping::resolveDistinct(_this:RootRelationalInstanceSetImplementation[1]):Boolean[0..1]
+{
+    if ($_this.distinct == true,
+        | true,
+        | let superMapping = $_this->superMapping()->cast(@RootRelationalInstanceSetImplementation);
+          if ($superMapping->isEmpty(),
+              | false,
+              | $superMapping->map(x|$x->resolveDistinct())
+          );
+    );
+}
+
+function meta::relational::mapping::resolveUserDefinedPrimaryKey(_this:RootRelationalInstanceSetImplementation[1]):Boolean[1]
+{
+    if ($_this.userDefinedPrimaryKey == true,
+        | true,
+        | let superMapping = $_this->superMapping()->cast(@RootRelationalInstanceSetImplementation);
+          if ($superMapping->isEmpty(),
+              | false,
+              | $superMapping->toOne()->resolveUserDefinedPrimaryKey()
+          );
+    );
+}
+
+function meta::relational::mapping::resolvePrimaryKey(_this:RootRelationalInstanceSetImplementation[1]):RelationalOperationElement[*]
+{
+    let superMapping = $_this->superMapping()->cast(@RootRelationalInstanceSetImplementation);
+    if ($superMapping->isEmpty(),
+        | $_this.primaryKey,
+        | let _thisPrimaryKey = $_this.primaryKey;
+          let _thisHasGroupBy = !$_this.groupBy->isEmpty();
+          let _thisHasDistinct = if ($_this.distinct == true,| true,| false);
+          let _thisHasUserDefinedPrimaryKey = $_this.userDefinedPrimaryKey;
+
+          let superPrimaryKey = $superMapping->map(x|$x->resolvePrimaryKey());
+          let superHasGroupBy = !$superMapping->map(x|$x->resolveGroupBy())->isEmpty();
+          let superHasDistinct = if ($superMapping->map(x|$x->resolveDistinct()) == true,| true,| false);
+          let superHasUserDefinedPrimaryKey = $superMapping->toOne()->resolveUserDefinedPrimaryKey();
+
+          let primaryKeyLogicalOrder = [pair($_thisHasGroupBy, list($_this.primaryKey)),
+                                        pair($superHasGroupBy, list($superPrimaryKey)),
+                                        pair($_thisHasDistinct, list($_this.primaryKey)),
+                                        pair($superHasDistinct, list($superPrimaryKey)),
+                                        pair($_thisHasUserDefinedPrimaryKey, list($_this.primaryKey)),
+                                        pair($superHasUserDefinedPrimaryKey, list($superPrimaryKey)),
+                                        pair(true, list($_this.primaryKey))];
+
+          $primaryKeyLogicalOrder->filter(x|$x.first==true)->first().second.values;
+    );
+}
+
+function meta::relational::mapping::transform(_this:meta::relational::mapping::RelationalPropertyMapping[1], sourceValue: Any[1]): Any[1]
+{
+    if($_this.transformer->isEmpty(),
+        | $sourceValue ,
+        | $_this.transformer->toOne()->cast(@EnumerationMapping<Any> )->toDomainValue($sourceValue)
+    );
+}
+
+
+function meta::relational::metamodel::schema(_this:Database[1], name:String[1]):Schema[0..1]
+{
+    let schemas = $_this.includes->map(d|$d->cast(@Database)->schema($name))->concatenate($_this.schemas->filter(s|$s.name == $name));
+    if ($schemas->size() > 1,
+            |let schema = $schemas->at(0);
+             ^$schema(tables = $schemas.tables);,
+            |$schemas->first()
+       );
+}
+
+function meta::relational::metamodel::join(_this:Database[1], join:String[1]):Join[0..1]
+{
+    $_this.includes->map(d|$d->cast(@Database)->join($join))
+                  ->concatenate($_this.joins->filter(j|$j.name == $join))->first();
+}
+
+function meta::relational::metamodel::filter(_this:Database[1], filter:String[1]):Filter[0..1]
+{
+    $_this.includes->map(d|$d->cast(@Database)->filter($filter))
+                  ->concatenate($_this.filters->filter(j|$j.name == $filter))->first();
+}
+
+function meta::relational::metamodel::table(_this:Schema[1], name:String[1]):Table[0..1]
+{
+    $_this.tables->filter(t|$t.name == $name)->first();
+}
+
+function meta::relational::metamodel::view(_this:Schema[1], name:String[1]):View[0..1]
+{
+    $_this.views->filter(t|$t.name == $name)->first();
+}
+
+
+
+function meta::relational::metamodel::column(_this:Table[1], columnName:String[1]):Column[0..1]
+{
+    $_this.columns->cast(@Column)->filter(c | $c.name == $columnName )->first();
+}
+
+function meta::relational::metamodel::isTemporaryTable(_this:Table[1]):Boolean[1]
+{
+    !$_this.temporaryTable->isEmpty() && $_this.temporaryTable->toOne()
+}
+
+
+function meta::relational::metamodel::mainRelation(_this:RelationalMappingSpecification[1]):Relation[1]
+{
+    $_this.mainTableAlias.relation
+}
+
+function meta::relational::metamodel::mainTable(_this:RelationalMappingSpecification[1]):Table[1]
+{
+    $_this.mainTableAlias.relationalElement->match(
+        [
+            t:Table[1]|$t,
+            v:View[1]|$v->mainTable()
+        ]
+    )
+}
+
+
+function meta::relational::metamodel::children(_this:RelationalTreeNode[1]):JoinTreeNode[*]
+{
+    $_this.childrenData->cast(@JoinTreeNode)
+}
+
+function meta::relational::metamodel::childByJoinName(_this:RelationalTreeNode[1], s:String[1]):JoinTreeNode[0..1]
+{
+    $_this->children()->filter(c| $c.join.name == $s)->first()
+}
+
+
+function meta::relational::metamodel::otherTableFromAlias(_this:Join[1], tableAlias:TableAlias[1]):TableAlias[0..1]
+{
+    let aliasesByTableAliasName  = $_this.aliases->filter(t | ($t.first.name == $tableAlias.name));
+    let aliases = if($aliasesByTableAliasName->size() > 1,|filterBySchemaName($aliasesByTableAliasName, $tableAlias.relationalElement->cast(@NamedRelation));, |$aliasesByTableAliasName);
+    if ($aliases->isEmpty(), | [], | $aliases->at(0).second);
+}
+
+function meta::relational::metamodel::otherTable(_this:Join[1], namedRelation:NamedRelation[1]):TableAlias[0..1]
+{
+    let aliasesByTableName = $_this.aliases->filter(t | $t.first.relation->cast(@NamedRelation).name == $namedRelation.name);
+    let aliases = if($aliasesByTableName->size() > 1,|filterBySchemaName($aliasesByTableName, $namedRelation);, |$aliasesByTableName);
+    if ($aliases->isEmpty(), | [], | $aliases->at(0).second);
+}
+
+function meta::relational::metamodel::filterBySchemaName(aliases:Pair<TableAlias, TableAlias>[*], namedRelation:NamedRelation[1]):Pair<TableAlias, TableAlias>[*]
+{
+    $namedRelation->match([
+                        t:Table[1]|$aliases->filter(p|$p.first.relation()->instanceOf(Table) && $t->cast(@Table).schema.name == $p.first.relation()->cast(@Table).schema.name),
+                        v:View[1]|$aliases->filter(p|$p.first.relation()->instanceOf(View) && $v->cast(@View).schema.name == $p.first.relation()->cast(@View).schema.name)
+    ]);
+}

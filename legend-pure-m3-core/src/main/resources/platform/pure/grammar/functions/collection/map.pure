@@ -1,0 +1,104 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::functions::collection::tests::map::model::*;
+import meta::pure::functions::collection::tests::map::*;
+
+
+// For automap
+native function meta::pure::functions::collection::map<T,V|m>(value:T[m], func:Function<{T[1]->V[1]}>[1]):V[m];
+native function meta::pure::functions::collection::map<T,V>(value:T[*], func:Function<{T[1]->V[*]}>[1]):V[*];
+native function meta::pure::functions::collection::map<T,V>(value:T[0..1], func:Function<{T[1]->V[0..1]}>[1]):V[0..1];
+//--------------------------------------
+
+
+function <<test.Test>> meta::pure::functions::collection::tests::map::testMapInstance():Boolean[1]
+{
+    let people = [^M_Person(firstName='Fabrice', lastName='Smith'), ^M_Person(firstName='Pierre', lastName='Doe'), ^M_Person(firstName='Justin', lastName='Branche')];
+    assertEquals(['Smith', 'Doe', 'Branche'], $people->map(p | $p.lastName));
+}
+
+function <<test.Test>> meta::pure::functions::collection::tests::map::testMapRelationshipFromOneToOne():Boolean[1]
+{
+    let address = ^M_Address(name='Paris, FR', type=M_GeographicEntityType.CITY);
+    assertIs($address, ^M_Person(firstName='Fabrice', lastName='Smith', address=$address).address->toOne());
+}
+
+function <<test.Test>> meta::pure::functions::collection::tests::map::testMapRelationshipFromManyToOne():Boolean[1]
+{
+    let addressParis = ^M_Address(name='Paris, FR', type=M_GeographicEntityType.CITY);
+    let addressHoboken = ^M_Address(name='Hoboken, NJ, US', type=M_GeographicEntityType.CITY);
+    let smith = ^M_Person(firstName='Fabrice', lastName='Smith', address=$addressParis);
+    let roe = ^M_Person(firstName='David', lastName='Roe', address=$addressHoboken);
+    assertEquals([$addressParis, $addressHoboken], [$smith, $roe].address);
+    assertEquals(['Paris, FR', 'Hoboken, NJ, US'], [$smith, $roe].address.name);
+}
+
+function <<test.Test>> meta::pure::functions::collection::tests::map::testMapRelationshipFromManyToMany():Boolean[1]
+{
+    let locationParis = ^M_Location(place='Paris', type=M_GeographicEntityType.CITY);
+    let locationSF = ^M_Location(place='San Franciso', type=M_GeographicEntityType.CITY);
+    let locationHoboken = ^M_Location(place='Hoboken', type=M_GeographicEntityType.CITY);
+    let smith = ^M_Person(firstName='Fabrice', lastName='Smith', locations=[$locationParis, $locationSF]);
+    let roe = ^M_Person(firstName='David', lastName='Roe', locations=$locationHoboken);
+    assertEquals([$locationParis, $locationSF, $locationHoboken], [$smith, $roe].locations);
+}
+
+function <<test.Test>> meta::pure::functions::collection::tests::map::testMapWithFunctionAsVariable():Boolean[1]
+{
+    let f = [^M_Person(firstName='a', lastName='a'), ^M_Person(firstName='b', lastName='b'), ^M_Person(firstName='c', lastName='c')];
+    let lambda = {p:M_Person[1]|$p.lastName};
+    assertEquals(['a','b','c'], $f->map($lambda));
+}
+
+function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::collection::tests::map::testMapWithPropertyAsVariable():Boolean[1]
+{
+    let f = [^M_Person(firstName='a', lastName='a'), ^M_Person(firstName='b', lastName='b'), ^M_Person(firstName='c', lastName='c')];
+    let property = M_Person->classPropertyByName('lastName')->toOne();
+    assertEquals(['a','b','c'], $f->map($property));
+}
+
+
+
+Class meta::pure::functions::collection::tests::map::model::M_Person
+{
+    firstName : String[1];
+    lastName : String[1];
+    locations : M_Location[*];
+    address : M_Address[0..1];
+}
+
+function meta::pure::functions::collection::tests::map::classPropertyByName(class:Class<Any>[1], name:String[1]):Property<Nil,Any|*>[0..1]
+{
+    $class.properties->filter(p | $p.name == $name)->first()
+}
+
+Class meta::pure::functions::collection::tests::map::model::M_Location
+{
+    place : String[1];
+    type : M_GeographicEntityType[1];
+}
+
+Class meta::pure::functions::collection::tests::map::model::M_Address
+{
+    name : String[1];
+    type : M_GeographicEntityType[1];
+}
+
+Enum meta::pure::functions::collection::tests::map::model::M_GeographicEntityType
+{
+    {doc.doc = 'A city, town, village, or other urban area.'} CITY,
+    <<doc.deprecated>> COUNTRY,
+    {doc.doc = 'Any geographic entity other than a city or country.'} REGION
+}

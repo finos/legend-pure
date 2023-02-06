@@ -37,7 +37,7 @@ public final class DatamartCodeRepository extends SVNCodeRepository
                 (other instanceof ModelCodeRepository) ||
                 CodeRepositoryProviderHelper.isCoreRepository(other) ||
                 (other instanceof SystemCodeRepository) ||
-                (other instanceof PlatformCodeRepository);
+                (other != null && other.getName().startsWith("platform"));
     }
 
     private static String getRepositoryName(String businessUnit)

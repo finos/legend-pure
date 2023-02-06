@@ -15,7 +15,7 @@
 package org.finos.legend.pure.runtime.java.interpreted;
 
 import org.finos.legend.pure.m3.execution.FunctionExecution;
-import org.finos.legend.pure.m3.tests.property.AbstractTestDefaultValue;
+import org.finos.legend.pure.m3.tests.elements.property.AbstractTestDefaultValue;
 import org.junit.After;
 import org.junit.BeforeClass;
 
