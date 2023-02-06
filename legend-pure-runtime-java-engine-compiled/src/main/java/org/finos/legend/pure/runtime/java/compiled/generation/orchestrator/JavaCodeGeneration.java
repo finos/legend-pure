@@ -27,7 +27,9 @@ import org.finos.legend.pure.runtime.java.compiled.generation.JavaStandaloneLibr
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphSerializer;
 
 import java.io.File;
+import java.net.URL;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Set;
 
 public class JavaCodeGeneration
@@ -181,7 +183,6 @@ public class JavaCodeGeneration
         }
     }
 
-
     private static long startStep(String step, Log log)
     {
         log.info("  Beginning " + step);
@@ -199,9 +200,36 @@ public class JavaCodeGeneration
         CodeRepositorySet.Builder builder = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true));
         if (extraRepositories != null)
         {
-            extraRepositories.forEach(r -> builder.addCodeRepository(GenericCodeRepository.build(classLoader, r)));
+            extraRepositories.forEach(r -> builder.addCodeRepository(getExtraRepository(classLoader, r)));
         }
         return builder.build();
+    }
+
+    private static GenericCodeRepository getExtraRepository(ClassLoader classLoader, String extraRepository)
+    {
+        // First check if this is a resource
+        URL url = classLoader.getResource(extraRepository);
+        if (url != null)
+        {
+            try
+            {
+                return GenericCodeRepository.build(url);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException("Error loading extra repository \"" + extraRepository + "\" from resource " + url, e);
+            }
+        }
+
+        // If it's not a resource, assume it is a file path
+        try
+        {
+            return GenericCodeRepository.build(Paths.get(extraRepository));
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Error loading extra repository \"" + extraRepository + "\"", e);
+        }
     }
 
     private static MutableSet<String> getSelectedRepositories(CodeRepositorySet allRepositories, Set<String> repositories, Set<String> excludedRepositories)
@@ -417,5 +445,4 @@ public class JavaCodeGeneration
     {
         monolithic, modular
     }
-
 }
