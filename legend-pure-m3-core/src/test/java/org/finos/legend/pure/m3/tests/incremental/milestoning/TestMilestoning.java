@@ -17,10 +17,12 @@ package org.finos.legend.pure.m3.tests.incremental.milestoning;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
-import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
@@ -40,9 +42,12 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
-        return Lists.immutable.with(CodeRepository.newPlatformCodeRepository(),
-                GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME),
-                GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system"));
+        MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
+        CodeRepository system = GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME);
+        CodeRepository test = GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system");
+        repositories.add(test);
+        repositories.add(system);
+        return repositories;
     }
 
     @After
@@ -87,12 +92,12 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
         String classAWithNoStereotype = "Class test::A{}";
 
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", classAWithBusinessTemporalStereotype)
-                        .createInMemorySource("userId.pure", "function test():Any[*]{let a =^test::A(businessDate=%2018-12-18T14:03:00);print($a.businessDate,1);}")
+                        .createInMemorySource("userId.pure", "function test():Any[*]{let a =^test::A(businessDate=%2018-12-18T14:03:00);$a.businessDate;}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
                         .createInMemorySource("sourceId.pure", classAWithNoStereotype)
-                        .compileWithExpectedCompileFailure("Can't find the property 'businessDate' in the class test::A", "userId.pure", 1, 84)
+                        .compileWithExpectedCompileFailure("Can't find the property 'businessDate' in the class test::A", "userId.pure", 1, 78)
                         .deleteSource("sourceId.pure")
                         .createInMemorySource("sourceId.pure", classAWithBusinessTemporalStereotype)
                         .compile(),

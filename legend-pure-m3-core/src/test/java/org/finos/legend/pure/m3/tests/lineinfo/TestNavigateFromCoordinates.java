@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.m3.tests.lineinfo;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.After;
 import org.junit.Assert;

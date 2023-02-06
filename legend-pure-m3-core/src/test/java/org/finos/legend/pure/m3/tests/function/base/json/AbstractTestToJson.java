@@ -14,16 +14,20 @@
 
 package org.finos.legend.pure.m3.tests.function.base.json;
 
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.TestCodeRepositoryWithDependencies;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
@@ -363,9 +367,15 @@ public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompile
 
     protected static MutableCodeStorage getCodeStorage()
     {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        CodeRepositorySet.Builder builder = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true));
+        MutableList<CodeRepository> rep = Lists.mutable.withAll(builder.build().getRepositories());
         CodeRepository platform = CodeRepository.newPlatformCodeRepository();
-        CodeRepository test = new TestCodeRepositoryWithDependencies("test", null, platform);
-        return new PureCodeStorage(null, new ClassLoaderCodeStorage(platform, test));
+        CodeRepository json = rep.detect(x -> x.getName().equals("platform_functions_json"));
+        CodeRepository func = rep.detect(x -> x.getName().equals("platform_functions"));
+        CodeRepository test = new TestCodeRepositoryWithDependencies("test", null, platform, func, json);
+        rep.add(test);
+        return new PureCodeStorage(null, new ClassLoaderCodeStorage(rep));
     }
 
     public static Pair<String, String> getExtra()

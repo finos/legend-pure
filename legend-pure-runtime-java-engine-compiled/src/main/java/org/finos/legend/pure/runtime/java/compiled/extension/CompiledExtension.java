@@ -14,16 +14,23 @@
 
 package org.finos.legend.pure.runtime.java.compiled.extension;
 
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.set.SetIterable;
+import org.eclipse.collections.api.tuple.Pair;
+import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaSourceCodeGenerator;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.Native;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Bridge;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.Procedure3;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.Procedure4;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureFunction1;
 
 import java.util.List;
+import java.util.function.Function;
 
 public interface CompiledExtension
 {
@@ -34,4 +41,12 @@ public interface CompiledExtension
     List<Procedure3<CoreInstance, JavaSourceCodeGenerator, ProcessorContext>> getExtraPackageableElementProcessors();
 
     List<Procedure4<CoreInstance, CoreInstance, ProcessorContext, ProcessorSupport>> getExtraClassMappingProcessors();
+
+    RichIterable<? extends Pair<String, Function<? super CoreInstance, String>>> getExtraIdBuilders(ProcessorSupport processorSupport);
+
+    SetIterable<String> getExtraCorePath();
+
+    PureFunction1<Object, Object> getExtraFunctionEvaluation(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge bridge, ExecutionSupport es);
+
+    String getRelatedRepository();
 }

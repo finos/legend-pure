@@ -14,10 +14,9 @@
 
 package org.finos.legend.pure.m3.tests.incremental.profile;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
-import org.finos.legend.pure.m3.RuntimeVerifier;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -29,6 +28,7 @@ public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledP
     public static void setUp() {
         setUpRuntime(getExtra());
     }
+
 
     @After
     public void cleanRuntime() {
@@ -107,10 +107,14 @@ public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledP
 
         this.runtime.createInMemorySource("userId.pure", "Profile my::profile::testProfile{stereotypes:[s1,s2];tags: [name];}");
         this.runtime.createInMemorySource("sourceId.pure", "import meta::pure::functions::meta::*;\n" +
+                "function meta::pure::functions::meta::stereotype(profile:Profile[1], str:String[1]):Stereotype[1]" +
+                "{" +
+                "   $profile.stereotypes->at(0);" +
+                "}\n" +
                 "function meta::pure::functions::meta::hasStereotype(f:ElementWithStereotypes[1], stereotype:String[1], profile:Profile[1]):Boolean[1]\n" +
                 "{\n" +
                 "    let st = $profile->stereotype($stereotype);\n" +
-                "    $f.stereotypes->exists(s | $s == $st);\n" +
+                "    !$f.stereotypes->filter(s | $s == $st)->isEmpty();\n" +
                 "}\nfunction hasStereo(a:ElementWithStereotypes[1]):Boolean[1]{ if($a->hasStereotype('s1',my::profile::testProfile), | true, | false)}");
         this.runtime.compile();
         int size = this.runtime.getModelRepository().serialize().length;
@@ -133,7 +137,11 @@ public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledP
                         .createInMemorySource("sourceId.pure", "import meta::pure::functions::meta::*;\n" +
                                 "import my::pack::*;\n" +
                                 "Class my::pack::A{ value:Any[0..1]; }\n" +
-                                "function my::pack::newObj(a:ElementWithStereotypes[1]):A[1]{ ^A(value=if($a.stereotypes->contains(my::pack::testProfile->stereotype('s1')), | true, | false))}")
+                                "function meta::pure::functions::meta::stereotype(profile:Profile[1], str:String[1]):Stereotype[1]" +
+                                "{" +
+                                "   $profile.stereotypes->at(0);" +
+                                "}\n" +
+                                "function my::pack::newObj(a:ElementWithStereotypes[1]):A[1]{ ^A(value=if(!$a.stereotypes->filter(x|$x == my::pack::testProfile->stereotype('s1'))->isEmpty(), | true, | false))}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("userId.pure", "////My Comment\n" +

@@ -15,7 +15,7 @@
 package org.finos.legend.pure.m3.tests.function.base.measure;
 
 import org.eclipse.collections.api.list.ListIterable;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;

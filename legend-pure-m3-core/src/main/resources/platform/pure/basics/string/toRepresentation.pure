@@ -1,0 +1,150 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::functions::string::tests::toRepresentation::*;
+
+function meta::pure::functions::string::toRepresentation(any:Any[1]):String[1]
+{
+    $any->match([
+                 s:String[1] | '\'' + $s->replace('\'', '\\\'') + '\'',
+                 d:Date[1] | '%' + $d->toString(),
+                 d:Decimal[1] | $d->toString() + 'D',
+                 n:Number[1] | $n->toString(),
+                 b:Boolean[1] | $b->toString(),
+                 p:PackageableElement[1] | if($p.name->isEmpty(), |'<' + $p->id() + ' instanceOf ' + $p->type()->elementToPath() + '>', |$p->elementToPath()),
+                 a:Any[1] | '<' + $a->id() + ' instanceOf ' + $a->type()->elementToPath() + '>'
+                ])
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::toRepresentation::testIntegerToRepresentation():Boolean[1]
+{
+    assertEq('1', 1->toRepresentation());
+    assertEq('-1', toRepresentation(-1));
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::toRepresentation::testFloatToRepresentation():Boolean[1]
+{
+    assertEq('3.14', 3.14->toRepresentation());
+    assertEq('3.14159', 3.14159->toRepresentation());
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::toRepresentation::testFloatToRepresentationWithExcessTrailingZeros():Boolean[1]
+{
+    assertEq('17.0', 17.0->toRepresentation());
+    assertEq('17.0', 17.000->toRepresentation());
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::toRepresentation::testFloatToRepresentationWithNoLeadingZero():Boolean[1]
+{
+    assertEq('0.01', 0.01->toRepresentation());
+    assertEq('0.01', .01->toRepresentation());
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::toRepresentation::testFloatToRepresentationWithPositiveExponent():Boolean[1]
+{
+    assertEq('134210000.0', 134.21e6->toRepresentation());
+    assertEq('134210000.0', 1.3421e8->toRepresentation());
+    assertEq('134210000.0', 0.13421e9->toRepresentation());
+    assertEq('134210000.0', 134210000.0->toRepresentation());
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::toRepresentation::testFloatToRepresentationWithNegativeExponent():Boolean[1]
+{
+    assertEq('0.000000013421', 134.21e-10->toRepresentation());
+    assertEq('0.000000013421', 1.3421e-8->toRepresentation());
+    assertEq('0.000000013421', 0.13421e-7->toRepresentation());
+    assertEq('0.000000013421', 0.000000013421->toRepresentation());
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::toRepresentation::testBooleanToRepresentation():Boolean[1]
+{
+    assertEq('true', true->toRepresentation());
+    assertEq('false', false->toRepresentation());
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::toRepresentation::testStringToRepresentation():Boolean[1]
+{
+    assertEq('\'the quick brown fox jumps over the lazy dog\'', 'the quick brown fox jumps over the lazy dog'->toRepresentation());
+    assertEq('\'\'', ''->toRepresentation());
+    assertEq('\'the quick brown fox jumps over the lazy \\ \\\'dog\\\'\'', 'the quick brown fox jumps over the lazy \\ \'dog\''->toRepresentation());
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::toRepresentation::testSimpleDateToRepresentation():Boolean[1]
+{
+    assertEq('%2014-01-02T01:54:27.352+0000', %2014-01-01T20:54:27.352-0500->toRepresentation());
+}
+
+function <<test.Test>>  meta::pure::functions::string::tests::toRepresentation::testDateTimeWithTimezoneToRepresentation():Boolean[1]
+{
+    assertEq('%2014-01-01T00:00:00.0000+0000', %2014-01-01T00:00:00.0000+0000->toRepresentation());
+    assertEq('%2014-01-01T00:00:00.0000+0000', %2014-01-01T00:00:00.0000-0000->toRepresentation());
+
+    assertEq('%2014-01-01T00:00:00.000+0000', %2014-01-01T00:00:00.000+0000->toRepresentation());
+    assertEq('%2014-01-01T00:00:00.000+0000', %2014-01-01T00:00:00.000-0000->toRepresentation());
+
+    assertEq('%2014-01-01T00:00:00.0+0000', %2014-1-1T0:00:00.0+0000->toRepresentation());
+    assertEq('%2014-01-01T00:00:00.0+0000', %2014-1-1T0:00:00.0-0000->toRepresentation());
+
+    assertEq('%2014-01-01T00:00+0000', %2014-1-1T0:00+0000->toRepresentation());
+    assertEq('%2014-01-01T00:00+0000', %2014-1-1T0:00-0000->toRepresentation());
+}
+
+function <<test.Test>>  meta::pure::functions::string::tests::toRepresentation::testDateTimeToRepresentation():Boolean[1]
+{
+    assertEq('%2014-01-01T00:00:00.000+0000', %2014-01-01T00:00:00.000->toRepresentation());
+    assertEq('%2014-01-01T00:00:00.00+0000', %2014-01-01T00:00:00.00->toRepresentation());
+    assertEq('%2014-01-01T00:00:00.0+0000', %2014-1-1T0:00:00.0->toRepresentation());
+    assertEq('%2014-01-01T00:00:00+0000', %2014-1-1T0:00:00->toRepresentation());
+}
+
+function <<test.Test>>  meta::pure::functions::string::tests::toRepresentation::testDateToRepresentation():Boolean[1]
+{
+    assertEq('%2014-01-01', %2014-01-01->toRepresentation());
+    assertEq('%2014-01-01', %2014-1-1->toRepresentation());
+
+    assertEq('%2014-01', %2014-01->toRepresentation());
+    assertEq('%2014-01', %2014-1->toRepresentation());
+
+    assertEq('%2014', %2014->toRepresentation());
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::toRepresentation::testClassInstanceToRepresentation():Boolean[1]
+{
+    let listRepr = ^ST_List<String>(values=['a', 'b', 'c'])->toRepresentation();
+    assert($listRepr->startsWith('<Anonymous_') || $listRepr->startsWith('<@_'), 'Expected %r to start with \'<Anonymous_\'', $listRepr);
+
+    let personRepr = ^ST_Person(firstName='Pierre', lastName='Doe')->toRepresentation();
+    assert($personRepr->startsWith('<Anonymous_') || $personRepr->startsWith('<@_'), 'Expected %r to start with \'<Anonymous_\'', $personRepr);
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::toRepresentation::testClassToRepresentation():Boolean[1]
+{
+    assertEq('meta::pure::functions::string::tests::toRepresentation::ST_Person', ST_Person->toRepresentation());
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::toRepresentation::testFunctionToRepresentation():Boolean[1]
+{
+    assertEq('meta::pure::functions::string::toRepresentation_Any_1__String_1_', meta::pure::functions::string::toRepresentation_Any_1__String_1_->toRepresentation());
+}
+
+Class meta::pure::functions::string::tests::toRepresentation::ST_List<T>
+{
+    values : T[*];
+}
+
+Class meta::pure::functions::string::tests::toRepresentation::ST_Person
+{
+    firstName : String[1];
+    lastName : String[1];
+}

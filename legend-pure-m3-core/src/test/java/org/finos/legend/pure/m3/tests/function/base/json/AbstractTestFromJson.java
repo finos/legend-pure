@@ -15,7 +15,7 @@
 package org.finos.legend.pure.m3.tests.function.base.json;
 
 import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;

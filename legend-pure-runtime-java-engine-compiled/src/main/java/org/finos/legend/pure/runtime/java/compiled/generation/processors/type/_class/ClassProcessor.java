@@ -19,9 +19,7 @@ import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
+import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.helper.PropertyTypeHelper;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -29,6 +27,7 @@ import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
+import org.finos.legend.pure.m3.serialization.runtime.ParserService;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
@@ -37,44 +36,13 @@ import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 
 public class ClassProcessor
 {
-    private static final SetIterable<String> EXCLUDED_PLATFORM_FILES = Sets.immutable.with("/platform/json/json.pure",
-            "/platform/avro/avro.pure"
-            );
-
-    private static final MutableList<String> DATE_MILESTONING_CLASSES = Lists.mutable.of(
-            "meta::pure::milestoning::DateMilestoning",
-            "meta::pure::milestoning::BusinessDateMilestoning",
-            "meta::pure::milestoning::ProcessingDateMilestoning",
-            "meta::pure::milestoning::BiTemporalMilestoning"
-    );
-
-    private static boolean isDateMilestoningClass(CoreInstance _class)
-    {
-        return DATE_MILESTONING_CLASSES.contains(PackageableElement.getUserPathForPackageableElement(_class));
-    }
+    private static final MutableSet<String> PLATFORM_FILES = new ParserService().parsers().flatCollect(c -> c.getCoreInstanceFactoriesRegistry().flatCollect(CoreInstanceFactoryRegistry::allManagedTypes)).toSet().withAll(new ParserService().inlineDSLs().flatCollect(c -> c.getCoreInstanceFactoriesRegistry().flatCollect(CoreInstanceFactoryRegistry::allManagedTypes)).toSet());
 
     public static boolean isPlatformClass(CoreInstance _class)
     {
-        SourceInformation sourceInfo = _class.getSourceInformation();
-        if (sourceInfo != null)
-        {
-            String sourceId = sourceInfo.getSourceId();
-            if ((sourceId != null) && sourceId.startsWith("/platform/") && !EXCLUDED_PLATFORM_FILES.contains(sourceId))
-            {
-                return true;
-            }
-        }
-        return isDateMilestoningClass(_class);
+        return PLATFORM_FILES.contains(PackageableElement.getUserPathForPackageableElement(_class));
     }
-
-    public static final Predicate<CoreInstance> IS_PLATFORM_CLASS = new Predicate<CoreInstance>()
-    {
-        @Override
-        public boolean accept(CoreInstance _class)
-        {
-            return isPlatformClass(_class);
-        }
-    };
+    public static final Predicate<CoreInstance> IS_PLATFORM_CLASS = ClassProcessor::isPlatformClass;
 
     public static RichIterable<CoreInstance> processClass(CoreInstance classGenericType, ProcessorContext processorContext, boolean addJavaSerializationSupport, String pureExternalPackage)
     {
@@ -143,6 +111,6 @@ public class ClassProcessor
     {
         SourceInformation sourceInfo = _class.getSourceInformation();
         String sourceId = (sourceInfo == null) ? null : sourceInfo.getSourceId();
-        return (sourceId != null) && sourceId.startsWith("/platform/");
+        return (sourceId != null) && sourceId.startsWith("/platform");
     }
 }

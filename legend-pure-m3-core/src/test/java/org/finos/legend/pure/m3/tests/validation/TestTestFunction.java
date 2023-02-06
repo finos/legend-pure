@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.m3.tests.validation;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
@@ -24,12 +24,14 @@ import org.junit.Test;
 public class TestTestFunction extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("testFile.pure");
     }
 
@@ -96,7 +98,7 @@ public class TestTestFunction extends AbstractPureTestWithCoreCompiledPlatform
                     "function <<test.ToFix>> testFn(arg:String[1]):Boolean[1]\n" +
                             "{\n" +
                             "  assert($arg == 'the quick brown fox', |'')\n" +
-                            "}");
+                            "}" );
             Assert.fail("Expected compilation exception");
         }
         catch (Exception e)

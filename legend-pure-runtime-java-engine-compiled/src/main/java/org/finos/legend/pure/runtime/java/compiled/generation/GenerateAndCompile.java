@@ -83,7 +83,7 @@ public class GenerateAndCompile
             sourceCounter.reset();
             compiledSourcesByRepo.forEach((compileGroup, sources) ->
             {
-                if (!PlatformCodeRepository.NAME.equals(compileGroup) && sources.notEmpty())
+                if (sources.notEmpty())
                 {
                     ListIterable<StringJavaSource> compileGroupJavaSources = this.generate.generate(compileGroup, sources, sourceCodeGeneratorFn.apply(compileGroup), sourceCounter, totalSourceCount);
                     try

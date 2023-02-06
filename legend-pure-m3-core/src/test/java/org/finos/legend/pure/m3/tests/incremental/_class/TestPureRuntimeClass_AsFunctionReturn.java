@@ -15,12 +15,13 @@
 package org.finos.legend.pure.m3.tests.incremental._class;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.ImmutableMap;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
-import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation._class._Class;
@@ -45,9 +46,12 @@ public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithC
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
-        return Lists.immutable.with(CodeRepository.newPlatformCodeRepository(),
-                GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME),
-                GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system"));
+        MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
+        CodeRepository system = GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME);
+        CodeRepository test = GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system");
+        repositories.add(system);
+        repositories.add(test);
+        return repositories;
     }
 
     @After
@@ -201,7 +205,7 @@ public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithC
                                 "import test::*;\n" +
                                         "Class test::TestClassB\n" +
                                         "{\n" +
-                                        "    prop:List<TestClassA>[1];\n" +
+                                        "    prop:Pair<TestClassA, String>[1];\n" +
                                         "}\n")
                         .compile(),
                 new RuntimeTestScriptBuilder()
@@ -440,4 +444,5 @@ public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithC
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
     }
+
 }

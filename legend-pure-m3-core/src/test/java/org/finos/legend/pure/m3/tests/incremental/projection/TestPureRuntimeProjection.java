@@ -16,12 +16,11 @@ package org.finos.legend.pure.m3.tests.incremental.projection;
 
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
-import org.finos.legend.pure.m3.RuntimeVerifier;
-import org.finos.legend.pure.m3.TrackingTransactionObserver;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
+import org.finos.legend.pure.m3.tests.TrackingTransactionObserver;
 import org.finos.legend.pure.m3.execution.VoidFunctionExecution;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;

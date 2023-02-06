@@ -45,7 +45,7 @@ public class ParserService
         {
             try
             {
-                Parser parser =it.next();
+                Parser parser = it.next();
                 parsers.add(parser);
             }
             catch (Throwable e)

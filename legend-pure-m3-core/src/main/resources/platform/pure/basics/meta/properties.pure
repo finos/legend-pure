@@ -1,0 +1,40 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::functions::meta::tests::model::*;
+
+function meta::pure::functions::meta::properties(genericType:GenericType[1]):Property<Nil,Any|*>[*]
+{
+    // TODO use this once problems with compiled execution are fixed
+//    $genericType.rawType->toOne()->generalizations()->map(cls | $cls->cast(@Class<Any>).properties->concatenate($cls->cast(@Class<Any>).propertiesFromAssociations))
+
+    let theClass = $genericType.rawType->toOne()->cast(@Class<Any>);
+    let result = ^List<Property<Nil,Any|*>>(values = $theClass.properties);
+    let resultWithAssoProps = ^$result(values += $theClass.propertiesFromAssociations);
+    ^$resultWithAssoProps(values += $theClass.generalizations->map(generalization | properties($generalization.general))).values;
+}
+
+function <<test.Test>>  meta::pure::functions::meta::tests::properties::testProperties():Boolean[1]
+{
+    let props = ^CC_Address(name='Hoboken', type=CC_GeographicEntityType.CITY)->genericType()->properties();
+    assertEquals(CC_Address.properties->concatenate(CC_Address.propertiesFromAssociations)->concatenate(CC_GeographicEntity.properties)->concatenate(Any.properties), $props);
+
+    assertSize($props, 7);
+    assertIs(CC_Address.properties->filter(p|$p.name == 'name')->at(0), $props->at(0));
+    assertIs(CC_Address.properties->filter(p|$p.name == 'street')->at(0), $props->at(1));
+    assertIs(CC_Address.properties->filter(p|$p.name == 'comments')->at(0), $props->at(2));
+    assertIs(CC_Address.propertiesFromAssociations->filter(p|$p.name == 'location')->at(0), $props->at(3));
+    assertIs(CC_GeographicEntity.properties->filter(p|$p.name == 'type')->at(0), $props->at(4));
+    assertIs(Any.properties->filter(p|$p.name == 'classifierGenericType')->at(0), $props->at(5));
+}

@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.m3.tests.function.base.math;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.junit.Test;
 
 public abstract class AbstractTestDivide extends AbstractPureTestWithCoreCompiled {

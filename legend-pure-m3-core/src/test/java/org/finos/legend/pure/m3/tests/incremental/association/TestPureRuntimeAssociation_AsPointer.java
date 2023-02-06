@@ -14,9 +14,9 @@
 
 package org.finos.legend.pure.m3.tests.incremental.association;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
-import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -40,11 +40,11 @@ public class TestPureRuntimeAssociation_AsPointer extends AbstractPureTestWithCo
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Association a {a:A[1];b:B[1];}")
                         .createInMemorySource("userId.pure", "Class A{}" +
                                 "Class B{}" +
-                                "function test():Nil[0]{print(a,1);}")
+                                "function test():Any[*]{a}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
-                        .compileWithExpectedCompileFailure("a has not been defined!", "userId.pure", 1, 48)
+                        .compileWithExpectedCompileFailure("a has not been defined!", "userId.pure", 1, 42)
                         .createInMemorySource("sourceId.pure", "Association a {a:A[1];b:B[1];}")
                         .compile(),
                 this.runtime, this.functionExecution, this.getAdditionalVerifiers());
@@ -57,13 +57,13 @@ public class TestPureRuntimeAssociation_AsPointer extends AbstractPureTestWithCo
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Association a {a:A[1];b:B[1];}")
                         .createInMemorySource("userId.pure", "Class A{}" +
                                 "Class B{}" +
-                                "function test():Nil[0]{print(a,1);}")
+                                "function test():Any[*]{a}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
-                        .compileWithExpectedCompileFailure("a has not been defined!", "userId.pure", 1, 48)
+                        .compileWithExpectedCompileFailure("a has not been defined!", "userId.pure", 1, 42)
                         .createInMemorySource("sourceId.pure", "Association axx {xx:A[1];yy:B[1];}")
-                        .compileWithExpectedCompileFailure("a has not been defined!", "userId.pure", 1, 48)
+                        .compileWithExpectedCompileFailure("a has not been defined!", "userId.pure", 1, 42)
                         .updateSource("sourceId.pure", "Association a {a:A[1];b:B[1];}")
                         .compile(),
                 this.runtime, this.functionExecution, this.getAdditionalVerifiers());

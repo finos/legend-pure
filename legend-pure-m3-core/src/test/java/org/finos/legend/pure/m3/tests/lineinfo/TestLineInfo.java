@@ -18,7 +18,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.impl.factory.Lists;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -115,7 +115,7 @@ public class TestLineInfo extends AbstractPureTestWithCoreCompiledPlatform
         CoreInstance classifierGenericType = propertiesByName.get("classifierGenericType");
         Assert.assertNotNull(classifierGenericType);
         // Note: these source coordinates may change if m3.pure changes
-        assertSourceInformation("/platform/pure/m3.pure", 1007, 13, 1007, 126, 1014, 17, classifierGenericType.getSourceInformation());
+        assertSourceInformation("/platform/pure/grammar/m3.pure", 1007, 13, 1007, 126, 1014, 17, classifierGenericType.getSourceInformation());
 
         // Test function
         CoreInstance func = this.runtime.getCoreInstance("pkg1::pkg2::printSomething__Any_1_");
@@ -135,7 +135,7 @@ public class TestLineInfo extends AbstractPureTestWithCoreCompiledPlatform
         Assert.assertNotNull(funcType);
         Assert.assertEquals(M3Paths.ConcreteFunctionDefinition, PackageableElement.getUserPathForPackageableElement(funcType, "::"));
         // Note: these source coordinates may change if m3.pure changes
-        assertSourceInformation("/platform/pure/m3.pure", 2261, 1, 2261, 88, 2285, 1, funcType.getSourceInformation());
+        assertSourceInformation("/platform/pure/grammar/m3.pure", 2261, 1, 2261, 88, 2285, 1, funcType.getSourceInformation());
     }
 
     @Test

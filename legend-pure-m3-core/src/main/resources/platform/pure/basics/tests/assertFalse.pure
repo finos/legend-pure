@@ -1,0 +1,61 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::functions::asserts::*;
+
+function meta::pure::functions::asserts::assertFalse(condition:Boolean[1], message:String[1]):Boolean[1]
+{
+    assert(!$condition, $message);
+}
+
+function meta::pure::functions::asserts::assertFalse(condition:Boolean[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]
+{
+    assert(!$condition, $formatString, $formatArgs);
+}
+
+function meta::pure::functions::asserts::assertFalse(condition:Boolean[1], message:Function<{->String[1]}>[1]):Boolean[1]
+{
+    assert(!$condition, $message);
+}
+
+
+
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertFalse():Any[*]
+{
+    assertFalse(false);
+    assertFalse(2 == 3);
+    assertFalse((1 + 2) == 4);
+}
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertFalseWithMessage():Any[*]
+{
+    assertFalse(false, 'Test message');
+    assertFalse(2 == 3, 'Test message');
+    assertFalse((1 + 2) == 4, 'Test message');
+}
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertFalseWithFormat():Any[*]
+{
+    assertFalse(false, 'Test message: %s', [true]);
+    assertFalse(2 == 3, 'Test message: %s', [true]);
+    assertFalse((1 + 2) == 4, 'Test message: %s', [true]);
+}
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertFalseWithLambda():Any[*]
+{
+    assertFalse(false, | 'Test message');
+    assertFalse(2 == 3, | format('Test message %s', [true]));
+    assertFalse((1 + 2) == 4, | format('Test message: %s', [true]));
+}

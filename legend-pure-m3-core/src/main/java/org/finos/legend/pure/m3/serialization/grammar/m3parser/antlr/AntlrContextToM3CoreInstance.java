@@ -1226,7 +1226,7 @@ public class AntlrContextToM3CoreInstance
             this.checkExists(ctx.qualifiedName().size() == 1 ? null : ctx.qualifiedName(1), ctx.identifier(), sourceInfo);
         }
 
-        CoreInstance classifier = this.processorSupport.package_getByUserPath(this.getQualifiedNameString(ctx.qualifiedName(0)));
+        CoreInstance classifier = this.processorSupport.package_getByUserPath(this.getQualifiedNameString(ctx.qualifiedName(0)));;
         CoreInstance instance = ctx.identifier() == null ? this.repository.newAnonymousCoreInstance(sourceInfo, classifier) : this.repository.newCoreInstance(ctx.identifier().getText(), classifier, sourceInfo);
 
         if (topLevel)

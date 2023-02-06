@@ -16,8 +16,9 @@ package org.finos.legend.pure.runtime.java.compiled.serialization;
 
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.factory.Maps;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
 import org.finos.legend.pure.runtime.java.compiled.metadata.Metadata;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataLazy;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphDeserializer;
@@ -35,7 +36,7 @@ public class TestLazyImplClassifiers extends AbstractPureTestWithCoreCompiled
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getFunctionExecution());
+        setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
     }
 
     @Before

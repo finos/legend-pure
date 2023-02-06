@@ -25,7 +25,7 @@ import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.eclipse.collections.impl.utility.Iterate;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.imports.Imports;
@@ -55,7 +55,7 @@ public class TestBinaryModelSourceSerializer extends AbstractPureTestWithCoreCom
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), getFactoryRegistryOverride(), getOptions(), getExtra());
+        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), getFactoryRegistryOverride(), getOptions(), getExtra(), false);
     }
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
@@ -321,7 +321,7 @@ public class TestBinaryModelSourceSerializer extends AbstractPureTestWithCoreCom
     @Test
     public void testM3Serialization()
     {
-        Source source = runtime.getSourceById("/platform/pure/m3.pure");
+        Source source = runtime.getSourceById("/platform/pure/grammar/m3.pure");
         SetIterable<String> expectedInstances = collectInstancePaths(source.getNewInstances(), Sets.mutable.with("meta", "meta::pure", "meta::pure::functions", "meta::pure::functions::lang", "meta::pure::metamodel", "meta::pure::metamodel::extension", "meta::pure::metamodel::function", "meta::pure::metamodel::function::property", "meta::pure::metamodel::import", "meta::pure::metamodel::multiplicity", "meta::pure::metamodel::relationship", "meta::pure::metamodel::treepath", "meta::pure::metamodel::type", "meta::pure::metamodel::type::generics", "meta::pure::metamodel::constraint", "meta::pure::metamodel::valuespecification", "meta::pure::router", "meta::pure::tools", "system", "system::imports", "meta::pure::test"));
         SetIterable<String> expectedReferences = Sets.mutable.with();
 
@@ -356,7 +356,7 @@ public class TestBinaryModelSourceSerializer extends AbstractPureTestWithCoreCom
         {
             MutableSet<String> expectedInstances = getInstancePaths(source.getNewInstances());
             expectedInstances.addAllIterable(importGroupsByBaseName.get(Source.formatForImportGroupId(source.getId())));
-            if ("/platform/pure/m3.pure".equals(source.getId()))
+            if ("/platform/pure/grammar/m3.pure".equals(source.getId()))
             {
                 expectedInstances.addAllIterable(Lists.mutable.with("meta", "meta::pure", "meta::pure::functions", "meta::pure::functions::lang", "meta::pure::metamodel", "meta::pure::metamodel::constraint", "meta::pure::metamodel::extension", "meta::pure::metamodel::function", "meta::pure::metamodel::function::property", "meta::pure::metamodel::import", "meta::pure::metamodel::multiplicity", "meta::pure::metamodel::relationship", "meta::pure::metamodel::treepath", "meta::pure::metamodel::type", "meta::pure::metamodel::type::generics", "meta::pure::metamodel::valuespecification", "meta::pure::router", "meta::pure::tools", "system", "system::imports", "meta::pure::test"));
             }
@@ -397,8 +397,9 @@ public class TestBinaryModelSourceSerializer extends AbstractPureTestWithCoreCom
                     .withRuntimeStatus(getPureRuntimeStatus()).build();
             getFunctionExecution().init(runtime2, new Message(""));
             runtime2.loadAndCompileCore();
+            runtime2.loadAndCompileSystem();
 
-            Assert.assertEquals(runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()).collect(s -> s.getId()).toSet(), runtime2.getSourceRegistry().getSourceIds().toSet());
+            Assert.assertEquals(runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()).collect(s -> s.getId()).toSet().toSortedList(), runtime2.getSourceRegistry().getSourceIds().toSet().toSortedList());
 
             for (Source source1 : runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()))
             {

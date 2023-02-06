@@ -16,15 +16,16 @@ package org.finos.legend.pure.m3.compiler.validation;
 
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.factory.Maps;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class ValidatorState extends MatcherState
 {
@@ -33,12 +34,14 @@ public class ValidatorState extends MatcherState
     private CoreInstance rootMapping;
     private final MutableMap<String, CoreInstance> setImplementationsById = Maps.mutable.empty();
     private final MutableMap<String, CoreInstance> enumerationMappingsById = Maps.mutable.empty();
+    private final InlineDSLLibrary inlineDSLLibrary;
 
-    public ValidatorState(ValidationType validationType, CodeStorage codeStorage, ProcessorSupport processorSupport)
+    public ValidatorState(ValidationType validationType, CodeStorage codeStorage, InlineDSLLibrary inlineDSLLibrary, ProcessorSupport processorSupport)
     {
         super(processorSupport);
         this.validationType = validationType;
         this.codeStorage = codeStorage;
+        this.inlineDSLLibrary = inlineDSLLibrary;
     }
 
     public ValidationType getValidationType()
@@ -117,4 +120,11 @@ public class ValidatorState extends MatcherState
         this.setImplementationsById.clear();
         this.enumerationMappingsById.clear();
     }
+
+    @Override
+    public InlineDSLLibrary getInlineDSLLibrary()
+    {
+        return this.inlineDSLLibrary;
+    }
+
 }

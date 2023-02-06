@@ -34,7 +34,7 @@ public class ProtocolsVersionsCodeRepository extends SVNCodeRepository
             return true;
         }
 
-        if ((other instanceof PlatformCodeRepository) || CodeRepositoryProviderHelper.isCoreRepository(other) || (other instanceof SystemCodeRepository))
+        if ((other != null && other.getName().startsWith("platform")) || CodeRepositoryProviderHelper.isCoreRepository(other) || (other instanceof SystemCodeRepository))
         {
             return true;
         }

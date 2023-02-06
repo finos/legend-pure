@@ -29,6 +29,6 @@ public class LoadCsvToDbTable extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return "org.finos.legend.pure.runtime.java.extension.store.relational.RelationalNativeImplementation.loadCsvToDbTable(" + transformedParams.get(0) + ", " + transformedParams.get(1) + ", " + transformedParams.get(2) + ", " + transformedParams.get(3) + ", es)";
+        return "RelationalGen.loadCsvToDbTable(" + transformedParams.get(0) + ", " + transformedParams.get(1) + ", " + transformedParams.get(2) + ", " + transformedParams.get(3) + ", es)";
     }
 }

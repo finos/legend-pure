@@ -19,6 +19,7 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.factory.Stacks;
+import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
@@ -30,6 +31,7 @@ import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
+import org.eclipse.collections.impl.utility.ListIterate;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.Version;
 
 import java.util.Objects;
@@ -292,7 +294,9 @@ public abstract class AbstractPureRepositoryJarLibrary implements PureRepository
             }
             default:
             {
-                throw new IllegalArgumentException(platformVersions.toSortedList().makeString("Platform version mismatch: ", ", ", ""));
+                //Iterable<? extends PureRepositoryJar> jars
+                String all = Lists.mutable.ofAll(jars).collect(jar -> jar.getMetadata().getRepositoryName()+" "+jar.getMetadata().getPurePlatformVersion()).makeString("\n");
+                throw new IllegalArgumentException(platformVersions.toSortedList().makeString("Platform version mismatch: ", ", ", "")+"\nAll repositories:\n"+all);
             }
         }
 

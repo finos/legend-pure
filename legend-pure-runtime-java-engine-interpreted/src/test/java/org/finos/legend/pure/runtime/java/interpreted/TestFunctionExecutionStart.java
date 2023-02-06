@@ -15,12 +15,11 @@
 package org.finos.legend.pure.runtime.java.interpreted;
 
 import org.eclipse.collections.impl.factory.Lists;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;

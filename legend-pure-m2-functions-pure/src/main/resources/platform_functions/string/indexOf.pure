@@ -1,0 +1,46 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+native function meta::pure::functions::string::indexOf(str:String[1], toFind:String[1]):Integer[1];
+
+native function meta::pure::functions::string::indexOf(str:String[1], toFind:String[1], fromIndex:Integer[1]):Integer[1];
+
+
+function <<test.Test>> meta::pure::functions::string::tests::indexOf::test():Boolean[1]
+{
+    let string = 'the quick brown fox jumps over the lazy dog';
+
+    assertEquals(4, $string->indexOf('quick'));
+    assertEquals(16, $string->indexOf('fox'));
+    assertEquals(-1, $string->indexOf('happy'));
+}
+
+
+function <<test.Test>> meta::pure::functions::string::tests::indexOf::testFromIndex():Boolean[1]
+{
+    let string = 'the the';
+
+    assertEquals(1, $string->indexOf('h', 0));
+    assertEquals(5, $string->indexOf('h', 3));
+}
+
+
+function <<test.Test>> meta::pure::functions::string::tests::indexOf::testSubstringWithIndexOf():Boolean[1]
+{
+    let text = 'Pure is <awesome>';
+    let endIndex = $text->indexOf('>') + 1;
+    let first = $text->substring($text->indexOf('<'), $endIndex);
+
+    assertEquals('<awesome>', $first);
+}

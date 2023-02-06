@@ -14,12 +14,13 @@
 
 package org.finos.legend.pure.runtime.java.compiled;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.PureCompiledExecutionException;
+import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -33,7 +34,7 @@ public class TestGenerationWithPureStacktraceIncluded extends AbstractPureTestWi
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getFunctionExecution(), getCodeStorage());
+        setUpRuntime(getFunctionExecution(), getCodeStorage(), JavaModelFactoryRegistryLoader.loader());
     }
 
     @After
@@ -65,14 +66,14 @@ public class TestGenerationWithPureStacktraceIncluded extends AbstractPureTestWi
         compileTestSource("pureStacktaceTest.pure",
                 "function test():Any[*]\n" +
                         "{\n" +
-                        "   print('whatever',1);noOP();\n" +
+                        "   'whatever';noOP();\n" +
                         "}\n");
         PureCompiledExecutionException e = Assert.assertThrows(PureCompiledExecutionException.class, () -> execute("test():Any[*]"));
         StringBuilder sb = new StringBuilder();
         e.printPureStackTrace(sb);
         Assert.assertEquals("resource:invalidCast.pure line:3 column:15\n" +
                 "resource:noOP.pure line:3 column:4\n" +
-                "resource:pureStacktaceTest.pure line:3 column:24\n", sb.toString());
+                "resource:pureStacktaceTest.pure line:3 column:15\n", sb.toString());
     }
 
     @Test
@@ -95,10 +96,10 @@ public class TestGenerationWithPureStacktraceIncluded extends AbstractPureTestWi
                 "{   \n" +
                 "   let current =  \n" +
                 "      $class.properties->map(pt | $pt.genericType.rawType->toOne()->match([\n" +
-                "         {pr:PrimitiveType[1] | jsiProperty($pathToRoot->concatenate($pt)->toOneMany()) },                        \n" +
-                "         {et:Enumeration<Any>[1] | jsiProperty($pathToRoot->concatenate($pt)->toOneMany()) },\n" +
+                "         {pr:PrimitiveType[1] | jsiProperty($pathToRoot->add($pt)->toOneMany()) },                        \n" +
+                "         {et:Enumeration<Any>[1] | jsiProperty($pathToRoot->add($pt)->toOneMany()) },\n" +
                 "         {a:Class<Any>[1] | \n" +
-                "          let newPath = $pathToRoot->concatenate($pt);\n" +
+                "          let newPath = $pathToRoot->add($pt);\n" +
                 "          let keyProps = $a.properties; \n" +
                 "          let props = if(true, | jsiProperty($pt), | if($a.properties->size() > 1, \n" +
                 "                                                        | if($keyProps->isEmpty(), | $a->getJsiProperties($newPath), \n" +

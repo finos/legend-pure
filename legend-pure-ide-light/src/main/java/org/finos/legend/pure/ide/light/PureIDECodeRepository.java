@@ -33,6 +33,6 @@ public class PureIDECodeRepository extends CodeRepository
     @Override
     public boolean isVisible(CodeRepository other)
     {
-        return (this == other) || CodeRepositoryProviderHelper.isCoreRepository(other) || (other instanceof PlatformCodeRepository);
+        return (this == other) || CodeRepositoryProviderHelper.isCoreRepository(other) || (other != null && other.getName().startsWith("platform"));
     }
 }

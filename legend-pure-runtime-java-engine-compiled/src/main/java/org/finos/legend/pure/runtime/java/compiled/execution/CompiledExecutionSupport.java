@@ -14,6 +14,9 @@
 
 package org.finos.legend.pure.runtime.java.compiled.execution;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ImmutableList;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
@@ -29,6 +32,8 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.compiler.JavaCompilerState;
 import org.finos.legend.pure.runtime.java.compiled.compiler.MemoryFileManager;
 import org.finos.legend.pure.runtime.java.compiled.delta.MetadataProvider;
+import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
+import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtensionLoader;
 import org.finos.legend.pure.runtime.java.compiled.metadata.ClassCache;
 import org.finos.legend.pure.runtime.java.compiled.metadata.FunctionCache;
 import org.finos.legend.pure.runtime.java.compiled.metadata.Metadata;
@@ -65,12 +70,14 @@ public class CompiledExecutionSupport implements ExecutionSupport
 
     private final MutableSet<String> extraSupportedTypes;
 
-    public CompiledExecutionSupport(JavaCompilerState javaCompilerState, CompiledProcessorSupport processorSupport, SourceRegistry sourceRegistry, CodeStorage codeStorage, IncrementalCompiler incrementalCompiler, ExecutionActivityListener executionActivityListener, ConsoleCompiled console, FunctionCache functionCache, ClassCache classCache, MetadataProvider metadataProvider, MutableSet<String> extraSupportedTypes)
+    private final MutableList<CompiledExtension> compiledExtensions;
+
+    public CompiledExecutionSupport(JavaCompilerState javaCompilerState, CompiledProcessorSupport processorSupport, SourceRegistry sourceRegistry, CodeStorage codeStorage, IncrementalCompiler incrementalCompiler, ExecutionActivityListener executionActivityListener, ConsoleCompiled console, FunctionCache functionCache, ClassCache classCache, MetadataProvider metadataProvider, MutableSet<String> extraSupportedTypes, MutableList<CompiledExtension> compiledExtensions)
     {
-        this(javaCompilerState, processorSupport, sourceRegistry, codeStorage, incrementalCompiler, executionActivityListener, console, functionCache, classCache, metadataProvider, extraSupportedTypes, null);
+        this(javaCompilerState, processorSupport, sourceRegistry, codeStorage, incrementalCompiler, executionActivityListener, console, functionCache, classCache, metadataProvider, extraSupportedTypes, compiledExtensions, null);
     }
 
-    public CompiledExecutionSupport(JavaCompilerState javaCompilerState, CompiledProcessorSupport processorSupport, SourceRegistry sourceRegistry, CodeStorage codeStorage, IncrementalCompiler incrementalCompiler, ExecutionActivityListener executionActivityListener, ConsoleCompiled console, FunctionCache functionCache, ClassCache classCache, MetadataProvider metadataProvider, MutableSet<String> extraSupportedTypes, RuntimeOptions options)
+    public CompiledExecutionSupport(JavaCompilerState javaCompilerState, CompiledProcessorSupport processorSupport, SourceRegistry sourceRegistry, CodeStorage codeStorage, IncrementalCompiler incrementalCompiler, ExecutionActivityListener executionActivityListener, ConsoleCompiled console, FunctionCache functionCache, ClassCache classCache, MetadataProvider metadataProvider, MutableSet<String> extraSupportedTypes, MutableList<CompiledExtension> compiledExtensions, RuntimeOptions options)
     {
         this.javaCompilerState = javaCompilerState;
         this.sourceRegistry = sourceRegistry;
@@ -85,6 +92,7 @@ public class CompiledExecutionSupport implements ExecutionSupport
         this.metadataAccessor = new MetadataHolder(processorSupport.getMetadata());
         this.extraSupportedTypes = extraSupportedTypes;
         this.options = (options == null) ? name -> false : options;
+        this.compiledExtensions = compiledExtensions;
     }
 
     public SetIterable<String> getExtraSupportedTypes()
@@ -203,5 +211,10 @@ public class CompiledExecutionSupport implements ExecutionSupport
     public MetadataProvider getMetadataProvider()
     {
         return this.metadataProvider;
+    }
+
+    public MutableList<CompiledExtension> getCompiledExtensions()
+    {
+        return compiledExtensions;
     }
 }

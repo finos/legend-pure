@@ -79,6 +79,7 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m4.ModelRepository;
@@ -536,7 +537,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
     private void cleanProcess(ValueSpecification instance, ProcessorState processorState, ModelRepository repository, Context context, ProcessorSupport processorSupport)
     {
         MutableList<CoreInstance> visited = Lists.mutable.empty();
-        Unbinder.process(Sets.mutable.with(instance), repository, processorState.getParserLibrary(), processorState.getInlineDSLLibrary(), context, processorSupport, new UnbindState(context, processorState.getURLPatternLibrary(), processorSupport)
+        Unbinder.process(Sets.mutable.with(instance), repository, processorState.getParserLibrary(), processorState.getInlineDSLLibrary(), context, processorSupport, new UnbindState(context, processorState.getURLPatternLibrary(), processorState.getInlineDSLLibrary(), processorSupport)
         {
             @Override
             public boolean noteVisited(CoreInstance instance)
@@ -934,7 +935,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
     {
         for (CoreInstance function : possibleFunctions)
         {
-            if (Visibility.isVisibleInSource(function, (functionExpressionSourceInformation == null) ? null : functionExpressionSourceInformation.getSourceId(), processorState.getCodeStorage().getAllRepositories(), processorSupport))
+            if (Visibility.isVisibleInSource(function, (functionExpressionSourceInformation == null) ? null : functionExpressionSourceInformation.getSourceId(), processorState.getCodeStorage() == null ? CodeRepositoryProviderHelper.findCodeRepositories() : processorState.getCodeStorage().getAllRepositories(), processorSupport))
             {
                 CoreInstance pkg = ((PackageableFunction<?>) function)._package();
                 StringBuilder packageName = new StringBuilder();

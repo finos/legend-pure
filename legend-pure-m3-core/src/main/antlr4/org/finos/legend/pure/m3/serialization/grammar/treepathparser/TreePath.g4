@@ -93,8 +93,8 @@ STRING:   '"' ( EscapeSequence | ~('\\'|'"') )* '"'
                |  '\'' ( EscapeSequence | ~('\\'|'\'') )* '\'';
 BOOLEAN: 'true' | 'false';
 INTEGER: (DIGIT)+;
-FLOAT: (DIGIT)* '.' (DIGIT)+ (['e', 'E'] (['+', '-'])? (DIGIT)+)? (['f', 'F'])?;
-DECIMAL: ((DIGIT)* '.' (DIGIT)+ | (DIGIT)+) (['e', 'E'] (['+', '-'])? (DIGIT)+)? ['d', 'D'];
+FLOAT: (DIGIT)* '.' (DIGIT)+ (('e' | 'E') ('+' | '-')? (DIGIT)+)? ('f' | 'F')?;
+DECIMAL: ((DIGIT)* '.' (DIGIT)+ | (DIGIT)+) (('e' | 'E') (('+' | '-'))? (DIGIT)+)? ('d' | 'D');
 DATE: '%' ('-')? (DIGIT)+ ('-'(DIGIT)+ ('-'(DIGIT)+ ('T' DATE_TIME (DATE_TZ)?)?)?)?;
 STRICTTIME: '%' DATE_TIME;
 DATE_TIME: (DIGIT)+ (':'(DIGIT)+ (':'(DIGIT)+ ('.'(DIGIT)+)?)?)?;
@@ -106,7 +106,7 @@ LINE_COMMENT: '//' ~[\r\n]* -> skip ;
 
 fragment
 EscapeSequence
-    :   '\\' ('b' | 't'| 'n' | 'f' | 'r' | '\"' | '\'' | '\\');
+    :   '\\' ('b' | 't'| 'n' | 'f' | 'r' | '"' | '\'' | '\\');
 
 fragment 
 LETTER : [A-Za-z];

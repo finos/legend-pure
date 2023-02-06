@@ -29,6 +29,6 @@ public class LoadValuesToDbTableNew extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return "org.finos.legend.pure.runtime.java.extension.store.relational.RelationalNativeImplementation.loadValuesToDbTable(" + transformedParams.get(0) + ", " + transformedParams.get(1) + ", " + transformedParams.get(2) + ", es)";
+        return "RelationalGen.loadValuesToDbTable(" + transformedParams.get(0) + ", " + transformedParams.get(1) + ", " + transformedParams.get(2) + ", es)";
     }
 }

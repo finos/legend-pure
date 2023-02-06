@@ -15,7 +15,7 @@
 package org.finos.legend.pure.m3.tests.function.base.io;
 
 import com.sun.net.httpserver.*;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.junit.*;
 
 import java.io.IOException;

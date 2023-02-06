@@ -122,11 +122,7 @@ public class GenericTypeValidator implements MatchRunner<GenericType>
                 {
                     if (typeArgument != null)
                     {
-                        // TODO fix Path
-                        if (!Type.subTypeOf(rawType, processorSupport.package_getByUserPath(M3Paths.Path), processorSupport))
-                        {
-                            validateGenericTypeRecursive(typeArgument, validateFullyDefined, processorSupport);
-                        }
+                        validateGenericTypeRecursive(typeArgument, validateFullyDefined, processorSupport);
                     }
                     else if (validateFullyDefined)
                     {

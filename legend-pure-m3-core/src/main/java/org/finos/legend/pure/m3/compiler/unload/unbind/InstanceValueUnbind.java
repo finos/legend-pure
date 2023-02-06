@@ -14,22 +14,21 @@
 
 package org.finos.legend.pure.m3.compiler.unload.unbind;
 
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.EnumStub;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.RootRouteNode;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.SimpleFunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class InstanceValueUnbind implements MatchRunner<InstanceValue>
@@ -50,33 +49,26 @@ public class InstanceValueUnbind implements MatchRunner<InstanceValue>
             {
                 ((UnbindState)state).freeProcessedAndValidated(value);
             }
+
             Shared.cleanUpReferenceUsage(value, instanceValue, processorSupport);
-            //TODO replace call to Instance.instanceOf once we resolve issue with Path not being available in this module - circular dependency
-            if(value instanceof LambdaFunction ||
-                    value instanceof SimpleFunctionExpression ||
-                    Instance.instanceOf(value, M3Paths.Path, processorSupport) ||
-                    value instanceof RootRouteNode)
-            {
-                matcher.fullMatch(value, state);
-            }
-            else if (Instance.instanceOf(value, M3Paths.RootGraphFetchTree, processorSupport))
-            {
-                matcher.fullMatch(value, state);
-            }
-            else if (value instanceof KeyExpression)
+
+            if (value instanceof KeyExpression)
             {
                 ((UnbindState) state).freeProcessedAndValidated(modelRepository.newBooleanCoreInstance(((KeyExpression)value)._add()));
                 ((UnbindState) state).freeProcessedAndValidated(((KeyExpression)value)._key());
                 matcher.fullMatch(((KeyExpression)value)._expression(), state);
             }
-            else
+            else if (value instanceof ImportStub)
             {
                 Shared.cleanImportStub(value, processorSupport);
+            }
+            else if (!(value instanceof PrimitiveCoreInstance) && !(value instanceof EnumStub))
+            {
+                matcher.fullMatch(value, state);
             }
 
             if (value instanceof ValueSpecification)
             {
-                matcher.fullMatch(value, state);
                 ((ValueSpecification)value)._usageContextRemove();
             }
         }

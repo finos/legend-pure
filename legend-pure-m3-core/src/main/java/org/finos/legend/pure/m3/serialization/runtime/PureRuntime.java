@@ -39,6 +39,7 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
 import org.finos.legend.pure.m3.navigation.function.InvalidFunctionDescriptorException;
 import org.finos.legend.pure.m3.serialization.PureRuntimeEventHandler;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
@@ -67,8 +68,7 @@ import java.util.concurrent.ForkJoinPool;
 
 public class PureRuntime
 {
-    private static final String M3_PURE = "/platform/pure/m3.pure";
-    private static final String LANG_PURE = "/platform/pure/corefunctions/lang.pure";
+    private static final String M3_PURE = "/platform/pure/grammar/m3.pure";
 
     private final URLPatternLibrary patternLibrary = new URLPatternLibrary();
 
@@ -114,6 +114,58 @@ public class PureRuntime
         this.options = options;
     }
 
+    public void initialize(Message message)
+    {
+        synchronized (this.initializationLock)
+        {
+            this.initialized = false;
+            this.initializing = true;
+            try
+            {
+                this.initializationError = false;
+                try
+                {
+                    message.setMessage("Initializing...");
+                    this.loadAndCompileCore(message);
+                    try
+                    {
+                        this.loadAndCompileSystem(message);
+                        this.cache.cacheRepoAndSources();
+                    }
+                    finally
+                    {
+                        this.initialized = true;
+                    }
+                    message.setMessage("...");
+                }
+                catch (RuntimeException | Error e)
+                {
+                    this.initializationError = true;
+                    throw e;
+                }
+            }
+            finally
+            {
+                this.initializing = false;
+            }
+        }
+    }
+
+    public void reset()
+    {
+        this.initialized = false;
+        this.initializing = false;
+        this.initializationError = false;
+        this.incrementalCompiler.reset();
+        this.patternLibrary.clear();
+        this.sourceRegistry.clear();
+        // TODO consider whether to reload sources from storage
+        for (PureRuntimeEventHandler eventHandler : this.eventHandlers)
+        {
+            eventHandler.reset();
+        }
+    }
+
     public URLPatternLibrary getURLPatternLibrary()
     {
         return this.patternLibrary;
@@ -132,21 +184,6 @@ public class PureRuntime
     public void setForceImmutable(boolean forceImmutable)
     {
         this.forceImmutable = forceImmutable;
-    }
-
-    public void reset()
-    {
-        this.initialized = false;
-        this.initializing = false;
-        this.initializationError = false;
-        this.incrementalCompiler.reset();
-        this.patternLibrary.clear();
-        this.sourceRegistry.clear();
-        // TODO consider whether to reload sources from storage
-        for (PureRuntimeEventHandler eventHandler : this.eventHandlers)
-        {
-            eventHandler.reset();
-        }
     }
 
     public SourceRegistry getSourceRegistry()
@@ -195,14 +232,8 @@ public class PureRuntime
 
         try
         {
-            MutableList<String> sourcePaths = this.getCodeStorage().getFileOrFiles(PlatformCodeRepository.NAME).toList();
-            // Hack: we put lang.pure first because the M3 compiler relies on it for ^ expressions
-            int index = sourcePaths.indexOf(LANG_PURE);
-            if (0 < index)
-            {
-                sourcePaths.set(index, sourcePaths.get(0));
-                sourcePaths.set(0, LANG_PURE);
-            }
+            RichIterable<CodeRepository> allPlatform = this.getCodeStorage().getAllRepositories().select(c -> c.getName().startsWith("platform"));
+            MutableList<String> sourcePaths = allPlatform.flatCollect(c -> this.getCodeStorage().getFileOrFiles(c.getName())).toList();
 
             if (message != null)
             {
@@ -819,43 +850,6 @@ public class PureRuntime
         }
 
         this.pureRuntimeStatus.finishRuntimeInitialization();
-    }
-
-    public void initialize(Message message)
-    {
-        synchronized (this.initializationLock)
-        {
-            this.initialized = false;
-            this.initializing = true;
-            try
-            {
-                this.initializationError = false;
-                try
-                {
-                    message.setMessage("Initializing...");
-                    this.loadAndCompileCore(message);
-                    try
-                    {
-                        this.loadAndCompileSystem(message);
-                        this.cache.cacheRepoAndSources();
-                    }
-                    finally
-                    {
-                        this.initialized = true;
-                    }
-                    message.setMessage("...");
-                }
-                catch (RuntimeException | Error e)
-                {
-                    this.initializationError = true;
-                    throw e;
-                }
-            }
-            finally
-            {
-                this.initializing = false;
-            }
-        }
     }
 
     public PureGraphCache getCache()

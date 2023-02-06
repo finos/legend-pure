@@ -1,0 +1,44 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::functions::asserts::*;
+
+
+function meta::pure::functions::asserts::assertEmpty(collection:Any[*]):Boolean[1]
+{
+    assertEmpty($collection, '%s is not empty', [^List<Any>(values=$collection)]);
+}
+
+function meta::pure::functions::asserts::assertEmpty(collection:Any[*], message:String[1]):Boolean[1]
+{
+    assert($collection->isEmpty(), $message);
+}
+
+function meta::pure::functions::asserts::assertEmpty(collection:Any[*], formatString:String[1], formatArgs:Any[*]):Boolean[1]
+{
+    assert($collection->isEmpty(), $formatString, $formatArgs);
+}
+
+function meta::pure::functions::asserts::assertEmpty(collection:Any[*], message:Function<{->String[1]}>[1]):Boolean[1]
+{
+    assert($collection->isEmpty(), $message);
+}
+
+
+
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertEmpty():Any[*]
+{
+   assertEmpty([]);
+   assertEmpty([1, 2, 3]->filter(x | $x == 5));
+}

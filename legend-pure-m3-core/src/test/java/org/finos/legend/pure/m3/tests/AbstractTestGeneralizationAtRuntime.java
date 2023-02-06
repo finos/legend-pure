@@ -14,8 +14,6 @@
 
 package org.finos.legend.pure.m3.tests;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
-import org.junit.Assert;
 import org.junit.Test;
 
 public abstract class AbstractTestGeneralizationAtRuntime extends AbstractPureTestWithCoreCompiled
@@ -28,19 +26,8 @@ public abstract class AbstractTestGeneralizationAtRuntime extends AbstractPureTe
                 "function go():Any[*]" +
                 "{" +
                 "   assert(meta::pure::metamodel::PackageableElement.specializations->size() > 0, |'');\n" +
-                "   print(a, 1);" +
+                "   assertEquals('a', a->id());" +
                 "}");
         this.execute("go():Any[*]");
-        Assert.assertEquals("a instance PackageableElement\n" +
-                "    name(Property):\n" +
-                "        wee instance String\n" +
-                "    referenceUsages(Property):\n" +
-                "        Anonymous_StripedId instance ReferenceUsage\n" +
-                "            offset(Property):\n" +
-                "                [>1] 0 instance Integer\n" +
-                "            owner(Property):\n" +
-                "                [>1] Anonymous_StripedId instance InstanceValue\n" +
-                "            propertyName(Property):\n" +
-                "                [>1] values instance String", this.functionExecution.getConsole().getLine(0));
     }
 }

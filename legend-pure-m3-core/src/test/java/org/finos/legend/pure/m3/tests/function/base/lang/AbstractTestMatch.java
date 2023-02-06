@@ -43,13 +43,6 @@ public abstract class AbstractTestMatch extends PureExpressionTest
     }
 
     @Test
-    public void testMatchPureObjectTypeFail()
-    {
-        Pattern expectedInfo = Pattern.compile("^Match failure: (\\W*\\d*\\w*)\\(?\\d*\\)? instanceOf PathElement$");
-        assertExpressionRaisesPureException(expectedInfo, "^meta::pure::metamodel::path::PathElement() ->match([i:Integer[1] | $i])");
-    }
-
-    @Test
     public void testMatchIndividualFail()
     {
         Pattern expectedInfo = Pattern.compile("^Match failure: test string\\(?\\d*\\)? instanceOf String$");

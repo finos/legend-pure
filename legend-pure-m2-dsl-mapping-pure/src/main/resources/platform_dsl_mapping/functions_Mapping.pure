@@ -1,0 +1,149 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::mapping::*;
+import meta::pure::store::*;
+import meta::pure::mapping::aggregationAware::*;
+
+function meta::pure::mapping::enumerationMappingByName(_this:Mapping[1], name:String[1]):EnumerationMapping<Any>[0..1]
+{
+    let enumMapping = $_this.includes->map(i | $i.included)
+                  ->map(m | $m->enumerationMappingByName($name))
+                  ->concatenate($_this.enumerationMappings->filter(em|$em.name == $name))->removeDuplicates();
+
+    if ($enumMapping->isEmpty(), | [], | $enumMapping->toOne());
+}
+
+function meta::pure::mapping::_classMappingByClass(_this:Mapping[1], class:Class<Any>[1]):SetImplementation[*]
+{
+    let assocPropertyMappings = $_this.associationMappings->map(a|$a->allPropertyMappings());
+    let assocPropertyMappingsGroupedById = $assocPropertyMappings->groupBy({p | $p.sourceSetImplementationId});
+    $_this.includes->map(i | $i.included)
+                  ->map(m | $m->_classMappingByClass($class))
+                  ->concatenate($_this.classMappings->filter(cm|$cm.class == $class))
+                  ->concatenate($_this.classMappings->map(impl|$impl->instanceOf(AggregationAwareSetImplementation)->if(|$impl->cast(@AggregationAwareSetImplementation).aggregateSetImplementations.setImplementation,|[]))->filter(cm|$cm.mappingClass == $class))
+                  ->map(cm | $cm->addAssociationMappingsIfRequired($assocPropertyMappingsGroupedById));
+}
+
+function meta::pure::mapping::__classMappingByClass(mapping:Mapping[1], class:Class<Any>[1]):SetImplementation[*]
+{
+   let rootClassMappings = $mapping->rootClassMappingByClass($class);
+
+   let embeddedSets = $mapping->classMappings()->map(cm | $cm->match([
+         p:PropertyMappingsImplementation[1] |$p->allPropertyMappings()->map(p | $p->findEmbeddedMappingsByClass($class)),
+         a:SetImplementation[1]| []
+         ]));
+
+   $rootClassMappings->concatenate($embeddedSets);
+}
+
+function <<access.private>> meta::pure::mapping::findEmbeddedMappingsByClass(propertyMapping: PropertyMapping[1], class:Class<Any>[1]):SetImplementation[*]
+{
+
+   $propertyMapping->match([
+      s:InstanceSetImplementation[1] | let nested = $s->allPropertyMappings()->map(p | $p->findEmbeddedMappingsByClass($class));
+                               if ($s.class == $class, | [$s]->concatenate($nested); , | $nested);,
+      a:PropertyMapping[1] | []
+   ]);
+}
+
+function meta::pure::mapping::rootClassMappingByClass(_this:Mapping[1], class:Class<Any>[1]):SetImplementation[0..1]
+{
+    $_this->_classMappingByClass($class)->filter(s|$s.root == true)->last();
+}
+
+function meta::pure::mapping::_classMappingByIdRecursive(_this:Mapping[1], id:String[*]):SetImplementation[*]
+{
+    let result = $_this.includes->map(i | $i.included)
+                               ->map(m | $m->_classMappingByIdRecursive($id))
+                               ->concatenate($_this.classMappings->filter(cm|$cm.id == $id))
+                               ->distinct();
+}
+
+function meta::pure::mapping::classMappingById(_this:Mapping[1], id:String[1]):SetImplementation[0..1]
+{
+    let assocPropertyMappings = $_this->_associationPropertyMappingsByIdRecursive($id)->removeDuplicates()->groupBy({p | $p.sourceSetImplementationId});
+    let allClassMappings = $_this->_classMappingByIdRecursive($id);
+    if($allClassMappings->isEmpty(),| [],| $allClassMappings->toOne()->addAssociationMappingsIfRequired($assocPropertyMappings));
+}
+
+function meta::pure::mapping::_associationPropertyMappingsByIdRecursive(_this:Mapping[1], id:String[1]):PropertyMapping[*]
+{
+    let result = $_this.includes->map(i | $i.included)
+                               ->map(m | $m->_associationPropertyMappingsByIdRecursive($id))
+                               ->concatenate($_this.associationMappings->map(a|$a->allPropertyMappings())->filter(pm | $pm.sourceSetImplementationId == $id));
+}
+
+function meta::pure::mapping::classMappings(_this:Mapping[1]):SetImplementation[*]
+{
+   let allAssocPropertyMappings = $_this->_allAssociationMappingsRecursive()->removeDuplicates()->map(a|$a->allPropertyMappings())->groupBy({p | $p.sourceSetImplementationId});
+   let allClassMappings = $_this->_allClassMappingsRecursive()->removeDuplicates();
+   $allClassMappings->map(cm | $cm->addAssociationMappingsIfRequired($allAssocPropertyMappings));
+}
+
+function meta::pure::mapping::_allClassMappingsRecursive(_this:Mapping[1]):SetImplementation[*]
+{
+   $_this.includes.included->map(m | $m->_allClassMappingsRecursive())->concatenate($_this.classMappings);
+}
+
+function meta::pure::mapping::_allAssociationMappingsRecursive(_this:Mapping[1]):AssociationImplementation[*]
+{
+   $_this.includes.included->map(m | $m->_allAssociationMappingsRecursive())->concatenate($_this.associationMappings);
+}
+
+function meta::pure::mapping::findSubstituteStore(_this:Mapping[1], store:Store[1]):Store[0..1]
+{
+    $_this.includes->fold({inc:MappingInclude[1], sub:Store[0..1] | if($sub->isEmpty(), |$inc->findSubstituteStore($store), |$sub)}, [])
+}
+
+function meta::pure::mapping::resolveStore(_this:Mapping[1], store:Store[1]):Store[1]
+{
+    let substitute = $_this->findSubstituteStore($store);
+    if($substitute->isEmpty(), |$store, |$substitute->toOne());
+}
+
+function meta::pure::mapping::allSuperSetImplementationIds(_this:Mapping[1], id : String[1]):String[*]
+{
+    let setImplementation = $_this->classMappingById($id);
+    $id->concatenate(if ($setImplementation->isEmpty() || $setImplementation.superSetImplementationId->isEmpty(),
+                         | [],
+                         | $_this->allSuperSetImplementationIds($setImplementation.superSetImplementationId->toOne())));
+}
+
+function <<access.private>> meta::pure::mapping::addAssociationMappingsIfRequired(classMapping:SetImplementation[1], associationPropertyMappingsById:Map<String,List<PropertyMapping>>[1]):SetImplementation[1]
+{
+    if ($classMapping->instanceOf(InstanceSetImplementation),
+        | let assocProperties = $associationPropertyMappingsById->get($classMapping.id);
+          if ($assocProperties->isEmpty(),
+              | $classMapping,
+              | let pmr = $classMapping->cast(@InstanceSetImplementation);
+                ^$pmr(propertyMappings=$pmr.propertyMappings->concatenate($assocProperties.values));
+          );,
+        | $classMapping
+    );
+}
+
+
+
+function meta::pure::mapping::findSubstituteStore(_this:MappingInclude[1], store:Store[1]):Store[0..1]
+{
+    let includedSub = $_this.included->findSubstituteStore($store);
+    if ($includedSub->isEmpty(),
+        | $_this.storeSubstitutions->filter(s | $store == $s.original)->first()->map(s | $s.substitute),
+        | let sub = $_this.storeSubstitutions->filter(s | $includedSub == $s.original);
+          if ($sub->isEmpty(),
+              | $includedSub,
+              | $sub->first()->map(s | $s.substitute));
+       );
+}

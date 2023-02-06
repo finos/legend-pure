@@ -16,6 +16,7 @@ package org.finos.legend.pure.runtime.java.extension.store.relational.compiled.n
 
 import org.finos.legend.pure.m2.relational.AbstractTestPureDBFunction;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
 import org.junit.Before;
 
 public class TestPureDBFunction extends AbstractTestPureDBFunction
@@ -23,6 +24,6 @@ public class TestPureDBFunction extends AbstractTestPureDBFunction
     @Before
     public void setUp()
     {
-        setUpRuntime(new FunctionExecutionCompiledBuilder().build());
+        setUpRuntime(new FunctionExecutionCompiledBuilder().build(), JavaModelFactoryRegistryLoader.loader());
     }
 }

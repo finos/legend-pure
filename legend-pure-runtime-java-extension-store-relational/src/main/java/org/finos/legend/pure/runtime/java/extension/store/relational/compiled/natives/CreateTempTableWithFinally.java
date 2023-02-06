@@ -48,7 +48,7 @@ public class CreateTempTableWithFinally extends AbstractNative
 
         String toSqlString = "(String)CoreGen.evaluate(es," + toSql + "," + tableName + "," + columns + "," + dbType + ")";
 
-        return "org.finos.legend.pure.runtime.java.extension.store.relational.compiled.RelationalGen.createTempTable(" + tableName + "," + toSqlString + "," + connection + ",0,0," + NativeFunctionProcessor.buildM4LineColumnSourceInformation(functionExpression.getSourceInformation()) + "," + relyOnFinallyForCleanup + ",es)";
+        return "org.finos.legend.pure.generated.RelationalGen.createTempTable(" + tableName + "," + toSqlString + "," + connection + ",0,0," + NativeFunctionProcessor.buildM4LineColumnSourceInformation(functionExpression.getSourceInformation()) + "," + relyOnFinallyForCleanup + ",es)";
     }
 
 }

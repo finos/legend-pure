@@ -1,0 +1,98 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::functions::lang::tests::eval::*;
+
+native function meta::pure::functions::lang::eval<V|m>(func:Function<{->V[m]}>[1]):V[m];
+
+native function meta::pure::functions::lang::eval<T,V|m,n>(func:Function<{T[n]->V[m]}>[1], param:T[n]):V[m];
+
+native function meta::pure::functions::lang::eval<T,U,V|m,n,p>(func:Function<{T[n],U[p]->V[m]}>[1], param1:T[n], param2:U[p]):V[m];
+
+native function meta::pure::functions::lang::eval<T,U,V,W|m,n,p,q>(func:Function<{T[n],U[p],W[q]->V[m]}>[1], param1:T[n], param2:U[p], param3:W[q]):V[m];
+
+native function meta::pure::functions::lang::eval<T,U,V,W,X|m,n,p,q,r>(func:Function<{T[n],U[p],W[q],X[r]->V[m]}>[1], param1:T[n], param2:U[p], param3:W[q], param4:X[r]):V[m];
+
+native function meta::pure::functions::lang::eval<T,U,V,W,X,Y|m,n,p,q,r,s>(func:Function<{T[n],U[p],W[q],X[r],Y[s]->V[m]}>[1], param1:T[n], param2:U[p], param3:W[q], param4:X[r], param5:Y[s]):V[m];
+
+native function meta::pure::functions::lang::eval<T,U,V,W,X,Y,Z|m,n,p,q,r,s,t>(func:Function<{T[n],U[p],W[q],X[r],Y[s],Z[t]->V[m]}>[1], param1:T[n], param2:U[p], param3:W[q], param4:X[r], param5:Y[s], param6:Z[t]):V[m];
+
+native function meta::pure::functions::lang::eval<S,T,V,U,W,X,Y,Z|m,n,o,p,q,r,s,t>(func:Function<{S[n],T[o],U[p],W[q],X[r],Y[s],Z[t]->V[m]}>[1], param1:S[n], param2:T[o], param3:U[p], param4:W[q], param5:X[r], param6:Y[s], param7:Z[t]):V[m];
+
+
+
+function <<test.Test>> meta::pure::functions::lang::tests::eval::testEval():Boolean[1]
+{
+    assertEquals('test', {|'test'}->eval());
+    // TODO fix this - it doesn't even compile
+    // assertEquals('test', SimpleFunctionDefinition.all()->filter(f | $f->functionType().parameters->isEmpty())->at(0)->eval());
+}
+
+function <<test.Test>>  meta::pure::functions::math::tests::evaluate::minus::testSingleExpressionMinus():Boolean[1]
+{
+    assertEq(-1, -({| 1}->eval()));
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::eval::testEvalWithCollectionWithOneElement():Boolean[1]
+{
+    assert(meta::pure::functions::lang::tests::eval::doSomething_Integer_1__Boolean_1_->eval(getInts()));
+}
+
+function meta::pure::functions::lang::tests::eval::getInts():Integer[*]
+{
+   [1];
+}
+
+function meta::pure::functions::lang::tests::eval::doSomething(int:Integer[1]):Boolean[1]
+{
+   true;
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::eval::testEvalTwo():Boolean[1]
+{
+    assertEquals(3, {x, y | $x + $y}->eval(1, 2));
+    assertEquals('12', {x, y | $x + $y}->eval('1', '2'));
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::evaluate::testEvaluateMultiplicityInference():Boolean[1]
+{
+    let f = {i:Integer[1] | 'p' + $i->toString()};
+    assertEquals([2], [1, 2, 3]->filter(i | eq($f->eval($i), 'p2')));
+}
+
+function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::lang::tests::evaluate::copy::testFunctionDefinitionCopy():Boolean[1]
+{
+    let f1 = 'meta::pure::functions::lang::tests::copy::testFunctionDefinitionCopy__Boolean_1_'->pathToElement();
+    let type = $f1->genericType();
+    assertIs(ConcreteFunctionDefinition, $type.rawType->toOne());
+
+    let f2 = ^$f1();
+    assertIsNot($f1, $f2);
+    assertEquals($type.rawType, $f2->genericType().rawType);
+    assertEquals($type.typeArguments->size(), $f2->genericType().typeArguments->size());
+    assertEmpty($type->properties()->filter(p | $p->eval($f1) != $p->eval($f2)));
+}
+
+function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::lang::tests::evaluate::copy::testFunctionDefinitionWithInstanceCopy():Boolean[1]
+{
+    let f1 = 'meta::pure::functions::lang::tests::copy::testFlatCopyToOne__Boolean_1_'->pathToElement();
+    let type = $f1->genericType();
+    assertIs(ConcreteFunctionDefinition, $type.rawType->toOne());
+
+    let f2 = ^$f1();
+    assertIsNot($f1, $f2);
+    assertEquals($type.rawType, $f2->genericType().rawType);
+    assertEquals($type.typeArguments->size(), $f2->genericType().typeArguments->size());
+    assertEmpty($type->properties()->filter(p | $p->eval($f1) != $p->eval($f2)));
+}

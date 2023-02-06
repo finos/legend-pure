@@ -48,7 +48,7 @@ public final class ModelCodeRepository extends SVNCodeRepository
             return true;
         }
 
-        if ((other instanceof PlatformCodeRepository) || (other instanceof SystemCodeRepository) || CodeRepositoryProviderHelper.isCoreRepository(other))
+        if ((other != null && other.getName().startsWith("platform")) || (other instanceof SystemCodeRepository) || CodeRepositoryProviderHelper.isCoreRepository(other))
         {
             return true;
         }

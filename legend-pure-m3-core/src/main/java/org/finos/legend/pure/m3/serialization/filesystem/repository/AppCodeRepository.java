@@ -47,7 +47,7 @@ public final class AppCodeRepository extends SVNCodeRepository
                 (other instanceof ModelCodeRepository) ||
                 (other instanceof SystemCodeRepository) ||
                 CodeRepositoryProviderHelper.isCoreRepository(other) ||
-                (other instanceof PlatformCodeRepository) ||
+                (other != null && other.getName().startsWith("platform")) ||
                 this.visibleRepoNames.contains(other.getName());
     }
 

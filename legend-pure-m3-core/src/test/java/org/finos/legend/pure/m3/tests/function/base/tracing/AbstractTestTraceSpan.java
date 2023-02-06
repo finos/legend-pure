@@ -14,9 +14,8 @@
 
 package org.finos.legend.pure.m3.tests.function.base.tracing;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
-import io.opentracing.noop.NoopTracerFactory;
 import io.opentracing.util.GlobalTracer;
 import org.junit.*;
 
@@ -31,7 +30,7 @@ public abstract class AbstractTestTraceSpan extends AbstractPureTestWithCoreComp
     @Test
     public void testTraceSpan()
     {
-        compileTestSource("fromString.pure","function testTraceSpan():Nil[0]\n" +
+        compileTestSource("fromString.pure", "function testTraceSpan():Nil[0]\n" +
                 "{\n" +
                 "    meta::pure::functions::tracing::traceSpan(|print('Hello World',1), 'Test Execute');\n" +
                 "}\n");
@@ -43,7 +42,7 @@ public abstract class AbstractTestTraceSpan extends AbstractPureTestWithCoreComp
     @Test
     public void testTraceSpanWithReturnValue()
     {
-        compileTestSource("fromString.pure","function testTraceSpan():Nil[0]\n" +
+        compileTestSource("fromString.pure", "function testTraceSpan():Nil[0]\n" +
                 "{\n" +
                 "    let text = meta::pure::functions::tracing::traceSpan(|' World', 'Test Execute');\n" +
                 "    print('Hello' + $text, 1);\n" +
@@ -55,7 +54,7 @@ public abstract class AbstractTestTraceSpan extends AbstractPureTestWithCoreComp
     @Test
     public void testTraceSpanWithAnnotations()
     {
-        compileTestSource("fromString.pure","function testTraceSpan():Nil[0]\n" +
+        compileTestSource("fromString.pure", "function testTraceSpan():Nil[0]\n" +
                 "{\n" +
                 "   let annotations = newMap([\n" +
                 "      pair('key1', 'value1'), \n" +
@@ -74,7 +73,7 @@ public abstract class AbstractTestTraceSpan extends AbstractPureTestWithCoreComp
     @Test
     public void testTraceSpanUsingEval()
     {
-        compileTestSource("fromString.pure","function testTraceSpan():Nil[0]\n" +
+        compileTestSource("fromString.pure", "function testTraceSpan():Nil[0]\n" +
                 "{\n" +
                 "    let res = meta::pure::functions::tracing::traceSpan_Function_1__String_1__V_m_->eval(|'Hello World', 'Test Execute');\n" +
                 "    print($res,1);" +
@@ -89,7 +88,7 @@ public abstract class AbstractTestTraceSpan extends AbstractPureTestWithCoreComp
     {
         tracer.reset();
         unregisterTracer();
-        compileTestSource("fromString.pure","function testTraceSpan():Nil[0]\n" +
+        compileTestSource("fromString.pure", "function testTraceSpan():Nil[0]\n" +
                 "{\n" +
                 "    meta::pure::functions::tracing::traceSpan(|print('Hello World',1), 'Test Execute');\n" +
                 "}\n");
@@ -102,7 +101,7 @@ public abstract class AbstractTestTraceSpan extends AbstractPureTestWithCoreComp
     @Test
     public void testTraceSpanShouldHandleErrorWhileEvaluatingTagsLamda()
     {
-        compileTestSource("fromString.pure","function getTags(): Map<String, String>[1] {" +
+        compileTestSource("fromString.pure", "function getTags(): Map<String, String>[1] {" +
                 "   assert('a' == 'b', |'');    " +
                 "   newMap([        \n" +
                 "      pair('key1', '') \n" +
@@ -122,13 +121,13 @@ public abstract class AbstractTestTraceSpan extends AbstractPureTestWithCoreComp
     @Test
     public void testTraceSpanShouldHandleStackOverflowErrorWhileEvaluatingTagsLamda()
     {
-        compileTestSource("fromString.pure","function getTags(): Map<String, String>[1] {" +
-                              "   getTags();  \n" +
-                              "}" +
-                              "function testTraceSpan():Nil[0]\n" +
-                              "{\n" +
-                              "    meta::pure::functions::tracing::traceSpan(|print('Hello World', 1), 'Test Execute', |getTags(), false);\n" +
-                              "}\n");
+        compileTestSource("fromString.pure", "function getTags(): Map<String, String>[1] {" +
+                "   getTags();  \n" +
+                "}" +
+                "function testTraceSpan():Nil[0]\n" +
+                "{\n" +
+                "    meta::pure::functions::tracing::traceSpan(|print('Hello World', 1), 'Test Execute', |getTags(), false);\n" +
+                "}\n");
         this.execute("testTraceSpan():Nil[0]");
         Assert.assertEquals("'Hello World'", this.functionExecution.getConsole().getLine(0));
         Assert.assertTrue(tracer.spanExists("Test Execute"));
@@ -136,10 +135,10 @@ public abstract class AbstractTestTraceSpan extends AbstractPureTestWithCoreComp
         Assert.assertTrue(tags.get("Exception").toString().startsWith("Unable to resolve tags - "));
     }
 
-    @Test (expected = PureAssertFailException.class)
+    @Test(expected = PureAssertFailException.class)
     public void testTraceSpanShouldNotHandleErrorWhileEvaluatingTagsLamda()
     {
-        compileTestSource("fromString.pure","function getTags(): Map<String, String>[1] {" +
+        compileTestSource("fromString.pure", "function getTags(): Map<String, String>[1] {" +
                 "   assert('a' == 'b', |'');    " +
                 "   newMap([        \n" +
                 "      pair('key1', '') \n" +
@@ -153,7 +152,8 @@ public abstract class AbstractTestTraceSpan extends AbstractPureTestWithCoreComp
     }
 
     @AfterClass
-    public static void tearDown() {
+    public static void tearDown()
+    {
         tracer.reset();
         unregisterTracer();
     }
@@ -168,7 +168,9 @@ public abstract class AbstractTestTraceSpan extends AbstractPureTestWithCoreComp
             tracerField.set(GlobalTracer.get(), false);
             Assert.assertFalse(GlobalTracer.isRegistered());
         }
-        catch (Exception ignored){}
+        catch (Exception ignored)
+        {
+        }
     }
 
 }

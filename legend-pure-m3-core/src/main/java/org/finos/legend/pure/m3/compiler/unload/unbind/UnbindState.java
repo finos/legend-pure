@@ -16,6 +16,7 @@ package org.finos.legend.pure.m3.compiler.unload.unbind;
 
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.pattern.URLPatternLibrary;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -25,11 +26,14 @@ public class UnbindState extends MatcherState
     private final Context context;
     private final URLPatternLibrary URLPatternLibrary;
 
-    public UnbindState(Context context, URLPatternLibrary URLPatternLibrary, ProcessorSupport processorSupport)
+    private final InlineDSLLibrary inlineDSLLibrary;
+
+    public UnbindState(Context context, URLPatternLibrary URLPatternLibrary, InlineDSLLibrary inlineDSLLibrary, ProcessorSupport processorSupport)
     {
         super(processorSupport);
         this.context = context;
         this.URLPatternLibrary = URLPatternLibrary;
+        this.inlineDSLLibrary = inlineDSLLibrary;
     }
 
     @Override
@@ -53,5 +57,11 @@ public class UnbindState extends MatcherState
     public void freeValidated(CoreInstance instance)
     {
         instance.markNotValidated();
+    }
+
+    @Override
+    public InlineDSLLibrary getInlineDSLLibrary()
+    {
+        return this.inlineDSLLibrary;
     }
 }

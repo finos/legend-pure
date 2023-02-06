@@ -15,10 +15,10 @@
 package org.finos.legend.pure.m3.tests.incremental;
 
 import org.eclipse.collections.impl.factory.Lists;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
-import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -27,12 +27,14 @@ import org.junit.Test;
 public class TestAllFunction extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("sourceId.pure");
         runtime.delete("userId.pure");
     }
@@ -43,11 +45,11 @@ public class TestAllFunction extends AbstractPureTestWithCoreCompiledPlatform
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
                         .createInMemorySource("userId.pure", "function test():Boolean[1]{assert(1 == Class.all()->filter(c|$c.name == 'A')->size(), |'')}")
                         .compile(),
-                        new RuntimeTestScriptBuilder()
-                                .deleteSource("sourceId.pure")
-                                .createInMemorySource("sourceId.pure", "Class A{}")
-                                .compile(),
-                        this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                new RuntimeTestScriptBuilder()
+                        .deleteSource("sourceId.pure")
+                        .createInMemorySource("sourceId.pure", "Class A{}")
+                        .compile(),
+                this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
     }
 
     @Test
@@ -72,14 +74,14 @@ public class TestAllFunction extends AbstractPureTestWithCoreCompiledPlatform
         for (int i = 0; i < 10; i++)
         {
             this.runtime.createInMemorySource("sourceId.pure", "Class A\n" +
-                                                          "{\n" +
-                                                          "     b:String[*];\n" +
-                                                          "     a(s:String[1]){$this.b->filter(a|true)->at(0)}:String[1];\n" +
-                                                          "}\n" +
-                                                          "function test():Integer[1]\n" +
-                                                          "{\n" +
-                                                          "     ConcreteFunctionDefinition.all()->size();\n" +
-                                                          "}\n");
+                    "{\n" +
+                    "     b:String[*];\n" +
+                    "     a(s:String[1]){$this.b->filter(a|true)->at(0)}:String[1];\n" +
+                    "}\n" +
+                    "function test():Integer[1]\n" +
+                    "{\n" +
+                    "     ConcreteFunctionDefinition.all()->size();\n" +
+                    "}\n");
             this.runtime.compile();
             int newValue = this.context.getClassifierInstances(this.runtime.getCoreInstance(M3Paths.ConcreteFunctionDefinition)).size();
             if (oldValue != 0 && oldValue != newValue)

@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.m3.tests.validation;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
@@ -149,7 +149,7 @@ public class TestFunctionReturnType extends AbstractPureTestWithCoreCompiledPlat
     {
         // This should compile
         compileTestSource("testSource1.pure",
-                "function func1WithReturn<T>(t:T[*]):List<T>[1]\n" +
+                        "function func1WithReturn<T>(t:T[*]):List<T>[1]\n" +
                         "{\n" +
                         "  ^List<T>(values=$t)\n" +
                         "}\n");

@@ -14,10 +14,10 @@
 
 package org.finos.legend.pure.m3.tests.incremental.function;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
-import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
-import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
@@ -44,12 +44,12 @@ public class TestPureRuntimeFunction_Lambda extends AbstractPureTestWithCoreComp
     public void testPureRuntimeFunctionLambdaCollection() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class Test{} Class B{a:A[1];} Class A{} function f(a:A[1]):String[1]{'ok1'}")
-                        .createInMemorySource("userId.pure", "function go():Nil[0]{print(^B(a=^A())->match([b:B[1]|f($b.a)+'ok2']),1);}\n")
+                        .createInMemorySource("userId.pure", "function go():Any[1]{^B(a=^A())->match([b:B[1]|f($b.a)+'ok2']);}\n")
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
                         .createInMemorySource("sourceId.pure", "function sourceFunction():Integer[1]{1}")
-                        .compileWithExpectedCompileFailure("B has not been defined!", "userId.pure", 1, 29)
+                        .compileWithExpectedCompileFailure("B has not been defined!", "userId.pure", 1, 23)
                         .updateSource("sourceId.pure", "Class Test{} Class B{a:A[1];} Class A{} function f(a:A[1]):String[1]{'ok'}")
                         .compile()
                         .deleteSource("sourceId.pure")
@@ -79,8 +79,8 @@ public class TestPureRuntimeFunction_Lambda extends AbstractPureTestWithCoreComp
 */
 
         this.runtime.createInMemorySource("sourceId.pure", "Class Test{} Class B{a:A[1];} Class A{}");
-        this.runtime.createInMemorySource("userId.pure", "function go():Nil[0]{print(^B(a=^A())->match([b:B[1]|f($b.a)+'ok']),1);}\n");
-        this.runtime.createInMemorySource("other.pure", " function f(a:A[1]):String[1]{'ok'}");
+        this.runtime.createInMemorySource("userId.pure", "function go():Any[1]{^B(a=^A())->match([b:B[1]|fz($b.a)+'ok']);}\n");
+        this.runtime.createInMemorySource("other.pure", " function fz(a:A[1]):String[1]{'ok'}");
         this.runtime.compile();
         int size = this.runtime.getModelRepository().serialize().length;
         for (int i = 0; i < 10; i++)
@@ -104,10 +104,10 @@ public class TestPureRuntimeFunction_Lambda extends AbstractPureTestWithCoreComp
             }
             catch (Exception e)
             {
-                assertPureException(PureCompilationException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "f(_:C[1])\n" +
+                assertPureException(PureCompilationException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "fz(_:C[1])\n" +
                         PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_IMPORTED_MESSAGE +
-                        "\tf(A[1]):String[1]\n" +
-                        PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE, "userId.pure", 1, 54, e);
+                        "\tfz(A[1]):String[1]\n" +
+                        PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE, "userId.pure", 1, 48, e);
             }
         }
         this.runtime.modify("sourceId.pure", "Class Test{} Class B{a:A[1];} Class A{}");

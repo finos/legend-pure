@@ -32,28 +32,6 @@ public interface Bridge
         return this::buildList;
     }
 
-    @Deprecated
-    default Function2<Multiplicity, ExecutionSupport, Boolean> hasToOneUpperBound()
-    {
-        return this::hasToOneUpperBound;
-    }
-
-    @Deprecated
-    default Function2<Multiplicity, ExecutionSupport, Boolean> isToOne()
-    {
-        return this::isToOne;
-    }
-
-    @Deprecated
-    default Function3<PackageableElement, String, ExecutionSupport, String> elementToPath()
-    {
-        return this::elementToPath;
-    }
-
     <T> List<T> buildList();
-    boolean hasToOneUpperBound(Multiplicity multiplicity, ExecutionSupport executionSupport);
-    boolean isToOne(Multiplicity multiplicity, ExecutionSupport executionSupport);
-    String elementToPath(PackageableElement element, String separator, ExecutionSupport executionSupport);
-
     LambdaCompiledExtended buildLambda(LambdaFunction<Object> lambdaFunction, SharedPureFunction<Object> pureFunction);
 }

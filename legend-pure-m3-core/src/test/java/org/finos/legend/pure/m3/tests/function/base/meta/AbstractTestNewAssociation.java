@@ -16,7 +16,7 @@ package org.finos.legend.pure.m3.tests.function.base.meta;
 
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.Test;
 

@@ -1,0 +1,5 @@
+{
+  "name" : "platform_dsl_path",
+  "pattern" : "(meta::pure::metamodel::path)(::.*)?",
+  "dependencies" : ["platform"]
+}

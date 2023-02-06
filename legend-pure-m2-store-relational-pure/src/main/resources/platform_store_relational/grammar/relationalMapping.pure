@@ -1,0 +1,86 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::functions::collection::*;
+
+import meta::pure::mapping::*;
+
+import meta::relational::mapping::*;
+
+import meta::relational::metamodel::*;
+import meta::relational::metamodel::join::*;
+import meta::relational::metamodel::relation::*;
+
+// Relational Mapping
+Class meta::relational::mapping::RelationalInstanceSetImplementation extends InstanceSetImplementation
+{
+    primaryKey : RelationalOperationElement[*];
+}
+
+Class meta::relational::mapping::FilterMapping
+{
+    setMappingOwner : RelationalInstanceSetImplementation[0..1];
+    joinTreeNode : JoinTreeNode[0..1];
+    database : Database[1];
+    filterName : String[1];
+    filter : Filter[1];
+}
+
+Class meta::relational::mapping::GroupByMapping
+{
+    setMappingOwner : RelationalInstanceSetImplementation[0..1];
+    columns : RelationalOperationElement[*];
+}
+
+Class meta::relational::mapping::RootRelationalInstanceSetImplementation extends RelationalInstanceSetImplementation, RelationalMappingSpecification
+{
+}
+
+Class meta::relational::mapping::EmbeddedRelationalInstanceSetImplementation extends EmbeddedSetImplementation, RelationalInstanceSetImplementation
+{
+    setMappingOwner : RootRelationalInstanceSetImplementation[1];
+}
+
+Class meta::relational::mapping::OtherwiseEmbeddedRelationalInstanceSetImplementation extends EmbeddedRelationalInstanceSetImplementation,OtherwiseEmbeddedSetImplementation
+{
+
+}
+
+Class meta::relational::mapping::InlineEmbeddedRelationalInstanceSetImplementation extends EmbeddedRelationalInstanceSetImplementation,InlineEmbeddedSetImplementation
+{
+
+
+}
+
+Class meta::relational::mapping::RelationalPropertyMapping extends PropertyMapping
+{
+   relationalOperationElement : RelationalOperationElement[1];
+   transformer: ValueTransformer<Any>[0..1];
+}
+
+Class meta::relational::mapping::RelationalAssociationImplementation extends AssociationImplementation
+{
+}
+
+Class meta::relational::mapping::SemiStructuredRelationalPropertyMapping extends RelationalPropertyMapping
+{
+}
+
+Class <<doc.deprecated>> meta::relational::mapping::SemiStructuredEmbeddedRelationalInstanceSetImplementation extends SemiStructuredRelationalPropertyMapping, EmbeddedRelationalInstanceSetImplementation
+{
+}
+
+Class meta::relational::mapping::SemiStructuredRelationalInstanceSetImplementation extends RootRelationalInstanceSetImplementation
+{
+}

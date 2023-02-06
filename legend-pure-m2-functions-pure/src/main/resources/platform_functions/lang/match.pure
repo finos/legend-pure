@@ -1,0 +1,47 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::functions::lang::tests::model::*;
+
+native function meta::pure::functions::lang::match<T,P|m,n,o>(var:Any[*], functions:Function<{Nil[n],P[o]->T[m]}>[1..*], with:P[o]):T[m];
+
+function <<test.Test>> meta::pure::functions::lang::tests::match::testMatchWithExtraParam():Boolean[1]
+{
+   assertEquals('good_other', [1]->match([{i:Integer[1], b:String[1]|'good_'+$b},
+                                          {s:String[1], b:String[1]|'bad'}
+                                         ],'other')
+   );
+
+   assertEquals('good_otheryo', [1]->match([{i:Integer[1], b:String[*]|'good_'+$b->joinStrings('', '', '');},
+                                            {s:String[1], b:String[*]|'bad'}
+                                         ],['other', 'yo'])
+   );
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::match::testMatchWithExtraParamsAndFunctionsAsParam():Boolean[1]
+{
+    let lambdas = [{a:String[1],b:String[1]|'1'+$b},{a:Integer[1],b:String[1]|$b},{a:Date[1],b:String[1]|'5'+$b}];
+    assertEquals('11', '1'->match($lambdas, '1'));
+    assertEquals('2', 1->match($lambdas, '2'));
+    assertEquals('53', %2005->match($lambdas, '3'));
+}
+
+function <<test.Test, test.ExcludeModular>> meta::pure::functions::lang::tests::match::testMatchWithMixedReturnType():Boolean[1]
+{
+    let f = ^LA_Location(place='Hoboken, NJ', type=LA_GeographicEntityType.CITY)->match([a:LA_Address[1] | 'address', l:LA_Location[1] | 1, a:Any[1] | 'Any1'])->deactivate();
+    assertIs(Any, $f.genericType.rawType->toOne());
+}
+
+
+

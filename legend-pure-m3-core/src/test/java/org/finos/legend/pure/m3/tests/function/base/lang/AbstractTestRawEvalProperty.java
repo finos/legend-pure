@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.m3.tests.function.base.lang;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -34,12 +34,6 @@ public abstract class AbstractTestRawEvalProperty extends AbstractPureTestWithCo
                     "{\n" +
                     "   species: String[1];\n" +
                     "}\n" +
-                    "function\n" +
-                    "   {doc.doc = 'Get the property with the given name from the given class. Note that this searches only properties defined directly on the class, not those inherited from super-classes or those which come from associations.'}\n" +
-                    "   meta::pure::functions::meta::classPropertyByName(class:Class<Any>[1], name:String[1]):Property<Nil,Any|*>[0..1]\n" +
-                    "{\n" +
-                    "    $class.properties->filter(p | $p.name == $name)->first()\n" +
-                    "}\n" +
                     "function test():Nil[0]\n" +
                     "{\n" +
                     "   let person = ^Person(name = 'Obi Wan');\n" +
@@ -51,7 +45,7 @@ public abstract class AbstractTestRawEvalProperty extends AbstractPureTestWithCo
         }
         catch (Exception e)
         {
-            this.assertPureException(PureExecutionException.class, "Can't find the property 'name' in the class Alien", 19, 62, e);
+            this.assertPureException(PureExecutionException.class, "Can't find the property 'name' in the class Alien", 13, 62, e);
         }
     }
 }

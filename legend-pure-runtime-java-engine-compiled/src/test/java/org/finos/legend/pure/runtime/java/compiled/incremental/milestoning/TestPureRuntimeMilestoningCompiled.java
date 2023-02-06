@@ -17,7 +17,7 @@ package org.finos.legend.pure.runtime.java.compiled.incremental.milestoning;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.tuple.Pair;
-import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.tests.incremental.milestoning.TestMilestoning;
@@ -25,6 +25,7 @@ import org.finos.legend.pure.m3.tools.test.ToFix;
 import org.finos.legend.pure.runtime.java.compiled.CompiledClassloaderStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.CompiledMetadataStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -34,7 +35,7 @@ public class TestPureRuntimeMilestoningCompiled extends TestMilestoning
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), getFactoryRegistryOverride(), getOptions(), getExtra());
+        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), JavaModelFactoryRegistryLoader.loader(), getOptions(), getExtra());
     }
 
     protected static FunctionExecution getFunctionExecution()
@@ -55,10 +56,5 @@ public class TestPureRuntimeMilestoningCompiled extends TestMilestoning
     public void testStabilityOnTemporalStereotypeRemovalWithAssociation()
     {
         super.testStabilityOnTemporalStereotypeRemovalWithAssociation();
-    }
-
-    public static Pair<String, String> getExtra()
-    {
-        return null;
     }
 }

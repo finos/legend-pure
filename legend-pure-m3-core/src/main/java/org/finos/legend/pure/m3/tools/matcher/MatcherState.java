@@ -17,6 +17,7 @@ package org.finos.legend.pure.m3.tools.matcher;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.set.mutable.UnifiedSet;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public abstract class MatcherState
@@ -57,4 +58,6 @@ public abstract class MatcherState
     {
         return true;
     }
+
+    public abstract InlineDSLLibrary getInlineDSLLibrary();
 }

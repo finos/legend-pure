@@ -215,7 +215,7 @@ public class IncrementalCompiler_Old extends IncrementalCompiler
 
     private void unbindGraphDependencies(SetIterable<CoreInstance> consolidatedCoreInstances)
     {
-        Unbinder.process(consolidatedCoreInstances, this.modelRepository, this.library, this.dslLibrary, this.context, this.processorSupport, new UnbindState(this.context, this.urlPatternLibrary, this.processorSupport), this.message);
+        Unbinder.process(consolidatedCoreInstances, this.modelRepository, this.library, this.dslLibrary, this.context, this.processorSupport, new UnbindState(this.context, this.urlPatternLibrary, this.dslLibrary, this.processorSupport), this.message);
         this.toProcess.addAllIterable(consolidatedCoreInstances);
     }
 

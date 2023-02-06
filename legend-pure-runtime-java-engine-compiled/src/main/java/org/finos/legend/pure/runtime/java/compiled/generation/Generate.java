@@ -24,13 +24,13 @@ import org.eclipse.collections.api.map.OrderedMap;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.Counter;
 import org.eclipse.collections.impl.map.ordered.mutable.OrderedMapAdapter;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.statelistener.JavaCompilerEventObserver;
 import org.finos.legend.pure.runtime.java.compiled.statelistener.VoidJavaCompilerEventObserver;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.SortedMap;
 import java.util.function.Function;
@@ -67,9 +67,18 @@ public class Generate
     {
         MutableList<StringJavaSource> javaSources = Lists.mutable.empty();
         this.observer.startGeneratingJavaFiles(compileGroup);
+
+        ListIterable<StringJavaSource> helpers = javaSourceCodeGenerator.generatePureCoreHelperClasses(javaSourceCodeGenerator.getProcessorContext());
+        javaSources.addAllIterable(helpers);
+        sourceCounter.add(helpers.size());
+
+        Collection<StringJavaSource> extras = javaSourceCodeGenerator.generateExtensionsCode(compileGroup);
+        javaSources.addAll(extras);
+        sourceCounter.add(extras.size());
+
         sources.forEach(source ->
         {
-            javaSources.addAllIterable(javaSourceCodeGenerator.generateCode(source));
+            javaSources.addAllIterable(javaSourceCodeGenerator.generateCode(source, null));
             sourceCounter.increment();
             if (this.message != null)
             {
@@ -77,6 +86,7 @@ public class Generate
             }
         });
         this.observer.endGeneratingJavaFiles(compileGroup, javaSources);
+
         return javaSources;
     }
 
@@ -86,6 +96,7 @@ public class Generate
         {
             this.message.setMessage("Generating and compiling Java source code ...");
         }
+
         compiledSourcesByRepo = ReposWithBadDependencies.combineReposWithBadDependencies(compiledSourcesByRepo);
         Counter sourceCounter = new Counter();
         compiledSourcesByRepo.forEach((compileGroup, sources) -> sourceCounter.add(sources.size()));
@@ -95,7 +106,7 @@ public class Generate
             sourceCounter.reset();
             compiledSourcesByRepo.forEach((compileGroup, sources) ->
             {
-                if (!PlatformCodeRepository.NAME.equals(compileGroup) && sources.notEmpty())
+                if (sources.notEmpty())
                 {
                     JavaSourceCodeGenerator sourceCodeGenerator = sourceCodeGeneratorFn.apply(compileGroup);
                     ListIterable<StringJavaSource> compileGroupJavaSources = generate(compileGroup, sources, sourceCodeGenerator, sourceCounter, totalSourceCount);
@@ -103,7 +114,6 @@ public class Generate
                 }
             });
         }
-
     }
 
     public void generateJavaCodeForSources(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo, JavaSourceCodeGenerator sourceCodeGenerator)

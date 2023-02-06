@@ -20,11 +20,9 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.block.function.checked.CheckedFunction;
-import org.eclipse.collections.impl.block.function.checked.CheckedFunction2;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.*;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.PropertyCoreInstanceWrapper;
@@ -45,43 +43,40 @@ import org.finos.legend.pure.m3.statelistener.ExecutionActivityListener;
 import org.finos.legend.pure.m3.statelistener.VoidExecutionActivityListener;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext.VariableNameConflictException;
 import org.finos.legend.pure.runtime.java.interpreted.extension.InterpretedExtension;
 import org.finos.legend.pure.runtime.java.interpreted.extension.InterpretedExtensionLoader;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.InstantiationContext;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.NativeFunction;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core._boolean.Eq;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core._boolean.Equal;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core._boolean.Is;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.asserts.Assert;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.cipher.Cipher;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.cipher.Decipher;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.collection.Get;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.collection.*;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.collection.map.*;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.date.*;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.hash.Hash;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.io.Http;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.io.Print;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.io.ReadFile;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.lang.*;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.math.*;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.math.trigonometry.*;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.meta.*;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.string.*;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.tools.Profile;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.tracing.TraceSpan;
-import org.finos.legend.pure.runtime.java.interpreted.natives.legend.AlloyTest;
-import org.finos.legend.pure.runtime.java.interpreted.natives.legend.LegendTest;
-import org.finos.legend.pure.runtime.java.interpreted.natives.runtime.CurrentUserId;
-import org.finos.legend.pure.runtime.java.interpreted.natives.runtime.Guid;
-import org.finos.legend.pure.runtime.java.interpreted.natives.runtime.IsOptionSet;
+import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
+import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.collection.*;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.io.Print;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.lang.*;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.math.Abs;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.meta.*;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.string.*;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.tests.Assert;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar._boolean.conjunctions.And;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar._boolean.conjunctions.Not;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar._boolean.conjunctions.Or;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar._boolean.equality.Eq;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar._boolean.equality.Equal;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar._boolean.equality.Is;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar._boolean.inequalities.LessThan;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar._boolean.inequalities.LessThanOrEqualTo;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.collection.*;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.lang.*;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.math.*;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.multiplicity.ToOne;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.multiplicity.ToOneMany;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.string.JoinStrings;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.VoidProfiler;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -93,6 +88,8 @@ public class FunctionExecutionInterpreted implements FunctionExecution
     private final AtomicBoolean cancelExecution = new AtomicBoolean(false);
     private final ExecutionActivityListener executionActivityListener;
     private PureRuntime runtime;
+
+    private Console console = new ConsoleInterpreted();
 
     private ProcessorSupport processorSupport;
 
@@ -139,129 +136,104 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.storage = runtime.getCodeStorage();
         this.message = message;
 
-        this.nativeFunctions.put("replaceTreeNode_TreeNode_1__TreeNode_1__TreeNode_1__TreeNode_1_", new ReplaceTreeNode(repository));
-        this.nativeFunctions.put("letFunction_String_1__T_m__T_m_", new Let());
-        this.nativeFunctions.put("extractEnumValue_Enumeration_1__String_1__T_1_", new ExtractEnumValue());
-        this.nativeFunctions.put("new_Class_1__String_1__KeyExpression_MANY__T_1_", new New(repository, this));
-        this.nativeFunctions.put("new_Class_1__String_1__T_1_", new New(repository, this));
-        this.nativeFunctions.put("newUnit_Unit_1__Number_1__Any_1_", new NewUnit(repository, this));
-        this.nativeFunctions.put("getUnitValue_Any_1__Number_1_", new GetUnitValue(repository, this));
-        this.nativeFunctions.put("dynamicNew_Class_1__KeyValue_MANY__Any_1_", new DynamicNew(repository, false, this));
-        this.nativeFunctions.put("dynamicNew_GenericType_1__KeyValue_MANY__Any_1_", new DynamicNew(repository, true, this));
-        this.nativeFunctions.put("dynamicNew_Class_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Any_1_", new DynamicNew(repository, false, this));
-        this.nativeFunctions.put("dynamicNew_GenericType_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Any_1_", new DynamicNew(repository, true, this));
-        this.nativeFunctions.put("dynamicNew_Class_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Function_$0_1$__Any_1_", new DynamicNew(repository, false, this));
-        this.nativeFunctions.put("dynamicNew_GenericType_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Function_$0_1$__Any_1_", new DynamicNew(repository, true, this));
-        this.nativeFunctions.put("removeOverride_T_1__T_1_", new RemoveOverride());
-        this.nativeFunctions.put("get_T_MANY__String_1__T_$0_1$_", new Get());
-        this.nativeFunctions.put("at_T_MANY__Integer_1__T_1_", new At());
-        this.nativeFunctions.put("filter_T_MANY__Function_1__T_MANY_", new Filter(this));
 
+        registerGrammarNatives(repository);
+        registerBasicNatives(repository);
+
+
+        for (Pair<String, Function2<FunctionExecutionInterpreted, ModelRepository, NativeFunction>> extraNative : extensions.flatCollect(e -> e.getExtraNatives()))
+        {
+            this.nativeFunctions.put(extraNative.getOne(), extraNative.getTwo().value(this, repository));
+        }
+    }
+
+    private void registerGrammarNatives(ModelRepository repository)
+    {
+        // Boolean
+        this.nativeFunctions.put("and_Boolean_1__Boolean_1__Boolean_1_", new And(repository, this));
+        this.nativeFunctions.put("or_Boolean_1__Boolean_1__Boolean_1_", new Or(repository, this));
+        this.nativeFunctions.put("not_Boolean_1__Boolean_1_", new Not(repository));
+        this.nativeFunctions.put("eq_Any_1__Any_1__Boolean_1_", new Eq(repository));
+        this.nativeFunctions.put("equal_Any_MANY__Any_MANY__Boolean_1_", new Equal(repository));
+        this.nativeFunctions.put("is_Any_1__Any_1__Boolean_1_", new Is(repository));
+        this.nativeFunctions.put("lessThan_Number_1__Number_1__Boolean_1_", new LessThan(repository));
+        this.nativeFunctions.put("lessThanEqual_Number_1__Number_1__Boolean_1_", new LessThanOrEqualTo(repository));
+
+        // Collection
+        this.nativeFunctions.put("filter_T_MANY__Function_1__T_MANY_", new Filter(this));
+        this.nativeFunctions.put("first_T_MANY__T_$0_1$_", new First());
+        this.nativeFunctions.put("isEmpty_Any_MANY__Boolean_1_", new IsEmpty(repository));
         Map c = new Map(this);
         this.nativeFunctions.put("map_T_m__Function_1__V_m_", c);
         this.nativeFunctions.put("map_T_MANY__Function_1__V_MANY_", c);
         this.nativeFunctions.put("map_T_$0_1$__Function_1__V_$0_1$_", c);
+        this.nativeFunctions.put("range_Integer_1__Integer_1__Integer_1__Integer_MANY_", new Range(repository));
+        this.nativeFunctions.put("size_Any_MANY__Integer_1_", new Size(repository));
 
-        this.nativeFunctions.put("exists_T_MANY__Function_1__Boolean_1_", new Exists(repository, this));
-        this.nativeFunctions.put("forAll_T_MANY__Function_1__Boolean_1_", new ForAll(repository, this));
-        this.nativeFunctions.put("isEmpty_Any_MANY__Boolean_1_", new IsEmpty(repository));
-        this.nativeFunctions.put("fold_T_MANY__Function_1__V_m__V_m_", new Fold(this));
+        // Lang
+        this.nativeFunctions.put("compare_T_1__T_1__Integer_1_", new Compare(repository));
+        this.nativeFunctions.put("copy_T_1__String_1__KeyExpression_MANY__T_1_", new Copy(repository, this));
+        this.nativeFunctions.put("copy_T_1__String_1__T_1_", new Copy(repository, this));
+        this.nativeFunctions.put("extractEnumValue_Enumeration_1__String_1__T_1_", new ExtractEnumValue());
         this.nativeFunctions.put("getAll_Class_1__T_MANY_", new GetAll());
         this.nativeFunctions.put("getAllVersions_Class_1__T_MANY_", new GetAll());
         this.nativeFunctions.put("getAllVersionsInRange_Class_1__Date_1__Date_1__T_MANY_", new GetAll());
         this.nativeFunctions.put("getAll_Class_1__Date_1__T_MANY_", new GetAll());
         this.nativeFunctions.put("getAll_Class_1__Date_1__Date_1__T_MANY_", new GetAll());
         this.nativeFunctions.put("deepFetchGetAll_Class_1__DeepFetchTempTable_1__T_MANY_", new GetAll());
-        this.nativeFunctions.put("indexOf_T_MANY__T_1__Integer_1_", new IndexOf(repository));
-        this.nativeFunctions.put("add_T_MANY__T_1__T_$1_MANY$_", new Add());
-        this.nativeFunctions.put("add_T_MANY__Integer_1__T_1__T_$1_MANY$_", new Add());
-        this.nativeFunctions.put("concatenate_T_MANY__T_MANY__T_MANY_", new Concatenate());
-        this.nativeFunctions.put("repeat_T_1__Integer_1__T_MANY_", new Repeat());
-        this.nativeFunctions.put("first_T_MANY__T_$0_1$_", new First());
-        this.nativeFunctions.put("last_T_MANY__T_$0_1$_", new Last());
-        this.nativeFunctions.put("init_T_MANY__T_MANY_", new Init());
-        this.nativeFunctions.put("tail_T_MANY__T_MANY_", new Tail());
-        this.nativeFunctions.put("chunk_String_1__Integer_1__String_MANY_", new Chunk(repository));
-        this.nativeFunctions.put("take_T_MANY__Integer_1__T_MANY_", new Take());
-        this.nativeFunctions.put("drop_T_MANY__Integer_1__T_MANY_", new Drop());
-        this.nativeFunctions.put("slice_T_MANY__Integer_1__Integer_1__T_MANY_", new Slice());
-        this.nativeFunctions.put("zip_T_MANY__U_MANY__Pair_MANY_", new Zip(repository));
+        this.nativeFunctions.put("letFunction_String_1__T_m__T_m_", new Let());
+        this.nativeFunctions.put("new_Class_1__String_1__KeyExpression_MANY__T_1_", new New(repository, this));
+        this.nativeFunctions.put("new_Class_1__String_1__T_1_", new New(repository, this));
 
-        Print p = new Print(repository);
-        this.nativeFunctions.put("print_Any_MANY__Integer_1__Nil_0_", p);
-
-        this.nativeFunctions.put("executeHTTPRaw_URL_1__HTTPMethod_1__String_$0_1$__String_$0_1$__HTTPResponse_1_", new Http(repository));
-
-        TraceSpan traceSpan = new TraceSpan(this);
-        this.nativeFunctions.put("traceSpan_Function_1__String_1__V_m_", traceSpan);
-        this.nativeFunctions.put("traceSpan_Function_1__String_1__Function_1__V_m_", traceSpan);
-        this.nativeFunctions.put("traceSpan_Function_1__String_1__Function_1__Boolean_1__V_m_", traceSpan);
-
-        Plus plus = new Plus(repository);
-        this.nativeFunctions.put("plus_Integer_MANY__Integer_1_", plus);
-        this.nativeFunctions.put("plus_Float_MANY__Float_1_", plus);
-        this.nativeFunctions.put("plus_Decimal_MANY__Decimal_1_", plus);
-        this.nativeFunctions.put("plus_Number_MANY__Number_1_", plus);
-
-        Abs abs = new Abs(repository);
-        this.nativeFunctions.put("abs_Integer_1__Integer_1_", abs);
-        this.nativeFunctions.put("abs_Float_1__Float_1_", abs);
-        this.nativeFunctions.put("abs_Decimal_1__Decimal_1_", abs);
-        this.nativeFunctions.put("abs_Number_1__Number_1_", abs);
-
+        // Math
+        this.nativeFunctions.put("divide_Number_1__Number_1__Float_1_", new Divide(repository));
+        this.nativeFunctions.put("divide_Decimal_1__Decimal_1__Integer_1__Decimal_1_", new DivideDecimal(repository));
         Minus minus = new Minus(repository);
         this.nativeFunctions.put("minus_Integer_MANY__Integer_1_", minus);
         this.nativeFunctions.put("minus_Float_MANY__Float_1_", minus);
         this.nativeFunctions.put("minus_Decimal_MANY__Decimal_1_", minus);
         this.nativeFunctions.put("minus_Number_MANY__Number_1_", minus);
-
+        Plus plus = new Plus(repository);
+        this.nativeFunctions.put("plus_Integer_MANY__Integer_1_", plus);
+        this.nativeFunctions.put("plus_Float_MANY__Float_1_", plus);
+        this.nativeFunctions.put("plus_Decimal_MANY__Decimal_1_", plus);
+        this.nativeFunctions.put("plus_Number_MANY__Number_1_", plus);
         Times times = new Times(repository);
         this.nativeFunctions.put("times_Integer_MANY__Integer_1_", times);
         this.nativeFunctions.put("times_Float_MANY__Float_1_", times);
         this.nativeFunctions.put("times_Decimal_MANY__Decimal_1_", times);
         this.nativeFunctions.put("times_Number_MANY__Number_1_", times);
 
-        this.nativeFunctions.put("floor_Number_1__Integer_1_", new Floor(repository));
-        this.nativeFunctions.put("ceiling_Number_1__Integer_1_", new Ceiling(repository));
-        this.nativeFunctions.put("round_Number_1__Integer_1_", new Round(repository));
-        this.nativeFunctions.put("round_Decimal_1__Integer_1__Decimal_1_", new RoundWithScale(repository));
-        this.nativeFunctions.put("round_Float_1__Integer_1__Float_1_", new RoundWithScale(repository));
-        this.nativeFunctions.put("stdDev_Number_$1_MANY$__Boolean_1__Number_1_", new StdDev(repository));
+        // Multiplicity
+        this.nativeFunctions.put("toOne_T_MANY__T_1_", new ToOne(repository));
+        this.nativeFunctions.put("toOne_T_MANY__String_1__T_1_", new ToOne(repository));
+        this.nativeFunctions.put("toOneMany_T_MANY__T_$1_MANY$_", new ToOneMany(repository));
+        this.nativeFunctions.put("toOneMany_T_MANY__String_1__T_$1_MANY$_", new ToOneMany(repository));
 
-        this.nativeFunctions.put("divide_Number_1__Number_1__Float_1_", new Divide(repository));
-        this.nativeFunctions.put("divide_Decimal_1__Decimal_1__Integer_1__Decimal_1_", new DivideDecimal(repository));
-
-        this.nativeFunctions.put("pow_Number_1__Number_1__Number_1_", new Power(repository));
-        this.nativeFunctions.put("exp_Number_1__Float_1_", new Exp(repository));
-        this.nativeFunctions.put("log_Number_1__Float_1_", new Log(repository));
-        this.nativeFunctions.put("rem_Number_1__Number_1__Number_1_", new Rem(repository));
-        this.nativeFunctions.put("mod_Integer_1__Integer_1__Integer_1_", new Mod(repository));
-
-        this.nativeFunctions.put("sin_Number_1__Float_1_", new Sine(repository));
-        this.nativeFunctions.put("asin_Number_1__Float_1_", new ArcSine(repository));
-        this.nativeFunctions.put("cos_Number_1__Float_1_", new Cosine(repository));
-        this.nativeFunctions.put("acos_Number_1__Float_1_", new ArcCosine(repository));
-        this.nativeFunctions.put("tan_Number_1__Float_1_", new Tangent(repository));
-        this.nativeFunctions.put("atan_Number_1__Float_1_", new ArcTangent(repository));
-        this.nativeFunctions.put("atan2_Number_1__Number_1__Float_1_", new ArcTangent2(repository));
-        this.nativeFunctions.put("sqrt_Number_1__Float_1_", new Sqrt(repository));
-
-        this.nativeFunctions.put("lessThan_Number_1__Number_1__Boolean_1_", new LessThan(repository));
-        this.nativeFunctions.put("lessThanEqual_Number_1__Number_1__Boolean_1_", new LessThanOrEqualTo(repository));
-
-        this.nativeFunctions.put("toDecimal_Number_1__Decimal_1_", new ToDecimal(repository));
-        this.nativeFunctions.put("toFloat_Number_1__Float_1_", new ToFloat(repository));
-
-        this.nativeFunctions.put("is_Any_1__Any_1__Boolean_1_", new Is(repository));
-        this.nativeFunctions.put("eq_Any_1__Any_1__Boolean_1_", new Eq(repository));
-        this.nativeFunctions.put("equal_Any_MANY__Any_MANY__Boolean_1_", new Equal(repository));
-
+        // String
         this.nativeFunctions.put("joinStrings_String_MANY__String_1__String_1__String_1__String_1_", new JoinStrings(repository));
-        this.nativeFunctions.put("compileValueSpecification_String_m__CompilationResult_m_", new CompileValueSpecification(this.runtime));
-        this.nativeFunctions.put("cast_Any_m__T_1__T_m_", new Cast(repository));
+    }
 
-        this.nativeFunctions.put("evaluate_Function_1__List_MANY__Any_MANY_", new EvaluateAny(this));
-        this.nativeFunctions.put("rawEvalProperty_Property_1__Any_1__V_m_", new RawEvalProperty(this));
+
+    private void registerBasicNatives(ModelRepository repository)
+    {
+        // Collection
+        this.nativeFunctions.put("concatenate_T_MANY__T_MANY__T_MANY_", new Concatenate(this, repository));
+        this.nativeFunctions.put("add_T_MANY__T_1__T_$1_MANY$_", new Add());
+        this.nativeFunctions.put("add_T_MANY__Integer_1__T_1__T_$1_MANY$_", new Add());
+        this.nativeFunctions.put("at_T_MANY__Integer_1__T_1_", new At());
+        this.nativeFunctions.put("fold_T_MANY__Function_1__V_m__V_m_", new Fold(this));
+        this.nativeFunctions.put("init_T_MANY__T_MANY_", new Init());
+        this.nativeFunctions.put("removeDuplicates_T_MANY__Function_$0_1$__Function_$0_1$__T_MANY_", new RemoveDuplicates(this));
+        this.nativeFunctions.put("sort_T_m__Function_$0_1$__Function_$0_1$__T_m_", new Sort(this));
+        this.nativeFunctions.put("tail_T_MANY__T_MANY_", new Tail());
+
+        // IO
+        this.nativeFunctions.put("print_Any_MANY__Integer_1__Nil_0_", new Print(this, repository));
+
+
+        // Lang
+        this.nativeFunctions.put("cast_Any_m__T_1__T_m_", new Cast(repository));
         this.nativeFunctions.put("eval_Function_1__V_m_", new Evaluate(this));
         this.nativeFunctions.put("eval_Function_1__T_n__V_m_", new Evaluate(this));
         this.nativeFunctions.put("eval_Function_1__T_n__U_p__V_m_", new Evaluate(this));
@@ -270,147 +242,46 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.nativeFunctions.put("eval_Function_1__T_n__U_p__W_q__X_r__Y_s__V_m_", new Evaluate(this));
         this.nativeFunctions.put("eval_Function_1__T_n__U_p__W_q__X_r__Y_s__Z_t__V_m_", new Evaluate(this));
         this.nativeFunctions.put("eval_Function_1__S_n__T_o__U_p__W_q__X_r__Y_s__Z_t__V_m_", new Evaluate(this));
+        this.nativeFunctions.put("if_Boolean_1__Function_1__Function_1__T_m_", new If(this));
+        this.nativeFunctions.put("match_Any_MANY__Function_$1_MANY$__T_m_", new Match(this, repository));
+        this.nativeFunctions.put("dynamicNew_Class_1__KeyValue_MANY__Any_1_", new DynamicNew(this, repository));
+        this.nativeFunctions.put("dynamicNew_GenericType_1__KeyValue_MANY__Any_1_", new DynamicNewGenericType(this, repository));
+        this.nativeFunctions.put("dynamicNew_Class_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Any_1_", new DynamicNew(this, repository));
+        this.nativeFunctions.put("dynamicNew_GenericType_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Any_1_", new DynamicNewGenericType(this, repository));
+        this.nativeFunctions.put("dynamicNew_Class_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Function_$0_1$__Any_1_", new DynamicNew(this, repository));
+        this.nativeFunctions.put("dynamicNew_GenericType_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Function_$0_1$__Any_1_", new DynamicNewGenericType(this, repository));
+        this.nativeFunctions.put("evaluate_Function_1__List_MANY__Any_MANY_", new EvaluateAny(this, repository));
+
+
+        // Math
+        Abs abs = new Abs(repository);
+        this.nativeFunctions.put("abs_Integer_1__Integer_1_", abs);
+        this.nativeFunctions.put("abs_Float_1__Float_1_", abs);
+        this.nativeFunctions.put("abs_Decimal_1__Decimal_1_", abs);
+        this.nativeFunctions.put("abs_Number_1__Number_1_", abs);
+
+        // Meta
+        this.nativeFunctions.put("evaluateAndDeactivate_T_m__T_m_", new EvaluateAndDeactivate());
         this.nativeFunctions.put("genericType_Any_MANY__GenericType_1_", new GenericType());
         this.nativeFunctions.put("genericTypeClass_GenericType_1__Class_1_", new GenericTypeClass(repository));
-        this.nativeFunctions.put("generalizations_Type_1__Type_$1_MANY$_", new Generalizations());
-        this.nativeFunctions.put("sourceInformation_Any_1__SourceInformation_$0_1$_", new SourceInformation(repository));
-
-        this.nativeFunctions.put("match_Any_MANY__Function_$1_MANY$__T_m_", new Match(this));
-        this.nativeFunctions.put("match_Any_MANY__Function_$1_MANY$__P_o__T_m_", new Match(this));
-
+        this.nativeFunctions.put("getUnitValue_Any_1__Number_1_", new GetUnitValue(this, repository));
         this.nativeFunctions.put("id_Any_1__String_1_", new Id(repository));
-        this.nativeFunctions.put("if_Boolean_1__Function_1__Function_1__T_m_", new If(this));
-        this.nativeFunctions.put("copy_T_1__String_1__KeyExpression_MANY__T_1_", new Copy(repository, this));
-        this.nativeFunctions.put("copy_T_1__String_1__T_1_", new Copy(repository, this));
-        this.nativeFunctions.put("size_Any_MANY__Integer_1_", new Size(repository));
-        this.nativeFunctions.put("length_String_1__Integer_1_", new Length(repository));
-        this.nativeFunctions.put("split_String_1__String_1__String_MANY_", new Split(repository));
-        this.nativeFunctions.put("trim_String_1__String_1_", new Trim(repository));
-        this.nativeFunctions.put("and_Boolean_1__Boolean_1__Boolean_1_", new And(repository, this));
-        this.nativeFunctions.put("or_Boolean_1__Boolean_1__Boolean_1_", new Or(repository, this));
-        this.nativeFunctions.put("not_Boolean_1__Boolean_1_", new Not(repository));
-        this.nativeFunctions.put("profile_T_m__Boolean_1__ProfileResult_1_", new Profile(repository, p, this));
-        this.nativeFunctions.put("sort_T_m__Function_$0_1$__Function_$0_1$__T_m_", new Sort(this));
-        this.nativeFunctions.put("removeDuplicates_T_MANY__Function_$0_1$__Function_$0_1$__T_MANY_", new RemoveDuplicates(this));
-        this.nativeFunctions.put("removeAllOptimized_T_MANY__T_MANY__T_MANY_", new RemoveAllOptimized(this));
-        this.nativeFunctions.put("range_Integer_1__Integer_1__Integer_1__Integer_MANY_", new Range(repository));
-        this.nativeFunctions.put("compare_T_1__T_1__Integer_1_", new Compare(repository));
         this.nativeFunctions.put("instanceOf_Any_1__Type_1__Boolean_1_", new InstanceOf(repository));
-        this.nativeFunctions.put("subTypeOf_Type_1__Type_1__Boolean_1_", new SubTypeOf(repository));
-        this.nativeFunctions.put("deactivate_Any_MANY__ValueSpecification_1_", new Deactivate());
-        this.nativeFunctions.put("reactivate_ValueSpecification_1__Map_1__Any_MANY_", new Reactivate(this));
-        this.nativeFunctions.put("canReactivateDynamically_ValueSpecification_1__Boolean_1_", new CanReactivateDynamically(repository));
-        this.nativeFunctions.put("evaluateAndDeactivate_T_m__T_m_", new EvaluateAndDeactivate());
-        this.nativeFunctions.put("toString_Any_1__String_1_", new ToString(repository, this));
-        this.nativeFunctions.put("mutateAdd_T_1__String_1__Any_MANY__T_1_", new MutateAdd());
-        this.nativeFunctions.put("enumName_Enumeration_1__String_1_", new EnumName(repository));
-        this.nativeFunctions.put("enumValues_Enumeration_1__T_MANY_", new EnumValues());
-        this.nativeFunctions.put("newClass_String_1__Class_1_", new NewClass(repository));
-        this.nativeFunctions.put("newAssociation_String_1__Property_1__Property_1__Association_1_", new NewAssociation(repository));
-        this.nativeFunctions.put("newProperty_String_1__GenericType_1__GenericType_1__Multiplicity_1__Property_1_", new NewProperty(repository));
-        this.nativeFunctions.put("newLambdaFunction_FunctionType_1__LambdaFunction_1_", new NewLambdaFunction(repository));
-        this.nativeFunctions.put("openVariableValues_Function_1__Map_1_", new OpenVariableValues(repository));
-        this.nativeFunctions.put("newEnumeration_String_1__String_MANY__Enumeration_1_", new NewEnumeration(repository));
-        this.nativeFunctions.put("stereotype_Profile_1__String_1__Stereotype_1_", new Stereotype());
-        this.nativeFunctions.put("tag_Profile_1__String_1__Tag_1_", new Tag());
+        this.nativeFunctions.put("newUnit_Unit_1__Number_1__Any_1_", new NewUnit(this, repository));
+
+        // String
+        this.nativeFunctions.put("format_String_1__Any_MANY__String_1_", new Format(repository, this));
+        this.nativeFunctions.put("length_String_1__Integer_1_", new Length(repository));
         this.nativeFunctions.put("replace_String_1__String_1__String_1__String_1_", new Replace(repository));
+        this.nativeFunctions.put("split_String_1__String_1__String_MANY_", new Split(repository));
+        this.nativeFunctions.put("startsWith_String_1__String_1__Boolean_1_", new StartsWith(repository));
         SubString substring = new SubString(repository);
         this.nativeFunctions.put("substring_String_1__Integer_1__String_1_", substring);
         this.nativeFunctions.put("substring_String_1__Integer_1__Integer_1__String_1_", substring);
-        this.nativeFunctions.put("contains_String_1__String_1__Boolean_1_", new Contains(repository));
-        this.nativeFunctions.put("startsWith_String_1__String_1__Boolean_1_", new StartsWith(repository));
-        this.nativeFunctions.put("endsWith_String_1__String_1__Boolean_1_", new EndsWith(repository));
-        this.nativeFunctions.put("matches_String_1__String_1__Boolean_1_", new Matches(repository));
-        IndexOfString indexOf = new IndexOfString(repository);
-        this.nativeFunctions.put("indexOf_String_1__String_1__Integer_1_", indexOf);
-        this.nativeFunctions.put("indexOf_String_1__String_1__Integer_1__Integer_1_", indexOf);
-        this.nativeFunctions.put("toOne_T_MANY__T_1_", new ToOne(repository));
-        this.nativeFunctions.put("toOne_T_MANY__String_1__T_1_", new ToOne(repository));
-        this.nativeFunctions.put("toOneMany_T_MANY__T_$1_MANY$_", new ToOneMany(repository));
-        this.nativeFunctions.put("toOneMany_T_MANY__String_1__T_$1_MANY$_", new ToOneMany(repository));
-        this.nativeFunctions.put("readFile_String_1__String_$0_1$_", new ReadFile(repository, storage));
+        this.nativeFunctions.put("toString_Any_1__String_1_", new ToString(repository, this));
 
-        this.nativeFunctions.put("reverse_T_m__T_m_", new Reverse());
-        this.nativeFunctions.put("parseBoolean_String_1__Boolean_1_", new ParsePrimitive(repository, ModelRepository.BOOLEAN_TYPE_NAME));
-        this.nativeFunctions.put("parseDate_String_1__Date_1_", new ParsePrimitive(repository, ModelRepository.DATE_TYPE_NAME));
-        this.nativeFunctions.put("parseFloat_String_1__Float_1_", new ParsePrimitive(repository, ModelRepository.FLOAT_TYPE_NAME));
-        this.nativeFunctions.put("parseDecimal_String_1__Decimal_1_", new ParsePrimitive(repository, ModelRepository.DECIMAL_TYPE_NAME));
-        this.nativeFunctions.put("parseInteger_String_1__Integer_1_", new ParsePrimitive(repository, ModelRepository.INTEGER_TYPE_NAME));
-        this.nativeFunctions.put("toInteger_String_1__Integer_1_", new ToInteger(repository));
-        this.nativeFunctions.put("encodeBase64_String_1__String_1_", new EncodeBase64(repository));
-        this.nativeFunctions.put("decodeBase64_String_1__String_1_", new DecodeBase64(repository));
-        this.nativeFunctions.put("today__StrictDate_1_", new Today(repository));
-        this.nativeFunctions.put("now__DateTime_1_", new Now(repository));
-        this.nativeFunctions.put("hasSubsecond_Date_1__Boolean_1_", new HasSubsecond(repository));
-        this.nativeFunctions.put("hasSubsecondWithAtLeastPrecision_Date_1__Integer_1__Boolean_1_", new HasSubsecondWithAtLeastPrecision(repository));
-        this.nativeFunctions.put("hasSecond_Date_1__Boolean_1_", new HasSecond(repository));
-        this.nativeFunctions.put("hasMinute_Date_1__Boolean_1_", new HasMinute(repository));
-        this.nativeFunctions.put("hasHour_Date_1__Boolean_1_", new HasHour(repository));
-        this.nativeFunctions.put("hasDay_Date_1__Boolean_1_", new HasDay(repository));
-        this.nativeFunctions.put("hasMonth_Date_1__Boolean_1_", new HasMonth(repository));
-        this.nativeFunctions.put("second_Date_1__Integer_1_", new Second(repository));
-        this.nativeFunctions.put("minute_Date_1__Integer_1_", new Minute(repository));
-        this.nativeFunctions.put("hour_Date_1__Integer_1_", new Hour(repository));
-        this.nativeFunctions.put("dayOfMonth_Date_1__Integer_1_", new DayOfMonth(repository));
-        this.nativeFunctions.put("dayOfWeekNumber_Date_1__Integer_1_", new DayOfWeekNumber(repository));
-        this.nativeFunctions.put("weekOfYear_Date_1__Integer_1_", new WeekOfYear(repository));
-        this.nativeFunctions.put("monthNumber_Date_1__Integer_1_", new MonthNumber(repository));
-        this.nativeFunctions.put("year_Date_1__Integer_1_", new Year(repository));
-        this.nativeFunctions.put("datePart_Date_1__Date_1_", new DatePart(repository));
-        this.nativeFunctions.put("adjust_Date_1__Integer_1__DurationUnit_1__Date_1_", new AdjustDate(repository));
-        this.nativeFunctions.put("dateDiff_Date_1__Date_1__DurationUnit_1__Integer_1_", new DateDiff(repository));
-        this.nativeFunctions.put("mayExecuteLegendTest_Function_1__Function_1__X_k_", new LegendTest(repository, this));
-        this.nativeFunctions.put("mayExecuteAlloyTest_Function_1__Function_1__X_k_", new AlloyTest(repository, this));
-
-        NewDate newDate = new NewDate(repository);
-        this.nativeFunctions.put("date_Integer_1__Date_1_", newDate);
-        this.nativeFunctions.put("date_Integer_1__Integer_1__Date_1_", newDate);
-        this.nativeFunctions.put("date_Integer_1__Integer_1__Integer_1__StrictDate_1_", newDate);
-        this.nativeFunctions.put("date_Integer_1__Integer_1__Integer_1__Integer_1__DateTime_1_", newDate);
-        this.nativeFunctions.put("date_Integer_1__Integer_1__Integer_1__Integer_1__Integer_1__DateTime_1_", newDate);
-        this.nativeFunctions.put("date_Integer_1__Integer_1__Integer_1__Integer_1__Integer_1__Number_1__DateTime_1_", newDate);
-
+        // Tests
         this.nativeFunctions.put("assert_Boolean_1__Function_1__Boolean_1_", new Assert(this));
-
-        this.nativeFunctions.put("format_String_1__Any_MANY__String_1_", new Format(repository, this));
-        this.nativeFunctions.put("toLower_String_1__String_1_", new ToLower(repository));
-        this.nativeFunctions.put("toUpper_String_1__String_1_", new ToUpper(repository));
-
-        this.nativeFunctions.put("isSourceReadOnly_String_1__Boolean_1_", new IsSourceReadOnly(this.runtime));
-        this.nativeFunctions.put("currentUserId__String_1_", new CurrentUserId(repository));
-        this.nativeFunctions.put("isOptionSet_String_1__Boolean_1_", new IsOptionSet(this));
-        this.nativeFunctions.put("generateGuid__String_1_", new Guid(repository));
-
-
-
-        this.nativeFunctions.put("newMap_Pair_MANY__Map_1_", new ConstructorForPairList(repository));
-        this.nativeFunctions.put("newMap_Pair_MANY__Property_MANY__Map_1_", new ConstructorForPairList(repository));
-        this.nativeFunctions.put("get_Map_1__U_1__V_$0_1$_", new org.finos.legend.pure.runtime.java.interpreted.natives.core.collection.map.Get());
-        this.nativeFunctions.put("getIfAbsentPutWithKey_Map_1__U_1__Function_1__V_$0_1$_", new GetIfAbsentPutWithKey(this));
-        this.nativeFunctions.put("getMapStats_Map_1__MapStats_$0_1$_", new GetMapStats(repository));
-        this.nativeFunctions.put("put_Map_1__U_1__V_1__Map_1_", new Put());
-        this.nativeFunctions.put("putAll_Map_1__Pair_MANY__Map_1_", new PutAllPairs());
-        this.nativeFunctions.put("putAll_Map_1__Map_1__Map_1_", new PutAllMaps());
-        this.nativeFunctions.put("keys_Map_1__U_MANY_", new Keys());
-        this.nativeFunctions.put("keyValues_Map_1__Pair_MANY_", new KeyValues(repository));
-        this.nativeFunctions.put("values_Map_1__V_MANY_", new Values());
-        this.nativeFunctions.put("replaceAll_Map_1__Pair_MANY__Map_1_", new ReplaceAll());
-
-        this.nativeFunctions.put("groupBy_X_MANY__Function_1__Map_1_", new GroupBy(this));
-        this.nativeFunctions.put("functionDescriptorToId_String_1__String_1_", new FunctionDescriptorToId(repository));
-        this.nativeFunctions.put("isValidFunctionDescriptor_String_1__Boolean_1_", new IsValidFunctionDescriptor(repository));
-        Cipher cipher = new Cipher(repository);
-        this.nativeFunctions.put("encrypt_String_1__String_1__String_1_", cipher);
-        this.nativeFunctions.put("encrypt_Number_1__String_1__String_1_", cipher);
-        this.nativeFunctions.put("encrypt_Boolean_1__String_1__String_1_", cipher);
-        this.nativeFunctions.put("decrypt_String_1__String_1__String_1_", new Decipher(repository));
-
-        this.nativeFunctions.put("hash_String_1__HashType_1__String_1_", new Hash(repository));
-
-        for (Pair<String, Function2<FunctionExecutionInterpreted, ModelRepository, NativeFunction>> extraNative : extensions.flatCollect(e -> e.getExtraNatives()))
-        {
-            this.nativeFunctions.put(extraNative.getOne(), extraNative.getTwo().value(this, repository));
-        }
     }
 
     public CodeStorage getStorage()
@@ -479,7 +350,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
     @Override
     public Console getConsole()
     {
-        return ((Print)this.nativeFunctions.get("print_Any_MANY__Integer_1__Nil_0_")).getConsole();
+        return console;
     }
 
     public PureRuntime getPureRuntime()
@@ -516,7 +387,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
     {
         if (function instanceof LambdaWithContext)
         {
-            context = ((LambdaWithContext)function).getVariableContext();
+            context = ((LambdaWithContext) function).getVariableContext();
         }
 
         return this.executeFunctionExecuteParams(function, params, resolvedTypeParameters, resolvedMultiplicityParameters, context, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
@@ -529,7 +400,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
     {
         if (function instanceof LambdaWithContext)
         {
-            context = ((LambdaWithContext)function).getVariableContext();
+            context = ((LambdaWithContext) function).getVariableContext();
         }
 
         return this.executeFunction(false, LambdaFunctionCoreInstanceWrapper.toLambdaFunction(function), params, resolvedTypeParameters, resolvedMultiplicityParameters, context, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
@@ -590,7 +461,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
 
             if (function instanceof PackageableFunction)
             {
-                for (CoreInstance constraint : ((PackageableFunction<CoreInstance>)function)._preConstraints())
+                for (CoreInstance constraint : ((PackageableFunction<CoreInstance>) function)._preConstraints())
                 {
                     CoreInstance definition = Instance.getValueForMetaPropertyToOneResolved(Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.functionDefinition, processorSupport), M3Properties.expressionSequence, processorSupport);
                     String ruleId = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.name, processorSupport).getName();
@@ -603,7 +474,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
             }
 
             // Execute
-            CoreInstance result;
+            CoreInstance result = null;
             if (Instance.instanceOf(function, M3Paths.NativeFunction, processorSupport))
             {
                 org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunction function1 = NativeFunctionCoreInstanceWrapper.toNativeFunction(function);
@@ -631,47 +502,20 @@ public class FunctionExecutionInterpreted implements FunctionExecution
                 }
                 result = returnVal;
             }
-            else if (Instance.instanceOf(function, M3Paths.Path, processorSupport))
+            List<CoreInstance> instances = this.extensions.collect(x -> x.getExtraFunctionExecution(function, params, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport, processorSupport, this)).select(x -> x != null);
+
+            if (instances.size() == 1)
             {
-                final boolean executable = ValueSpecification.isExecutable(params.get(0), processorSupport);
-
-                CoreInstance value = params.get(0).getValueForMetaPropertyToOne(M3Properties.values);
-
-                MutableList<CoreInstance> res = function.getValueForMetaPropertyToMany(M3Properties.path).injectInto(FastList.newListWith(value), new CheckedFunction2<MutableList<CoreInstance>, CoreInstance, MutableList<CoreInstance>>()
-                {
-                    @Override
-                    public MutableList<CoreInstance> safeValue(MutableList<CoreInstance> instances, final CoreInstance pathElement) throws Exception
-                    {
-                        return instances.flatCollect(new CheckedFunction<CoreInstance, Iterable<CoreInstance>>()
-                        {
-                            @Override
-                            public Iterable<CoreInstance> safeValueOf(CoreInstance instance) throws Exception
-                            {
-                                CoreInstance property = Instance.getValueForMetaPropertyToOneResolved(pathElement, M3Properties.property, processorSupport);
-                                MutableList<CoreInstance> parameters = FastList.newListWith(ValueSpecificationBootstrap.wrapValueSpecification(instance, executable, processorSupport));
-                                parameters.addAllIterable(Instance.getValueForMetaPropertyToManyResolved(pathElement, M3Properties.parameters, processorSupport).collect(new org.eclipse.collections.api.block.function.Function<CoreInstance, CoreInstance>()
-                                {
-                                    @Override
-                                    public CoreInstance valueOf(CoreInstance coreInstance)
-                                    {
-                                        return ValueSpecificationBootstrap.wrapValueSpecification(Instance.getValueForMetaPropertyToManyResolved(coreInstance, M3Properties.values, processorSupport), executable, processorSupport);
-                                    }
-                                }));
-                                return (Iterable<CoreInstance>)FunctionExecutionInterpreted.this.executeFunction(false, PropertyCoreInstanceWrapper.toProperty(property), parameters, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport).getValueForMetaPropertyToMany(M3Properties.values);
-                            }
-                        });
-                    }
-                });
-                result = ValueSpecificationBootstrap.wrapValueSpecification(res, executable, processorSupport);
+                result = instances.get(0);
             }
-            else
+            else if (result == null)
             {
-                throw new PureExecutionException("Unsupported function for execution");
+                throw new PureExecutionException("Unsupported function for execution " + function.getName());
             }
 
             if (function instanceof PackageableFunction)
             {
-                if (((PackageableFunction<CoreInstance>)function)._postConstraints().notEmpty())
+                if (((PackageableFunction<CoreInstance>) function)._postConstraints().notEmpty())
                 {
                     try
                     {
@@ -681,7 +525,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
                     {
                         throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), e.getMessage(), e);
                     }
-                    for (CoreInstance constraint : ((PackageableFunction<CoreInstance>)function)._postConstraints())
+                    for (CoreInstance constraint : ((PackageableFunction<CoreInstance>) function)._postConstraints())
                     {
 
                         CoreInstance definition = Instance.getValueForMetaPropertyToOneResolved(Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.functionDefinition, processorSupport), M3Properties.expressionSequence, processorSupport);
@@ -702,15 +546,14 @@ public class FunctionExecutionInterpreted implements FunctionExecution
             org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInfo = (functionExpressionToUseInStack == null ? null : functionExpressionToUseInStack.getSourceInformation());
             if (sourceInfo != null && sourceInfo != e.getSourceInformation())
             {
-                String testPurePlatformFileName = "/platform/pure/corefunctions/test.pure";
-
+                String testPurePlatformFileName = "/platform/pure/basics/tests/";
                 boolean allFromAssert = true;
                 for (org.finos.legend.pure.m4.coreinstance.SourceInformation si : e.getPureStackSourceInformation())
                 {
-                    allFromAssert = allFromAssert && si != null && testPurePlatformFileName.equals(si.getSourceId());
+                    allFromAssert = allFromAssert && si != null && si.getSourceId().startsWith(testPurePlatformFileName);
                 }
 
-                if (allFromAssert && !testPurePlatformFileName.equals(sourceInfo.getSourceId()))
+                if (allFromAssert && !sourceInfo.getSourceId().startsWith(testPurePlatformFileName))
                 {
                     throw new PureAssertFailException(sourceInfo, e.getInfo());
                 }
@@ -753,7 +596,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
                 {
                     if (pureException instanceof PureAssertFailException)
                     {
-                        throw new PureAssertFailException(sourceInfo, pureException.getInfo(), (PureAssertFailException)pureException);
+                        throw new PureAssertFailException(sourceInfo, pureException.getInfo(), (PureAssertFailException) pureException);
                     }
                     else
                     {

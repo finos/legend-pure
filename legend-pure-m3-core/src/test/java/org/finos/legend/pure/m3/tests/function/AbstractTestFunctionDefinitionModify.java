@@ -15,7 +15,8 @@
 package org.finos.legend.pure.m3.tests.function;
 
 import org.eclipse.collections.api.factory.Lists;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.eclipse.collections.api.list.MutableList;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.TestCodeRepositoryWithDependencies;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
@@ -251,8 +252,10 @@ public abstract class AbstractTestFunctionDefinitionModify extends AbstractPureT
 
     protected static MutableCodeStorage getCodeStorage()
     {
-        CodeRepository platform = CodeRepository.newPlatformCodeRepository();
+        MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
+        CodeRepository platform = repositories.detect(x -> x.getName().equals("platform"));
         CodeRepository test = new TestCodeRepositoryWithDependencies("test", null, platform);
-        return new PureCodeStorage(null, new ClassLoaderCodeStorage(platform, test));
+        repositories.add(test);
+        return new PureCodeStorage(null, new ClassLoaderCodeStorage(repositories));
     }
 }

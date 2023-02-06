@@ -36,10 +36,10 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecificat
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -49,15 +49,13 @@ import java.util.function.Function;
 
 public class MilestoningDatesPropagationFunctions
 {
-    public static final String PATH_MILESTONING_DATES_VARIABLE_NAME = "p_milestoning_dates";
-
     private MilestoningDatesPropagationFunctions()
     {
     }
 
     public static MilestoningDateContextScope withNewMilestoningDateContext(FunctionExpression fe, CoreInstance possibleLambda, ProcessorState processorState, ModelRepository repository, Context context, ProcessorSupport processorSupport)
     {
-        ListIterable<String> varNames = getMilestoningDatesVarNames(possibleLambda, processorSupport);
+        ListIterable<String> varNames = getMilestoningDatesVarNames(possibleLambda, processorState.getInlineDSLLibrary(), processorSupport);
         MilestoningDates propagatedMilestoningDates = getMilestoningDatesForFunctionsWithLambda(fe, processorState, varNames, repository, context, processorSupport);
         return processorState.withMilestoningDateContext(propagatedMilestoningDates, varNames);
     }
@@ -98,30 +96,26 @@ public class MilestoningDatesPropagationFunctions
         return null;
     }
 
-    private static ListIterable<String> getMilestoningDatesVarNames(CoreInstance value, ProcessorSupport processorSupport)
+    private static ListIterable<String> getMilestoningDatesVarNames(CoreInstance value, InlineDSLLibrary inlineDSLLibrary, ProcessorSupport processorSupport)
     {
-        if (value instanceof LambdaFunction)
-        {
-            return getLambdaInputVarNames((LambdaFunction<?>) value, processorSupport);
-        }
-        //TODO: move to m2-path
-        if (Instance.instanceOf(value, M3Paths.Path, processorSupport))
-        {
-            return Lists.immutable.with(PATH_MILESTONING_DATES_VARIABLE_NAME);
-        }
         if (value instanceof InstanceValue)
         {
             ListIterable<? extends CoreInstance> instanceValues = ((InstanceValue) value)._valuesCoreInstance().toList();
-            if ((instanceValues.size() == 1) && instanceValues.getFirst() instanceof LambdaFunction)
-            {
-                return getLambdaInputVarNames((LambdaFunction<?>) instanceValues.get(0), processorSupport);
-            }
-            if ((instanceValues.size() >= 1) && Instance.instanceOf(instanceValues.getFirst(), M3Paths.Path, processorSupport))
-            {
-                return Lists.immutable.with(PATH_MILESTONING_DATES_VARIABLE_NAME);
-            }
+            return getMilestoningDatesVarNamesUnit(instanceValues, inlineDSLLibrary, processorSupport);
         }
-        return Lists.immutable.empty();
+        else
+        {
+            return getMilestoningDatesVarNamesUnit(Lists.mutable.with(value), inlineDSLLibrary, processorSupport);
+        }
+    }
+
+    private static ListIterable<String> getMilestoningDatesVarNamesUnit(ListIterable<? extends CoreInstance> values, InlineDSLLibrary inlineDSLLibrary, ProcessorSupport processorSupport)
+    {
+        if (values.size() == 1 && values.getFirst() instanceof LambdaFunction)
+        {
+            return getLambdaInputVarNames((LambdaFunction<?>) values.getFirst(), processorSupport);
+        }
+        return inlineDSLLibrary.getInlineDSLs().collect(InlineDSL::getMilestoningDatesVarNamesExtractor).select(Objects::nonNull).flatCollect(x->x.getMilestoningDatesVarNames(values, processorSupport)).toList();
     }
 
     private static ListIterable<String> getLambdaInputVarNames(LambdaFunction<?> lambdaFunction, ProcessorSupport processorSupport)

@@ -14,19 +14,18 @@
 
 package org.finos.legend.pure.runtime.java.compiled.modeling._class;
 
-import org.finos.legend.pure.generated.CoreJavaModelFactoryRegistry;
-import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.AbstractTestGeneralizationAtRuntime;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
-import org.junit.After;
+import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
 import org.junit.BeforeClass;
 
 public class TestGeneralizationCompiled extends AbstractTestGeneralizationAtRuntime
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution(), getFactoryRegistryOverride());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
     }
 
     protected static FunctionExecution getFunctionExecution()
@@ -34,8 +33,4 @@ public class TestGeneralizationCompiled extends AbstractTestGeneralizationAtRunt
         return new FunctionExecutionCompiledBuilder().build();
     }
 
-    protected static CoreInstanceFactoryRegistry getFactoryRegistryOverride()
-    {
-        return CoreJavaModelFactoryRegistry.REGISTRY;
-    }
 }

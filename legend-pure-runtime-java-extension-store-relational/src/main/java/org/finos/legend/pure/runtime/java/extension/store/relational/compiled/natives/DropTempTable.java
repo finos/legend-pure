@@ -42,6 +42,6 @@ public class DropTempTable extends AbstractNative
 
         String toSqlString = "\"drop table \"+" + tableName;
 
-        return "org.finos.legend.pure.runtime.java.extension.store.relational.compiled.RelationalGen.dropTempTable(" + tableName + "," + toSqlString + "," + connection + ",0,0," + NativeFunctionProcessor.buildM4LineColumnSourceInformation(functionExpression.getSourceInformation()) + ",es)";
+        return "org.finos.legend.pure.generated.RelationalGen.dropTempTable(" + tableName + "," + toSqlString + "," + connection + ",0,0," + NativeFunctionProcessor.buildM4LineColumnSourceInformation(functionExpression.getSourceInformation()) + ",es)";
     }
 }

@@ -17,29 +17,36 @@ package org.finos.legend.pure.runtime.java.compiled.incremental;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Lists;
-import org.finos.legend.pure.m3.RuntimeVerifier;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.tests.incremental.enumeration.AbstractPureRuntimeEnumerationTest;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.compiled.CompiledClassloaderStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.CompiledMetadataStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
 import org.junit.After;
 import org.junit.BeforeClass;
 
 public class TestPureRuntimeEnumerationCompiled extends AbstractPureRuntimeEnumerationTest
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
     }
+
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("sourceId.pure");
         runtime.delete("userId.pure");
-        try{
+        try
+        {
             runtime.compile();
-        } catch (PureCompilationException e) {
+        }
+        catch (PureCompilationException e)
+        {
             setUp();
         }
     }
@@ -48,16 +55,11 @@ public class TestPureRuntimeEnumerationCompiled extends AbstractPureRuntimeEnume
     protected ListIterable<RuntimeVerifier.FunctionExecutionStateVerifier> getAdditionalVerifiers()
     {
         return Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of(new CompiledMetadataStateVerifier(),
-                        new CompiledClassloaderStateVerifier());
+                new CompiledClassloaderStateVerifier());
     }
 
     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
-    }
-
-    public static Pair<String, String> getExtra()
-    {
-        return null;
     }
 }

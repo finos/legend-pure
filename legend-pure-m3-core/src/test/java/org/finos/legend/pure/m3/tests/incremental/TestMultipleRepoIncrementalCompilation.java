@@ -15,11 +15,12 @@
 package org.finos.legend.pure.m3.tests.incremental;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
-import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.eclipse.collections.api.list.MutableList;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.TestCodeRepositoryWithDependencies;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
@@ -28,6 +29,8 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpa
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.Objects;
 
 public class TestMultipleRepoIncrementalCompilation extends AbstractPureTestWithCoreCompiledPlatform
 {
@@ -48,12 +51,18 @@ public class TestMultipleRepoIncrementalCompilation extends AbstractPureTestWith
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
-        CodeRepository platform = CodeRepository.newPlatformCodeRepository();
-        CodeRepository core = new TestCodeRepositoryWithDependencies("core", null, Sets.mutable.with(platform));
-        CodeRepository system = new TestCodeRepositoryWithDependencies("system", null, Sets.mutable.with(platform, core));
-        CodeRepository model = new TestCodeRepositoryWithDependencies("model", null, Sets.mutable.with(platform, core, system));
-        CodeRepository other = new TestCodeRepositoryWithDependencies("datamart_other", null, Sets.mutable.with(platform, core, system, model));
-        return Lists.immutable.with(platform, system, model, other);
+        MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
+        CodeRepository platform = repositories.detect(x -> x.getName().equals("platform"));
+        CodeRepository functions = repositories.detect(x -> x.getName().equals("platform_functions"));
+        CodeRepository core = new TestCodeRepositoryWithDependencies("zcore", null, Sets.mutable.with(platform));
+        CodeRepository system = new TestCodeRepositoryWithDependencies("system", null, Sets.mutable.with(platform, core, functions).select(Objects::nonNull));
+        CodeRepository model = new TestCodeRepositoryWithDependencies("model", null, Sets.mutable.with(platform, core, system, functions).select(Objects::nonNull));
+        CodeRepository other = new TestCodeRepositoryWithDependencies("datamart_other", null, Sets.mutable.with(platform, core, system, model, functions).select(Objects::nonNull));
+        repositories.add(core);
+        repositories.add(system);
+        repositories.add(model);
+        repositories.add(other);
+        return repositories;
     }
 
     protected static MutableCodeStorage getCodeStorage()
@@ -65,13 +74,13 @@ public class TestMultipleRepoIncrementalCompilation extends AbstractPureTestWith
     public void verifyUnbindingRecompilationOrderSuccessAcrossRepos() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("/model/sourceId.pure", "Class domain::A{version : Integer[1];}")
-                        .createInMemorySource("/datamart_other/file1.pure", "function datamarts::dmt::doStuff1():Nil[0]{print(domain::A.all(),1);}")
+                        .createInMemorySource("/datamart_other/file1.pure", "function datamarts::dmt::doStuff1():Any[*]{domain::A.all();}")
                         // This function refers to the function above, so will be triggered for unbinding even though we don't change it's source
                         // This test verifies that we don't try to rebind it, until doStuff1 is back in scope
-                        .createInMemorySource("/datamart_other/file2.pure", "function datamarts::dmt::doStuff2():Nil[0]{print(datamarts::dmt::doStuff1(),1);}")
+                        .createInMemorySource("/datamart_other/file2.pure", "function datamarts::dmt::doStuff2():Any[*]{datamarts::dmt::doStuff1();}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
-                        .updateSource("/datamart_other/file1.pure", "function datamarts::dmt::doStuff1():Nil[0]{print(domain::A.all(),1);}")
+                        .updateSource("/datamart_other/file1.pure", "function datamarts::dmt::doStuff1():Any[*]{domain::A.all();}")
                         .updateSource("/model/sourceId.pure", "Class domain::A{version : Integer[*];}")
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
@@ -82,15 +91,15 @@ public class TestMultipleRepoIncrementalCompilation extends AbstractPureTestWith
     public void verifyUnbindingRecompilationOrderSuccessAcrossReposWithCompileFailureInSecondRepo() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("/model/sourceId.pure", "Class domain::A{cats : Integer[1];}")
-                        .createInMemorySource("/datamart_other/file1.pure", "function datamarts::dmt::doStuff1():Nil[0]{print(domain::A.all().cats,1);}")
+                        .createInMemorySource("/datamart_other/file1.pure", "function datamarts::dmt::doStuff1():Any[*]{domain::A.all().cats;}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         //Rename property
                         .updateSource("/model/sourceId.pure", "Class domain::A{dogs : Integer[1];}")
-                        .compileWithExpectedCompileFailure("Can't find the property 'cats' in the class domain::A", "/datamart_other/file1.pure", 1, 66)
+                        .compileWithExpectedCompileFailure("Can't find the property 'cats' in the class domain::A", "/datamart_other/file1.pure", 1, 60)
                         //Compile again - error should be the same - this checks that we are keeping the state of
                         //what has not been compiled correctly across runs
-                        .compileWithExpectedCompileFailure("Can't find the property 'cats' in the class domain::A", "/datamart_other/file1.pure", 1, 66)
+                        .compileWithExpectedCompileFailure("Can't find the property 'cats' in the class domain::A", "/datamart_other/file1.pure", 1, 60)
                         //Put it back
                         .updateSource("/model/sourceId.pure", "Class domain::A{cats : Integer[1];}")
                         .compile(),

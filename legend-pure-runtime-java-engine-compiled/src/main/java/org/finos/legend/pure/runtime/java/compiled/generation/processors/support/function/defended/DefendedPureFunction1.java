@@ -14,11 +14,17 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended;
 
+import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureFunction1;
 
-public abstract class DefendedPureFunction1<T,V> implements PureFunction1<T,V>
+public abstract class DefendedPureFunction1<T, V> implements PureFunction1<T, V>
 {
+    public V execute(ListIterable<?> vars, ExecutionSupport es)
+    {
+        return value((T) vars.get(0), es);
+    }
+
     @Override
     public V apply(T argument1, ExecutionSupport argument2)
     {

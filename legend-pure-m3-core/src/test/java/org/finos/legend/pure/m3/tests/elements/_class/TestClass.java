@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.m3.tests.elements._class;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.junit.After;
 import org.junit.Assert;

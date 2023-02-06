@@ -15,7 +15,8 @@
  limitations under the License.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
@@ -33,49 +34,82 @@
     <build>
         <plugins>
             <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>pre-compile</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>GenerateFactoryClasses</id>
                         <phase>generate-sources</phase>
                         <goals>
                             <goal>java</goal>
                         </goals>
+                        <configuration>
+                            <mainClass>
+                                org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.JavaModelFactoryGenerator
+                            </mainClass>
+                            <arguments>
+                                <argument>Mapping</argument>
+                                <argument>
+                                    org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.MappingParser,
+                                    org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.OperationParser,
+                                    org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.EnumerationMappingParser,
+                                    org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.AggregationAwareParser,
+                                    org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.XStoreParser
+                                </argument>
+                                <argument>${project.build.directory}/generated-sources/</argument>
+                            </arguments>
+                            <includeProjectDependencies>true</includeProjectDependencies>
+                            <includePluginDependencies>true</includePluginDependencies>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>GenerateTestJavaCode</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>
+                                org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.JavaCodeGeneration
+                            </mainClass>
+                            <arguments>
+                                <argument>platform_dsl_mapping</argument>
+                                <argument>${project.build.directory}/generated-test-resources</argument>
+                                <argument>${project.build.directory}</argument>
+                            </arguments>
+                            <includeProjectDependencies>true</includeProjectDependencies>
+                            <includePluginDependencies>true</includePluginDependencies>
+                        </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <mainClass>org.finos.legend.pure.runtime.java.compiled.generation.JavaClassLoaderSourceCodeGenerator</mainClass>
-                    <arguments>
-                        <argument>${project.build.directory}/generated-sources/</argument>
-                        <argument />
-                        <argument>Mapping</argument>
-                    </arguments>
-                    <includeProjectDependencies>true</includeProjectDependencies>
-                    <includePluginDependencies>true</includePluginDependencies>
-                </configuration>
                 <dependencies>
                     <dependency>
                         <groupId>org.finos.legend.pure</groupId>
-                        <artifactId>legend-pure-code-compiled-platform-par</artifactId>
+                        <artifactId>legend-pure-m2-dsl-mapping-grammar</artifactId>
                         <version>${project.version}</version>
                     </dependency>
                 </dependencies>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>add-source</id>
-                        <phase>initialize</phase>
                         <goals>
-                            <goal>add-source</goal>
+                            <goal>test-jar</goal>
                         </goals>
-                        <configuration>
-                            <sources>
-                                <source>${project.basedir}/target/generated-sources/</source>
-                            </sources>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -95,36 +129,17 @@
 
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-m3-dsl-path</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-m3-dsl-graph</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-m3-platform</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-m2-dsl-diagram</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-m2-dsl-mapping</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-m2-store-relational</artifactId>
+            <artifactId>legend-pure-m2-dsl-mapping-pure</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-runtime-java-engine-compiled</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-runtime-java-extension-functions</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
@@ -136,5 +151,17 @@
             <artifactId>eclipse-collections</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-runtime-java-extension-functions</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-runtime-java-engine-compiled</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

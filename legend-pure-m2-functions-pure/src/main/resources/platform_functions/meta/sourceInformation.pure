@@ -1,0 +1,64 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::functions::meta::tests::sourceInformation::*;
+
+Class meta::pure::functions::meta::SourceInformation
+{
+    <<equality.Key>> source : String[1];
+    <<equality.Key>> startLine : Integer[1];
+    <<equality.Key>> startColumn : Integer[1];
+    <<equality.Key>> line : Integer[1];
+    <<equality.Key>> column : Integer[1];
+    <<equality.Key>> endLine : Integer[1];
+    <<equality.Key>> endColumn : Integer[1];
+}
+
+native function meta::pure::functions::meta::sourceInformation(node:Any[1]):SourceInformation[0..1];
+
+
+function <<test.Test>>   meta::pure::functions::meta::tests::sourceInformation::testClassSourceInformation():Boolean[1]
+{
+    let sourceInfo = TestClass->sourceInformation()->toOne();
+    assertEq('/platform_functions/meta/sourceInformation.pure', $sourceInfo.source);
+    assertEq(61, $sourceInfo.startLine);
+    assertEq(1, $sourceInfo.startColumn);
+    assertEq(61, $sourceInfo.line);
+    assertEq(62, $sourceInfo.column);
+    assertEq(64, $sourceInfo.endLine);
+    assertEq(1, $sourceInfo.endColumn);
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::sourceInformation::testFunctionSourceInformation():Boolean[1]
+{
+    let sourceInfo = meta::pure::functions::meta::tests::sourceInformation::testFunctionSourceInformation__Boolean_1_->sourceInformation()->toOne();
+    assertEq('/platform_functions/meta/sourceInformation.pure', $sourceInfo.source);
+    assertEq(43, $sourceInfo.startLine);
+    assertEq(1, $sourceInfo.startColumn);
+    assertEq(43, $sourceInfo.line);
+    assertEq(79, $sourceInfo.column);
+    assertEq(53, $sourceInfo.endLine);
+    assertEq(1, $sourceInfo.endColumn);
+}
+
+function <<test.Test>>  meta::pure::functions::meta::tests::sourceInformation::testNoSourceInformation():Boolean[1]
+{
+    assertEmpty(1->sourceInformation());
+}
+
+
+Class meta::pure::functions::meta::tests::sourceInformation::TestClass
+{
+    attribute:Integer[1];
+}

@@ -16,8 +16,9 @@ package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.MutableMap;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
+import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.serialization.GraphSerializer;
 import org.junit.Assert;
@@ -29,7 +30,7 @@ public abstract class TestStringCaching<T extends StringCache> extends AbstractP
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getFunctionExecution());
+        setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
     }
 
     @Test

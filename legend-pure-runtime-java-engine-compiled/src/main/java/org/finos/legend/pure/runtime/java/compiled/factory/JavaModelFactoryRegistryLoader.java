@@ -25,7 +25,7 @@ public class JavaModelFactoryRegistryLoader
 {
     public static void main(String args[])
     {
-        System.out.println(loader());
+        System.out.println(loader().allManagedTypes().toSortedList().makeString("\n"));
     }
 
     public static CoreInstanceFactoryRegistry loader()

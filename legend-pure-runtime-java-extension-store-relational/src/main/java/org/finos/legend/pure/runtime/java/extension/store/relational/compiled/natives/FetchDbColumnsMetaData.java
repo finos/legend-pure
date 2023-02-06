@@ -29,6 +29,6 @@ public class FetchDbColumnsMetaData extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return "org.finos.legend.pure.runtime.java.extension.store.relational.compiled.RelationalGen.fetchDbMetaData(" + transformedParams.get(0) + ", new org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.FetchDbColumnsMetaDataFunction(" + transformedParams.get(1) + "," + transformedParams.get(2) + "," + transformedParams.get(3) + "), Maps.immutable.<String, Function<ListIterable<Object>, String>>with(\"SQL_TYPE_NAME\", new org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.FindSqlTypeNameFunction()), es)";
+        return "org.finos.legend.pure.generated.RelationalGen.fetchDbMetaData(" + transformedParams.get(0) + ", new org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.FetchDbColumnsMetaDataFunction(" + transformedParams.get(1) + "," + transformedParams.get(2) + "," + transformedParams.get(3) + "), Maps.immutable.<String, Function<ListIterable<Object>, String>>with(\"SQL_TYPE_NAME\", new org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.FindSqlTypeNameFunction()), es)";
     }
 }

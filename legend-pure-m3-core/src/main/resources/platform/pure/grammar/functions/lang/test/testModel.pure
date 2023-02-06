@@ -1,0 +1,101 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::functions::lang::tests::model::*;
+
+Class meta::pure::functions::lang::tests::model::LA_GeographicEntity
+{
+    type : LA_GeographicEntityType[1];
+}
+
+Class meta::pure::functions::lang::tests::model::LA_Location extends LA_GeographicEntity
+{
+    place : String[1];
+    censusdate: Date[0..1];
+}
+
+Class meta::pure::functions::lang::tests::model::LA_Address extends LA_GeographicEntity
+{
+    name : String[1];
+}
+
+Class meta::pure::functions::lang::tests::model::LA_Person
+{
+    firstName : String[1];
+    lastName: String[1];
+    otherNames : String[*];
+    address : LA_Address[0..1];
+    locations : LA_Location[*];
+    name()
+    {
+        $this.firstName+' '+$this.lastName
+    }:String[1];
+    nameWithTitle(title:String[1])
+    {
+        $title+' '+$this.firstName+' '+$this.lastName
+    }:String[1];
+    fullName(lastNameFirst:Boolean[1])
+    {
+        if($lastNameFirst, | $this.lastName + ', ' + $this.firstName, | $this.firstName + ' ' + $this.lastName)
+    }:String[1];
+}
+
+Association meta::pure::functions::lang::tests::model::LA_Person_Firm
+{
+    firm : LA_Firm[0..1];
+    employees : LA_Person[*];
+}
+
+Class meta::pure::functions::lang::tests::model::LA_List<T>
+{
+    values : T[*];
+}
+
+Class meta::pure::functions::lang::tests::model::LA_Firm
+{
+    legalName : String[1];
+    address : LA_Address[0..1];
+}
+
+Enum meta::pure::functions::lang::tests::model::LA_GeographicEntityType
+{
+    {doc.doc = 'A city, town, village, or other urban area.'} CITY,
+    <<doc.deprecated>> COUNTRY,
+    {doc.doc = 'Any geographic entity other than a city or country.'} REGION
+}
+
+Class meta::pure::functions::lang::tests::model::LA_Organization
+{
+    name : String[1];
+}
+
+Association meta::pure::functions::lang::tests::model::LA_SubOrganization
+{
+    parent : LA_Organization[0..1];
+    children : LA_Organization[*];
+}
+
+Association meta::pure::functions::tests::model::LA_FirmOrganizations
+{
+    firm : LA_Firm[1];
+    organizations : LA_Organization[*];
+}
+
+Class meta::pure::functions::lang::tests::model::LA_Division extends LA_Organization
+{
+}
+
+Class meta::pure::functions::lang::tests::model::LA_Department extends LA_Organization
+{
+}

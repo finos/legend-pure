@@ -1,0 +1,114 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+//-----
+// Map
+//-----
+native function meta::pure::functions::collection::newMap<U,V>(pairs:Pair<U,V>[*]):Map<U,V>[1];
+//{
+//   $pairs->fold({a,b|$b->put($a.first, $a.second)},^Map<U,V>());
+//}
+
+native function meta::pure::functions::collection::newMap<U,V>(pairs:Pair<U,V>[*], p:Property<U,Any|1>[*]):Map<U,V>[1];
+//{
+//   $pairs->fold({a,b|$b->put($a.first, $a.second)},^Map<U,V>(_func=$f));
+//}
+
+native function meta::pure::functions::collection::replaceAll<U,V>(m:Map<U,V>[1], pairs:Pair<U,V>[*]):Map<U,V>[1];
+//{
+//   $pairs->fold({a,b|$b->put($a.first, $a.second)}, ^Map<U,V>(_func= $m._func));
+//}
+
+native function meta::pure::functions::collection::put<U,V>(m:Map<U,V>[1], key:U[1], value:V[1]):Map<U,V>[1];
+//{
+//   let filtered = if($m._func->isEmpty(),
+//                           |$m._values->filter(v|$v.first != $key),
+//                           |$m._values->filter(v|!$m._func->toOne()->eval($v.first, $key))
+//                        );
+//   ^$m(_values = $filtered->concatenate(pair($key, $value)));
+//}
+
+native function meta::pure::functions::collection::putAll<U,V>(m:Map<U,V>[1], pairs:Pair<U,V>[*]):Map<U,V>[1];
+//{
+//   $pairs->fold({a,b|$b->put($a.first, $a.second)}, $m);
+//}
+
+native function meta::pure::functions::collection::putAll<U,V>(m:Map<U,V>[1], o:Map<U,V>[1]):Map<U,V>[1];
+//{
+//   $o._values->fold({a,b|$b->put($a.first, $a.second)}, $m);
+//}
+
+native function meta::pure::functions::collection::keyValues<U,V>(m:Map<U,V>[1]):Pair<U,V>[*];
+//{
+//    $m._values;
+//}
+
+native function meta::pure::functions::collection::keys<U,V>(m:Map<U,V>[1]):U[*];
+//{
+//    $m._values.first;
+//}
+
+native function meta::pure::functions::collection::values<U,V>(m:Map<U,V>[1]):V[*];
+//{
+//    $m._values.second;
+//}
+
+native function meta::pure::functions::collection::get<U,V>(m:Map<U,V>[1], key:U[1]):V[0..1];
+//{
+//   let found = if($m._func->isEmpty(),
+//            |$m._values->filter(v|$v.first == $key),
+//            |$m._values->filter(v|$m._func->toOne()->eval($v.first, $key))
+//   );
+//   if ($found->isEmpty(),|[],|$found.second->first());
+//}
+
+native function meta::pure::functions::collection::getIfAbsentPutWithKey<U,V>(m:Map<U,V>[1], key:U[1], func:Function<{U[1]->V[0..1]}>[1]):V[0..1];
+
+native function meta::pure::functions::collection::getMapStats<U,V>(m:Map<U,V>[1]):MapStats[0..1];
+
+//------
+// Pair
+//------
+function meta::pure::functions::collection::pair<U,V>(first:U[1], second:V[1]):Pair<U,V>[1]
+{
+   ^Pair<U,V>(first=$first, second=$second);
+}
+
+//------
+// Tree
+//------
+native function meta::pure::functions::collection::replaceTreeNode(root:TreeNode[1], target:TreeNode[1], value:TreeNode[1]):TreeNode[1];
+
+//------
+// List
+//------
+function meta::pure::functions::collection::list<U>(vals:U[*]):List<U>[1]
+{
+   ^List<U>(values = $vals);
+}
+
+
+
+Class meta::pure::functions::collection::ValueHolder<T>
+{
+    value : T[1];
+}
+
+Class meta::pure::functions::collection::MapStats
+{
+   getIfAbsentCounter : Integer[1];
+}
+
+
+

@@ -36,36 +36,40 @@
 
         <module>legend-pure-m3-bootstrap-generator</module>
         <module>legend-pure-m3-core</module>
-        <module>legend-pure-m3-dsl-path</module>
-        <module>legend-pure-m3-dsl-graph</module>
-        <module>legend-pure-m3-platform</module>
 
         <module>legend-pure-runtime-java-engine-interpreted</module>
         <module>legend-pure-runtime-java-engine-compiled</module>
         <module>legend-pure-runtime-java-engine-shared</module>
 
-        <module>legend-pure-m2-external-json</module>
-        <module>legend-pure-runtime-java-extension-external-json</module>
+        <module>legend-pure-m2-functions-pure</module>
+        <module>legend-pure-runtime-java-extension-functions</module>
 
-        <module>legend-pure-m2-dsl-mapping</module>
+        <module>legend-pure-m2-functions-json-pure</module>
+        <module>legend-pure-runtime-java-extension-functions-json</module>
+        <module>legend-pure-runtime-java-extension-functions-shared-conversion</module>
+
+        <module>legend-pure-m2-dsl-path-pure</module>
+        <module>legend-pure-m2-dsl-path-grammar</module>
+        <module>legend-pure-runtime-java-extension-dsl-path</module>
+
+        <module>legend-pure-m2-dsl-graph-pure</module>
+        <module>legend-pure-m2-dsl-graph-grammar</module>
+        <module>legend-pure-runtime-java-extension-dsl-graph</module>
+
+        <module>legend-pure-m2-dsl-mapping-grammar</module>
+        <module>legend-pure-m2-dsl-mapping-pure</module>
         <module>legend-pure-runtime-java-extension-dsl-mapping</module>
 
-        <module>legend-pure-m2-dsl-diagram</module>
+        <module>legend-pure-m2-dsl-diagram-grammar</module>
+        <module>legend-pure-m2-dsl-diagram-pure</module>
         <module>legend-pure-runtime-java-extension-dsl-diagram</module>
 
-        <module>legend-pure-m2-store-relational</module>
+        <module>legend-pure-m2-store-relational-pure</module>
+        <module>legend-pure-m2-store-relational-grammar</module>
         <module>legend-pure-runtime-java-extension-store-relational</module>
 
-        <module>legend-pure-runtime-java-extension-external-shared</module>
-
-        <module>legend-pure-configuration-external</module>
-
-        <module>legend-pure-code-compiled-platform-par</module>
-        <module>legend-pure-code-compiled-platform-java</module>
-        <module>legend-pure-code-compiled-tests</module>
-
-        <module>legend-pure-maven-compilation-par</module>
-        <module>legend-pure-maven-java-compiled</module>
+        <module>legend-pure-maven-generation-par</module>
+        <module>legend-pure-maven-generation-java</module>
 
         <module>legend-pure-ide-light</module>
     </modules>
@@ -134,11 +138,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.8.1</version>
-                    <configuration>
-                        <source>${maven.compiler.source}</source>
-                        <target>${maven.compiler.target}</target>
-                        <release>${maven.compiler.release}</release>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -247,12 +246,12 @@
                 </plugin>
                 <plugin>
                     <groupId>org.finos.legend.pure</groupId>
-                    <artifactId>legend-pure-maven-compilation-par</artifactId>
+                    <artifactId>legend-pure-maven-generation-par</artifactId>
                     <version>${project.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.finos.legend.pure</groupId>
-                    <artifactId>legend-pure-maven-java-compiled</artifactId>
+                    <artifactId>legend-pure-maven-generation-java</artifactId>
                     <version>${project.version}</version>
                 </plugin>
             </plugins>
@@ -348,12 +347,14 @@
                 </executions>
                 <configuration>
                     <excludes>
-                        <exclude>org/finos/legend/pure/m2/dsl/mapping/serialization/grammar/**/*</exclude>
                         <exclude>org/finos/legend/pure/m4/serialization/grammar/**/*</exclude>
                         <exclude>org/finos/legend/pure/m3/serialization/grammar/**/*</exclude>
-                        <exclude>org/finos/legend/pure/m3/inlinedsl/graph/serialization/grammar/**/*</exclude>
-                        <exclude>org/finos/legend/pure/m3/inlinedsl/path/serialization/grammar/**/*</exclude>
                         <exclude>org/finos/legend/pure/m3/coreinstance/**/*</exclude>
+                        <exclude>org/finos/legend/pure/m2/dsl/mapping/serialization/grammar/**/*</exclude>
+                        <exclude>org/finos/legend/pure/m2/dsl/diagram/serialization/grammar/**/*</exclude>
+                        <exclude>org/finos/legend/pure/m2/dsl/graph/serialization/grammar/**/*</exclude>
+                        <exclude>org/finos/legend/pure/m2/dsl/path/serialization/grammar/**/*</exclude>
+                        <exclude>org/finos/legend/pure/m2/relational/serialization/grammar/**/*</exclude>
                         <exclude>org/finos/legend/pure/generated/**/*</exclude>
                     </excludes>
                 </configuration>
@@ -371,6 +372,64 @@
                     </reportsDirectory>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-generated-source</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.basedir}/target/generated-sources/</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-resources</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>add-resource</goal>
+                        </goals>
+                        <configuration>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/src/main/resources</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-test-generated-source</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.basedir}/target/generated-test-sources/</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-test-generated-resources</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>add-test-resource</goal>
+                        </goals>
+                        <configuration>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/target/generated-test-resources/</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -384,12 +443,12 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-runtime-java-engine-shared</artifactId>
+                <artifactId>legend-pure-m3-core-platform-pure</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-configuration-external</artifactId>
+                <artifactId>legend-pure-runtime-java-engine-shared</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -409,12 +468,12 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-m3-platform</artifactId>
+                <artifactId>legend-pure-m2-functions-pure</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-m2-dsl-mapping</artifactId>
+                <artifactId>legend-pure-m2-dsl-mapping-grammar</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -424,37 +483,48 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-runtime-java-extension-dsl-mapping</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-runtime-java-extension-dsl-diagram</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-m2-external-json</artifactId>
+                <artifactId>legend-pure-m2-functions-json-pure</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-m2-store-relational</artifactId>
+                <artifactId>legend-pure-m2-store-relational-pure</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-code-compiled-platform-par</artifactId>
+                <artifactId>legend-pure-m2-store-relational-grammar</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-code-compiled-platform-java</artifactId>
+                <artifactId>legend-pure-m2-dsl-diagram-pure</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-m2-dsl-diagram</artifactId>
+                <artifactId>legend-pure-m2-dsl-diagram-grammar</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-m3-dsl-path</artifactId>
+                <artifactId>legend-pure-m2-dsl-path-pure</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-m2-dsl-path-grammar</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -464,12 +534,34 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-runtime-java-extension-external-json</artifactId>
+                <artifactId>legend-pure-runtime-java-extension-functions-json</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-runtime-java-extension-external-shared</artifactId>
+                <artifactId>legend-pure-runtime-java-extension-dsl-graph</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-runtime-java-extension-dsl-path</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-runtime-java-extension-functions</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-runtime-java-extension-functions</artifactId>
+                <type>test-jar</type>
+                <scope>test</scope>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-runtime-java-extension-functions-shared-conversion</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -484,7 +576,17 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-m3-dsl-graph</artifactId>
+                <artifactId>legend-pure-m2-dsl-graph-pure</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-m2-dsl-graph-grammar</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-m2-dsl-mapping-pure</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -494,12 +596,12 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-maven-compilation-par</artifactId>
+                <artifactId>legend-pure-maven-generation-par</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-maven-java-compiled</artifactId>
+                <artifactId>legend-pure-maven-generation-java</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!-- PURE -->
@@ -932,6 +1034,13 @@
             <!-- Test Scope -->
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-runtime-java-engine-compiled</artifactId>
+                <type>test-jar</type>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-m3-core</artifactId>
                 <type>test-jar</type>
                 <version>${project.version}</version>
@@ -939,35 +1048,35 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-m3-dsl-graph</artifactId>
+                <artifactId>legend-pure-m2-dsl-graph-grammar</artifactId>
                 <type>test-jar</type>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-m2-dsl-diagram</artifactId>
+                <artifactId>legend-pure-m2-dsl-diagram-grammar</artifactId>
                 <type>test-jar</type>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-m2-dsl-mapping</artifactId>
+                <artifactId>legend-pure-m2-dsl-mapping-grammar</artifactId>
                 <type>test-jar</type>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-m2-store-relational</artifactId>
+                <artifactId>legend-pure-m2-store-relational-grammar</artifactId>
                 <type>test-jar</type>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-m3-dsl-path</artifactId>
+                <artifactId>legend-pure-m2-dsl-path-grammar</artifactId>
                 <type>test-jar</type>
                 <version>${project.version}</version>
                 <scope>test</scope>
@@ -976,11 +1085,6 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${junit.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-code-compiled-tests</artifactId>
-                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.jersey.test-framework</groupId>

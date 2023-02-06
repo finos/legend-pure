@@ -15,8 +15,10 @@
 package org.finos.legend.pure.runtime.java.extension.dsl.mapping.compiled;
 
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.set.SetIterable;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingProperties;
+import org.finos.legend.pure.m3.coreinstance.MappingCoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.extension.BaseCompiledExtension;
@@ -29,7 +31,8 @@ public class MappingExtensionCompiled extends BaseCompiledExtension
     public MappingExtensionCompiled()
     {
         super(
-                Lists.fixedSize.with(),
+                "platform_dsl_mapping",
+                () -> Lists.fixedSize.with(),
                 Lists.fixedSize.with(),
                 Lists.fixedSize.with((mapping, cg, processorContext) ->
                 {
@@ -61,5 +64,11 @@ public class MappingExtensionCompiled extends BaseCompiledExtension
     public static CompiledExtension extension()
     {
         return new MappingExtensionCompiled();
+    }
+
+    @Override
+    public SetIterable<String> getExtraCorePath()
+    {
+        return MappingCoreInstanceFactoryRegistry.ALL_PATHS;
     }
 }

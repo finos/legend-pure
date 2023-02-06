@@ -14,8 +14,12 @@
 
 package org.finos.legend.pure.m3.tests.function.base.lang;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.eclipse.collections.api.factory.Lists;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.junit.Assert;
@@ -105,12 +109,6 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
                     "function meta::pure::versioning::classPropertyByNonMilestonedName(c:Class<Any>[1], name:String[1]):AbstractProperty<Any>[0..1] {\n" +
                     "   $c->allProperties()->filter(p|$p.name == $name || $p.name == ($name + 'AllVersions'))->first();//->meta::pure::milestoning::reverseMilestoningTransforms()->toOne();\n" +
                     "}\n" +
-                    "function\n" +
-                    "   {doc.doc = 'Get the property with the given name from the given class. Note that this searches only properties defined directly on the class, not those inherited from super-classes or those which come from associations.'}\n" +
-                    "   meta::pure::functions::meta::classPropertyByName(class:Class<Any>[1], name:String[1]):Property<Nil,Any|*>[0..1]\n" +
-                    "{\n" +
-                    "    $class.properties->filter(p | $p.name == $name)->first()\n" +
-                    "}\n" +
                     "function test():Nil[0]\n" +
                     "{\n" +
                     "   print(ElementaryParticle->classPropertyByName('energy')->toOne()->eval(^Wave(wavelength=42.01)), 1);" +
@@ -121,7 +119,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
         catch (RuntimeException e)
         {
             //e.printStackTrace();
-            this.assertExceptionInformation(e, "Error during dynamic function evaluation. The type Wave is not compatible with the type ElementaryParticle", 29, 70, this.checkLineNumbers());
+            this.assertExceptionInformation(e, "Error during dynamic function evaluation. The type Wave is not compatible with the type ElementaryParticle", 23, 70, this.checkLineNumbers());
         }
     }
 
@@ -274,6 +272,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
         }
         catch (RuntimeException e)
         {
+            e.printStackTrace();
             this.assertExceptionInformation(e, "Failed", 3, 5, this.checkLineNumbers());
         }
     }
@@ -288,6 +287,56 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
                         "}" );
         this.execute("test():Any[*]");
     }
+
+    @Test
+    public void testPureRuntimeClassConstraintFunctionEvaluate()
+    {
+        compileTestSource("fromString.pure",
+                "Class Employee" +
+                        "[" +
+                        "   $this.lastName->startsWith('A')" +
+                        "]" +
+                        "{" +
+                        "   lastName:String[1];" +
+                        "}"+
+                        "function testNew():Any[*]\n" +
+                        "{\n" +
+                        "   let t = ^Employee(lastName = 'AAAAAA');" +
+                        "   assert(Employee.constraints->at(0).functionDefinition->evaluate(^List<Any>(values=$t))->toOne()->cast(@Boolean), |'');" +
+                        "   $t;" +
+                        "}\n");
+        execute("testNew():Any[*]");
+    }
+
+    @Test
+    public void testInheritedQualifiedPropertyWithThisInReturnedLambda()
+    {
+        compileTestSource("fromString.pure",
+                "import test::*;\n" +
+                        "Class test::TestClass1\n" +
+                        "{\n" +
+                        "  name : String[1];\n" +
+                        "  getNameFunction()\n" +
+                        "  {\n" +
+                        "    {|$this->cast(@TestClass1).name}\n" +
+                        "  }:Function<{->String[1]}>[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class test::TestClass2 extends TestClass1\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "function test::testFn():Any[*]\n" +
+                        "{\n" +
+                        "  ^TestClass1(name='Daniel').getNameFunction()->eval() +\n" +
+                        "    ' ' +\n" +
+                        "    ^TestClass2(name='Benedict').getNameFunction()->eval()\n" +
+                        "}\n");
+        CoreInstance func = runtime.getFunction("test::testFn():Any[*]");
+        CoreInstance result = functionExecution.start(func, Lists.immutable.empty());
+        Assert.assertEquals("Daniel Benedict", PrimitiveUtilities.getStringValue(result.getValueForMetaPropertyToOne(M3Properties.values)));
+    }
+
 
     public void assertExceptionInformation(Exception e, String message, int lineNo, int columnNo, boolean checkLineNumbers)
     {

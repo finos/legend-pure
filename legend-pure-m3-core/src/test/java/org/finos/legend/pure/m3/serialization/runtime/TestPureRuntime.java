@@ -15,7 +15,7 @@
 package org.finos.legend.pure.m3.serialization.runtime;
 
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
@@ -41,8 +41,8 @@ public class TestPureRuntime
         PureRuntime runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))).build();
         runtime.loadAndCompileCore();
 
-        RuntimeException e = Assert.assertThrows(RuntimeException.class, () -> runtime.loadSource("/platform/pure/path.pure"));
-        Assert.assertEquals("/platform/pure/path.pure is already loaded", e.getMessage());
+        RuntimeException e = Assert.assertThrows(RuntimeException.class, () -> runtime.loadSource("/platform/pure/grammar/m3.pure"));
+        Assert.assertEquals("/platform/pure/grammar/m3.pure is already loaded", e.getMessage());
     }
 
     @Test
@@ -51,7 +51,7 @@ public class TestPureRuntime
         PureRuntime runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))).build();
         runtime.loadAndCompileCore();
 
-        Source m3Pure = runtime.getSourceById("/platform/pure/m3.pure");
+        Source m3Pure = runtime.getSourceById("/platform/pure/grammar/m3.pure");
         Assert.assertNotNull(m3Pure);
         Assert.assertTrue("No instances registered in m3.pure", m3Pure.getNewInstances().notEmpty());
     }

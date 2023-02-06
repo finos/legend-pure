@@ -15,13 +15,25 @@
 package org.finos.legend.pure.runtime.java.interpreted.extension;
 
 import org.eclipse.collections.api.block.function.Function2;
+import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.tuple.Pair;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.finos.legend.pure.runtime.java.interpreted.natives.core.NativeFunction;
+import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
+import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
+import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
+import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
+
+import java.util.Stack;
 
 public interface InterpretedExtension
 {
     MutableList<Pair<String, Function2<FunctionExecutionInterpreted, ModelRepository, NativeFunction>>> getExtraNatives();
+
+    CoreInstance getExtraFunctionExecution(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<CoreInstance> function, ListIterable<? extends CoreInstance> params, final Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, final Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, final VariableContext variableContext, final CoreInstance functionExpressionToUseInStack, final Profiler profiler, final InstantiationContext instantiationContext, final ExecutionSupport executionSupport, ProcessorSupport processorSupport, FunctionExecutionInterpreted interpreted);
 }

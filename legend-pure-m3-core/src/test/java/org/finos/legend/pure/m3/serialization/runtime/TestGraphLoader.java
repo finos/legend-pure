@@ -27,7 +27,7 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.impl.test.Verify;
 import org.eclipse.collections.impl.utility.Iterate;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -145,9 +145,8 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
     public void testIsKnownFile()
     {
         assertInitialState();
-        Assert.assertTrue(this.loader.isKnownFile("platform/pure/m3.pc"));
-        Assert.assertTrue(this.loader.isKnownFile("platform/pure/graph.pc"));
-        Assert.assertTrue(this.loader.isKnownFile("platform/pure/milestoning.pc"));
+        Assert.assertTrue(this.loader.isKnownFile("platform/pure/grammar/m3.pc"));
+        Assert.assertTrue(this.loader.isKnownFile("platform/pure/grammar/milestoning.pc"));
 
         Assert.assertFalse(this.loader.isKnownFile("not a file at all"));
         Assert.assertFalse(this.loader.isKnownFile("datamart_datamt/something/somethingelse.pure"));
@@ -179,7 +178,7 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
         assertInitialState();
 
         MutableSet<String> alreadyLoaded = this.loader.getLoadedFiles().collect(PureRepositoryJarTools::binaryPathToPurePath, Sets.mutable.empty());
-        String m3SourceId = "/platform/pure/m3.pure";
+        String m3SourceId = "/platform/pure/grammar/m3.pure";
         this.loader.loadFile(m3SourceId);
 
         assertSetsEqual(Sets.mutable.with(m3SourceId).withAll(alreadyLoaded), this.loader.getLoadedFiles().collect(PureRepositoryJarTools::binaryPathToPurePath, Sets.mutable.empty()));
@@ -213,8 +212,8 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
     {
         assertInitialState();
 
-        String m3SourceId = "/platform/pure/m3.pure";
-        String collectionSourceId = "/platform/pure/collection.pure";
+        String m3SourceId = "/platform/pure/grammar/m3.pure";
+        String collectionSourceId = "/platform/pure/anonymousCollections.pure";
 
         this.loader.loadFile(collectionSourceId);
         MutableSet<String> loadedFiles = this.loader.getLoadedFiles().collect(PureRepositoryJarTools::binaryPathToPurePath, Sets.mutable.empty());

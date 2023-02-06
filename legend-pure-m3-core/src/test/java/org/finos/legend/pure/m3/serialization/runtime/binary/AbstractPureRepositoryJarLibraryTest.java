@@ -28,7 +28,7 @@ import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.test.Verify;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.Version;
@@ -77,9 +77,8 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
     @Test
     public void testIsKnownFile()
     {
-        Assert.assertTrue(this.library.isKnownFile("platform/pure/m3.pc"));
-        Assert.assertTrue(this.library.isKnownFile("platform/pure/graph.pc"));
-        Assert.assertTrue(this.library.isKnownFile("platform/pure/path.pc"));
+        Assert.assertTrue(this.library.isKnownFile("platform/pure/grammar/m3.pc"));
+        Assert.assertTrue(this.library.isKnownFile("platform/pure/grammar/functions/lang/all.pc"));
 
         Assert.assertFalse(this.library.isKnownFile("not a file at all"));
         Assert.assertFalse(this.library.isKnownFile("datamart_datamt/something/somethingelse.pure"));
@@ -116,7 +115,7 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
     @Test
     public void testReadFiles()
     {
-        testReadFiles("platform/pure/m3.pc", "platform/pure/grammar.pc", "platform/pure/graph.pc");
+        testReadFiles("platform/pure/grammar/m3.pc", "platform/pure/grammar/functions/lang/all.pc", "platform/pure/grammar/functions/collection/filter.pc");
     }
 
     protected void testReadFiles(String... files)
@@ -205,7 +204,7 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
     @Test
     public void testFileDependencies_SingleFile()
     {
-        String m3BinPath = "platform/pure/m3.pc";
+        String m3BinPath = "platform/pure/grammar/m3.pc";
         SetIterable<String> m3Dependencies = this.library.getFileDependencies(m3BinPath);
         Verify.assertSetsEqual(Sets.mutable.with(m3BinPath), m3Dependencies.toSet());
 
@@ -221,8 +220,8 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
     @Test
     public void testFileDependencies_MultipleFiles()
     {
-        String m3BinPath = "platform/pure/m3.pc";
-        String collectionBinPath = "platform/pure/collection.pc";
+        String m3BinPath = "platform/pure/grammar/m3.pc";
+        String collectionBinPath = "platform/pure/grammar/functions/lang/all.pc";
 
         MutableSet<String> m3Dependencies = this.library.getFileDependencies(m3BinPath).toSet();
         Verify.assertSetsEqual(Sets.mutable.with(m3BinPath), m3Dependencies);
@@ -239,7 +238,7 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
     @Test
     public void testDependentFiles_SingleFile()
     {
-        String m3BinPath = "platform/pure/m3.pc";
+        String m3BinPath = "platform/pure/grammar/m3.pc";
         Verify.assertSetsEqual(this.library.getAllFiles().toSet(), this.library.getDependentFiles(m3BinPath).toSet());
 
         MutableSetMultimap<String, String> allExpectedDependents = Multimaps.mutable.set.empty();
@@ -270,9 +269,9 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
     @Test
     public void testDependentFiles_MultipleFiles()
     {
-        String m3BinPath = "platform/pure/m3.pc";
-        String collectionBinPath = "platform/pure/collection.pc";
-        String dateBinPath = "platform/pure/equality.pc";
+        String m3BinPath = "platform/pure/grammar/m3.pc";
+        String collectionBinPath = "platform/pure/grammar/functions/lang/all.pc";
+        String dateBinPath = "platform/pure/grammar/functions/string/plus.pc";
 
         MutableSetMultimap<String, String> allExpectedDependents = Multimaps.mutable.set.empty();
         for (Source source : runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()))

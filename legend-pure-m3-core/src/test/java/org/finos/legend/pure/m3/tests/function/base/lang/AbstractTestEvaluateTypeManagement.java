@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.m3.tests.function.base.lang;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.junit.Test;
 
 public abstract class AbstractTestEvaluateTypeManagement extends AbstractPureTestWithCoreCompiled
@@ -28,17 +28,15 @@ public abstract class AbstractTestEvaluateTypeManagement extends AbstractPureTes
                 "   print('ok',1);" +
                 "   ^Result<T|m>();" +
                 "}\n" +
-                "function meta::pure::functions::meta::pathToElement(path:String[1]):PackageableElement[1]\n" +
+                "function meta::alloy::test::mayExecuteAlloyTest<X|k>(f1:meta::pure::metamodel::function::Function<{String[1], String[1], String[1], Integer[1]->X[k]}>[1],\n" +
+                "                                                            f2:meta::pure::metamodel::function::Function<{->X[k]}>[1]):X[k]" +
+                "{" +
+                "   $f2->eval();" +
+                "}" +
+                "function meta::pure::functions::collection::list<U>(vals:U[*]):List<U>[1]\n" +
                 "{\n" +
-                "    $path->pathToElement('::')\n" +
-                "}\n" +
-                "\n" +
-                "function meta::pure::functions::meta::pathToElement(path:String[1], separator:String[1]):PackageableElement[1]\n" +
-                "{\n" +
-                "    $path->split($separator)->fold({str:String[1], pkg:PackageableElement[1] | let p = $pkg->cast(@Package).children->filter(c | $c.name == $str);\n" +
-                "                                                                               if ($p->isEmpty(), | assert(false, | $path + ' is not a valid PackageableElement. Package \\'' + $str + '\\' not found'); $p->toOne();, | $p->toOne());\n" +
-                "                                   }, ::)\n" +
-                "}\n" +
+                "   ^List<U>(values = $vals);\n" +
+                "}" +
                 "function meta::pure::router::execute<R|y>(f:FunctionDefinition<{->R[y]}>[1]):Result<R|y>[0..1]\n" +
                 "{\n" +
                 "   meta::alloy::test::mayExecuteAlloyTest(\n" +
@@ -62,13 +60,20 @@ public abstract class AbstractTestEvaluateTypeManagement extends AbstractPureTes
     {
         compileTestSource("inferenceTest.pure",
                 "function go():Any[*]\n" +
-                "{\n" +
-                "   let pair = pair('bla', 2);\n" +
-                "   let evalProp = {p:Property<Nil,Any|*>[1], k:Any[1]|let values = $p->eval($k);};\n" +
-                "   let p = Pair.properties->cast(@Property<Nil,Any|*>)->filter(p|$p.name=='first')->toOne();"+
-                "   $evalProp->evaluate([list($p), list($pair)]);\n" +
-                "}\n" +
-                "");
+                        "{\n" +
+                        "   let pair = pair('bla', 2);\n" +
+                        "   let evalProp = {p:Property<Nil,Any|*>[1], k:Any[1]|let values = $p->eval($k);};\n" +
+                        "   let p = Pair.properties->cast(@Property<Nil,Any|*>)->filter(p|$p.name=='first')->toOne();" +
+                        "   $evalProp->evaluate([list($p), list($pair)]);\n" +
+                        "}\n" +
+                        "function meta::pure::functions::collection::pair<U,V>(first:U[1], second:V[1]):Pair<U,V>[1]\n" +
+                        "{\n" +
+                        "   ^Pair<U,V>(first=$first, second=$second);\n" +
+                        "}" +
+                        "function meta::pure::functions::collection::list<U>(vals:U[*]):List<U>[1]\n" +
+                        "{\n" +
+                        "   ^List<U>(values = $vals);\n" +
+                        "}");
         this.compileAndExecute("go():Any[*]");
     }
 
@@ -77,11 +82,16 @@ public abstract class AbstractTestEvaluateTypeManagement extends AbstractPureTes
     {
         compileTestSource("inferenceTest.pure",
                 "function go():Any[*] {\n" +
-                "        list('ok');\n" +
-                "}\n" +
-                "");
+                        "        list('ok');\n" +
+                        "}\n" +
+                        "function meta::pure::functions::collection::list<U>(vals:U[*]):List<U>[1]\n" +
+                        "{\n" +
+                        "   ^List<U>(values = $vals);\n" +
+                        "}" +
+                        "");
         this.compileAndExecute("go():Any[*]");
     }
+
     @Test
     public void testTypeManagementForEvaluateMul() throws Exception
     {
@@ -91,17 +101,15 @@ public abstract class AbstractTestEvaluateTypeManagement extends AbstractPureTes
                 "   print('ok',1);" +
                 "   ^Result<T|m>();" +
                 "}" +
-                "function meta::pure::functions::meta::pathToElement(path:String[1]):PackageableElement[1]\n" +
+                "function meta::alloy::test::mayExecuteAlloyTest<X|k>(f1:meta::pure::metamodel::function::Function<{String[1], String[1], String[1], Integer[1]->X[k]}>[1],\n" +
+                "                                                            f2:meta::pure::metamodel::function::Function<{->X[k]}>[1]):X[k]" +
+                "{" +
+                "   $f2->eval();" +
+                "}" +
+                "function meta::pure::functions::collection::list<U>(vals:U[*]):List<U>[1]\n" +
                 "{\n" +
-                "    $path->pathToElement('::')\n" +
-                "}\n" +
-                "\n" +
-                "function meta::pure::functions::meta::pathToElement(path:String[1], separator:String[1]):PackageableElement[1]\n" +
-                "{\n" +
-                "    $path->split($separator)->fold({str:String[1], pkg:PackageableElement[1] | let p = $pkg->cast(@Package).children->filter(c | $c.name == $str);\n" +
-                "                                                                               if ($p->isEmpty(), | assert(false, | $path + ' is not a valid PackageableElement. Package \\'' + $str + '\\' not found'); $p->toOne();, | $p->toOne());\n" +
-                "                                   }, ::)\n" +
-                "}\n" +
+                "   ^List<U>(values = $vals);\n" +
+                "}" +
                 "function meta::pure::router::execute<R|y>(f:FunctionDefinition<{->R[y]}>[1]):Result<R|y>[0..1]\n" +
                 "{\n" +
                 "   meta::alloy::test::mayExecuteAlloyTest(\n" +

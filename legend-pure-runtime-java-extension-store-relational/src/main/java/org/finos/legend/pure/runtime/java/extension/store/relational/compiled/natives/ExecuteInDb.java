@@ -14,16 +14,22 @@
 
 package org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives;
 
-import org.finos.legend.pure.m3.coreinstance.meta.relational.runtime.DatabaseConnection;
-import org.finos.legend.pure.m3.execution.ExecutionSupport;
-import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
+import org.eclipse.collections.api.list.ListIterable;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.NativeFunctionProcessor;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
 
-public class ExecuteInDb extends AbstractNativeFunctionGeneric
+public class ExecuteInDb extends AbstractNative
 {
     public ExecuteInDb()
     {
-        super("org.finos.legend.pure.runtime.java.extension.store.relational.compiled.RelationalGen.executeInDb", new Class[]{String.class, DatabaseConnection.class, long.class, long.class, SourceInformation.class, ExecutionSupport.class},
-                true, true, false, "executeInDb_String_1__DatabaseConnection_1__Integer_1__Integer_1__ResultSet_1_");
+        super("executeInDb_String_1__DatabaseConnection_1__Integer_1__Integer_1__ResultSet_1_");
+    }
+
+    @Override
+    public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
+    {
+        return "org.finos.legend.pure.generated.RelationalGen.executeInDb((String)" + transformedParams.get(0) + ", (Root_meta_relational_runtime_DatabaseConnection)" + transformedParams.get(1) + ", (Long)" + transformedParams.get(2) + ", (Long)" + transformedParams.get(3) + ", " + NativeFunctionProcessor.buildM4LineColumnSourceInformation(functionExpression.getSourceInformation()) + ", es)";
     }
 }

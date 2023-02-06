@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.m3.tests.function.base.lang;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tools.ThrowableTools;
 import org.finos.legend.pure.m4.exception.PureException;
 import org.junit.Assert;

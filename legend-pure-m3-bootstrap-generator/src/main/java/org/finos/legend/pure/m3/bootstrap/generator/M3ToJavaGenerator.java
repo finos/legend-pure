@@ -135,11 +135,11 @@ public class M3ToJavaGenerator
         this.stubDefs.putAll(additionalStubs);
     }
 
-    public void generate(ModelRepository repository, ListIterable<String> fileNames)
+    public void generate(ModelRepository repository, SetIterable<String> fileNames, String fileNameStartsWith)
     {
         MutableMap<String, CoreInstance> packageToCoreInstance = Maps.mutable.of();
         MutableSet<CoreInstance> m3Enumerations = Sets.mutable.of();
-        this.createClasses(repository.getTopLevels(), packageToCoreInstance, m3Enumerations, fileNames);
+        this.createClasses(repository.getTopLevels(), packageToCoreInstance, m3Enumerations, fileNames, fileNameStartsWith);
         this.createFactory(packageToCoreInstance, m3Enumerations);
     }
 
@@ -161,22 +161,22 @@ public class M3ToJavaGenerator
     }
 
     private void createClasses(RichIterable<? extends CoreInstance> instances, MutableMap<String, CoreInstance> packageToCoreInstance,
-                               MutableSet<CoreInstance> m3Enumerations, ListIterable<String> sourcesToInclude)
+                               MutableSet<CoreInstance> m3Enumerations, SetIterable<String> sourcesToInclude, String fileNameStartsWith)
     {
         for (CoreInstance instance : instances)
         {
             if ("Class".equals(instance.getClassifier().getName())
-                    && (instance.getSourceInformation() != null && sourcesToInclude.contains(instance.getSourceInformation().getSourceId())))
+                    && (instance.getSourceInformation() != null && (sourcesToInclude.contains(instance.getSourceInformation().getSourceId())) || (fileNameStartsWith != null && instance.getSourceInformation().getSourceId().startsWith(fileNameStartsWith))))
             {
                 String javaPackage = this.createAndWriteClass(instance);
                 packageToCoreInstance.put(javaPackage + "." + instance.getName() + "Instance", instance);
             }
-            else if (isEnum(instance) && "/platform/pure/m3.pure".equals(instance.getSourceInformation().getSourceId()))
+            else if (isEnum(instance) && "/platform/pure/grammar/m3.pure".equals(instance.getSourceInformation().getSourceId()))
             {
                 //Needed for M3 serialization
                 m3Enumerations.add(instance);
             }
-            this.createClasses(instance.getValueForMetaPropertyToMany("children"), packageToCoreInstance, m3Enumerations, sourcesToInclude);
+            this.createClasses(instance.getValueForMetaPropertyToMany("children"), packageToCoreInstance, m3Enumerations, sourcesToInclude, fileNameStartsWith);
         }
     }
 
@@ -186,16 +186,15 @@ public class M3ToJavaGenerator
         CoreInstance classGenericType = getClassGenericType(instance);
 
         MutableSet<CoreInstance> propertiesFromAssociations = Sets.mutable.withAll(instance.getValueForMetaPropertyToMany("propertiesFromAssociations"));
-        MutableSet<CoreInstance> properties = Sets.mutable.<CoreInstance>withAll(instance.getValueForMetaPropertyToMany("properties"))
-                .withAll(propertiesFromAssociations);
+        collectGeneralizationXProperties(instance.getValueForMetaPropertyToMany("generalizations"), "propertiesFromAssociations", propertiesFromAssociations);
 
         MutableSet<CoreInstance> qualifiedProperties = Sets.mutable.<CoreInstance>withAll(instance.getValueForMetaPropertyToMany("qualifiedProperties"))
                 .withAll(instance.getValueForMetaPropertyToMany("qualifiedPropertiesFromAssociations"));
+        collectGeneralizationXProperties(instance.getValueForMetaPropertyToMany("generalizations"), "qualifiedProperties", qualifiedProperties);
 
-        collectGeneralizationQualifiedProperties(instance.getValueForMetaPropertyToMany("generalizations"), qualifiedProperties);
+        MutableSet<CoreInstance> properties = Sets.mutable.<CoreInstance>withAll(instance.getValueForMetaPropertyToMany("properties")).withAll(propertiesFromAssociations);
 
         Imports imports = this.getPropertyTypePackages(classGenericType, properties, qualifiedProperties, true);
-
 
         String immutableInterfaceText = this.createAccessorInterface(instance, javaPackage, properties, qualifiedProperties, imports);
         //String mutableInterfaceText = this.createBuilderInterface(instance, javaPackage, properties, imports);
@@ -2026,7 +2025,7 @@ public class M3ToJavaGenerator
 
     private String createWrapperStaticConversionFunction(String interfaceName, String wrapperName, String maybeFullyQualifiedInterfaceName, String typeArgs)
     {
-        return "    public static class CoreInstanceFunction" + typeArgs + " implements org.eclipse.collections.api.block.function.Function<CoreInstance, " + maybeFullyQualifiedInterfaceName + ">\n" +
+        return "    public static class CoreInstanceFunction" + typeArgs + " extends org.finos.legend.pure.m4.tools.DefendedFunction<CoreInstance, " + maybeFullyQualifiedInterfaceName + ">\n" +
                 "    {\n" +
                 "        public " + maybeFullyQualifiedInterfaceName + " valueOf(CoreInstance coreInstance)\n" +
                 "        {\n" +
@@ -2246,6 +2245,7 @@ public class M3ToJavaGenerator
         try
         {
             Path p = Paths.get(this.outputDir + ROOT_PACKAGE.replace(".", "/") + "/" + factoryName + ".java");
+            Files.createDirectories(p.getParent());
             Files.write(p, result.getBytes(StandardCharsets.UTF_8));
         }
         catch (IOException e)
@@ -2283,23 +2283,21 @@ public class M3ToJavaGenerator
 
     }
 
-    private static void collectGeneralizationQualifiedProperties(ListIterable<? extends CoreInstance> generalizations, MutableSet<CoreInstance> qualifiedProperties)
+    private static void collectGeneralizationXProperties(ListIterable<? extends CoreInstance> generalizations, String propertyType, MutableSet<CoreInstance> result)
     {
         for (CoreInstance generalization : generalizations)
         {
             CoreInstance general = getTypeFromGenericType(generalization.getValueForMetaPropertyToOne("general"));
-
-            ListIterable<? extends CoreInstance> ps = general == null ? Lists.mutable.empty() : general.getValueForMetaPropertyToMany("qualifiedProperties");
-
+            ListIterable<? extends CoreInstance> ps = general == null ? Lists.mutable.empty() : general.getValueForMetaPropertyToMany(propertyType);
             // TODO: Respect property resolution order
             for (CoreInstance prop : ps)
             {
-                if (!qualifiedProperties.contains(prop))
+                if (!result.contains(prop))
                 {
-                    qualifiedProperties.add(prop);
+                    result.add(prop);
                 }
             }
-            collectGeneralizationQualifiedProperties(general == null ? Lists.mutable.empty() : general.getValueForMetaPropertyToMany("generalizations"), qualifiedProperties);
+            collectGeneralizationXProperties(general == null ? Lists.mutable.empty() : general.getValueForMetaPropertyToMany("generalizations"), propertyType, result);
         }
 
     }
