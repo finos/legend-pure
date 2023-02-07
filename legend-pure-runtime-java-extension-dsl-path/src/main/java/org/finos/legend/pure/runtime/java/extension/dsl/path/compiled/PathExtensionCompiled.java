@@ -5,6 +5,7 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.SetIterable;
+import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m2.inlinedsl.path.M2PathPaths;
 import org.finos.legend.pure.m3.coreinstance.PathCoreInstanceFactoryRegistry;
@@ -17,7 +18,6 @@ import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.finos.legend.pure.runtime.java.compiled.extension.BaseCompiledExtension;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Bridge;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
@@ -26,36 +26,27 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 
 import java.util.function.Function;
 
-public class PathExtensionCompiled extends BaseCompiledExtension
+public class PathExtensionCompiled implements CompiledExtension
 {
-    public PathExtensionCompiled()
-    {
-        super("platform_dsl_path",
-                () -> Lists.fixedSize.with(),
-                Lists.fixedSize.with(),
-                Lists.fixedSize.with(),
-                Lists.fixedSize.with());
-    }
-
     @Override
-    public RichIterable<? extends org.eclipse.collections.api.tuple.Pair<String, Function<? super CoreInstance, String>>> getExtraIdBuilders(ProcessorSupport processorSupport)
+    public RichIterable<? extends Pair<String, Function<? super CoreInstance, String>>> getExtraIdBuilders(ProcessorSupport processorSupport)
     {
         if (processorSupport.package_getByUserPath(M2PathPaths.Path) != null)
         {
-            return Lists.mutable.with(Tuples.pair(M2PathPaths.Path, PathExtensionCompiled::buildIdForPath));
+            return Lists.immutable.with(Tuples.pair(M2PathPaths.Path, PathExtensionCompiled::buildIdForPath));
         }
-        return Lists.mutable.empty();
+        return Lists.immutable.empty();
     }
 
+    @Override
     public PureFunction1<Object, Object> getExtraFunctionEvaluation(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge bridge, ExecutionSupport es)
     {
         if (func instanceof Path)
         {
             return new PureFunction1<Object, Object>()
             {
-
                 @Override
-                public Object execute(ListIterable vars, ExecutionSupport es)
+                public Object execute(ListIterable<?> vars, ExecutionSupport es)
                 {
                     return value(vars.getFirst(), es);
                 }
@@ -71,7 +62,7 @@ public class PathExtensionCompiled extends BaseCompiledExtension
                         }
                         return mutableList.flatCollect(instance ->
                         {
-                            MutableList<Object> parameters = ((PropertyPathElement) path)._parameters().collect(o1 -> o1 instanceof InstanceValue ? ((InstanceValue) o1)._values() : null, org.eclipse.collections.impl.factory.Lists.mutable.with(instance));
+                            MutableList<Object> parameters = ((PropertyPathElement) path)._parameters().collect(o1 -> o1 instanceof InstanceValue ? ((InstanceValue) o1)._values() : null, Lists.mutable.with(instance));
                             return CompiledSupport.toPureCollection(Pure.evaluate(es, ((PropertyPathElement) path)._property(), bridge, parameters.toArray()));
                         });
                     });
@@ -82,7 +73,6 @@ public class PathExtensionCompiled extends BaseCompiledExtension
         }
         return null;
     }
-
 
     private static String buildIdForPath(CoreInstance path)
     {
@@ -96,9 +86,14 @@ public class PathExtensionCompiled extends BaseCompiledExtension
         return PathCoreInstanceFactoryRegistry.ALL_PATHS;
     }
 
+    @Override
+    public String getRelatedRepository()
+    {
+        return "platform_dsl_path";
+    }
+
     public static CompiledExtension extension()
     {
         return new PathExtensionCompiled();
     }
-
 }

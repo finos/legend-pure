@@ -21,54 +21,62 @@ import org.finos.legend.pure.m2.dsl.mapping.M2MappingProperties;
 import org.finos.legend.pure.m3.coreinstance.MappingCoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.runtime.java.compiled.extension.BaseCompiledExtension;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtensionLoader;
+import org.finos.legend.pure.runtime.java.compiled.generation.JavaSourceCodeGenerator;
+import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.Procedure3;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification.ValueSpecificationProcessor;
 
-public class MappingExtensionCompiled extends BaseCompiledExtension
+import java.util.List;
+
+public class MappingExtensionCompiled implements CompiledExtension
 {
-    public MappingExtensionCompiled()
+    @Override
+    public List<Procedure3<CoreInstance, JavaSourceCodeGenerator, ProcessorContext>> getExtraPackageableElementProcessors()
     {
-        super(
-                "platform_dsl_mapping",
-                () -> Lists.fixedSize.with(),
-                Lists.fixedSize.with(),
-                Lists.fixedSize.with((mapping, cg, processorContext) ->
-                {
-                    if (Instance.instanceOf(mapping, M2MappingPaths.Mapping, cg.getProcessorSupport()))
-                    {
-                        for (CoreInstance classMapping : mapping.getValueForMetaPropertyToMany(M2MappingProperties.classMappings))
-                        {
-                            if (Instance.instanceOf(classMapping, M2MappingPaths.PureInstanceSetImplementation, cg.getProcessorSupport()))
-                            {
-                                if (classMapping.getValueForMetaPropertyToOne(M2MappingProperties.filter) != null)
-                                {
-                                    ValueSpecificationProcessor.createFunctionForLambda(mapping, classMapping.getValueForMetaPropertyToOne(M2MappingProperties.filter), cg.getProcessorSupport(), processorContext);
-                                }
-                                for (CoreInstance propertyMapping : classMapping.getValueForMetaPropertyToMany(M2MappingProperties.propertyMappings))
-                                {
-                                    ValueSpecificationProcessor.createFunctionForLambda(mapping, propertyMapping.getValueForMetaPropertyToOne(M2MappingProperties.transform), cg.getProcessorSupport(), processorContext);
-                                }
-                            }
-                            else
-                            {
-                                CompiledExtensionLoader.extensions().flatCollect(CompiledExtension::getExtraClassMappingProcessors).forEach(ep -> ep.value(mapping, classMapping, processorContext, cg.getProcessorSupport()));
-                            }
-                        }
-                    }
-                }),
-                Lists.fixedSize.with());
+        return Lists.fixedSize.with(MappingExtensionCompiled::processMapping);
     }
 
-    public static CompiledExtension extension()
+    private static void processMapping(CoreInstance mapping, JavaSourceCodeGenerator cg, ProcessorContext processorContext)
     {
-        return new MappingExtensionCompiled();
+        if (Instance.instanceOf(mapping, M2MappingPaths.Mapping, cg.getProcessorSupport()))
+        {
+            for (CoreInstance classMapping : mapping.getValueForMetaPropertyToMany(M2MappingProperties.classMappings))
+            {
+                if (Instance.instanceOf(classMapping, M2MappingPaths.PureInstanceSetImplementation, cg.getProcessorSupport()))
+                {
+                    if (classMapping.getValueForMetaPropertyToOne(M2MappingProperties.filter) != null)
+                    {
+                        ValueSpecificationProcessor.createFunctionForLambda(mapping, classMapping.getValueForMetaPropertyToOne(M2MappingProperties.filter), cg.getProcessorSupport(), processorContext);
+                    }
+                    for (CoreInstance propertyMapping : classMapping.getValueForMetaPropertyToMany(M2MappingProperties.propertyMappings))
+                    {
+                        ValueSpecificationProcessor.createFunctionForLambda(mapping, propertyMapping.getValueForMetaPropertyToOne(M2MappingProperties.transform), cg.getProcessorSupport(), processorContext);
+                    }
+                }
+                else
+                {
+                    CompiledExtensionLoader.extensions().flatCollect(CompiledExtension::getExtraClassMappingProcessors).forEach(ep -> ep.value(mapping, classMapping, processorContext, cg.getProcessorSupport()));
+                }
+            }
+        }
     }
 
     @Override
     public SetIterable<String> getExtraCorePath()
     {
         return MappingCoreInstanceFactoryRegistry.ALL_PATHS;
+    }
+
+    @Override
+    public String getRelatedRepository()
+    {
+        return "platform_dsl_mapping";
+    }
+
+    public static CompiledExtension extension()
+    {
+        return new MappingExtensionCompiled();
     }
 }
