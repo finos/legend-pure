@@ -38,6 +38,7 @@ import org.eclipse.collections.impl.lazy.AbstractLazyIterable;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.eclipse.collections.impl.map.strategy.mutable.UnifiedMapWithHashingStrategy;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
@@ -65,9 +66,18 @@ import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.*;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.DateTime;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.Year;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.YearMonth;
 import org.finos.legend.pure.m4.exception.PureException;
-import org.finos.legend.pure.runtime.java.compiled.compiler.*;
+import org.finos.legend.pure.runtime.java.compiled.compiler.MemoryClassLoader;
+import org.finos.legend.pure.runtime.java.compiled.compiler.MemoryFileManager;
+import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompileException;
+import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompiler;
+import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledProcessorSupport;
 import org.finos.legend.pure.runtime.java.compiled.execution.ConsoleCompiled;
@@ -81,7 +91,6 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ReflectiveCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ValCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureEqualsHashingStrategy;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
@@ -95,8 +104,6 @@ import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -105,7 +112,23 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.TimeZone;
+import java.util.UUID;
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
 
 public class CompiledSupport
 {
@@ -871,65 +894,27 @@ public class CompiledSupport
      * @param <T>        collection element type
      * @return sorted collection
      */
-    public static <T, U> RichIterable<T> toSorted(RichIterable<T> collection, SharedPureFunction key, SharedPureFunction comp, ExecutionSupport es)
+    public static <T> RichIterable<T> toSorted(RichIterable<T> collection, SharedPureFunction<?> key, SharedPureFunction<? extends Number> comp, ExecutionSupport es)
     {
-        if (Iterate.isEmpty(collection))
+        if (collection == null)
         {
-            return collection;
+            return Lists.immutable.empty();
         }
-        if ((key == null) && (comp == null))
-        {
-            return collection.toSortedList(CompiledSupport::compareInt);
-        }
+
         if (key == null)
         {
-            return toSortedWithComparison(collection, comp, es);
+            Comparator<T> comparator = (comp == null) ?
+                    CompiledSupport::compareInt :
+                    (left, right) -> comp.execute(Lists.immutable.with(left, right), es).intValue();
+            return collection.toSortedList(comparator);
         }
-        if (comp == null)
-        {
-            return toSortedWithKey(collection, key, es);
-        }
-        return toSortedWithKeyComparison(collection, key, comp, es);
-    }
 
-    private static <T> RichIterable<T> toSortedWithKeyComparison(RichIterable<T> collection, SharedPureFunction key, SharedPureFunction comp, ExecutionSupport es)
-    {
-        final MutableMap<T, Object> keyMap = new UnifiedMapWithHashingStrategy<>(PureEqualsHashingStrategy.HASHING_STRATEGY, collection.size());
-        final Function<T, Object> keyFunction = element -> key.execute(Lists.immutable.with(element), null);
-        return collection.toSortedList((left, right) ->
-        {
-            if (left == right)
-            {
-                Object leftKey = keyMap.getIfAbsentPutWithKey(left, keyFunction);
-                return ((Long)comp.execute(Lists.immutable.with(leftKey, leftKey), es)).intValue();
-            }
-
-            Object leftKey = keyMap.getIfAbsentPutWithKey(left, keyFunction);
-            Object rightKey = keyMap.getIfAbsentPutWithKey(right, keyFunction);
-            return ((Long)comp.execute(Lists.immutable.with(leftKey, rightKey), es)).intValue();
-        });
-    }
-
-    private static <T> RichIterable<T> toSortedWithKey(RichIterable<T> collection, SharedPureFunction key, ExecutionSupport es)
-    {
-        MutableMap<T, Object> keyMap = new UnifiedMapWithHashingStrategy<>(PureEqualsHashingStrategy.HASHING_STRATEGY, collection.size());
-        Function<T, Object> keyFunction = element -> key.execute(Lists.immutable.with(element), es);
-        return collection.toSortedList((left, right) ->
-        {
-            if (left == right)
-            {
-                return 0;
-            }
-
-            Object leftKey = keyMap.getIfAbsentPutWithKey(left, keyFunction);
-            Object rightKey = keyMap.getIfAbsentPutWithKey(right, keyFunction);
-            return compareInt(leftKey, rightKey);
-        });
-    }
-
-    private static <T> RichIterable<T> toSortedWithComparison(RichIterable<T> collection, SharedPureFunction comp, final ExecutionSupport executionSupport)
-    {
-        return collection.toSortedList((left, right) -> ((Long)comp.execute(Lists.immutable.with(left, right), executionSupport)).intValue());
+        Comparator<Pair<?, ?>> comparator = (comp == null) ?
+                (left, right) -> compareInt(left.getOne(), right.getOne()) :
+                (left, right) -> comp.execute(Lists.immutable.with(left.getOne(), right.getOne()), es).intValue();
+        return collection.collect(e -> Tuples.pair(key.execute(Lists.immutable.with(e), es), e), Lists.mutable.empty())
+                .sortThis(comparator)
+                .collect(Pair::getTwo);
     }
 
     /**
