@@ -75,12 +75,12 @@ jobs:
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -DargLine="-Xmx2g"
       - name: Build + Test
         if: (github.repository != 'finos/legend-pure') || (github.ref != 'refs/heads/master')
-        run: mvn -B -e install javadoc:javadoc -DargLine="-Xmx2g" -Dmaven.test.failure.ignore=true
+        run: mvn -B -e install javadoc:javadoc -DargLine="-Xmx2g"
         env:
           MAVEN_OPTS: -Xmx4g
       - name: Build + Test + Sonar + Maven Deploy
         if: (github.repository == 'finos/legend-pure') && (github.ref == 'refs/heads/master')
-        run: mvn -B -e deploy javadoc:javadoc -Psonar -DargLine="-Xmx2g" -Dmaven.test.failure.ignore=true
+        run: mvn -B -e deploy javadoc:javadoc -Psonar -DargLine="-Xmx2g"
         env:
           MAVEN_OPTS: -Xmx4g
       - name: Upload Test Results
