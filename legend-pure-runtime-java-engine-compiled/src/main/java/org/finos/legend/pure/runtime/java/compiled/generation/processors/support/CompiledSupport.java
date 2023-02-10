@@ -38,7 +38,6 @@ import org.eclipse.collections.impl.lazy.AbstractLazyIterable;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.eclipse.collections.impl.map.strategy.mutable.UnifiedMapWithHashingStrategy;
-import org.eclipse.collections.impl.tuple.Tuples;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
@@ -889,19 +888,19 @@ public class CompiledSupport
      * collection.
      *
      * @param collection collection to sort
-     * @param key        key function
+     * @param keyFn      key function
      * @param comp       comparator
      * @param <T>        collection element type
      * @return sorted collection
      */
-    public static <T> RichIterable<T> toSorted(RichIterable<T> collection, SharedPureFunction<?> key, SharedPureFunction<? extends Number> comp, ExecutionSupport es)
+    public static <T> RichIterable<T> toSorted(RichIterable<T> collection, SharedPureFunction<?> keyFn, SharedPureFunction<? extends Number> comp, ExecutionSupport es)
     {
         if (collection == null)
         {
             return Lists.immutable.empty();
         }
 
-        if (key == null)
+        if (keyFn == null)
         {
             Comparator<T> comparator = (comp == null) ?
                     CompiledSupport::compareInt :
@@ -909,12 +908,38 @@ public class CompiledSupport
             return collection.toSortedList(comparator);
         }
 
-        Comparator<Pair<?, ?>> comparator = (comp == null) ?
-                (left, right) -> compareInt(left.getOne(), right.getOne()) :
-                (left, right) -> comp.execute(Lists.immutable.with(left.getOne(), right.getOne()), es).intValue();
-        return collection.collect(e -> Tuples.pair(key.execute(Lists.immutable.with(e), es), e), Lists.mutable.empty())
+        class ElementWithKey
+        {
+            private final T value;
+            private Object key;
+            private boolean keyComputed = false;
+
+            private ElementWithKey(T value)
+            {
+                this.value = value;
+            }
+
+            Object getKey()
+            {
+                if (!this.keyComputed)
+                {
+                    this.key = keyFn.execute(Lists.immutable.with(this.value), es);
+                    this.keyComputed = true;
+                }
+                return this.key;
+            }
+
+            T getValue()
+            {
+                return this.value;
+            }
+        }
+        Comparator<ElementWithKey> comparator = (comp == null) ?
+                (left, right) -> compareInt(left.getKey(), right.getKey()) :
+                (left, right) -> comp.execute(Lists.immutable.with(left.getKey(), right.getKey()), es).intValue();
+        return collection.collect(ElementWithKey::new, Lists.mutable.empty())
                 .sortThis(comparator)
-                .collect(Pair::getTwo);
+                .collect(ElementWithKey::getValue);
     }
 
     /**
