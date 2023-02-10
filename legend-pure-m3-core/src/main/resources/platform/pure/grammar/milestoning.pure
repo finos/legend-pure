@@ -53,9 +53,9 @@ Profile meta::pure::profiles::milestoning
     stereotypes: [generatedmilestoningproperty, generatedmilestoningdateproperty];
 }
 
-native function meta::pure::functions::collection::getAllVersionsInRange<T>(type:Class<T>[1], start:Date[1], end:Date[1]):T[*];
-native function meta::pure::functions::collection::getAll<T>(type:Class<T>[1], milestoningDate:Date[1]):T[*];
-native function meta::pure::functions::collection::getAll<T>(type:Class<T>[1], processingDate:Date[1], businessDate:Date[1]):T[*];
+native function <<functionType.SideEffectFunction>> meta::pure::functions::collection::getAllVersionsInRange<T>(type:Class<T>[1], start:Date[1], end:Date[1]):T[*];
+native function <<functionType.SideEffectFunction>> meta::pure::functions::collection::getAll<T>(type:Class<T>[1], milestoningDate:Date[1]):T[*];
+native function <<functionType.SideEffectFunction>> meta::pure::functions::collection::getAll<T>(type:Class<T>[1], processingDate:Date[1], businessDate:Date[1]):T[*];
 
 
 
