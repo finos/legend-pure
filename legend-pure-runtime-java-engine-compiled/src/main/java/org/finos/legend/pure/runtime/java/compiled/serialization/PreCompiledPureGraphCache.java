@@ -18,26 +18,44 @@ import org.finos.legend.pure.m3.serialization.runtime.cache.ClassLoaderPureGraph
 import org.finos.legend.pure.runtime.java.compiled.compiler.MemoryClassLoader;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
+import java.util.concurrent.ForkJoinPool;
 
 public class PreCompiledPureGraphCache extends ClassLoaderPureGraphCache
 {
     private final Path preCompiledLib;
 
+    public PreCompiledPureGraphCache(ClassLoader classLoader, ForkJoinPool forkJoinPool, Path preCompiledLib)
+    {
+        super(classLoader, forkJoinPool);
+        this.preCompiledLib = preCompiledLib;
+    }
+
+    public PreCompiledPureGraphCache(ClassLoader classLoader, Path preCompiledLib)
+    {
+        this(classLoader, null, preCompiledLib);
+    }
+
+    public PreCompiledPureGraphCache(ForkJoinPool forkJoinPool, Path preCompiledLib)
+    {
+        this(null, forkJoinPool, preCompiledLib);
+    }
+
     public PreCompiledPureGraphCache(Path preCompiledLib)
     {
-        this.preCompiledLib = preCompiledLib;
+        this(null, null, preCompiledLib);
     }
 
     public void prepareClassLoader(MemoryClassLoader classLoader)
     {
         try
         {
-            classLoader.loadClassesFromJarFile(preCompiledLib);
+            classLoader.loadClassesFromJarFile(this.preCompiledLib);
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 }
