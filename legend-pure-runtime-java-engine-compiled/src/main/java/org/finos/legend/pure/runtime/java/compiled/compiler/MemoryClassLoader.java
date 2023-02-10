@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.compiled.compiler;
 
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.set.mutable.UnifiedSet;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -23,7 +23,7 @@ import java.nio.file.Path;
 public class MemoryClassLoader extends ClassLoader
 {
     private final MemoryFileManager manager;
-    private final MutableSet<String> names = UnifiedSet.newSet();
+    private final MutableSet<String> loadedClassNames = Sets.mutable.empty();
 
     public MemoryClassLoader(MemoryFileManager manager, ClassLoader cl)
     {
@@ -32,18 +32,18 @@ public class MemoryClassLoader extends ClassLoader
     }
 
     @Override
-    protected Class findClass(String name) throws ClassNotFoundException
+    protected Class<?> findClass(String name) throws ClassNotFoundException
     {
-        synchronized (this.manager)
+        synchronized (this.loadedClassNames)
         {
-            if (!this.names.contains(name))
+            if (!this.loadedClassNames.contains(name))
             {
                 ClassJavaSource mc = this.manager.getClassJavaSourceByName(name);
                 if (mc != null)
                 {
-                    this.names.add(name);
+                    this.loadedClassNames.add(name);
                     byte[] array = mc.getBytes();
-                    return this.defineClass(name, array, 0, array.length);
+                    return defineClass(name, array, 0, array.length);
                 }
             }
         }
@@ -52,11 +52,11 @@ public class MemoryClassLoader extends ClassLoader
 
     public int loadedClassCount()
     {
-        return this.names.size();
+        return this.loadedClassNames.size();
     }
 
     public void loadClassesFromJarFile(Path jar) throws IOException
     {
-        manager.loadClassesFromJarFile(jar);
+        this.manager.loadClassesFromJarFile(jar);
     }
 }
