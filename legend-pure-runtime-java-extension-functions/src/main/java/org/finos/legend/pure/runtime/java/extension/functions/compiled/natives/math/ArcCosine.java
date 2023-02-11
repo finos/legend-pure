@@ -16,13 +16,11 @@ package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.
 
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class ArcCosine extends AbstractNativeFunctionGeneric
 {
     public ArcCosine()
     {
-        super(getMethod(CompiledSupport.class, "acos", Number.class, SourceInformation.class),
-                true, false, false,"acos_Number_1__Float_1_");
+        super("FunctionsGen.acos", new Class[]{Number.class, SourceInformation.class}, true, false, false, "acos_Number_1__Float_1_");
     }
 }

@@ -14,12 +14,13 @@
 
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.date;
 
+import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class Year extends AbstractNativeFunctionGeneric
 {
-    public Year() {
-        super(getMethod(CompiledSupport.class, "year"), "year_Date_1__Integer_1_");
+    public Year()
+    {
+        super("FunctionsGen.year", new Class[]{PureDate.class}, "year_Date_1__Integer_1_");
     }
 }

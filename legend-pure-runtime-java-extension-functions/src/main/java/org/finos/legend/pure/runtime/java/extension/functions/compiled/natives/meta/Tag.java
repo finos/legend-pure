@@ -21,6 +21,6 @@ public class Tag extends AbstractNativeFunctionGeneric
 {
     public Tag()
     {
-        super("Pure.tag", new Class[]{Profile.class, String.class}, "tag_Profile_1__String_1__Tag_1_");
+        super("FunctionsGen.tag", new Class[]{Profile.class, String.class}, "tag_Profile_1__String_1__Tag_1_");
     }
 }

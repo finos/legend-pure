@@ -16,11 +16,11 @@ package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.
 
 import org.eclipse.collections.api.RichIterable;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class Take extends AbstractNativeFunctionGeneric
 {
-    public Take() {
-        super(getMethod(CompiledSupport.class, "take", RichIterable.class, long.class), "take_T_MANY__Integer_1__T_MANY_");
+    public Take()
+    {
+        super("FunctionsGen.take", new Class[]{RichIterable.class, long.class}, "take_T_MANY__Integer_1__T_MANY_");
     }
 }

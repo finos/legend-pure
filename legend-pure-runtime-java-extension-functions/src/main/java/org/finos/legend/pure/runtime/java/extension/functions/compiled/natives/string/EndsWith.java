@@ -15,11 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class EndsWith extends AbstractNativeFunctionGeneric
 {
-    public EndsWith() {
-        super(getMethod(CompiledSupport.class, "endsWith"), "endsWith_String_1__String_1__Boolean_1_");
+    public EndsWith()
+    {
+        super("FunctionsGen.endsWith", new Class[]{String.class, String.class}, "endsWith_String_1__String_1__Boolean_1_");
     }
 }

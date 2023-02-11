@@ -15,12 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class ParseDecimal extends AbstractNativeFunctionGeneric
 {
     public ParseDecimal()
     {
-        super(getMethod(CompiledSupport.class, "parseDecimal"), "parseDecimal_String_1__Decimal_1_");
+        super("FunctionsGen.parseDecimal", new Class[]{String.class}, "parseDecimal_String_1__Decimal_1_");
     }
 }

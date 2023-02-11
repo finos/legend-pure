@@ -29,7 +29,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.Ty
 public class RawEvalProperty extends AbstractNativeFunctionGeneric
 {
     public RawEvalProperty() {
-        super("Pure.rawEvalProperty", new Class[] {Property.class, Object.class, SourceInformation.class},
+        super("FunctionsGen.rawEvalProperty", new Class[] {Property.class, Object.class, SourceInformation.class},
                 true, false, false, "rawEvalProperty_Property_1__Any_1__V_m_");
     }
 

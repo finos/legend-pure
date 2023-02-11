@@ -15,12 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class Tangent extends AbstractNativeFunctionGeneric
 {
     public Tangent()
     {
-        super(getMethod(CompiledSupport.class, "tan", Number.class),"tan_Number_1__Float_1_");
+        super("FunctionsGen.tan", new Class[]{Number.class}, "tan_Number_1__Float_1_");
     }
 }

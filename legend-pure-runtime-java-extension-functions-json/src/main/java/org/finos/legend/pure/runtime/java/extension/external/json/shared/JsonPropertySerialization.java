@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.extension.external.json.shared;
 
-import org.finos.legend.pure.runtime.java.shared.cipher.AESCipherUtil;
+import org.finos.legend.pure.runtime.java.extension.functions.shared.cipher.AESCipherUtil;
 import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.ClassConversion;
 import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.Conversion;
 import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.PropertySerialization;

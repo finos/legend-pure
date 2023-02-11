@@ -14,12 +14,13 @@
 
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.date;
 
+import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class HasMonth extends AbstractNativeFunctionGeneric
 {
-    public HasMonth() {
-        super(getMethod(CompiledSupport.class, "hasMonth"), "hasMonth_Date_1__Boolean_1_");
+    public HasMonth()
+    {
+        super("FunctionsGen.hasMonth", new Class[]{PureDate.class}, "hasMonth_Date_1__Boolean_1_");
     }
 }

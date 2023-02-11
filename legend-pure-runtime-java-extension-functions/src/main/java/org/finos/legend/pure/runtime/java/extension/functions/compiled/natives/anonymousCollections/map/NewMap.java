@@ -26,7 +26,7 @@ public class NewMap extends AbstractNativeFunctionGeneric
 {
     public NewMap()
     {
-        super("CoreGen.newMap", new Class[]{RichIterable.class, ExecutionSupport.class}, false, true, false, "newMap_Pair_MANY__Map_1_");
+        super("FunctionsGen.newMap", new Class[]{RichIterable.class, ExecutionSupport.class}, false, true, false, "newMap_Pair_MANY__Map_1_");
     }
 
     @Override

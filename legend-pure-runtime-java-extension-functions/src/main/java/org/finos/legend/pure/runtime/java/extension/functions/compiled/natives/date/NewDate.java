@@ -38,7 +38,7 @@ public class NewDate extends AbstractNative
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
         SourceInformation sourceInformation = functionExpression.getSourceInformation();
-        return "CompiledSupport.newDate(" + StringUtils.join(transformedParams, ", ") + ", " + NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + ")";
+        return "FunctionsGen.newDate(" + StringUtils.join(transformedParams, ", ") + ", " + NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + ")";
     }
 
     @Override
@@ -53,27 +53,27 @@ public class NewDate extends AbstractNative
                 "       {\n" +
                 "           case 1:\n" +
                 "           {\n" +
-                "               return CompiledSupport.newDate((long) vars.get(0), null);\n" +
+                "               return FunctionsGen.newDate((long) vars.get(0), null);\n" +
                 "           }\n" +
                 "           case 2:\n" +
                 "           {\n" +
-                "               return CompiledSupport.newDate((long) vars.get(0), (long) vars.get(1), null);\n" +
+                "               return FunctionsGen.newDate((long) vars.get(0), (long) vars.get(1), null);\n" +
                 "           }\n" +
                 "           case 3:\n" +
                 "           {\n" +
-                "               return CompiledSupport.newDate((long) vars.get(0), (long) vars.get(1), (long) vars.get(2), null);\n" +
+                "               return FunctionsGen.newDate((long) vars.get(0), (long) vars.get(1), (long) vars.get(2), null);\n" +
                 "           }\n" +
                 "           case 4:\n" +
                 "           {\n" +
-                "               return CompiledSupport.newDate((long) vars.get(0), (long) vars.get(1), (long) vars.get(2), (long) vars.get(3), null);\n" +
+                "               return FunctionsGen.newDate((long) vars.get(0), (long) vars.get(1), (long) vars.get(2), (long) vars.get(3), null);\n" +
                 "           }\n" +
                 "           case 5:\n" +
                 "           {\n" +
-                "               return CompiledSupport.newDate((long) vars.get(0), (long) vars.get(1), (long) vars.get(2), (long) vars.get(3), (long) vars.get(4), null);\n" +
+                "               return FunctionsGen.newDate((long) vars.get(0), (long) vars.get(1), (long) vars.get(2), (long) vars.get(3), (long) vars.get(4), null);\n" +
                 "           }\n" +
                 "           default:\n" +
                 "           {\n" +
-                "               return CompiledSupport.newDate((long) vars.get(0), (long) vars.get(1), (long) vars.get(2), (long) vars.get(3), (long) vars.get(4), (Number) vars.get(5), null);\n" +
+                "               return FunctionsGen.newDate((long) vars.get(0), (long) vars.get(1), (long) vars.get(2), (long) vars.get(3), (long) vars.get(4), (Number) vars.get(5), null);\n" +
                 "           }\n" +
                 "       }\n" +
                 "   }\n" +

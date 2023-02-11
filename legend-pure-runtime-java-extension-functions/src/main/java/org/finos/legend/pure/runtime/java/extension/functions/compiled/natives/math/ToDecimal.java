@@ -15,12 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class ToDecimal extends AbstractNativeFunctionGeneric
 {
     public ToDecimal()
     {
-        super(getMethod(CompiledSupport.class, "toDecimal"), "toDecimal_Number_1__Decimal_1_");
+        super("FunctionsGen.toDecimal", new Class[]{Number.class}, "toDecimal_Number_1__Decimal_1_");
     }
 }

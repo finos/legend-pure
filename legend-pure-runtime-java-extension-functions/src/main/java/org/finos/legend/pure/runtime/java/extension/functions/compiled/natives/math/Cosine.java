@@ -15,12 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class Cosine extends AbstractNativeFunctionGeneric
 {
     public Cosine()
     {
-        super(getMethod(CompiledSupport.class, "cos", Number.class),"cos_Number_1__Float_1_");
+        super("FunctionsGen.cos", new Class[]{Number.class}, "cos_Number_1__Float_1_");
     }
 }

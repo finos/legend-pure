@@ -30,7 +30,7 @@ public class NewEnumeration extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return "CoreGen.newEnumeration(" + transformedParams.get(0) + "," + transformedParams.get(1) + ",((CompiledExecutionSupport)es).getMetadataAccessor(), " + NativeFunctionProcessor.buildM4SourceInformation(functionExpression.getSourceInformation()) + ")";
+        return "FunctionsGen.newEnumeration(" + transformedParams.get(0) + "," + transformedParams.get(1) + ",((CompiledExecutionSupport)es).getMetadataAccessor(), " + NativeFunctionProcessor.buildM4SourceInformation(functionExpression.getSourceInformation()) + ")";
     }
 
     @Override
@@ -42,7 +42,7 @@ public class NewEnumeration extends AbstractNative
                 "            @Override\n" +
                 "            public Object execute(ListIterable<?> vars, final ExecutionSupport es)\n" +
                 "            {\n" +
-                "                return CoreGen.newEnumeration((String) vars.get(0), (RichIterable) vars.get(1), ((CompiledExecutionSupport) es).getMetadataAccessor(), null);\n" +
+                "                return FunctionsGen.newEnumeration((String) vars.get(0), (RichIterable) vars.get(1), ((CompiledExecutionSupport) es).getMetadataAccessor(), null);\n" +
                 "            }\n" +
                 "        }";
     }

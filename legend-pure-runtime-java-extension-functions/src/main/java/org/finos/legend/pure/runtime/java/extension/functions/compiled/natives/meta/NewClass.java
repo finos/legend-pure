@@ -30,7 +30,7 @@ public class NewClass extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return "CoreGen.newClass(" + transformedParams.get(0) + ",((CompiledExecutionSupport)es).getMetadataAccessor(), " + NativeFunctionProcessor.buildM4SourceInformation(functionExpression.getSourceInformation()) + ")";
+        return "FunctionsGen.newClass(" + transformedParams.get(0) + ",((CompiledExecutionSupport)es).getMetadataAccessor(), " + NativeFunctionProcessor.buildM4SourceInformation(functionExpression.getSourceInformation()) + ")";
     }
 
     @Override
@@ -42,7 +42,7 @@ public class NewClass extends AbstractNative
                 "            @Override\n" +
                 "            public Object execute(ListIterable<?> vars, final ExecutionSupport es)\n" +
                 "            {\n" +
-                "                return CoreGen.newClass((String) vars.get(0), ((CompiledExecutionSupport) es).getMetadataAccessor(), null);\n" +
+                "                return FunctionsGen.newClass((String) vars.get(0), ((CompiledExecutionSupport) es).getMetadataAccessor(), null);\n" +
                 "            }\n" +
                 "        }";
     }

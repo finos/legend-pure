@@ -15,12 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class Exp extends AbstractNativeFunctionGeneric
 {
     public Exp()
     {
-        super(getMethod(CompiledSupport.class, "exp", Number.class),"exp_Number_1__Float_1_");
+        super("FunctionsGen.exp", new Class[]{Number.class}, "exp_Number_1__Float_1_");
     }
 }

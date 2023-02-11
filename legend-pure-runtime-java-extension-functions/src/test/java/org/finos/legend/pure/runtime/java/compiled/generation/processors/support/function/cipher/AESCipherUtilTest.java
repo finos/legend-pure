@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.runtime.java.shared.cipher;
+package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.cipher;
 
 import org.apache.commons.codec.binary.Base64;
+import org.finos.legend.pure.runtime.java.extension.functions.shared.cipher.AESCipherUtil;
 import org.junit.Assert;
 import org.junit.Test;
 

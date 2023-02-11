@@ -16,13 +16,12 @@ package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.
 
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class IsOptionSet extends AbstractNativeFunctionGeneric
 {
     public IsOptionSet()
     {
-        super(getMethod(CompiledSupport.class, "isOptionSet", String.class, ExecutionSupport.class),
+        super("FunctionsGen.isOptionSet", new Class[]{String.class, ExecutionSupport.class},
                 false, true, false, "isOptionSet_String_1__Boolean_1_");
     }
 

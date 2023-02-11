@@ -15,12 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class ToFloat extends AbstractNativeFunctionGeneric
 {
     public ToFloat()
     {
-        super(getMethod(CompiledSupport.class, "toFloat"), "toFloat_Number_1__Float_1_");
+        super("FunctionsGen.toFloat", new Class[]{Number.class}, "toFloat_Number_1__Float_1_");
     }
 }

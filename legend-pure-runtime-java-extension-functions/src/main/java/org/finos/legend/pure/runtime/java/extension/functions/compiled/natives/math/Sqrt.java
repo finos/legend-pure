@@ -16,13 +16,12 @@ package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.
 
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class Sqrt extends AbstractNativeFunctionGeneric
 {
     public Sqrt()
     {
-        super(getMethod(CompiledSupport.class, "sqrt", Number.class, SourceInformation.class),
-                true, false, false, "sqrt_Number_1__Float_1_");
+        super("FunctionsGen.sqrt", new Class[]{Number.class, SourceInformation.class},
+        true, false, false, "sqrt_Number_1__Float_1_");
     }
 }

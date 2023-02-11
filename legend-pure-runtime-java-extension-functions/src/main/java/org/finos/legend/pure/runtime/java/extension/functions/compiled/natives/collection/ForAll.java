@@ -21,14 +21,15 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
+
+import org.eclipse.collections.api.block.predicate.Predicate;
 
 public class ForAll extends AbstractNativeFunctionGeneric
 {
     public ForAll()
     {
-        super(getMethod(CompiledSupport.class, "forAll"), "forAll_T_MANY__Function_1__Boolean_1_");
+        super("FunctionsGen.forAll", new Class[]{Object.class, Predicate.class}, "forAll_T_MANY__Function_1__Boolean_1_");
     }
 
     @Override
@@ -43,7 +44,7 @@ public class ForAll extends AbstractNativeFunctionGeneric
                 CoreInstance param = functionType.getValueForMetaPropertyToMany(M3Properties.parameters).getFirst();
                         String type = TypeProcessor.typeToJavaObjectSingle(Instance.getValueForMetaPropertyToOneResolved(param, M3Properties.genericType, processorSupport), true, processorSupport);
 
-        return "null".equals(list) ? "true" : "CompiledSupport.forAll(" + list + ", new DefendedPredicate<" + type + ">(){PureFunction1<" + type + ",Boolean> func=(PureFunction1<" + type + ",Boolean>)CoreGen.getSharedPureFunction(" + transformedParams.get(1) + ",es); public boolean accept(" + type + " param){return func.value(param,es);}})\n";
+        return "null".equals(list) ? "true" : "FunctionsGen.forAll(" + list + ", new DefendedPredicate<" + type + ">(){PureFunction1<" + type + ",Boolean> func=(PureFunction1<" + type + ",Boolean>)CoreGen.getSharedPureFunction(" + transformedParams.get(1) + ",es); public boolean accept(" + type + " param){return func.value(param,es);}})\n";
     }
 
 }

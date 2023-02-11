@@ -22,6 +22,6 @@ public class PutAllPairs extends AbstractNativeFunctionGeneric
 {
     public PutAllPairs()
     {
-        super("Pure.putAllPairs", new Class[]{PureMap.class, RichIterable.class}, "putAll_Map_1__Pair_MANY__Map_1_");
+        super("FunctionsGen.putAllPairs", new Class[]{PureMap.class, RichIterable.class}, "putAll_Map_1__Pair_MANY__Map_1_");
     }
 }

@@ -28,7 +28,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.Ty
 public class Get extends AbstractNativeFunctionGeneric
 {
     public Get() {
-        super("Pure.get", new Class[]{RichIterable.class, String.class}, "get_T_MANY__String_1__T_$0_1$_");
+        super("FunctionsGen.get", new Class[]{RichIterable.class, String.class}, "get_T_MANY__String_1__T_$0_1$_");
     }
 
     @Override
@@ -37,6 +37,6 @@ public class Get extends AbstractNativeFunctionGeneric
         ProcessorSupport processorSupport = processorContext.getSupport();
         String type = TypeProcessor.typeToJavaPrimitiveSingle(Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.genericType, processorSupport), processorSupport);
 
-        return "(" + type + ")Pure.get(" + StringUtils.join(transformedParams, ", ") + ")";
+        return "(" + type + ")FunctionsGen.get(" + StringUtils.join(transformedParams, ", ") + ")";
     }
 }

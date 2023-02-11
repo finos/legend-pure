@@ -16,13 +16,11 @@ package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.
 
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class ArcTangent2 extends AbstractNativeFunctionGeneric
 {
     public ArcTangent2()
     {
-        super(getMethod(CompiledSupport.class, "atan2", Number.class, Number.class, SourceInformation.class),
-                true, false, false, "atan2_Number_1__Number_1__Float_1_");
+        super("FunctionsGen.atan2", new Class[]{Number.class, Number.class, SourceInformation.class}, true, false, false, "atan2_Number_1__Number_1__Float_1_");
     }
 }

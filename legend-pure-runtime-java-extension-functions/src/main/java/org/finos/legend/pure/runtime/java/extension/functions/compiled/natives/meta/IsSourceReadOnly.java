@@ -16,12 +16,12 @@ package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.
 
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class IsSourceReadOnly extends AbstractNativeFunctionGeneric
 {
-    public IsSourceReadOnly() {
-        super(getMethod(CompiledSupport.class, "isSourceReadOnly", new Class[]{String.class, ExecutionSupport.class}),
+    public IsSourceReadOnly()
+    {
+        super("FunctionsGen.isSourceReadOnly", new Class[]{String.class, ExecutionSupport.class},
                 false, true, false, "isSourceReadOnly_String_1__Boolean_1_");
     }
 }

@@ -30,7 +30,7 @@ public class NewAssociation extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return "CoreGen.newAssociation(" + transformedParams.get(0) + "," + transformedParams.get(1) + "," + transformedParams.get(2) + ",((CompiledExecutionSupport)es).getMetadataAccessor(), " + NativeFunctionProcessor.buildM4SourceInformation(functionExpression.getSourceInformation()) + ")";
+        return "FunctionsGen.newAssociation(" + transformedParams.get(0) + "," + transformedParams.get(1) + "," + transformedParams.get(2) + ",((CompiledExecutionSupport)es).getMetadataAccessor(), " + NativeFunctionProcessor.buildM4SourceInformation(functionExpression.getSourceInformation()) + ")";
     }
 
     @Override
@@ -41,7 +41,7 @@ public class NewAssociation extends AbstractNative
                 "            @Override\n" +
                 "            public Object execute(ListIterable<?> vars, final ExecutionSupport es)\n" +
                 "            {\n" +
-                "                return CoreGen.newAssociation((String) vars.get(0), (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property) vars.get(1), (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property) vars.get(2), ((CompiledExecutionSupport) es).getMetadataAccessor(), null);\n" +
+                "                return FunctionsGen.newAssociation((String) vars.get(0), (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property) vars.get(1), (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property) vars.get(2), ((CompiledExecutionSupport) es).getMetadataAccessor(), null);\n" +
                 "            }\n" +
                 "        }";
     }

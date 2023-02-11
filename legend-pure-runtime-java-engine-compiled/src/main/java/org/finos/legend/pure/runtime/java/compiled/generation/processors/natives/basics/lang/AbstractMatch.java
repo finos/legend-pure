@@ -65,13 +65,13 @@ public abstract class AbstractMatch extends AbstractNativeFunctionGeneric
                 CoreInstance sourceGenericType = funcParam.getValueForMetaPropertyToOne(M3Properties.genericType);
                 CoreInstance sourceRawType = Instance.getValueForMetaPropertyToOneResolved(sourceGenericType, M3Properties.rawType, processorSupport);
                 String sourceType = TypeProcessor.typeToJavaObjectSingle(sourceGenericType, false, processorSupport);
-                CoreInstance funcParam2 = isMatchWith?Instance.getValueForMetaPropertyToManyResolved(matchFunctionType, M3Properties.parameters, processorSupport).get(1):null;
-                String otherType = isMatchWith?TypeProcessor.typeToJavaObjectWithMul(Instance.getValueForMetaPropertyToOneResolved(funcParam2, M3Properties.genericType, processorSupport), Instance.getValueForMetaPropertyToOneResolved(funcParam2, M3Properties.multiplicity, processorSupport), processorSupport):null;
+                CoreInstance funcParam2 = isMatchWith ? Instance.getValueForMetaPropertyToManyResolved(matchFunctionType, M3Properties.parameters, processorSupport).get(1) : null;
+                String otherType = isMatchWith ? TypeProcessor.typeToJavaObjectWithMul(Instance.getValueForMetaPropertyToOneResolved(funcParam2, M3Properties.genericType, processorSupport), Instance.getValueForMetaPropertyToOneResolved(funcParam2, M3Properties.multiplicity, processorSupport), processorSupport) : null;
                 CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(funcParam, M3Properties.multiplicity, processorSupport);
                 int lowerBound = Multiplicity.multiplicityLowerBoundToInt(multiplicity);
                 int upperBound = Multiplicity.multiplicityUpperBoundToInt(multiplicity);
                 String funcParamName = Instance.getValueForMetaPropertyToOneResolved(funcParam, M3Properties.name, processorSupport).getName();
-                String funcParamName2 = isMatchWith?Instance.getValueForMetaPropertyToOneResolved(funcParam2, M3Properties.name, processorSupport).getName():"";
+                String funcParamName2 = isMatchWith ? Instance.getValueForMetaPropertyToOneResolved(funcParam2, M3Properties.name, processorSupport).getName() : "";
                 String value = FunctionProcessor.processFunctionDefinitionContent(null, matchFunc, true, processorContext, processorSupport);
 
                 if (Instance.instanceOf(sourceRawType, M3Paths.Enumeration, processorSupport))
@@ -84,9 +84,9 @@ public abstract class AbstractMatch extends AbstractNativeFunctionGeneric
                     match += "(Pure.matches(" + input + "," + sourceType + ".class," + lowerBound + "," + upperBound + ")?\n";
                 }
                 match += (resultMany ? "CompiledSupport.toPureCollection(" : "") +
-                        "   (new DefendedFunction"+(isMatchWith?"2<Object,"+otherType+", Object>":"")+"()\n" +
+                        "   (new DefendedFunction" + (isMatchWith ? "2<Object," + otherType + ", Object>" : "") + "()\n" +
                         "   {\n" +
-                        "       public Object value"+(isMatchWith?"":"Of")+"(final Object _" + funcParamName + "_As_Object"+(isMatchWith?", final "+otherType+" _"+funcParamName2:"")+")\n" +
+                        "       public Object value" + (isMatchWith ? "" : "Of") + "(final Object _" + funcParamName + "_As_Object" + (isMatchWith ? ", final " + otherType + " _" + funcParamName2 : "") + ")\n" +
                         "       {\n" +
                         (Multiplicity.isToOne(funcParam.getValueForMetaPropertyToOne(M3Properties.multiplicity), false) ?
                                 "            final " + sourceType + " _" + funcParamName + " = (" + sourceType + ")CompiledSupport.makeOne(_" + funcParamName + "_As_Object);\n"
@@ -96,7 +96,7 @@ public abstract class AbstractMatch extends AbstractNativeFunctionGeneric
                         "            " + value + "\n" +
                         "       }\n" +
 
-                        "   }).value"+(isMatchWith?"":"Of")+"(" + ((upperBound == 1)?"CompiledSupport.first(":"CompiledSupport.toPureCollection(") + input + ")"+(isMatchWith?", "+transformedParams.get(2):"")+")"  + (resultMany ? ")" : "") + "\n" +
+                        "   }).value" + (isMatchWith ? "" : "Of") + "(" + ((upperBound == 1) ? "CompiledSupport.first(" : "CompiledSupport.toPureCollection(") + input + ")" + (isMatchWith ? ", " + transformedParams.get(2) : "") + ")" + (resultMany ? ")" : "") + "\n" +
                         ":\n";
 
 
@@ -108,9 +108,9 @@ public abstract class AbstractMatch extends AbstractNativeFunctionGeneric
         }
         else
         {
-            return "("+type+")(Object)"+(resultMany ? "CompiledSupport.toPureCollection(" : "") +
-                    "CoreGen.dynamicMatch"+(isMatchWith?"With":"")+"("+input+",(RichIterable<" + FullJavaPaths.Function + "<? extends Object>>)(Object)CompiledSupport.toOneMany("+transformedParams.get(1) +
-                    "," + NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + ")"+(isMatchWith?","+transformedParams.get(2):"")+", es)"+
+            return "(" + type + ")(Object)" + (resultMany ? "CompiledSupport.toPureCollection(" : "") +
+                    (isMatchWith ? "FunctionsGen.dynamicMatchWith" : "CoreGen.dynamicMatch") + "(" + input + ",(RichIterable<" + FullJavaPaths.Function + "<? extends Object>>)(Object)CompiledSupport.toOneMany(" + transformedParams.get(1) +
+                    "," + NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + ")" + (isMatchWith ? "," + transformedParams.get(2) : "") + ", es)" +
                     (resultMany ? ")" : "");
         }
     }

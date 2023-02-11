@@ -15,12 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class ToLower extends AbstractNativeFunctionGeneric
 {
     public ToLower()
     {
-        super(getMethod(CompiledSupport.class, "toLowerCase"), "toLower_String_1__String_1_");
+        super("FunctionsGen.toLowerCase", new Class[]{String.class}, "toLower_String_1__String_1_");
     }
 }

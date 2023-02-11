@@ -20,6 +20,6 @@ public class Hash extends AbstractNativeFunctionGeneric
 {
     public Hash()
     {
-        super("Pure.hash", new Class[]{String.class, Object.class}, "hash_String_1__HashType_1__String_1_");
+        super("FunctionsGen.hash", new Class[]{String.class, Object.class}, "hash_String_1__HashType_1__String_1_");
     }
 }

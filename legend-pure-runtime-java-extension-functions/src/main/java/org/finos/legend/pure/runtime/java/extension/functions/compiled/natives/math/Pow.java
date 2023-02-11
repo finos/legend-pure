@@ -15,13 +15,12 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class Pow extends AbstractNativeFunctionGeneric
 {
     public Pow()
     {
-        super(getMethod(CompiledSupport.class, "pow"), "pow_Number_1__Number_1__Number_1_");
+        super("FunctionsGen.pow", new Class[]{Number.class, Number.class}, "pow_Number_1__Number_1__Number_1_");
     }
 }
 

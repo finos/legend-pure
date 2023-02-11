@@ -15,12 +15,12 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.anonymousCollections.map;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;
 
 public class Put extends AbstractNativeFunctionGeneric
 {
     public Put()
     {
-        super(getMethod(CompiledSupport.class, "put"),"put_Map_1__U_1__V_1__Map_1_");
+        super("FunctionsGen.put", new Class[]{PureMap.class, Object.class, Object.class}, "put_Map_1__U_1__V_1__Map_1_");
     }
 }

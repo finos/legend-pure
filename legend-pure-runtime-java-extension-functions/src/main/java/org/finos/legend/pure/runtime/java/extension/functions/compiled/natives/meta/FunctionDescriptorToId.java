@@ -15,11 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.meta;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class FunctionDescriptorToId extends AbstractNativeFunctionGeneric
 {
-   public FunctionDescriptorToId() {
-       super(getMethod(CompiledSupport.class, "functionDescriptorToId"), true, false, false,"functionDescriptorToId_String_1__String_1_");
-   }
+    public FunctionDescriptorToId()
+    {
+        super("FunctionsGen.functionDescriptorToId", new Class[]{String.class, SourceInformation.class}, true, false, false, "functionDescriptorToId_String_1__String_1_");
+    }
 }

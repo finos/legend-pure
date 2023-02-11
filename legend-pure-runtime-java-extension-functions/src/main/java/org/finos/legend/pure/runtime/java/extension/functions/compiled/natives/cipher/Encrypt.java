@@ -15,13 +15,15 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.cipher;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class Encrypt extends AbstractNativeFunctionGeneric
 {
-    public Encrypt() {
-        super(getMethod(CompiledSupport.class, "encrypt", String.class, String.class),
-                false, false, false,
-                "encrypt_String_1__String_1__String_1_", "encrypt_Number_1__String_1__String_1_", "encrypt_Boolean_1__String_1__String_1_");
+    public Encrypt()
+    {
+        super("FunctionsGen.encrypt",
+                new Class[]{String.class, String.class},
+                "encrypt_String_1__String_1__String_1_",
+                "encrypt_Number_1__String_1__String_1_",
+                "encrypt_Boolean_1__String_1__String_1_");
     }
 }

@@ -21,6 +21,6 @@ public class OpenVariableValues extends AbstractNativeFunctionGeneric
 {
     public OpenVariableValues()
     {
-        super("CoreGen.getOpenVariables", new Class[]{Function.class}, "openVariableValues_Function_1__Map_1_");
+        super("FunctionsGen.getOpenVariables", new Class[]{Function.class}, "openVariableValues_Function_1__Map_1_");
     }
 }

@@ -14,13 +14,13 @@
 
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.date;
 
+import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class AdjustDate extends AbstractNativeFunctionGeneric
 {
     public AdjustDate()
     {
-        super(getMethod(CompiledSupport.class, "adjustDate"), "adjust_Date_1__Integer_1__DurationUnit_1__Date_1_");
+        super("FunctionsGen.adjustDate", new Class[]{PureDate.class, Long.class, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum.class}, "adjust_Date_1__Integer_1__DurationUnit_1__Date_1_");
     }
 }
