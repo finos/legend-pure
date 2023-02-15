@@ -107,7 +107,7 @@ public class MetadataLazy implements Metadata
     @Override
     public MapIterable<String, CoreInstance> getMetadata(String classifier)
     {
-        return hasClassifier(classifier) ? loadAllClassifierInstances(classifier).asUnmodifiable() : null;
+        return hasClassifier(classifier) ? loadAllClassifierInstances(classifier).asUnmodifiable() : Maps.fixedSize.empty();
     }
 
     @Override
