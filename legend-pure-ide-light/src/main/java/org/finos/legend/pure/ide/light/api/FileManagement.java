@@ -320,7 +320,7 @@ public class FileManagement
         String repoName = codeStorage.getRepoName(path);
         builder.append("{\"li_attr\":{\"id\":\"file_");
         builder.append(path);
-        builder.append("\",\"path\":\"").append(path).append("\",\"file\":false,\"repo\":\"true\"");
+        builder.append("\",\"path\":\"").append(path).append("\",\"file\":false,\"repo\":true");
         builder.append(",\"RO\":").append(codeStorage.isRepositoryImmutable(codeStorage.getRepositoryForPath(path)));
         builder.append("},\"text\":\"");
         builder.append(repo.getName());
