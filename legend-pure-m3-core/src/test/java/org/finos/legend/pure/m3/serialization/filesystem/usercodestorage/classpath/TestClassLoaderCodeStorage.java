@@ -94,7 +94,7 @@ public class TestClassLoaderCodeStorage
         Verify.assertSetsEqual(
                 Sets.mutable.with("/test/codestorage/fake.pure", "/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure", "/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level2/level2.pure"),
                 this.testCodeStorage.getUserFiles().toSet());
-        Verify.assertEquals(104, this.combinedCodeStorage.getUserFiles().toSet().size());
+        Verify.assertEquals(105, this.combinedCodeStorage.getUserFiles().toSet().size());
     }
 
     @Test

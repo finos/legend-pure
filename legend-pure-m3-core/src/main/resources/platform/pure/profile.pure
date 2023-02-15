@@ -1,4 +1,4 @@
-// Copyright 2022 Goldman Sachs
+// Copyright 2023 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,5 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Returns the current time to a system dependent precision.
-native function <<functionType.SideEffectFunction>> meta::pure::functions::date::now():DateTime[1];
+Profile meta::pure::profiles::functionType
+{
+    stereotypes : [SideEffectFunction];
+}
