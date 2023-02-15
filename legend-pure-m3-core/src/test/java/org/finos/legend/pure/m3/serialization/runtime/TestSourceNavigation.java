@@ -255,4 +255,30 @@ public class TestSourceNavigation extends AbstractPureTestWithCoreCompiledPlatfo
         Assert.assertEquals(1, found.getSourceInformation().getLine());
         Assert.assertEquals(22, found.getSourceInformation().getColumn());
     }
+
+    @Test
+    public void testNavigateFunctionDescriptor()
+    {
+        Source source = runtime.createInMemorySource(
+                "test.pure",
+                "function doSomething(param: String[1]): Any[*]\n" +
+                        "{\n" +
+                        "  [\n" +
+                        "    print_Any_MANY__Integer_1__Nil_0_\n" +
+                        "  ];\n" +
+                        "  print_Any_MANY__Integer_1__Nil_0_;\n" +
+                        "}"
+        );
+
+        runtime.compile();
+        CoreInstance found = source.navigate(4, 7, processorSupport);
+        Assert.assertEquals("/platform/pure/basics/io/print.pure", found.getSourceInformation().getSourceId());
+        Assert.assertEquals(15, found.getSourceInformation().getLine());
+        Assert.assertEquals(44, found.getSourceInformation().getColumn());
+
+        found = source.navigate(6, 7, processorSupport);
+        Assert.assertEquals("/platform/pure/basics/io/print.pure", found.getSourceInformation().getSourceId());
+        Assert.assertEquals(15, found.getSourceInformation().getLine());
+        Assert.assertEquals(44, found.getSourceInformation().getColumn());
+    }
 }
