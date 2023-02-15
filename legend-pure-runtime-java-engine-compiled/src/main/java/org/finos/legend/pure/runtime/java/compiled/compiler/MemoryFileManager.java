@@ -15,25 +15,13 @@
 package org.finos.legend.pure.runtime.java.compiled.compiler;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.predicate.Predicate;
-import org.eclipse.collections.api.block.procedure.Procedure2;
 import org.eclipse.collections.api.collection.MutableCollection;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.api.multimap.list.MutableListMultimap;
-import org.eclipse.collections.impl.block.factory.Predicates;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
-import org.eclipse.collections.impl.multimap.list.FastListMultimap;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 
-import javax.tools.FileObject;
-import javax.tools.ForwardingJavaFileManager;
-import javax.tools.JavaCompiler;
-import javax.tools.JavaFileObject;
-import javax.tools.JavaFileObject.Kind;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.StandardLocation;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -41,17 +29,25 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+import javax.tools.FileObject;
+import javax.tools.ForwardingJavaFileManager;
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileObject;
+import javax.tools.JavaFileObject.Kind;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
 
 public class MemoryFileManager extends ForwardingJavaFileManager<StandardJavaFileManager>
 {
     private final MemoryFileManager parent;
-    private final MutableMap<String, ClassJavaSource> codeByName = UnifiedMap.newMap();
-    private final MutableListMultimap<String, ClassJavaSource> codeByPackage = FastListMultimap.newMultimap();
+    private final MutableMap<String, ClassJavaSource> codeByName = Maps.mutable.empty();
+    private final MutableMap<String, MutableList<ClassJavaSource>> codeByPackage = Maps.mutable.empty();
 
     private final Message message;
     private int count = 0;
@@ -76,33 +72,33 @@ public class MemoryFileManager extends ForwardingJavaFileManager<StandardJavaFil
     @Override
     public Iterable<JavaFileObject> list(Location location, String packageName, Set<Kind> kinds, boolean recurse) throws IOException
     {
-        MutableList<JavaFileObject> result = FastList.newList(this.codeByName.size());
+        MutableList<JavaFileObject> result = Lists.mutable.ofInitialCapacity(this.codeByName.size());
         collectFiles(result, location, packageName, kinds, recurse);
         return result;
     }
 
-    private void collectFiles(final MutableCollection<JavaFileObject> target, Location location, String packageName, Set<Kind> kinds, boolean recurse) throws IOException
+    private void collectFiles(MutableCollection<JavaFileObject> target, Location location, String packageName, Set<Kind> kinds, boolean recurse) throws IOException
     {
         if (this.parent != null)
         {
             this.parent.collectFiles(target, location, packageName, kinds, recurse);
         }
         target.addAllIterable(super.list(location, packageName, kinds, recurse));
-        if ((location == StandardLocation.CLASS_PATH ) && kinds.contains(Kind.CLASS))
+        if ((location == StandardLocation.CLASS_PATH) && kinds.contains(Kind.CLASS))
         {
-            target.addAll(this.codeByPackage.get(packageName));
+            MutableList<ClassJavaSource> packageFiles = this.codeByPackage.get(packageName);
+            if (packageFiles != null)
+            {
+                target.addAll(packageFiles);
+            }
             if (recurse)
             {
-                final String packagePrefix = packageName + '.';
-                this.codeByPackage.forEachKeyMultiValues(new Procedure2<String, Iterable<ClassJavaSource>>()
+                String packagePrefix = packageName + '.';
+                this.codeByPackage.forEachKeyValue((pkg, files) ->
                 {
-                    @Override
-                    public void value(String pkg, Iterable<ClassJavaSource> files)
+                    if (pkg.startsWith(packagePrefix))
                     {
-                        if (pkg.startsWith(packagePrefix))
-                        {
-                            target.addAllIterable(files);
-                        }
+                        target.addAll(files);
                     }
                 });
             }
@@ -114,7 +110,7 @@ public class MemoryFileManager extends ForwardingJavaFileManager<StandardJavaFil
     {
         if (file instanceof ClassJavaSource)
         {
-            return ((ClassJavaSource)file).inferBinaryName();
+            return ((ClassJavaSource) file).inferBinaryName();
         }
         return super.inferBinaryName(location, file);
     }
@@ -137,7 +133,7 @@ public class MemoryFileManager extends ForwardingJavaFileManager<StandardJavaFil
             source = ClassJavaSource.fromClassName(className);
             this.codeByName.put(className, source);
             String pkg = getPackageFromClassName(className);
-            this.codeByPackage.put(pkg, source);
+            this.codeByPackage.getIfAbsentPut(pkg, Lists.mutable::empty).add(source);
         }
         if (this.message != null)
         {
@@ -180,28 +176,24 @@ public class MemoryFileManager extends ForwardingJavaFileManager<StandardJavaFil
             return this.codeByName.valuesView();
         }
 
-        MutableList<ClassJavaSource> sources = FastList.newList(this.codeByName.size() + this.parent.codeByName.size());
+        MutableList<ClassJavaSource> sources = Lists.mutable.ofInitialCapacity(this.codeByName.size() + this.parent.codeByName.size());
         sources.addAll(this.codeByName.values());
-        this.parent.collectAllClassJavaSourcesIf(Predicates.notIn(this.codeByName.keySet()), sources);
+        this.parent.collectAllClassJavaSourcesIf(s -> !this.codeByName.containsKey(s), sources);
         return sources;
     }
 
-    private void collectAllClassJavaSourcesIf(final Predicate<? super String> predicate, final MutableCollection<? super ClassJavaSource> target)
+    private void collectAllClassJavaSourcesIf(Predicate<? super String> predicate, MutableCollection<? super ClassJavaSource> target)
     {
-        this.codeByName.forEachKeyValue(new Procedure2<String, ClassJavaSource>()
+        this.codeByName.forEachKeyValue((className, source) ->
         {
-            @Override
-            public void value(String className, ClassJavaSource source)
+            if (predicate.test(className))
             {
-                if (predicate.accept(className))
-                {
-                    target.add(source);
-                }
+                target.add(source);
             }
         });
         if (this.parent != null)
         {
-            this.parent.collectAllClassJavaSourcesIf(Predicates.and(predicate, Predicates.notIn(this.codeByName.keySet())), target);
+            this.parent.collectAllClassJavaSourcesIf(s -> predicate.test(s) && !this.codeByName.containsKey(s), target);
         }
     }
 
@@ -277,7 +269,7 @@ public class MemoryFileManager extends ForwardingJavaFileManager<StandardJavaFil
                     buffer = new byte[8192];
                 }
                 long size = entry.getSize();
-                try (OutputStream outStream = source.openOutputStream((size > 0L) ? (int)size : 8192))
+                try (OutputStream outStream = source.openOutputStream((size > 0L) ? (int) size : 8192))
                 {
                     for (int read = zipStream.read(buffer); read != -1; read = zipStream.read(buffer))
                     {
