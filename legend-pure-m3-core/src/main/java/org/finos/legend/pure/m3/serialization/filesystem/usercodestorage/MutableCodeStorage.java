@@ -16,6 +16,7 @@ package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.list.ListIterable;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.UpdateReport;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 
@@ -26,6 +27,8 @@ import java.io.OutputStream;
 public interface MutableCodeStorage extends CodeStorage
 {
     void initialize(Message message);
+
+    boolean isRepositoryImmutable(CodeRepository repository);
 
     RichIterable<CodeStorageNode> getModifiedUserFiles();
 

@@ -444,10 +444,21 @@ public class PureCodeStorage implements MutableCodeStorage
     }
 
     @Override
-    public boolean isImmutable(String path)
+    public CodeRepository getRepositoryForPath(String path)
     {
-        RepositoryCodeStorage codeStorage = getCodeStorage(path);
-        return codeStorage instanceof ImmutableRepositoryCodeStorage;
+        if (!path.isEmpty() && (path.charAt(0) == '/'))
+        {
+            int index = path.indexOf('/', 1);
+            String rootPath = index != -1 ? path.substring(1, index) : path.substring(1);
+            return this.repositoriesByName.get(rootPath);
+        }
+        return null;
+    }
+
+    @Override
+    public boolean isRepositoryImmutable(CodeRepository repository)
+    {
+        return repository != null && this.codeStorageByName.get(repository.getName()) instanceof ImmutableRepositoryCodeStorage;
     }
 
     @Override
@@ -1022,7 +1033,6 @@ public class PureCodeStorage implements MutableCodeStorage
             return CodeStorageNodeStatus.UNKNOWN;
         }
     }
-
 
     public static String getSourceRepoName(String sourceId)
     {

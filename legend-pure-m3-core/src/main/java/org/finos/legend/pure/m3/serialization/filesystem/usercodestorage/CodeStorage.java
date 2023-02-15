@@ -44,6 +44,11 @@ public interface CodeStorage
 
     CodeRepository getRepository(String name);
 
+    default CodeRepository getRepositoryForPath(String path)
+    {
+        throw new UnsupportedOperationException("Not Supported");
+    }
+
     CodeStorageNode getNode(String path);
 
     RichIterable<CodeStorageNode> getFiles(String path);
@@ -74,15 +79,6 @@ public interface CodeStorage
      * @return whether path is under version control
      */
     boolean isVersioned(String path);
-
-    /**
-     * Return whether the given file or directory is
-     * immutable.
-     *
-     * @param path file or directory path
-     * @return whether path is immutable
-     */
-    boolean isImmutable(String path);
 
     /**
      * Get the current revision number of the given file
