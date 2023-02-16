@@ -16,14 +16,15 @@ package org.finos.legend.pure.m2.relational;
 
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.junit.Assert;
 import org.junit.Test;
 
 public abstract class AbstractTestPureDBFunction extends AbstractPureTestWithCoreCompiled
 {
     @Test
-    public void testCreateTempTableError() throws Exception
+    public void testCreateTempTableError()
     {
-        this.compileTestSource(
+        compileTestSource(
                 "import meta::relational::runtime::*;\n" +
                         "import meta::relational::metamodel::*;\n" +
                         "import meta::relational::metamodel::execute::*;\n" +
@@ -38,21 +39,15 @@ public abstract class AbstractTestPureDBFunction extends AbstractPureTestWithCor
                         "###Relational\n" +
                         "Database mydb()\n"
         );
-        try
-        {
-            this.compileAndExecute("test():Any[0..1]");
-        }
-        catch (PureExecutionException ex)
-        {
-            assertPureException(PureExecutionException.class, "Error executing sql query; SQL reason: Syntax error in SQL statement \"CREATE LOCAL TEMPORARY TABLE ([*]COL INT) \"; expected \"identifier\"; SQL statement:\n" +
-                    "Create LOCAL TEMPORARY TABLE (col INT) [42001-197]; SQL error code: 42001; SQL state: 42001", 8, 4, ex);
-        }
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> compileAndExecute("test():Any[0..1]"));
+        assertPureException(PureExecutionException.class, "Error executing sql query; SQL reason: Syntax error in SQL statement \"CREATE LOCAL TEMPORARY TABLE ([*]COL INT)\"; expected \"identifier\"; SQL statement:\n" +
+                "Create LOCAL TEMPORARY TABLE (col INT) [42001-200]; SQL error code: 42001; SQL state: 42001", 8, 4, e);
     }
 
     @Test
-    public void testDropTempTableError() throws Exception
+    public void testDropTempTableError()
     {
-        this.compileTestSource(
+        compileTestSource(
                 "import meta::relational::runtime::*;\n" +
                         "import meta::relational::metamodel::*;\n" +
                         "import meta::relational::metamodel::execute::*;\n" +
@@ -65,21 +60,15 @@ public abstract class AbstractTestPureDBFunction extends AbstractPureTestWithCor
                         "###Relational\n" +
                         "Database mydb()\n"
         );
-        try
-        {
-            this.compileAndExecute("test():Any[0..1]");
-        }
-        catch (PureExecutionException ex)
-        {
-            this.assertPureException(PureExecutionException.class, "Error executing sql query; SQL reason: Table \"TT\" not found; SQL statement:\n" +
-                    "drop table tt [42102-197]; SQL error code: 42102; SQL state: 42S02", 8, 4, ex);
-        }
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> compileAndExecute("test():Any[0..1]"));
+        assertPureException(PureExecutionException.class, "Error executing sql query; SQL reason: Table \"TT\" not found; SQL statement:\n" +
+                "drop table tt [42102-200]; SQL error code: 42102; SQL state: 42S02", 8, 4, e);
     }
 
     @Test
-    public void testExecuteInDbError() throws Exception
+    public void testExecuteInDbError()
     {
-        this.compileTestSource(
+        compileTestSource(
                 "import meta::relational::runtime::*;\n" +
                         "import meta::relational::metamodel::*;\n" +
                         "import meta::relational::metamodel::execute::*;\n" +
@@ -92,14 +81,8 @@ public abstract class AbstractTestPureDBFunction extends AbstractPureTestWithCor
                         "###Relational\n" +
                         "Database mydb()\n"
         );
-        try
-        {
-            this.compileAndExecute("test():Any[0..1]");
-        }
-        catch (PureExecutionException ex)
-        {
-            this.assertPureException(PureExecutionException.class, "Error executing sql query; SQL reason: Table \"TT\" not found; SQL statement:\n" +
-                    "select * from tt [42102-197]; SQL error code: 42102; SQL state: 42S02", 8, 4, ex);
-        }
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> compileAndExecute("test():Any[0..1]"));
+        assertPureException(PureExecutionException.class, "Error executing sql query; SQL reason: Table \"TT\" not found; SQL statement:\n" +
+                "select * from tt [42102-200]; SQL error code: 42102; SQL state: 42S02", 8, 4, e);
     }
 }
