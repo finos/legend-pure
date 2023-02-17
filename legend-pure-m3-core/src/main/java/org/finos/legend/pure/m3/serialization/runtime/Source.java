@@ -446,6 +446,10 @@ public class Source
                     {
                         if (result instanceof FunctionExpression)
                         {
+                            return 5;
+                        }
+                        if (result instanceof InstanceValue)
+                        {
                             return 4;
                         }
                         if (result instanceof ValueSpecification)

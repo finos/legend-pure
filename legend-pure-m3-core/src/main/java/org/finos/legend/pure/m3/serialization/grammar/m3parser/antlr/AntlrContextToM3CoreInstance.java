@@ -2997,12 +2997,14 @@ public class AntlrContextToM3CoreInstance
         {
             this.typeParametersAndMultiplicityParameters(ctx.typeAndMultiplicityParameters(), typeParametersNames, multiplicityParametersNames);
         }
+        ListIterable<CoreInstance> stereotypes = (ctx.stereotypes() == null) ? null : stereotypes(ctx.stereotypes(), importId);
         FunctionType signature = functionTypeSignature(ctx.functionTypeSignature(), function, typeParametersNames, multiplicityParametersNames, importId, spacePlusTabs(space, 1));
 
         function._functionName(ctx.qualifiedName().identifier().getText());
         PackageInstance packageInstance = this.buildPackage(ctx.qualifiedName().packagePath());
 
         function._package(packageInstance);
+        function._stereotypesCoreInstance(stereotypes);
         packageInstance._childrenAdd(function);
         GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
         Type type = (Type) this.processorSupport.package_getByUserPath(M3Paths.NativeFunction);

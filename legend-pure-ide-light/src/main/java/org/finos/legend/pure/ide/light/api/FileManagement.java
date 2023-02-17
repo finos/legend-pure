@@ -26,6 +26,7 @@ import org.finos.legend.pure.m3.serialization.filesystem.repository.ScratchCodeR
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNodeStatus;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.Version;
 import org.json.simple.JSONObject;
@@ -242,7 +243,7 @@ public class FileManagement
     {
         try
         {
-            CodeStorage codeStorage = session.getCodeStorage();
+            MutableCodeStorage codeStorage = session.getCodeStorage();
             if (codeStorage == null)
             {
                 throw new RuntimeException("Cannot find code storage");
@@ -271,7 +272,7 @@ public class FileManagement
 
             return Response.ok((StreamingOutput) outputStream ->
             {
-                outputStream.write(this.transformContent(content));
+                outputStream.write(this.transformContent(content, codeStorage.isRepositoryImmutable(codeStorage.getRepositoryForPath(filePath))));
                 outputStream.close();
             }).build();
         }
@@ -285,13 +286,13 @@ public class FileManagement
         }
     }
 
-    private byte[] transformContent(byte[] content)
+    private byte[] transformContent(byte[] content, boolean isImmutable)
     {
         JSONObject object = new JSONObject();
         object.put("content", new String(content));
+        object.put("RO", isImmutable);
         return object.toJSONString().getBytes();
     }
-
 
     private void writeNode(StringBuilder builder, MutableCodeStorage codeStorage, String path, CodeStorageNode node)
     {
@@ -319,7 +320,9 @@ public class FileManagement
         String repoName = codeStorage.getRepoName(path);
         builder.append("{\"li_attr\":{\"id\":\"file_");
         builder.append(path);
-        builder.append("\",\"path\":\"" + path + "\",\"file\":\"false\",\"repo\":\"true\"},\"text\":\"");
+        builder.append("\",\"path\":\"").append(path).append("\",\"file\":false,\"repo\":true");
+        builder.append(",\"RO\":").append(codeStorage.isRepositoryImmutable(codeStorage.getRepositoryForPath(path)));
+        builder.append("},\"text\":\"");
         builder.append(repo.getName());
         if (currentRevision >= 0)
         {
@@ -331,7 +334,6 @@ public class FileManagement
             builder.append(Version.SERVER);
             builder.append(')');
             builder.append("\",\"icon\":\"/ide/pure/icons/wrench.png\",\"state\":\"closed\",\"children\":true}");
-
         }
         else
         {
@@ -343,7 +345,9 @@ public class FileManagement
     {
         builder.append("{\"li_attr\":{\"id\":\"file_");
         builder.append(path);
-        builder.append("\",\"path\":\"").append(path).append("\",\"file\":\"false\"},\"text\":\"");
+        builder.append("\",\"path\":\"").append(path).append("\",\"file\":false");
+        builder.append(",\"RO\":").append(codeStorage.isRepositoryImmutable(codeStorage.getRepositoryForPath(path)));
+        builder.append("},\"text\":\"");
         builder.append(directory.getName());
         builder.append("\",\"state\":\"closed\",\"children\":").append(!codeStorage.isEmptyFolder(path)).append("}");
     }
@@ -352,18 +356,16 @@ public class FileManagement
     {
         builder.append("{\"li_attr\":{\"id\":\"file_");
         builder.append(path);
-        builder.append("\",\"path\":\"").append(path).append("\",\"file\":\"true\"");
+        builder.append("\",\"path\":\"").append(path).append("\",\"file\":true");
+        builder.append(",\"RO\":").append(codeStorage.isRepositoryImmutable(codeStorage.getRepositoryForPath(path)));
 
-        if (PlatformCodeRepository.NAME.equals(codeStorage.getRepoName(path)))
-        {
-            builder.append(",\"RO\":\"true\""); // TODO can we replace this with an actual boolean?
-        }
-        else if (file.getStatus() != CodeStorageNodeStatus.NORMAL)
+        if (file.getStatus() != CodeStorageNodeStatus.NORMAL)
         {
             builder.append(",\"statusType\":\"");
             builder.append(file.getStatus());
             builder.append('"');
         }
+
         builder.append("},\"text\":\"");
         builder.append(file.getName());
         builder.append("\",\"icon\":\"/ide/pure/icons/filesystem/txt.png\"}");

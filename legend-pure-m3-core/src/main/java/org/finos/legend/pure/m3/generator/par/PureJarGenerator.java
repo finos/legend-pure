@@ -4,6 +4,8 @@ import org.eclipse.collections.api.factory.Sets;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.grammar.Parser;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.serialization.runtime.ParserService;
 
 import java.io.File;
@@ -49,8 +51,8 @@ public class PureJarGenerator
             log.info("  Extra repositories: " + extraRepositories);
             CodeRepositorySet resolvedRepositories = resolveRepositories(repositories, excludedRepositories, extraRepositories);
             log.info("  Repositories with resolved dependencies: " + resolvedRepositories.getRepositories());
-            log.info("  Register DSLs: " + ps.parsers().collect(c -> c.getName()).makeString(", "));
-            log.info("  Register in-line DSLs: " + ps.inlineDSLs().collect(c -> c.getName()).makeString(", "));
+            log.info("  Register DSLs: " + ps.parsers().collect(Parser::getName).makeString(", "));
+            log.info("  Register in-line DSLs: " + ps.inlineDSLs().collect(InlineDSL::getName).makeString(", "));
             log.info("  Pure platform version: " + purePlatformVersion);
             log.info("  Pure source directory: " + sourceDirectory);
             log.info("  Output directory: " + outputDirectory);
@@ -64,7 +66,6 @@ public class PureJarGenerator
             throw e;
         }
         log.info(String.format("  -> Finished Pure PAR generation in %.9fs", durationSinceInSeconds(start)));
-
     }
 
     private static CodeRepositorySet resolveRepositories(Set<String> repositories, Set<String> excludedRepositories, Set<String> extraRepositories)

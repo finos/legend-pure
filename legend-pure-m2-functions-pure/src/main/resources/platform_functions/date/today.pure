@@ -13,4 +13,4 @@
 // limitations under the License.
 
 // Returns the current day.
-native function meta::pure::functions::date::today():StrictDate[1];
+native function <<functionType.SideEffectFunction>> meta::pure::functions::date::today():StrictDate[1];

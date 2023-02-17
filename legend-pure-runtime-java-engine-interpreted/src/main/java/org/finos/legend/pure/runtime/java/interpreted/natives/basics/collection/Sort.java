@@ -14,18 +14,20 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.natives.basics.collection;
 
-import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
@@ -54,117 +56,36 @@ public class Sort extends NativeFunction
         CoreInstance key = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
         CoreInstance comparison = Instance.getValueForMetaPropertyToOneResolved(params.get(2), M3Properties.values, processorSupport);
 
-        Comparator<CoreInstance> comparator = getComparator(key, resolvedTypeParameters, resolvedMultiplicityParameters, comparison, getParentOrEmptyVariableContext(variableContext), functionExpressionToUseInStack, profiler, processorSupport, instantiationContext, executionSupport);
-
-        return ValueSpecificationBootstrap.wrapValueSpecification(collection.toSortedList(comparator), ValueSpecification.isExecutable(params.get(0), processorSupport), processorSupport);
+        MutableList<? extends CoreInstance> sorted = sort(collection, key, comparison, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), functionExpressionToUseInStack, profiler, processorSupport, instantiationContext, executionSupport);
+        return ValueSpecificationBootstrap.wrapValueSpecification(sorted, ValueSpecification.isExecutable(params.get(0), processorSupport), processorSupport);
     }
 
-    private Comparator<CoreInstance> getComparator(CoreInstance key, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, CoreInstance comparison, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, ProcessorSupport processorSupport, InstantiationContext instantiationContext, ExecutionSupport executionSupport)
+    private <T extends CoreInstance> MutableList<T> sort(ListIterable<T> collection, CoreInstance key, CoreInstance comparison, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, ProcessorSupport processorSupport, InstantiationContext instantiationContext, ExecutionSupport executionSupport)
     {
-        if ((key == null) && (comparison == null))
-        {
-            return getDefaultComparator(processorSupport);
-        }
-        else if (key == null)
-        {
-            return getComparatorWithComparison(comparison, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, processorSupport, instantiationContext, executionSupport);
-        }
-        else if (comparison == null)
-        {
-            return getComparatorWithKey(key, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, processorSupport, instantiationContext, executionSupport);
-        }
-        else
-        {
-            return getComparatorWithKeyAndComparison(key, resolvedTypeParameters, resolvedMultiplicityParameters, comparison, variableContext, functionExpressionToUseInStack, profiler, processorSupport, instantiationContext, executionSupport);
-        }
-    }
-
-    private Comparator<CoreInstance> getDefaultComparator(final ProcessorSupport processorSupport)
-    {
-        return new Comparator<CoreInstance>()
-        {
-            @Override
-            public int compare(CoreInstance instance1, CoreInstance instance2)
-            {
-                return Compare.compare(instance1, instance2, processorSupport);
-            }
-        };
-    }
-
-    private Comparator<CoreInstance> getComparatorWithComparison(final CoreInstance comparison, final Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, final Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, final VariableContext variableContext, final CoreInstance functionExpressionToUseInStack, final Profiler profiler, final ProcessorSupport processorSupport, final InstantiationContext instantiationContext, final ExecutionSupport executionSupport)
-    {
-        return new Comparator<CoreInstance>()
-        {
-            @Override
-            public int compare(CoreInstance left, CoreInstance right)
-            {
-                if (left == right)
+        Comparator<CoreInstance> comparator = (comparison == null) ?
+                (left, right) -> Compare.compare(left, right, processorSupport) :
+                (left, right) ->
                 {
-                    return 0;
-                }
+                    if (left == right)
+                    {
+                        return 0;
+                    }
 
-                return Integer.parseInt(Instance.getValueForMetaPropertyToOneResolved(Sort.this.functionExecution.executeLambdaFromNative(comparison, Lists.immutable.with(ValueSpecificationBootstrap.wrapValueSpecification(left, true, processorSupport), ValueSpecificationBootstrap.wrapValueSpecification(right, true, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport), M3Properties.values, processorSupport).getName());
-            }
-        };
+                    return PrimitiveUtilities.getIntegerValue(Instance.getValueForMetaPropertyToOneResolved(this.functionExecution.executeLambdaFromNative(comparison, Lists.immutable.with(ValueSpecificationBootstrap.wrapValueSpecification(left, true, processorSupport), ValueSpecificationBootstrap.wrapValueSpecification(right, true, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport), M3Properties.values, processorSupport)).intValue();
+                };
+
+        if (key == null)
+        {
+            return collection.toSortedList(comparator);
+        }
+
+        return collection.collect(e -> Tuples.pair(executeKey(key, e, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), functionExpressionToUseInStack, profiler, processorSupport, instantiationContext, executionSupport), e), Lists.mutable.empty())
+                .sortThis((left, right) -> comparator.compare(left.getOne(), right.getOne()))
+                .collect(Pair::getTwo);
     }
 
-    private Comparator<CoreInstance> getComparatorWithKey(final CoreInstance key, final Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, final Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, final VariableContext variableContext, final CoreInstance functionExpressionToUseInStack, final Profiler profiler, final ProcessorSupport processorSupport, final InstantiationContext instantiationContext, final ExecutionSupport executionSupport)
+    private CoreInstance executeKey(CoreInstance key, CoreInstance instance, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, ProcessorSupport processorSupport, InstantiationContext instantiationContext, ExecutionSupport executionSupport)
     {
-        final Function<CoreInstance, CoreInstance> keyFunction = new Function<CoreInstance, CoreInstance>()
-        {
-            @Override
-            public CoreInstance valueOf(CoreInstance instance)
-            {
-                return Instance.getValueForMetaPropertyToOneResolved(Sort.this.functionExecution.executeLambdaFromNative(key, Lists.immutable.with(ValueSpecificationBootstrap.wrapValueSpecification(instance, true, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport), M3Properties.values, processorSupport);
-            }
-        };
-
-        final MutableMap<CoreInstance, CoreInstance> keyMap = UnifiedMap.newMap();
-
-        return new Comparator<CoreInstance>()
-        {
-            @Override
-            public int compare(CoreInstance left, CoreInstance right)
-            {
-                if (left == right)
-                {
-                    return 0;
-                }
-
-                CoreInstance leftKey = keyMap.getIfAbsentPutWithKey(left, keyFunction);
-                CoreInstance rightKey = keyMap.getIfAbsentPutWithKey(right, keyFunction);
-                return (leftKey == rightKey) ? 0 : Compare.compare(leftKey, rightKey, processorSupport);
-            }
-        };
-    }
-
-    private Comparator<CoreInstance> getComparatorWithKeyAndComparison(final CoreInstance key, final Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, final Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, final CoreInstance comparison, final VariableContext variableContext, final CoreInstance functionExpressionToUseInStack, final Profiler profiler, final ProcessorSupport processorSupport, final InstantiationContext instantiationContext, final ExecutionSupport executionSupport)
-    {
-        final Function<CoreInstance, CoreInstance> keyFunction = new Function<CoreInstance, CoreInstance>()
-        {
-            @Override
-            public CoreInstance valueOf(CoreInstance instance)
-            {
-                return Instance.getValueForMetaPropertyToOneResolved(Sort.this.functionExecution.executeLambdaFromNative(key, Lists.immutable.with(ValueSpecificationBootstrap.wrapValueSpecification(instance, true, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport), M3Properties.values, processorSupport);
-            }
-        };
-
-        final MutableMap<CoreInstance, CoreInstance> keyMap = UnifiedMap.newMap();
-
-        return new Comparator<CoreInstance>()
-        {
-            @Override
-            public int compare(CoreInstance left, CoreInstance right)
-            {
-                if (left == right)
-                {
-                    return 0;
-                }
-
-                CoreInstance leftKey = keyMap.getIfAbsentPutWithKey(left, keyFunction);
-                CoreInstance rightKey = keyMap.getIfAbsentPutWithKey(right, keyFunction);
-                return (leftKey == rightKey) ? 0 : Integer.parseInt(Instance.getValueForMetaPropertyToOneResolved(Sort.this.functionExecution.executeLambdaFromNative(comparison, Lists.immutable.with(ValueSpecificationBootstrap.wrapValueSpecification(leftKey, true, processorSupport), ValueSpecificationBootstrap.wrapValueSpecification(rightKey, true, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport), M3Properties.values, processorSupport).getName());
-            }
-        };
+        return Instance.getValueForMetaPropertyToOneResolved(this.functionExecution.executeLambdaFromNative(key, Lists.immutable.with(ValueSpecificationBootstrap.wrapValueSpecification(instance, true, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport), M3Properties.values, processorSupport);
     }
 }

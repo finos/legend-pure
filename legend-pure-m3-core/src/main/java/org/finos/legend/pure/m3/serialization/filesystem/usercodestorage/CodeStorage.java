@@ -44,6 +44,11 @@ public interface CodeStorage
 
     CodeRepository getRepository(String name);
 
+    default CodeRepository getRepositoryForPath(String path)
+    {
+        throw new UnsupportedOperationException("Not Supported");
+    }
+
     CodeStorageNode getNode(String path);
 
     RichIterable<CodeStorageNode> getFiles(String path);
