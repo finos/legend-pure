@@ -123,6 +123,7 @@ function meta::relational::metamodel::datatype::pureTypeForDbColumn(column : met
 Class meta::relational::mapping::RelationalActivity extends meta::pure::mapping::Activity
 {
    sql : String[1];
+   comment : String[0..1];
    executionTimeInNanoSecond : Integer[0..1];
    sqlGenerationTimeInNanoSecond : Integer[0..1];
    connectionAcquisitionTimeInNanoSecond : Integer[0..1];

@@ -168,6 +168,7 @@ Class meta::relational::metamodel::Alias extends meta::relational::metamodel::Re
 
 Class meta::relational::metamodel::SQLQuery extends meta::relational::metamodel::RelationalOperationElement
 {
+   comment : String[0..1];
 }
 
 Class meta::relational::metamodel::TableAlias extends Alias
