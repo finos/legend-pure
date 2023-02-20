@@ -17,16 +17,16 @@ import meta::pure::graphFetch::execution::*;
 
 Class meta::pure::graphFetch::GraphFetchTree
 {
-   subTrees : GraphFetchTree[*];                          // TODO - Rename to propertyGFT
+   subTrees : GraphFetchTree[*];
    subTypeTrees : SubTypeGraphFetchTree[*];
 
-  propertyTrees(){
-    $this.subTrees->filter(st|$st->instanceOf(PropertyGraphFetchTree))->cast(@PropertyGraphFetchTree)
-   }: PropertyGraphFetchTree[*];
+  propertyTrees() {
+     $this.subTrees->filter(st|$st->instanceOf(PropertyGraphFetchTree))->cast(@PropertyGraphFetchTree)
+  }: PropertyGraphFetchTree[*];
 
-  propertyTreeForProperty(property : AbstractProperty<Any>[1]){
-    $this.propertyTrees()->filter(st|$st.property == $property)
-   }: PropertyGraphFetchTree[*] ;
+  propertyTreeForProperty(property : AbstractProperty<Any>[1]) {
+     $this.propertyTrees()->filter(st|$st.property == $property)
+  }: PropertyGraphFetchTree[*] ;
 }
 
 Class meta::pure::graphFetch::SubTypeGraphFetchTree extends GraphFetchTree
@@ -44,8 +44,8 @@ Class meta::pure::graphFetch::PropertyGraphFetchTree extends GraphFetchTree
    property : AbstractProperty<Any>[1];
    parameters : ValueSpecification[*];
    alias : String[0..1];
-   subType : Class<Any>[0..1];     //TODO remove this  : embed subType of a property access within same tree
-
+   subType : Class<Any>[0..1];
+   
    isPrimitive(){
       $this.property.genericType.rawType->toOne()->instanceOf(PrimitiveType) || $this.property.genericType.rawType->toOne()->instanceOf(Enumeration)
    }:Boolean[1];
