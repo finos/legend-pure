@@ -18,6 +18,20 @@ import meta::pure::graphFetch::execution::*;
 Class meta::pure::graphFetch::GraphFetchTree
 {
    subTrees : GraphFetchTree[*];
+   subTypeTrees : SubTypeGraphFetchTree[*];
+
+  propertyTrees() {
+     $this.subTrees->filter(st|$st->instanceOf(PropertyGraphFetchTree))->cast(@PropertyGraphFetchTree)
+  }: PropertyGraphFetchTree[*];
+
+  propertyTreeForProperty(property : AbstractProperty<Any>[1]) {
+     $this.propertyTrees()->filter(st|$st.property == $property)
+  }: PropertyGraphFetchTree[*] ;
+}
+
+Class meta::pure::graphFetch::SubTypeGraphFetchTree extends GraphFetchTree
+{
+  subTypeClass: Class<Any>[1];
 }
 
 Class meta::pure::graphFetch::RootGraphFetchTree<T> extends GraphFetchTree, PackageableElement
