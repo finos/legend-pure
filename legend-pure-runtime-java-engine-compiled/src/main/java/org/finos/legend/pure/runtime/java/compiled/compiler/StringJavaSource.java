@@ -14,7 +14,11 @@
 
 package org.finos.legend.pure.runtime.java.compiled.compiler;
 
-import javax.tools.SimpleJavaFileObject;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -22,6 +26,8 @@ import java.util.regex.Pattern;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
+import java.util.zip.InflaterInputStream;
+import javax.tools.SimpleJavaFileObject;
 
 public abstract class StringJavaSource extends SimpleJavaFileObject
 {
@@ -74,30 +80,43 @@ public abstract class StringJavaSource extends SimpleJavaFileObject
     private static byte[] possiblyCompressCode(byte[] codeBytes)
     {
         Deflater deflater = new Deflater(Deflater.BEST_SPEED);
-        deflater.setInput(codeBytes);
-        byte[] outBytes = new byte[codeBytes.length];
-        int compressedSize = deflater.deflate(outBytes, 0, outBytes.length, Deflater.FULL_FLUSH);
-        if (compressedSize == 0)
-        {
-            throw new RuntimeException("Error compressing string: " + new String(codeBytes, StandardCharsets.UTF_8));
-        }
-        if (compressedSize >= codeBytes.length)
-        {
-            // if compression doesn't make it smaller, don't compress
-            return null;
-        }
-        return Arrays.copyOfRange(outBytes, 0, compressedSize);
-    }
-
-    private static String decompressCode(int originalSize, byte[] compressedCode)
-    {
-        Inflater inflater = new Inflater(false);
-        inflater.setInput(compressedCode);
-        byte[] codeBytes = new byte[originalSize];
-        int totalUncompressed = 0;
         try
         {
-            for (int uncompressed = inflater.inflate(codeBytes, 0, originalSize); uncompressed != 0; uncompressed = inflater.inflate(codeBytes, totalUncompressed, originalSize - totalUncompressed))
+            byte[] outBytes = new byte[codeBytes.length];
+            deflater.setInput(codeBytes);
+            int compressedSize = deflater.deflate(outBytes, 0, outBytes.length, Deflater.FULL_FLUSH);
+            if (compressedSize == 0)
+            {
+                throw new RuntimeException("Error compressing string: " + new String(codeBytes, StandardCharsets.UTF_8));
+            }
+            if (compressedSize >= codeBytes.length)
+            {
+                // if compression doesn't make it smaller, don't compress
+                return null;
+            }
+            return Arrays.copyOfRange(outBytes, 0, compressedSize);
+        }
+        finally
+        {
+            deflater.end();
+        }
+    }
+
+    private static String decompressToString(int originalSize, byte[] compressedCode)
+    {
+        return new String(decompressToBytes(originalSize, compressedCode), StandardCharsets.UTF_8);
+    }
+
+    private static byte[] decompressToBytes(int originalSize, byte[] compressedCode)
+    {
+        Inflater inflater = new Inflater(false);
+        try
+        {
+            inflater.setInput(compressedCode);
+            byte[] codeBytes = new byte[originalSize];
+            int totalUncompressed = 0;
+            int uncompressed;
+            while ((uncompressed = inflater.inflate(codeBytes, totalUncompressed, originalSize - totalUncompressed)) != 0)
             {
                 totalUncompressed += uncompressed;
             }
@@ -105,12 +124,16 @@ public abstract class StringJavaSource extends SimpleJavaFileObject
             {
                 throw new RuntimeException("Error decompressing code: expected " + originalSize + " bytes, got " + totalUncompressed + " bytes");
             }
+            return codeBytes;
         }
         catch (DataFormatException e)
         {
             throw new RuntimeException("Error decompressing code", e);
         }
-        return new String(codeBytes, StandardCharsets.UTF_8);
+        finally
+        {
+            inflater.end();
+        }
     }
 
     private static class SimpleStringJavaSource extends StringJavaSource
@@ -134,6 +157,12 @@ public abstract class StringJavaSource extends SimpleJavaFileObject
         {
             return this.code.length();
         }
+
+        @Override
+        public InputStream openInputStream()
+        {
+            return new ByteArrayInputStream(this.code.getBytes(StandardCharsets.UTF_8));
+        }
     }
 
     private static class CompressedStringJavaSource extends StringJavaSource
@@ -151,13 +180,29 @@ public abstract class StringJavaSource extends SimpleJavaFileObject
         @Override
         public String getCode()
         {
-            return decompressCode(this.originalLength, this.compressedCode);
+            return decompressToString(this.originalLength, this.compressedCode);
         }
 
         @Override
         public int size()
         {
             return this.compressedCode.length;
+        }
+
+        @Override
+        public InputStream openInputStream()
+        {
+            return (this.originalLength < 1024) ?
+                    new ByteArrayInputStream(decompressToBytes(this.originalLength, this.compressedCode)) :
+                    new InflaterInputStream(new ByteArrayInputStream(this.compressedCode));
+        }
+
+        @Override
+        public Reader openReader(boolean ignoreEncodingErrors)
+        {
+            return (this.originalLength < 1024) ?
+                    new StringReader(getCode()) :
+                    new InputStreamReader(new InflaterInputStream(new ByteArrayInputStream(this.compressedCode)), StandardCharsets.UTF_8);
         }
     }
 }
