@@ -25,7 +25,7 @@ public class MatchWith extends AbstractMatch
 {
     public MatchWith()
     {
-        super("CoreGen.dynamicMatchWith", new Class[]{Object.class, RichIterable.class, Object.class, ExecutionSupport.class}, "match_Any_MANY__Function_$1_MANY$__P_o__T_m_");
+        super("FunctionsGen.dynamicMatchWith", new Class[]{Object.class, RichIterable.class, Object.class, ExecutionSupport.class}, "match_Any_MANY__Function_$1_MANY$__P_o__T_m_");
     }
 
     @Override

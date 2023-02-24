@@ -15,11 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.meta;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class IsValidFunctionDescriptor extends AbstractNativeFunctionGeneric
 {
-    public IsValidFunctionDescriptor() {
-        super(getMethod(CompiledSupport.class, "isValidFunctionDescriptor"), "isValidFunctionDescriptor_String_1__Boolean_1_");
+    public IsValidFunctionDescriptor()
+    {
+        super("FunctionsGen.isValidFunctionDescriptor", new Class[]{String.class}, "isValidFunctionDescriptor_String_1__Boolean_1_");
     }
 }

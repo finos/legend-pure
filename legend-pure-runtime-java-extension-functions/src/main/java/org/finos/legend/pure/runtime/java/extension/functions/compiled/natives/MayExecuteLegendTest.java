@@ -38,6 +38,6 @@ public class MayExecuteLegendTest extends AbstractNative
         CoreInstance functionType = Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(1), M3Properties.genericType, M3Properties.typeArguments, M3Properties.rawType, processorSupport);
         CoreInstance param = functionType.getValueForMetaPropertyToOne(M3Properties.returnType);
         String type = TypeProcessor.typeToJavaPrimitiveWithMul(param, functionType.getValueForMetaPropertyToOne(M3Properties.returnMultiplicity), true, processorContext);
-        return "(("+type+")CoreGen.legendTest(es, " + transformedParams.get(0) + "," + transformedParams.get(1) + "))";
+        return "(("+type+")FunctionsGen.legendTest(es, " + transformedParams.get(0) + "," + transformedParams.get(1) + "))";
     }
 }

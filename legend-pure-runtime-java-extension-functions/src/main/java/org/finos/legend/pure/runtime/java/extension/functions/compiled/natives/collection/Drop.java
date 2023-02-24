@@ -16,11 +16,11 @@ package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.
 
 import org.eclipse.collections.api.RichIterable;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class Drop extends AbstractNativeFunctionGeneric
 {
-    public Drop() {
-        super(getMethod(CompiledSupport.class, "drop", RichIterable.class, long.class),"drop_T_MANY__Integer_1__T_MANY_");
+    public Drop()
+    {
+        super("FunctionsGen.drop", new Class[]{RichIterable.class, long.class}, "drop_T_MANY__Integer_1__T_MANY_");
     }
 }

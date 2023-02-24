@@ -29,7 +29,7 @@ public class Mod extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return "CompiledSupport.mod(" + transformedParams.get(0) + "," + transformedParams.get(1) + ")";
+        return "FunctionsGen.mod(" + transformedParams.get(0) + "," + transformedParams.get(1) + ")";
     }
 
     @Override
@@ -40,8 +40,8 @@ public class Mod extends AbstractNative
                 "            @Override\n" +
                 "            public Long value(Long input1, Long input2, ExecutionSupport es)\n" +
                 "            {\n" +
-                "                return CompiledSupport.mod(input1, input2);\n" +
+                "                return FunctionsGen.mod(input1, input2);\n" +
                 "            }\n" +
-                "        }" ;
+                "        }";
     }
 }

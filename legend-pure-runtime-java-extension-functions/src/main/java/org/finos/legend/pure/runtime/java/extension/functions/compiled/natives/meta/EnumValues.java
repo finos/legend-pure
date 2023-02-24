@@ -14,13 +14,13 @@
 
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.meta;
 
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class EnumValues extends AbstractNativeFunctionGeneric
 {
     public EnumValues()
     {
-        super(getMethod(CompiledSupport.class, "enumValues"), "enumValues_Enumeration_1__T_MANY_");
+        super("FunctionsGen.enumValues", new Class[]{CoreInstance.class}, "enumValues_Enumeration_1__T_MANY_");
     }
 }

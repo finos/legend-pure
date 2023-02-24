@@ -14,14 +14,14 @@
 
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection;
 
+import org.eclipse.collections.api.RichIterable;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 
 public class Reverse extends AbstractNativeFunctionGeneric
 {
     public Reverse()
     {
-        super(getMethod(CompiledSupport.class, "toReversed"),"reverse_T_m__T_m_");
+        super("FunctionsGen.toReversed", new Class[]{RichIterable.class}, "reverse_T_m__T_m_");
     }
 }

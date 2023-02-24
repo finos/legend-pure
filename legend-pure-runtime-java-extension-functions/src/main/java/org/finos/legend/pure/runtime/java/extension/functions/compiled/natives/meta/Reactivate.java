@@ -29,7 +29,7 @@ public class Reactivate extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return "CompiledSupport.toPureCollection(CoreGen.reactivate(" + transformedParams.get(0) + ", " + transformedParams.get(1) + ", es))";
+        return "CompiledSupport.toPureCollection(FunctionsGen.reactivate(" + transformedParams.get(0) + ", " + transformedParams.get(1) + ", es))";
     }
 
     @Override
@@ -40,7 +40,7 @@ public class Reactivate extends AbstractNative
                 "            @Override\n" +
                 "            public Object value(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification input0, org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap input1, final ExecutionSupport es)\n" +
                 "            {\n" +
-                "                return CompiledSupport.toPureCollection(CoreGen.reactivate(input0, input1, es));\n" +
+                "                return CompiledSupport.toPureCollection(FunctionsGen.reactivate(input0, input1, es));\n" +
                 "            }\n" +
                 "        }";
     }

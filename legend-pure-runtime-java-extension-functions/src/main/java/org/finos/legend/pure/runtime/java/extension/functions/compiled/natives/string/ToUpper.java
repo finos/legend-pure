@@ -15,13 +15,12 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class ToUpper extends AbstractNativeFunctionGeneric
 {
     public ToUpper()
     {
-        super(getMethod(CompiledSupport.class, "toUpperCase"), "toUpper_String_1__String_1_");
+        super("FunctionsGen.toUpperCase", new Class[]{String.class}, "toUpper_String_1__String_1_");
     }
 
 }

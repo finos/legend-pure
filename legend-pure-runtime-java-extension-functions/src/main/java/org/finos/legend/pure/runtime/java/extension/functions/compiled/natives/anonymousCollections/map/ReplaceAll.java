@@ -22,6 +22,6 @@ public class ReplaceAll extends AbstractNativeFunctionGeneric
 {
     public ReplaceAll()
     {
-        super("Pure.replaceAll", new Class[]{PureMap.class, RichIterable.class}, "replaceAll_Map_1__Pair_MANY__Map_1_");
+        super("FunctionsGen.replaceAll", new Class[]{PureMap.class, RichIterable.class}, "replaceAll_Map_1__Pair_MANY__Map_1_");
     }
 }

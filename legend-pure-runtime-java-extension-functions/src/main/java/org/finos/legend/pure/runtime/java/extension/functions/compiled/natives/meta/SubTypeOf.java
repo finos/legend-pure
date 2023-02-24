@@ -22,7 +22,7 @@ public class SubTypeOf extends AbstractNativeFunctionGeneric
 {
     public SubTypeOf()
     {
-        super("Pure.subTypeOf", new Class[]{Type.class, Type.class, ExecutionSupport.class},
+        super("FunctionsGen.subTypeOf", new Class[]{Type.class, Type.class, ExecutionSupport.class},
                 false, true, false, "subTypeOf_Type_1__Type_1__Boolean_1_");
     }
 }

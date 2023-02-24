@@ -14,13 +14,14 @@
 
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math;
 
+import org.eclipse.collections.api.RichIterable;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.SourceInformation;
 
 public class StdDev extends AbstractNativeFunctionGeneric
 {
     public StdDev()
     {
-        super(getMethod(CompiledSupport.class, "stdDev"), true, false, false, "stdDev_Number_$1_MANY$__Boolean_1__Number_1_");
+        super("FunctionsGen.stdDev", new Class[]{RichIterable.class, Boolean.class, SourceInformation.class}, true, false, false, "stdDev_Number_$1_MANY$__Boolean_1__Number_1_");
     }
 }

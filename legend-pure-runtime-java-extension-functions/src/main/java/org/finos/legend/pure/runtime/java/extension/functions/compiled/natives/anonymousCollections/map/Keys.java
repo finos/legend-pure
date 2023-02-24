@@ -15,12 +15,12 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.anonymousCollections.map;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;
 
 public class Keys extends AbstractNativeFunctionGeneric
 {
     public Keys()
     {
-        super(getMethod(CompiledSupport.class, "keys"), "keys_Map_1__U_MANY_");
+        super("FunctionsGen.keys", new Class[]{PureMap.class}, "keys_Map_1__U_MANY_");
     }
 }

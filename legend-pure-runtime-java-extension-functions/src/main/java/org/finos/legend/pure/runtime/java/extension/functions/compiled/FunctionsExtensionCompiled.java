@@ -205,20 +205,35 @@ public class FunctionsExtensionCompiled extends BaseCompiledExtension
                         "package org.finos.legend.pure.generated;\n" +
                                 "\n" +
                                 "import org.eclipse.collections.api.RichIterable;\n" +
+                                "import org.eclipse.collections.api.block.function.Function0;\n" +
+                                "import org.eclipse.collections.api.factory.Lists;\n" +
+                                "import org.eclipse.collections.api.list.ListIterable;\n" +
                                 "import org.eclipse.collections.api.list.MutableList;\n" +
                                 "import org.eclipse.collections.impl.list.mutable.FastList;\n" +
+                                "import org.finos.legend.pure.m3.coreinstance.Package;\n" +
+                                "import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair;\n" +
                                 "import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;\n" +
+                                "import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;\n" +
+                                "import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;\n" +
                                 "import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;\n" +
+                                "import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;\n" +
+                                "import org.finos.legend.pure.m3.exception.PureExecutionException;\n" +
                                 "import org.finos.legend.pure.m3.execution.ExecutionSupport;\n" +
+                                "import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;\n" +
+                                "import org.finos.legend.pure.m3.tools.ListHelper;\n" +
                                 "import org.finos.legend.pure.m4.coreinstance.SourceInformation;\n" +
                                 "import org.finos.legend.pure.runtime.java.compiled.delta.CodeBlockDeltaCompiler;\n" +
                                 "import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;\n" +
+                                "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Bridge;\n" +
+                                "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Pure;\n" +
+                                "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.DefendedFunction;\n" +
+                                "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.DefendedFunction0;\n" +
+                                "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;\n" +
+                                "import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataAccessor;\n" +
                                 "import org.finos.legend.pure.runtime.java.shared.http.HttpMethod;\n" +
                                 "import org.finos.legend.pure.runtime.java.shared.http.HttpRawHelper;\n" +
                                 "import org.finos.legend.pure.runtime.java.shared.http.URLScheme;\n" +
-                                "\n" +
-                                "\n" +
-                                "public class FunctionsGen\n" +
+                                "public class FunctionsGen extends org.finos.legend.pure.runtime.java.extension.functions.compiled.FunctionsHelper\n" +
                                 "{\n" +
                                 "    public static Root_meta_pure_functions_io_http_HTTPResponse executeHttpRaw(Root_meta_pure_functions_io_http_URL url, Object method, String mimeType, String body, ExecutionSupport executionSupport)\n" +
                                 "    {\n" +
@@ -285,6 +300,179 @@ public class FunctionsExtensionCompiled extends BaseCompiledExtension
                                 "        }\n" +
                                 "        return result;\n" +
                                 "    }\n" +
+                                "\n" +
+                                "    public static Object alloyTest(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function alloyTest, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function regular)\n" +
+                                "    {\n" +
+                                "        return alloyTest(es, alloyTest, regular, CoreGen.bridge);\n" +
+                                "    }\n" +
+                                "\n" +
+                                "    public static Object legendTest(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function alloyTest, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function regular)\n" +
+                                "    {\n" +
+                                "        return legendTest(es, alloyTest, regular,  CoreGen.bridge);\n" +
+                                "    }\n" +
+                                "\n" +
+                                "    public static PureMap newMap(RichIterable pairs, RichIterable properties, ExecutionSupport es)\n" +
+                                "    {\n" +
+                                "        return newMap(pairs, properties, CoreGen.bridge, es);\n" +
+                                "    }\n" +
+                                "\n" +
+                                "    public static <U, V> RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>> zip(Object l1, Object l2)\n" +
+                                "    {\n" +
+                                "        return zip(l1, l2, new DefendedFunction0<Pair<U, V>>()\n" +
+                                "        {\n" +
+                                "            @Override\n" +
+                                "            public org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V> value()\n" +
+                                "            {\n" +
+                                "                return new Root_meta_pure_functions_collection_Pair_Impl<U, V>(\"\");\n" +
+                                "            }\n" +
+                                "        });\n" +
+                                "    }\n" +
+                                "\n" +
+                                "    public static <U, V> RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>> zip(RichIterable<? extends U> l1, RichIterable<? extends V> l2)\n" +
+                                "    {\n" +
+                                "        return zip(l1, l2, new DefendedFunction0<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>>()\n" +
+                                "        {\n" +
+                                "            @Override\n" +
+                                "            public org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V> value()\n" +
+                                "            {\n" +
+                                "                return new Root_meta_pure_functions_collection_Pair_Impl<U, V>(\"\");\n" +
+                                "            }\n" +
+                                "        });\n" +
+                                "    }\n" +
+                                "\n" +
+                                "    public static <U, V> RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>> zip(Object l1, Object l2, Function0<? extends Pair<U, V>> pairBuilder)\n" +
+                                "    {\n" +
+                                "        return zipImpl((RichIterable<? extends U>) l1, (RichIterable<? extends V>) l2, pairBuilder);\n" +
+                                "    }\n" +
+                                "\n" +
+                                "    public static <U, V> RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>> zip(RichIterable<? extends U> l1, RichIterable<? extends V> l2, final Function0<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>> pairBuilder)\n" +
+                                "    {\n" +
+                                "        return zipImpl(l1, l2, pairBuilder);\n" +
+                                "    }\n" +
+                                "\n" +
+                                "    private static <U, V> RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>> zipImpl(RichIterable<? extends U> l1, RichIterable<? extends V> l2, final Function0<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>> pairBuilder)\n" +
+                                "    {\n" +
+                                "        return l1 == null || l2 == null ? FastList.<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>>newList() : l1.zip(l2).collect(new DefendedFunction<org.eclipse.collections.api.tuple.Pair<? extends U, ? extends V>, Pair<U, V>>()\n" +
+                                "        {\n" +
+                                "            @Override\n" +
+                                "            public org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V> valueOf(org.eclipse.collections.api.tuple.Pair<? extends U, ? extends V> pair)\n" +
+                                "            {\n" +
+                                "                return pairBuilder.value()._first(pair.getOne())._second(pair.getTwo());\n" +
+                                "            }\n" +
+                                "        });\n" +
+                                "    }\n" +
+                                "\n" +
+                                "    public static Object dynamicMatchWith(Object obj, RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>> funcs, Object var, ExecutionSupport es)\n" +
+                                "    {\n" +
+                                "        return FunctionsGen.dynamicMatchWith(obj, funcs, var, CoreGen.bridge, es);\n" +
+                                "    }\n" +
+                                "\n" +
+                                "\n" +
+                                "    public static org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class<Any> newClass(String fullPathString, MetadataAccessor ma, SourceInformation si)\n" +
+                                "    {\n" +
+                                "        ListIterable<String> fullPath = PackageableElement.splitUserPath(fullPathString);\n" +
+                                "        if (fullPath.isEmpty())\n" +
+                                "        {\n" +
+                                "            throw new PureExecutionException(null, \"Cannot create a new Class: '\" + fullPathString + \"'\");\n" +
+                                "        }\n" +
+                                "        String name = fullPath.getLast();\n" +
+                                "        org.finos.legend.pure.m3.coreinstance.Package _package = Pure.buildPackageIfNonExistent(new Package_Impl(\"Root\")._name(\"Root\"), ListHelper.subList(fullPath, 0, fullPath.size() - 1), si, new DefendedFunction<String, Package>()\n" +
+                                "        {\n" +
+                                "            @Override\n" +
+                                "            public Package valueOf(String s)\n" +
+                                "            {\n" +
+                                "                return new Package_Impl(s);\n" +
+                                "            }\n" +
+                                "        });\n" +
+                                "        org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class<Any> _class = new Root_meta_pure_metamodel_type_Class_Impl(name)._name(name)._package(_package);\n" +
+                                "        return _class._classifierGenericType(\n" +
+                                "                        new Root_meta_pure_metamodel_type_generics_GenericType_Impl(\"Anonymous_StripedId\")\n" +
+                                "                                ._rawType(ma.getClass(\"Root::meta::pure::metamodel::type::Class\"))\n" +
+                                "                                ._typeArguments(Lists.immutable.of(new Root_meta_pure_metamodel_type_generics_GenericType_Impl(\"Anonymous_StripedId\")._rawType(_class))))\n" +
+                                "                ._generalizations(Lists.immutable.of(\n" +
+                                "                        new Root_meta_pure_metamodel_relationship_Generalization_Impl(\"Anonymous_StripedId\")\n" +
+                                "                                ._general(new Root_meta_pure_metamodel_type_generics_GenericType_Impl(\"Anonymous_StripedId\")._rawType(ma.getTopType()))\n" +
+                                "                                ._specific(_class)));\n" +
+                                "    }\n" +
+                                "\n" +
+                                "    public static org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association newAssociation(String fullPathString, Property p1, Property p2, MetadataAccessor ma, SourceInformation si)\n" +
+                                "    {\n" +
+                                "        ListIterable<String> fullPath = PackageableElement.splitUserPath(fullPathString);\n" +
+                                "        if (fullPath.isEmpty())\n" +
+                                "        {\n" +
+                                "            throw new PureExecutionException(null, \"Cannot create a new Association: '\" + fullPathString + \"'\");\n" +
+                                "        }\n" +
+                                "        String name = fullPath.getLast();\n" +
+                                "        org.finos.legend.pure.m3.coreinstance.Package _package = Pure.buildPackageIfNonExistent(new Package_Impl(\"Root\")._name(\"Root\"), ListHelper.subList(fullPath, 0, fullPath.size() - 1), si, new DefendedFunction<String, Package>()\n" +
+                                "        {\n" +
+                                "            @Override\n" +
+                                "            public Package valueOf(String s)\n" +
+                                "            {\n" +
+                                "                return new Package_Impl(s);\n" +
+                                "            }\n" +
+                                "        });\n" +
+                                "        org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association _association = new Root_meta_pure_metamodel_relationship_Association_Impl(name)._name(name)._package(_package);\n" +
+                                "        return _association._propertiesAdd(p1)._propertiesAdd(p2)._classifierGenericType(\n" +
+                                "                new Root_meta_pure_metamodel_type_generics_GenericType_Impl(\"Anonymous_StripedId\")\n" +
+                                "                        ._rawType(ma.getClass(\"Root::meta::pure::metamodel::relationship::Association\")));\n" +
+                                "    }\n" +
+                                "\n" +
+                                "    public static org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration<Any> newEnumeration(final String fullPathString, RichIterable values, MetadataAccessor ma, SourceInformation si)\n" +
+                                "    {\n" +
+                                "        ListIterable<String> fullPath = PackageableElement.splitUserPath(fullPathString);\n" +
+                                "        if (fullPath.isEmpty())\n" +
+                                "        {\n" +
+                                "            throw new PureExecutionException(null, \"Cannot create a new Enumeration: '\" + fullPathString + \"'\");\n" +
+                                "        }\n" +
+                                "        String name = fullPath.getLast();\n" +
+                                "        String packageName = ListHelper.subList(fullPath, 0, fullPath.size() - 1).makeString(\"::\");\n" +
+                                "        org.finos.legend.pure.m3.coreinstance.Package _package = Pure.buildPackageIfNonExistent(new Package_Impl(\"Root\")._name(\"Root\"), ListHelper.subList(fullPath, 0, fullPath.size() - 1), si, new DefendedFunction<String, Package>()\n" +
+                                "        {\n" +
+                                "            @Override\n" +
+                                "            public Package valueOf(String s)\n" +
+                                "            {\n" +
+                                "                return new Package_Impl(s);\n" +
+                                "            }\n" +
+                                "        });\n" +
+                                "        org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration<Any> _enumeration = new Root_meta_pure_metamodel_type_Enumeration_Impl<Any>(name)._name(name)._package(_package);\n" +
+                                "        return _enumeration._classifierGenericType(\n" +
+                                "                        new Root_meta_pure_metamodel_type_generics_GenericType_Impl(\"Anonymous_StripedId\")\n" +
+                                "                                ._rawType(ma.getClass(\"Root::meta::pure::metamodel::type::Enumeration\"))\n" +
+                                "                                ._typeArguments(Lists.immutable.of(new Root_meta_pure_metamodel_type_generics_GenericType_Impl(\"Anonymous_StripedId\")._rawType(_enumeration))))\n" +
+                                "                ._generalizations(Lists.immutable.of(\n" +
+                                "                        new Root_meta_pure_metamodel_relationship_Generalization_Impl(\"Anonymous_StripedId\")\n" +
+                                "                                ._general(new Root_meta_pure_metamodel_type_generics_GenericType_Impl(\"Anonymous_StripedId\")._rawType(ma.getClass(\"Root::meta::pure::metamodel::type::Enum\")))\n" +
+                                "                                ._specific(_enumeration)))\n" +
+                                "                ._values(values.collect(new DefendedFunction<String, PureEnum>()\n" +
+                                "                {\n" +
+                                "                    public PureEnum valueOf(String valueName)\n" +
+                                "                    {\n" +
+                                "                        return new PureEnum(valueName, fullPathString);\n" +
+                                "                    }\n" +
+                                "                }));\n" +
+                                "    }\n" +
+                                "\n" +
+                                "    public static PureMap getOpenVariables(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func)\n" +
+                                "    {\n" +
+                                "        return Pure.getOpenVariables(func, CoreGen.bridge);\n" +
+                                "    }\n" +
+                                "\n" +
+                                "    public static Object reactivate(ValueSpecification valueSpecification, PureMap lambdaOpenVariablesMap, ExecutionSupport es)\n" +
+                                "    {\n" +
+                                "        return Pure.reactivate(valueSpecification, lambdaOpenVariablesMap, true, CoreGen.bridge, es);\n" +
+                                "    }\n" +
+                                "\n" +
+                                "    public static Object reactivate(ValueSpecification valueSpecification, PureMap lambdaOpenVariablesMap, boolean allowJavaCompilation, ExecutionSupport es)\n" +
+                                "    {\n" +
+                                "        return Pure.reactivate(valueSpecification, lambdaOpenVariablesMap, allowJavaCompilation, CoreGen.bridge, es);\n" +
+                                "    }\n" +
+                                "\n" +
+                                "    public static Object traceSpan(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function function, String operationName, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function funcToGetTags, boolean tagsCritical)\n" +
+                                "    {\n" +
+                                "        return FunctionsGen.traceSpan(es, function, operationName, funcToGetTags, tagsCritical, CoreGen.bridge);\n" +
+                                "    }\n" +
+                                "\n" +
+                                "\n" +
                                 "}")),
                 Lists.fixedSize.with(),
                 Lists.fixedSize.with()

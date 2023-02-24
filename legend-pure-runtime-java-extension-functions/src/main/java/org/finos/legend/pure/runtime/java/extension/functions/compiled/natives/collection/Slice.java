@@ -17,13 +17,12 @@ package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.
 import org.eclipse.collections.api.RichIterable;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class Slice extends AbstractNativeFunctionGeneric
 {
     public Slice()
     {
-        super(getMethod(CompiledSupport.class, "slice", RichIterable.class, long.class, long.class, SourceInformation.class),
-        true, false, false, "slice_T_MANY__Integer_1__Integer_1__T_MANY_");
+        super("FunctionsGen.slice", new Class[]{RichIterable.class, long.class, long.class, SourceInformation.class},
+                true, false, false, "slice_T_MANY__Integer_1__Integer_1__T_MANY_");
     }
 }

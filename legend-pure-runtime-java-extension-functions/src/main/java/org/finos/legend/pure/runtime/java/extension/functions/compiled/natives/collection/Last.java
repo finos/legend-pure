@@ -39,7 +39,7 @@ public class Last extends AbstractNative
         CoreInstance expression = parametersValues.get(0);
         boolean castToIterable = !Multiplicity.isToOne(expression.getValueForMetaPropertyToOne(M3Properties.multiplicity));
 
-        return "CompiledSupport.last(" + (castToIterable ? "(" + TypeProcessor.typeToJavaObjectWithMul(expression.getValueForMetaPropertyToOne(M3Properties.genericType), expression.getValueForMetaPropertyToOne(M3Properties.multiplicity), processorSupport) + ")" : "") + transformedParams.get(0) + ")";
+        return "FunctionsGen.last(" + (castToIterable ? "(" + TypeProcessor.typeToJavaObjectWithMul(expression.getValueForMetaPropertyToOne(M3Properties.genericType), expression.getValueForMetaPropertyToOne(M3Properties.multiplicity), processorSupport) + ")" : "") + transformedParams.get(0) + ")";
     }
 
     @Override
@@ -50,7 +50,7 @@ public class Last extends AbstractNative
                 "            @Override\n" +
                 "            public Object value(Object input, ExecutionSupport es)\n" +
                 "            {\n" +
-                "                return input instanceof RichIterable ? CompiledSupport.last((RichIterable<?>) input) : CompiledSupport.last(input);\n" +
+                "                return input instanceof RichIterable ? FunctionsGen.last((RichIterable<?>) input) : FunctionsGen.last(input);\n" +
                 "            }\n" +
                 "        }";
     }

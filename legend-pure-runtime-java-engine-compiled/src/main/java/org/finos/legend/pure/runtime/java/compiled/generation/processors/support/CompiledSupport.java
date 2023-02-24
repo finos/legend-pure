@@ -14,30 +14,21 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.function.Function2;
-import org.eclipse.collections.api.block.predicate.Predicate;
-import org.eclipse.collections.api.block.procedure.Procedure;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
-import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.map.primitive.IntObjectMap;
-import org.eclipse.collections.api.ordered.OrderedIterable;
-import org.eclipse.collections.api.ordered.ReversibleIterable;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.lazy.AbstractLazyIterable;
 import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
-import org.eclipse.collections.impl.map.strategy.mutable.UnifiedMapWithHashingStrategy;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
@@ -55,28 +46,14 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
-import org.finos.legend.pure.m3.navigation.function.InvalidFunctionDescriptorException;
-import org.finos.legend.pure.m3.serialization.runtime.SourceRegistry;
-import org.finos.legend.pure.m3.tools.ListHelper;
-import org.finos.legend.pure.m3.tools.StatisticsUtil;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.DateTime;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.Year;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.YearMonth;
 import org.finos.legend.pure.m4.exception.PureException;
-import org.finos.legend.pure.runtime.java.compiled.compiler.MemoryClassLoader;
-import org.finos.legend.pure.runtime.java.compiled.compiler.MemoryFileManager;
-import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompileException;
-import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompiler;
-import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
+import org.finos.legend.pure.runtime.java.compiled.compiler.*;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledProcessorSupport;
 import org.finos.legend.pure.runtime.java.compiled.execution.ConsoleCompiled;
@@ -91,18 +68,17 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ValCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.ClassProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification.ValueSpecificationProcessor;
 import org.finos.legend.pure.runtime.java.compiled.metadata.JavaMethodWithParamsSharedPureFunction;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataAccessor;
-import org.finos.legend.pure.runtime.java.shared.cipher.AESCipherUtil;
-import org.finos.legend.pure.runtime.java.shared.identity.IdentityManager;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -111,23 +87,7 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.TimeZone;
-import java.util.UUID;
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
+import java.util.*;
 
 public class CompiledSupport
 {
@@ -144,7 +104,6 @@ public class CompiledSupport
     }
 
 
-    private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
     private static final ImmutableList<Class<?>> PRIMITIVE_CLASS_COMPARISON_ORDER = Lists.immutable.with(Long.class, Double.class, PureDate.class, Boolean.class, String.class);
 
     public static final Comparator<Object> DEFAULT_COMPARATOR = CompiledSupport::compareInt;
@@ -167,60 +126,6 @@ public class CompiledSupport
             result.setSourceInformation(sourceInformation);
             return (T)result;
         }
-    }
-
-    public static Object buildSourceInformation(RichIterable<?> coreInstance, ClassLoader globalClassLoader)
-    {
-        return buildSourceInformation(coreInstance.getAny(), globalClassLoader);
-    }
-
-    public static Object buildSourceInformation(Object obj, ClassLoader globalClassLoader)
-    {
-        Object result = null;
-        if (obj instanceof CoreInstance)
-        {
-            CoreInstance coreInstance = (CoreInstance)obj;
-            SourceInformation sourceInfo = coreInstance.getSourceInformation();
-            if (sourceInfo != null)
-            {
-                try
-                {
-                    Class<?> sourceInfoClass = globalClassLoader.loadClass(FullJavaPaths.SourceInformation_Impl);
-                    result = sourceInfoClass.getConstructor(String.class).newInstance("NOID");
-                    sourceInfoClass.getField("_source").set(result, sourceInfo.getSourceId());
-                    sourceInfoClass.getField("_startLine").set(result, sourceInfo.getStartLine());
-                    sourceInfoClass.getField("_startColumn").set(result, sourceInfo.getStartColumn());
-                    sourceInfoClass.getField("_line").set(result, sourceInfo.getLine());
-                    sourceInfoClass.getField("_column").set(result, sourceInfo.getColumn());
-                    sourceInfoClass.getField("_endLine").set(result, sourceInfo.getEndLine());
-                    sourceInfoClass.getField("_endColumn").set(result, sourceInfo.getEndColumn());
-                }
-                catch (Exception e)
-                {
-                    throw new RuntimeException("Error getting source information for " + obj, e);
-                }
-            }
-        }
-        return result;
-    }
-
-    public static boolean isSourceReadOnly(String sourceName, ExecutionSupport es)
-    {
-        return isSourceReadOnly(((CompiledExecutionSupport)es).getSourceRegistry(), sourceName);
-    }
-
-    public static boolean isSourceReadOnly(SourceRegistry sourceRegistry, String sourceName)
-    {
-        if (sourceRegistry == null)
-        {
-            throw new RuntimeException("The source registry has not been defined... This function should probably not be used in your current environment.");
-        }
-        return sourceRegistry.getSource(sourceName).isImmutable();
-    }
-
-    public static RichIterable enumValues(CoreInstance coreInstance)
-    {
-        return coreInstance.getValueForMetaPropertyToMany(M3Properties.values);
     }
 
     public static <T> RichIterable<T> toPureCollection(RichIterable<T> objects)
@@ -427,20 +332,6 @@ public class CompiledSupport
         return object.getFirst();
     }
 
-
-    public static <T> RichIterable<T> toReversed(RichIterable<T> collection)
-    {
-        if (collection == null || Iterate.isEmpty(collection))
-        {
-            return Lists.immutable.empty();
-        }
-        if (collection instanceof ReversibleIterable)
-        {
-            return ((ReversibleIterable<T>)collection).asReversed();
-        }
-        return collection.toList().reverseThis();
-    }
-
     public static <T> RichIterable<T> toOneMany(T object, SourceInformation sourceInformation)
     {
         return toOneManyWithMessage(object, null, sourceInformation);
@@ -497,72 +388,6 @@ public class CompiledSupport
         return (object == null) || ((object instanceof Iterable) && Iterate.isEmpty((Iterable<?>)object));
     }
 
-    public static <T> RichIterable<T> take(T element, long number)
-    {
-        return ((element == null) || (number < 1)) ? Lists.immutable.empty() : Lists.immutable.with(element);
-    }
-
-    public static <T> RichIterable<T> take(RichIterable<T> list, long number)
-    {
-        if ((list == null) || (number <= 0))
-        {
-            return Lists.immutable.empty();
-        }
-        if (list instanceof LazyIterable)
-        {
-            return ((LazyIterable<T>)list).take((int)number);
-        }
-        if (number >= list.size())
-        {
-            return list;
-        }
-
-        int end = (int)number;
-        if (list instanceof ListIterable)
-        {
-            return ListHelper.subList((ListIterable<T>)list, 0, end);
-        }
-
-        MutableList<T> result = FastList.newList(end);
-        result.addAllIterable(LazyIterate.take(list, end));
-        return result;
-    }
-
-    public static <T> RichIterable<T> drop(T element, long number)
-    {
-        return ((element == null) || (number >= 1)) ? Lists.immutable.<T>empty() : Lists.immutable.with(element);
-    }
-
-    public static <T> RichIterable<T> drop(RichIterable<T> list, long number)
-    {
-        if (list == null)
-        {
-            return Lists.immutable.empty();
-        }
-        if (number <= 0)
-        {
-            return list;
-        }
-        if (list instanceof LazyIterable)
-        {
-            return ((LazyIterable<T>)list).drop((int)number);
-        }
-        int size = list.size();
-        if (number >= size)
-        {
-            return Lists.immutable.empty();
-        }
-
-        int toDrop = (int)number;
-        if (list instanceof ListIterable)
-        {
-            return ListHelper.subList((ListIterable<T>)list, toDrop, size);
-        }
-
-        MutableList<T> result = FastList.newList(size - toDrop);
-        result.addAllIterable(LazyIterate.drop(list, toDrop));
-        return result;
-    }
 
     public static <T> RichIterable<T> init(T elem)
     {
@@ -752,42 +577,6 @@ public class CompiledSupport
         return result;
     }
 
-    public static <T> RichIterable<? extends T> removeAllOptimized(RichIterable<? extends T> main, RichIterable<? extends T> other)
-    {
-        Set<?> set = (other instanceof Set) ? (Set<?>) other : Sets.mutable.withAll(other);
-        return main.reject(set::contains);
-    }
-
-    public static boolean exists(Object object, Predicate predicate)
-    {
-        if (object == null)
-        {
-            return false;
-        }
-
-        if (object instanceof Iterable)
-        {
-            return Iterate.anySatisfy((Iterable)object, predicate);
-        }
-
-        return predicate.accept(object);
-    }
-
-    public static boolean forAll(Object object, Predicate predicate)
-    {
-        if (object == null)
-        {
-            return true;
-        }
-
-        if (object instanceof Iterable)
-        {
-            return Iterate.allSatisfy((Iterable)object, predicate);
-        }
-
-        return predicate.accept(object);
-    }
-
     public static <T, V> RichIterable<? extends T> mapToManyOverMany(RichIterable<? extends V> collection, Function2<? super V, ExecutionSupport, ? extends Iterable<? extends T>> function, final ExecutionSupport executionSupport)
     {
         return collection == null ? Lists.mutable.empty() : collection.flatCollect((Function<? super V, ? extends Iterable<T>>) object -> ((Function2<? super V, ExecutionSupport, ? extends Iterable<T>>) function).value(object, executionSupport));
@@ -829,15 +618,86 @@ public class CompiledSupport
         return instance;
     }
 
-    public static <T> T last(RichIterable<T> list)
+
+    public static int abs(int n)
     {
-        return Iterate.isEmpty(list) ? null : list.getLast();
+        return Math.abs(n);
     }
 
-    public static <T> T last(T instance)
+    public static long abs(long n)
     {
-        return instance;
+        return Math.abs(n);
     }
+
+    public static float abs(float n)
+    {
+        return Math.abs(n);
+    }
+
+    public static double abs(double n)
+    {
+        return Math.abs(n);
+    }
+
+    public static Integer abs(Integer n)
+    {
+        return Math.abs(n);
+    }
+
+    public static Long abs(Long n)
+    {
+        return Math.abs(n);
+    }
+
+    public static Float abs(Float n)
+    {
+        return Math.abs(n);
+    }
+
+    public static Double abs(Double n)
+    {
+        return Math.abs(n);
+    }
+
+    public static BigDecimal abs(BigDecimal bd)
+    {
+        return bd.abs();
+    }
+
+    public static BigInteger abs(BigInteger bi)
+    {
+        return bi.abs();
+    }
+
+    public static Number abs(Number n)
+    {
+        if (n instanceof Integer)
+        {
+            return Math.abs((Integer) n);
+        }
+        else if (n instanceof Long)
+        {
+            return Math.abs((Long) n);
+        }
+        else if (n instanceof Float)
+        {
+            return Math.abs((Float) n);
+        }
+        else if (n instanceof Double)
+        {
+            return Math.abs((Double) n);
+        }
+        else if (n instanceof BigDecimal)
+        {
+            return ((BigDecimal) n).abs();
+        }
+        else if (n instanceof BigInteger)
+        {
+            return ((BigInteger) n).abs();
+        }
+        throw new IllegalArgumentException("Unhandled Number Type " + n);
+    }
+
 
     public static Object print(ConsoleCompiled console, Object content, Long max)
     {
@@ -942,28 +802,7 @@ public class CompiledSupport
                 .collect(ElementWithKey::getValue);
     }
 
-    /**
-     * Return a list consisting of element repeated n times.
-     *
-     * @param element element to repeat
-     * @param n       number of times to repeat element
-     * @param <T>     element type
-     * @return element repeated n times
-     */
-    public static <T> RichIterable<T> repeat(T element, long n)
-    {
-        if (n <= 0)
-        {
-            return Lists.immutable.empty();
-        }
-        int num = (int)n;
-        MutableList<T> elements = FastList.newList(num);
-        for (; num > 0; num--)
-        {
-            elements.add(element);
-        }
-        return elements;
-    }
+
 
     /**
      * Implementation of the Pure "eq" function.  This returns
@@ -1024,15 +863,6 @@ public class CompiledSupport
         return left == right;
     }
 
-    public static double exp(Number n)
-    {
-        return Math.exp(n.doubleValue());
-    }
-
-    public static double log(Number n)
-    {
-        return Math.log(n.doubleValue());
-    }
 
     public static boolean equal(Object left, Object right) //NOSONAR Function signature avoids confusion
     {
@@ -1317,99 +1147,7 @@ public class CompiledSupport
         throw new IllegalArgumentException("Unhandled primitive: " + value + " (" + value.getClass() + ")");
     }
 
-    public static int abs(int n)
-    {
-        return Math.abs(n);
-    }
 
-    public static long abs(long n)
-    {
-        return Math.abs(n);
-    }
-
-    public static float abs(float n)
-    {
-        return Math.abs(n);
-    }
-
-    public static double abs(double n)
-    {
-        return Math.abs(n);
-    }
-
-    public static Integer abs(Integer n)
-    {
-        return Math.abs(n);
-    }
-
-    public static Long abs(Long n)
-    {
-        return Math.abs(n);
-    }
-
-    public static Float abs(Float n)
-    {
-        return Math.abs(n);
-    }
-
-    public static Double abs(Double n)
-    {
-        return Math.abs(n);
-    }
-
-    public static BigDecimal abs(BigDecimal bd)
-    {
-        return bd.abs();
-    }
-
-    public static BigInteger abs(BigInteger bi)
-    {
-        return bi.abs();
-    }
-
-    public static Number abs(Number n)
-    {
-        if (n instanceof Integer)
-        {
-            return Math.abs((Integer)n);
-        }
-        else if (n instanceof Long)
-        {
-            return Math.abs((Long)n);
-        }
-        else if (n instanceof Float)
-        {
-            return Math.abs((Float)n);
-        }
-        else if (n instanceof Double)
-        {
-            return Math.abs((Double)n);
-        }
-        else if (n instanceof BigDecimal)
-        {
-            return ((BigDecimal)n).abs();
-        }
-        else if (n instanceof BigInteger)
-        {
-            return ((BigInteger)n).abs();
-        }
-        throw new IllegalArgumentException("Unhandled Number Type " + n);
-    }
-
-    public static Number stdDev(RichIterable<? extends Number> list, boolean isBiasCorrected, SourceInformation sourceInformation)
-    {
-        if (list == null || list.isEmpty())
-        {
-            throw new PureExecutionException(sourceInformation, "Unable to process empty list");
-        }
-        MutableList<Number> javaNumbers = Lists.mutable.withAll(list);
-        double[] values = new double[javaNumbers.size()];
-        for (int i = 0; i < javaNumbers.size(); i++)
-        {
-            values[i] = javaNumbers.get(i).doubleValue();
-        }
-        return StatisticsUtil.standardDeviation(values, isBiasCorrected);
-    }
 
     public static <T extends Number> T plus(T number)
     {
@@ -1605,228 +1343,7 @@ public class CompiledSupport
         return (T)product;
     }
 
-    public static Long floor(Number number)
-    {
-        if (number instanceof Long)
-        {
-            return (Long)number;
-        }
-        else
-        {
-            return (long)Math.floor(number.doubleValue());
-        }
-    }
 
-    public static Long ceiling(Number number)
-    {
-        if (number instanceof Long)
-        {
-            return (Long)number;
-        }
-        else
-        {
-            return (long)Math.ceil(number.doubleValue());
-        }
-    }
-
-    public static Long round(Number number)
-    {
-        if (number instanceof Long)
-        {
-            return (Long)number;
-        }
-        else
-        {
-            double toRound = number.doubleValue();
-            if (toRound == 0x1.fffffffffffffp-2) // greatest double value less than 0.5
-            {
-                return 0L;
-            }
-            else
-            {
-                toRound += 0.5d;
-                double floor = Math.floor(toRound);
-                if ((floor == toRound) && ((floor % 2) != 0))
-                {
-                    return ((long)floor - 1);
-                }
-                else
-                {
-                    return (long)floor;
-                }
-            }
-        }
-    }
-
-    public static Number round(Number number, long scale)
-    {
-        if (number instanceof Double)
-        {
-            return round((Double)number, scale);
-        }
-        else if (number instanceof BigDecimal)
-        {
-            return round((BigDecimal)number, scale);
-        }
-
-        throw new IllegalArgumentException("incorrect number type");
-    }
-
-    public static double round(Double number, long scale)
-    {
-        return round(BigDecimal.valueOf(number), scale).doubleValue();
-    }
-
-    public static BigDecimal round(BigDecimal number, long scale)
-    {
-        return number.setScale((int)scale, RoundingMode.HALF_UP);
-    }
-
-    public static double sin(Number input)
-    {
-        return sin(input.doubleValue());
-    }
-
-    public static double sin(double input)
-    {
-        return Math.sin(input);
-    }
-
-    public static double cos(Number input)
-    {
-        return cos(input.doubleValue());
-    }
-
-    public static double cos(double input)
-    {
-        return Math.cos(input);
-    }
-
-    public static double tan(Number input)
-    {
-        return tan(input.doubleValue());
-    }
-
-    public static double tan(double input)
-    {
-        double result = Math.tan(input);
-        if (Double.isNaN(result))
-        {
-            throw new PureExecutionException("Unable to compute tan of " + input);
-        }
-        return result;
-    }
-
-    public static double asin(Number input, SourceInformation sourceInformation)
-    {
-        return asin(input.doubleValue(), sourceInformation);
-    }
-
-    public static double asin(double input, SourceInformation sourceInformation)
-    {
-        double result = Math.asin(input);
-        if (Double.isNaN(result))
-        {
-            throw new PureExecutionException(sourceInformation, "Unable to compute asin of " + input);
-        }
-        return result;
-    }
-
-    public static double acos(Number input, SourceInformation sourceInformation)
-    {
-        return acos(input.doubleValue(), sourceInformation);
-    }
-
-    public static double acos(double input, SourceInformation sourceInformation)
-    {
-        double result = Math.acos(input);
-        if (Double.isNaN(result))
-        {
-            throw new PureExecutionException(sourceInformation, "Unable to compute acos of " + input);
-        }
-        return result;
-    }
-
-    public static double atan(Number input)
-    {
-        return atan(input.doubleValue());
-    }
-
-    public static double atan(double input)
-    {
-        return Math.atan(input);
-    }
-
-    public static double atan2(Number input1, Number input2, SourceInformation sourceInformation)
-    {
-        return atan2(input1.doubleValue(), input2.doubleValue(), sourceInformation);
-    }
-
-    public static double atan2(double input1, double input2, SourceInformation sourceInformation)
-    {
-        double result = Math.atan2(input1, input2);
-        if (Double.isNaN(result))
-        {
-            throw new PureExecutionException(sourceInformation, "Unable to compute atan2 of " + input1 + " " + input2);
-        }
-        return result;
-    }
-
-    public static double sqrt(Number input, SourceInformation sourceInformation)
-    {
-        return sqrt(input.doubleValue(), sourceInformation);
-    }
-
-    public static double sqrt(double input, SourceInformation sourceInformation)
-    {
-        double result = Math.sqrt(input);
-        if (Double.isNaN(result))
-        {
-            throw new PureExecutionException(sourceInformation,
-                    "Unable to compute sqrt of " + input);
-        }
-        return result;
-    }
-
-    public static Number rem(Number dividend, Number divisor, SourceInformation sourceInformation)
-    {
-        if (divisor.doubleValue() == 0)
-        {
-            throw new PureExecutionException(sourceInformation, "Cannot divide " + dividend.toString() + " by zero");
-        }
-
-        if (dividend instanceof Long && divisor instanceof Long)
-        {
-            return dividend.longValue() % divisor.longValue();
-        }
-
-        if (dividend instanceof BigDecimal && divisor instanceof BigDecimal)
-        {
-            return ((BigDecimal)dividend).remainder((BigDecimal)divisor);
-        }
-
-        if (dividend instanceof BigDecimal && divisor instanceof Long)
-        {
-            return ((BigDecimal)dividend).remainder(BigDecimal.valueOf((Long)divisor));
-        }
-
-        if (dividend instanceof BigDecimal && divisor instanceof Double)
-        {
-            return ((BigDecimal)dividend).remainder(BigDecimal.valueOf((Double)divisor));
-        }
-
-        if (dividend instanceof Long && divisor instanceof BigDecimal)
-        {
-            return BigDecimal.valueOf((Long)dividend).remainder((BigDecimal)divisor);
-        }
-
-        if (dividend instanceof Double && divisor instanceof BigDecimal)
-        {
-            return BigDecimal.valueOf((Double)dividend).remainder((BigDecimal)divisor);
-        }
-
-        return dividend.doubleValue() % divisor.doubleValue();
-    }
 
     public static Double divide(Number left, Number right, SourceInformation sourceInformation)
     {
@@ -1863,19 +1380,6 @@ public class CompiledSupport
         return left.divide(right, (int)scale, RoundingMode.HALF_UP);
     }
 
-    public static long mod(long dividend, long divisor)
-    {
-        return BigInteger.valueOf(dividend).mod(BigInteger.valueOf(divisor)).longValue();
-    }
-
-    public static Double pow(Number number, Number power)
-    {
-        return StrictMath.pow(
-                number instanceof Long ? number.longValue() : number.doubleValue(),
-                power instanceof Long ? power.longValue() : power.doubleValue()
-        );
-    }
-
     public static boolean lessThan(Number left, Number right)
     {
         if ((left instanceof Long) && (right instanceof Long))
@@ -1900,20 +1404,6 @@ public class CompiledSupport
         }
     }
 
-    public static BigDecimal toDecimal(Number number)
-    {
-        if (number instanceof BigDecimal)
-        {
-            return (BigDecimal)number;
-        }
-        return new BigDecimal(number.toString());
-    }
-
-    public static double toFloat(Number number)
-    {
-        return number.doubleValue();
-    }
-
     public static String substring(String str, Number start)
     {
         return substring(str, start, null);
@@ -1931,24 +1421,10 @@ public class CompiledSupport
         return str1.startsWith(str2);
     }
 
-    public static boolean endsWith(String str1, String str2)
-    {
-        return str1.endsWith(str2);
-    }
-
-    public static boolean matches(String str, String regexp)
-    {
-        return str.matches(regexp);
-    }
 
     public static String replace(String str1, String str2, String str3)
     {
         return str1.replace(str2, str3);
-    }
-
-    public static boolean contains(String str1, String str2)
-    {
-        return str1.contains(str2);
     }
 
     public static Long length(String str)
@@ -1956,35 +1432,9 @@ public class CompiledSupport
         return (long) str.length();
     }
 
-    public static String toLowerCase(String str)
-    {
-        return str.toLowerCase();
-    }
 
-    public static String toUpperCase(String str)
-    {
-        return str.toUpperCase();
-    }
 
-    public static String trim(String str)
-    {
-        return str.trim();
-    }
 
-    public static String encodeBase64(String str)
-    {
-        return Base64.encodeBase64URLSafeString(str.getBytes());
-    }
-
-    public static String decodeBase64(String str)
-    {
-        return new String(Base64.decodeBase64(str));
-    }
-
-    public static BigDecimal parseDecimal(String str)
-    {
-        return new BigDecimal(str.endsWith("D") || str.endsWith("d") ? str.substring(0, str.length() - 1) : str);
-    }
 
     public static boolean pureAssert(boolean condition, SharedPureFunction function, SourceInformation sourceInformation, ExecutionSupport es)
     {
@@ -2046,7 +1496,7 @@ public class CompiledSupport
         return classifierPath.substring(index + 1);
     }
 
-    private static String getPureGeneratedClassName(Object obj)
+    public static String getPureGeneratedClassName(Object obj)
     {
         return getFieldValue(obj, TEMP_TYPE_NAME);
     }
@@ -2089,154 +1539,6 @@ public class CompiledSupport
         }
     }
 
-    public static <T> T mutateAdd(T val, String property, RichIterable<? extends Object> vals, SourceInformation sourceInformation)
-    {
-        try
-        {
-            Method m = val.getClass().getMethod("_" + property);
-            if (m.getReturnType() == RichIterable.class)
-            {
-                RichIterable l = (RichIterable)m.invoke(val);
-                RichIterable newValues = Iterate.isEmpty(l) ? vals : LazyIterate.concatenate(l, vals).toList();
-
-                m = val.getClass().getMethod("_" + property, RichIterable.class);
-                m.invoke(val, newValues);
-            }
-            else
-            {
-                m = val.getClass().getMethod("_" + property, m.getReturnType());
-                m.invoke(val, vals.getFirst());
-            }
-        }
-        catch (NoSuchMethodException e)
-        {
-            throw new PureExecutionException(sourceInformation, "Cannot find property '" + property + "' on " + getPureGeneratedClassName(val));
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-        return val;
-    }
-
-    public static <T> RichIterable<T> slice(T element, long low, long high, SourceInformation sourceInformation)
-    {
-        return ((element == null) || (low > 0) || (high <= 0)) ? Lists.immutable.<T>empty() : Lists.immutable.with(element);
-    }
-
-    public static <T> RichIterable<T> slice(RichIterable<T> collection, long low, long high, SourceInformation sourceInformation)
-    {
-        low = (low < 0) ? 0 : low;
-        high = (high < 0) ? 0 : high;
-
-        if ((collection == null) || (high == 0) || (high == low))
-        {
-            return Lists.immutable.empty();
-        }
-
-        if (collection instanceof LazyIterable)
-        {
-            return ((LazyIterable<T>)collection).drop((int)low).take((int)(high - low));
-        }
-
-        int collectionSize = collection.size();
-        if (low >= collectionSize)
-        {
-            return Lists.immutable.empty();
-        }
-        int start = (int)low;
-        int end = (high > collectionSize) ? collectionSize : (int)high;
-        if (start > end)
-        {
-            throw new PureExecutionException(sourceInformation, "The low bound (" + start + ") can't be higher than the high bound (" + end + ") in a slice operation");
-        }
-
-
-        if (collection instanceof ListIterable)
-        {
-            return ListHelper.subList((ListIterable<T>)collection, start, end);
-        }
-
-        MutableList<T> result = FastList.newList(end - start);
-        result.addAllIterable(LazyIterate.drop(collection, start).take(end - start));
-        return result;
-    }
-
-    public static RichIterable<String> chunk(String text, long size, SourceInformation sourceInformation)
-    {
-        if (size < 1)
-        {
-            throw new PureExecutionException(sourceInformation, "Invalid chunk size: " + size);
-        }
-        return chunk(text, (int)size);
-    }
-
-    private static RichIterable<String> chunk(final String text, final int size)
-    {
-        final int length = text.length();
-        if (length == 0)
-        {
-            return Lists.immutable.empty();
-        }
-
-        if (size >= length)
-        {
-            return Lists.immutable.with(text);
-        }
-
-        return new AbstractLazyIterable<String>()
-        {
-            @Override
-            public boolean isEmpty()
-            {
-                return false;
-            }
-
-            @Override
-            public int size()
-            {
-                return (length + size - 1) / size;
-            }
-
-            @Override
-            public void each(Procedure<? super String> procedure)
-            {
-                for (int i = 0; i < length; i += size)
-                {
-                    procedure.value(text.substring(i, Math.min(i + size, length)));
-                }
-            }
-
-            @Override
-            public Iterator<String> iterator()
-            {
-                return new Iterator<String>()
-                {
-                    private int current = 0;
-
-                    @Override
-                    public boolean hasNext()
-                    {
-                        return this.current < length;
-                    }
-
-                    @Override
-                    public String next()
-                    {
-                        if (!hasNext())
-                        {
-                            throw new NoSuchElementException();
-                        }
-                        int start = this.current;
-                        int end = Math.min(start + size, length);
-                        String next = text.substring(start, end);
-                        this.current = end;
-                        return next;
-                    }
-                };
-            }
-        };
-    }
 
     public static Object dynamicallyBuildLambdaFunction(CoreInstance lambdaFunction, ExecutionSupport es)
     {
@@ -2432,324 +1734,15 @@ public class CompiledSupport
         }
     }
 
-    public static StrictDate today()
-    {
-        return StrictDate.fromCalendar(new GregorianCalendar(GMT));
-    }
 
-    public static DateTime now()
-    {
-        return (DateTime)DateFunctions.fromDate(new Date());
-    }
 
-    public static PureDate datePart(PureDate date)
-    {
-        return date.hasHour() ? DateFunctions.newPureDate(date.getYear(), date.getMonth(), date.getDay()) : date;
-    }
 
-    public static long year(PureDate date)
-    {
-        return date.getYear();
-    }
-
-    public static boolean hasMonth(PureDate date)
-    {
-        return date.hasMonth();
-    }
-
-    public static long monthNumber(PureDate date)
-    {
-        return date.getMonth();
-    }
-
-    public static long weekOfYear(PureDate date, SourceInformation sourceInformation)
-    {
-        if (!date.hasDay())
-        {
-            throw new PureExecutionException(sourceInformation, "Cannot get week of year for " + date);
-        }
-        return date.getCalendar().get(Calendar.WEEK_OF_YEAR);
-    }
-
-    public static boolean hasDay(PureDate date)
-    {
-        return date.hasDay();
-    }
-
-    public static long dayOfWeekNumber(PureDate date, SourceInformation sourceInformation)
-    {
-        if (!date.hasDay())
-        {
-            throw new PureExecutionException(sourceInformation, "Cannot get day of week for " + date);
-        }
-        switch (date.getCalendar().get(Calendar.DAY_OF_WEEK))
-        {
-            case Calendar.MONDAY:
-            {
-                return 1;
-            }
-            case Calendar.TUESDAY:
-            {
-                return 2;
-            }
-            case Calendar.WEDNESDAY:
-            {
-                return 3;
-            }
-            case Calendar.THURSDAY:
-            {
-                return 4;
-            }
-            case Calendar.FRIDAY:
-            {
-                return 5;
-            }
-            case Calendar.SATURDAY:
-            {
-                return 6;
-            }
-            case Calendar.SUNDAY:
-            {
-                return 7;
-            }
-            default:
-            {
-                throw new PureExecutionException(sourceInformation, "Error getting day of week for " + date);
-            }
-        }
-    }
-
-    public static long dayOfMonth(PureDate date, SourceInformation sourceInformation)
-    {
-        if (!date.hasDay())
-        {
-            throw new PureExecutionException(sourceInformation, "Cannot get day of month for " + date);
-        }
-        return date.getDay();
-    }
-
-    public static boolean hasHour(PureDate date)
-    {
-        return date.hasHour();
-    }
-
-    public static long hour(PureDate date, SourceInformation sourceInformation)
-    {
-        if (!date.hasHour())
-        {
-            throw new PureExecutionException(sourceInformation, "Cannot get hour for " + date);
-        }
-        return date.getHour();
-    }
-
-    public static boolean hasMinute(PureDate date)
-    {
-        return date.hasMinute();
-    }
-
-    public static long minute(PureDate date, SourceInformation sourceInformation)
-    {
-        if (!date.hasMinute())
-        {
-            throw new PureExecutionException(sourceInformation, "Cannot get minute for " + date);
-        }
-        return date.getMinute();
-    }
-
-    public static boolean hasSecond(PureDate date)
-    {
-        return date.hasSecond();
-    }
-
-    public static long second(PureDate date, SourceInformation sourceInformation)
-    {
-        if (!date.hasSecond())
-        {
-            throw new PureExecutionException(sourceInformation, "Cannot get second for " + date);
-        }
-        return date.getSecond();
-    }
-
-    public static boolean hasSubsecond(PureDate date)
-    {
-        return date.hasSubsecond();
-    }
-
-    public static boolean hasSubsecondWithAtLeastPrecision(PureDate date, long minPrecision)
-    {
-        return date.hasSubsecond() && (date.getSubsecond().length() >= minPrecision);
-    }
-
-    public static PureDate newDate(long year, SourceInformation sourceInformation)
-    {
-        try
-        {
-            return Year.newYear((int)year);
-        }
-        catch (Exception e)
-        {
-            throw new PureExecutionException(sourceInformation, e.getMessage());
-        }
-    }
-
-    public static PureDate newDate(long year, long month, SourceInformation sourceInformation)
-    {
-        try
-        {
-            return YearMonth.newYearMonth((int)year, (int)month);
-        }
-        catch (Exception e)
-        {
-            throw new PureExecutionException(sourceInformation, e.getMessage());
-        }
-    }
-
-    public static StrictDate newDate(long year, long month, long day, SourceInformation sourceInformation)
-    {
-        try
-        {
-            return DateFunctions.newPureDate((int)year, (int)month, (int)day);
-        }
-        catch (Exception e)
-        {
-            throw new PureExecutionException(sourceInformation, e.getMessage());
-        }
-    }
-
-    public static DateTime newDate(long year, long month, long day, long hour, SourceInformation sourceInformation)
-    {
-        try
-        {
-            return DateFunctions.newPureDate((int)year, (int)month, (int)day, (int)hour);
-        }
-        catch (Exception e)
-        {
-            throw new PureExecutionException(sourceInformation, e.getMessage());
-        }
-    }
-
-    public static DateTime newDate(long year, long month, long day, long hour, long minute, SourceInformation sourceInformation)
-    {
-        try
-        {
-            return DateFunctions.newPureDate((int)year, (int)month, (int)day, (int)hour, (int)minute);
-        }
-        catch (Exception e)
-        {
-            throw new PureExecutionException(sourceInformation, e.getMessage());
-        }
-    }
-
-    public static DateTime newDate(long year, long month, long day, long hour, long minute, Number second, SourceInformation sourceInformation)
-    {
-        int secondInt;
-        String subsecond = null;
-        if ((second instanceof Integer) || (second instanceof Long) || (second instanceof BigInteger))
-        {
-            // TODO check if the number is too large for an int
-            secondInt = second.intValue();
-        }
-        else if ((second instanceof Float) || (second instanceof Double))
-        {
-            secondInt = second.intValue();
-            String string = BigDecimal.valueOf(second.doubleValue()).toPlainString();
-            int index = string.indexOf('.');
-            subsecond = (index == -1) ? "0" : string.substring(index + 1);
-        }
-        else if (second instanceof BigDecimal)
-        {
-            secondInt = second.intValue();
-            String string = ((BigDecimal)second).toPlainString();
-            int index = string.indexOf('.');
-            if (index != -1)
-            {
-                subsecond = string.substring(index + 1);
-            }
-        }
-        else
-        {
-            throw new PureExecutionException(sourceInformation, "Unhandled number: " + second);
-        }
-        try
-        {
-            return (subsecond == null) ? DateFunctions.newPureDate((int)year, (int)month, (int)day, (int)hour, (int)minute, secondInt) : DateFunctions.newPureDate((int)year, (int)month, (int)day, (int)hour, (int)minute, secondInt, subsecond);
-        }
-        catch (Exception e)
-        {
-            throw new PureExecutionException(sourceInformation, e.getMessage());
-        }
-    }
-
-    public static PureDate adjustDate(PureDate date, long number, Enum unit)
-    {
-        switch (unit._name())
-        {
-            case "YEARS":
-            {
-                return date.addYears((int)number);
-            }
-            case "MONTHS":
-            {
-                return date.addMonths((int)number);
-            }
-            case "WEEKS":
-            {
-                return date.addWeeks((int)number);
-            }
-            case "DAYS":
-            {
-                return date.addDays((int)number);
-            }
-            case "HOURS":
-            {
-                return date.addHours((int)number);
-            }
-            case "MINUTES":
-            {
-                return date.addMinutes((int)number);
-            }
-            case "SECONDS":
-            {
-                return date.addSeconds((int)number);
-            }
-            case "MILLISECONDS":
-            {
-                return date.addMilliseconds((int)number);
-            }
-            case "MICROSECONDS":
-            {
-                return date.addMicroseconds(number);
-            }
-            case "NANOSECONDS":
-            {
-                return date.addNanoseconds(number);
-            }
-            default:
-            {
-                throw new PureExecutionException("Unsupported duration unit: " + unit);
-            }
-        }
-    }
-
-    public static long dateDiff(PureDate date1, PureDate date2, Enum unit)
-    {
-        return date1.dateDifference(date2, unit._name());
-    }
 
     public static String escapeJSON(String str)
     {
         return JSONValue.escape(str);
     }
 
-    public static String currentUserId()
-    {
-        return IdentityManager.getAuthenticatedUserId();
-    }
-
-    public static boolean isOptionSet(String name, ExecutionSupport es)
-    {
-        return ((CompiledExecutionSupport)es).getRuntimeOptions().isOptionSet(name);
-    }
 
     public static Class<?> convertFunctionTypeStringToClass(String type, ClassLoader classLoader)
     {
@@ -2786,10 +1779,7 @@ public class CompiledSupport
         }
     }
 
-    public static String guid()
-    {
-        return UUID.randomUUID().toString();
-    }
+
 
     public static String fullClassName(String className)
     {
@@ -2810,77 +1800,13 @@ public class CompiledSupport
         return classToLoad;
     }
 
-    public static long indexOf(Object instances, Object object)
-    {
-        if (instances == null)
-        {
-            return -1L;
-        }
-        if (!(instances instanceof Iterable))
-        {
-            return instances.equals(object) ? 0L : -1L;
-        }
-        return indexOf((Iterable<?>)instances, object);
-    }
-
-    public static long indexOf(Iterable<?> instances, Object object)
-    {
-        if (instances == null)
-        {
-            return -1L;
-        }
-        if (instances instanceof OrderedIterable)
-        {
-            return ((OrderedIterable<?>)instances).indexOf(object);
-        }
-        if (instances instanceof List)
-        {
-            return ((List<?>)instances).indexOf(object);
-        }
-        long index = 0L;
-        for (Object instance : instances)
-        {
-            if (Objects.equals(instance, object))
-            {
-                return index;
-            }
-            index++;
-        }
-        return -1L;
-    }
 
     public static <T> T notSupportedYet()
     {
         throw new RuntimeException("Not supported yet!");
     }
 
-    public static <T> T removeOverride(T instance)
-    {
-        return (T)((Any)instance)._elementOverrideRemove();
-    }
 
-    public static PureMap put(PureMap pureMap, Object key, Object val)
-    {
-        Map map = pureMap.getMap();
-        MutableMap newOne = map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy(((UnifiedMapWithHashingStrategy)map).hashingStrategy(), map) : new UnifiedMap(map);
-        newOne.put(key, val);
-        return new PureMap(newOne);
-    }
-
-    public static RichIterable values(PureMap map)
-    {
-        return map.getMap().valuesView().toList();
-    }
-
-    public static RichIterable keys(PureMap map)
-    {
-        return map.getMap().keysView().toList();
-    }
-
-    public static String readFile(String path, ExecutionSupport es)
-    {
-        return ((CompiledExecutionSupport)es).getCodeStorage().exists(path) ? ((CompiledExecutionSupport)es).getCodeStorage().getContentAsText(path) : null;
-    }
 
     public static Object executeFunction(CoreInstance functionDefinition, Class<?>[] paramClasses, Object[] params, ExecutionSupport executionSupport)
     {
@@ -3113,63 +2039,5 @@ public class CompiledSupport
         }
     }
 
-    public static String functionDescriptorToId(String functionDescriptor, SourceInformation sourceInformation)
-    {
-        String id;
-        try
-        {
-            id = FunctionDescriptor.functionDescriptorToId(functionDescriptor);
-        }
-        catch (InvalidFunctionDescriptorException e)
-        {
-            throw new PureExecutionException(sourceInformation, "Invalid function descriptor: " + functionDescriptor, e);
-        }
-        return id;
-    }
-
-    public static boolean isValidFunctionDescriptor(String possiblyFunctionDescriptor)
-    {
-        return FunctionDescriptor.isValidFunctionDescriptor(possiblyFunctionDescriptor);
-    }
-
-
-    public static String encrypt(String value, String key)
-    {
-        return performEncryption(value, key);
-    }
-
-    public static String encrypt(Number value, String key)
-    {
-        return performEncryption(value.toString(), key);
-    }
-
-    public static String encrypt(Boolean value, String key)
-    {
-        return performEncryption(value.toString(), key);
-    }
-
-    private static String performEncryption(String value, String key)
-    {
-        try
-        {
-            return new String(AESCipherUtil.encrypt(key, value.getBytes()));
-        }
-        catch (Exception e)
-        {
-            throw new PureExecutionException("Error ciphering value '" + value + "' with key '" + key + "'.");
-        }
-    }
-
-    public static String decrypt(String value, String key)
-    {
-        try
-        {
-            return new String(AESCipherUtil.decrypt(key, value.getBytes()));
-        }
-        catch (Exception e)
-        {
-            throw new PureExecutionException("Error deciphering value '" + value + "' with key '" + key + "'.");
-        }
-    }
 
 }

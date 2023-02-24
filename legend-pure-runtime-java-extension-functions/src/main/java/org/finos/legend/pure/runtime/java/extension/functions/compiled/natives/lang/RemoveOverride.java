@@ -15,11 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.lang;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class RemoveOverride extends AbstractNativeFunctionGeneric
 {
-    public RemoveOverride() {
-        super(getMethod(CompiledSupport.class, "removeOverride"), "removeOverride_T_1__T_1_");
+    public RemoveOverride()
+    {
+        super("FunctionsGen.removeOverride", new Class[]{Object.class}, "removeOverride_T_1__T_1_");
     }
 }

@@ -15,12 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.runtime;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class CurrentUserId extends AbstractNativeFunctionGeneric
 {
     public CurrentUserId()
     {
-        super(getMethod(CompiledSupport.class, "currentUserId"), "currentUserId__String_1_");
+        super("FunctionsGen.currentUserId", new Class[]{}, "currentUserId__String_1_");
     }
 }

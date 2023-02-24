@@ -15,11 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class IndexOf extends AbstractNativeFunctionGeneric
 {
-    public IndexOf() {
-        super(getMethod(CompiledSupport.class, "indexOf", Iterable.class, Object.class), "indexOf_T_MANY__T_1__Integer_1_");
+    public IndexOf()
+    {
+        super("FunctionsGen.indexOf", new Class[]{Iterable.class, Object.class}, "indexOf_T_MANY__T_1__Integer_1_");
     }
 }

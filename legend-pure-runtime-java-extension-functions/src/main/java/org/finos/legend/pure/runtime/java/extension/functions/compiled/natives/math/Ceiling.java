@@ -15,12 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class Ceiling extends AbstractNativeFunctionGeneric
 {
     public Ceiling()
     {
-        super(getMethod(CompiledSupport.class, "ceiling"), "ceiling_Number_1__Integer_1_");
+        super("FunctionsGen.ceiling", new Class[]{Number.class}, "ceiling_Number_1__Integer_1_");
     }
 }

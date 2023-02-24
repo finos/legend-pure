@@ -19,7 +19,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 
 public class ReplaceTreeNode extends AbstractNativeFunctionGeneric
 {
-    public ReplaceTreeNode() {
-        super("Pure.replaceTreeNode", new Class[]{TreeNode.class, TreeNode.class, TreeNode.class}, "replaceTreeNode_TreeNode_1__TreeNode_1__TreeNode_1__TreeNode_1_");
+    public ReplaceTreeNode()
+    {
+        super("FunctionsGen.replaceTreeNode", new Class[]{TreeNode.class, TreeNode.class, TreeNode.class}, "replaceTreeNode_TreeNode_1__TreeNode_1__TreeNode_1__TreeNode_1_");
     }
 }

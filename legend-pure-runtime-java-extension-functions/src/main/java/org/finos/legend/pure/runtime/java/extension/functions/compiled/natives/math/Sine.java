@@ -15,12 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class Sine extends AbstractNativeFunctionGeneric
 {
     public Sine()
     {
-        super(getMethod(CompiledSupport.class, "sin", Number.class),"sin_Number_1__Float_1_");
+        super("FunctionsGen.sin", new Class[]{Number.class}, "sin_Number_1__Float_1_");
     }
 }

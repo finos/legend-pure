@@ -14,9 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support;
 
-import io.opentracing.Scope;
-import io.opentracing.Span;
-import io.opentracing.util.GlobalTracer;
 import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.HashingStrategy;
@@ -34,17 +31,12 @@ import org.eclipse.collections.impl.block.procedure.checked.CheckedProcedure;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
-import org.eclipse.collections.impl.map.strategy.mutable.UnifiedMapWithHashingStrategy;
 import org.eclipse.collections.impl.set.strategy.mutable.UnifiedSetWithHashingStrategy;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.StringIterate;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.TreeNode;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.ModelElementAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Tag;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
@@ -81,8 +73,6 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 import org.finos.legend.pure.runtime.java.compiled.metadata.JavaMethodWithParamsSharedPureFunction;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataAccessor;
-import org.finos.legend.pure.runtime.java.shared.hash.HashType;
-import org.finos.legend.pure.runtime.java.shared.hash.HashingUtil;
 import org.json.simple.JSONObject;
 
 import java.lang.Class;
@@ -90,9 +80,6 @@ import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class Pure
 {
@@ -123,29 +110,6 @@ public class Pure
         return multiplicity._upperBound() != null && multiplicity._upperBound()._value() != null && multiplicity._upperBound()._value() == 1L;
     }
 
-    private static final ExecutorService traceAsyncExecutor = Executors.newCachedThreadPool(new ThreadFactory()
-    {
-        private final ThreadGroup group = System.getSecurityManager() == null
-                ? Thread.currentThread().getThreadGroup()
-                : System.getSecurityManager().getThreadGroup();
-        private final AtomicInteger threadNumber = new AtomicInteger(1);
-
-        @Override
-        public Thread newThread(Runnable r)
-        {
-            Thread thread = new Thread(this.group, r, "trace-async-executor-thread-" + this.threadNumber.getAndIncrement(), 0);
-            if (!thread.isDaemon())
-            {
-                thread.setDaemon(true);
-            }
-            if (thread.getPriority() != Thread.NORM_PRIORITY)
-            {
-                thread.setPriority(Thread.NORM_PRIORITY);
-            }
-            return thread;
-        }
-    });
-
     public static CoreInstance getProperty(String className, String propertyName, MetadataAccessor ma)
     {
         if (propertyName == null)
@@ -168,52 +132,6 @@ public class Pure
             }
         }
         throw new PureExecutionException("Can't find the property '" + propertyName + "' in the class '" + className + "'");
-    }
-
-    public static Object alloyTest(ExecutionSupport
-                                           es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function
-                                           alloyTest, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function regular, Bridge bridge)
-    {
-        String host = System.getProperty("alloy.test.server.host");
-        long port = System.getProperty("alloy.test.server.port") == null ? -1 : Long.parseLong(System.getProperty("alloy.test.server.port"));
-        if (host != null && port == -1)
-        {
-            throw new PureExecutionException("The system variable 'alloy.test.server.host' is set to '" + host + "' however 'alloy.test.server.port' has not been set!");
-        }
-        String clientVersion = System.getProperty("alloy.test.clientVersion");
-        String serverVersion = System.getProperty("alloy.test.serverVersion");
-        return host != null ? evaluate(es, alloyTest, bridge, clientVersion, serverVersion, host, port) : evaluate(es, regular, bridge);
-    }
-
-    public static Object legendTest(ExecutionSupport
-                                            es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function
-                                            alloyTest, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function regular, Bridge bridge)
-    {
-        String host = System.getProperty("legend.test.server.host");
-        long port = System.getProperty("legend.test.server.port") == null ? -1 : Long.parseLong(System.getProperty("legend.test.server.port"));
-        String clientVersion = System.getProperty("legend.test.clientVersion");
-        String serverVersion = System.getProperty("legend.test.serverVersion");
-        String serializationKind = System.getProperty("legend.test.serializationKind");
-        if (host != null)
-        {
-            if (port == -1)
-            {
-                throw new PureExecutionException("The system variable 'legend.test.server.host' is set to '" + host + "' however 'legend.test.server.port' has not been set!");
-            }
-            if (serializationKind == null || !(serializationKind.equals("text") || serializationKind.equals("json")))
-            {
-                serializationKind = "json";
-            }
-            if (clientVersion == null)
-            {
-                throw new PureExecutionException("The system variable 'legend.test.clientVersion' should be set");
-            }
-            if (serverVersion == null)
-            {
-                throw new PureExecutionException("The system variable 'legend.test.serverVersion' should be set");
-            }
-        }
-        return host != null ? evaluate(es, alloyTest, bridge, clientVersion, serverVersion, serializationKind, host, port) : evaluate(es, regular, bridge);
     }
 
     public static <E> E getEnumByName(Enumeration<E> enumeration, String name)
@@ -317,31 +235,6 @@ public class Pure
         }
     }
 
-    public static RichIterable<Type> getGeneralizations(Type type, ExecutionSupport es)
-    {
-        MutableList<Type> generalizations = FastList.newList();
-        for (CoreInstance superType : org.finos.legend.pure.m3.navigation.type.Type.getGeneralizationResolutionOrder(type, ((CompiledExecutionSupport) es).getProcessorSupport()))
-        {
-            generalizations.add((Type) superType);
-        }
-        return generalizations;
-    }
-
-    public static Object rawEvalProperty(Property property, Object value, SourceInformation sourceInformation)
-    {
-        try
-        {
-            return value.getClass().getField("_" + property._name()).get(value);
-        }
-        catch (NoSuchFieldException e)
-        {
-            throw new PureExecutionException(sourceInformation, "Can't find the property '" + property._name() + "' in the class " + CompiledSupport.getPureClassName(value));
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
 
     public static SharedPureFunction<?> getSharedPureFunction
             (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge
@@ -592,11 +485,6 @@ public class Pure
         }
     }
 
-    public static Object get(RichIterable<?> list, String id)
-    {
-        return list.detect(e -> id.equals(((CoreInstance) e).getName()));
-    }
-
     public static org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class<?> genericTypeClass
             (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType)
     {
@@ -613,15 +501,6 @@ public class Pure
         return (obj instanceof Any) ? ((Any) obj).getName() : String.valueOf(obj);
     }
 
-    public static Tag tag(Profile profile, String tag)
-    {
-        return profile._p_tags().detect(t -> tag.equals(t._value()));
-    }
-
-    public static Stereotype stereotype(Profile profile, String stereotype)
-    {
-        return profile._p_stereotypes().detect(st -> stereotype.equals(st._value()));
-    }
 
     public static PureMap getOpenVariables
             (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge bridge)
@@ -747,36 +626,6 @@ public class Pure
         });
     }
 
-    public static TreeNode replaceTreeNode(TreeNode instance, TreeNode targetNode, TreeNode subTree)
-    {
-        if (instance == targetNode)
-        {
-            return subTree;
-        }
-        TreeNode result = instance.copy();
-        replaceTreeNodeCopy(instance, result, targetNode, subTree);
-        return result;
-    }
-
-    public static void replaceTreeNodeCopy(TreeNode instance, TreeNode result, TreeNode targetNode, TreeNode
-            subTree)
-    {
-        result._childrenData(FastList.newList());
-
-        for (TreeNode child : instance._childrenData())
-        {
-            if (child == targetNode)
-            {
-                result._childrenDataAdd(subTree);
-            }
-            else
-            {
-                TreeNode newCopy = child.copy();
-                replaceTreeNodeCopy(child, newCopy, targetNode, subTree);
-                result._childrenDataAdd(newCopy);
-            }
-        }
-    }
 
     public static boolean instanceOf(Object obj, Type type, ExecutionSupport es)
     {
@@ -987,52 +836,6 @@ public class Pure
         return theClass.equals(org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Map.class) ? PureMap.class : theClass;
     }
 
-    public static boolean subTypeOf(Type subType, Type superType, ExecutionSupport es)
-    {
-        if (subType.equals(superType))
-        {
-            return true;
-        }
-
-        // NOTE: ClassNotFoundException can occur when we use subTypeOf() in engine where some
-        // Java classes are not available during plan generation. There is a potentially
-        // less performant alternative which is to use type_subTypeOf() as this will use the
-        // metamodel graph instead of Java classes to test subtype; but this alternative is more reliable.
-        // As such, to be defensive, we should fallback to the latter when the former fails with ClassNotFoundException
-        // See https://github.com/finos/legend-pure/issues/324
-        Class<?> theSubTypeClass;
-        try
-        {
-            theSubTypeClass = pureTypeToJavaClass(subType, es);
-        }
-        catch (Exception e)
-        {
-            return ((CompiledExecutionSupport) es).getProcessorSupport().type_subTypeOf(subType, superType);
-        }
-        if (theSubTypeClass == Nil.class)
-        {
-            return true;
-        }
-
-        Class<?> theSuperTypeClass;
-        try
-        {
-            theSuperTypeClass = pureTypeToJavaClass(superType, es);
-        }
-        catch (Exception e)
-        {
-            return ((CompiledExecutionSupport) es).getProcessorSupport().type_subTypeOf(subType, superType);
-        }
-        return (theSuperTypeClass == Any.class) || theSuperTypeClass.isAssignableFrom(theSubTypeClass);
-    }
-
-    public static Object dynamicMatchWith(Object
-                                                  obj, RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>>
-                                                  funcs, Object var, Bridge bridge, ExecutionSupport es)
-    {
-        return dynamicMatch(obj, funcs, var, true, bridge, es);
-    }
-
     public static Object dynamicMatch(Object
                                               obj, RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>>
                                               funcs, Bridge bridge, ExecutionSupport es)
@@ -1136,156 +939,6 @@ public class Pure
         }
         return false;
     }
-
-    public static PureMap newMap(RichIterable pairs, ExecutionSupport es)
-    {
-        MutableMap<Object, Object> map = UnifiedMapWithHashingStrategy.newMap(PureEqualsHashingStrategy.HASHING_STRATEGY);
-        for (Object po : pairs)
-        {
-            org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair p = (org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair) po;
-            map.put(p._first(), p._second());
-        }
-        return new PureMap(map);
-    }
-
-    public static PureMap newMap(org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair
-                                         p, ExecutionSupport es)
-    {
-        MutableMap<Object, Object> map = UnifiedMapWithHashingStrategy.newMap(PureEqualsHashingStrategy.HASHING_STRATEGY);
-        if (p != null)
-        {
-            map.put(p._first(), p._second());
-        }
-        return new PureMap(map);
-    }
-
-    public static PureMap newMap(RichIterable pairs, Property property, ExecutionSupport es)
-    {
-        MutableMap<Object, Object> map = UnifiedMapWithHashingStrategy.newMap(new PropertyHashingStrategy(property, es));
-        for (Object po : pairs)
-        {
-            org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair p = (org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair) po;
-            map.put(p._first(), p._second());
-        }
-        return new PureMap(map);
-    }
-
-    public static PureMap newMap(org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair
-                                         pair, Property property, ExecutionSupport es)
-    {
-        MutableMap<Object, Object> map = UnifiedMapWithHashingStrategy.newMap(new PropertyHashingStrategy(property, es));
-        if (pair != null)
-        {
-            map.put(pair._first(), pair._second());
-        }
-        return new PureMap(map);
-    }
-
-    public static PureMap newMap(RichIterable pairs, RichIterable properties, Bridge bridge, ExecutionSupport es)
-    {
-        MutableMap<Object, Object> map = UnifiedMapWithHashingStrategy.newMap(new PropertyHashingStrategy(properties, bridge, es));
-        for (Object po : pairs)
-        {
-            org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair p = (org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair) po;
-            map.put(p._first(), p._second());
-        }
-        return new PureMap(map);
-    }
-
-    public static PureMap putAllPairs(PureMap pureMap, RichIterable pairs)
-    {
-        Map map = pureMap.getMap();
-        MutableMap newOne = map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : new UnifiedMap(map);
-        for (Object po : pairs)
-        {
-            org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair p = (org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair) po;
-            newOne.put(p._first(), p._second());
-        }
-        return new PureMap(newOne);
-    }
-
-    public static PureMap putAllPairs(PureMap
-                                              pureMap, org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair pair)
-    {
-        Map map = pureMap.getMap();
-        MutableMap newOne = map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : new UnifiedMap(map);
-        newOne.put(pair._first(), pair._second());
-        return new PureMap(newOne);
-    }
-
-    public static PureMap putAllMaps(PureMap pureMap, PureMap other)
-    {
-        Map map = pureMap.getMap();
-        MutableMap newOne = map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : new UnifiedMap(map);
-        newOne.putAll(other.getMap());
-        return new PureMap(newOne);
-    }
-
-    public static PureMap replaceAll(PureMap pureMap, RichIterable pairs)
-    {
-        Map map = pureMap.getMap();
-        MutableMap newOne = map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy(((UnifiedMapWithHashingStrategy) map).hashingStrategy()) : new UnifiedMap();
-        for (Object po : pairs)
-        {
-            org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair p = (org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair) po;
-            newOne.put(p._first(), p._second());
-        }
-        return new PureMap(newOne);
-    }
-
-    public static PureMap replaceAll(PureMap
-                                             pureMap, org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair pair)
-    {
-        Map map = pureMap.getMap();
-        MutableMap newOne = map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy(((UnifiedMapWithHashingStrategy) map).hashingStrategy()) : new UnifiedMap();
-        newOne.put(pair._first(), pair._second());
-        return new PureMap(newOne);
-    }
-
-private static class PropertyHashingStrategy implements HashingStrategy
-{
-    RichIterable<Property> properties;
-    ExecutionSupport es;
-    Bridge bridge;
-
-    PropertyHashingStrategy(RichIterable<Property> properties, Bridge bridge, ExecutionSupport es)
-    {
-        this.properties = properties;
-        this.bridge = bridge;
-        this.es = es;
-    }
-
-    PropertyHashingStrategy(Property property, ExecutionSupport es)
-    {
-        this.properties = FastList.newListWith(property);
-        this.es = es;
-    }
-
-    @Override
-    public int computeHashCode(Object o)
-    {
-        int hashCode = 0;
-        for (Property value : this.properties)
-        {
-            hashCode = (31 * hashCode) + CompiledSupport.safeHashCode(evaluate(this.es, value, bridge, o));
-        }
-        return hashCode;
-    }
-
-    @Override
-    public boolean equals(Object o, Object e1)
-    {
-        for (Property value : this.properties)
-        {
-            if (!evaluate(this.es, value, bridge, o).equals(evaluate(this.es, value, bridge, e1)))
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
-}
 
     public static Object reactivate(final ValueSpecification valueSpecification,
                                     final PureMap lambdaOpenVariablesMap,
@@ -1407,86 +1060,4 @@ private static class PropertyHashingStrategy implements HashingStrategy
         return typeFromClassMetaData;
     }
 
-    public static String hash(String text, Object hashTypeObject)
-    {
-        Enum hashTypeEnum = (Enum) hashTypeObject;
-        HashType hashType = HashType.valueOf(hashTypeEnum._name());
-
-        return HashingUtil.hash(text, hashType);
-    }
-
-    public static Object traceSpan(final ExecutionSupport es,
-                                   final org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function function,
-                                   final String operationName,
-                                   final org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function funcToGetTags,
-                                   final boolean tagsCritical,
-                                   Bridge bridge)
-    {
-        if (!GlobalTracer.isRegistered())
-        {
-            return evaluate(es, function, bridge, Lists.mutable.empty());
-        }
-
-        Span span = GlobalTracer.get().buildSpan(operationName).start();
-        try (Scope scope = GlobalTracer.get().scopeManager().activate(span))
-        {
-            if (funcToGetTags != null)
-            {
-                try
-                {
-                    Future<?> future = traceAsyncExecutor.submit(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            try (Scope scope = GlobalTracer.get().scopeManager().activate(span))
-                            {
-                                MutableMap<?, ?> tags = ((PureMap) evaluate(es, funcToGetTags, bridge, Lists.mutable.empty())).getMap();
-                                for (Entry entry : tags.entrySet())
-                                {
-                                    String tag = (String) entry.getKey();
-                                    String value = (String) entry.getValue();
-                                    if (span != null)
-                                    {
-                                        span.setTag(tag, value);
-                                    }
-                                }
-                            }
-                        }
-                    });
-                    future.get(60, TimeUnit.SECONDS);
-                }
-                catch (TimeoutException e)
-                {
-                    if (span != null)
-                    {
-                        span.setTag("Exception", String.format("Timeout received before tags could be resolved"));
-                    }
-                }
-                catch (InterruptedException e)
-                {
-                    Thread.currentThread().interrupt();
-                }
-                catch (Exception e)
-                {
-                    if (tagsCritical)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                    if (span != null)
-                    {
-                        span.setTag("Exception", String.format("Unable to resolve tags - [%s]", e.getMessage()));
-                    }
-                }
-            }
-            return evaluate(es, function, bridge, Lists.mutable.empty());
-        }
-        finally
-        {
-            if (span != null)
-            {
-                span.finish();
-            }
-        }
-    }
 }

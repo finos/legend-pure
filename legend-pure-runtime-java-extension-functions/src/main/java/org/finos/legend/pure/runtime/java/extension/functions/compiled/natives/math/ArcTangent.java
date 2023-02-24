@@ -15,12 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class ArcTangent extends AbstractNativeFunctionGeneric
 {
     public ArcTangent()
     {
-        super(getMethod(CompiledSupport.class, "atan", Number.class),"atan_Number_1__Float_1_");
+        super("FunctionsGen.atan", new Class[]{Number.class}, "atan_Number_1__Float_1_");
     }
 }

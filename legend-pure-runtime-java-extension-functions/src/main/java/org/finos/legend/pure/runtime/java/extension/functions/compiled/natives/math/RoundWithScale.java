@@ -15,12 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class RoundWithScale extends AbstractNativeFunctionGeneric
 {
     public RoundWithScale()
     {
-        super(getMethod(CompiledSupport.class, "round", Number.class, long.class), "round_Decimal_1__Integer_1__Decimal_1_", "round_Float_1__Integer_1__Float_1_");
+        super("FunctionsGen.round", new Class[]{Number.class, long.class}, "round_Decimal_1__Integer_1__Decimal_1_", "round_Float_1__Integer_1__Float_1_");
     }
 }

@@ -15,11 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class DecodeBase64 extends AbstractNativeFunctionGeneric
 {
-    public DecodeBase64() {
-        super(getMethod(CompiledSupport.class, "decodeBase64", String.class), "decodeBase64_String_1__String_1_");
+    public DecodeBase64()
+    {
+        super("FunctionsGen.decodeBase64", new Class[]{String.class}, "decodeBase64_String_1__String_1_");
     }
 }

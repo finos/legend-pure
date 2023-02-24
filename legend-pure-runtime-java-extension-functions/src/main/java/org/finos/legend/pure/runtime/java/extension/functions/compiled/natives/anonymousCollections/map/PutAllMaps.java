@@ -21,6 +21,6 @@ public class PutAllMaps extends AbstractNativeFunctionGeneric
 {
     public PutAllMaps()
     {
-        super("Pure.putAllMaps", new Class[]{PureMap.class, PureMap.class}, "putAll_Map_1__Map_1__Map_1_");
+        super("FunctionsGen.putAllMaps", new Class[]{PureMap.class, PureMap.class}, "putAll_Map_1__Map_1__Map_1_");
     }
 }

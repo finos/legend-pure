@@ -27,7 +27,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.Ty
 public class Zip extends AbstractNativeFunctionGeneric
 {
     public Zip() {
-        super("CoreGen.zip", new Class[]{Object.class, Object.class}, "zip_T_MANY__U_MANY__Pair_MANY_");
+        super("FunctionsGen.zip", new Class[]{Object.class, Object.class}, "zip_T_MANY__U_MANY__Pair_MANY_");
     }
 
     @Override
@@ -43,7 +43,7 @@ public class Zip extends AbstractNativeFunctionGeneric
         String param2 = transformedParams.get(1);
         param2 = castToIterableIfParamIsNull(param2, param2VS, processorSupport);
 
-        return "CoreGen.zip(" + param1 + ", " + param2 + ")";
+        return "FunctionsGen.zip(" + param1 + ", " + param2 + ")";
     }
 
     private static String castToIterableIfParamIsNull(String paramStr, CoreInstance param, ProcessorSupport processorSupport)

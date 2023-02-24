@@ -15,12 +15,12 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.SourceInformation;
 
 public class Chunk extends AbstractNativeFunctionGeneric
 {
     public Chunk()
     {
-        super(getMethod(CompiledSupport.class, "chunk"), true, false, false, "chunk_String_1__Integer_1__String_MANY_");
+        super("FunctionsGen.chunk", new Class[]{String.class, Long.class, SourceInformation.class}, true, false, false, "chunk_String_1__Integer_1__String_MANY_");
     }
 }

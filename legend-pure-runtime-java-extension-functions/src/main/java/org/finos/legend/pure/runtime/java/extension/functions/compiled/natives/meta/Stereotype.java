@@ -21,6 +21,6 @@ public class Stereotype extends AbstractNativeFunctionGeneric
 {
     public Stereotype()
     {
-        super("Pure.stereotype", new Class[]{Profile.class, String.class}, "stereotype_Profile_1__String_1__Stereotype_1_");
+        super("FunctionsGen.stereotype", new Class[]{Profile.class, String.class}, "stereotype_Profile_1__String_1__Stereotype_1_");
     }
 }

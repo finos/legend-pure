@@ -15,12 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.date;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class Today extends AbstractNativeFunctionGeneric
 {
     public Today()
     {
-        super(getMethod(CompiledSupport.class, "today"), "today__StrictDate_1_");
+        super("FunctionsGen.today", new Class[]{}, "today__StrictDate_1_");
     }
 }

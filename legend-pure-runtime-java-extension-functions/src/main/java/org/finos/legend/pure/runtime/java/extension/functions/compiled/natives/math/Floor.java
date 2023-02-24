@@ -15,12 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class Floor extends AbstractNativeFunctionGeneric
 {
     public Floor()
     {
-        super(getMethod(CompiledSupport.class, "floor"),"floor_Number_1__Integer_1_");
+        super("FunctionsGen.floor", new Class[]{Number.class}, "floor_Number_1__Integer_1_");
     }
 }

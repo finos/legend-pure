@@ -15,12 +15,12 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.SourceInformation;
 
 public class Rem extends AbstractNativeFunctionGeneric
 {
     public Rem()
     {
-        super(getMethod(CompiledSupport.class, "rem"), true, false, false, "rem_Number_1__Number_1__Number_1_");
+        super("FunctionsGen.rem", new Class[]{Number.class, Number.class, SourceInformation.class}, true, false, false, "rem_Number_1__Number_1__Number_1_");
     }
 }

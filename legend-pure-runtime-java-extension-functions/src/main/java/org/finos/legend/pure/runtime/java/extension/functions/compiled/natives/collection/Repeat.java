@@ -15,11 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class Repeat extends AbstractNativeFunctionGeneric
 {
-    public Repeat() {
-        super(getMethod(CompiledSupport.class, "repeat"), "repeat_T_1__Integer_1__T_MANY_");
+    public Repeat()
+    {
+        super("FunctionsGen.repeat", new Class[]{Object.class, Long.class}, "repeat_T_1__Integer_1__T_MANY_");
     }
 }

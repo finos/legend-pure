@@ -21,14 +21,15 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
+
+import java.util.function.Predicate;
 
 public class Exists extends AbstractNativeFunctionGeneric
 {
     public Exists()
     {
-        super(getMethod(CompiledSupport.class, "exists"), "exists_T_MANY__Function_1__Boolean_1_");
+        super("FunctionsGen.exists", new Class[]{Object.class, Predicate.class}, "exists_T_MANY__Function_1__Boolean_1_");
     }
 
     @Override
@@ -43,11 +44,12 @@ public class Exists extends AbstractNativeFunctionGeneric
         CoreInstance param = functionType.getValueForMetaPropertyToMany(M3Properties.parameters).getFirst();
         String type = TypeProcessor.typeToJavaObjectSingle(Instance.getValueForMetaPropertyToOneResolved(param, M3Properties.genericType, processorSupport), true, processorSupport);
 
-        return "null".equals(list) ? "false" : "CompiledSupport.exists(" + list + ", new DefendedPredicate<" + type + ">(){private final PureFunction1<" + type + ",Boolean> func = (PureFunction1<" + type + ",Boolean>)CoreGen.getSharedPureFunction(" + transformedParams.get(1) + ",es); public boolean accept(" + type + " param){return func.value(param, es);}})\n";
+        return "null".equals(list) ? "false" : "FunctionsGen.exists(" + list + ", new DefendedPredicate<" + type + ">(){private final PureFunction1<" + type + ",Boolean> func = (PureFunction1<" + type + ",Boolean>)CoreGen.getSharedPureFunction(" + transformedParams.get(1) + ",es); public boolean accept(" + type + " param){return func.value(param, es);}})\n";
     }
 
     @Override
-    public String buildBody() {
+    public String buildBody()
+    {
 
         return "new DefendedPureFunction2<Object, Object, Boolean>()\n" +
                 "        {\n" +
@@ -63,7 +65,7 @@ public class Exists extends AbstractNativeFunctionGeneric
                 "                               return func.value(param, es);\n" +
                 "                           }\n" +
                 "                     };\n" +
-                "                return CompiledSupport.exists(t, predicate);\n" +
+                "                return FunctionsGen.exists(t, predicate);\n" +
                 "            }\n" +
                 "        }";
     }

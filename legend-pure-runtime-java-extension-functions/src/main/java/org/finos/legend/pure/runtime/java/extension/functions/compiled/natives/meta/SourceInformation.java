@@ -30,7 +30,7 @@ public class SourceInformation extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return "((" + FullJavaPaths.SourceInformation_Impl + ")CompiledSupport.buildSourceInformation(" + transformedParams.get(0) + ", ((CompiledExecutionSupport)es).getClassLoader()))";
+        return "((" + FullJavaPaths.SourceInformation_Impl + ")FunctionsGen.buildSourceInformation(" + transformedParams.get(0) + ", ((CompiledExecutionSupport)es).getClassLoader()))";
     }
 
     @Override
@@ -41,7 +41,7 @@ public class SourceInformation extends AbstractNative
                 "            @Override\n" +
                 "            public Object value(Object any, ExecutionSupport es)\n" +
                 "            {\n" +
-                "                return (" + FullJavaPaths.SourceInformation_Impl + ") CompiledSupport.buildSourceInformation(any, ((CompiledExecutionSupport)es).getClassLoader());\n" +
+                "                return (" + FullJavaPaths.SourceInformation_Impl + ") FunctionsGen.buildSourceInformation(any, ((CompiledExecutionSupport)es).getClassLoader());\n" +
                 "            }\n" +
                 "        }";
     }

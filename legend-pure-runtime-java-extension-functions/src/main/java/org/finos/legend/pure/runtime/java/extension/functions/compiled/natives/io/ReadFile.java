@@ -14,12 +14,13 @@
 
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.io;
 
+import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class ReadFile extends AbstractNativeFunctionGeneric
 {
-    public ReadFile() {
-        super(getMethod(CompiledSupport.class, "readFile"), false, true, false, "readFile_String_1__String_$0_1$_");
+    public ReadFile()
+    {
+        super("FunctionsGen.readFile", new Class[]{String.class, ExecutionSupport.class}, false, true, false, "readFile_String_1__String_$0_1$_");
     }
 }

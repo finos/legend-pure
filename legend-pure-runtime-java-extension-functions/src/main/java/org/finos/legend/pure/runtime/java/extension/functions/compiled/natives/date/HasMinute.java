@@ -14,12 +14,13 @@
 
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.date;
 
+import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 public class HasMinute extends AbstractNativeFunctionGeneric
 {
-    public HasMinute() {
-        super(getMethod(CompiledSupport.class, "hasMinute"), "hasMinute_Date_1__Boolean_1_");
+    public HasMinute()
+    {
+        super("FunctionsGen.hasMinute", new Class[]{PureDate.class}, "hasMinute_Date_1__Boolean_1_");
     }
 }
