@@ -158,17 +158,6 @@ public class MemoryFileManager extends ForwardingJavaFileManager<StandardJavaFil
         return source;
     }
 
-    ClassJavaSource removeClassJavaSourceByName(String name)
-    {
-        ClassJavaSource source = this.codeByName.remove(name);
-        if (source != null)
-        {
-            String pkg = getPackageFromClassName(name);
-            this.codeByPackage.remove(pkg, source);
-        }
-        return source;
-    }
-
     RichIterable<ClassJavaSource> getAllClassJavaSources(boolean includeClassesFromParent)
     {
         if (!includeClassesFromParent || (this.parent == null))
