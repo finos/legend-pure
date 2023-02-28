@@ -15,6 +15,8 @@
 package org.finos.legend.pure.runtime.java.compiled.extension;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.api.tuple.Pair;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
@@ -34,19 +36,40 @@ import java.util.function.Function;
 
 public interface CompiledExtension
 {
-    List<StringJavaSource> getExtraJavaSources();
+    default List<StringJavaSource> getExtraJavaSources()
+    {
+        return Lists.fixedSize.empty();
+    }
 
-    List<Native> getExtraNatives();
+    default List<Native> getExtraNatives()
+    {
+        return Lists.fixedSize.empty();
+    }
 
-    List<Procedure3<CoreInstance, JavaSourceCodeGenerator, ProcessorContext>> getExtraPackageableElementProcessors();
+    default List<Procedure3<CoreInstance, JavaSourceCodeGenerator, ProcessorContext>> getExtraPackageableElementProcessors()
+    {
+        return Lists.fixedSize.empty();
+    }
 
-    List<Procedure4<CoreInstance, CoreInstance, ProcessorContext, ProcessorSupport>> getExtraClassMappingProcessors();
+    default List<Procedure4<CoreInstance, CoreInstance, ProcessorContext, ProcessorSupport>> getExtraClassMappingProcessors()
+    {
+        return Lists.fixedSize.empty();
+    }
 
-    RichIterable<? extends Pair<String, Function<? super CoreInstance, String>>> getExtraIdBuilders(ProcessorSupport processorSupport);
+    default RichIterable<? extends Pair<String, Function<? super CoreInstance, String>>> getExtraIdBuilders(ProcessorSupport processorSupport)
+    {
+        return Lists.immutable.empty();
+    }
 
-    SetIterable<String> getExtraCorePath();
+    default SetIterable<String> getExtraCorePath()
+    {
+        return Sets.immutable.empty();
+    }
 
-    PureFunction1<Object, Object> getExtraFunctionEvaluation(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge bridge, ExecutionSupport es);
+    default PureFunction1<Object, Object> getExtraFunctionEvaluation(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge bridge, ExecutionSupport es)
+    {
+        return null;
+    }
 
     String getRelatedRepository();
 }

@@ -14,40 +14,28 @@
 
 package org.finos.legend.pure.runtime.java.compiled.extension;
 
-import org.apache.commons.lang3.concurrent.ConcurrentException;
-import org.apache.commons.lang3.concurrent.LazyInitializer;
-import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function0;
-import org.eclipse.collections.api.block.procedure.Procedure;
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Sets;
-import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.api.tuple.Pair;
-import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaSourceCodeGenerator;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.Native;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Bridge;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.Procedure3;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.Procedure4;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureFunction1;
 
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.Supplier;
 
 public abstract class BaseCompiledExtension implements CompiledExtension
 {
     private final List<StringJavaSource> extraJavaSources;
-    private final Function0<List<Native>> extraNatives;
+    private final Supplier<? extends List<Native>> extraNatives;
     private final List<Procedure3<CoreInstance, JavaSourceCodeGenerator, ProcessorContext>> extraPackageableElementProcessors;
     private final List<Procedure4<CoreInstance, CoreInstance, ProcessorContext, ProcessorSupport>> extraClassMappingProcessors;
 
     private final String relatedRepository;
 
-    protected BaseCompiledExtension(String relatedRepository, Function0<List<Native>> extraNatives, List<StringJavaSource> extraJavaSources, List<Procedure3<CoreInstance, JavaSourceCodeGenerator, ProcessorContext>> extraPackageableElementProcessors, List<Procedure4<CoreInstance, CoreInstance, ProcessorContext, ProcessorSupport>> extraClassMappingProcessors)
+    protected BaseCompiledExtension(String relatedRepository, Supplier<? extends List<Native>> extraNatives, List<StringJavaSource> extraJavaSources, List<Procedure3<CoreInstance, JavaSourceCodeGenerator, ProcessorContext>> extraPackageableElementProcessors, List<Procedure4<CoreInstance, CoreInstance, ProcessorContext, ProcessorSupport>> extraClassMappingProcessors)
     {
         this.extraNatives = extraNatives;
         this.extraJavaSources = extraJavaSources;
@@ -56,48 +44,28 @@ public abstract class BaseCompiledExtension implements CompiledExtension
         this.relatedRepository = relatedRepository;
     }
 
+    @Override
     public List<StringJavaSource> getExtraJavaSources()
     {
         return this.extraJavaSources;
     }
 
+    @Override
     public List<Native> getExtraNatives()
     {
-        try
-        {
-            return this.extraNatives.value();
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-
+        return this.extraNatives.get();
     }
 
+    @Override
     public List<Procedure3<CoreInstance, JavaSourceCodeGenerator, ProcessorContext>> getExtraPackageableElementProcessors()
     {
         return this.extraPackageableElementProcessors;
     }
 
+    @Override
     public List<Procedure4<CoreInstance, CoreInstance, ProcessorContext, ProcessorSupport>> getExtraClassMappingProcessors()
     {
         return this.extraClassMappingProcessors;
-    }
-
-    public RichIterable<? extends Pair<String, Function<? super CoreInstance, String>>> getExtraIdBuilders(ProcessorSupport processorSupport)
-    {
-        return Lists.mutable.empty();
-    }
-
-    @Override
-    public SetIterable<String> getExtraCorePath()
-    {
-        return Sets.mutable.empty();
-    }
-
-    public PureFunction1<Object, Object> getExtraFunctionEvaluation(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge bridge, ExecutionSupport es)
-    {
-        return null;
     }
 
     @Override
