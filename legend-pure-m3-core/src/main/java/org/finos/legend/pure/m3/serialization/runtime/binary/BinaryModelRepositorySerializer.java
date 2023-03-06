@@ -21,7 +21,6 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.Version;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.serialization.Writer;
@@ -98,7 +97,7 @@ public class BinaryModelRepositorySerializer
         {
             return this.modelVersion;
         }
-        if ((this.repositoryName == null) || PlatformCodeRepository.NAME.equals(this.repositoryName))
+        if ((this.repositoryName == null) || "platform".equals(this.repositoryName))
         {
             return null;
         }

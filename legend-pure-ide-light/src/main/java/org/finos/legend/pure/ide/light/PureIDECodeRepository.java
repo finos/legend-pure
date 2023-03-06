@@ -16,7 +16,6 @@ package org.finos.legend.pure.ide.light;
 
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 
 import java.util.regex.Pattern;
 

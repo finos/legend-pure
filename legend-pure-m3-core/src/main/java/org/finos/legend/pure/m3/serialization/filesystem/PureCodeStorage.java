@@ -991,9 +991,9 @@ public class PureCodeStorage implements MutableCodeStorage
             }
         }
         // platform is required, so add it if it is missing
-        if (!index.containsKey(PlatformCodeRepository.NAME))
+        if (!index.containsKey("platform"))
         {
-            index.put(PlatformCodeRepository.NAME, new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()));
+            index.put("platform", new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()));
         }
         return index.toImmutable();
     }

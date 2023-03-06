@@ -19,13 +19,12 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Maps;
 import org.finos.legend.pure.m2.relational.AbstractPureRelationalTestWithCoreCompiled;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
-import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
-import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -73,7 +72,7 @@ public class TestView extends AbstractPureRelationalTestWithCoreCompiled
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
         MutableList<CodeRepository> repositories = org.eclipse.collections.api.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
-        repositories.add(GenericCodeRepository.build("test", "((test)|(meta))(::.*)?", PlatformCodeRepository.NAME));
+        repositories.add(GenericCodeRepository.build("test", "((test)|(meta))(::.*)?", "platform"));
         return repositories;
     }
 

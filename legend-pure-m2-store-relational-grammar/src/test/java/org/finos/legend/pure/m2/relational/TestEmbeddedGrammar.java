@@ -24,8 +24,6 @@ import org.finos.legend.pure.m2.dsl.mapping.M2MappingProperties;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.MappingParser;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.OperationParser;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.RelationalParser;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
-import org.finos.legend.pure.m3.tests.CompiledStateIntegrityTestTools;
 import org.finos.legend.pure.m3.compiler.validation.ValidationType;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
@@ -34,10 +32,11 @@ import org.finos.legend.pure.m3.serialization.Loader.LoaderException;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
 import org.finos.legend.pure.m3.statelistener.VoidM3M4StateListener;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.CompiledStateIntegrityTestTools;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
@@ -62,7 +61,7 @@ public class TestEmbeddedGrammar extends AbstractPureRelationalTestWithCoreCompi
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
         MutableList<CodeRepository> repositories = Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
-        repositories.add(GenericCodeRepository.build("test", "((test)|(meta))(::.*)?", PlatformCodeRepository.NAME));
+        repositories.add(GenericCodeRepository.build("test", "((test)|(meta))(::.*)?", "platform"));
         return repositories;
     }
 

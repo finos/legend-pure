@@ -40,12 +40,7 @@ import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
 import org.finos.legend.pure.m3.navigation.function.InvalidFunctionDescriptorException;
 import org.finos.legend.pure.m3.serialization.PureRuntimeEventHandler;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNodeStatus;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.*;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.UpdateReport;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
@@ -887,7 +882,7 @@ public class PureRuntime
             throw new IllegalArgumentException("Not a " + CodeStorage.PURE_FILE_EXTENSION + " file: " + path);
         }
         MutableCodeStorage codeStorage = getCodeStorage();
-        boolean immutable = this.forceImmutable || PlatformCodeRepository.NAME.equals(codeStorage.getRepoName(path)); // TODO do something smarter here
+        boolean immutable = this.forceImmutable || "platform".equals(codeStorage.getRepoName(path)); // TODO do something smarter here
         if (Source.isInMemory(path))
         {
             throw new RuntimeException("'" + path + "' should not be in memory!");

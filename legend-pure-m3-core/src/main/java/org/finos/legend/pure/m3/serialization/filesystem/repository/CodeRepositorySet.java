@@ -129,7 +129,7 @@ public class CodeRepositorySet
      */
     public CodeRepositorySet subset(Iterable<? extends String> selectedRepositories)
     {
-        MutableMap<String, CodeRepository> resolved = Maps.mutable.with(PlatformCodeRepository.NAME, getRepository(PlatformCodeRepository.NAME));
+        MutableMap<String, CodeRepository> resolved = Maps.mutable.with("platform", getRepository("platform"));
         Deque<CodeRepository> deque = Iterate.collect(selectedRepositories, this::getRepository, new ArrayDeque<>(size()));
         while (!deque.isEmpty())
         {
@@ -196,9 +196,9 @@ public class CodeRepositorySet
 
         public void removeCodeRepository(String repositoryName)
         {
-            if (PlatformCodeRepository.NAME.equals(repositoryName))
+            if ("platform".equals(repositoryName))
             {
-                throw new IllegalArgumentException("The code repository " + PlatformCodeRepository.NAME + " may not be removed");
+                throw new IllegalArgumentException("The code repository " + "platform" + " may not be removed");
             }
             this.repositories.removeKey(repositoryName);
         }

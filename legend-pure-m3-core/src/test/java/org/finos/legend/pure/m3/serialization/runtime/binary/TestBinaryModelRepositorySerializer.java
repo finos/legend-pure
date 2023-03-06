@@ -20,12 +20,10 @@ import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.test.Verify;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.imports.Imports;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.TestCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.SystemCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
@@ -34,6 +32,7 @@ import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -42,11 +41,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -68,7 +63,7 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
         byte[] bytes;
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream())
         {
-            BinaryModelRepositorySerializer.serialize(stream, PlatformCodeRepository.NAME, runtime);
+            BinaryModelRepositorySerializer.serialize(stream, "platform", runtime);
             bytes = stream.toByteArray();
         }
 
@@ -106,7 +101,7 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
                 Assert.assertTrue(manifest.hasPurePlatformVersion());
                 Assert.assertEquals(Version.PLATFORM, manifest.getPurePlatformVersion());
             }
-            Assert.assertEquals(PlatformCodeRepository.NAME, manifest.getPureRepositoryName());
+            Assert.assertEquals("platform", manifest.getPureRepositoryName());
             Assert.assertFalse(manifest.hasPureModelVersion());
             Assert.assertNull(manifest.getPureModelVersion());
 
@@ -162,11 +157,11 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
 
             try (ByteArrayOutputStream stream = new ByteArrayOutputStream())
             {
-                BinaryModelRepositorySerializer.serialize(stream, PlatformCodeRepository.NAME, runtime);
+                BinaryModelRepositorySerializer.serialize(stream, "platform", runtime);
                 bytes1 = stream.toByteArray();
 
                 stream.reset();
-                BinaryModelRepositorySerializer.serialize(stream, PlatformCodeRepository.NAME, runtime);
+                BinaryModelRepositorySerializer.serialize(stream, "platform", runtime);
                 bytes2 = stream.toByteArray();
             }
 
@@ -189,11 +184,11 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
 
             try (ByteArrayOutputStream stream = new ByteArrayOutputStream())
             {
-                BinaryModelRepositorySerializer.serialize(stream, PlatformCodeRepository.NAME, runtime);
+                BinaryModelRepositorySerializer.serialize(stream, "platform", runtime);
                 bytes1 = stream.toByteArray();
 
                 stream.reset();
-                BinaryModelRepositorySerializer.serialize(stream, PlatformCodeRepository.NAME, runtime2);
+                BinaryModelRepositorySerializer.serialize(stream, "platform", runtime2);
                 bytes2 = stream.toByteArray();
             }
 
@@ -229,7 +224,7 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
     public void testNonStandardRepositorySerialization() throws IOException
     {
         TestCodeRepository testRepo = new TestCodeRepository("test");
-        RepositoryCodeStorage classPathCodeStorage = new ClassLoaderCodeStorage(getRepositoryByName(PlatformCodeRepository.NAME), testRepo);
+        RepositoryCodeStorage classPathCodeStorage = new ClassLoaderCodeStorage(getRepositoryByName("platform"), testRepo);
         PureCodeStorage codeStorage = new PureCodeStorage(null, classPathCodeStorage);
         PureRuntime runtime2 = new PureRuntimeBuilder(codeStorage).withRuntimeStatus(getPureRuntimeStatus()).buildAndInitialize();
 

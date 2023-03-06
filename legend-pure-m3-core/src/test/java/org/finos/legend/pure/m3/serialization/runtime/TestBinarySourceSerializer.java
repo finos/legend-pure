@@ -50,7 +50,7 @@ public class TestBinarySourceSerializer extends AbstractPureTestWithCoreCompiled
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
         return Lists.immutable.with(CodeRepository.newPlatformCodeRepository(),
-                GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME));
+                GenericCodeRepository.build("test", "test(::.*)?", "platform"));
     }
 
     @Test

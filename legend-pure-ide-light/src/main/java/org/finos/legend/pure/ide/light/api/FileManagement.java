@@ -21,12 +21,9 @@ import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.ide.light.helpers.response.ExceptionTranslation;
 import org.finos.legend.pure.ide.light.session.PureSession;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.ScratchCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNodeStatus;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.Version;
 import org.json.simple.JSONObject;
@@ -34,12 +31,7 @@ import org.json.simple.JSONValue;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
@@ -202,8 +194,8 @@ public class FileManagement
             {
                 nodes.sortThis((o1, o2) ->
                 {
-                    String name1 = PureCodeStorage.WELCOME_FILE_NAME.equals(o1.getName()) || PlatformCodeRepository.NAME.equals(o1.getName()) || ScratchCodeRepository.NAME.equals(o1.getName()) ? "zzz" + o1.getName() : o1.getName();
-                    String name2 = PureCodeStorage.WELCOME_FILE_NAME.equals(o2.getName()) || PlatformCodeRepository.NAME.equals(o2.getName()) || ScratchCodeRepository.NAME.equals(o2.getName()) ? "zzz" + o2.getName() : o2.getName();
+                    String name1 = PureCodeStorage.WELCOME_FILE_NAME.equals(o1.getName()) || "platform".equals(o1.getName()) || ScratchCodeRepository.NAME.equals(o1.getName()) ? "zzz" + o1.getName() : o1.getName();
+                    String name2 = PureCodeStorage.WELCOME_FILE_NAME.equals(o2.getName()) || "platform".equals(o2.getName()) || ScratchCodeRepository.NAME.equals(o2.getName()) ? "zzz" + o2.getName() : o2.getName();
                     return name1.compareTo(name2);
                 });
             }
@@ -328,7 +320,7 @@ public class FileManagement
         {
             builder.append("\",\"icon\":\"/ide/pure/icons/filesystem/cloud.png\",\"state\":\"closed\",\"children\":true}");
         }
-        else if (PlatformCodeRepository.NAME.equals(repoName))
+        else if ("platform".equals(repoName))
         {
             builder.append(" (");
             builder.append(Version.SERVER);

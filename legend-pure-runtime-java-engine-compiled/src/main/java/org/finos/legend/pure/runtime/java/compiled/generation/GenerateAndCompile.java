@@ -17,7 +17,6 @@ package org.finos.legend.pure.runtime.java.compiled.generation;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.impl.Counter;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.runtime.java.compiled.compiler.Compile;
