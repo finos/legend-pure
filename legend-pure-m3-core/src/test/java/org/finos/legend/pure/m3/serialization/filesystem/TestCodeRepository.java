@@ -15,7 +15,6 @@
 package org.finos.legend.pure.m3.serialization.filesystem;
 
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 
 import java.util.regex.Pattern;
 
@@ -34,6 +33,6 @@ public class TestCodeRepository extends CodeRepository
     @Override
     public boolean isVisible(CodeRepository other)
     {
-        return other == this || other instanceof PlatformCodeRepository;
+        return other == this || other.getName().equals("platform");
     }
 }

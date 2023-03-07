@@ -370,7 +370,7 @@ public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompile
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         CodeRepositorySet.Builder builder = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true));
         MutableList<CodeRepository> rep = Lists.mutable.withAll(builder.build().getRepositories());
-        CodeRepository platform = CodeRepository.newPlatformCodeRepository();
+        CodeRepository platform = CodeRepositoryProviderHelper.findPlatformCodeRepository();
         CodeRepository json = rep.detect(x -> x.getName().equals("platform_functions_json"));
         CodeRepository func = rep.detect(x -> x.getName().equals("platform_functions"));
         CodeRepository test = new TestCodeRepositoryWithDependencies("test", null, platform, func, json);

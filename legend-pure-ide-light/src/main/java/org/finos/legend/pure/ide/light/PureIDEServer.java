@@ -131,7 +131,6 @@ public abstract class PureIDEServer extends Application<ServerConfiguration>
         Set<String> fromIdeName = fromIde.flatCollect(RepositoryCodeStorage::getRepositories).collect(CodeRepository::getName).toSet();
         List<CodeRepository> fromClasspath = CodeRepositoryProviderHelper.findCodeRepositories()
                 .toList()
-                .with(CodeRepository.newPlatformCodeRepository())
                 .reject(x -> fromIdeName.contains(x.getName()));
         return fromIde.with(new ClassLoaderCodeStorage(fromClasspath));
     }

@@ -18,6 +18,7 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProvider;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.compiler.visibility.AccessLevel;
 import org.finos.legend.pure.m3.compiler.visibility.Visibility;
@@ -68,15 +69,14 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
-        return Lists.immutable.with(
+        return Lists.immutable.<CodeRepository>with(
                 SVNCodeRepository.newDatamartCodeRepository("dtm"),
                 SVNCodeRepository.newDatamartCodeRepository("datamt"),
                 SVNCodeRepository.newModelCodeRepository(""),
                 SVNCodeRepository.newModelCodeRepository("candidate", Sets.immutable.with("")),
                 SVNCodeRepository.newModelCodeRepository("legacy", Sets.immutable.with("")),
                 SVNCodeRepository.newModelValidationCodeRepository(),
-                SVNCodeRepository.newSystemCodeRepository(),
-                CodeRepository.newPlatformCodeRepository()
+                SVNCodeRepository.newSystemCodeRepository()
         ).newWithAll(CodeRepositoryProviderHelper.findCodeRepositories());
     }
 

@@ -34,7 +34,7 @@ public class TestCodeRepository
     @Test
     public void testToSortedRepositoriesList_Single()
     {
-        CodeRepository platformRepo = CodeRepository.newPlatformCodeRepository();
+        CodeRepository platformRepo = CodeRepositoryProviderHelper.findPlatformCodeRepository();
         CodeRepository repoA = GenericCodeRepository.build("repo_a", "meta::pure::\\.*", "platform");
         CodeRepository repoB = GenericCodeRepository.build("repo_b", "meta::pure::\\.*", "platform");
         CodeRepository repoC = GenericCodeRepository.build("repo_c", "meta::pure::\\.*", "platform", "repo_a");
@@ -50,7 +50,7 @@ public class TestCodeRepository
     @Test
     public void testToSortedRepositoriesList_General()
     {
-        CodeRepository platformRepo = CodeRepository.newPlatformCodeRepository();
+        CodeRepository platformRepo = CodeRepositoryProviderHelper.findPlatformCodeRepository();
         CodeRepository repoA = GenericCodeRepository.build("repo_a", "meta::pure::\\.*", "platform");
         CodeRepository repoB = GenericCodeRepository.build("repo_b", "meta::pure::\\.*", "platform");
         CodeRepository repoC = GenericCodeRepository.build("repo_c", "meta::pure::\\.*", "platform", "repo_a");
@@ -78,7 +78,7 @@ public class TestCodeRepository
     @Test
     public void testToSortedRepositoriesList_Loop()
     {
-        CodeRepository platformRepo = CodeRepository.newPlatformCodeRepository();
+        CodeRepository platformRepo = CodeRepositoryProviderHelper.findPlatformCodeRepository();
         CodeRepository repoA = GenericCodeRepository.build("repo_a", "meta::pure::\\.*", "platform");
         CodeRepository repoB = GenericCodeRepository.build("repo_b", "meta::pure::\\.*", "platform", "repo_a");
         CodeRepository repoC = GenericCodeRepository.build("repo_c", "meta::pure::\\.*", "platform", "repo_b", "repo_e");

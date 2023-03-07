@@ -33,11 +33,7 @@ import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.StringIterate;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.SVNCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.ScratchCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.*;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNodeStatus;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
@@ -81,6 +77,7 @@ public class PureCodeStorage implements MutableCodeStorage
     public PureCodeStorage(Path root, RepositoryCodeStorage... codeStorages)
     {
         this.root = root;
+        codeStorages = codeStorages.length == 0 ? new RepositoryCodeStorage[]{new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository())} : codeStorages;
         this.codeStorages = Lists.immutable.with(codeStorages);
         this.codeStorageByName = indexCodeStoragesByName(codeStorages).toImmutable();
         this.repositoriesByName = this.codeStorages.asLazy().flatCollect(RepositoryCodeStorage.GET_REPOSITORIES).groupByUniqueKey(CodeRepository::getName, UnifiedMap.newMap(this.codeStorageByName.size())).toImmutable();
@@ -947,7 +944,7 @@ public class PureCodeStorage implements MutableCodeStorage
             {
                 svnCodeRepositories.add((SVNCodeRepository) repository);
             }
-            else if (repository instanceof PlatformCodeRepository || repository instanceof GenericCodeRepository)
+            else if (repository instanceof GenericCodeRepository)
             {
                 codeStorages.add(new ClassLoaderCodeStorage(repository));
             }
@@ -993,7 +990,7 @@ public class PureCodeStorage implements MutableCodeStorage
         // platform is required, so add it if it is missing
         if (!index.containsKey("platform"))
         {
-            index.put("platform", new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()));
+            throw new RuntimeException("platform can't be found!");
         }
         return index.toImmutable();
     }

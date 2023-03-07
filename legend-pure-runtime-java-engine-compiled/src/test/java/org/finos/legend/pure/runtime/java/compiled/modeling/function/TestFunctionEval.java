@@ -6,6 +6,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecificat
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tools.test.ToFix;
@@ -64,7 +65,7 @@ public class TestFunctionEval extends AbstractPureTestWithCoreCompiled
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
-        return org.eclipse.collections.api.factory.Lists.immutable.with(CodeRepository.newPlatformCodeRepository(),
+        return org.eclipse.collections.api.factory.Lists.immutable.with(CodeRepositoryProviderHelper.findPlatformCodeRepository(),
                 GenericCodeRepository.build("test", "test(::.*)?", "platform", "system"));
     }
 }

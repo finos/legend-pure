@@ -165,7 +165,6 @@ public class CodeRepositorySet
 
         private Builder()
         {
-            addCodeRepository(CodeRepository.newPlatformCodeRepository());
         }
 
         private Builder(CodeRepositorySet manager)

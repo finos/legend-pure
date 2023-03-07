@@ -52,15 +52,14 @@ public class TestVisibilityAndAccessibilityInGraph extends AbstractPureTestWithC
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
-        return Lists.immutable.with(
+        return Lists.immutable.<CodeRepository>with(
                 SVNCodeRepository.newDatamartCodeRepository("dtm"),
                 SVNCodeRepository.newDatamartCodeRepository("datamt"),
                 SVNCodeRepository.newModelCodeRepository(""),
                 SVNCodeRepository.newModelCodeRepository("candidate", Sets.immutable.with("")),
                 SVNCodeRepository.newModelCodeRepository("legacy", Sets.immutable.with("")),
                 SVNCodeRepository.newModelValidationCodeRepository(),
-                SVNCodeRepository.newSystemCodeRepository(),
-                CodeRepository.newPlatformCodeRepository()
+                SVNCodeRepository.newSystemCodeRepository()
         ).newWithAll(CodeRepositoryProviderHelper.findCodeRepositories());
     }
 

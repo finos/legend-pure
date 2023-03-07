@@ -99,11 +99,6 @@ public abstract class CodeRepository
         return (name != null) && VALID_REPO_NAME_PATTERN.matcher(name).matches();
     }
 
-    public static CodeRepository newPlatformCodeRepository()
-    {
-        return new PlatformCodeRepository();
-    }
-
     public static CodeRepository newScratchCodeRepository()
     {
         return new ScratchCodeRepository();

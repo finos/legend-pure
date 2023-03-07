@@ -36,15 +36,14 @@ public class TestRepositoryComparator extends AbstractPureTestWithCoreCompiledPl
     @BeforeClass
     public static void setUp()
     {
-        MutableList<CodeRepository> repositories = Lists.mutable.with(
+        MutableList<CodeRepository> repositories = Lists.mutable.<CodeRepository>with(
                 SVNCodeRepository.newDatamartCodeRepository("dtm"),
                 SVNCodeRepository.newDatamartCodeRepository("datamt"),
                 SVNCodeRepository.newModelCodeRepository(""),
                 SVNCodeRepository.newModelCodeRepository("candidate", Sets.immutable.with("")),
                 SVNCodeRepository.newModelCodeRepository("legacy", Sets.immutable.with("")),
                 SVNCodeRepository.newModelValidationCodeRepository(),
-                SVNCodeRepository.newSystemCodeRepository(),
-                CodeRepository.newPlatformCodeRepository()
+                SVNCodeRepository.newSystemCodeRepository()
         ).withAll(CodeRepositoryProviderHelper.findCodeRepositories());
         repositoriesByName = repositories.groupByUniqueKey(CodeRepository::getName);
         setUpRuntime(new PureCodeStorage(null, new ClassLoaderCodeStorage(repositories)), getExtra());

@@ -23,6 +23,16 @@ import java.util.ServiceLoader;
 public class CodeRepositoryProviderHelper
 {
     /**
+     * Find platform code repository accessible via a {@linkplain CodeRepositoryProvider}.
+     *
+     * @return platform code repositories
+     */
+    public static CodeRepository findPlatformCodeRepository()
+    {
+        return findCodeRepositories(false).select(c->"platform".equals(c.getName())).getFirst();
+    }
+
+    /**
      * Find all code repositories accessible via a {@linkplain CodeRepositoryProvider}.
      *
      * @return all code repositories

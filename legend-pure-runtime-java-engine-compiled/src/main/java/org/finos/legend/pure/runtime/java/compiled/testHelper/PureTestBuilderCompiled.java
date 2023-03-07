@@ -131,8 +131,7 @@ public class PureTestBuilderCompiled extends TestSuite
 
     public static CompiledExecutionSupport getClassLoaderExecutionSupport()
     {
-        RichIterable<CodeRepository> filtered = CodeRepositoryProviderHelper.findCodeRepositories().select(r -> !r.getName().equals("test_generic_repository") && !r.getName().equals("other_test_generic_repository"));
-        MutableList<CodeRepository> codeRepos = Lists.mutable.of(CodeRepository.newPlatformCodeRepository()).withAll(filtered);
+        RichIterable<CodeRepository> codeRepos = CodeRepositoryProviderHelper.findCodeRepositories().select(r -> !r.getName().equals("test_generic_repository") && !r.getName().equals("other_test_generic_repository"));
         ClassLoader classLoader = PureTestBuilderCompiled.class.getClassLoader();
         return new CompiledExecutionSupport(
                 new JavaCompilerState(null, classLoader),

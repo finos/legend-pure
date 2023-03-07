@@ -19,6 +19,7 @@ import org.eclipse.collections.impl.test.Verify;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.serialization.filesystem.TestCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
 import org.junit.Assert;
 import org.junit.Before;
@@ -34,7 +35,7 @@ public class TestClassLoaderCodeStorage
     public void setUp()
     {
         this.testCodeStorage = new ClassLoaderCodeStorage(new TestCodeRepository("test"));
-        this.platformCodeStorage = new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository());
+        this.platformCodeStorage = new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository());
         this.combinedCodeStorage = new ClassLoaderCodeStorage(LazyIterate.concatenate(this.testCodeStorage.getRepositories(), this.platformCodeStorage.getRepositories()));
     }
 

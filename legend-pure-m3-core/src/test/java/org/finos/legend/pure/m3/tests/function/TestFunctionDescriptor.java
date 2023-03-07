@@ -18,7 +18,7 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
 import org.finos.legend.pure.m3.navigation.function.InvalidFunctionDescriptorException;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
@@ -80,7 +80,7 @@ public class TestFunctionDescriptor
     @Test
     public void testGetFunctionDescriptor() throws InvalidFunctionDescriptorException
     {
-        PureRuntime runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))).build();
+        PureRuntime runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository()))).build();
         runtime.loadAndCompileCore();
         runtime.createInMemorySource("fromString.pure", "function pkg1::pkg2::pkg3::func1(string1:String[1], string2:String[1]):String[1]\n" +
                                                    "{\n" +
@@ -187,7 +187,7 @@ public class TestFunctionDescriptor
     @Test
     public void testGetFunctionByDescriptor() throws InvalidFunctionDescriptorException
     {
-        PureRuntime runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))).build();
+        PureRuntime runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository()))).build();
         runtime.loadAndCompileCore();
         runtime.createInMemorySource("fromString.pure", "function test1():Integer[1]\n" +
                                                    "{\n" +
