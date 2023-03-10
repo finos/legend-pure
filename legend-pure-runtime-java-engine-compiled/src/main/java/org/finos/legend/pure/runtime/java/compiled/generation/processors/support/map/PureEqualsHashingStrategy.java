@@ -21,9 +21,10 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 /**
  * PURE hashing strategy.
  */
-public class PureEqualsHashingStrategy implements HashingStrategy
+public class PureEqualsHashingStrategy implements HashingStrategy<Object>
 {
-    public static final HashingStrategy HASHING_STRATEGY = new PureEqualsHashingStrategy();
+    public static final HashingStrategy<Object> HASHING_STRATEGY = new PureEqualsHashingStrategy();
+
     @Override
     public int computeHashCode(Object object)
     {
@@ -35,7 +36,7 @@ public class PureEqualsHashingStrategy implements HashingStrategy
     {
         if (object1 instanceof JavaCompiledCoreInstance)
         {
-            return ((JavaCompiledCoreInstance)object1).pureEquals(object2);
+            return ((JavaCompiledCoreInstance) object1).pureEquals(object2);
         }
         return object1.equals(object2);
     }
