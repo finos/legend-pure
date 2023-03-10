@@ -21,10 +21,10 @@ import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.TestCodeRepositoryWithDependencies;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
@@ -370,11 +370,7 @@ public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompile
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         CodeRepositorySet.Builder builder = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true));
         MutableList<CodeRepository> rep = Lists.mutable.withAll(builder.build().getRepositories());
-        CodeRepository platform = CodeRepositoryProviderHelper.findPlatformCodeRepository();
-        CodeRepository json = rep.detect(x -> x.getName().equals("platform_functions_json"));
-        CodeRepository func = rep.detect(x -> x.getName().equals("platform_functions"));
-        CodeRepository test = new TestCodeRepositoryWithDependencies("test", null, platform, func, json);
-        rep.add(test);
+        rep.add(new GenericCodeRepository("test", null, "platform", "platform_functions", "platform_functions_json"));
         return new PureCodeStorage(null, new ClassLoaderCodeStorage(rep));
     }
 

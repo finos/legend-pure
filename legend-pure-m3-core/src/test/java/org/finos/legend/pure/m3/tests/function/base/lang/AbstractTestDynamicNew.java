@@ -16,12 +16,12 @@ package org.finos.legend.pure.m3.tests.function.base.lang;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.TestCodeRepositoryWithDependencies;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.elements.property.AbstractTestDefaultValue;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.After;
@@ -317,7 +317,7 @@ public abstract class AbstractTestDynamicNew extends AbstractPureTestWithCoreCom
     protected static MutableCodeStorage getCodeStorage()
     {
         MutableList<CodeRepository> repositories = Lists.mutable.withAll(org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories()));
-        CodeRepository test = new TestCodeRepositoryWithDependencies("test", null, repositories.detect(x -> x.getName().equals("platform")), repositories.detect(x -> x.getName().equals("platform_functions")));
+        CodeRepository test = new GenericCodeRepository("test", null, "platform", "platform_functions");
         repositories.add(test);
         return new PureCodeStorage(null, new ClassLoaderCodeStorage(repositories));
     }
