@@ -38,7 +38,7 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.MutableVersionControlledCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -145,7 +145,7 @@ public class TestRun implements SimpleFunction
             return null;
         }
 
-        final MutableCodeStorage codeStorage = runtime.getCodeStorage();
+        final MutableVersionControlledCodeStorage codeStorage = (MutableVersionControlledCodeStorage)runtime.getCodeStorage();
         RichIterable<CodeStorageNode> modifiedUserFiles = codeStorage.getModifiedUserFiles();
         if (modifiedUserFiles.isEmpty())
         {
@@ -155,7 +155,7 @@ public class TestRun implements SimpleFunction
         MutableSet<String> repos = Sets.mutable.empty();
         for (CodeStorageNode node : modifiedUserFiles)
         {
-            repos.add(codeStorage.getRepoName(node.getPath()));
+            repos.add(codeStorage.getRepository(node.getPath()).getName());
         }
         if (repos.isEmpty())
         {
@@ -168,7 +168,7 @@ public class TestRun implements SimpleFunction
             @Override
             public boolean accept(CoreInstance test)
             {
-                return reposPlusDependents.contains(codeStorage.getRepoName(test.getSourceInformation().getSourceId()));
+                return reposPlusDependents.contains(codeStorage.getRepository(test.getSourceInformation().getSourceId()).getName());
             }
         };
     }

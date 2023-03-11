@@ -22,7 +22,7 @@ import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 
 public class AbstractPureTestWithCoreCompiledPlatform extends AbstractPureTestWithCoreCompiled
 {
@@ -84,7 +84,7 @@ public class AbstractPureTestWithCoreCompiledPlatform extends AbstractPureTestWi
         setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), codeRepositories), getFactoryRegistryOverride(), getOptions(), extra);
     }
 
-    protected static MutableCodeStorage getCodeStorage()
+    protected static MutableRepositoryCodeStorage getCodeStorage()
     {
         return PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories());
     }

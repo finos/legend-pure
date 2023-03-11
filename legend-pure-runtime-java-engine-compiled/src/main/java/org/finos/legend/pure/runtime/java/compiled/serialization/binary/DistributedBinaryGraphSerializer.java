@@ -25,7 +25,7 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.Writer;
@@ -255,7 +255,7 @@ public abstract class DistributedBinaryGraphSerializer
 
     public static DistributedBinaryGraphSerializer newSerializer(PureRuntime runtime, String repositoryName)
     {
-        MutableCodeStorage codeStorage = runtime.getCodeStorage();
+        MutableRepositoryCodeStorage codeStorage = runtime.getCodeStorage();
         CodeRepository repository = codeStorage.getRepository(repositoryName);
         if (repository == null)
         {

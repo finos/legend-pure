@@ -22,7 +22,6 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
-import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.*;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.PropertyCoreInstanceWrapper;
@@ -36,14 +35,13 @@ import org.finos.legend.pure.m3.navigation.*;
 import org.finos.legend.pure.m3.navigation.function.Function;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.statelistener.ExecutionActivityListener;
 import org.finos.legend.pure.m3.statelistener.VoidExecutionActivityListener;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext.VariableNameConflictException;
 import org.finos.legend.pure.runtime.java.interpreted.extension.InterpretedExtension;
@@ -93,7 +91,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
 
     private ProcessorSupport processorSupport;
 
-    private CodeStorage storage;
+    private RepositoryCodeStorage storage;
     private Message message;
 
     private MutableMap<String, NativeFunction> nativeFunctions;
@@ -284,7 +282,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.nativeFunctions.put("assert_Boolean_1__Function_1__Boolean_1_", new Assert(this));
     }
 
-    public CodeStorage getStorage()
+    public RepositoryCodeStorage getStorage()
     {
         return this.storage;
     }

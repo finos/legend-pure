@@ -22,10 +22,9 @@ import org.finos.legend.pure.ide.light.helpers.response.ExceptionTranslation;
 import org.finos.legend.pure.ide.light.session.PureSession;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.ScratchCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNodeStatus;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.*;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.Version;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.VersionControlledCodeStorage;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
@@ -202,7 +201,7 @@ public class FileManagement
             ;
             if (nodes.notEmpty())
             {
-                MutableCodeStorage codeStorage = session.getCodeStorage();
+                MutableRepositoryCodeStorage codeStorage = session.getCodeStorage();
                 Iterator<CodeStorageNode> iterator = nodes.iterator();
                 writeNode(json, codeStorage, path, iterator.next());
                 while (iterator.hasNext())
@@ -235,7 +234,7 @@ public class FileManagement
     {
         try
         {
-            MutableCodeStorage codeStorage = session.getCodeStorage();
+            MutableRepositoryCodeStorage codeStorage = session.getCodeStorage();
             if (codeStorage == null)
             {
                 throw new RuntimeException("Cannot find code storage");
@@ -264,7 +263,7 @@ public class FileManagement
 
             return Response.ok((StreamingOutput) outputStream ->
             {
-                outputStream.write(this.transformContent(content, codeStorage.isRepositoryImmutable(codeStorage.getRepositoryForPath(filePath))));
+                outputStream.write(this.transformContent(content, codeStorage.getRepositoryForPath(filePath)  instanceof ImmutableRepositoryCodeStorage));
                 outputStream.close();
             }).build();
         }
@@ -286,7 +285,7 @@ public class FileManagement
         return object.toJSONString().getBytes();
     }
 
-    private void writeNode(StringBuilder builder, MutableCodeStorage codeStorage, String path, CodeStorageNode node)
+    private void writeNode(StringBuilder builder, MutableRepositoryCodeStorage codeStorage, String path, CodeStorageNode node)
     {
         String fullPath = "/".equals(path) ? (path + node.getName()) : (path + "/" + node.getName());
         if (node.isDirectory())
@@ -306,14 +305,15 @@ public class FileManagement
         }
     }
 
-    private void writeRepoNode(StringBuilder builder, MutableCodeStorage codeStorage, String path, CodeStorageNode repo)
+    private void writeRepoNode(StringBuilder builder, MutableRepositoryCodeStorage cs, String path, CodeStorageNode repo)
     {
+        VersionControlledCodeStorage codeStorage = (VersionControlledCodeStorage) cs;
         long currentRevision = codeStorage.getCurrentRevision(path);
-        String repoName = codeStorage.getRepoName(path);
+        String repoName = codeStorage.getRepository(path).getName();
         builder.append("{\"li_attr\":{\"id\":\"file_");
         builder.append(path);
         builder.append("\",\"path\":\"").append(path).append("\",\"file\":false,\"repo\":true");
-        builder.append(",\"RO\":").append(codeStorage.isRepositoryImmutable(codeStorage.getRepositoryForPath(path)));
+        builder.append(",\"RO\":").append(codeStorage.getRepositoryForPath(path) instanceof ImmutableRepositoryCodeStorage);
         builder.append("},\"text\":\"");
         builder.append(repo.getName());
         if (currentRevision >= 0)
@@ -333,23 +333,23 @@ public class FileManagement
         }
     }
 
-    private void writeDirectoryNode(StringBuilder builder, String path, MutableCodeStorage codeStorage, CodeStorageNode directory)
+    private void writeDirectoryNode(StringBuilder builder, String path, MutableRepositoryCodeStorage codeStorage, CodeStorageNode directory)
     {
         builder.append("{\"li_attr\":{\"id\":\"file_");
         builder.append(path);
         builder.append("\",\"path\":\"").append(path).append("\",\"file\":false");
-        builder.append(",\"RO\":").append(codeStorage.isRepositoryImmutable(codeStorage.getRepositoryForPath(path)));
+        builder.append(",\"RO\":").append(codeStorage.getRepositoryForPath(path) instanceof ImmutableRepositoryCodeStorage);
         builder.append("},\"text\":\"");
         builder.append(directory.getName());
         builder.append("\",\"state\":\"closed\",\"children\":").append(!codeStorage.isEmptyFolder(path)).append("}");
     }
 
-    private void writeFileNode(StringBuilder builder, MutableCodeStorage codeStorage, String path, CodeStorageNode file)
+    private void writeFileNode(StringBuilder builder, MutableRepositoryCodeStorage codeStorage, String path, CodeStorageNode file)
     {
         builder.append("{\"li_attr\":{\"id\":\"file_");
         builder.append(path);
         builder.append("\",\"path\":\"").append(path).append("\",\"file\":true");
-        builder.append(",\"RO\":").append(codeStorage.isRepositoryImmutable(codeStorage.getRepositoryForPath(path)));
+        builder.append(",\"RO\":").append(codeStorage.getRepositoryForPath(path) instanceof ImmutableRepositoryCodeStorage);
 
         if (file.getStatus() != CodeStorageNodeStatus.NORMAL)
         {

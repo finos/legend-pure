@@ -17,7 +17,7 @@ package org.finos.legend.pure.m3.serialization.runtime;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.cache.PureGraphCache;
 import org.finos.legend.pure.m3.serialization.runtime.cache.VoidPureGraphCache;
 
@@ -29,7 +29,7 @@ import java.util.function.Function;
  */
 public class PureRuntimeBuilder
 {
-    private final MutableCodeStorage codeStorage;
+    private final MutableRepositoryCodeStorage codeStorage;
     private PureGraphCache cache = VoidPureGraphCache.VOID_PURE_GRAPH_CACHE;
     private PureRuntimeStatus pureRuntimeStatus = VoidPureRuntimeStatus.VOID_PURE_RUNTIME_STATUS;
     private Message message = new Message("");
@@ -41,7 +41,7 @@ public class PureRuntimeBuilder
     private ExecutedTestTracker executedTestTracker;
     private RuntimeOptions options = RuntimeOptions.systemPropertyOptions("pure.options.");
 
-    public PureRuntimeBuilder(MutableCodeStorage codeStorage)
+    public PureRuntimeBuilder(MutableRepositoryCodeStorage codeStorage)
     {
         this.codeStorage = codeStorage;
     }

@@ -14,14 +14,14 @@
 
 package org.finos.legend.pure.m3.tests.function.base;
 
-import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.utility.ArrayIterate;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.BooleanCoreInstance;
@@ -139,7 +139,7 @@ public abstract class PureExpressionTest extends AbstractPureTestWithCoreCompile
                 "{\n" +
                 ArrayIterate.makeString(expression.split("\\R"), "        ", "\n        ", "\n") +
                 "}\n";
-        String sourceName = functionName + CodeStorage.PURE_FILE_EXTENSION;
+        String sourceName = functionName + RepositoryCodeStorage.PURE_FILE_EXTENSION;
         this.sourcesToDelete.add(sourceName);
         compileTestSource(sourceName, testFunctionString);
         CoreInstance result = execute(functionSignature);

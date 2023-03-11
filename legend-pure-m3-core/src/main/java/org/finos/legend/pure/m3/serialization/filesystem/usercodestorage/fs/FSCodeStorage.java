@@ -19,11 +19,7 @@ import org.eclipse.collections.api.collection.MutableCollection;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.AbstractSingleRepositoryCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNodeStatus;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.*;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.tools.FileTools;
 
@@ -212,7 +208,7 @@ public class FSCodeStorage extends AbstractSingleRepositoryCodeStorage
         writeRepoPath(builder);
         for (Path element : relativePath)
         {
-            builder.append(CodeStorage.PATH_SEPARATOR);
+            builder.append(RepositoryCodeStorage.PATH_SEPARATOR);
             builder.append(element);
         }
         return builder.toString();

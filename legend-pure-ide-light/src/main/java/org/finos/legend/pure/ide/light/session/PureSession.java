@@ -27,13 +27,9 @@ import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.execution.test.TestCollection;
 import org.finos.legend.pure.m3.execution.test.TestRunner;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
-import org.finos.legend.pure.m3.serialization.runtime.ExecutedTestTracker;
-import org.finos.legend.pure.m3.serialization.runtime.Message;
-import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
-import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
-import org.finos.legend.pure.m3.serialization.runtime.Source;
+import org.finos.legend.pure.m3.serialization.runtime.*;
 import org.finos.legend.pure.m3.statelistener.VoidExecutionActivityListener;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -58,7 +54,7 @@ import static org.finos.legend.pure.ide.light.helpers.response.ExceptionTranslat
 public class PureSession
 {
     private PureRuntime pureRuntime;
-    public MutableCodeStorage codeStorage;
+    public MutableRepositoryCodeStorage codeStorage;
     private FunctionExecution functionExecution;
     private SourceLocationConfiguration sourceLocationConfiguration;
     private final ConcurrentMutableMap<Integer, TestRunnerWrapper> testRunnersById = ConcurrentHashMap.newMap();
@@ -99,7 +95,7 @@ public class PureSession
         return this.functionExecution;
     }
 
-    public MutableCodeStorage getCodeStorage()
+    public MutableRepositoryCodeStorage getCodeStorage()
     {
         return this.codeStorage;
     }

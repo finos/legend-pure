@@ -51,7 +51,7 @@ public interface VersionControlledCodeStorage extends RepositoryCodeStorage
 
     RichIterable<Revision> getAllRevisionLogs(RichIterable<String> path);
 
-    String getDiff(Iterable<String> paths);
+    String getDiff(RichIterable<String> paths);
 
     RichIterable<CodeStorageNode> getModifiedUserFiles();
 

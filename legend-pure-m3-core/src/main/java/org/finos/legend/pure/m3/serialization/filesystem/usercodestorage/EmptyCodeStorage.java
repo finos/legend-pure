@@ -151,7 +151,7 @@ public class EmptyCodeStorage extends AbstractMultipleRepositoryCodeStorage
 
     private String resolveToRepoName(String path)
     {
-        String nameWithoutSlash = path.startsWith(CodeStorage.ROOT_PATH) ? path.substring(CodeStorage.ROOT_PATH.length()) : path;
+        String nameWithoutSlash = path.startsWith(RepositoryCodeStorage.ROOT_PATH) ? path.substring(RepositoryCodeStorage.ROOT_PATH.length()) : path;
         return this.repositories.containsKey(nameWithoutSlash) ? nameWithoutSlash : null;
     }
 

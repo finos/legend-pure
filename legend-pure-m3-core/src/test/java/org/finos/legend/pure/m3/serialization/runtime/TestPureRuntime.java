@@ -16,10 +16,9 @@ package org.finos.legend.pure.m3.serialization.runtime;
 
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.IncrementalCompiler.IncrementalCompilerTransaction;
 import org.finos.legend.pure.m3.serialization.runtime.cache.CompressedMemoryPureGraphCache;
@@ -59,7 +58,7 @@ public class TestPureRuntime
     @Test
     public void testInstancesInContextDuringCaching()
     {
-        MutableCodeStorage codeStorage = new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository()));
+        MutableRepositoryCodeStorage codeStorage = new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository()));
 
         PureGraphCache cache = new CompressedMemoryPureGraphCache();
         Assert.assertFalse(cache.getCacheState().isCached());

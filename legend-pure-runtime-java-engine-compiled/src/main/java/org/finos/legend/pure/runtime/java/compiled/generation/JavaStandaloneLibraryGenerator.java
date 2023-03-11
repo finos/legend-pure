@@ -225,7 +225,7 @@ public class JavaStandaloneLibraryGenerator
 
     private SortedMap<String, MutableList<Source>> getSourcesToCompile(String repo)
     {
-        if (!this.runtime.getCodeStorage().isRepoName(repo))
+        if (this.runtime.getCodeStorage().getRepository(repo) == null)
         {
             throw new IllegalArgumentException("Repository \"" + repo + "\" is not present");
         }
@@ -239,9 +239,9 @@ public class JavaStandaloneLibraryGenerator
 
     private SortedMap<String, MutableList<Source>> getSourcesToCompile(Set<String> repos)
     {
-        if (!Iterate.allSatisfy(repos, this.runtime.getCodeStorage()::isRepoName))
+        if (!Iterate.allSatisfy(repos, r -> this.runtime.getCodeStorage().getRepository(r) != null))
         {
-            MutableList<String> missingRepos = Iterate.reject(repos, this.runtime.getCodeStorage()::isRepoName, Lists.mutable.empty()).sortThis();
+            MutableList<String> missingRepos = Iterate.reject(repos, c -> this.runtime.getCodeStorage().getRepository(c) != null, Lists.mutable.empty()).sortThis();
             throw new IllegalArgumentException(missingRepos.makeString("The following repositories are not present: ", ", ", ""));
         }
         return getSourcesToCompile(repos::contains);

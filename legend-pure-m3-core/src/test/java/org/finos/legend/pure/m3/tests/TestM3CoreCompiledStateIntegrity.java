@@ -16,7 +16,7 @@ package org.finos.legend.pure.m3.tests;
 
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.junit.BeforeClass;
 
@@ -25,7 +25,7 @@ public class TestM3CoreCompiledStateIntegrity extends AbstractCompiledStateInteg
     @BeforeClass
     public static void initialize()
     {
-        MutableCodeStorage codeStorage = new PureCodeStorage(null, new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository()));
+        MutableRepositoryCodeStorage codeStorage = new PureCodeStorage(null, new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository()));
         initialize(codeStorage);
     }
 }

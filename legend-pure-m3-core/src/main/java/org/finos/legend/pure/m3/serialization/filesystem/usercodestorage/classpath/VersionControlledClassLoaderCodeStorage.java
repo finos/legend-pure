@@ -102,7 +102,7 @@ public class VersionControlledClassLoaderCodeStorage extends ClassLoaderCodeStor
     }
 
     @Override
-    public String getDiff(Iterable<String> paths)
+    public String getDiff(RichIterable<String> paths)
     {
         return "";
     }

@@ -9,7 +9,7 @@ import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.EmptyCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.statelistener.VoidExecutionActivityListener;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
@@ -50,7 +50,7 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
     public static void setUp()
     {
         RichIterable<? extends CodeRepository> repositories = AbstractPureTestWithCoreCompiled.getCodeRepositories();
-        MutableCodeStorage codeStorage = new PureCodeStorage(null,
+        MutableRepositoryCodeStorage codeStorage = new PureCodeStorage(null,
                 new ClassLoaderCodeStorage(repositories),
                 new EmptyCodeStorage(new GenericCodeRepository("test", "test::.*", "platform", "platform_functions"), new GenericCodeRepository("other", "other::.*", "test")));
 

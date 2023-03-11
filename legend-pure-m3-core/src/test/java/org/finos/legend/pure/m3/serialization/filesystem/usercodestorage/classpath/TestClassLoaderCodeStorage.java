@@ -36,7 +36,7 @@ public class TestClassLoaderCodeStorage
     {
         this.testCodeStorage = new ClassLoaderCodeStorage(new GenericCodeRepository("test", null, "platform"));
         this.platformCodeStorage = new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository());
-        this.combinedCodeStorage = new ClassLoaderCodeStorage(LazyIterate.concatenate(this.testCodeStorage.getRepositories(), this.platformCodeStorage.getRepositories()));
+        this.combinedCodeStorage = new ClassLoaderCodeStorage(LazyIterate.concatenate(this.testCodeStorage.getAllRepositories(), this.platformCodeStorage.getAllRepositories()));
     }
 
     @Test
@@ -128,9 +128,9 @@ public class TestClassLoaderCodeStorage
     @Test
     public void testRepositoryName()
     {
-        Verify.assertSetsEqual(Sets.mutable.with("platform"), this.platformCodeStorage.getRepositories().collect(CodeRepository::getName).toSet());
-        Verify.assertSetsEqual(Sets.mutable.with("test"), this.testCodeStorage.getRepositories().collect(CodeRepository::getName).toSet());
-        Verify.assertSetsEqual(Sets.mutable.with("platform", "test"), this.combinedCodeStorage.getRepositories().collect(CodeRepository::getName).toSet());
+        Verify.assertSetsEqual(Sets.mutable.with("platform"), this.platformCodeStorage.getAllRepositories().collect(CodeRepository::getName).toSet());
+        Verify.assertSetsEqual(Sets.mutable.with("test"), this.testCodeStorage.getAllRepositories().collect(CodeRepository::getName).toSet());
+        Verify.assertSetsEqual(Sets.mutable.with("platform", "test"), this.combinedCodeStorage.getAllRepositories().collect(CodeRepository::getName).toSet());
     }
 
     @Test(expected = RuntimeException.class)

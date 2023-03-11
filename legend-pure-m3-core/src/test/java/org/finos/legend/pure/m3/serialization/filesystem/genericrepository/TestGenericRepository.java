@@ -52,7 +52,7 @@ public class TestGenericRepository
     {
         RichIterable<CodeRepository> repositoryList = CodeRepositoryProviderHelper.findCodeRepositories();
         PureCodeStorage codeStorage = PureCodeStorage.createCodeStorage(new File("").toPath(), repositoryList);
-        Verify.assertSetsEqual(Sets.mutable.with("platform", "test_generic_repository", "other_test_generic_repository"), codeStorage.getAllRepoNames().toSet());
+        Verify.assertSetsEqual(Sets.mutable.with("platform", "test_generic_repository", "other_test_generic_repository"), codeStorage.getAllRepositories().collect(CodeRepository::getName).toSet());
         Verify.assertSetsEqual(Sets.mutable.with("/test_generic_repository/testBla.pure", "/other_test_generic_repository/test.pure"), codeStorage.getUserFiles().toSet().select(c -> !c.startsWith("/platform")));
     }
 }

@@ -27,7 +27,6 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.impl.test.Verify;
 import org.eclipse.collections.impl.utility.Iterate;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -35,17 +34,14 @@ import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
-import org.finos.legend.pure.m3.serialization.runtime.binary.BinaryModelRepositorySerializer;
-import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJar;
-import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJarLibrary;
-import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJarTools;
-import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJars;
-import org.finos.legend.pure.m3.serialization.runtime.binary.SimplePureRepositoryJarLibrary;
+import org.finos.legend.pure.m3.serialization.runtime.binary.*;
 import org.finos.legend.pure.m3.serialization.runtime.pattern.PurePattern;
 import org.finos.legend.pure.m3.serialization.runtime.pattern.URLPatternLibrary;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.tools.PackageTreeIterable;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -75,8 +71,8 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
     {
         setUpRuntime();
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-        CodeStorage codeStorage = runtime.getCodeStorage();
-        RichIterable<String> repoNames = codeStorage.getAllRepoNames();
+        RepositoryCodeStorage codeStorage = runtime.getCodeStorage();
+        RichIterable<String> repoNames = codeStorage.getAllRepositories().collect(CodeRepository::getName);
         if (codeStorage.isFile(PureCodeStorage.WELCOME_FILE_PATH))
         {
             repoNames = repoNames.toList().with(null);
@@ -101,8 +97,8 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
     {
         MutableList<PureRepositoryJar> jars = Lists.mutable.empty();
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-        CodeStorage codeStorage = runtime.getCodeStorage();
-        RichIterable<String> repoNames = codeStorage.getAllRepoNames();
+        RepositoryCodeStorage codeStorage = runtime.getCodeStorage();
+        RichIterable<String> repoNames = codeStorage.getAllRepositories().collect(CodeRepository::getName);
         if (codeStorage.isFile(PureCodeStorage.WELCOME_FILE_PATH))
         {
             repoNames = repoNames.toList().with(null);

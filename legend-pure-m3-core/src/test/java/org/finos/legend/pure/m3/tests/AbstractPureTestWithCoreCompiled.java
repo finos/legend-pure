@@ -30,8 +30,8 @@ import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.*;
 import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJarLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.binary.SimplePureRepositoryJarLibrary;
@@ -84,12 +84,12 @@ public abstract class AbstractPureTestWithCoreCompiled
         setUpRuntime(execution, PureCodeStorage.createCodeStorage(getCodeStorageRoot(), codeRepositories), registry, getOptions(), getExtra(), true);
     }
 
-    public static void setUpRuntime(MutableCodeStorage codeStorage)
+    public static void setUpRuntime(MutableRepositoryCodeStorage codeStorage)
     {
         setUpRuntime(getFunctionExecution(), codeStorage, getFactoryRegistryOverride(), getOptions(), getExtra(), true);
     }
 
-    public static void setUpRuntime(MutableCodeStorage codeStorage, CoreInstanceFactoryRegistry registry)
+    public static void setUpRuntime(MutableRepositoryCodeStorage codeStorage, CoreInstanceFactoryRegistry registry)
     {
         setUpRuntime(getFunctionExecution(), codeStorage, registry, getOptions(), getExtra(), true);
     }
@@ -104,17 +104,17 @@ public abstract class AbstractPureTestWithCoreCompiled
         setUpRuntime(execution, getCodeStorage(), registry, getOptions(), getExtra(), true);
     }
 
-    public static void setUpRuntime(FunctionExecution execution, MutableCodeStorage codeStorage, CoreInstanceFactoryRegistry registry)
+    public static void setUpRuntime(FunctionExecution execution, MutableRepositoryCodeStorage codeStorage, CoreInstanceFactoryRegistry registry)
     {
         setUpRuntime(execution, codeStorage, registry, getOptions(), getExtra(), true);
     }
 
-    public static void setUpRuntime(FunctionExecution execution, MutableCodeStorage codeStorage, CoreInstanceFactoryRegistry registry, Pair<String, String> extra)
+    public static void setUpRuntime(FunctionExecution execution, MutableRepositoryCodeStorage codeStorage, CoreInstanceFactoryRegistry registry, Pair<String, String> extra)
     {
         setUpRuntime(execution, codeStorage, registry, getOptions(), extra, true);
     }
 
-    public static void setUpRuntime(FunctionExecution execution, MutableCodeStorage codeStorage)
+    public static void setUpRuntime(FunctionExecution execution, MutableRepositoryCodeStorage codeStorage)
     {
         setUpRuntime(execution, codeStorage, getFactoryRegistryOverride(), getOptions(), getExtra(), true);
     }
@@ -134,12 +134,12 @@ public abstract class AbstractPureTestWithCoreCompiled
         setUpRuntime(execution, getCodeStorage(), getFactoryRegistryOverride(), options, getExtra(), true);
     }
 
-    public static void setUpRuntime(MutableCodeStorage codeStorage, Pair<String, String> extra)
+    public static void setUpRuntime(MutableRepositoryCodeStorage codeStorage, Pair<String, String> extra)
     {
         setUpRuntime(getFunctionExecution(), codeStorage, getFactoryRegistryOverride(), getOptions(), extra, true);
     }
 
-    public static void setUpRuntime(FunctionExecution execution, MutableCodeStorage codeStorage, Pair<String, String> extra)
+    public static void setUpRuntime(FunctionExecution execution, MutableRepositoryCodeStorage codeStorage, Pair<String, String> extra)
     {
         setUpRuntime(execution, codeStorage, getFactoryRegistryOverride(), getOptions(), extra, true);
     }
@@ -150,33 +150,33 @@ public abstract class AbstractPureTestWithCoreCompiled
     }
 
     @Deprecated
-    public static void setUpRuntime(FunctionExecution execution, MutableCodeStorage codeStorage, RichIterable<? extends CodeRepository> repositories)
+    public static void setUpRuntime(FunctionExecution execution, MutableRepositoryCodeStorage codeStorage, RichIterable<? extends CodeRepository> repositories)
     {
         setUpRuntime(execution, codeStorage, getFactoryRegistryOverride(), getOptions(), getExtra(), repositories);
     }
 
     @Deprecated
-    public static void setUpRuntime(MutableCodeStorage codeStorage, RichIterable<? extends CodeRepository> repositories, Pair<String, String> extra)
+    public static void setUpRuntime(MutableRepositoryCodeStorage codeStorage, RichIterable<? extends CodeRepository> repositories, Pair<String, String> extra)
     {
         setUpRuntime(getFunctionExecution(), codeStorage, getFactoryRegistryOverride(), getOptions(), extra, repositories);
     }
 
     @Deprecated
-    public static void setUpRuntime(FunctionExecution execution, MutableCodeStorage codeStorage, CoreInstanceFactoryRegistry registry, RuntimeOptions options, Pair<String, String> extra, RichIterable<? extends CodeRepository> repositories)
+    public static void setUpRuntime(FunctionExecution execution, MutableRepositoryCodeStorage codeStorage, CoreInstanceFactoryRegistry registry, RuntimeOptions options, Pair<String, String> extra, RichIterable<? extends CodeRepository> repositories)
     {
         if ((repositories != null) && !repositories.toSet().equals(codeStorage.getAllRepositories().toSet()))
         {
-            throw new IllegalArgumentException("Conflict between specified repositories (" + repositories.collect(CodeRepository::getName) + ") and those from code storage (" + codeStorage.getAllRepoNames() + ")");
+            throw new IllegalArgumentException("Conflict between specified repositories (" + repositories.collect(CodeRepository::getName) + ") and those from code storage (" + codeStorage.getAllRepositories().collect(CodeRepository::getName) + ")");
         }
         setUpRuntime(execution, codeStorage, registry, options, extra, true);
     }
 
-    public static void setUpRuntime(FunctionExecution execution, MutableCodeStorage codeStorage, CoreInstanceFactoryRegistry registry, RuntimeOptions options, Pair<String, String> extra)
+    public static void setUpRuntime(FunctionExecution execution, MutableRepositoryCodeStorage codeStorage, CoreInstanceFactoryRegistry registry, RuntimeOptions options, Pair<String, String> extra)
     {
         setUpRuntime(execution, codeStorage, registry, options, extra, true);
     }
 
-    public static void setUpRuntime(FunctionExecution execution, MutableCodeStorage codeStorage, CoreInstanceFactoryRegistry registry, RuntimeOptions options, Pair<String, String> extra, boolean loadFromCache)
+    public static void setUpRuntime(FunctionExecution execution, MutableRepositoryCodeStorage codeStorage, CoreInstanceFactoryRegistry registry, RuntimeOptions options, Pair<String, String> extra, boolean loadFromCache)
     {
         codeRepositories = codeStorage.getAllRepositories();
         functionExecution = execution;
@@ -272,7 +272,7 @@ public abstract class AbstractPureTestWithCoreCompiled
         return VoidPureRuntimeStatus.VOID_PURE_RUNTIME_STATUS;
     }
 
-    protected static MutableCodeStorage getCodeStorage()
+    protected static MutableRepositoryCodeStorage getCodeStorage()
     {
         return PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories());
     }
@@ -375,12 +375,12 @@ public abstract class AbstractPureTestWithCoreCompiled
      */
     protected static void compileTestSource(String source)
     {
-        compileTestSource("testSource_" + UUID.randomUUID().toString().replace('-', '_') + CodeStorage.PURE_FILE_EXTENSION, source);
+        compileTestSource("testSource_" + UUID.randomUUID().toString().replace('-', '_') + RepositoryCodeStorage.PURE_FILE_EXTENSION, source);
     }
 
     protected void compileTestSourceM3(String source)
     {
-        compileTestSourceM3("testSource_" + UUID.randomUUID().toString().replace('-', '_') + CodeStorage.PURE_FILE_EXTENSION, source);
+        compileTestSourceM3("testSource_" + UUID.randomUUID().toString().replace('-', '_') + RepositoryCodeStorage.PURE_FILE_EXTENSION, source);
     }
 
     protected CoreInstance compileAndExecute(String functionIdOrDescriptor, CoreInstance... parameters)

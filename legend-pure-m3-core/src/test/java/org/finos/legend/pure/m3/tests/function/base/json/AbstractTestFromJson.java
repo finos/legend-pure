@@ -14,14 +14,14 @@
 
 package org.finos.legend.pure.m3.tests.function.base.json;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureException;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -69,7 +69,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
 
         try
         {
-            this.compileTestSource(testName + CodeStorage.PURE_FILE_EXTENSION, source);
+            this.compileTestSource(testName + RepositoryCodeStorage.PURE_FILE_EXTENSION, source);
             CoreInstance func = this.runtime.getFunction(testName + "():Any[*]");
             this.functionExecution.start(func, FastList.<CoreInstance>newList());
 
@@ -79,7 +79,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
         {
             String exceptionDetails = "".equals(expectedExceptionSnippet) ? "" : ": \n" + expectedExceptionSnippet;
             this.assertException(e, "Error populating property 'testField' on class 'meta::pure::functions::json::tests::" + testName + "'" + exceptionDetails);
-            runtime.delete(testName + CodeStorage.PURE_FILE_EXTENSION);
+            runtime.delete(testName + RepositoryCodeStorage.PURE_FILE_EXTENSION);
         }
     }
 
@@ -98,10 +98,10 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
         };
         String source = StringUtils.join(rawSource, "\n") + "\n";
 
-        this.compileTestSource(testName + CodeStorage.PURE_FILE_EXTENSION, source);
+        this.compileTestSource(testName + RepositoryCodeStorage.PURE_FILE_EXTENSION, source);
         CoreInstance func = this.runtime.getFunction(testName + "():Any[*]");
         this.functionExecution.start(func, FastList.<CoreInstance>newList());
-        runtime.delete(testName + CodeStorage.PURE_FILE_EXTENSION);
+        runtime.delete(testName + RepositoryCodeStorage.PURE_FILE_EXTENSION);
     }
 
     @Test

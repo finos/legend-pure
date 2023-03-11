@@ -128,7 +128,7 @@ public abstract class PureIDEServer extends Application<ServerConfiguration>
     private MutableList<RepositoryCodeStorage> getRepositories(SourceLocationConfiguration sourceLocationConfiguration)
     {
         MutableList<RepositoryCodeStorage> fromIde = this.buildRepositories(sourceLocationConfiguration);
-        Set<String> fromIdeName = fromIde.flatCollect(RepositoryCodeStorage::getRepositories).collect(CodeRepository::getName).toSet();
+        Set<String> fromIdeName = fromIde.flatCollect(RepositoryCodeStorage::getAllRepositories).collect(CodeRepository::getName).toSet();
         List<CodeRepository> fromClasspath = CodeRepositoryProviderHelper.findCodeRepositories()
                 .toList()
                 .reject(x -> fromIdeName.contains(x.getName()));

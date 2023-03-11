@@ -23,18 +23,17 @@ import java.io.InputStream;
 
 public interface RepositoryCodeStorage
 {
-    Function<RepositoryCodeStorage, RichIterable<CodeRepository>> GET_REPOSITORIES = new Function<RepositoryCodeStorage, RichIterable<CodeRepository>>()
-    {
-        @Override
-        public RichIterable<CodeRepository> valueOf(RepositoryCodeStorage codeStorage)
-        {
-            return codeStorage.getRepositories();
-        }
-    };
+    String PATH_SEPARATOR = "/";
+    String ROOT_PATH = PATH_SEPARATOR;
+    String PURE_FILE_EXTENSION = ".pure";
 
     void initialize(Message message);
 
-    RichIterable<CodeRepository> getRepositories();
+    RichIterable<CodeRepository> getAllRepositories();
+
+    CodeRepository getRepository(String name);
+
+    CodeRepository getRepositoryForPath(String path);
 
     CodeStorageNode getNode(String path);
 
