@@ -20,11 +20,11 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.ide.light.helpers.response.ExceptionTranslation;
 import org.finos.legend.pure.ide.light.session.PureSession;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.ScratchCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.*;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.Version;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.VersionControlledCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.welcome.WelcomeCodeStorage;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
@@ -193,8 +193,8 @@ public class FileManagement
             {
                 nodes.sortThis((o1, o2) ->
                 {
-                    String name1 = PureCodeStorage.WELCOME_FILE_NAME.equals(o1.getName()) || "platform".equals(o1.getName()) || ScratchCodeRepository.NAME.equals(o1.getName()) ? "zzz" + o1.getName() : o1.getName();
-                    String name2 = PureCodeStorage.WELCOME_FILE_NAME.equals(o2.getName()) || "platform".equals(o2.getName()) || ScratchCodeRepository.NAME.equals(o2.getName()) ? "zzz" + o2.getName() : o2.getName();
+                    String name1 = WelcomeCodeStorage.WELCOME_FILE_NAME.equals(o1.getName()) || "platform".equals(o1.getName()) || ScratchCodeRepository.NAME.equals(o1.getName()) ? "zzz" + o1.getName() : o1.getName();
+                    String name2 = WelcomeCodeStorage.WELCOME_FILE_NAME.equals(o2.getName()) || "platform".equals(o2.getName()) || ScratchCodeRepository.NAME.equals(o2.getName()) ? "zzz" + o2.getName() : o2.getName();
                     return name1.compareTo(name2);
                 });
             }

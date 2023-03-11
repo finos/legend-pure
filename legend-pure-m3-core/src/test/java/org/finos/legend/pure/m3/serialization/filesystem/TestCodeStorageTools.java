@@ -16,6 +16,7 @@ package org.finos.legend.pure.m3.serialization.filesystem;
 
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.welcome.WelcomeCodeStorage;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -39,8 +40,8 @@ public class TestCodeStorageTools
     public void testIsValidPath()
     {
         Assert.assertTrue(CodeStorageTools.isValidPath(RepositoryCodeStorage.ROOT_PATH));
-        Assert.assertTrue(CodeStorageTools.isValidPath(PureCodeStorage.WELCOME_FILE_PATH));
-        Assert.assertTrue(CodeStorageTools.isValidPath(PureCodeStorage.WELCOME_FILE_NAME));
+        Assert.assertTrue(CodeStorageTools.isValidPath(WelcomeCodeStorage.WELCOME_FILE_PATH));
+        Assert.assertTrue(CodeStorageTools.isValidPath(WelcomeCodeStorage.WELCOME_FILE_NAME));
         Assert.assertTrue(CodeStorageTools.isValidPath("platform"));
         Assert.assertTrue(CodeStorageTools.isValidPath("/platform"));
         Assert.assertTrue(CodeStorageTools.isValidPath("/platform/pure/corefunctions/"));
@@ -74,8 +75,8 @@ public class TestCodeStorageTools
     @Test
     public void testIsValidFilePath()
     {
-        Assert.assertTrue(CodeStorageTools.isValidFilePath(PureCodeStorage.WELCOME_FILE_PATH));
-        Assert.assertTrue(CodeStorageTools.isValidFilePath(PureCodeStorage.WELCOME_FILE_NAME));
+        Assert.assertTrue(CodeStorageTools.isValidFilePath(WelcomeCodeStorage.WELCOME_FILE_PATH));
+        Assert.assertTrue(CodeStorageTools.isValidFilePath(WelcomeCodeStorage.WELCOME_FILE_NAME));
         Assert.assertTrue(CodeStorageTools.isValidFilePath("/platform/pure/corefunctions/lang.pure"));
         Assert.assertTrue(CodeStorageTools.isValidFilePath("nonexistent/but/still/valid/file.pure"));
         Assert.assertTrue(CodeStorageTools.isValidFilePath("/nonexistent/but/still/valid/file.pure"));
@@ -110,8 +111,8 @@ public class TestCodeStorageTools
         Assert.assertTrue(CodeStorageTools.isValidFolderPath("nonexistent/but/still/valid/folder/"));
         Assert.assertTrue(CodeStorageTools.isValidFolderPath("/nonexistent/but/still/valid/folder/"));
 
-        Assert.assertFalse(CodeStorageTools.isValidFolderPath(PureCodeStorage.WELCOME_FILE_PATH));
-        Assert.assertFalse(CodeStorageTools.isValidFolderPath(PureCodeStorage.WELCOME_FILE_NAME));
+        Assert.assertFalse(CodeStorageTools.isValidFolderPath(WelcomeCodeStorage.WELCOME_FILE_PATH));
+        Assert.assertFalse(CodeStorageTools.isValidFolderPath(WelcomeCodeStorage.WELCOME_FILE_NAME));
         Assert.assertFalse(CodeStorageTools.isValidFolderPath("/platform/pure/corefunctions/lang.pure"));
         Assert.assertFalse(CodeStorageTools.isValidFolderPath("/nonexistent/but/still/valid/file.pure"));
         Assert.assertFalse(CodeStorageTools.isValidFolderPath("/nonexistent/but/still/valid/file.csv"));
@@ -130,8 +131,8 @@ public class TestCodeStorageTools
     @Test
     public void testIsPureFilePath()
     {
-        Assert.assertTrue(CodeStorageTools.isPureFilePath(PureCodeStorage.WELCOME_FILE_PATH));
-        Assert.assertTrue(CodeStorageTools.isPureFilePath(PureCodeStorage.WELCOME_FILE_NAME));
+        Assert.assertTrue(CodeStorageTools.isPureFilePath(WelcomeCodeStorage.WELCOME_FILE_PATH));
+        Assert.assertTrue(CodeStorageTools.isPureFilePath(WelcomeCodeStorage.WELCOME_FILE_NAME));
         Assert.assertTrue(CodeStorageTools.isPureFilePath("/platform/pure/corefunctions/lang.pure"));
         Assert.assertTrue(CodeStorageTools.isPureFilePath("nonexistent/but/still/valid/file.pure"));
         Assert.assertTrue(CodeStorageTools.isPureFilePath("/nonexistent/but/still/valid/file.pure"));
@@ -174,8 +175,8 @@ public class TestCodeStorageTools
     @Test
     public void testHasPureFileExtension()
     {
-        Assert.assertTrue(CodeStorageTools.hasPureFileExtension(PureCodeStorage.WELCOME_FILE_PATH));
-        Assert.assertTrue(CodeStorageTools.hasPureFileExtension(PureCodeStorage.WELCOME_FILE_NAME));
+        Assert.assertTrue(CodeStorageTools.hasPureFileExtension(WelcomeCodeStorage.WELCOME_FILE_PATH));
+        Assert.assertTrue(CodeStorageTools.hasPureFileExtension(WelcomeCodeStorage.WELCOME_FILE_NAME));
         Assert.assertTrue(CodeStorageTools.hasPureFileExtension("/platform/pure/corefunctions/lang.pure"));
         Assert.assertTrue(CodeStorageTools.hasPureFileExtension("nonexistent/but/still/valid/file.pure"));
         Assert.assertTrue(CodeStorageTools.hasPureFileExtension("/nonexistent/but/still/valid/file.pure"));
@@ -221,7 +222,7 @@ public class TestCodeStorageTools
         Assert.assertNull(CodeStorageTools.getInitialPathElement(null));
         Assert.assertNull(CodeStorageTools.getInitialPathElement(""));
 
-        Assert.assertEquals(PureCodeStorage.WELCOME_FILE_NAME, CodeStorageTools.getInitialPathElement(PureCodeStorage.WELCOME_FILE_PATH));
+        Assert.assertEquals(WelcomeCodeStorage.WELCOME_FILE_NAME, CodeStorageTools.getInitialPathElement(WelcomeCodeStorage.WELCOME_FILE_PATH));
         Assert.assertEquals("platform", CodeStorageTools.getInitialPathElement("platform"));
         Assert.assertEquals("platform", CodeStorageTools.getInitialPathElement("/platform"));
         Assert.assertEquals("platform", CodeStorageTools.getInitialPathElement("/platform/"));
@@ -256,7 +257,7 @@ public class TestCodeStorageTools
     public void testIsCanonicalPath()
     {
         Assert.assertTrue(CodeStorageTools.isCanonicalPath(RepositoryCodeStorage.ROOT_PATH));
-        Assert.assertTrue(CodeStorageTools.isCanonicalPath(PureCodeStorage.WELCOME_FILE_PATH));
+        Assert.assertTrue(CodeStorageTools.isCanonicalPath(WelcomeCodeStorage.WELCOME_FILE_PATH));
         Assert.assertTrue(CodeStorageTools.isCanonicalPath("/platform/pure/corefunctions"));
         Assert.assertTrue(CodeStorageTools.isCanonicalPath("/platform/pure/corefunctions/lang.pure"));
         Assert.assertTrue(CodeStorageTools.isCanonicalPath("/nonexistent/but/still/valid"));

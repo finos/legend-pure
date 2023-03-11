@@ -36,6 +36,7 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.welcome.WelcomeCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.binary.*;
@@ -73,7 +74,7 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         RepositoryCodeStorage codeStorage = runtime.getCodeStorage();
         RichIterable<String> repoNames = codeStorage.getAllRepositories().collect(CodeRepository::getName);
-        if (codeStorage.isFile(PureCodeStorage.WELCOME_FILE_PATH))
+        if (codeStorage.isFile(WelcomeCodeStorage.WELCOME_FILE_PATH))
         {
             repoNames = repoNames.toList().with(null);
         }
@@ -99,7 +100,7 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         RepositoryCodeStorage codeStorage = runtime.getCodeStorage();
         RichIterable<String> repoNames = codeStorage.getAllRepositories().collect(CodeRepository::getName);
-        if (codeStorage.isFile(PureCodeStorage.WELCOME_FILE_PATH))
+        if (codeStorage.isFile(WelcomeCodeStorage.WELCOME_FILE_PATH))
         {
             repoNames = repoNames.toList().with(null);
         }

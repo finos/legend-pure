@@ -20,9 +20,9 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.welcome.WelcomeCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.GraphLoader;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
@@ -65,7 +65,7 @@ public class MemoryGraphLoaderPureGraphCache extends AbstractPureGraphCache
         MutableList<PureRepositoryJar> newJars = Lists.mutable.empty();
         RepositoryCodeStorage codeStorage = this.pureRuntime.getCodeStorage();
         RichIterable<String> repoNames = codeStorage.getAllRepositories().collect(CodeRepository::getName);
-        if (codeStorage.isFile(PureCodeStorage.WELCOME_FILE_PATH))
+        if (codeStorage.isFile(WelcomeCodeStorage.WELCOME_FILE_PATH))
         {
             repoNames = repoNames.toList().with(null);
         }

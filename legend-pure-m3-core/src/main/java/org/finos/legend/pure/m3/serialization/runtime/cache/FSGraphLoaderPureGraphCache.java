@@ -20,9 +20,9 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.utility.internal.IterableIterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.welcome.WelcomeCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.GraphLoader;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
@@ -167,7 +167,7 @@ public class FSGraphLoaderPureGraphCache extends AbstractFSDirectoryPureGraphCac
 
     private boolean shouldAddRootRepo()
     {
-        return this.pureRuntime.getCodeStorage().isFile(PureCodeStorage.WELCOME_FILE_PATH);
+        return this.pureRuntime.getCodeStorage().isFile(WelcomeCodeStorage.WELCOME_FILE_PATH);
     }
 
     private Path getRepositoryJarPath(String repositoryName)
