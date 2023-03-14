@@ -43,7 +43,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportG
 import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.imports.Imports;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.CoreInstanceFactoriesRegistry;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
@@ -80,7 +80,7 @@ public abstract class IncrementalCompiler implements SourceEventHandler
         {
             throw new RuntimeException("Instance " + object.getName() + " of type " + object.getClassifier().getName() + " has no source information. This needs to be fixed");
         }
-        return PureCodeStorage.getSourceRepoName(sourceInformation.getSourceId());
+        return CompositeCodeStorage.getSourceRepoName(sourceInformation.getSourceId());
     };
 
     final InlineDSLLibrary dslLibrary;

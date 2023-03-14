@@ -20,6 +20,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.list.mutable.ListAdapter;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.welcome.WelcomeCodeStorage;
 
 import java.util.List;
 import java.util.regex.Pattern;
@@ -96,12 +97,17 @@ public abstract class CodeRepository
 
     protected static boolean isValidRepositoryName(String name)
     {
-        return (name != null) && VALID_REPO_NAME_PATTERN.matcher(name).matches();
+        return (name != null) && (name.equals(WelcomeCodeStorage.WELCOME_FILE_NAME) || VALID_REPO_NAME_PATTERN.matcher(name).matches());
     }
 
     public static CodeRepository newScratchCodeRepository()
     {
         return new ScratchCodeRepository();
+    }
+
+    public static CodeRepository newScratchCodeRepository(String name)
+    {
+        return new ScratchCodeRepository(name);
     }
 
     /**

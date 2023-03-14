@@ -15,7 +15,8 @@
 package org.finos.legend.pure.runtime.java.compiled;
 
 import org.finos.legend.pure.m3.execution.FunctionExecution;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
@@ -123,8 +124,6 @@ public class TestGenerationWithPureStacktraceIncluded extends AbstractPureTestWi
 
     protected static MutableRepositoryCodeStorage getCodeStorage()
     {
-        //target\generated-sources\
-        Path pureCodeDirectory = Paths.get("target\\generated-sources\\");
-        return PureCodeStorage.createCodeStorage(pureCodeDirectory, getCodeRepositories());
+        return new CompositeCodeStorage(new ClassLoaderCodeStorage(getCodeRepositories()));
     }
 }

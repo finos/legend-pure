@@ -21,7 +21,7 @@ import org.eclipse.collections.impl.factory.Maps;
 import org.finos.legend.pure.m3.navigation.*;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
@@ -45,7 +45,7 @@ public class TestMultiplicity
     @BeforeClass
     public static void setUp()
     {
-        runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository()))).build();
+        runtime = new PureRuntimeBuilder(new CompositeCodeStorage(new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository()))).build();
         runtime.loadAndCompileCore();
         repository = runtime.getModelRepository();
         support = runtime.getProcessorSupport();

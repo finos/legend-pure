@@ -36,7 +36,7 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.MutableVersionControlledCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
@@ -162,7 +162,7 @@ public class TestRun implements SimpleFunction
             return Predicates.alwaysFalse();
         }
 
-        final SetIterable<String> reposPlusDependents = PureCodeStorage.getRepositoriesDependendingOnByName(codeStorage.getAllRepositories(), repos);
+        final SetIterable<String> reposPlusDependents = CompositeCodeStorage.getRepositoriesDependendingOnByName(codeStorage.getAllRepositories(), repos);
         return new Predicate<CoreInstance>()
         {
             @Override

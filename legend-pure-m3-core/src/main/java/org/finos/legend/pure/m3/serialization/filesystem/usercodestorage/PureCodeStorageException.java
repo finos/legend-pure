@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m3.serialization.filesystem;
+package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage;
 
-public class PureVCSException extends RuntimeException
+public class PureCodeStorageException extends RuntimeException
 {
-    public PureVCSException(String message, Throwable cause)
+    public PureCodeStorageException(String message, Throwable cause)
     {
         super(message, cause);
     }
 
-    public PureVCSException(String message)
+    public PureCodeStorageException(String message)
     {
         super(message);
     }

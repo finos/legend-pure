@@ -17,7 +17,7 @@ package org.finos.legend.pure.m2.ds.mapping.test;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
@@ -28,6 +28,8 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.nio.file.Path;
 
 public class TestVisibility extends AbstractPureMappingTestWithCoreCompiled
 {
@@ -63,7 +65,7 @@ public class TestVisibility extends AbstractPureMappingTestWithCoreCompiled
 
     protected static MutableRepositoryCodeStorage getCodeStorage()
     {
-        return new PureCodeStorage(null, new ClassLoaderCodeStorage(getCodeRepositories()));
+        return new CompositeCodeStorage(new ClassLoaderCodeStorage(getCodeRepositories()));
     }
 
     @Test

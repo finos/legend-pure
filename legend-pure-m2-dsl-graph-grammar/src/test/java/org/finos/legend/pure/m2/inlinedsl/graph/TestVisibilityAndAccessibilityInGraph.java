@@ -17,7 +17,7 @@ package org.finos.legend.pure.m2.inlinedsl.graph;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.SVNCodeRepository;
@@ -29,6 +29,8 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.nio.file.Path;
 
 public class TestVisibilityAndAccessibilityInGraph extends AbstractPureTestWithCoreCompiled
 {
@@ -65,7 +67,7 @@ public class TestVisibilityAndAccessibilityInGraph extends AbstractPureTestWithC
 
     protected static MutableRepositoryCodeStorage getCodeStorage()
     {
-        return new PureCodeStorage(null, new ClassLoaderCodeStorage(getCodeRepositories()));
+        return new CompositeCodeStorage(new ClassLoaderCodeStorage(getCodeRepositories()));
     }
 
     @Test

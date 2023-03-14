@@ -18,7 +18,8 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
@@ -81,12 +82,12 @@ public class AbstractPureTestWithCoreCompiledPlatform extends AbstractPureTestWi
 
     public static void setUpRuntime(Pair<String, String> extra, RichIterable<? extends CodeRepository> codeRepositories)
     {
-        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), codeRepositories), getFactoryRegistryOverride(), getOptions(), extra);
+        setUpRuntime(getFunctionExecution(), new CompositeCodeStorage(new ClassLoaderCodeStorage(codeRepositories)), getFactoryRegistryOverride(), getOptions(), extra);
     }
 
     protected static MutableRepositoryCodeStorage getCodeStorage()
     {
-        return PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories());
+        return new CompositeCodeStorage(new ClassLoaderCodeStorage(getCodeRepositories()));
     }
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()

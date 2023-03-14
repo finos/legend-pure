@@ -309,7 +309,7 @@ public class FileManagement
     {
         VersionControlledCodeStorage codeStorage = (VersionControlledCodeStorage) cs;
         long currentRevision = codeStorage.getCurrentRevision(path);
-        String repoName = codeStorage.getRepository(path).getName();
+        String repoName = codeStorage.getRepositoryForPath(path).getName();
         builder.append("{\"li_attr\":{\"id\":\"file_");
         builder.append(path);
         builder.append("\",\"path\":\"").append(path).append("\",\"file\":false,\"repo\":true");

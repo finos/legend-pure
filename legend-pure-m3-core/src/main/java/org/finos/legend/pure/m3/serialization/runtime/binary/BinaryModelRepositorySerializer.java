@@ -20,7 +20,7 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.Version;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.VersionControlledCodeStorage;
@@ -66,7 +66,7 @@ public class BinaryModelRepositorySerializer
         {
             this.runtime.getSourceRegistry().getSources().forEach(source ->
             {
-                if (PureCodeStorage.isSourceInRepository(source.getId(), this.repositoryName))
+                if (CompositeCodeStorage.isSourceInRepository(source.getId(), this.repositoryName))
                 {
                     stream.reset();
                     SourceSerializationResult result = BinaryModelSourceSerializer.serialize(writer, source, this.runtime);

@@ -18,7 +18,7 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.utility.LazyIterate;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
@@ -69,7 +69,7 @@ public class PureJarSerializer
             log.info("    *Building code storage leveraging the class loader (as sourceDirectory is not specified)");
             ClassLoaderCodeStorage cs = new ClassLoaderCodeStorage(classLoader, repositories.getRepositories());
             log.info("      " + cs.getAllRepositories().collect(CodeRepository::getName) + " - " + cs.getUserFiles().size() + " files");
-            MutableRepositoryCodeStorage codeStorage = new PureCodeStorage(null, cs);
+            MutableRepositoryCodeStorage codeStorage = new CompositeCodeStorage(cs);
 
             Message message = getMessage(log, "      ");
             log.info("    *Starting file compilation");
@@ -91,7 +91,7 @@ public class PureJarSerializer
             log.info("    *Loading the following repo from PARs: " + repositoriesWithoutSource.collect(CodeRepository::getName));
 
             // Build the runtime
-            MutableRepositoryCodeStorage codeStorage = new PureCodeStorage(sourceDirectory, allCodeStorage.toArray(new RepositoryCodeStorage[0]));
+            MutableRepositoryCodeStorage codeStorage = new CompositeCodeStorage(allCodeStorage.toArray(new RepositoryCodeStorage[0]));
             runtime = new PureRuntimeBuilder(codeStorage).setTransactionalByDefault(false).build();
 
             // Load the PARS

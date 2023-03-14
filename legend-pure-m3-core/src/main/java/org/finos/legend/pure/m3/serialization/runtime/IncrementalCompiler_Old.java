@@ -31,7 +31,7 @@ import org.finos.legend.pure.m3.compiler.unload.unbind.UnbindState;
 import org.finos.legend.pure.m3.compiler.unload.walk.WalkerState;
 import org.finos.legend.pure.m3.compiler.validation.ValidationType;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
@@ -99,7 +99,7 @@ public class IncrementalCompiler_Old extends IncrementalCompiler
         {
             result = new SourceMutation();
 
-            Multimap<String, ? extends Source> sourcesByRepo = sources.groupBy((Source source) -> PureCodeStorage.getSourceRepoName(source.getId()));
+            Multimap<String, ? extends Source> sourcesByRepo = sources.groupBy((Source source) -> CompositeCodeStorage.getSourceRepoName(source.getId()));
             Multimap<String, CoreInstance> toProcessByRepo = this.toProcess.groupBy(GET_COREINSTANCE_REPO_NAME);
             MutableSet<String> allReposToCompile = Sets.mutable.withAll(sourcesByRepo.keysView()).withAll(toProcessByRepo.keysView());
 

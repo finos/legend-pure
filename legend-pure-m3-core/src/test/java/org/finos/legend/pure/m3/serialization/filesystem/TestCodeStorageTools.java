@@ -237,6 +237,9 @@ public class TestCodeStorageTools
         Assert.assertEquals("platform", CodeStorageTools.getInitialPathElement("platform/pure/corefunctions/"));
         Assert.assertEquals("platform", CodeStorageTools.getInitialPathElement("/platform/pure/corefunctions/lang.pure"));
         Assert.assertEquals("platform", CodeStorageTools.getInitialPathElement("platform/pure/corefunctions/lang.pure"));
+        Assert.assertEquals("welcome.pure", CodeStorageTools.getInitialPathElement("welcome.pure"));
+        Assert.assertEquals("welcome.pure", CodeStorageTools.getInitialPathElement("/welcome.pure"));
+        Assert.assertEquals("welcome.pure", CodeStorageTools.getInitialPathElement("/welcome.pure/"));
     }
 
     @Test

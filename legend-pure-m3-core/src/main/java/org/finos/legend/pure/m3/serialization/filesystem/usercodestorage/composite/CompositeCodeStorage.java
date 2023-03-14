@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m3.serialization.filesystem;
+package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
@@ -32,38 +32,38 @@ import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.StringIterate;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.*;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.*;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.fs.MutableFSCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.MutableVersionControlledCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.Revision;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.UpdateReport;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.VersionControlledCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.welcome.WelcomeCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 
 import java.io.*;
-import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-public class PureCodeStorage implements MutableVersionControlledCodeStorage
+public class CompositeCodeStorage implements MutableVersionControlledCodeStorage
 {
     private final MutableList<RepositoryCodeStorage> codeStorages;
     private final MutableMap<String, RepositoryCodeStorage> codeStorageByName;
     private final ImmutableMap<String, CodeRepository> repositoriesByName;
 
-    public PureCodeStorage(Path root, RepositoryCodeStorage... codeStorages)
+    public CompositeCodeStorage(RichIterable<RepositoryCodeStorage> codeStorages)
+    {
+        this(codeStorages.toArray(new RepositoryCodeStorage[0]));
+    }
+
+    public CompositeCodeStorage(RepositoryCodeStorage... codeStorages)
     {
         codeStorages = codeStorages.length == 0 ? new RepositoryCodeStorage[]{new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository())} : codeStorages;
         this.codeStorages = Lists.mutable.with(codeStorages);
-        WelcomeCodeStorage welcomeCodeStorage = new WelcomeCodeStorage(root);
         this.codeStorageByName = indexCodeStoragesByName(codeStorages);
-        this.codeStorageByName.put(WelcomeCodeStorage.WELCOME_FILE_NAME, welcomeCodeStorage);
         this.repositoriesByName = this.codeStorages.asLazy().flatCollect(RepositoryCodeStorage::getAllRepositories).groupByUniqueKey(CodeRepository::getName, UnifiedMap.newMap(this.codeStorageByName.size())).toImmutable();
-        this.codeStorages.add(welcomeCodeStorage);
     }
 
     @Override
@@ -521,12 +521,12 @@ public class PureCodeStorage implements MutableVersionControlledCodeStorage
         {
             if (path == null)
             {
-                throw new PureVCSException("Some of the paths provided for commit were found to be null");
+                throw new PureCodeStorageException("Some of the paths provided for commit were found to be null");
             }
             RepositoryCodeStorage pathCodeStorage = getCodeStorage(path);
             if (!(pathCodeStorage instanceof MutableVersionControlledCodeStorage))
             {
-                throw new PureVCSException("Cannot commit " + paths);
+                throw new PureCodeStorageException("Cannot commit " + paths);
             }
             if (codeStorage == null)
             {
@@ -534,12 +534,12 @@ public class PureCodeStorage implements MutableVersionControlledCodeStorage
             }
             else if (codeStorage != pathCodeStorage)
             {
-                throw new PureVCSException("Cannot commit " + paths);
+                throw new PureCodeStorageException("Cannot commit " + paths);
             }
         }
         if (codeStorage == null)
         {
-            throw new PureVCSException("Cannot commit " + paths);
+            throw new PureCodeStorageException("Cannot commit " + paths);
         }
         codeStorage.commit(paths, message);
     }
@@ -565,11 +565,11 @@ public class PureCodeStorage implements MutableVersionControlledCodeStorage
         if (exceptions.size() == 1)
         {
             Exception e = exceptions.get(0);
-            if (e instanceof PureVCSException)
+            if (e instanceof PureCodeStorageException)
             {
-                throw (PureVCSException) e;
+                throw (PureCodeStorageException) e;
             }
-            throw new PureVCSException("Error performing cleanup", e);
+            throw new PureCodeStorageException("Error performing cleanup", e);
         }
         if (exceptions.size() > 1)
         {
@@ -583,7 +583,7 @@ public class PureCodeStorage implements MutableVersionControlledCodeStorage
             }
             pw.println("------");
             pw.flush();
-            throw new PureVCSException(sw.toString());
+            throw new PureCodeStorageException(sw.toString());
         }
     }
 
@@ -602,11 +602,11 @@ public class PureCodeStorage implements MutableVersionControlledCodeStorage
         }
         catch (Exception e)
         {
-            if (e instanceof PureVCSException)
+            if (e instanceof PureCodeStorageException)
             {
-                throw (PureVCSException) e;
+                throw (PureCodeStorageException) e;
             }
-            throw new PureVCSException("Error applying patch", e);
+            throw new PureCodeStorageException("Error applying patch", e);
         }
     }
 
@@ -628,11 +628,11 @@ public class PureCodeStorage implements MutableVersionControlledCodeStorage
         }
         catch (Exception e)
         {
-            if (e instanceof PureVCSException)
+            if (e instanceof PureCodeStorageException)
             {
-                throw (PureVCSException) e;
+                throw (PureCodeStorageException) e;
             }
-            throw new PureVCSException("Error checking file conflicts", e);
+            throw new PureCodeStorageException("Error checking file conflicts", e);
         }
         return false;
     }
@@ -717,53 +717,7 @@ public class PureCodeStorage implements MutableVersionControlledCodeStorage
 
 
 
-    public static PureCodeStorage createCodeStorage(Path root, Iterable<? extends CodeRepository> repositories)
-    {
-        return new PureCodeStorage(root, getCodeStorages(repositories, root, null));
-    }
 
-    public static PureCodeStorage createCodeStorage(Path root, Iterable<? extends CodeRepository> repositories, VCSCodeStorageBuilder svnCodeStorageBuilder)
-    {
-        return new PureCodeStorage(root, getCodeStorages(repositories, root, svnCodeStorageBuilder));
-    }
-
-    private static RepositoryCodeStorage[] getCodeStorages(Iterable<? extends CodeRepository> repositories, Path root, VCSCodeStorageBuilder svnCodeStorageBuilder)
-    {
-        MutableList<RepositoryCodeStorage> codeStorages = Lists.mutable.empty();
-        MutableList<SVNCodeRepository> svnCodeRepositories = Lists.mutable.empty();
-        for (CodeRepository repository : repositories)
-        {
-            if (repository instanceof SVNCodeRepository)
-            {
-                svnCodeRepositories.add((SVNCodeRepository)repository);
-            }
-            else if (repository instanceof GenericCodeRepository)
-            {
-                codeStorages.add(new ClassLoaderCodeStorage(repository));
-            }
-            else if (repository instanceof ScratchCodeRepository)
-            {
-                if (root == null)
-                {
-                    throw new RuntimeException("Cannot create code storage for scratch without a root directory");
-                }
-                codeStorages.add(new MutableFSCodeStorage(repository, root.resolve(repository.getName())));
-            }
-            else
-            {
-                throw new IllegalArgumentException("Unhandled code repository: " + repository);
-            }
-        }
-        if (svnCodeRepositories.notEmpty())
-        {
-            if (svnCodeStorageBuilder == null)
-            {
-                throw new RuntimeException("Cannot create SVN code storage without an SVNCodeStorageBuilder");
-            }
-            codeStorages.addAllIterable(svnCodeStorageBuilder.createPureCodeStorage(svnCodeRepositories));
-        }
-        return codeStorages.toArray(new RepositoryCodeStorage[codeStorages.size()]);
-    }
 
     private static MutableMap<String, RepositoryCodeStorage> indexCodeStoragesByName(RepositoryCodeStorage... codeStorages)
     {

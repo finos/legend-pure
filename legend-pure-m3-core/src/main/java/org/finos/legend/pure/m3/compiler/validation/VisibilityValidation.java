@@ -41,7 +41,7 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -143,16 +143,16 @@ public class VisibilityValidation
             Type rawType = (Type) ImportStub.withImportStubByPass(genericType._rawTypeCoreInstance(), processorSupport);
             if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(genericType) && !Visibility.isVisibleInSource(rawType, sourceId, validatorState.getCodeStorage().getAllRepositories(), processorSupport))
             {
-                String classRepoName = PureCodeStorage.getSourceRepoName(cls.getSourceInformation().getSourceId());
-                String otherRepoName = PureCodeStorage.getSourceRepoName(rawType.getSourceInformation().getSourceId());
+                String classRepoName = CompositeCodeStorage.getSourceRepoName(cls.getSourceInformation().getSourceId());
+                String otherRepoName = CompositeCodeStorage.getSourceRepoName(rawType.getSourceInformation().getSourceId());
                 //todo: temporarily allow these while we clean-up
                 boolean classIsInModelRepo = (classRepoName != null) && classRepoName.startsWith("model");
                 boolean otherIsInModelRepo = (otherRepoName != null) && otherRepoName.startsWith("model");
                 if (!(classIsInModelRepo && otherIsInModelRepo))
                 {
                     throw new PureCompilationException(p.getSourceInformation(), "Associations are not permitted between classes in different repositories, " +
-                            getElementNameForExceptionMessage(rawType, processorSupport) + " is in the \"" + PureCodeStorage.getSourceRepoName(rawType.getSourceInformation().getSourceId()) + "\" repository and " +
-                            getElementNameForExceptionMessage(cls, processorSupport) + " is in the \"" + PureCodeStorage.getSourceRepoName(cls.getSourceInformation().getSourceId()) + "\" repository" +
+                            getElementNameForExceptionMessage(rawType, processorSupport) + " is in the \"" + CompositeCodeStorage.getSourceRepoName(rawType.getSourceInformation().getSourceId()) + "\" repository and " +
+                            getElementNameForExceptionMessage(cls, processorSupport) + " is in the \"" + CompositeCodeStorage.getSourceRepoName(cls.getSourceInformation().getSourceId()) + "\" repository" +
                             ". This can be solved by first creating a subclass located in the same repository and creating an Association to the subclass.");
                 }
             }

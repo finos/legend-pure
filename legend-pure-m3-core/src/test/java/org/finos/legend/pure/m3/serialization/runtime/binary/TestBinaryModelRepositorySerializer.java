@@ -22,7 +22,7 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.test.Verify;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.imports.Imports;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.SystemCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
@@ -42,6 +42,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -225,7 +226,7 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
     {
         GenericCodeRepository testRepo = new GenericCodeRepository("test", null, "platform");
         RepositoryCodeStorage classPathCodeStorage = new ClassLoaderCodeStorage(getRepositoryByName("platform"), testRepo);
-        PureCodeStorage codeStorage = new PureCodeStorage(null, classPathCodeStorage);
+        CompositeCodeStorage codeStorage = new CompositeCodeStorage(classPathCodeStorage);
         PureRuntime runtime2 = new PureRuntimeBuilder(codeStorage).withRuntimeStatus(getPureRuntimeStatus()).buildAndInitialize();
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();

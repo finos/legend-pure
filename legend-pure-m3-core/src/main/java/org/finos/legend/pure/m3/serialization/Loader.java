@@ -24,7 +24,7 @@ import org.finos.legend.pure.m3.compiler.validation.ValidationType;
 import org.finos.legend.pure.m3.compiler.validation.Validator;
 import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
@@ -37,6 +37,8 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.exception.PureException;
+
+import java.nio.file.Path;
 
 public class Loader
 {
@@ -72,7 +74,7 @@ public class Loader
 
             // Validate M3
             stateListener.startValidation();
-            Validator.validateM3(newInstances, validationType, library, new InlineDSLLibrary(), new PureCodeStorage(null), repository, context, processorSupport);
+            Validator.validateM3(newInstances, validationType, library, new InlineDSLLibrary(), new CompositeCodeStorage(), repository, context, processorSupport);
             stateListener.finishedValidation();
         }
         catch (PureException e)

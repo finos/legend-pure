@@ -20,7 +20,7 @@ import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
@@ -34,6 +34,8 @@ import org.json.simple.parser.ParseException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.nio.file.Path;
 
 public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompiled
 {
@@ -371,7 +373,7 @@ public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompile
         CodeRepositorySet.Builder builder = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true));
         MutableList<CodeRepository> rep = Lists.mutable.withAll(builder.build().getRepositories());
         rep.add(new GenericCodeRepository("test", null, "platform", "platform_functions", "platform_functions_json"));
-        return new PureCodeStorage(null, new ClassLoaderCodeStorage(rep));
+        return new CompositeCodeStorage(new ClassLoaderCodeStorage(rep));
     }
 
     public static Pair<String, String> getExtra()

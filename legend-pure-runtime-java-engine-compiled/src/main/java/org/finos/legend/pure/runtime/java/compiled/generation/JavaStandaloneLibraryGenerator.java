@@ -23,7 +23,7 @@ import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.utility.Iterate;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.RepositoryComparator;
@@ -259,10 +259,10 @@ public class JavaStandaloneLibraryGenerator
     {
         MutableMap<String, MutableList<Source>> sourcesByRepo = Maps.mutable.empty();
         this.runtime.getSourceRegistry().getSources().forEach((repoFilter == null) ?
-                s -> sourcesByRepo.getIfAbsentPut(PureCodeStorage.getSourceRepoName(s.getId()), Lists.mutable::empty).add(s) :
+                s -> sourcesByRepo.getIfAbsentPut(CompositeCodeStorage.getSourceRepoName(s.getId()), Lists.mutable::empty).add(s) :
                 s ->
                 {
-                    String repo = PureCodeStorage.getSourceRepoName(s.getId());
+                    String repo = CompositeCodeStorage.getSourceRepoName(s.getId());
                     if (repoFilter.test(repo))
                     {
                         sourcesByRepo.getIfAbsentPut(repo, Lists.mutable::empty).add(s);

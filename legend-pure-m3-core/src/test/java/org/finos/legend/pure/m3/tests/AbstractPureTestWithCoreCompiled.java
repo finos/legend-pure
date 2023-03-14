@@ -26,12 +26,13 @@ import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.execution.VoidFunctionExecution;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.*;
 import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJarLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.binary.SimplePureRepositoryJarLibrary;
@@ -81,7 +82,7 @@ public abstract class AbstractPureTestWithCoreCompiled
 
     public static void setUpRuntime(FunctionExecution execution, RichIterable<? extends CodeRepository> codeRepositories, CoreInstanceFactoryRegistry registry)
     {
-        setUpRuntime(execution, PureCodeStorage.createCodeStorage(getCodeStorageRoot(), codeRepositories), registry, getOptions(), getExtra(), true);
+        setUpRuntime(execution, new CompositeCodeStorage(new ClassLoaderCodeStorage(codeRepositories)), registry, getOptions(), getExtra(), true);
     }
 
     public static void setUpRuntime(MutableRepositoryCodeStorage codeStorage)
@@ -274,7 +275,7 @@ public abstract class AbstractPureTestWithCoreCompiled
 
     protected static MutableRepositoryCodeStorage getCodeStorage()
     {
-        return PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories());
+        return new CompositeCodeStorage(new ClassLoaderCodeStorage(getCodeRepositories()));
     }
 
     protected static Path getCodeStorageRoot()

@@ -37,7 +37,7 @@ import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
 import org.finos.legend.pure.m3.navigation.imports.Imports;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
@@ -111,8 +111,8 @@ public class IncrementalCompiler_New extends IncrementalCompiler
         {
             result = new SourceMutation();
 
-            Multimap<String, ? extends Source> sourcesByRepo = sources.groupBy(s -> PureCodeStorage.getSourceRepoName(s.getId()));
-            Multimap<String, ? extends Source> sourcesByRepoNew = sources.groupBy(PureCodeStorage.GET_SOURCE_REPO);
+            Multimap<String, ? extends Source> sourcesByRepo = sources.groupBy(s -> CompositeCodeStorage.getSourceRepoName(s.getId()));
+            Multimap<String, ? extends Source> sourcesByRepoNew = sources.groupBy(CompositeCodeStorage.GET_SOURCE_REPO);
             Multimap<String, SourceState> sourceStatesByRepo = this.oldSourceStates.groupBy(IncrementalCompiler_New::getSourceStateRepo);
             Multimap<String, CoreInstance> potentialRepos = potentialToProcess.groupBy(GET_COREINSTANCE_REPO_NAME);
 
@@ -169,7 +169,7 @@ public class IncrementalCompiler_New extends IncrementalCompiler
                 }
                 else if ("model-all".equals(repo))
                 {
-                    compiledSourcesByRepo.putAll(repoSources.groupBy(source -> PureCodeStorage.getSourceRepoName(source.getId())));
+                    compiledSourcesByRepo.putAll(repoSources.groupBy(source -> CompositeCodeStorage.getSourceRepoName(source.getId())));
                 }
                 else
                 {
@@ -473,7 +473,7 @@ public class IncrementalCompiler_New extends IncrementalCompiler
 
     private static String getSourceStateRepo(SourceState sourceState)
     {
-        String repo = PureCodeStorage.getSourceRepoName(sourceState.getSource().getId());
+        String repo = CompositeCodeStorage.getSourceRepoName(sourceState.getSource().getId());
         if (repo == null)
         {
             return null;
@@ -483,7 +483,7 @@ public class IncrementalCompiler_New extends IncrementalCompiler
 
     private static boolean coreInstanceIsFromRepo(CoreInstance instance, String repoName)
     {
-        String instanceRepository = PureCodeStorage.getSourceRepoName(instance.getSourceInformation().getSourceId());
+        String instanceRepository = CompositeCodeStorage.getSourceRepoName(instance.getSourceInformation().getSourceId());
         if ("Pure".equals(repoName))
         {
             return true;

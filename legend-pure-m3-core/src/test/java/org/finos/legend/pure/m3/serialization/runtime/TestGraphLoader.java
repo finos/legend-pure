@@ -33,7 +33,7 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.welcome.WelcomeCodeStorage;
@@ -280,7 +280,7 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
         // Compare sources
         SourceRegistry sourceRegistry1 = runtime.getSourceRegistry();
         SourceRegistry sourceRegistry2 = this.runtime2.getSourceRegistry();
-        MutableSet<String> relevantSourceIds1 = sourceRegistry1.getSourceIds().select(id -> repos.contains(PureCodeStorage.getSourceRepoName(id)), Sets.mutable.empty());
+        MutableSet<String> relevantSourceIds1 = sourceRegistry1.getSourceIds().select(id -> repos.contains(CompositeCodeStorage.getSourceRepoName(id)), Sets.mutable.empty());
         assertSetsEqual(relevantSourceIds1, sourceRegistry2.getSourceIds().toSet());
         assertSetsEqual(relevantSourceIds1, this.loader.getLoadedFiles().collect(PureRepositoryJarTools::binaryPathToPurePath, Sets.mutable.empty()));
         relevantSourceIds1.forEach(this::assertSourcesEqual);
@@ -292,7 +292,7 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
     private boolean isInSomeRepo(CoreInstance instance, SetIterable<String> repos)
     {
         SourceInformation sourceInfo = instance.getSourceInformation();
-        return (sourceInfo != null) && repos.contains(PureCodeStorage.getSourceRepoName(sourceInfo.getSourceId()));
+        return (sourceInfo != null) && repos.contains(CompositeCodeStorage.getSourceRepoName(sourceInfo.getSourceId()));
     }
 
     private void assertSourcesEqual(String sourceId)

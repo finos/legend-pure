@@ -16,7 +16,7 @@ package org.finos.legend.pure.m3.tests.incremental;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
@@ -27,6 +27,8 @@ import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import java.nio.file.Path;
 
 public abstract class AbstractTestIncrementalCompilation extends AbstractPureTestWithCoreCompiled
 {
@@ -42,7 +44,7 @@ public abstract class AbstractTestIncrementalCompilation extends AbstractPureTes
         repositories.add(system);
         repositories.add(model);
         repositories.add(other);
-        return new PureCodeStorage(null, new ClassLoaderCodeStorage(repositories));
+        return new CompositeCodeStorage(new ClassLoaderCodeStorage(repositories));
     }
 
     @After

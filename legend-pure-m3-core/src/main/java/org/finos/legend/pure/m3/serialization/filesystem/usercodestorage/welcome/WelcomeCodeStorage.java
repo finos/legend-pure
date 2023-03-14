@@ -1,12 +1,13 @@
 package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.welcome;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.factory.Lists;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 
 import java.io.IOException;
@@ -19,6 +20,8 @@ import java.nio.file.Path;
 public class WelcomeCodeStorage implements MutableRepositoryCodeStorage
 {
     private final Path root;
+
+    private final MutableList<CodeRepository> repos = Lists.mutable.with(CodeRepository.newScratchCodeRepository(WELCOME_FILE_NAME));
 
     public static final String WELCOME_FILE_NAME = "welcome.pure";
     public static final String WELCOME_FILE_PATH = RepositoryCodeStorage.ROOT_PATH + WELCOME_FILE_NAME;
@@ -56,19 +59,19 @@ public class WelcomeCodeStorage implements MutableRepositoryCodeStorage
     @Override
     public RichIterable<CodeRepository> getAllRepositories()
     {
-        return null;
+        return repos;
     }
 
     @Override
     public CodeRepository getRepository(String name)
     {
-        return null;
+        return WELCOME_FILE_NAME.equals(name) ? repos.getFirst() : null;
     }
 
     @Override
     public CodeRepository getRepositoryForPath(String path)
     {
-        return null;
+        return WELCOME_FILE_NAME.equals(path) ? repos.getFirst() : null;
     }
 
     @Override
@@ -318,6 +321,6 @@ public class WelcomeCodeStorage implements MutableRepositoryCodeStorage
 
     private CodeStorageNode getWelcomeNode()
     {
-        return new PureCodeStorage.RootCodeStorageNode(WELCOME_FILE_NAME, false);
+        return new CompositeCodeStorage.RootCodeStorageNode(WELCOME_FILE_NAME, false);
     }
 }

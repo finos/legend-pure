@@ -19,7 +19,7 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.test.Verify;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
@@ -29,6 +29,8 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.nio.file.Path;
 
 public abstract class AbstractTestChunk extends AbstractPureTestWithCoreCompiled
 {
@@ -94,6 +96,6 @@ public abstract class AbstractTestChunk extends AbstractPureTestWithCoreCompiled
         MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
         CodeRepository test = new GenericCodeRepository("test", null, "platform", "platform_functions");
         repositories.add(test);
-        return new PureCodeStorage(null, new ClassLoaderCodeStorage(repositories));
+        return new CompositeCodeStorage(new ClassLoaderCodeStorage(repositories));
     }
 }

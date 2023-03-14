@@ -20,7 +20,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.SVNCodeRepository;
@@ -28,6 +28,8 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpa
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.nio.file.Path;
 
 public class TestRepositoryComparator extends AbstractPureTestWithCoreCompiledPlatform
 {
@@ -46,7 +48,7 @@ public class TestRepositoryComparator extends AbstractPureTestWithCoreCompiledPl
                 SVNCodeRepository.newSystemCodeRepository()
         ).withAll(CodeRepositoryProviderHelper.findCodeRepositories());
         repositoriesByName = repositories.groupByUniqueKey(CodeRepository::getName);
-        setUpRuntime(new PureCodeStorage(null, new ClassLoaderCodeStorage(repositories)), getExtra());
+        setUpRuntime(new CompositeCodeStorage(new ClassLoaderCodeStorage(repositories)), getExtra());
     }
 
     @Test

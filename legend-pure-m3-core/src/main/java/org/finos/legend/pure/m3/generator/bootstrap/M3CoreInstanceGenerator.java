@@ -15,7 +15,6 @@
 package org.finos.legend.pure.m3.generator.bootstrap;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.impl.factory.Lists;
@@ -31,7 +30,7 @@ import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.type.Type;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
@@ -56,7 +55,7 @@ public class M3CoreInstanceGenerator
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         CodeRepositorySet.Builder builder = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true));
         RichIterable<CodeRepository> repositories = builder.build().getRepositories();
-        PureRuntime runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get(""), new ClassLoaderCodeStorage(repositories))).setTransactionalByDefault(false).build();
+        PureRuntime runtime = new PureRuntimeBuilder(new CompositeCodeStorage(new ClassLoaderCodeStorage(repositories))).setTransactionalByDefault(false).build();
 
         ModelRepository repository = runtime.getModelRepository();
         runtime.loadAndCompileCore();

@@ -27,10 +27,10 @@ import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.execution.test.PureTestBuilder;
 import org.finos.legend.pure.m3.execution.test.TestCollection;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.compiler.JavaCompilerState;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
@@ -137,7 +137,7 @@ public class PureTestBuilderCompiled extends TestSuite
                 new JavaCompilerState(null, classLoader),
                 new CompiledProcessorSupport(classLoader, MetadataLazy.fromClassLoader(classLoader, codeRepos.collect(CodeRepository::getName)), Sets.mutable.empty()),
                 null,
-                new PureCodeStorage(null, new ClassLoaderCodeStorage(classLoader, codeRepos)),
+                new CompositeCodeStorage(new ClassLoaderCodeStorage(classLoader, codeRepos)),
                 null,
                 null,
                 new ConsoleCompiled(),
