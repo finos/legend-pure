@@ -65,10 +65,6 @@ public class MemoryGraphLoaderPureGraphCache extends AbstractPureGraphCache
         MutableList<PureRepositoryJar> newJars = Lists.mutable.empty();
         RepositoryCodeStorage codeStorage = this.pureRuntime.getCodeStorage();
         RichIterable<String> repoNames = codeStorage.getAllRepositories().collect(CodeRepository::getName);
-        if (codeStorage.isFile(WelcomeCodeStorage.WELCOME_FILE_PATH))
-        {
-            repoNames = repoNames.toList().with(null);
-        }
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         for (String repoName : repoNames)
         {

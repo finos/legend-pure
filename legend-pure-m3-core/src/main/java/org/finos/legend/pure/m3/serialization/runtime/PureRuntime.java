@@ -100,8 +100,8 @@ public class PureRuntime
 
         this.incrementalCompiler =
                 useFastCompiler ?
-                    new IncrementalCompiler_New(parsers, inlineDSLs, codeStorage, this.patternLibrary, message, factoryRegistryOverride, incrementalCompilerForkJoinPool, isTransactionByDefault) :
-                    new IncrementalCompiler_Old(parsers, inlineDSLs, codeStorage, this.patternLibrary, message, factoryRegistryOverride, incrementalCompilerForkJoinPool, isTransactionByDefault);
+                        new IncrementalCompiler_New(parsers, inlineDSLs, codeStorage, this.patternLibrary, message, factoryRegistryOverride, incrementalCompilerForkJoinPool, isTransactionByDefault) :
+                        new IncrementalCompiler_Old(parsers, inlineDSLs, codeStorage, this.patternLibrary, message, factoryRegistryOverride, incrementalCompilerForkJoinPool, isTransactionByDefault);
 
         this.sourceRegistry = new SourceRegistry(codeStorage, this.incrementalCompiler.getParserLibrary(), Lists.fixedSize.<SourceEventHandler>of(this.incrementalCompiler));
 
@@ -228,12 +228,12 @@ public class PureRuntime
 
         try
         {
-            RichIterable<CodeRepository> allPlatform = this.getCodeStorage().getAllRepositories().select(c -> c.getName().startsWith("platform"));
+            RichIterable<CodeRepository> allPlatform = this.getCodeStorage().getAllRepositories().select(c -> c.getName() != null && c.getName().startsWith("platform"));
             MutableList<String> sourcePaths = allPlatform.flatCollect(c -> this.getCodeStorage().getFileOrFiles(c.getName())).toList();
 
             if (message != null)
             {
-                message.setMessage("Loading "+sourcePaths.size()+" sources...");
+                message.setMessage("Loading " + sourcePaths.size() + " sources...");
             }
             MutableList<Source> sources = sourcePaths.collect(this::getOrLoadSource);
 
@@ -285,7 +285,7 @@ public class PureRuntime
             LazyIterable<String> sourcePaths = getCodeStorage().getUserFiles().asLazy();
             if (message != null)
             {
-                message.setMessage("Loading "+sourcePaths.size()+" sources...");
+                message.setMessage("Loading " + sourcePaths.size() + " sources...");
             }
             MutableList<Source> sources = sourcePaths.collect(this::getOrLoadSource).reject(Source.IS_COMPILED).toList();
             compile(sources, postProcessorObserver);
@@ -481,7 +481,7 @@ public class PureRuntime
 
     public void modify(String path, String code)
     {
-        if(this.executedTestTracker != null)
+        if (this.executedTestTracker != null)
         {
             if (this.willModify(path, code))
             {
@@ -571,7 +571,7 @@ public class PureRuntime
             this.incrementalCompiler.markForUnload(source);
             if (!source.isInMemory())
             {
-                ((MutableVersionControlledCodeStorage)this.getCodeStorage()).markAsResolved(path);
+                ((MutableVersionControlledCodeStorage) this.getCodeStorage()).markAsResolved(path);
                 this.cache.deleteCache();
             }
             if (this.executedTestTracker != null)
@@ -585,7 +585,7 @@ public class PureRuntime
     {
         MutableRepositoryCodeStorage codeStorage = getCodeStorage();
         UpdateReport report = new UpdateReport();
-        ((MutableVersionControlledCodeStorage)this.getCodeStorage()).update(report, path, version);
+        ((MutableVersionControlledCodeStorage) this.getCodeStorage()).update(report, path, version);
         if (!report.isEmpty())
         {
             try
@@ -619,7 +619,7 @@ public class PureRuntime
 
     public void commit(ListIterable<String> paths, String message)
     {
-        ((MutableVersionControlledCodeStorage)this.getCodeStorage()).commit(paths, message);
+        ((MutableVersionControlledCodeStorage) this.getCodeStorage()).commit(paths, message);
         if (this.executedTestTracker != null)
         {
             this.executedTestTracker.invalidate();
@@ -629,7 +629,7 @@ public class PureRuntime
     public void revert(String sourceId)
     {
         MutableRepositoryCodeStorage codeStorage = getCodeStorage();
-        for (String possiblyModified : ((MutableVersionControlledCodeStorage)this.getCodeStorage()).revert(sourceId))
+        for (String possiblyModified : ((MutableVersionControlledCodeStorage) this.getCodeStorage()).revert(sourceId))
         {
             if (CodeStorageTools.hasPureFileExtension(possiblyModified))
             {
@@ -654,10 +654,10 @@ public class PureRuntime
     public RichIterable<String> applyPatch(String path, File patchFile)
     {
         MutableRepositoryCodeStorage codeStorage = getCodeStorage();
-        ((MutableVersionControlledCodeStorage)this.getCodeStorage()).applyPatch(path, patchFile);
-        RichIterable<CodeStorageNode> modifiedUserFiles = ((MutableVersionControlledCodeStorage)this.getCodeStorage()).getModifiedUserFiles();
+        ((MutableVersionControlledCodeStorage) this.getCodeStorage()).applyPatch(path, patchFile);
+        RichIterable<CodeStorageNode> modifiedUserFiles = ((MutableVersionControlledCodeStorage) this.getCodeStorage()).getModifiedUserFiles();
         RichIterable<String> rejectFiles = modifiedUserFiles.selectWith(CodeStorageNode.HAS_STATUS, CodeStorageNodeStatus.UNKNOWN).select(CodeStorageNode.IS_REJECT_FILE).collect(CodeStorageNode.GET_PATH);
-        if(!modifiedUserFiles.isEmpty())
+        if (!modifiedUserFiles.isEmpty())
         {
             try
             {
@@ -885,7 +885,7 @@ public class PureRuntime
         }
         MutableRepositoryCodeStorage codeStorage = getCodeStorage();
         CodeRepository repo = codeStorage.getRepositoryForPath(path);
-        boolean immutable = this.forceImmutable || (repo != null && repo.getName().startsWith("platform")); // TODO do something smarter here
+        boolean immutable = this.forceImmutable || (repo != null && repo.getName() != null && repo.getName().startsWith("platform")); // TODO do something smarter here
         if (Source.isInMemory(path))
         {
             throw new RuntimeException("'" + path + "' should not be in memory!");

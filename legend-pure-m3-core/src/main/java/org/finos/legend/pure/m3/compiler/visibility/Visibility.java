@@ -47,7 +47,7 @@ public class Visibility
             return true;
         }
         String repositoryName = CompositeCodeStorage.getSourceRepoName(sourceId);
-        CodeRepository repository = codeRepositories == null || repositoryName == null ? null : codeRepositories.select(r -> r.getName().equals(repositoryName)).getFirst();
+        CodeRepository repository = codeRepositories == null || repositoryName == null ? null : codeRepositories.select(r -> repositoryName.equals(r.getName())).getFirst();
         return isVisibleInRepository(instance, repository, codeRepositories, processorSupport);
     }
 
@@ -100,7 +100,7 @@ public class Visibility
             return false;
         }
 
-        CodeRepository instanceRepository = codeRepositories.select(r -> r.getName().equals(instanceRepositoryName)).getFirst();
+        CodeRepository instanceRepository = codeRepositories.select(r -> instanceRepositoryName.equals(r.getName())).getFirst();
         return (instanceRepository != null) && repository.isVisible(instanceRepository);
     }
 

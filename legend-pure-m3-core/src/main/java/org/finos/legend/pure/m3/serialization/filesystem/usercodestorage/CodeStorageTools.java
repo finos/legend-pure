@@ -74,7 +74,8 @@ public class CodeStorageTools
 
         int start = (path.charAt(0) == '/') ? 1 : 0;
         int end = path.indexOf('/', start);
-        return (end == -1) ? path.substring(start) : path.substring(start, end);
+        String value = (end == -1) ? path.substring(start) : path.substring(start, end);
+        return value.endsWith(".pure") ? null : value;
     }
 
     public static String canonicalizePath(String path)

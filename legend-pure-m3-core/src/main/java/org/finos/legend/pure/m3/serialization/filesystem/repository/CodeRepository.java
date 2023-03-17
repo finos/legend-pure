@@ -80,13 +80,13 @@ public abstract class CodeRepository
             return false;
         }
 
-        return this.name.equals(((CodeRepository) other).getName());
+        return this.name != null && this.name.equals(((CodeRepository) other).getName());
     }
 
     @Override
     public int hashCode()
     {
-        return this.name.hashCode();
+        return this.name == null ? 0 : this.name.hashCode();
     }
 
     @Override
@@ -97,7 +97,7 @@ public abstract class CodeRepository
 
     protected static boolean isValidRepositoryName(String name)
     {
-        return (name != null) && (name.equals(WelcomeCodeStorage.WELCOME_FILE_NAME) || VALID_REPO_NAME_PATTERN.matcher(name).matches());
+        return name == null || VALID_REPO_NAME_PATTERN.matcher(name).matches();
     }
 
     public static CodeRepository newScratchCodeRepository()

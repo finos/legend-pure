@@ -34,7 +34,7 @@ public class PureTestBuilderInterpreted
         PureRuntime runtime = new PureRuntimeBuilder(codeStorage).build();
         Message message = new Message("");
         functionExecution.init(runtime, message);
-        PureRepositoryJarLibrary jarLibrary = SimplePureRepositoryJarLibrary.newLibrary(GraphLoader.findJars(Lists.mutable.withAll(codeRepositories.select(c -> c.getName().startsWith("platform") || c.getName().startsWith("core")).collect(CodeRepository::getName)), Thread.currentThread().getContextClassLoader(), message));
+        PureRepositoryJarLibrary jarLibrary = SimplePureRepositoryJarLibrary.newLibrary(GraphLoader.findJars(Lists.mutable.withAll(codeRepositories.select(c -> c.getName() != null && (c.getName().startsWith("platform") || c.getName().startsWith("core"))).collect(CodeRepository::getName)), Thread.currentThread().getContextClassLoader(), message));
         GraphLoader loader = new GraphLoader(runtime.getModelRepository(), runtime.getContext(), runtime.getIncrementalCompiler().getParserLibrary(), runtime.getIncrementalCompiler().getDslLibrary(), runtime.getSourceRegistry(), runtime.getURLPatternLibrary(), jarLibrary);
         loader.loadAll(message);
         ExecutionSupport executionSupport = new ExecutionSupport();

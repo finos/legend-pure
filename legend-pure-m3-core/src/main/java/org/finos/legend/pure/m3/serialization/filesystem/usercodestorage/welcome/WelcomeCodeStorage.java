@@ -21,7 +21,7 @@ public class WelcomeCodeStorage implements MutableRepositoryCodeStorage
 {
     private final Path root;
 
-    private final MutableList<CodeRepository> repos = Lists.mutable.with(CodeRepository.newScratchCodeRepository(WELCOME_FILE_NAME));
+    private final MutableList<CodeRepository> repos = Lists.mutable.with(CodeRepository.newScratchCodeRepository(null));
 
     public static final String WELCOME_FILE_NAME = "welcome.pure";
     public static final String WELCOME_FILE_PATH = RepositoryCodeStorage.ROOT_PATH + WELCOME_FILE_NAME;
@@ -65,7 +65,7 @@ public class WelcomeCodeStorage implements MutableRepositoryCodeStorage
     @Override
     public CodeRepository getRepository(String name)
     {
-        return WELCOME_FILE_NAME.equals(name) ? repos.getFirst() : null;
+        return name == null ? repos.getFirst() : null;
     }
 
     @Override

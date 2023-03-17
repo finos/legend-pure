@@ -74,10 +74,6 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         RepositoryCodeStorage codeStorage = runtime.getCodeStorage();
         RichIterable<String> repoNames = codeStorage.getAllRepositories().collect(CodeRepository::getName);
-        if (codeStorage.isFile(WelcomeCodeStorage.WELCOME_FILE_PATH))
-        {
-            repoNames = repoNames.toList().with(null);
-        }
         for (String repoName : repoNames)
         {
             outStream.reset();
@@ -100,10 +96,6 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         RepositoryCodeStorage codeStorage = runtime.getCodeStorage();
         RichIterable<String> repoNames = codeStorage.getAllRepositories().collect(CodeRepository::getName);
-        if (codeStorage.isFile(WelcomeCodeStorage.WELCOME_FILE_PATH))
-        {
-            repoNames = repoNames.toList().with(null);
-        }
         for (String repoName : repoNames)
         {
             outStream.reset();

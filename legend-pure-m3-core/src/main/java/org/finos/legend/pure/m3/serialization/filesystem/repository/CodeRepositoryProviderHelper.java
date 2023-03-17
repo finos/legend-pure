@@ -29,7 +29,7 @@ public class CodeRepositoryProviderHelper
      */
     public static CodeRepository findPlatformCodeRepository()
     {
-        return findCodeRepositories(false).select(c->"platform".equals(c.getName())).getFirst();
+        return findCodeRepositories(false).select(c -> "platform".equals(c.getName())).getFirst();
     }
 
     /**
@@ -89,6 +89,6 @@ public class CodeRepositoryProviderHelper
 
     public static boolean isCoreRepository(CodeRepository codeRepository)
     {
-        return codeRepository != null && codeRepository.getName().startsWith("core");
+        return codeRepository != null && codeRepository.getName() != null && codeRepository.getName().startsWith("core");
     }
 }

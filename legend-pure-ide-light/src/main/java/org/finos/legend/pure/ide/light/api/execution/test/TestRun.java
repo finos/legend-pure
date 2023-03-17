@@ -155,7 +155,7 @@ public class TestRun implements SimpleFunction
         MutableSet<String> repos = Sets.mutable.empty();
         for (CodeStorageNode node : modifiedUserFiles)
         {
-            repos.add(codeStorage.getRepository(node.getPath()).getName());
+            repos.add(codeStorage.getRepositoryForPath(node.getPath()).getName());
         }
         if (repos.isEmpty())
         {
@@ -168,7 +168,7 @@ public class TestRun implements SimpleFunction
             @Override
             public boolean accept(CoreInstance test)
             {
-                return reposPlusDependents.contains(codeStorage.getRepository(test.getSourceInformation().getSourceId()).getName());
+                return reposPlusDependents.contains(codeStorage.getRepositoryForPath(test.getSourceInformation().getSourceId()).getName());
             }
         };
     }

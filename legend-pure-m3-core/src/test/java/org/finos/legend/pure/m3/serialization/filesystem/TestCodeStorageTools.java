@@ -222,7 +222,6 @@ public class TestCodeStorageTools
         Assert.assertNull(CodeStorageTools.getInitialPathElement(null));
         Assert.assertNull(CodeStorageTools.getInitialPathElement(""));
 
-        Assert.assertEquals(WelcomeCodeStorage.WELCOME_FILE_NAME, CodeStorageTools.getInitialPathElement(WelcomeCodeStorage.WELCOME_FILE_PATH));
         Assert.assertEquals("platform", CodeStorageTools.getInitialPathElement("platform"));
         Assert.assertEquals("platform", CodeStorageTools.getInitialPathElement("/platform"));
         Assert.assertEquals("platform", CodeStorageTools.getInitialPathElement("/platform/"));
@@ -237,9 +236,9 @@ public class TestCodeStorageTools
         Assert.assertEquals("platform", CodeStorageTools.getInitialPathElement("platform/pure/corefunctions/"));
         Assert.assertEquals("platform", CodeStorageTools.getInitialPathElement("/platform/pure/corefunctions/lang.pure"));
         Assert.assertEquals("platform", CodeStorageTools.getInitialPathElement("platform/pure/corefunctions/lang.pure"));
-        Assert.assertEquals("welcome.pure", CodeStorageTools.getInitialPathElement("welcome.pure"));
-        Assert.assertEquals("welcome.pure", CodeStorageTools.getInitialPathElement("/welcome.pure"));
-        Assert.assertEquals("welcome.pure", CodeStorageTools.getInitialPathElement("/welcome.pure/"));
+        Assert.assertEquals(null, CodeStorageTools.getInitialPathElement("welcome.pure"));
+        Assert.assertEquals(null, CodeStorageTools.getInitialPathElement("/welcome.pure"));
+        Assert.assertEquals(null, CodeStorageTools.getInitialPathElement("/welcome.pure/"));
     }
 
     @Test

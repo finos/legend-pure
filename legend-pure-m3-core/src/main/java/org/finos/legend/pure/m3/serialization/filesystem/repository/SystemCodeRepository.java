@@ -29,6 +29,6 @@ public final class SystemCodeRepository extends SVNCodeRepository
     @Override
     public boolean isVisible(CodeRepository other)
     {
-        return (this == other) || (other instanceof SystemCodeRepository) || CodeRepositoryProviderHelper.isCoreRepository(other) || (other != null && other.getName().startsWith("platform"));
+        return (this == other) || (other instanceof SystemCodeRepository) || CodeRepositoryProviderHelper.isCoreRepository(other) || (other != null && other.getName() != null && other.getName().startsWith("platform"));
     }
 }
