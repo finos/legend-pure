@@ -84,7 +84,7 @@ public class CodeRepositoryProviderHelper
         {
             serviceLoader.reload();
         }
-        return Iterate.collect(serviceLoader, CodeRepositoryProvider::repository, Lists.mutable.empty());
+        return Iterate.flatCollect(serviceLoader, CodeRepositoryProvider::repositories, Lists.mutable.empty());
     }
 
     public static boolean isCoreRepository(CodeRepository codeRepository)
