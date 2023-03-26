@@ -15,7 +15,10 @@
 package org.finos.legend.pure.m4.coreinstance.primitive;
 
 import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.block.function.Function2;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 
 public final class DateCoreInstance extends PrimitiveCoreInstance<PureDate>
@@ -24,7 +27,37 @@ public final class DateCoreInstance extends PrimitiveCoreInstance<PureDate>
     {
         public PureDate valueOf(CoreInstance coreInstance)
         {
-            return coreInstance == null ? null : ((DateCoreInstance)coreInstance).getValue();
+            if (coreInstance == null)
+            {
+                return null;
+            }
+            else if (coreInstance instanceof DateCoreInstance)
+            {
+                return coreInstance == null ? null : ((DateCoreInstance)coreInstance).getValue();
+            }
+            else
+            {
+                return DateFunctions.parsePureDate(coreInstance.getName());
+            }
+        }
+    };
+
+    public static final Function2<CoreInstance, ModelRepository, DateCoreInstance> CAST_CORE_INSTANCE_FN = new Function2<CoreInstance, ModelRepository, DateCoreInstance>()
+    {
+        public DateCoreInstance value(CoreInstance coreInstance, ModelRepository repository)
+        {
+            if (coreInstance == null)
+            {
+                return null;
+            }
+            else if (coreInstance instanceof DateCoreInstance)
+            {
+                return (DateCoreInstance) coreInstance;
+            }
+            else
+            {
+                return repository.newDateCoreInstance(coreInstance.getName());
+            }
         }
     };
 

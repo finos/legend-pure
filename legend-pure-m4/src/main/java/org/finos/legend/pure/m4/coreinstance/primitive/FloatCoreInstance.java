@@ -17,6 +17,8 @@ package org.finos.legend.pure.m4.coreinstance.primitive;
 import java.math.BigDecimal;
 
 import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.block.function.Function2;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public final class FloatCoreInstance extends PrimitiveCoreInstance<BigDecimal>
@@ -25,7 +27,37 @@ public final class FloatCoreInstance extends PrimitiveCoreInstance<BigDecimal>
     {
         public BigDecimal valueOf(CoreInstance coreInstance)
         {
-            return coreInstance == null ? null : ((FloatCoreInstance)coreInstance).getValue();
+            if (coreInstance == null)
+            {
+                return null;
+            }
+            else if (coreInstance instanceof FloatCoreInstance)
+            {
+                return ((FloatCoreInstance)coreInstance).getValue();
+            }
+            else
+            {
+                return new BigDecimal(coreInstance.getName());
+            }
+        }
+    };
+
+    public static final Function2<CoreInstance, ModelRepository, FloatCoreInstance> CAST_CORE_INSTANCE_FN = new Function2<CoreInstance, ModelRepository, FloatCoreInstance>()
+    {
+        public FloatCoreInstance value(CoreInstance coreInstance, ModelRepository repository)
+        {
+            if (coreInstance == null)
+            {
+                return null;
+            }
+            else if (coreInstance instanceof FloatCoreInstance)
+            {
+                return (FloatCoreInstance) coreInstance;
+            }
+            else
+            {
+                return repository.newFloatCoreInstance(coreInstance.getName());
+            }
         }
     };
 

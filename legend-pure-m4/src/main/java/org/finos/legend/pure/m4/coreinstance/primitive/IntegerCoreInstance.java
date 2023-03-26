@@ -17,6 +17,8 @@ package org.finos.legend.pure.m4.coreinstance.primitive;
 import java.math.BigInteger;
 
 import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.block.function.Function2;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public final class IntegerCoreInstance extends PrimitiveCoreInstance<Number>
@@ -25,7 +27,52 @@ public final class IntegerCoreInstance extends PrimitiveCoreInstance<Number>
     {
         public Number valueOf(CoreInstance coreInstance)
         {
-            return coreInstance == null ? null : ((IntegerCoreInstance)coreInstance).getValue();
+            if (coreInstance == null)
+            {
+                return null;
+            }
+            else if (coreInstance instanceof IntegerCoreInstance)
+            {
+                return ((IntegerCoreInstance) coreInstance).getValue();
+            }
+            else
+            {
+                String name = coreInstance.getName();
+                try
+                {
+                    return Integer.valueOf(name);
+                }
+                catch (NumberFormatException e)
+                {
+                    try
+                    {
+                        return Long.valueOf(name);
+                    }
+                    catch (NumberFormatException e1)
+                    {
+                        return new BigInteger(name);
+                    }
+                }
+            }
+        }
+    };
+
+    public static final Function2<CoreInstance, ModelRepository, IntegerCoreInstance> CAST_CORE_INSTANCE_FN = new Function2<CoreInstance, ModelRepository, IntegerCoreInstance>()
+    {
+        public IntegerCoreInstance value(CoreInstance coreInstance, ModelRepository repository)
+        {
+            if (coreInstance == null)
+            {
+                return null;
+            }
+            else if (coreInstance instanceof IntegerCoreInstance)
+            {
+                return (IntegerCoreInstance) coreInstance;
+            }
+            else
+            {
+                return repository.newIntegerCoreInstance(coreInstance.getName());
+            }
         }
     };
 

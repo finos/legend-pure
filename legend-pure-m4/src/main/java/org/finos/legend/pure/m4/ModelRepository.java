@@ -446,7 +446,7 @@ public class ModelRepository
         return newDateTimeCoreInstance(getPureDate(name));
     }
 
-    public CoreInstance newStrictTimeCoreInstance(String name)
+    public StrictTimeCoreInstance newStrictTimeCoreInstance(String name)
     {
         return newStrictTimeCoreInstance(getPureStrictTime(name));
     }

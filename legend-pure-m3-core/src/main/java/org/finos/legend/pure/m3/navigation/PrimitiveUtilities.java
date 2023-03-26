@@ -24,7 +24,6 @@ import org.finos.legend.pure.m4.coreinstance.primitive.DateCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.DecimalCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.FloatCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.IntegerCoreInstance;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 
 import java.math.BigDecimal;
@@ -42,7 +41,7 @@ public class PrimitiveUtilities
 
     public static boolean getBooleanValue(CoreInstance instance)
     {
-        return (instance instanceof BooleanCoreInstance) ? ((BooleanCoreInstance)instance).getValue() : ModelRepository.BOOLEAN_TRUE.equals(instance.getName());
+        return BooleanCoreInstance.FROM_CORE_INSTANCE_FN.valueOf(instance);
     }
 
     public static boolean getBooleanValue(CoreInstance instance, boolean defaultIfNull)
@@ -52,7 +51,7 @@ public class PrimitiveUtilities
 
     public static PureDate getDateValue(CoreInstance instance)
     {
-        return (instance instanceof DateCoreInstance) ? ((DateCoreInstance)instance).getValue() : DateFunctions.parsePureDate(instance.getName());
+        return DateCoreInstance.FROM_CORE_INSTANCE_FN.valueOf(instance);
     }
 
     public static PureDate getDateValue(CoreInstance instance, PureDate defaultIfNull)
@@ -62,7 +61,7 @@ public class PrimitiveUtilities
 
     public static BigDecimal getFloatValue(CoreInstance instance)
     {
-        return (instance instanceof FloatCoreInstance) ? ((FloatCoreInstance)instance).getValue() : new BigDecimal(instance.getName());
+        return FloatCoreInstance.FROM_CORE_INSTANCE_FN.valueOf(instance);
     }
 
     public static BigDecimal getFloatValue(CoreInstance instance, BigDecimal defaultIfNull)
@@ -82,27 +81,7 @@ public class PrimitiveUtilities
 
     public static Number getIntegerValue(CoreInstance instance)
     {
-        if (instance instanceof IntegerCoreInstance)
-        {
-            return ((IntegerCoreInstance)instance).getValue();
-        }
-
-        String name = instance.getName();
-        try
-        {
-            return Integer.valueOf(name);
-        }
-        catch (NumberFormatException e)
-        {
-            try
-            {
-                return Long.valueOf(name);
-            }
-            catch (NumberFormatException e1)
-            {
-                return new BigInteger(name);
-            }
-        }
+        return IntegerCoreInstance.FROM_CORE_INSTANCE_FN.valueOf(instance);
     }
 
     public static Number getIntegerValue(CoreInstance instance, Integer defaultIfNull)

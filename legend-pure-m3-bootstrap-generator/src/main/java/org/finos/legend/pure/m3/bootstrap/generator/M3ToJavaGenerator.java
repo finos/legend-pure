@@ -1262,11 +1262,8 @@ public class M3ToJavaGenerator
         if (isPrimitiveTypeProperty(propertyReturnGenericType))
         {
             String cast = getPrimitiveClass(propertyReturnGenericType);
-            if (!isToOne)
-            {
-                cast = "RichIterable<? extends " + cast + ">";
-            }
-            return "(" + cast + ")" + expression;
+            String fn = cast + ".CAST_CORE_INSTANCE_FN";
+            return applyFunction2WithCardinality(property, fn, expression, false, isToOne);
         }
         else
         {

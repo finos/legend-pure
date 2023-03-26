@@ -15,8 +15,11 @@
 package org.finos.legend.pure.m4.coreinstance.primitive;
 
 import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.block.function.Function2;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
+import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.StrictTimeFunctions;
 
 public final class StrictTimeCoreInstance extends PrimitiveCoreInstance<PureStrictTime>
 {
@@ -24,7 +27,37 @@ public final class StrictTimeCoreInstance extends PrimitiveCoreInstance<PureStri
     {
         public PureStrictTime valueOf(CoreInstance coreInstance)
         {
-            return coreInstance == null ? null : ((StrictTimeCoreInstance)coreInstance).getValue();
+            if (coreInstance == null)
+            {
+                return null;
+            }
+            else if (coreInstance instanceof StrictTimeCoreInstance)
+            {
+                return ((StrictTimeCoreInstance) coreInstance).getValue();
+            }
+            else
+            {
+                return StrictTimeFunctions.parsePureStrictTime(coreInstance.getName());
+            }
+        }
+    };
+
+    public static final Function2<CoreInstance, ModelRepository, StrictTimeCoreInstance> CAST_CORE_INSTANCE_FN = new Function2<CoreInstance, ModelRepository, StrictTimeCoreInstance>()
+    {
+        public StrictTimeCoreInstance value(CoreInstance coreInstance, ModelRepository repository)
+        {
+            if (coreInstance == null)
+            {
+                return null;
+            }
+            else if (coreInstance instanceof StrictTimeCoreInstance)
+            {
+                return (StrictTimeCoreInstance) coreInstance;
+            }
+            else
+            {
+                return repository.newStrictTimeCoreInstance(coreInstance.getName());
+            }
         }
     };
 

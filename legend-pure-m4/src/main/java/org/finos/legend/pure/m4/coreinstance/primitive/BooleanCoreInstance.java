@@ -15,6 +15,7 @@
 package org.finos.legend.pure.m4.coreinstance.primitive;
 
 import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.block.function.Function2;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
 
@@ -24,7 +25,37 @@ public final class BooleanCoreInstance extends PrimitiveCoreInstance<Boolean>
     {
         public Boolean valueOf(CoreInstance coreInstance)
         {
-            return coreInstance == null ? null : ((BooleanCoreInstance)coreInstance).getValue();
+            if (coreInstance == null)
+            {
+                return null;
+            }
+            else if (coreInstance instanceof BooleanCoreInstance)
+            {
+                return ((BooleanCoreInstance)coreInstance).getValue();
+            }
+            else
+            {
+                return ModelRepository.BOOLEAN_TRUE.equals(coreInstance.getName());
+            }
+        }
+    };
+
+    public static final Function2<CoreInstance, ModelRepository, BooleanCoreInstance> CAST_CORE_INSTANCE_FN = new Function2<CoreInstance, ModelRepository, BooleanCoreInstance>()
+    {
+        public BooleanCoreInstance value(CoreInstance coreInstance, ModelRepository repository)
+        {
+            if (coreInstance == null)
+            {
+                return null;
+            }
+            else if (coreInstance instanceof BooleanCoreInstance)
+            {
+                return (BooleanCoreInstance) coreInstance;
+            }
+            else
+            {
+                return repository.newBooleanCoreInstance(coreInstance.getName());
+            }
         }
     };
 

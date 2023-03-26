@@ -15,6 +15,8 @@
 package org.finos.legend.pure.m4.coreinstance.primitive;
 
 import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.block.function.Function2;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public final class StringCoreInstance extends PrimitiveCoreInstance<String>
@@ -23,7 +25,37 @@ public final class StringCoreInstance extends PrimitiveCoreInstance<String>
     {
         public String valueOf(CoreInstance coreInstance)
         {
-            return coreInstance == null ? null : ((StringCoreInstance)coreInstance).getValue();
+            if (coreInstance == null)
+            {
+                return null;
+            }
+            else if (coreInstance instanceof StringCoreInstance)
+            {
+                return ((StringCoreInstance) coreInstance).getValue();
+            }
+            else
+            {
+                return coreInstance.getName();
+            }
+        }
+    };
+
+    public static final Function2<CoreInstance, ModelRepository, StringCoreInstance> CAST_CORE_INSTANCE_FN = new Function2<CoreInstance, ModelRepository, StringCoreInstance>()
+    {
+        public StringCoreInstance value(CoreInstance coreInstance, ModelRepository repository)
+        {
+            if (coreInstance == null)
+            {
+                return null;
+            }
+            else if (coreInstance instanceof StringCoreInstance)
+            {
+                return (StringCoreInstance) coreInstance;
+            }
+            else
+            {
+                return repository.newStringCoreInstance(coreInstance.getName());
+            }
         }
     };
 
