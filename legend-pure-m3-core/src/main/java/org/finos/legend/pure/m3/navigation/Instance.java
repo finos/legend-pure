@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.navigation;
 
+import java.util.Collections;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
@@ -87,13 +88,14 @@ public class Instance
 
     public static void addValueToProperty(CoreInstance owner, String keyName, CoreInstance value, ProcessorSupport processorSupport)
     {
-        owner.addKeyValue(processorSupport.property_getPath(findProperty(owner, keyName, processorSupport)), value);
+        ListIterable<String> path = processorSupport.property_getPath(findProperty(owner, keyName, processorSupport));
+        processorSupport.instance_addValueToProperty(owner, path, Collections.singletonList(value));
     }
 
     public static void addValueToProperty(CoreInstance owner, String keyName, Iterable<? extends CoreInstance> values, ProcessorSupport processorSupport)
     {
         ListIterable<String> path = processorSupport.property_getPath(findProperty(owner, keyName, processorSupport));
-        values.forEach(v -> owner.addKeyValue(path, v));
+        processorSupport.instance_addValueToProperty(owner, path, values);
     }
 
     public static void removeProperty(CoreInstance owner, String keyName, ProcessorSupport processorSupport)
@@ -118,12 +120,12 @@ public class Instance
 
     public static void setValuesForProperty(CoreInstance owner, String property, ListIterable<? extends CoreInstance> values, ProcessorSupport processorSupport)
     {
-        owner.setKeyValues(processorSupport.property_getPath(findProperty(owner, property, processorSupport)), values);
+        processorSupport.instance_setValuesForProperty(owner, findProperty(owner, property, processorSupport), values);
     }
 
     public static CoreInstance getValueForMetaPropertyToOneResolved(CoreInstance owner, String property, ProcessorSupport processorSupport)
     {
-        CoreInstance coreInstance = owner.getValueForMetaPropertyToOne(property);
+        CoreInstance coreInstance = processorSupport.instance_getValueForMetaPropertyToOneResolved(owner, property);
         return ImportStub.withImportStubByPass(coreInstance, processorSupport);
     }
 
@@ -177,7 +179,7 @@ public class Instance
 
     public static CoreInstance getValueForMetaPropertyToOneResolved(CoreInstance owner, CoreInstance property, ProcessorSupport processorSupport)
     {
-        return ImportStub.withImportStubByPass(owner.getValueForMetaPropertyToOne(property), processorSupport);
+        return ImportStub.withImportStubByPass(processorSupport.instance_getValueForMetaPropertyToOneResolved(owner, property.getName()), processorSupport);
     }
 
     public static Function<CoreInstance, CoreInstance> getValueForMetaPropertyToOneResolvedFunction(String property, ProcessorSupport processorSupport)
@@ -187,20 +189,21 @@ public class Instance
 
     public static ListIterable<? extends CoreInstance> getValueForMetaPropertyToManyResolved(CoreInstance owner, String propertyName, ProcessorSupport processorSupport)
     {
-        return ImportStub.withImportStubByPasses(owner.getValueForMetaPropertyToMany(propertyName), processorSupport);
+        return ImportStub.withImportStubByPasses(processorSupport.instance_getValueForMetaPropertyToMany(owner, propertyName), processorSupport);
     }
 
     public static ListIterable<? extends CoreInstance> getValueForMetaPropertyToManyResolved(CoreInstance owner, CoreInstance property, ProcessorSupport processorSupport)
     {
-        return ImportStub.withImportStubByPasses(owner.getValueForMetaPropertyToMany(property), processorSupport);
+        return ImportStub.withImportStubByPasses(processorSupport.instance_getValueForMetaPropertyToMany(owner, property), processorSupport);
     }
 
     private static CoreInstance findProperty(CoreInstance owner, String propertyName, ProcessorSupport processorSupport)
     {
-        CoreInstance property = processorSupport.class_findPropertyUsingGeneralization(processorSupport.getClassifier(owner), propertyName);
+        CoreInstance classifier = processorSupport.getClassifier(owner);
+        CoreInstance property = processorSupport.class_findPropertyUsingGeneralization(classifier, propertyName);
         if (property == null)
         {
-            throw new RuntimeException("Cannot find property '" + propertyName + "' on " + PackageableElement.getUserPathForPackageableElement(owner.getClassifier()));
+            throw new RuntimeException("Cannot find property '" + propertyName + "' on " + PackageableElement.getUserPathForPackageableElement(classifier));
         }
         return property;
     }

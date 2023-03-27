@@ -112,4 +112,29 @@ public interface ProcessorSupport
      * @return Any
      */
     CoreInstance type_TopType();
+
+    default void instance_addValueToProperty(CoreInstance owner, ListIterable<String> path, Iterable<? extends CoreInstance> values)
+    {
+        values.forEach(v -> owner.addKeyValue(path, v));
+    }
+
+    default void instance_setValuesForProperty(CoreInstance owner, CoreInstance property, ListIterable<? extends CoreInstance> values)
+    {
+        owner.setKeyValues(this.property_getPath(property), values);
+    }
+
+    default CoreInstance instance_getValueForMetaPropertyToOneResolved(CoreInstance owner, String property)
+    {
+        return owner.getValueForMetaPropertyToOne(property);
+    }
+
+    default ListIterable<? extends CoreInstance> instance_getValueForMetaPropertyToMany(CoreInstance owner, String propertyName)
+    {
+        return owner.getValueForMetaPropertyToMany(propertyName);
+    }
+
+    default ListIterable<? extends CoreInstance> instance_getValueForMetaPropertyToMany(CoreInstance owner, CoreInstance property)
+    {
+        return owner.getValueForMetaPropertyToMany(property);
+    }
 }
