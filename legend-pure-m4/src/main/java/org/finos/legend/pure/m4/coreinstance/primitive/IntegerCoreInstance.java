@@ -23,58 +23,8 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public final class IntegerCoreInstance extends PrimitiveCoreInstance<Number>
 {
-    public static final Function<CoreInstance, Number> FROM_CORE_INSTANCE_FN = new Function<CoreInstance, Number>()
-    {
-        public Number valueOf(CoreInstance coreInstance)
-        {
-            if (coreInstance == null)
-            {
-                return null;
-            }
-            else if (coreInstance instanceof IntegerCoreInstance)
-            {
-                return ((IntegerCoreInstance) coreInstance).getValue();
-            }
-            else
-            {
-                String name = coreInstance.getName();
-                try
-                {
-                    return Integer.valueOf(name);
-                }
-                catch (NumberFormatException e)
-                {
-                    try
-                    {
-                        return Long.valueOf(name);
-                    }
-                    catch (NumberFormatException e1)
-                    {
-                        return new BigInteger(name);
-                    }
-                }
-            }
-        }
-    };
-
-    public static final Function2<CoreInstance, ModelRepository, IntegerCoreInstance> CAST_CORE_INSTANCE_FN = new Function2<CoreInstance, ModelRepository, IntegerCoreInstance>()
-    {
-        public IntegerCoreInstance value(CoreInstance coreInstance, ModelRepository repository)
-        {
-            if (coreInstance == null)
-            {
-                return null;
-            }
-            else if (coreInstance instanceof IntegerCoreInstance)
-            {
-                return (IntegerCoreInstance) coreInstance;
-            }
-            else
-            {
-                return repository.newIntegerCoreInstance(coreInstance.getName());
-            }
-        }
-    };
+    public static final Function<CoreInstance, Number> FROM_CORE_INSTANCE_FN = IntegerCoreInstance::valueOfCoreInstance;
+    public static final Function2<CoreInstance, ModelRepository, IntegerCoreInstance> CONVERT_CORE_INSTANCE_FN = IntegerCoreInstance::convertCoreInstance;
 
     private String name = null;
 
@@ -112,5 +62,52 @@ public final class IntegerCoreInstance extends PrimitiveCoreInstance<Number>
     public CoreInstance copy()
     {
         return new IntegerCoreInstance(this.getValue(), this.getClassifier(), this.getSyntheticId());
+    }
+
+    public static IntegerCoreInstance convertCoreInstance(CoreInstance coreInstance, ModelRepository repository)
+    {
+        if (coreInstance == null)
+        {
+            return null;
+        }
+        else if (coreInstance instanceof IntegerCoreInstance)
+        {
+            return (IntegerCoreInstance) coreInstance;
+        }
+        else
+        {
+            return repository.newIntegerCoreInstance(coreInstance.getName());
+        }
+    }
+
+    public static Number valueOfCoreInstance(CoreInstance coreInstance)
+    {
+        if (coreInstance == null)
+        {
+            return null;
+        }
+        else if (coreInstance instanceof IntegerCoreInstance)
+        {
+            return ((IntegerCoreInstance) coreInstance).getValue();
+        }
+        else
+        {
+            String name = coreInstance.getName();
+            try
+            {
+                return Integer.valueOf(name);
+            }
+            catch (NumberFormatException e)
+            {
+                try
+                {
+                    return Long.valueOf(name);
+                }
+                catch (NumberFormatException e1)
+                {
+                    return new BigInteger(name);
+                }
+            }
+        }
     }
 }

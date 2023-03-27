@@ -1262,7 +1262,7 @@ public class M3ToJavaGenerator
         if (isPrimitiveTypeProperty(propertyReturnGenericType))
         {
             String cast = getPrimitiveClass(propertyReturnGenericType);
-            String fn = cast + ".CAST_CORE_INSTANCE_FN";
+            String fn = cast + ".CONVERT_CORE_INSTANCE_FN";
             return applyFunction2WithCardinality(property, fn, expression, false, isToOne);
         }
         else

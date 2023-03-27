@@ -23,43 +23,8 @@ import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 
 public final class DateCoreInstance extends PrimitiveCoreInstance<PureDate>
 {
-    public static final Function<CoreInstance, PureDate> FROM_CORE_INSTANCE_FN = new Function<CoreInstance, PureDate>()
-    {
-        public PureDate valueOf(CoreInstance coreInstance)
-        {
-            if (coreInstance == null)
-            {
-                return null;
-            }
-            else if (coreInstance instanceof DateCoreInstance)
-            {
-                return coreInstance == null ? null : ((DateCoreInstance)coreInstance).getValue();
-            }
-            else
-            {
-                return DateFunctions.parsePureDate(coreInstance.getName());
-            }
-        }
-    };
-
-    public static final Function2<CoreInstance, ModelRepository, DateCoreInstance> CAST_CORE_INSTANCE_FN = new Function2<CoreInstance, ModelRepository, DateCoreInstance>()
-    {
-        public DateCoreInstance value(CoreInstance coreInstance, ModelRepository repository)
-        {
-            if (coreInstance == null)
-            {
-                return null;
-            }
-            else if (coreInstance instanceof DateCoreInstance)
-            {
-                return (DateCoreInstance) coreInstance;
-            }
-            else
-            {
-                return repository.newDateCoreInstance(coreInstance.getName());
-            }
-        }
-    };
+    public static final Function<CoreInstance, PureDate> FROM_CORE_INSTANCE_FN = DateCoreInstance::valueOfCoreInstance;
+    public static final Function2<CoreInstance, ModelRepository, DateCoreInstance> CONVERT_CORE_INSTANCE_FN = DateCoreInstance::convertCoreInstance;
 
     private String name = null;
 
@@ -82,5 +47,37 @@ public final class DateCoreInstance extends PrimitiveCoreInstance<PureDate>
     public CoreInstance copy()
     {
         return new DateCoreInstance(this.getValue(), this.getClassifier(), this.getSyntheticId());
+    }
+
+    public static DateCoreInstance convertCoreInstance(CoreInstance coreInstance, ModelRepository repository)
+    {
+        if (coreInstance == null)
+        {
+            return null;
+        }
+        else if (coreInstance instanceof DateCoreInstance)
+        {
+            return (DateCoreInstance) coreInstance;
+        }
+        else
+        {
+            return repository.newDateCoreInstance(coreInstance.getName());
+        }
+    }
+
+    public static PureDate valueOfCoreInstance(CoreInstance coreInstance)
+    {
+        if (coreInstance == null)
+        {
+            return null;
+        }
+        else if (coreInstance instanceof DateCoreInstance)
+        {
+            return ((DateCoreInstance)coreInstance).getValue();
+        }
+        else
+        {
+            return DateFunctions.parsePureDate(coreInstance.getName());
+        }
     }
 }

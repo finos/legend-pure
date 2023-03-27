@@ -41,7 +41,7 @@ public class PrimitiveUtilities
 
     public static boolean getBooleanValue(CoreInstance instance)
     {
-        return BooleanCoreInstance.FROM_CORE_INSTANCE_FN.valueOf(instance);
+        return BooleanCoreInstance.valueOfCoreInstance(instance);
     }
 
     public static boolean getBooleanValue(CoreInstance instance, boolean defaultIfNull)
@@ -51,7 +51,7 @@ public class PrimitiveUtilities
 
     public static PureDate getDateValue(CoreInstance instance)
     {
-        return DateCoreInstance.FROM_CORE_INSTANCE_FN.valueOf(instance);
+        return DateCoreInstance.valueOfCoreInstance(instance);
     }
 
     public static PureDate getDateValue(CoreInstance instance, PureDate defaultIfNull)
@@ -61,7 +61,7 @@ public class PrimitiveUtilities
 
     public static BigDecimal getFloatValue(CoreInstance instance)
     {
-        return FloatCoreInstance.FROM_CORE_INSTANCE_FN.valueOf(instance);
+        return FloatCoreInstance.valueOfCoreInstance(instance);
     }
 
     public static BigDecimal getFloatValue(CoreInstance instance, BigDecimal defaultIfNull)
@@ -81,7 +81,7 @@ public class PrimitiveUtilities
 
     public static Number getIntegerValue(CoreInstance instance)
     {
-        return IntegerCoreInstance.FROM_CORE_INSTANCE_FN.valueOf(instance);
+        return IntegerCoreInstance.valueOfCoreInstance(instance);
     }
 
     public static Number getIntegerValue(CoreInstance instance, Integer defaultIfNull)

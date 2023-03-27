@@ -23,43 +23,8 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public final class FloatCoreInstance extends PrimitiveCoreInstance<BigDecimal>
 {
-    public static final Function<CoreInstance, BigDecimal> FROM_CORE_INSTANCE_FN = new Function<CoreInstance, BigDecimal>()
-    {
-        public BigDecimal valueOf(CoreInstance coreInstance)
-        {
-            if (coreInstance == null)
-            {
-                return null;
-            }
-            else if (coreInstance instanceof FloatCoreInstance)
-            {
-                return ((FloatCoreInstance)coreInstance).getValue();
-            }
-            else
-            {
-                return new BigDecimal(coreInstance.getName());
-            }
-        }
-    };
-
-    public static final Function2<CoreInstance, ModelRepository, FloatCoreInstance> CAST_CORE_INSTANCE_FN = new Function2<CoreInstance, ModelRepository, FloatCoreInstance>()
-    {
-        public FloatCoreInstance value(CoreInstance coreInstance, ModelRepository repository)
-        {
-            if (coreInstance == null)
-            {
-                return null;
-            }
-            else if (coreInstance instanceof FloatCoreInstance)
-            {
-                return (FloatCoreInstance) coreInstance;
-            }
-            else
-            {
-                return repository.newFloatCoreInstance(coreInstance.getName());
-            }
-        }
-    };
+    public static final Function<CoreInstance, BigDecimal> FROM_CORE_INSTANCE_FN = FloatCoreInstance::valueOfCoreInstance;
+    public static final Function2<CoreInstance, ModelRepository, FloatCoreInstance> CONVERT_CORE_INSTANCE_FN = FloatCoreInstance::convertCoreInstance;
 
     private String name = null;
 
@@ -82,5 +47,37 @@ public final class FloatCoreInstance extends PrimitiveCoreInstance<BigDecimal>
     public CoreInstance copy()
     {
         return new FloatCoreInstance(this.getValue(), this.getClassifier(), this.getSyntheticId());
+    }
+
+    public static FloatCoreInstance convertCoreInstance(CoreInstance coreInstance, ModelRepository repository)
+    {
+        if (coreInstance == null)
+        {
+            return null;
+        }
+        else if (coreInstance instanceof FloatCoreInstance)
+        {
+            return (FloatCoreInstance) coreInstance;
+        }
+        else
+        {
+            return repository.newFloatCoreInstance(coreInstance.getName());
+        }
+    }
+
+    public static BigDecimal valueOfCoreInstance(CoreInstance coreInstance)
+    {
+        if (coreInstance == null)
+        {
+            return null;
+        }
+        else if (coreInstance instanceof FloatCoreInstance)
+        {
+            return ((FloatCoreInstance)coreInstance).getValue();
+        }
+        else
+        {
+            return new BigDecimal(coreInstance.getName());
+        }
     }
 }

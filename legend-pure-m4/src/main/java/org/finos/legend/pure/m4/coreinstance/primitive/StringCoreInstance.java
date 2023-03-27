@@ -21,43 +21,8 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public final class StringCoreInstance extends PrimitiveCoreInstance<String>
 {
-    public static final Function<CoreInstance, String> FROM_CORE_INSTANCE_FN = new Function<CoreInstance, String>()
-    {
-        public String valueOf(CoreInstance coreInstance)
-        {
-            if (coreInstance == null)
-            {
-                return null;
-            }
-            else if (coreInstance instanceof StringCoreInstance)
-            {
-                return ((StringCoreInstance) coreInstance).getValue();
-            }
-            else
-            {
-                return coreInstance.getName();
-            }
-        }
-    };
-
-    public static final Function2<CoreInstance, ModelRepository, StringCoreInstance> CAST_CORE_INSTANCE_FN = new Function2<CoreInstance, ModelRepository, StringCoreInstance>()
-    {
-        public StringCoreInstance value(CoreInstance coreInstance, ModelRepository repository)
-        {
-            if (coreInstance == null)
-            {
-                return null;
-            }
-            else if (coreInstance instanceof StringCoreInstance)
-            {
-                return (StringCoreInstance) coreInstance;
-            }
-            else
-            {
-                return repository.newStringCoreInstance(coreInstance.getName());
-            }
-        }
-    };
+    public static final Function<CoreInstance, String> FROM_CORE_INSTANCE_FN = StringCoreInstance::valueOfCoreInstance;
+    public static final Function2<CoreInstance, ModelRepository, StringCoreInstance> CONVERT_CORE_INSTANCE_FN = StringCoreInstance::convertCoreInstance;
 
     StringCoreInstance(String value, CoreInstance classifier, int internalSyntheticId)
     {
@@ -74,5 +39,37 @@ public final class StringCoreInstance extends PrimitiveCoreInstance<String>
     public CoreInstance copy()
     {
         return new StringCoreInstance(this.getValue(), this.getClassifier(), this.getSyntheticId());
+    }
+
+    public static StringCoreInstance convertCoreInstance(CoreInstance coreInstance, ModelRepository repository)
+    {
+        if (coreInstance == null)
+        {
+            return null;
+        }
+        else if (coreInstance instanceof StringCoreInstance)
+        {
+            return (StringCoreInstance) coreInstance;
+        }
+        else
+        {
+            return repository.newStringCoreInstance(coreInstance.getName());
+        }
+    }
+
+    public static  String valueOfCoreInstance(CoreInstance coreInstance)
+    {
+        if (coreInstance == null)
+        {
+            return null;
+        }
+        else if (coreInstance instanceof StringCoreInstance)
+        {
+            return ((StringCoreInstance) coreInstance).getValue();
+        }
+        else
+        {
+            return coreInstance.getName();
+        }
     }
 }

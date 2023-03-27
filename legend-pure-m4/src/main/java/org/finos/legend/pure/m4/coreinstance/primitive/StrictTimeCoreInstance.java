@@ -23,43 +23,8 @@ import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.StrictTimeFunc
 
 public final class StrictTimeCoreInstance extends PrimitiveCoreInstance<PureStrictTime>
 {
-    public static final Function<CoreInstance, PureStrictTime> FROM_CORE_INSTANCE_FN = new Function<CoreInstance, PureStrictTime>()
-    {
-        public PureStrictTime valueOf(CoreInstance coreInstance)
-        {
-            if (coreInstance == null)
-            {
-                return null;
-            }
-            else if (coreInstance instanceof StrictTimeCoreInstance)
-            {
-                return ((StrictTimeCoreInstance) coreInstance).getValue();
-            }
-            else
-            {
-                return StrictTimeFunctions.parsePureStrictTime(coreInstance.getName());
-            }
-        }
-    };
-
-    public static final Function2<CoreInstance, ModelRepository, StrictTimeCoreInstance> CAST_CORE_INSTANCE_FN = new Function2<CoreInstance, ModelRepository, StrictTimeCoreInstance>()
-    {
-        public StrictTimeCoreInstance value(CoreInstance coreInstance, ModelRepository repository)
-        {
-            if (coreInstance == null)
-            {
-                return null;
-            }
-            else if (coreInstance instanceof StrictTimeCoreInstance)
-            {
-                return (StrictTimeCoreInstance) coreInstance;
-            }
-            else
-            {
-                return repository.newStrictTimeCoreInstance(coreInstance.getName());
-            }
-        }
-    };
+    public static final Function<CoreInstance, PureStrictTime> FROM_CORE_INSTANCE_FN = StrictTimeCoreInstance::valueOfCoreInstance;
+    public static final Function2<CoreInstance, ModelRepository, StrictTimeCoreInstance> CONVERT_CORE_INSTANCE_FN = StrictTimeCoreInstance::convertCoreInstance;
 
     private String name = null;
 
@@ -82,5 +47,37 @@ public final class StrictTimeCoreInstance extends PrimitiveCoreInstance<PureStri
     public CoreInstance copy()
     {
         return new StrictTimeCoreInstance(this.getValue(), this.getClassifier(), this.getSyntheticId());
+    }
+
+    public static StrictTimeCoreInstance convertCoreInstance(CoreInstance coreInstance, ModelRepository repository)
+    {
+        if (coreInstance == null)
+        {
+            return null;
+        }
+        else if (coreInstance instanceof StrictTimeCoreInstance)
+        {
+            return (StrictTimeCoreInstance) coreInstance;
+        }
+        else
+        {
+            return repository.newStrictTimeCoreInstance(coreInstance.getName());
+        }
+    }
+
+    public static PureStrictTime valueOfCoreInstance(CoreInstance coreInstance)
+    {
+        if (coreInstance == null)
+        {
+            return null;
+        }
+        else if (coreInstance instanceof StrictTimeCoreInstance)
+        {
+            return ((StrictTimeCoreInstance) coreInstance).getValue();
+        }
+        else
+        {
+            return StrictTimeFunctions.parsePureStrictTime(coreInstance.getName());
+        }
     }
 }

@@ -21,43 +21,8 @@ import org.finos.legend.pure.m4.ModelRepository;
 
 public final class BooleanCoreInstance extends PrimitiveCoreInstance<Boolean>
 {
-    public static final Function<CoreInstance, Boolean> FROM_CORE_INSTANCE_FN = new Function<CoreInstance, Boolean>()
-    {
-        public Boolean valueOf(CoreInstance coreInstance)
-        {
-            if (coreInstance == null)
-            {
-                return null;
-            }
-            else if (coreInstance instanceof BooleanCoreInstance)
-            {
-                return ((BooleanCoreInstance)coreInstance).getValue();
-            }
-            else
-            {
-                return ModelRepository.BOOLEAN_TRUE.equals(coreInstance.getName());
-            }
-        }
-    };
-
-    public static final Function2<CoreInstance, ModelRepository, BooleanCoreInstance> CAST_CORE_INSTANCE_FN = new Function2<CoreInstance, ModelRepository, BooleanCoreInstance>()
-    {
-        public BooleanCoreInstance value(CoreInstance coreInstance, ModelRepository repository)
-        {
-            if (coreInstance == null)
-            {
-                return null;
-            }
-            else if (coreInstance instanceof BooleanCoreInstance)
-            {
-                return (BooleanCoreInstance) coreInstance;
-            }
-            else
-            {
-                return repository.newBooleanCoreInstance(coreInstance.getName());
-            }
-        }
-    };
+    public static final Function<CoreInstance, Boolean> FROM_CORE_INSTANCE_FN = BooleanCoreInstance::valueOfCoreInstance;
+    public static final Function2<CoreInstance, ModelRepository, BooleanCoreInstance> CONVERT_CORE_INSTANCE_FN = BooleanCoreInstance::convertCoreInstance;
 
     BooleanCoreInstance(Boolean value, CoreInstance classifier, int internalSyntheticId)
     {
@@ -74,5 +39,37 @@ public final class BooleanCoreInstance extends PrimitiveCoreInstance<Boolean>
     public CoreInstance copy()
     {
         return new BooleanCoreInstance(this.getValue(), this.getClassifier(), this.getSyntheticId());
+    }
+
+    public static BooleanCoreInstance convertCoreInstance(CoreInstance coreInstance, ModelRepository repository)
+    {
+        if (coreInstance == null)
+        {
+            return null;
+        }
+        else if (coreInstance instanceof BooleanCoreInstance)
+        {
+            return (BooleanCoreInstance) coreInstance;
+        }
+        else
+        {
+            return repository.newBooleanCoreInstance(coreInstance.getName());
+        }
+    }
+
+    public static Boolean valueOfCoreInstance(CoreInstance coreInstance)
+    {
+        if (coreInstance == null)
+        {
+            return null;
+        }
+        else if (coreInstance instanceof BooleanCoreInstance)
+        {
+            return ((BooleanCoreInstance)coreInstance).getValue();
+        }
+        else
+        {
+            return ModelRepository.BOOLEAN_TRUE.equals(coreInstance.getName());
+        }
     }
 }
