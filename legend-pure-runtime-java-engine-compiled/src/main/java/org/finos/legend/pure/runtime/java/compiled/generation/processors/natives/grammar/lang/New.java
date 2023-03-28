@@ -47,7 +47,7 @@ public class New extends AbstractNative
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
         if (_class.equals(processorSupport.package_getByUserPath(M3Paths.Map)))
         {
-            return "new PureMap(new org.eclipse.collections.impl.map.strategy.mutable.UnifiedMapWithHashingStrategy(org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureEqualsHashingStrategy.HASHING_STRATEGY))";
+            return "new PureMap(org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureEqualsHashingStrategy.newMutableMap())";
         }
         else
         {

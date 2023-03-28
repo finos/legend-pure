@@ -15,15 +15,15 @@
 package org.finos.legend.pure.runtime.java.compiled.compiler;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.block.factory.Predicates;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.LazyIterate;
 
+import java.util.regex.Pattern;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaFileObject;
@@ -63,9 +63,7 @@ public class PureJavaCompileException extends Exception
     private static String createMessage(Iterable<Diagnostic<? extends JavaFileObject>> diagnostics)
     {
         MutableList<Diagnostic<? extends JavaFileObject>> errorDiagnostics = Iterate.select(diagnostics, PureJavaCompileException::isErrorDiagnostic, Lists.mutable.empty());
-        return (errorDiagnostics.isEmpty())
-                ? "Unknown error compiling generated Java code"
-                : new MessageBuilder(errorDiagnostics).getMessage();
+        return errorDiagnostics.isEmpty() ? "Unknown error compiling generated Java code" : new MessageBuilder(errorDiagnostics).getMessage();
     }
 
     private static boolean isErrorDiagnostic(Diagnostic<?> diagnostic)
@@ -82,10 +80,8 @@ public class PureJavaCompileException extends Exception
     private static class MessageBuilder
     {
         private final MutableList<Diagnostic<? extends JavaFileObject>> diagnostics;
-        private MutableList<String> lines;
-        private String lastSourceName;
-        private String[] sourceLines;
-        private long sourceLinesHighwater;
+        private final Pattern lineSplitter = Pattern.compile("\\R");
+        private final MutableList<String> lines = Lists.mutable.empty();
 
         private MessageBuilder(MutableList<Diagnostic<? extends JavaFileObject>> diagnostics)
         {
@@ -94,13 +90,10 @@ public class PureJavaCompileException extends Exception
 
         String getMessage()
         {
-            this.lines = Lists.mutable.empty();
-            this.lastSourceName = null;
-
             addLine(createSummaryMessage());
             this.diagnostics.forEach(diagnostic -> printLines(diagnostic.toString()));
-            this.diagnostics.groupBy(PureJavaCompileException::getSourceName).forEachValue(this::printDiagnosticSource);
-            return lines.makeString("\n");
+            this.diagnostics.groupBy(PureJavaCompileException::getSourceName).forEachKeyMultiValues(this::printDiagnosticSources);
+            return this.lines.makeString("\n");
         }
 
         private void addLine(String line)
@@ -115,73 +108,89 @@ public class PureJavaCompileException extends Exception
             }
         }
 
+        private boolean maxMessageSizeReached()
+        {
+            return this.lines.size() >= MAX_LINES_FOR_MESSAGE;
+        }
+
         private void printLines(String text)
         {
-            String[] lines = text.split("\\n");
+            String[] lines = this.lineSplitter.split(text);
             ArrayIterate.forEach(lines, this::addLine);
         }
 
         private String createSummaryMessage()
         {
             StringBuilder builder = new StringBuilder();
-            int count = this.diagnostics.size();
-            builder.append(count);
-            builder.append((count == 1) ? " error compiling " : " errors compiling ");
-            MutableList<String> sourceNames = LazyIterate.collect(this.diagnostics, PureJavaCompileException::getSourceName).select(Predicates.notNull(), Sets.mutable.empty()).toSortedList();
-
+            builder.append(this.diagnostics.size()).append((this.diagnostics.size() == 1) ? " error compiling " : " errors compiling ");
+            MutableList<String> sourceNames = this.diagnostics.collect(PureJavaCompileException::getSourceName, Sets.mutable.empty()).without(null).toSortedList();
             if (sourceNames.size() <= MAX_SOURCES_FOR_MESSAGE)
             {
                 sourceNames.appendString(builder, ", ");
             }
             else
             {
-                LazyIterate.take(sourceNames, MAX_SOURCES_FOR_MESSAGE).appendString(builder, "", ", ", ", ... (and ");
-                builder.append(sourceNames.size() - MAX_SOURCES_FOR_MESSAGE);
-                builder.append(" more)");
+                sourceNames.subList(0, MAX_SOURCES_FOR_MESSAGE).appendString(builder, "", ", ", ", ... (and ");
+                builder.append(sourceNames.size() - MAX_SOURCES_FOR_MESSAGE).append(" more)");
             }
             return builder.toString();
         }
 
-        private void printDiagnosticSource(Diagnostic<? extends JavaFileObject> diagnostic)
+        private void printDiagnosticSources(String sourceName, Iterable<? extends Diagnostic<? extends JavaFileObject>> diagnostics)
         {
-            String sourceName = getSourceName(diagnostic);
-            if (sourceName != this.lastSourceName) //NOSONAR
+            if (maxMessageSizeReached())
             {
-                JavaFileObject source = diagnostic.getSource();
-                if (source instanceof StringJavaSource)
-                {
-                    this.sourceLines = ((StringJavaSource) source).getCode().split("\\n");
-                    this.sourceLinesHighwater = 0;
-                    addLine("");
-                    addLine(sourceName);
-                }
-                else
-                {
-                    this.sourceLines = new String[0];
-                    this.sourceLinesHighwater = 0;
-                }
-                this.lastSourceName = sourceName;
+                return;
             }
-            long lineNo = Math.max(diagnostic.getLineNumber() - SOURCE_CONTEXT_LINES, this.sourceLinesHighwater + 1);
-            long end = Math.min(diagnostic.getLineNumber() + SOURCE_CONTEXT_LINES, this.sourceLines.length);
-            if (lineNo - this.sourceLinesHighwater > 2)
+
+            Diagnostic<? extends JavaFileObject> firstDiagnostic = Iterate.getFirst(diagnostics);
+            if (firstDiagnostic == null)
             {
-                addLine(String.format("%04d:%04d ...", this.sourceLinesHighwater + 1, lineNo - 1));
-                this.sourceLinesHighwater = lineNo - 1;
+                return;
+            }
+
+            JavaFileObject source = firstDiagnostic.getSource();
+            String[] sourceLines;
+            if (source instanceof StringJavaSource)
+            {
+                sourceLines = this.lineSplitter.split(((StringJavaSource) source).getCode());
+                addLine("");
+                addLine(sourceName);
             }
             else
             {
-                lineNo = this.sourceLinesHighwater + 1;
+                sourceLines = new String[0];
             }
 
-            while (lineNo < end)
+            long sourceLinesHighwater = 0;
+            for (Diagnostic<? extends JavaFileObject> diagnostic : diagnostics)
             {
-                if (this.sourceLinesHighwater < lineNo)
+                if (maxMessageSizeReached())
                 {
-                    addLine(String.format("%04d %s", lineNo, this.sourceLines[(int) (lineNo - 1)]));
-                    this.sourceLinesHighwater = lineNo;
+                    return;
                 }
-                lineNo++;
+
+                long lineNo = Math.max(diagnostic.getLineNumber() - SOURCE_CONTEXT_LINES, sourceLinesHighwater + 1);
+                long end = Math.min(diagnostic.getLineNumber() + SOURCE_CONTEXT_LINES, sourceLines.length);
+                if (lineNo - sourceLinesHighwater > 2)
+                {
+                    addLine(String.format("%04d:%04d ...", sourceLinesHighwater + 1, lineNo - 1));
+                    sourceLinesHighwater = lineNo - 1;
+                }
+                else
+                {
+                    lineNo = sourceLinesHighwater + 1;
+                }
+
+                while (lineNo < end)
+                {
+                    if (sourceLinesHighwater < lineNo)
+                    {
+                        addLine(String.format("%04d %s", lineNo, sourceLines[(int) (lineNo - 1)]));
+                        sourceLinesHighwater = lineNo;
+                    }
+                    lineNo++;
+                }
             }
         }
     }

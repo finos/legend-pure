@@ -252,7 +252,7 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                         "        return legendTest(es, alloyTest, regular,  CoreGen.bridge);\n" +
                         "    }\n" +
                         "\n" +
-                        "    public static PureMap newMap(RichIterable pairs, RichIterable properties, ExecutionSupport es)\n" +
+                        "    public static PureMap newMap(RichIterable<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?>> pairs, RichIterable<? extends Property<?, ?>> properties, ExecutionSupport es)\n" +
                         "    {\n" +
                         "        return newMap(pairs, properties, CoreGen.bridge, es);\n" +
                         "    }\n" +

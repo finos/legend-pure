@@ -17,7 +17,6 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.suppor
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.function.Function2;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
@@ -28,7 +27,7 @@ import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.map.primitive.IntObjectMap;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.list.mutable.FastList;
+import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
@@ -53,7 +52,11 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.m4.exception.PureException;
-import org.finos.legend.pure.runtime.java.compiled.compiler.*;
+import org.finos.legend.pure.runtime.java.compiled.compiler.MemoryClassLoader;
+import org.finos.legend.pure.runtime.java.compiled.compiler.MemoryFileManager;
+import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompileException;
+import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompiler;
+import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledProcessorSupport;
 import org.finos.legend.pure.runtime.java.compiled.execution.ConsoleCompiled;
@@ -77,8 +80,6 @@ import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -87,7 +88,16 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.StringTokenizer;
+import java.util.function.BiFunction;
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
 
 public class CompiledSupport
 {
@@ -100,7 +110,7 @@ public class CompiledSupport
     {
         DecimalFormat format = new DecimalFormat("0.0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
         format.setMaximumFractionDigits(340); // 340 = DecimalFormat.DOUBLE_FRACTION_DIGITS
-        DECIMAL_FORMAT =  format;
+        DECIMAL_FORMAT = format;
     }
 
 
@@ -110,7 +120,7 @@ public class CompiledSupport
 
     public static <T> T copy(T coreInstance)
     {
-        return copy(coreInstance, (coreInstance == null ? null : ((AbstractCoreInstance)coreInstance).getSourceInformation()));
+        return copy(coreInstance, (coreInstance == null ? null : ((AbstractCoreInstance) coreInstance).getSourceInformation()));
     }
 
     @SuppressWarnings("unchecked")
@@ -122,9 +132,9 @@ public class CompiledSupport
         }
         else
         {
-            AbstractCoreInstance result = (AbstractCoreInstance)((AbstractCoreInstance)coreInstance).copy();
+            AbstractCoreInstance result = (AbstractCoreInstance) ((AbstractCoreInstance) coreInstance).copy();
             result.setSourceInformation(sourceInformation);
-            return (T)result;
+            return (T) result;
         }
     }
 
@@ -141,11 +151,12 @@ public class CompiledSupport
         }
         if (objects instanceof RichIterable)
         {
-            return (RichIterable<T>)objects;
+            return (RichIterable<T>) objects;
         }
         return Lists.immutable.ofAll(objects);
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> RichIterable<T> toPureCollection(T object)
     {
         if (object == null)
@@ -155,7 +166,7 @@ public class CompiledSupport
         // TODO remove this hack
         if (object instanceof RichIterable)
         {
-            return (RichIterable<T>)object;
+            return (RichIterable<T>) object;
         }
         // TODO remove this hack
         if (object instanceof Iterable)
@@ -167,13 +178,13 @@ public class CompiledSupport
 
     public static RichIterable<String> splitOnCamelCase(String string)
     {
-        return FastList.newListWith(StringUtils.splitByCharacterTypeCamelCase(string));
+        return Lists.mutable.with(StringUtils.splitByCharacterTypeCamelCase(string));
     }
 
     public static RichIterable<String> split(Object string, Object delimiter)
     {
-        String str = (String)((string instanceof Iterable) ? Iterate.getFirst((Iterable<?>)string) : string);
-        String delim = (String)((delimiter instanceof Iterable) ? Iterate.getFirst((Iterable<?>)delimiter) : delimiter);
+        String str = (String) ((string instanceof Iterable) ? Iterate.getFirst((Iterable<?>) string) : string);
+        String delim = (String) ((delimiter instanceof Iterable) ? Iterate.getFirst((Iterable<?>) delimiter) : delimiter);
 
         MutableList<String> result = Lists.mutable.with();
         StringTokenizer tokenizer = new StringTokenizer(str, delim);
@@ -195,26 +206,37 @@ public class CompiledSupport
         {
             try
             {
-                return ((ListIterable<?>)list).get((int)offset);
+                return ((ListIterable<?>) list).get((int) offset);
             }
             catch (IndexOutOfBoundsException e)
             {
-                String message = "The system is trying to get an element at offset " + offset + " where the collection is of size " + ((ListIterable<?>)list).size();
+                String message = "The system is trying to get an element at offset " + offset + " where the collection is of size " + ((ListIterable<?>) list).size();
                 throw new PureExecutionException(sourceInformation, message);
             }
         }
-        if (list instanceof RichIterable)
+        if (list instanceof List)
+        {
+            try
+            {
+                return ((List<?>) list).get((int) offset);
+            }
+            catch (IndexOutOfBoundsException e)
+            {
+                String message = "The system is trying to get an element at offset " + offset + " where the collection is of size " + ((List<?>) list).size();
+                throw new PureExecutionException(sourceInformation, message);
+            }
+        }
+        if (list instanceof Iterable)
         {
             if (offset < 0)
             {
-                String message = "The system is trying to get an element at offset " + offset + " where the collection is of size " + ((RichIterable<?>)list).size();
+                String message = "The system is trying to get an element at offset " + offset + " where the collection is of size " + Iterate.sizeOf((Iterable<?>) list);
                 throw new PureExecutionException(sourceInformation, message);
             }
-            int intOffset = (int)offset;
-            int size = 0;
-            for (Object item : (RichIterable<?>)list)
+            long size = 0;
+            for (Object item : (Iterable<?>) list)
             {
-                if (size == intOffset)
+                if (size == offset)
                 {
                     return item;
                 }
@@ -232,27 +254,27 @@ public class CompiledSupport
 
     public static int safeHashCode(boolean value)
     {
-        return value ? 1231 : 1237;
+        return Boolean.hashCode(value);
     }
 
     public static int safeHashCode(float value)
     {
-        return Float.floatToIntBits(value);
+        return Float.hashCode(value);
     }
 
     public static int safeHashCode(double value)
     {
-        return safeHashCode(Double.doubleToLongBits(value));
+        return Double.hashCode(value);
     }
 
     public static int safeHashCode(long value)
     {
-        return (int)(value ^ (value >>> 32));
+        return Long.hashCode(value);
     }
 
     public static int safeHashCode(int value)
     {
-        return value;
+        return Integer.hashCode(value);
     }
 
     public static int safeHashCode(Object object)
@@ -263,12 +285,12 @@ public class CompiledSupport
         }
         if (object instanceof JavaCompiledCoreInstance)
         {
-            return ((JavaCompiledCoreInstance)object).pureHashCode();
+            return ((JavaCompiledCoreInstance) object).pureHashCode();
         }
         if (object instanceof Iterable)
         {
             int hashCode = 0;
-            for (Object item : (Iterable<?>)object)
+            for (Object item : (Iterable<?>) object)
             {
                 hashCode = 31 * hashCode + safeHashCode(item);
             }
@@ -287,6 +309,7 @@ public class CompiledSupport
         return toOneWithMessage(objects, null, sourceInformation);
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T toOneWithMessage(T object, String message, SourceInformation sourceInformation)
     {
         if (object == null)
@@ -295,16 +318,17 @@ public class CompiledSupport
         }
         if (object instanceof RichIterable)
         {
-            return toOne((RichIterable<? extends T>)object, sourceInformation);
+            return toOne((RichIterable<? extends T>) object, sourceInformation);
         }
         return object;
     }
 
     public static <T> T toOneWithMessage(RichIterable<? extends T> objects, String message, SourceInformation sourceInformation)
     {
-        if (objects == null || objects.size() != 1)
+        int size = (objects == null) ? 0 : objects.size();
+        if (size != 1)
         {
-            throw new PureExecutionException(sourceInformation, message != null ? message : "Cannot cast a collection of size " + (objects == null ? 0 : objects.size()) + " to multiplicity [1]");
+            throw new PureExecutionException(sourceInformation, message != null ? message : "Cannot cast a collection of size " + size + " to multiplicity [1]");
         }
         return objects.getAny();
     }
@@ -318,7 +342,7 @@ public class CompiledSupport
     {
         if (object instanceof RichIterable)
         {
-            return ((RichIterable<?>)object).getAny();
+            return ((RichIterable<?>) object).getAny();
         }
         return object;
     }
@@ -342,29 +366,30 @@ public class CompiledSupport
         return toOneManyWithMessage(objects, null, sourceInformation);
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> RichIterable<T> toOneManyWithMessage(T object, String message, SourceInformation sourceInformation)
     {
         if (object == null)
         {
-            throw new PureExecutionException(sourceInformation, message != null ? message: "Cannot cast a collection of size 0 to multiplicity [1..*]");
+            throw new PureExecutionException(sourceInformation, message != null ? message : "Cannot cast a collection of size 0 to multiplicity [1..*]");
         }
         // TODO remove this hack
         if (object instanceof RichIterable)
         {
-            if (((RichIterable<?>)object).isEmpty())
+            if (((RichIterable<?>) object).isEmpty())
             {
-                throw new PureExecutionException(sourceInformation, message != null ? message: "Cannot cast a collection of size 0 to multiplicity [1..*]");
+                throw new PureExecutionException(sourceInformation, message != null ? message : "Cannot cast a collection of size 0 to multiplicity [1..*]");
             }
-            return (RichIterable<T>)object;
+            return (RichIterable<T>) object;
         }
         // TODO remove this hack
         if (object instanceof Iterable)
         {
-            if (Iterate.isEmpty((Iterable<?>)object))
+            if (Iterate.isEmpty((Iterable<?>) object))
             {
-                throw new PureExecutionException(sourceInformation, message != null ? message: "Cannot cast a collection of size 0 to multiplicity [1..*]");
+                throw new PureExecutionException(sourceInformation, message != null ? message : "Cannot cast a collection of size 0 to multiplicity [1..*]");
             }
-            return toPureCollection((Iterable<T>)object);
+            return toPureCollection((Iterable<T>) object);
         }
         return Lists.immutable.with(object);
     }
@@ -373,7 +398,7 @@ public class CompiledSupport
     {
         if (Iterate.isEmpty(objects))
         {
-            throw new PureExecutionException(sourceInformation, message != null ? message: "Cannot cast a collection of size 0 to multiplicity [1..*]");
+            throw new PureExecutionException(sourceInformation, message != null ? message : "Cannot cast a collection of size 0 to multiplicity [1..*]");
         }
         return objects;
     }
@@ -385,7 +410,7 @@ public class CompiledSupport
 
     public static boolean isEmpty(Object object)
     {
-        return (object == null) || ((object instanceof Iterable) && Iterate.isEmpty((Iterable<?>)object));
+        return (object == null) || ((object instanceof Iterable) && Iterate.isEmpty((Iterable<?>) object));
     }
 
 
@@ -402,7 +427,9 @@ public class CompiledSupport
         }
 
         int size = list.size();
-        return (size <= 1) ? Lists.immutable.empty() : LazyIterate.take(list, size - 1).toList();
+        return (size <= 1) ?
+                Lists.immutable.empty() :
+                Lists.mutable.<T>ofInitialCapacity(size - 1).withAll(LazyIterate.take(list, size - 1));
     }
 
     public static <T> RichIterable<T> tail(T list)
@@ -412,13 +439,20 @@ public class CompiledSupport
 
     public static <T> RichIterable<T> tail(RichIterable<T> list)
     {
-        if (list == null || isEmpty(list))
+        if (list == null)
         {
             return Lists.immutable.empty();
         }
 
-        RichIterable<T> result = LazyIterate.drop(list, 1);
-        return (list instanceof LazyIterable) ? result : result.toList();
+        if (list instanceof LazyIterable)
+        {
+            return list.isEmpty() ? Lists.immutable.empty() : ((LazyIterable<T>) list).drop(1);
+        }
+
+        int size = list.size();
+        return (size <= 1) ?
+                Lists.immutable.empty() :
+                Lists.mutable.<T>ofInitialCapacity(size - 1).withAll(LazyIterate.drop(list, 1));
     }
 
     public static <T> long compare(T left, T right)
@@ -426,6 +460,7 @@ public class CompiledSupport
         return compareInt(left, right);
     }
 
+    @SuppressWarnings("unchecked")
     private static <T> int compareInt(T left, T right)
     {
         if (left == right)
@@ -439,11 +474,11 @@ public class CompiledSupport
         {
             if ((left instanceof Number) && (right instanceof Number))
             {
-                return compareUnmatchedNumbers((Number)left, (Number)right);
+                return compareUnmatchedNumbers((Number) left, (Number) right);
             }
             if ((left instanceof PureDate) && (right instanceof PureDate))
             {
-                return ((PureDate)left).compareTo((PureDate)right);
+                return ((PureDate) left).compareTo((PureDate) right);
             }
 
             int leftIndex = PRIMITIVE_CLASS_COMPARISON_ORDER.indexOf(leftClass);
@@ -459,7 +494,7 @@ public class CompiledSupport
 
         if (left instanceof Comparable)
         {
-            return ((Comparable)left).compareTo(right);
+            return ((Comparable<? super T>) left).compareTo(right);
         }
 
         // TODO maybe do something smarter here
@@ -495,11 +530,11 @@ public class CompiledSupport
     {
         if (number instanceof BigDecimal)
         {
-            return (BigDecimal)number;
+            return (BigDecimal) number;
         }
         if (number instanceof BigInteger)
         {
-            return new BigDecimal((BigInteger)number);
+            return new BigDecimal((BigInteger) number);
         }
         if (number instanceof Byte || number instanceof Short || number instanceof Integer || number instanceof Long)
         {
@@ -513,34 +548,37 @@ public class CompiledSupport
         {
             return new BigDecimal(number.toString());
         }
-        catch (final NumberFormatException e)
+        catch (NumberFormatException e)
         {
             throw new RuntimeException("The given number (\"" + number + "\" of class " + number.getClass().getName() + ") does not have a parsable string representation", e);
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> RichIterable<T> add(RichIterable<? extends T> list, T element)
     {
         if (element == null)
         {
-            return (RichIterable<T>)list;
+            return (RichIterable<T>) list;
         }
-        MutableList<T> newList = list == null ? Lists.mutable.empty() : Lists.mutable.withAll(list);
-        newList.add((element instanceof Iterable) ? Iterate.getFirst((Iterable<T>)element) : element);
+        MutableList<T> newList = (list == null) ? Lists.mutable.empty() : Lists.mutable.withAll(list);
+        newList.add((element instanceof Iterable) ? Iterate.getFirst((Iterable<T>) element) : element);
         return newList;
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> RichIterable<T> add(RichIterable<? extends T> list, long index, T element)
     {
         if (element == null)
         {
-            return (RichIterable<T>)list;
+            return (RichIterable<T>) list;
         }
-        MutableList<T> newList = list == null ? FastList.<T>newList() : Lists.mutable.withAll(list);
-        newList.add((int)index, (element instanceof Iterable) ? Iterate.getFirst((Iterable<T>)element) : element);
+        MutableList<T> newList = (list == null) ? Lists.mutable.empty() : Lists.mutable.withAll(list);
+        newList.add((int) index, (element instanceof Iterable) ? Iterate.getFirst((Iterable<T>) element) : element);
         return newList;
     }
 
+    @SuppressWarnings("rawtypes")
     public static RichIterable<?> concatenate(Object list1, Object list2)
     {
         if ((list1 == null) && (list2 == null))
@@ -549,18 +587,38 @@ public class CompiledSupport
         }
         if (list1 == null)
         {
-            return (list2 instanceof RichIterable) ? (RichIterable<?>)list2 : Lists.immutable.with(list2);
+            return (list2 instanceof RichIterable) ? (RichIterable<?>) list2 : Lists.immutable.with(list2);
         }
         if (list2 == null)
         {
-            return (list1 instanceof RichIterable) ? (RichIterable<?>)list1 : Lists.immutable.with(list1);
+            return (list1 instanceof RichIterable) ? (RichIterable<?>) list1 : Lists.immutable.with(list1);
         }
 
-        Iterable it1 = (list1 instanceof Iterable) ? (Iterable)list1 : Lists.immutable.with(list1);
-        Iterable it2 = (list2 instanceof Iterable) ? (Iterable)list2 : Lists.immutable.with(list2);
+        if ((list1 instanceof LazyIterable) || (list2 instanceof LazyIterable))
+        {
+            Iterable it1 = (list1 instanceof Iterable) ? (Iterable) list1 : Lists.immutable.with(list1);
+            Iterable it2 = (list2 instanceof Iterable) ? (Iterable) list2 : Lists.immutable.with(list2);
+            return LazyIterate.concatenate(it1, it2);
+        }
 
-        RichIterable<Object> result = LazyIterate.concatenate(it1, it2);
-        return (it1 instanceof LazyIterable || it2 instanceof LazyIterable) ? result : result.toList();
+        MutableList<Object> result = Lists.mutable.empty();
+        if (list1 instanceof Iterable)
+        {
+            result.addAllIterable((Iterable<?>) list1);
+        }
+        else
+        {
+            result.add(list1);
+        }
+        if (list2 instanceof Iterable)
+        {
+            result.addAllIterable((Iterable<?>) list2);
+        }
+        else
+        {
+            result.add(list2);
+        }
+        return result;
     }
 
     public static RichIterable<Long> range(long start, long stop, long step, SourceInformation sourceInformation)
@@ -569,38 +627,62 @@ public class CompiledSupport
         {
             throw new PureExecutionException(sourceInformation, "range step must not be 0");
         }
-        MutableList<Long> result = FastList.newList((int)Math.max(0, (stop - start) / step));
-        for (; step > 0 ? start < stop : start > stop; start += step)
+
+        if ((step > 0) ? (start >= stop) : (start <= stop))
         {
-            result.add(start);
+            return Lists.immutable.empty();
+        }
+
+        long longSize = ((stop - start - Long.signum(step)) / step) + 1L;
+        if (longSize > Integer.MAX_VALUE)
+        {
+            throw new PureExecutionException(sourceInformation, "range [" + start + ":" + stop + ":" + step + "] too long: " + longSize);
+        }
+        MutableList<Long> result = Lists.mutable.ofInitialCapacity((int) longSize);
+        for (long i = start; (step > 0) ? (i < stop) : (i > stop); i += step)
+        {
+            result.add(i);
         }
         return result;
     }
 
-    public static <T, V> RichIterable<? extends T> mapToManyOverMany(RichIterable<? extends V> collection, Function2<? super V, ExecutionSupport, ? extends Iterable<? extends T>> function, final ExecutionSupport executionSupport)
+    public static <T, V> RichIterable<? extends T> mapToManyOverMany(RichIterable<? extends V> collection, BiFunction<? super V, ExecutionSupport, ? extends Iterable<? extends T>> function, ExecutionSupport executionSupport)
     {
-        return collection == null ? Lists.mutable.empty() : collection.flatCollect((Function<? super V, ? extends Iterable<T>>) object -> ((Function2<? super V, ExecutionSupport, ? extends Iterable<T>>) function).value(object, executionSupport));
+        return (collection == null) ? Lists.mutable.empty() : collection.flatCollect(e -> (Iterable<? extends T>) function.apply(e, executionSupport));
     }
 
-    public static <T, V> RichIterable<? extends T> mapToOneOverMany(RichIterable<? extends V> collection, Function2<? super V, ExecutionSupport, T> function, ExecutionSupport executionSupport)
+    public static <T, V> RichIterable<? extends T> mapToOneOverMany(RichIterable<? extends V> collection, BiFunction<? super V, ExecutionSupport, T> function, ExecutionSupport executionSupport)
     {
         if (collection == null)
         {
             return Lists.mutable.empty();
         }
 
-        RichIterable<T> result = collection.asLazy().collectWith(function, executionSupport).select(Objects::nonNull);
-        return collection instanceof LazyIterable ? result : result.toList();
+        if (collection instanceof LazyIterable)
+        {
+            return collection.collect(e -> function.apply(e, executionSupport)).select(Objects::nonNull);
+        }
+
+        MutableList<T> result = Lists.mutable.ofInitialCapacity(collection.size());
+        collection.forEach(e ->
+        {
+            T value = function.apply(e, executionSupport);
+            if (value != null)
+            {
+                result.add(value);
+            }
+        });
+        return result;
     }
 
-    public static <T, V> RichIterable<? extends T> mapToManyOverOne(V element, Function2<? super V, ExecutionSupport, ? extends RichIterable<? extends T>> function, ExecutionSupport executionSupport)
+    public static <T, V> RichIterable<? extends T> mapToManyOverOne(V element, BiFunction<? super V, ExecutionSupport, ? extends RichIterable<? extends T>> function, ExecutionSupport executionSupport)
     {
-        return (element == null) ? Lists.mutable.empty() : function.value(element, executionSupport);
+        return (element == null) ? Lists.mutable.empty() : function.apply(element, executionSupport);
     }
 
-    public static <T, V> T mapToOneOverOne(V element, Function2<? super V, ExecutionSupport, T> function, ExecutionSupport executionSupport)
+    public static <T, V> T mapToOneOverOne(V element, BiFunction<? super V, ExecutionSupport, T> function, ExecutionSupport executionSupport)
     {
-        return (element == null) ? null : function.value(element, executionSupport);
+        return (element == null) ? null : function.apply(element, executionSupport);
     }
 
     public static <T, V> V fold(RichIterable<? extends T> value, Function2<V, T, ? extends V> function, V accumulator)
@@ -673,25 +755,25 @@ public class CompiledSupport
     {
         if (n instanceof Integer)
         {
-            return Math.abs((Integer) n);
+            return Math.abs(n.intValue());
         }
-        else if (n instanceof Long)
+        if (n instanceof Long)
         {
-            return Math.abs((Long) n);
+            return Math.abs(n.longValue());
         }
-        else if (n instanceof Float)
+        if (n instanceof Float)
         {
-            return Math.abs((Float) n);
+            return Math.abs(n.floatValue());
         }
-        else if (n instanceof Double)
+        if (n instanceof Double)
         {
-            return Math.abs((Double) n);
+            return Math.abs(n.doubleValue());
         }
-        else if (n instanceof BigDecimal)
+        if (n instanceof BigDecimal)
         {
             return ((BigDecimal) n).abs();
         }
-        else if (n instanceof BigInteger)
+        if (n instanceof BigInteger)
         {
             return ((BigInteger) n).abs();
         }
@@ -707,7 +789,7 @@ public class CompiledSupport
 
     public static String joinStrings(Object strings, String prefix, String separator, String suffix)
     {
-        return (strings instanceof RichIterable) ? joinStrings((RichIterable<String>)strings, prefix, separator, suffix) : joinStrings((String)strings, prefix, separator, suffix);
+        return (strings instanceof RichIterable) ? joinStrings((RichIterable<String>) strings, prefix, separator, suffix) : joinStrings((String) strings, prefix, separator, suffix);
     }
 
     public static String joinStrings(String string, String prefix, String separator, String suffix)
@@ -717,9 +799,7 @@ public class CompiledSupport
 
     public static String joinStrings(RichIterable<String> strings, String prefix, String separator, String suffix)
     {
-        strings = strings == null ? Lists.mutable.empty() : strings;
-        int size = strings.size();
-
+        int size = (strings == null) ? 0 : strings.size();
         switch (size)
         {
             case 0:
@@ -728,7 +808,7 @@ public class CompiledSupport
             }
             case 1:
             {
-                return prefix + strings.getFirst() + suffix;
+                return prefix + strings.getAny() + suffix;
             }
             default:
             {
@@ -737,9 +817,9 @@ public class CompiledSupport
         }
     }
 
-    public static String format(String formatString, Object formatArgs, Function2 toRepresentationFunction, ExecutionSupport executionSupport)
+    public static String format(String formatString, Object formatArgs, BiFunction toRepresentationFunction, ExecutionSupport executionSupport)
     {
-        return PureStringFormat.format(formatString, (formatArgs instanceof Iterable) ? (Iterable<?>)formatArgs : Lists.immutable.with(formatArgs), toRepresentationFunction, executionSupport);
+        return PureStringFormat.format(formatString, (formatArgs instanceof Iterable) ? (Iterable<?>) formatArgs : Lists.immutable.with(formatArgs), toRepresentationFunction, executionSupport);
     }
 
     /**
@@ -803,7 +883,6 @@ public class CompiledSupport
     }
 
 
-
     /**
      * Implementation of the Pure "eq" function.  This returns
      * true if left and right are identical (point equality) or
@@ -831,7 +910,7 @@ public class CompiledSupport
         }
         if (left instanceof Number)
         {
-            return eq((Number)left, (Number)right);
+            return eq((Number) left, (Number) right);
         }
         if ((left instanceof String) || (left instanceof PureDate))
         {
@@ -872,18 +951,18 @@ public class CompiledSupport
         }
         if (left == null)
         {
-            return (right instanceof RichIterable) && ((RichIterable<?>)right).isEmpty();
+            return (right instanceof RichIterable) && ((RichIterable<?>) right).isEmpty();
         }
         if (right == null)
         {
-            return (left instanceof RichIterable) && ((RichIterable<?>)left).isEmpty();
+            return (left instanceof RichIterable) && ((RichIterable<?>) left).isEmpty();
         }
         if (left instanceof LazyIterable)
         {
-            Iterator<?> leftIterator = ((Iterable<?>)left).iterator();
+            Iterator<?> leftIterator = ((Iterable<?>) left).iterator();
             if (right instanceof Iterable)
             {
-                return iteratorsEqual(leftIterator, ((Iterable<?>)right).iterator());
+                return iteratorsEqual(leftIterator, ((Iterable<?>) right).iterator());
             }
             if (!leftIterator.hasNext())
             {
@@ -894,10 +973,10 @@ public class CompiledSupport
         }
         if (right instanceof LazyIterable)
         {
-            Iterator<?> rightIterator = ((Iterable<?>)right).iterator();
+            Iterator<?> rightIterator = ((Iterable<?>) right).iterator();
             if (left instanceof Iterable)
             {
-                return iteratorsEqual(((Iterable<?>)left).iterator(), rightIterator);
+                return iteratorsEqual(((Iterable<?>) left).iterator(), rightIterator);
             }
             if (!rightIterator.hasNext())
             {
@@ -908,32 +987,32 @@ public class CompiledSupport
         }
         if (left instanceof RichIterable)
         {
-            RichIterable<?> leftList = (RichIterable<?>)left;
+            RichIterable<?> leftList = (RichIterable<?>) left;
             int size = leftList.size();
             if (right instanceof RichIterable)
             {
-                RichIterable<?> rightList = (RichIterable<?>)right;
+                RichIterable<?> rightList = (RichIterable<?>) right;
                 return (size == rightList.size()) && iteratorsEqual(leftList.iterator(), rightList.iterator());
             }
-            return (size == 1) && equal(leftList.getFirst(), right);
+            return (size == 1) && equal(leftList.getAny(), right);
         }
         if (right instanceof RichIterable)
         {
-            RichIterable<?> rightList = (RichIterable<?>)right;
-            return (rightList.size() == 1) && equal(left, rightList.getFirst());
+            RichIterable<?> rightList = (RichIterable<?>) right;
+            return (rightList.size() == 1) && equal(left, rightList.getAny());
         }
         if (left instanceof Number)
         {
-            return (right instanceof Number) && eq((Number)left, (Number)right);
+            return (right instanceof Number) && eq((Number) left, (Number) right);
         }
 
         if (left instanceof JavaCompiledCoreInstance)
         {
-            return ((JavaCompiledCoreInstance)left).pureEquals(right);
+            return ((JavaCompiledCoreInstance) left).pureEquals(right);
         }
         if (right instanceof JavaCompiledCoreInstance)
         {
-            return ((JavaCompiledCoreInstance)right).pureEquals(left);
+            return ((JavaCompiledCoreInstance) right).pureEquals(left);
         }
 
         return left.equals(right);
@@ -1024,27 +1103,27 @@ public class CompiledSupport
         }
         if (instance instanceof Boolean)
         {
-            return pureToString(((Boolean)instance).booleanValue(), es);
+            return pureToString(((Boolean) instance).booleanValue(), es);
         }
         if (instance instanceof Number)
         {
-            return pureToString((Number)instance, es);
+            return pureToString((Number) instance, es);
         }
         if (instance instanceof PureDate)
         {
-            return pureToString((PureDate)instance, es);
+            return pureToString((PureDate) instance, es);
         }
         if (instance instanceof String)
         {
-            return pureToString((String)instance, es);
+            return pureToString((String) instance, es);
         }
         if (instance instanceof ReflectiveCoreInstance)
         {
-            return ((ReflectiveCoreInstance)instance).toString(es);
+            return ((ReflectiveCoreInstance) instance).toString(es);
         }
         if (instance instanceof BaseCoreInstance)
         {
-            String id = ((BaseCoreInstance)instance).getName();
+            String id = ((BaseCoreInstance) instance).getName();
             return ModelRepository.possiblyReplaceAnonymousId(id);
         }
 
@@ -1053,7 +1132,7 @@ public class CompiledSupport
             Method method = instance.getClass().getDeclaredMethod("toString", ExecutionSupport.class);
             try
             {
-                return (String)method.invoke(instance, es);
+                return (String) method.invoke(instance, es);
             }
             catch (IllegalAccessException | InvocationTargetException e)
             {
@@ -1090,7 +1169,7 @@ public class CompiledSupport
 
     public static String primitiveToString(float value)
     {
-        return primitiveToString((double)value);
+        return primitiveToString((double) value);
     }
 
     public static String primitiveToString(double value)
@@ -1116,7 +1195,7 @@ public class CompiledSupport
         }
         if (value instanceof BigDecimal)
         {
-            return primitiveToString((BigDecimal)value);
+            return primitiveToString((BigDecimal) value);
         }
         return value.toString();
     }
@@ -1130,23 +1209,22 @@ public class CompiledSupport
     {
         if (value instanceof Boolean)
         {
-            return primitiveToString(((Boolean)value).booleanValue());
+            return primitiveToString(((Boolean) value).booleanValue());
         }
         if (value instanceof Number)
         {
-            return primitiveToString((Number)value);
+            return primitiveToString((Number) value);
         }
         if (value instanceof PureDate)
         {
-            return primitiveToString((PureDate)value);
+            return primitiveToString((PureDate) value);
         }
         if (value instanceof String)
         {
-            return primitiveToString((String)value);
+            return primitiveToString((String) value);
         }
         throw new IllegalArgumentException("Unhandled primitive: " + value + " (" + value.getClass() + ")");
     }
-
 
 
     public static <T extends Number> T plus(T number)
@@ -1164,40 +1242,25 @@ public class CompiledSupport
         return number;
     }
 
-    public static Long plus(Long left, Long right)
+    public static long plus(Long left, Long right)
     {
-        return left.longValue() + right.longValue();
+        return left + right;
     }
 
     public static Number plus(Number left, Number right)
     {
-        if ((left instanceof Long) && (right instanceof Long))
+        if (((left instanceof Long) || (left instanceof Integer)) && ((right instanceof Long) || (right instanceof Integer)))
         {
             return left.longValue() + right.longValue();
         }
-        if (left instanceof BigDecimal && right instanceof BigDecimal)
+        if ((left instanceof BigDecimal) || (right instanceof BigDecimal))
         {
-            return ((BigDecimal)left).add((BigDecimal)right);
-        }
-        if (left instanceof BigDecimal && right instanceof Long)
-        {
-            return ((BigDecimal)left).add(BigDecimal.valueOf(right.longValue()));
-        }
-        if (left instanceof BigDecimal && right instanceof Double)
-        {
-            return ((BigDecimal)left).add(BigDecimal.valueOf(right.doubleValue()));
-        }
-        if (right instanceof BigDecimal && left instanceof Long)
-        {
-            return BigDecimal.valueOf(left.longValue()).add((BigDecimal)right);
-        }
-        if (right instanceof BigDecimal && left instanceof Double)
-        {
-            return BigDecimal.valueOf(left.doubleValue()).add(((BigDecimal)right));
+            return toBigDecimal(left).add(toBigDecimal(right));
         }
         return left.doubleValue() + right.doubleValue();
     }
 
+    @SuppressWarnings("unchecked")
     public static <T extends Number> T plus(RichIterable<T> numbers)
     {
         Number sum = 0L;
@@ -1205,23 +1268,20 @@ public class CompiledSupport
         {
             sum = plus(sum, n);
         }
-        return (T)sum;
+        return (T) sum;
     }
 
     public static Number minus(Number number)
     {
         if (number instanceof BigDecimal)
         {
-            return ((BigDecimal)number).negate();
+            return ((BigDecimal) number).negate();
         }
-        if (number instanceof Long)
+        if ((number instanceof Long) || (number instanceof Integer))
         {
             return -number.longValue();
         }
-        else
-        {
-            return -number.doubleValue();
-        }
+        return -number.doubleValue();
     }
 
     public static long minus(long integer)
@@ -1240,53 +1300,37 @@ public class CompiledSupport
         {
             return left.longValue() - right.longValue();
         }
-        if (left instanceof BigDecimal && right instanceof BigDecimal)
+        if ((left instanceof BigDecimal) || (right instanceof BigDecimal))
         {
-            return ((BigDecimal)left).subtract((BigDecimal)right);
-        }
-        if (left instanceof BigDecimal && right instanceof Long)
-        {
-            return ((BigDecimal)left).subtract(BigDecimal.valueOf(right.longValue()));
-        }
-        if (left instanceof BigDecimal && right instanceof Double)
-        {
-            return ((BigDecimal)left).subtract(BigDecimal.valueOf(right.doubleValue()));
-        }
-        if (right instanceof BigDecimal && left instanceof Long)
-        {
-            return BigDecimal.valueOf(left.longValue()).subtract((BigDecimal)right);
-        }
-        if (right instanceof BigDecimal && left instanceof Double)
-        {
-            return BigDecimal.valueOf(left.doubleValue()).subtract(((BigDecimal)right));
+            return toBigDecimal(left).subtract(toBigDecimal(right));
         }
         return left.doubleValue() - right.doubleValue();
     }
 
+    @SuppressWarnings("unchecked")
     public static <T extends Number> T minus(ListIterable<T> numbers)
     {
         int size = numbers.size();
-        if (size == 0)
+        switch (size)
         {
-            return (T)Long.valueOf(0);
-        }
-        else
-        {
-            Number result = size == 1 ? 0L : numbers.get(0);
-            int start = size == 1 ? 0 : 1;
-
-            for (int i = start; i < size; i++)
+            case 0:
             {
-                result = minus(result, numbers.get(i));
+                return (T) Long.valueOf(0L);
             }
-            return (T)result;
+            case 1:
+            {
+                return (T) minus(numbers.get(0));
+            }
+            default:
+            {
+                return (T) numbers.injectInto((Number) null, (result, n) -> (result == null) ? n : minus(result, n));
+            }
         }
     }
 
     public static <T extends Number> T minus(RichIterable<T> numbers)
     {
-        ListIterable<T> numbersList = (ListIterable)numbers;
-        return minus(numbersList);
+        return minus((ListIterable<T>) numbers);
     }
 
     public static <T extends Number> T times(T number)
@@ -1306,33 +1350,18 @@ public class CompiledSupport
 
     public static Number times(Number left, Number right)
     {
-        if ((left instanceof Long) && (right instanceof Long))
+        if (((left instanceof Long) || (left instanceof Integer)) && ((right instanceof Long) || (right instanceof Integer)))
         {
             return left.longValue() * right.longValue();
         }
-        if (left instanceof BigDecimal && right instanceof BigDecimal)
+        if ((left instanceof BigDecimal) || (right instanceof BigDecimal))
         {
-            return ((BigDecimal)left).multiply((BigDecimal)right);
-        }
-        if (left instanceof BigDecimal && right instanceof Long)
-        {
-            return ((BigDecimal)left).multiply(BigDecimal.valueOf(right.longValue()));
-        }
-        if (left instanceof BigDecimal && right instanceof Double)
-        {
-            return ((BigDecimal)left).multiply(BigDecimal.valueOf(right.doubleValue()));
-        }
-        if (right instanceof BigDecimal && left instanceof Long)
-        {
-            return ((BigDecimal)right).multiply(BigDecimal.valueOf(left.longValue()));
-        }
-        if (right instanceof BigDecimal && left instanceof Double)
-        {
-            return ((BigDecimal)right).multiply(BigDecimal.valueOf(left.doubleValue()));
+            return toBigDecimal(left).multiply(toBigDecimal(right));
         }
         return left.doubleValue() * right.doubleValue();
     }
 
+    @SuppressWarnings("unchecked")
     public static <T extends Number> T times(RichIterable<T> numbers)
     {
         Number product = 1L;
@@ -1340,9 +1369,8 @@ public class CompiledSupport
         {
             product = times(product, number);
         }
-        return (T)product;
+        return (T) product;
     }
-
 
 
     public static Double divide(Number left, Number right, SourceInformation sourceInformation)
@@ -1352,61 +1380,52 @@ public class CompiledSupport
             throw new PureExecutionException(sourceInformation, "Cannot divide " + right + " by zero");
         }
 
-        if (left instanceof BigDecimal && right instanceof BigDecimal)
+        if ((left instanceof BigDecimal) || (right instanceof BigDecimal))
         {
-            return ((BigDecimal)left).divide((BigDecimal)right, RoundingMode.HALF_UP).doubleValue();
+            return toBigDecimal(left).divide(toBigDecimal(right), RoundingMode.HALF_UP).doubleValue();
         }
-        if (left instanceof BigDecimal && right instanceof Long)
-        {
-            return ((BigDecimal)left).divide(BigDecimal.valueOf(right.longValue()), RoundingMode.HALF_UP).doubleValue();
-        }
-        if (left instanceof BigDecimal && right instanceof Double)
-        {
-            return ((BigDecimal)left).divide(BigDecimal.valueOf(right.doubleValue()), RoundingMode.HALF_UP).doubleValue();
-        }
-        if (right instanceof BigDecimal && left instanceof Long)
-        {
-            return BigDecimal.valueOf(left.longValue()).divide((BigDecimal)right, RoundingMode.HALF_UP).doubleValue();
-        }
-        if (right instanceof BigDecimal && left instanceof Double)
-        {
-            return BigDecimal.valueOf(left.doubleValue()).divide((BigDecimal)right, RoundingMode.HALF_UP).doubleValue();
-        }
-        return (left instanceof Long ? left.longValue() : left.doubleValue()) / (right instanceof Long ? right.longValue() : right.doubleValue());
+
+        return left.doubleValue() / right.doubleValue();
     }
 
     public static BigDecimal divideDecimal(BigDecimal left, BigDecimal right, long scale)
     {
-        return left.divide(right, (int)scale, RoundingMode.HALF_UP);
+        return left.divide(right, (int) scale, RoundingMode.HALF_UP);
     }
 
     public static boolean lessThan(Number left, Number right)
     {
-        if ((left instanceof Long) && (right instanceof Long))
+        if ((left instanceof BigDecimal) || (right instanceof BigDecimal))
+        {
+            return toBigDecimal(left).compareTo(toBigDecimal(right)) < 0;
+        }
+
+        if (((left instanceof Long) || (left instanceof Integer)) && ((right instanceof Long) || (right instanceof Integer)))
         {
             return left.longValue() < right.longValue();
         }
-        else
-        {
-            return left.doubleValue() < right.doubleValue();
-        }
+
+        return left.doubleValue() < right.doubleValue();
     }
 
     public static boolean lessThanEqual(Number left, Number right)
     {
-        if ((left instanceof Long) && (right instanceof Long))
+        if ((left instanceof BigDecimal) || (right instanceof BigDecimal))
+        {
+            return toBigDecimal(left).compareTo(toBigDecimal(right)) <= 0;
+        }
+
+        if (((left instanceof Long) || (left instanceof Integer)) && ((right instanceof Long) || (right instanceof Integer)))
         {
             return left.longValue() <= right.longValue();
         }
-        else
-        {
-            return left.doubleValue() <= right.doubleValue();
-        }
+
+        return left.doubleValue() <= right.doubleValue();
     }
 
     public static String substring(String str, Number start)
     {
-        return substring(str, start, null);
+        return str.substring(start.intValue());
     }
 
     public static String substring(String str, Number start, Number end)
@@ -1427,20 +1446,17 @@ public class CompiledSupport
         return str1.replace(str2, str3);
     }
 
-    public static Long length(String str)
+    public static long length(String str)
     {
-        return (long) str.length();
+        return str.length();
     }
 
 
-
-
-
-    public static boolean pureAssert(boolean condition, SharedPureFunction function, SourceInformation sourceInformation, ExecutionSupport es)
+    public static boolean pureAssert(boolean condition, SharedPureFunction<? extends String> function, SourceInformation sourceInformation, ExecutionSupport es)
     {
         if (!condition)
         {
-            String message = (String)function.execute(Lists.immutable.empty(), es);
+            String message = function.execute(Lists.immutable.empty(), es);
             throw new PureAssertFailException(sourceInformation, message);
         }
         return true;
@@ -1449,19 +1465,15 @@ public class CompiledSupport
     public static Object matchFailure(Object obj, SourceInformation sourceInformation)
     {
         throw new PureExecutionException(sourceInformation,
-                "Match failure: " + (obj == null ? null : ((obj instanceof RichIterable) ? ((RichIterable<?>)obj).collect(o -> o == null ? null : getErrorMessageForMatchFunctionBasedOnObjectType(o)).makeString("[", ", ", "]") : getErrorMessageForMatchFunctionBasedOnObjectType(obj))));
+                "Match failure: " + (obj == null ? null : ((obj instanceof RichIterable) ? ((RichIterable<?>) obj).collect(o -> o == null ? null : getErrorMessageForMatchFunctionBasedOnObjectType(o)).makeString("[", ", ", "]") : getErrorMessageForMatchFunctionBasedOnObjectType(obj))));
     }
 
     private static String getErrorMessageForMatchFunctionBasedOnObjectType(Object obj)
     {
-        StringBuilder errorMessage = new StringBuilder();
         if (isTypeOfEnum(obj))
         {
-            Enum enumVal = (Enum)obj;
-            errorMessage.append(enumVal._name())
-                    .append(" instanceOf ")
-                    .append(getEnumClassifierName(enumVal));
-            return errorMessage.toString();
+            Enum enumVal = (Enum) obj;
+            return enumVal._name() + " instanceOf " + getEnumClassifierName(enumVal);
         }
         if (obj instanceof BaseCoreInstance)
         {
@@ -1470,23 +1482,11 @@ public class CompiledSupport
         if (isPureGeneratedClass(obj))
         {
             String tempTypeName = getPureGeneratedClassName(obj);
-            errorMessage.append(tempTypeName)
-                    .append("Object instanceOf ")
-                    .append(tempTypeName);
-            return errorMessage.toString();
+            return tempTypeName + "Object instanceOf " + tempTypeName;
         }
+
         String primitiveJavaToPureType = JavaPurePrimitiveTypeMapping.getPureM3TypeFromJavaPrimitivesAndDates(obj);
-        if (primitiveJavaToPureType != null)
-        {
-            errorMessage.append(obj.toString())
-                    .append(" instanceOf ")
-                    .append(primitiveJavaToPureType);
-            return errorMessage.toString();
-        }
-        errorMessage.append(obj.toString())
-                .append(" instanceOf ")
-                .append(obj.getClass());
-        return errorMessage.toString();
+        return obj + " instanceOf " + ((primitiveJavaToPureType == null) ? obj.getClass() : primitiveJavaToPureType);
     }
 
     private static String getEnumClassifierName(Enum obj)
@@ -1508,7 +1508,7 @@ public class CompiledSupport
             obj.getClass().getField(fieldName);
             return true;
         }
-        catch (NoSuchFieldException e)
+        catch (NoSuchFieldException ignore)
         {
             return false;
         }
@@ -1522,7 +1522,7 @@ public class CompiledSupport
     private static boolean isPureGeneratedClass(Object obj)
     {
         return hasField(obj, TEMP_TYPE_NAME) ||
-                obj instanceof Class && ((Class<?>)obj).getCanonicalName().contains(JavaPackageAndImportBuilder.buildPackageFromSystemPath(null));
+                obj instanceof Class && ((Class<?>) obj).getCanonicalName().contains(JavaPackageAndImportBuilder.buildPackageFromSystemPath(null));
     }
 
     private static String getFieldValue(Object obj, String fieldName)
@@ -1531,9 +1531,9 @@ public class CompiledSupport
         {
             Field f = obj.getClass().getField(fieldName);
             f.setAccessible(true);
-            return (String)f.get(obj);
+            return (String) f.get(obj);
         }
-        catch (IllegalAccessException | NoSuchFieldException e)
+        catch (IllegalAccessException | NoSuchFieldException ignore)
         {
             return null;
         }
@@ -1542,8 +1542,8 @@ public class CompiledSupport
 
     public static Object dynamicallyBuildLambdaFunction(CoreInstance lambdaFunction, ExecutionSupport es)
     {
-        ClassLoader globalClassLoader = ((CompiledExecutionSupport)es).getClassLoader();
-        CompiledProcessorSupport compiledSupport = new CompiledProcessorSupport(globalClassLoader, ((CompiledExecutionSupport)es).getMetadata(), ((CompiledExecutionSupport)es).getExtraSupportedTypes());
+        ClassLoader globalClassLoader = ((CompiledExecutionSupport) es).getClassLoader();
+        CompiledProcessorSupport compiledSupport = new CompiledProcessorSupport(globalClassLoader, ((CompiledExecutionSupport) es).getMetadata(), ((CompiledExecutionSupport) es).getExtraSupportedTypes());
         ProcessorContext processorContext = new ProcessorContext(compiledSupport);
         processorContext.setInLineAllLambda(true);
 
@@ -1554,8 +1554,8 @@ public class CompiledSupport
                 "}" +
                 "}";
 
-        MemoryFileManager fileManager = ((CompiledExecutionSupport)es).getMemoryFileManager();
-        MutableList<StringJavaSource> javaClasses = FastList.newList();
+        MemoryFileManager fileManager = ((CompiledExecutionSupport) es).getMemoryFileManager();
+        MutableList<StringJavaSource> javaClasses = Lists.mutable.empty();
         javaClasses.add(StringJavaSource.newStringJavaSource("temp", name, _class));
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         MemoryFileManager manager = new MemoryFileManager(compiler, fileManager, null);
@@ -1582,14 +1582,13 @@ public class CompiledSupport
     }
 
 
-    public static Object dynamicallyEvaluateValueSpecification(final CoreInstance valueSpecification, PureMap lambdaOpenVariablesMap,
-                                                               ExecutionSupport es)
+    public static Object dynamicallyEvaluateValueSpecification(CoreInstance valueSpecification, PureMap lambdaOpenVariablesMap, ExecutionSupport es)
     {
-        MemoryFileManager fileManager = ((CompiledExecutionSupport)es).getMemoryFileManager();
-        ClassLoader globalClassLoader = ((CompiledExecutionSupport)es).getClassLoader();
+        MemoryFileManager fileManager = ((CompiledExecutionSupport) es).getMemoryFileManager();
+        ClassLoader globalClassLoader = ((CompiledExecutionSupport) es).getClassLoader();
 
-        final CompiledProcessorSupport compiledSupport = new CompiledProcessorSupport(globalClassLoader, ((CompiledExecutionSupport)es).getMetadata(), ((CompiledExecutionSupport)es).getExtraSupportedTypes());
-        final ProcessorContext processorContext = new ProcessorContext(compiledSupport);
+        CompiledProcessorSupport compiledSupport = new CompiledProcessorSupport(globalClassLoader, ((CompiledExecutionSupport) es).getMetadata(), ((CompiledExecutionSupport) es).getExtraSupportedTypes());
+        ProcessorContext processorContext = new ProcessorContext(compiledSupport);
 
         // Don't do anything if the ValueSpecification is already resolved ----------------
         if (Instance.instanceOf(valueSpecification, M3Paths.InstanceValue, processorContext.getSupport()))
@@ -1597,7 +1596,7 @@ public class CompiledSupport
             ListIterable<? extends CoreInstance> l = valueSpecification.getValueForMetaPropertyToMany(M3Properties.values);
             if (l.noneSatisfy(instance -> Instance.instanceOf(instance, M3Paths.ValueSpecification, processorContext.getSupport()) || Instance.instanceOf(instance, M3Paths.LambdaFunction, processorContext.getSupport())))
             {
-                ListIterable<Object> result = l.collect(instance -> instance instanceof ValCoreInstance ? ((ValCoreInstance)instance).getValue() : instance);
+                ListIterable<Object> result = l.collect(instance -> instance instanceof ValCoreInstance ? ((ValCoreInstance) instance).getValue() : instance);
                 return result.size() == 1 ? result.get(0) : result;
             }
         }
@@ -1609,41 +1608,35 @@ public class CompiledSupport
 
         String name = "DynaClass";
         RichIterable<Pair<String, CoreInstance>> values = lambdaOpenVariablesMap.getMap().keyValuesView();
-        final MutableMap<String, Object> openVars = Maps.mutable.of();
+        MutableMap<String, Object> openVars = Maps.mutable.of();
         String _class = JavaSourceCodeGenerator.imports + "\npublic class " + name +
                 "{\n" +
                 "   public static " + returnType + " doProcess(final MapIterable<String, Object> vars, final MutableMap<String, Object> valMap, final IntObjectMap<CoreInstance> localLambdas, final ExecutionSupport es){\n" +
-                values.collect(
-                        new Function<Pair<String, CoreInstance>, String>()
+                values.collect(pair ->
+                {
+                    String name1 = pair.getOne();
+                    CoreInstance valuesCoreInstance = pair.getTwo();
+                    ListIterable<? extends CoreInstance> values1 = valuesCoreInstance.getValueForMetaPropertyToMany(M3Properties.values).select(coreInstance -> !Instance.instanceOf(coreInstance, "meta::pure::executionPlan::PlanVarPlaceHolder", compiledSupport) && !Instance.instanceOf(coreInstance, "meta::pure::executionPlan::PlanVariablePlaceHolder", compiledSupport));
+                    openVars.put(name1, valuesCoreInstance);
+                    if (values1.isEmpty())
+                    {
+                        MutableList<CoreInstance> vars = Lists.mutable.empty();
+                        collectVars(valueSpecification, vars, compiledSupport);
+                        CoreInstance found = vars.detect(v -> name1.equals(v.getValueForMetaPropertyToOne("name").getName()));
+                        if (found != null)
                         {
-                            @Override
-                            public String valueOf(Pair<String, CoreInstance> pair)
-                            {
-                                final String name = pair.getOne();
-                                CoreInstance valuesCoreInstance = pair.getTwo();
-                                ListIterable<? extends CoreInstance> values = valuesCoreInstance.getValueForMetaPropertyToMany(M3Properties.values).select(coreInstance -> !Instance.instanceOf(coreInstance, "meta::pure::executionPlan::PlanVarPlaceHolder", compiledSupport) && !Instance.instanceOf(coreInstance, "meta::pure::executionPlan::PlanVariablePlaceHolder", compiledSupport));
-                                String type = null;
-                                openVars.put(name, valuesCoreInstance);
-                                if (values.isEmpty())
-                                {
-                                    MutableList<CoreInstance> vars = FastList.newList();
-                                    collectVars(valueSpecification, vars, compiledSupport);
-                                    CoreInstance found = vars.detect(coreInstance -> coreInstance.getValueForMetaPropertyToOne("name").getName().equals(name));
-                                    if (found != null)
-                                    {
-                                        type = TypeProcessor.typeToJavaObjectSingle(found.getValueForMetaPropertyToOne(M3Properties.genericType), false, compiledSupport);
-                                        return "      final  " + type + "  _" + name + " = null;";
-                                    }
-                                    return "";
-                                }
-                                else
-                                {
-                                    type = TypeProcessor.pureRawTypeToJava(compiledSupport.getClassifier(values.getFirst()), false, compiledSupport);
-                                    final String listImpl = JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath(M3Paths.List);
-                                    return (values.size() == 1) ? ("      final " + type + " _" + name + " = (" + type + ")((" + listImpl + ")vars.get(\"" + name + "\"))._values.getFirst();") : ("      final RichIterable<" + type + "> _" + name + " = ((" + listImpl + ")vars.get(\"" + name + "\"))._values;");
-                                }
-                            }
-                        }).makeString("\n") +
+                            String type = TypeProcessor.typeToJavaObjectSingle(found.getValueForMetaPropertyToOne(M3Properties.genericType), false, compiledSupport);
+                            return "      final  " + type + "  _" + name1 + " = null;";
+                        }
+                        return "";
+                    }
+                    else
+                    {
+                        String type = TypeProcessor.pureRawTypeToJava(compiledSupport.getClassifier(values1.getFirst()), false, compiledSupport);
+                        String listImpl = JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath(M3Paths.List);
+                        return (values1.size() == 1) ? ("      final " + type + " _" + name1 + " = (" + type + ")((" + listImpl + ")vars.get(\"" + name1 + "\"))._values.getFirst();") : ("      final RichIterable<" + type + "> _" + name1 + " = ((" + listImpl + ")vars.get(\"" + name1 + "\"))._values;");
+                    }
+                }).makeString("\n") +
                 "       return " + processed + ";\n" +
                 "   }\n" +
                 "}\n";
@@ -1735,9 +1728,6 @@ public class CompiledSupport
     }
 
 
-
-
-
     public static String escapeJSON(String str)
     {
         return JSONValue.escape(str);
@@ -1780,7 +1770,6 @@ public class CompiledSupport
     }
 
 
-
     public static String fullClassName(String className)
     {
         String classToLoad = className;
@@ -1807,20 +1796,19 @@ public class CompiledSupport
     }
 
 
-
     public static Object executeFunction(CoreInstance functionDefinition, Class<?>[] paramClasses, Object[] params, ExecutionSupport executionSupport)
     {
-        return executeFunction(IdBuilder.sourceToId(functionDefinition.getSourceInformation()), (ConcreteFunctionDefinition<?>)functionDefinition, paramClasses, params, executionSupport);
+        return executeFunction(IdBuilder.sourceToId(functionDefinition.getSourceInformation()), (ConcreteFunctionDefinition<?>) functionDefinition, paramClasses, params, executionSupport);
     }
 
 
     public static Object executeFunction(String uniqueFunctionId, ConcreteFunctionDefinition<?> functionDefinition, Class<?>[] paramClasses, Object[] params, ExecutionSupport es)
     {
-        SharedPureFunction<?> spf = ((CompiledExecutionSupport)es).getFunctionCache().getIfAbsentPutJavaFunctionForPureFunction(functionDefinition, () ->
+        SharedPureFunction<?> spf = ((CompiledExecutionSupport) es).getFunctionCache().getIfAbsentPutJavaFunctionForPureFunction(functionDefinition, () ->
         {
             try
             {
-                Class<?> clazz = ((CompiledExecutionSupport)es).getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + '.' + uniqueFunctionId);
+                Class<?> clazz = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + '.' + uniqueFunctionId);
                 String functionName = FunctionProcessor.functionNameToJava(functionDefinition);
                 Method method = getFunctionMethod(clazz, functionName, functionDefinition, paramClasses, params, es);
                 return new JavaMethodWithParamsSharedPureFunction<>(method, paramClasses, functionDefinition.getSourceInformation());
@@ -1894,7 +1882,7 @@ public class CompiledSupport
         }
     }
 
-    public static Object validate(boolean goDeep, final Object o, final SourceInformation si, final ExecutionSupport es)
+    public static Object validate(boolean goDeep, Object o, SourceInformation si, ExecutionSupport es)
     {
         try
         {
@@ -1926,21 +1914,16 @@ public class CompiledSupport
     private static String buildFunctionExecutionErrorMessage(CoreInstance functionDefinition, Object[] params, String reason, ExecutionSupport es)
     {
         StringBuilder builder = new StringBuilder("Error executing ");
-        org.finos.legend.pure.m3.navigation.function.Function.print(builder, functionDefinition, ((CompiledExecutionSupport)es).getProcessorSupport());
+        org.finos.legend.pure.m3.navigation.function.Function.print(builder, functionDefinition, ((CompiledExecutionSupport) es).getProcessorSupport());
 
         if (params != null)
         {
-            builder.append(" with parameters ");
-            MutableList<String> paramVals = new FastList<>(params.length);
-            for (Object param : params)
-            {
-                paramVals.add(pureToString(param, es));
-            }
-            builder.append(paramVals.makeString("[", ", ", "]"));
+            ArrayAdapter.adapt(params).asLazy()
+                    .collect(p -> pureToString(p, es))
+                    .appendString(builder, " with parameters [", ", ", "]");
         }
 
-        builder.append(". ").append(reason);
-        return builder.toString();
+        return builder.append(". ").append(reason).toString();
     }
 
     public static <T> RichIterable<? extends T> castWithExceptionHandling(RichIterable<?> sourceCollection, Class<?> targetType, SourceInformation sourceInformation)
@@ -1959,7 +1942,7 @@ public class CompiledSupport
             String errorMessage = "Cast exception: " + getPureClassName(sourceObject) + " cannot be cast to " + castTypeClassName;
             throw new PureExecutionException(sourceInformation, errorMessage);
         }
-        return (T)sourceObject;
+        return (T) sourceObject;
     }
 
     public static long safeSize(Object obj)
@@ -1970,7 +1953,7 @@ public class CompiledSupport
         }
         if (obj instanceof RichIterable)
         {
-            return ((RichIterable<?>)obj).size();
+            return ((RichIterable<?>) obj).size();
         }
         return 1L;
     }
@@ -1979,17 +1962,17 @@ public class CompiledSupport
     {
         if (isTypeOfEnum(obj))
         {
-            return getEnumClassifierName((Enum)obj);
+            return getEnumClassifierName((Enum) obj);
         }
         if (isPureGeneratedClass(obj))
         {
-            if (!(obj instanceof Class && ((Class<?>)obj).isInterface()))
+            if (!(obj instanceof Class && ((Class<?>) obj).isInterface()))
             {
                 return getPureGeneratedClassName(obj);
             }
         }
         String primitiveJavaToPureType = obj instanceof Class ?
-                JavaPurePrimitiveTypeMapping.getPureM3TypeFromJavaPrimitivesAndDates((Class<?>)obj) :
+                JavaPurePrimitiveTypeMapping.getPureM3TypeFromJavaPrimitivesAndDates((Class<?>) obj) :
                 JavaPurePrimitiveTypeMapping.getPureM3TypeFromJavaPrimitivesAndDates(obj);
         if (primitiveJavaToPureType != null)
         {
@@ -2031,13 +2014,6 @@ public class CompiledSupport
             }
             return pkgPath;
         }
-        else
-        {
-            MutableList<String> pkgPath = getUserObjectPathForPackageableElement(pkg, includeRoot);
-            pkgPath.add(packageableElement.getName());
-            return pkgPath;
-        }
+        return getUserObjectPathForPackageableElement(pkg, includeRoot).with(packageableElement.getName());
     }
-
-
 }
