@@ -14,6 +14,7 @@ import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeR
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
+import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.ParserService;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
@@ -152,11 +153,7 @@ public class JavaCodeGeneration
             }
 
             // Generate metadata and Java sources
-            long startGenerating = System.nanoTime();
-            log.info("  Start generating Java classes");
-            Generate generate = generate(startGenerating, allRepositories, selectedRepositories, distributedMetadataDirectory, codegenDirectory, generateMetadata, generationType, generateSources, log);
-            log.info(String.format("  Finished generating Java classes (%.9fs)", durationSinceInSeconds(startGenerating)));
-
+            Generate generate = generate(System.nanoTime(), allRepositories, selectedRepositories, distributedMetadataDirectory, codegenDirectory, generateMetadata, generationType, generateSources, log);
 
             // Compile Java sources
             if (!preventJavaCompilation)
@@ -322,10 +319,19 @@ public class JavaCodeGeneration
             log.info("  Beginning Pure initialization");
             RichIterable<CodeRepository> repositoriesForCompilation = allRepositories.subset(selectedRepositories).getRepositories();
 
+            Message message = new Message("")
+            {
+                @Override
+                public void setMessage(String message)
+                {
+                    log.info(message);
+                }
+            };
+
             // Initialize from PAR files cache
             CompositeCodeStorage codeStorage = new CompositeCodeStorage(new ClassLoaderCodeStorage(Thread.currentThread().getContextClassLoader(), repositoriesForCompilation));
             ClassLoaderPureGraphCache graphCache = new ClassLoaderPureGraphCache(Thread.currentThread().getContextClassLoader());
-            PureRuntime runtime = new PureRuntimeBuilder(codeStorage).withCache(graphCache).setTransactionalByDefault(false).buildAndTryToInitializeFromCache();
+            PureRuntime runtime = new PureRuntimeBuilder(codeStorage).withMessage(message).withCache(graphCache).setTransactionalByDefault(false).buildAndTryToInitializeFromCache();
             if (!runtime.isInitialized())
             {
                 CacheState cacheState = graphCache.getCacheState();
@@ -339,8 +345,8 @@ public class JavaCodeGeneration
                 }
                 log.info("    Initialization from caches failed - compiling from scratch");
                 runtime.reset();
-                runtime.loadAndCompileCore();
-                runtime.loadAndCompileSystem();
+                runtime.loadAndCompileCore(message);
+                runtime.loadAndCompileSystem(message);
             }
             log.info(String.format("    Finished Pure initialization (%.9fs)", durationSinceInSeconds(start)));
             return runtime;

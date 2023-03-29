@@ -25,11 +25,13 @@ import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
+import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.factory.primitive.LongLists;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.StringIterate;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
@@ -53,6 +55,8 @@ public class CompositeCodeStorage implements MutableVersionControlledCodeStorage
     private final MutableMap<String, RepositoryCodeStorage> codeStorageByName;
     private final ImmutableMap<String, CodeRepository> repositoriesByName;
 
+    private final ImmutableMap<String, Pair<CodeRepository, RepositoryCodeStorage>> codeStorageByRepositoryName;
+
     public CompositeCodeStorage(RichIterable<RepositoryCodeStorage> codeStorages)
     {
         this(codeStorages.toArray(new RepositoryCodeStorage[0]));
@@ -64,6 +68,7 @@ public class CompositeCodeStorage implements MutableVersionControlledCodeStorage
         this.codeStorages = Lists.mutable.with(codeStorages);
         this.codeStorageByName = indexCodeStoragesByName(codeStorages);
         this.repositoriesByName = this.codeStorages.asLazy().flatCollect(RepositoryCodeStorage::getAllRepositories).groupByUniqueKey(CodeRepository::getName, UnifiedMap.newMap(this.codeStorageByName.size())).toImmutable();
+        this.codeStorageByRepositoryName = this.codeStorages.asLazy().flatCollect(c -> c.getAllRepositories().collect(r -> Tuples.pair(r, c))).groupByUniqueKey(r -> r.getOne().getName(), UnifiedMap.newMap()).toImmutable();
     }
 
     @Override
@@ -74,6 +79,12 @@ public class CompositeCodeStorage implements MutableVersionControlledCodeStorage
         {
             codeStorage.initialize(message);
         }
+    }
+
+    @Override
+    public RepositoryCodeStorage getOriginalCodeStorage(CodeRepository codeRepository)
+    {
+        return this.codeStorageByRepositoryName.get(codeRepository.getName()).getTwo().getOriginalCodeStorage(codeRepository);
     }
 
     @Override
@@ -677,48 +688,6 @@ public class CompositeCodeStorage implements MutableVersionControlledCodeStorage
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     private static MutableMap<String, RepositoryCodeStorage> indexCodeStoragesByName(RepositoryCodeStorage... codeStorages)
     {
         MutableMap<String, RepositoryCodeStorage> index = UnifiedMap.newMap(codeStorages.length);
@@ -810,12 +779,7 @@ public class CompositeCodeStorage implements MutableVersionControlledCodeStorage
         return (length == repository.length()) && sourceId.startsWith(repository, start);
     }
 
-    public static final Function<Source, String> GET_SOURCE_REPO = source ->
-    {
-        String repoName = getSourceRepoName(source.getId());
-        return null == repoName ? null : repoName.startsWith("model") ? "model-all" : repoName;
-    };
-
+    public static final Function<Source, String> GET_SOURCE_REPO = source -> getSourceRepoName(source.getId());
 
     public static RichIterable<CodeRepository> getVisibleRepositories(RichIterable<CodeRepository> codeRepositories, CodeRepository repository)
     {

@@ -24,7 +24,6 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.imports.Imports;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.SystemCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.Version;
@@ -42,7 +41,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.*;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -213,11 +211,11 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
         // Real repository but not present
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream())
         {
-            BinaryModelRepositorySerializer.serialize(stream, SystemCodeRepository.NAME, runtime);
+            BinaryModelRepositorySerializer.serialize(stream, "system", runtime);
         }
         catch (IllegalArgumentException e)
         {
-            Assert.assertEquals("Unknown repository: " + SystemCodeRepository.NAME, e.getMessage());
+            Assert.assertEquals("Unknown repository: system", e.getMessage());
         }
     }
 

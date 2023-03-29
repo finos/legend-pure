@@ -1,6 +1,8 @@
 package org.finos.legend.pure.m3.generator.par;
 
+import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Sets;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
@@ -31,11 +33,11 @@ public class PureJarGenerator
             @Override
             public void error(String txt, Exception e)
             {
-                System.out.println("ERROR"+txt);
+                System.out.println("ERROR" + txt);
                 e.printStackTrace();
             }
         });
-     }
+    }
 
 
     public static void doGeneratePAR(Set<String> repositories, Set<String> excludedRepositories, Set<String> extraRepositories, String purePlatformVersion, File sourceDirectory, File outputDirectory, Log log) throws Exception
@@ -49,7 +51,7 @@ public class PureJarGenerator
             log.info("  Requested repositories: " + repositories);
             log.info("  Excluded repositories: " + excludedRepositories);
             log.info("  Extra repositories: " + extraRepositories);
-            CodeRepositorySet resolvedRepositories = resolveRepositories(repositories, excludedRepositories, extraRepositories);
+            CodeRepositorySet resolvedRepositories = resolveRepositories(repositories, excludedRepositories, extraRepositories, log);
             log.info("  Repositories with resolved dependencies: " + resolvedRepositories.getRepositories());
             log.info("  Register DSLs: " + ps.parsers().collect(Parser::getName).makeString(", "));
             log.info("  Register in-line DSLs: " + ps.inlineDSLs().collect(InlineDSL::getName).makeString(", "));
@@ -68,10 +70,12 @@ public class PureJarGenerator
         log.info(String.format("  -> Finished Pure PAR generation in %.9fs", durationSinceInSeconds(start)));
     }
 
-    private static CodeRepositorySet resolveRepositories(Set<String> repositories, Set<String> excludedRepositories, Set<String> extraRepositories)
+    private static CodeRepositorySet resolveRepositories(Set<String> repositories, Set<String> excludedRepositories, Set<String> extraRepositories, Log log)
     {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        CodeRepositorySet.Builder builder = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true));
+        RichIterable<CodeRepository> cpRepositories = CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true);
+        log.info("  Found repositories (in the classpath): " + cpRepositories.collect(CodeRepository::getName).makeString("[", ",", "]"));
+        CodeRepositorySet.Builder builder = CodeRepositorySet.newBuilder().withCodeRepositories(cpRepositories);
         if (extraRepositories != null)
         {
             extraRepositories.forEach(r -> builder.addCodeRepository(getExtraRepository(classLoader, r)));

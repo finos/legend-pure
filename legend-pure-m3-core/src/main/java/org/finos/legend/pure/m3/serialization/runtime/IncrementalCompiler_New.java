@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.serialization.runtime;
 
+import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.procedure.Procedure;
 import org.eclipse.collections.api.factory.Lists;
@@ -37,8 +38,8 @@ import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
 import org.finos.legend.pure.m3.navigation.imports.Imports;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.serialization.grammar.top.TopParser;
@@ -119,28 +120,14 @@ public class IncrementalCompiler_New extends IncrementalCompiler
             MutableSet<String> allReposToCompile = Sets.mutable.withAll(sourcesByRepo.keysView()).withAll(potentialRepos.keysView());
 
             ListIterable<String> repoCompileOrder = allReposToCompile.toSortedList(new RepositoryComparator(this.codeStorage.getAllRepositories()));
-            MutableList<String> newCompileOrder = Lists.mutable.empty();
-            repoCompileOrder.forEach(repo ->
-            {
-                if ((repo != null) && repo.startsWith("model"))
-                {
-                    if (!newCompileOrder.contains("model-all"))
-                    {
-                        newCompileOrder.add("model-all");
-                    }
-                }
-                else
-                {
-                    newCompileOrder.add(repo);
-                }
-            });
-            int repoCount = newCompileOrder.size();
+            this.message.setMessage("Compiling repositories in the following order:" + repoCompileOrder.makeString("[", ",", "]"));
 
             boolean shouldCreateNewRepoTransactions = this.isTransactionalByDefault && (threadLocalTransaction == null);
-            newCompileOrder.forEachWithIndex((repo, i) ->
+            repoCompileOrder.forEachWithIndex((repo, i) ->
             {
                 IncrementalCompilerTransaction repoTransaction = shouldCreateNewRepoTransactions ? this.newTransaction(true) : threadLocalTransaction;
                 RichIterable<? extends Source> repoSources = sourcesByRepoNew.get(repo);
+                this.message.setMessage("Compiling '" + repo + "' (sources:" + repoSources.size() + ")");
                 RichIterable<CoreInstance> toProcessThisRepo = this.toProcess.selectWith(IncrementalCompiler_New::coreInstanceIsFromRepo, repo).toImmutable();
                 RichIterable<CoreInstance> toUnbindThisRepo = this.toUnbind.selectWith(IncrementalCompiler_New::coreInstanceIsFromRepo, repo).toImmutable();
                 MutableSet<CoreInstance> repoTransactionInstances = Sets.mutable.empty();
@@ -148,11 +135,13 @@ public class IncrementalCompiler_New extends IncrementalCompiler
                 SourceMutation repoResult;
                 try
                 {
-                    repoResult = this.compileRepoSources(repoTransaction, repo, i + 1, repoCount, repoSources, toProcessThisRepo, toUnbindThisRepo, sourceStatesByRepo.get(repo), repoTransactionInstances, postProcessorObserver);
+                    long time = System.currentTimeMillis();
+                    repoResult = this.compileRepoSources(repoTransaction, repo, i + 1, repoCompileOrder.size(), repoSources, toProcessThisRepo, toUnbindThisRepo, sourceStatesByRepo.get(repo), repoTransactionInstances, postProcessorObserver);
                     if (shouldCreateNewRepoTransactions)
                     {
                         repoTransaction.commit();
                     }
+                    this.message.setMessage("Finished compiling " + repo + " in " + DurationFormatUtils.formatDuration(System.currentTimeMillis() - time, "HH:mm:ss", true));
                 }
                 catch (Exception e)
                 {
@@ -166,10 +155,6 @@ public class IncrementalCompiler_New extends IncrementalCompiler
                 if (repo == null)
                 {
                     compiledSourcesByRepo.putAll(repo, repoSources);
-                }
-                else if ("model-all".equals(repo))
-                {
-                    compiledSourcesByRepo.putAll(repoSources.groupBy(source -> CompositeCodeStorage.getSourceRepoName(source.getId())));
                 }
                 else
                 {
@@ -478,7 +463,7 @@ public class IncrementalCompiler_New extends IncrementalCompiler
         {
             return null;
         }
-        return repo.startsWith("model") ? "model-all" : repo;
+        return repo;
     }
 
     private static boolean coreInstanceIsFromRepo(CoreInstance instance, String repoName)
@@ -492,6 +477,6 @@ public class IncrementalCompiler_New extends IncrementalCompiler
         {
             return repoName == null;
         }
-        return repoName != null && ("model-all".equals(repoName) ? instanceRepository.startsWith("model") : instanceRepository.equals(repoName));
+        return instanceRepository.equals(repoName);
     }
 }

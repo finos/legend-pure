@@ -17,10 +17,10 @@ package org.finos.legend.pure.m2.inlinedsl.graph;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.SVNCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
@@ -29,8 +29,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.nio.file.Path;
 
 public class TestVisibilityAndAccessibilityInGraph extends AbstractPureTestWithCoreCompiled
 {
@@ -55,13 +53,13 @@ public class TestVisibilityAndAccessibilityInGraph extends AbstractPureTestWithC
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
         return Lists.immutable.<CodeRepository>with(
-                SVNCodeRepository.newDatamartCodeRepository("dtm"),
-                SVNCodeRepository.newDatamartCodeRepository("datamt"),
-                SVNCodeRepository.newModelCodeRepository(""),
-                SVNCodeRepository.newModelCodeRepository("candidate", Sets.immutable.with("")),
-                SVNCodeRepository.newModelCodeRepository("legacy", Sets.immutable.with("")),
-                SVNCodeRepository.newModelValidationCodeRepository(),
-                SVNCodeRepository.newSystemCodeRepository()
+                GenericCodeRepository.build("datamart_dtm", "((datamarts::dtm::(domain|mapping|store))|(apps::dtm))(::.*)?", "platform", "system", "model", "model_legacy"),
+                GenericCodeRepository.build("datamart_datamt", "((datamarts::datamt::(domain|mapping|store))|(apps::datamt))(::.*)?", "platform", "system", "model", "model_legacy"),
+                GenericCodeRepository.build("model", "(model::(domain|mapping|store|producers|consumers|external)||(apps::model))(::.*)?", "platform", "system"),
+                GenericCodeRepository.build("model_candidate", "(model_candidate::(domain|mapping|store|producers|consumers|external)||(apps::model_candidate))(::.*)?", "platform", "system", "model"),
+                GenericCodeRepository.build("model_legacy", "(model_legacy::(domain|mapping|store|producers|consumers|external)||(apps::model_legacy))(::.*)?", "platform", "system", "model"),
+                GenericCodeRepository.build("model_validation", "(model::producers)(::.*)?", "platform", "system", "model"),
+                GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform")
         ).newWithAll(CodeRepositoryProviderHelper.findCodeRepositories());
     }
 

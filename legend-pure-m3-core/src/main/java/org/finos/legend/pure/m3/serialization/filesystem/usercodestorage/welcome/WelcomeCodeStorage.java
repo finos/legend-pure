@@ -27,7 +27,6 @@ public class WelcomeCodeStorage implements MutableRepositoryCodeStorage
     public static final String WELCOME_FILE_PATH = RepositoryCodeStorage.ROOT_PATH + WELCOME_FILE_NAME;
     private static final String WELCOME_RESOURCE_NAME = "/org/finos/legend/pure/m3/serialization/filesystem/welcome.pure";
 
-
     public WelcomeCodeStorage(Path root)
     {
         this.root = root;

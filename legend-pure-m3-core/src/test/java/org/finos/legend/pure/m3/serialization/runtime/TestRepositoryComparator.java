@@ -16,20 +16,19 @@ package org.finos.legend.pure.m3.serialization.runtime;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.SVNCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.nio.file.Path;
 
 public class TestRepositoryComparator extends AbstractPureTestWithCoreCompiledPlatform
 {
@@ -38,15 +37,15 @@ public class TestRepositoryComparator extends AbstractPureTestWithCoreCompiledPl
     @BeforeClass
     public static void setUp()
     {
-        MutableList<CodeRepository> repositories = Lists.mutable.<CodeRepository>with(
-                SVNCodeRepository.newDatamartCodeRepository("dtm"),
-                SVNCodeRepository.newDatamartCodeRepository("datamt"),
-                SVNCodeRepository.newModelCodeRepository(""),
-                SVNCodeRepository.newModelCodeRepository("candidate", Sets.immutable.with("")),
-                SVNCodeRepository.newModelCodeRepository("legacy", Sets.immutable.with("")),
-                SVNCodeRepository.newModelValidationCodeRepository(),
-                SVNCodeRepository.newSystemCodeRepository()
-        ).withAll(CodeRepositoryProviderHelper.findCodeRepositories());
+        ImmutableList<CodeRepository> repositories = Lists.immutable.<CodeRepository>with(
+                GenericCodeRepository.build("datamart_dtm", "((datamarts::dtm::(domain|mapping|store))|(apps::dtm))(::.*)?", ""),//newDatamartCodeRepository("dtm"),
+                GenericCodeRepository.build("datamart_datamt", "((datamarts::datamt::(domain|mapping|store))|(apps::datamt))(::.*)?", ""),//SVNCodeRepository.newDatamartCodeRepository("datamt"),
+                GenericCodeRepository.build("model", "(model::(domain|mapping|store|producers|consumers|external)||(apps::model))(::.*)?", ""),//SVNCodeRepository.newModelCodeRepository(""),
+                GenericCodeRepository.build("candidate", "(model_candidate::(domain|mapping|store|producers|consumers|external)||(apps::model_candidate))(::.*)?"),//SVNCodeRepository.newModelCodeRepository("candidate", Sets.immutable.with("")),
+                GenericCodeRepository.build("legacy", "(model_legacy::(domain|mapping|store|producers|consumers|external)||(apps::model_legacy))(::.*)?"),//SVNCodeRepository.newModelCodeRepository("legacy", Sets.immutable.with("")),
+                GenericCodeRepository.build("model_validation", "(model::producers)(::.*)?"),//SVNCodeRepository.newModelValidationCodeRepository(),
+                GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?")//SVNCodeRepository.newSystemCodeRepository()
+        ).newWithAll(CodeRepositoryProviderHelper.findCodeRepositories());
         repositoriesByName = repositories.groupByUniqueKey(CodeRepository::getName);
         setUpRuntime(new CompositeCodeStorage(new ClassLoaderCodeStorage(repositories)), getExtra());
     }

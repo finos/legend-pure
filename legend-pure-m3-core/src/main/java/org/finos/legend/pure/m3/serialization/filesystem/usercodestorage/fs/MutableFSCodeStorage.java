@@ -16,6 +16,7 @@ package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.fs;
 
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 
 import java.io.OutputStream;

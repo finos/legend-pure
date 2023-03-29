@@ -21,6 +21,7 @@ import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
+import org.eclipse.collections.api.partition.PartitionIterable;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.set.strategy.mutable.UnifiedSetWithHashingStrategy;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
@@ -35,6 +36,7 @@ import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.VersionControlledCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
@@ -508,8 +510,9 @@ public final class JavaSourceCodeGenerator
         try
         {
             java.lang.Class<?> externalClass = Thread.currentThread().getContextClassLoader().loadClass("org.finos.legend.pure.runtime.java.compiled.generation.ExternalClassBuilder");
-            Method method = externalClass.getMethod("buildExternalizableFunctionClass", RichIterable.class, String.class, RichIterable.class);
-            return (String) method.invoke(null, functionDefinitions, EXTERNAL_FUNCTIONS_CLASS_NAME, this.codeStorage.getAllRepositories().collect(c -> c.getName()));
+            Method method = externalClass.getMethod("buildExternalizableFunctionClass", RichIterable.class, String.class, RichIterable.class, RichIterable.class);
+            PartitionIterable<CodeRepository> sortedRepos = this.codeStorage.getAllRepositories().partition(p -> this.codeStorage.getOriginalCodeStorage(p) instanceof VersionControlledCodeStorage);
+            return (String) method.invoke(null, functionDefinitions, EXTERNAL_FUNCTIONS_CLASS_NAME, sortedRepos.getSelected().collect(CodeRepository::getName), sortedRepos.getRejected().collect(CodeRepository::getName));
         }
         catch (ReflectiveOperationException e)
         {

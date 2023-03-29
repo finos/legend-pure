@@ -73,7 +73,7 @@ public class PureJarSerializer
 
             Message message = getMessage(log, "      ");
             log.info("    *Starting file compilation");
-            runtime = new PureRuntimeBuilder(codeStorage).setTransactionalByDefault(false).buildAndInitialize(message);
+            runtime = new PureRuntimeBuilder(codeStorage).withMessage(message).setTransactionalByDefault(false).buildAndInitialize(message);
             repositoriesToSerialize = repositories.getRepositories();
             log.info("      -> Finished compilation");
         }
@@ -138,7 +138,10 @@ public class PureJarSerializer
             @Override
             public void setMessage(String message)
             {
-                log.info(prefix + message);
+                if (!message.startsWith("Binding") && !message.startsWith("Parsing") && !message.startsWith("Unbinding"))
+                {
+                    log.info(prefix + message);
+                }
             }
         };
     }
