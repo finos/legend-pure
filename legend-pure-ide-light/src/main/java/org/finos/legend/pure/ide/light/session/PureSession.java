@@ -30,11 +30,7 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.Mutable
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.welcome.WelcomeCodeStorage;
-import org.finos.legend.pure.m3.serialization.runtime.ExecutedTestTracker;
-import org.finos.legend.pure.m3.serialization.runtime.Message;
-import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
-import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
-import org.finos.legend.pure.m3.serialization.runtime.Source;
+import org.finos.legend.pure.m3.serialization.runtime.*;
 import org.finos.legend.pure.m3.statelistener.VoidExecutionActivityListener;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -48,7 +44,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.file.Paths;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
@@ -56,9 +53,17 @@ import javax.servlet.http.HttpServletResponse;
 
 import static org.finos.legend.pure.ide.light.helpers.response.ExceptionTranslation.buildExceptionMessage;
 
+
 public class PureSession
 {
-    private final PureRuntime pureRuntime;
+    public static final String LEGEND_TEST_SERVER_HOST = "legend.test.server.host";
+    public static final String LEGEND_TEST_SERVER_PORT = "legend.test.server.port";
+    public static final String LEGEND_TEST_H2_PORT = "legend.test.h2.port";
+    public static final String LEGEND_TEST_CLIENT_VERSION = "legend.test.clientVersion";
+    public static final String LEGEND_TEST_SERVER_VERSION = "legend.test.serverVersion";
+    public static final String LEGEND_TEST_SERIALIZATION_KIND = "legend.test.serializationKind";
+
+    private PureRuntime pureRuntime;
     public MutableRepositoryCodeStorage codeStorage;
     private final FunctionExecution functionExecution;
     private final SourceLocationConfiguration sourceLocationConfiguration;
@@ -69,6 +74,9 @@ public class PureSession
     public Message message = new Message("");
 
     public MutableList<RepositoryCodeStorage> repos;
+    private final Map<String, Boolean> runtimeOptions = new ConcurrentHashMap<>();
+    private final Properties engineProperties = new Properties();
+    private final AtomicBoolean engineMode = new AtomicBoolean(false);
 
     public PureSession(SourceLocationConfiguration sourceLocationConfiguration, MutableList<RepositoryCodeStorage> repos)
     {
@@ -82,8 +90,34 @@ public class PureSession
 
         this.functionExecution = new FunctionExecutionInterpreted(VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER);
 
+        initializeEngineProperties();
+        initializePureOptions();
+
+        // Read Pure options from system properties and override defaults set in initializePureOptions
+        for (String property : System.getProperties().stringPropertyNames())
+        {
+            if (property.startsWith("pure.option."))
+            {
+                if (property.startsWith("pure.option."))
+                {
+                    setRuntimeOption(property.substring(12), Boolean.getBoolean(property));
+                }
+            }
+        }
+
         this.codeStorage = new CompositeCodeStorage(this.repos.toArray(new RepositoryCodeStorage[0]));
-        this.pureRuntime = new PureRuntimeBuilder(this.codeStorage).withMessage(this.message).setUseFastCompiler(true).build();
+        this.pureRuntime = new PureRuntimeBuilder(this.codeStorage)
+                .withMessage(this.message)
+                .setUseFastCompiler(true)
+                .withOptions(new RuntimeOptions()
+                {
+                    @Override
+                    public boolean isOptionSet(String name)
+                    {
+                        return isRuntimeOptionSet(name);
+                    }
+                }).build();
+
         this.functionExecution.init(this.pureRuntime, this.message);
         this.codeStorage.initialize(this.message);
     }
@@ -197,6 +231,148 @@ public class PureSession
         {
             this.executionCount.decrementAndGet();
         }
+    }
+
+    private void initializePureOptions()
+    {
+        this.setRuntimeOption("PlanLocal", false);
+        this.setRuntimeOption("ExecPlan", false);
+        this.setRuntimeOption("ShowLocalPlan", false);
+    }
+
+    private void initializeEngineProperties()
+    {
+        engineProperties.setProperty(LEGEND_TEST_SERVER_HOST, "127.0.0.1");
+        engineProperties.setProperty(LEGEND_TEST_SERVER_PORT, "9090");
+        engineProperties.setProperty(LEGEND_TEST_CLIENT_VERSION, "vX_X_X");
+        engineProperties.setProperty(LEGEND_TEST_SERVER_VERSION, "v1");
+        engineProperties.setProperty(LEGEND_TEST_SERIALIZATION_KIND, "json");
+    }
+
+    public void setRuntimeOption(String name, boolean value)
+    {
+        this.runtimeOptions.put(name, value);
+    }
+
+    public Map<String, Boolean> getAllRuntimeOptions()
+    {
+        return this.runtimeOptions;
+    }
+
+    public Optional<Boolean> getRuntimeOption(String name)
+    {
+        return Optional.ofNullable(this.runtimeOptions.get(name));
+    }
+
+    public boolean isRuntimeOptionSet(String name)
+    {
+        return this.getRuntimeOption(name).orElse(false);
+    }
+
+    public Optional<Properties> getLegendEngineSettings()
+    {
+        if (this.isEngineModeEnabled())
+        {
+            return Optional.of(this.engineProperties);
+        }
+        return Optional.empty();
+    }
+
+    public synchronized void enableEngineMode()
+    {
+        this.engineProperties.entrySet().stream().forEach(property -> System.setProperty((String) property.getKey(), (String) property.getValue()));
+        this.engineMode.compareAndSet(false, true);
+    }
+
+    public synchronized void disableEngineMode()
+    {
+        this.engineProperties.entrySet().stream().forEach(e -> System.clearProperty((String) e.getKey()));
+        this.engineMode.compareAndSet(true, false);
+    }
+
+    public Properties getEngineProperties()
+    {
+        return this.engineProperties;
+    }
+    public boolean isEngineModeEnabled()
+    {
+        return this.engineMode.get();
+    }
+
+
+    public String getLegendTestServerHost()
+    {
+        return this.engineProperties.getProperty(LEGEND_TEST_SERVER_HOST);
+    }
+
+    public String getLegendTestServerPort()
+    {
+        return this.engineProperties.getProperty(LEGEND_TEST_SERVER_PORT);
+    }
+
+    public String getLegendTestSerializationKind()
+    {
+        return this.engineProperties.getProperty(LEGEND_TEST_SERIALIZATION_KIND);
+    }
+
+    public String getLegendTestClientVersion()
+    {
+        return this.engineProperties.getProperty(LEGEND_TEST_CLIENT_VERSION);
+    }
+
+    public String getLegendTestServerVersion()
+    {
+        return this.engineProperties.getProperty(LEGEND_TEST_SERVER_VERSION);
+    }
+
+    private void setLegendSystemProperty(String propertyName, String propertyValue)
+    {
+        this.engineProperties.setProperty(propertyName, propertyValue);
+        if (this.isEngineModeEnabled())
+        {
+            System.setProperty(propertyName, propertyValue);
+        }
+    }
+
+    public boolean isEmbeddedH2Enabled()
+    {
+        return System.getProperty(LEGEND_TEST_H2_PORT) == null;
+    }
+
+    public void enableEmbeddedH2()
+    {
+        System.clearProperty(LEGEND_TEST_H2_PORT);
+    }
+
+    public void disableEmbeddedH2(Optional<String> port)
+    {
+        System.setProperty(LEGEND_TEST_H2_PORT, port.orElse("9092"));
+    }
+
+
+    public void setLegendTestServerHost(String URL)
+    {
+        setLegendSystemProperty(LEGEND_TEST_SERVER_HOST, URL);
+    }
+
+    public void setLegendTestServerPort(String port)
+    {
+        setLegendSystemProperty(LEGEND_TEST_SERVER_PORT, port);
+    }
+
+    public void setLegendTestClientVersion(String clientVersion)
+    {
+        setLegendSystemProperty(LEGEND_TEST_CLIENT_VERSION, clientVersion);
+    }
+
+    public void setLegendTestServerVersion(String serverVersion)
+    {
+        setLegendSystemProperty(LEGEND_TEST_SERVER_VERSION, serverVersion);
+    }
+
+    public void setLegendTestSerializationKind(String serializationKind)
+    {
+        setLegendSystemProperty(LEGEND_TEST_SERIALIZATION_KIND, serializationKind);
     }
 
     public JSONObject saveFiles(HttpServletRequest request, HttpServletResponse response) throws IOException

@@ -23,11 +23,7 @@ import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.federecio.dropwizard.swagger.SwaggerResource;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
-import org.finos.legend.pure.ide.light.api.Activities;
-import org.finos.legend.pure.ide.light.api.Suggestion;
-import org.finos.legend.pure.ide.light.api.FileManagement;
-import org.finos.legend.pure.ide.light.api.LifeCycle;
-import org.finos.legend.pure.ide.light.api.Service;
+import org.finos.legend.pure.ide.light.api.*;
 import org.finos.legend.pure.ide.light.api.concept.Concept;
 import org.finos.legend.pure.ide.light.api.concept.MovePackageableElements;
 import org.finos.legend.pure.ide.light.api.concept.RenameConcept;
@@ -100,6 +96,9 @@ public abstract class PureIDEServer extends Application<ServerConfiguration>
         environment.jersey().register(new Activities(pureSession));
         environment.jersey().register(new FileManagement(pureSession));
         environment.jersey().register(new LifeCycle(pureSession));
+        environment.jersey().register(new RuntimeOptions(pureSession));
+        environment.jersey().register(new EngineMode(pureSession));
+        environment.jersey().register(new EmbeddedH2(pureSession));
 
         environment.jersey().register(new Suggestion(pureSession));
 
