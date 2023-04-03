@@ -145,6 +145,7 @@ public final class ResultSetValueHandlers
         HANDLERS.put(Types.BOOLEAN, BOOLEAN);
         HANDLERS.put(Types.DATE, DATE);
         HANDLERS.put(Types.TIMESTAMP, TIMESTAMP);
+        HANDLERS.put(Types.TIMESTAMP_WITH_TIMEZONE, TIMESTAMP);
         HANDLERS.put(Types.TINYINT, LONG);
         HANDLERS.put(Types.SMALLINT, LONG);
         HANDLERS.put(Types.INTEGER, LONG);
