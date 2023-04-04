@@ -22,7 +22,7 @@ public class PureJarGenerator
         String purePlatformVersion = args[0];
         String repositories = args[1];
         String outputDirectory = args[2];
-        doGeneratePAR(Sets.mutable.with(repositories), Sets.mutable.empty(), Sets.mutable.empty(), purePlatformVersion, null, new File(outputDirectory), new Log()
+        doGeneratePAR(Sets.mutable.with(repositories), Sets.mutable.empty(), Sets.mutable.empty(), purePlatformVersion, null, null, new File(outputDirectory), new Log()
         {
             @Override
             public void info(String txt)
@@ -40,7 +40,7 @@ public class PureJarGenerator
     }
 
 
-    public static void doGeneratePAR(Set<String> repositories, Set<String> excludedRepositories, Set<String> extraRepositories, String purePlatformVersion, File sourceDirectory, File outputDirectory, Log log) throws Exception
+    public static void doGeneratePAR(Set<String> repositories, Set<String> excludedRepositories, Set<String> extraRepositories, String purePlatformVersion, String modelVersion, File sourceDirectory, File outputDirectory, Log log) throws Exception
     {
         long start = System.nanoTime();
         try
@@ -52,15 +52,16 @@ public class PureJarGenerator
             log.info("  Excluded repositories: " + excludedRepositories);
             log.info("  Extra repositories: " + extraRepositories);
             CodeRepositorySet resolvedRepositories = resolveRepositories(repositories, excludedRepositories, extraRepositories, log);
-            log.info("  Repositories with resolved dependencies: " + resolvedRepositories.getRepositories());
+            log.info("  Specified repositories (with resolved dependencies): " + resolvedRepositories.getRepositories().collect(CodeRepository::getName).makeString("[", ",", "]"));
             log.info("  Register DSLs: " + ps.parsers().collect(Parser::getName).makeString(", "));
             log.info("  Register in-line DSLs: " + ps.inlineDSLs().collect(InlineDSL::getName).makeString(", "));
             log.info("  Pure platform version: " + purePlatformVersion);
+            log.info("  Model version: " + modelVersion);
             log.info("  Pure source directory: " + sourceDirectory);
             log.info("  Output directory: " + outputDirectory);
 
             log.info("  Starting compilation and generation of Pure PAR file(s)");
-            PureJarSerializer.writePureRepositoryJars(outputDirectory.toPath(), (sourceDirectory == null) ? null : sourceDirectory.toPath(), purePlatformVersion, resolvedRepositories, log);
+            PureJarSerializer.writePureRepositoryJars(outputDirectory.toPath(), (sourceDirectory == null) ? null : sourceDirectory.toPath(), purePlatformVersion, modelVersion, resolvedRepositories, log);
         }
         catch (Exception e)
         {

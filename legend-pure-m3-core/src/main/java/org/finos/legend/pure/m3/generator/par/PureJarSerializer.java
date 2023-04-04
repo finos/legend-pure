@@ -45,22 +45,12 @@ public class PureJarSerializer
 {
     public static final String ARCHIVE_FILE_EXTENSION = "par";
 
-    @Deprecated
-    public static void writePureRepositoryJars(Path outputDirectory, Path sourceDirectory, String platformVersion, Iterable<CodeRepository> repositories, Log log) throws IOException
+    public static void writePureRepositoryJars(Path outputDirectory, Path sourceDirectory, String platformVersion, String modelVersion, CodeRepositorySet repositories, Log log) throws IOException
     {
-        CodeRepositorySet resolvedRepositories = CodeRepositorySet.newBuilder()
-                .withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories())
-                .build()
-                .subset(LazyIterate.collect(repositories, CodeRepository::getName));
-        writePureRepositoryJars(outputDirectory, sourceDirectory, platformVersion, resolvedRepositories, log);
+        writePureRepositoryJars(outputDirectory, sourceDirectory, platformVersion, modelVersion, repositories, Thread.currentThread().getContextClassLoader(), log);
     }
 
-    public static void writePureRepositoryJars(Path outputDirectory, Path sourceDirectory, String platformVersion, CodeRepositorySet repositories, Log log) throws IOException
-    {
-        writePureRepositoryJars(outputDirectory, sourceDirectory, platformVersion, repositories, Thread.currentThread().getContextClassLoader(), log);
-    }
-
-    public static void writePureRepositoryJars(Path outputDirectory, Path sourceDirectory, String platformVersion, CodeRepositorySet repositories, ClassLoader classLoader, Log log) throws IOException
+    public static void writePureRepositoryJars(Path outputDirectory, Path sourceDirectory, String platformVersion, String modelVersion, CodeRepositorySet repositories, ClassLoader classLoader, Log log) throws IOException
     {
         PureRuntime runtime;
         RichIterable<CodeRepository> repositoriesToSerialize;
@@ -126,7 +116,7 @@ public class PureJarSerializer
             log.info("      Writing " + outputFile);
             try (OutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(outputFile)))
             {
-                BinaryModelRepositorySerializer.serialize(outputStream, platformVersion, null, repositoryName, runtime);
+                BinaryModelRepositorySerializer.serialize(outputStream, platformVersion, modelVersion, repositoryName, runtime);
             }
         }
     }

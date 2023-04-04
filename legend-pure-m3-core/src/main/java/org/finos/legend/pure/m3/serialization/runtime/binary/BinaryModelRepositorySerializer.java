@@ -20,6 +20,7 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.tuple.Tuples;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.Version;
@@ -95,11 +96,11 @@ public class BinaryModelRepositorySerializer
 
     private String getModelVersion()
     {
-        if (this.modelVersion != null)
+        if (this.modelVersion != null && CodeRepositoryProviderHelper.notPlatformAndCoreString.accept(this.repositoryName))
         {
             return this.modelVersion;
         }
-        if ((this.repositoryName == null) || "platform".equals(this.repositoryName))
+        if (this.repositoryName == null || !CodeRepositoryProviderHelper.notPlatformAndCoreString.accept(this.repositoryName))
         {
             return null;
         }
@@ -121,11 +122,6 @@ public class BinaryModelRepositorySerializer
     public static void serialize(OutputStream stream, String platformVersion, String modelVersion, String repositoryName, PureRuntime runtime) throws IOException
     {
         new BinaryModelRepositorySerializer(platformVersion, modelVersion, repositoryName, runtime).serialize(stream);
-    }
-
-    public static void serialize(OutputStream stream, String platformVersion, String repositoryName, PureRuntime runtime) throws IOException
-    {
-        serialize(stream, platformVersion, null, repositoryName, runtime);
     }
 
     public static void serialize(OutputStream stream, String repository, PureRuntime runtime) throws IOException

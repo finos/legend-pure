@@ -26,7 +26,8 @@ import java.util.stream.Collectors;
 
 public class CodeRepositoryProviderHelper
 {
-    public static Predicate<CodeRepository> notPlatformAndCore = c -> !c.getName().startsWith("platform") && !c.getName().startsWith("core");
+    public static Predicate<String> notPlatformAndCoreString = c -> !c.startsWith("platform") && !c.startsWith("core");
+    public static Predicate<CodeRepository> notPlatformAndCore = c -> notPlatformAndCoreString.accept(c.getName());
 
     public static RichIterable<CodeRepository> findCodeRepositories(Path directory)
     {
