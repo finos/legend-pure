@@ -56,7 +56,6 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.me
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.measureUnit.UnitProcessor;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -507,17 +506,8 @@ public final class JavaSourceCodeGenerator
 
     private String buildExternalizableFunctionClass(RichIterable<String> functionDefinitions)
     {
-        try
-        {
-            java.lang.Class<?> externalClass = Thread.currentThread().getContextClassLoader().loadClass("org.finos.legend.pure.runtime.java.compiled.generation.ExternalClassBuilder");
-            Method method = externalClass.getMethod("buildExternalizableFunctionClass", RichIterable.class, String.class, RichIterable.class, RichIterable.class);
-            PartitionIterable<CodeRepository> sortedRepos = this.codeStorage.getAllRepositories().partition(p -> this.codeStorage.getOriginalCodeStorage(p) instanceof VersionControlledCodeStorage);
-            return (String) method.invoke(null, functionDefinitions, EXTERNAL_FUNCTIONS_CLASS_NAME, sortedRepos.getSelected().collect(CodeRepository::getName), sortedRepos.getRejected().collect(CodeRepository::getName));
-        }
-        catch (ReflectiveOperationException e)
-        {
-            throw new RuntimeException(e);
-        }
+        PartitionIterable<CodeRepository> sortedRepos = this.codeStorage.getAllRepositories().partition(p -> this.codeStorage.getOriginalCodeStorage(p) instanceof VersionControlledCodeStorage);
+        return ExternalClassBuilder.buildExternalizableFunctionClass(functionDefinitions, EXTERNAL_FUNCTIONS_CLASS_NAME, sortedRepos.getSelected().collect(CodeRepository::getName), sortedRepos.getRejected().collect(CodeRepository::getName));
     }
 
     private String buildPureCompiledLambda(ProcessorContext processorContext)

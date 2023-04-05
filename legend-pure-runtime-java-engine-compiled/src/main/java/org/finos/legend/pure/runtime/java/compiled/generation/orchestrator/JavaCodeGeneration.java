@@ -70,6 +70,8 @@ public class JavaCodeGeneration
                 Sets.mutable.empty(),
                 GenerationType.modular,
                 false,
+                false,
+                args.length == 4 ? args[3] : "",
                 true,
                 true,
                 true,
@@ -87,6 +89,8 @@ public class JavaCodeGeneration
                             Set<String> extraRepositories,
                             JavaCodeGeneration.GenerationType generationType,
                             boolean skip,
+                            boolean addExternalAPI,
+                            String externalAPIPackage,
                             boolean generateMetadata,
                             boolean useSingleDir,
                             boolean generateSources,
@@ -153,7 +157,7 @@ public class JavaCodeGeneration
             }
 
             // Generate metadata and Java sources
-            Generate generate = generate(System.nanoTime(), allRepositories, selectedRepositories, distributedMetadataDirectory, codegenDirectory, generateMetadata, generationType, generateSources, log);
+            Generate generate = generate(System.nanoTime(), allRepositories, selectedRepositories, distributedMetadataDirectory, codegenDirectory, generateMetadata, addExternalAPI, externalAPIPackage, generationType, generateSources, log);
 
             // Compile Java sources
             if (!preventJavaCompilation)
@@ -252,7 +256,7 @@ public class JavaCodeGeneration
         return selected;
     }
 
-    private static Generate generate(long start, CodeRepositorySet allRepositories, SetIterable<String> selectedRepositories, Path distributedMetadataDirectory, Path codegenDirectory, boolean generateMetadata, GenerationType generationType, boolean generateSources, Log log)
+    private static Generate generate(long start, CodeRepositorySet allRepositories, SetIterable<String> selectedRepositories, Path distributedMetadataDirectory, Path codegenDirectory, boolean generateMetadata, boolean addExternalAPI, String externalAPIPackage, GenerationType generationType, boolean generateSources, Log log)
     {
         // Initialize runtime
         PureRuntime runtime = initializeRuntime(start, allRepositories, selectedRepositories, log);
@@ -285,7 +289,7 @@ public class JavaCodeGeneration
         Generate generate;
         try
         {
-            JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, JavaPackageAndImportBuilder.externalizablePackage());
+            JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), addExternalAPI, externalAPIPackage);
             switch (generationType)
             {
                 case monolithic:
