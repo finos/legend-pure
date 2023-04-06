@@ -6,12 +6,12 @@ import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
@@ -116,6 +116,7 @@ public class JavaCodeGeneration
         log.info("  Excluded repositories: " + excludedRepositories);
         log.info("  Extra repositories: " + extraRepositories);
         log.info("  Generation type: " + generationType);
+        log.info("  Generate External API: '" + addExternalAPI + "' in package '" + externalAPIPackage + "'");
 
         try
         {
@@ -164,7 +165,7 @@ public class JavaCodeGeneration
             {
                 long startCompilation = System.nanoTime();
                 log.info("  Start compiling Java classes");
-                PureJavaCompiler compiler = compileJavaSources(startCompilation, generate, log);
+                PureJavaCompiler compiler = compileJavaSources(startCompilation, generate, addExternalAPI, log);
                 writeJavaClassFiles(startCompilation, compiler, classesDirectory, log);
                 log.info(String.format("  Finished compiling Java classes (%.9fs)", durationSinceInSeconds(startCompilation)));
             }
@@ -289,7 +290,7 @@ public class JavaCodeGeneration
         Generate generate;
         try
         {
-            JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), addExternalAPI, externalAPIPackage);
+            JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), addExternalAPI, externalAPIPackage, log);
             switch (generationType)
             {
                 case monolithic:
@@ -410,13 +411,13 @@ public class JavaCodeGeneration
         }
     }
 
-    private static PureJavaCompiler compileJavaSources(long start, Generate generate, Log log)
+    private static PureJavaCompiler compileJavaSources(long start, Generate generate, boolean addExternalAPI, Log log)
     {
         String compilationStep = "Pure compiled mode Java code compilation";
         long compilationStart = startStep(compilationStep, log);
         try
         {
-            PureJavaCompiler compiler = JavaStandaloneLibraryGenerator.compileOnly(generate.getJavaSourcesByGroup(), generate.getExternalizableSources(), false);
+            PureJavaCompiler compiler = JavaStandaloneLibraryGenerator.compileOnly(generate.getJavaSourcesByGroup(), generate.getExternalizableSources(), addExternalAPI);
             completeStep(compilationStep, compilationStart, log);
             return compiler;
         }

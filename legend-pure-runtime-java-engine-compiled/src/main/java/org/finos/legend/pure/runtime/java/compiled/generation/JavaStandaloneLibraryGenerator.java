@@ -33,6 +33,7 @@ import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompileExcep
 import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompiler;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
+import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.Log;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphSerializer;
 import org.finos.legend.pure.runtime.java.compiled.statelistener.VoidJavaCompilerEventObserver;
@@ -52,13 +53,15 @@ public class JavaStandaloneLibraryGenerator
     private final Iterable<? extends CompiledExtension> extensions;
     private final boolean addExternalAPI;
     private final String externalAPIPackage;
+    private final Log log;
 
-    private JavaStandaloneLibraryGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage)
+    private JavaStandaloneLibraryGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, Log log)
     {
         this.runtime = runtime;
         this.extensions = extensions;
         this.addExternalAPI = addExternalAPI;
         this.externalAPIPackage = externalAPIPackage;
+        this.log = log;
     }
 
     public PureJavaCompiler compile(String repo, boolean writeJavaSourcesToDisk, Path pathToWriteTo) throws PureJavaCompileException
@@ -166,13 +169,28 @@ public class JavaStandaloneLibraryGenerator
 
     private PureJavaCompiler compile(SortedMap<String, MutableList<Source>> sourcesToCompile, boolean modularMetadataIds, boolean writeJavaSourcesToDisk, Path pathToWriteTo) throws PureJavaCompileException
     {
-        GenerateAndCompile generateAndCompile = new GenerateAndCompile();
+        GenerateAndCompile generateAndCompile = new GenerateAndCompile(new Message("")
+        {
+            @Override
+            public void setMessage(String message)
+            {
+                if (!message.startsWith("Generating Java sources"))
+                {
+                    log.info("  " + message);
+                }
+            }
+        });
+
         if (modularMetadataIds)
         {
             generateAndCompile.generateAndCompileJavaCodeForSources(sourcesToCompile, group -> getSourceCodeGenerator(group, writeJavaSourcesToDisk, pathToWriteTo));
             if (this.addExternalAPI)
             {
                 generateAndCompile.generateAndCompileExternalizableAPI(getSourceCodeGenerator(null, writeJavaSourcesToDisk, pathToWriteTo), this.externalAPIPackage);
+            }
+            else
+            {
+                log.info("Skipping External API generation");
             }
         }
         else
@@ -183,19 +201,38 @@ public class JavaStandaloneLibraryGenerator
             {
                 generateAndCompile.generateAndCompileExternalizableAPI(javaSourceCodeGenerator, this.externalAPIPackage);
             }
+            else
+            {
+                log.info("Skipping External API generation");
+            }
         }
         return generateAndCompile.getPureJavaCompiler();
     }
 
     private Generate generateOnly(SortedMap<String, MutableList<Source>> sourcesToCompile, boolean modularMetadataIds, boolean writeJavaSourcesToDisk, Path pathToWriteTo)
     {
-        Generate generate = new Generate();
+        Generate generate = new Generate(new Message("")
+        {
+            @Override
+            public void setMessage(String message)
+            {
+                if (!message.startsWith("Generating Java sources"))
+                {
+                    log.info("  " + message);
+                }
+            }
+        });
+
         if (modularMetadataIds)
         {
             generate.generateJavaCodeForSources(sourcesToCompile, group -> getSourceCodeGenerator(group, writeJavaSourcesToDisk, pathToWriteTo));
             if (this.addExternalAPI)
             {
                 generate.generateExternalizableAPI(getSourceCodeGenerator(null, writeJavaSourcesToDisk, pathToWriteTo), this.externalAPIPackage);
+            }
+            else
+            {
+                log.info("Skipping External API generation");
             }
         }
         else
@@ -205,6 +242,10 @@ public class JavaStandaloneLibraryGenerator
             if (this.addExternalAPI)
             {
                 generate.generateExternalizableAPI(javaSourceCodeGenerator, this.externalAPIPackage);
+            }
+            else
+            {
+                log.info("Skipping External API generation");
             }
         }
         return generate;
@@ -271,9 +312,9 @@ public class JavaStandaloneLibraryGenerator
         return sourcesByRepo;
     }
 
-    public static JavaStandaloneLibraryGenerator newGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage)
+    public static JavaStandaloneLibraryGenerator newGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, Log log)
     {
-        return new JavaStandaloneLibraryGenerator(runtime, extensions, addExternalAPI, externalAPIPackage);
+        return new JavaStandaloneLibraryGenerator(runtime, extensions, addExternalAPI, externalAPIPackage, log);
     }
 
     public static PureJavaCompiler compileOnly(MapIterable<? extends String, ? extends Iterable<? extends StringJavaSource>> javaSources, ListIterable<? extends StringJavaSource> externalizableSources, boolean addExternalAPI) throws PureJavaCompileException

@@ -73,7 +73,6 @@ public class GenerateAndCompile
             this.message.setMessage("Generating and compiling Java source code ...");
         }
 
-        compiledSourcesByRepo = ReposWithBadDependencies.combineReposWithBadDependencies(compiledSourcesByRepo);
         Counter sourceCounter = new Counter();
         compiledSourcesByRepo.forEach((compileGroup, sources) -> sourceCounter.add(sources.size()));
         int totalSourceCount = sourceCounter.getCount();
@@ -105,6 +104,10 @@ public class GenerateAndCompile
 
     void generateAndCompileExternalizableAPI(JavaSourceCodeGenerator sourceCodeGenerator, String externalAPIPackage) throws PureJavaCompileException
     {
+        if (this.message != null)
+        {
+            this.message.setMessage("Generating and compiling Externalizable API in package '" + externalAPIPackage + "'");
+        }
         this.generate.generateExternalizableAPI(sourceCodeGenerator, externalAPIPackage);
         this.compile.compileExternalizableAPI(this.generate.getExternalizableSources());
     }

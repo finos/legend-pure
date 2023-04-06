@@ -22,6 +22,7 @@ import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegis
 import org.finos.legend.pure.runtime.java.compiled.generation.Generate;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaStandaloneLibraryGenerator;
+import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.VoidLog;
 import org.finos.legend.pure.runtime.java.compiled.metadata.ClassCache;
 import org.finos.legend.pure.runtime.java.compiled.metadata.FunctionCache;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataLazy;
@@ -108,7 +109,7 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
     @Test
     public void testStandaloneLibraryNoExternal() throws Exception
     {
-        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, null);
+        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, null, new VoidLog());
         Path classesDir = this.temporaryFolder.newFolder("classes").toPath();
         generator.serializeAndWriteDistributedMetadata(classesDir);
         generator.compileAndWriteClasses(classesDir);
@@ -145,7 +146,7 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
     @Test
     public void testGenerateOnly_allRepos() throws Exception
     {
-        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, null);
+        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, null, new VoidLog());
         Path sourcesDir = this.temporaryFolder.newFolder("src", "java").toPath();
         Assert.assertEquals(Lists.fixedSize.empty(), Files.list(sourcesDir).collect(Collectors.toList()));
 
@@ -163,7 +164,7 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
     @Test
     public void testGenerateOnly_oneRepo() throws Exception
     {
-        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, null);
+        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, null, new VoidLog());
         Path sourcesDir = this.temporaryFolder.newFolder("src", "java").toPath();
         Assert.assertEquals(Lists.fixedSize.empty(), Files.list(sourcesDir).collect(Collectors.toList()));
 
