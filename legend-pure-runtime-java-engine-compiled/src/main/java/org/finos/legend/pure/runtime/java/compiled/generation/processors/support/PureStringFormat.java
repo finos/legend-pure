@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support;
 
-import org.eclipse.collections.api.block.function.Function2;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
@@ -25,10 +24,11 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.function.BiFunction;
 
 public class PureStringFormat
 {
-    public static String format(String formatString, Iterable<?> formatArgs, Function2<Object,ExecutionSupport, String> toRepresentationFunction, ExecutionSupport executionSupport)
+    public static String format(String formatString, Iterable<?> formatArgs, BiFunction<Object, ? super ExecutionSupport, ? extends String> toRepresentationFunction, ExecutionSupport executionSupport)
     {
         Iterator<?> argIterator = formatArgs.iterator();
         int index = 0;
@@ -57,7 +57,7 @@ public class PureStringFormat
                         }
                         case 'r':
                         {
-                            Object arg = toRepresentationFunction.value(argIterator.next(), executionSupport);
+                            Object arg = toRepresentationFunction.apply(argIterator.next(), executionSupport);
                             builder.append(CompiledSupport.pureToString(arg, executionSupport));
                             break;
                         }
@@ -66,15 +66,15 @@ public class PureStringFormat
                             Object arg = argIterator.next();
                             if (arg instanceof Long)
                             {
-                                builder.append(((Long)arg).longValue());
+                                builder.append(((Long) arg).longValue());
                             }
                             else if (arg instanceof Integer)
                             {
-                                builder.append(((Integer)arg).intValue());
+                                builder.append(((Integer) arg).intValue());
                             }
                             else if (arg instanceof BigInteger)
                             {
-                                builder.append(arg.toString());
+                                builder.append(arg);
                             }
                             else
                             {
@@ -96,7 +96,7 @@ public class PureStringFormat
                             }
                             else
                             {
-                                ((PureDate)arg).format(builder, formatString.substring(index + 1, dateFormatEnd));
+                                ((PureDate) arg).format(builder, formatString.substring(index + 1, dateFormatEnd));
                                 index = dateFormatEnd + 1;
                             }
                             break;
@@ -112,7 +112,7 @@ public class PureStringFormat
                             {
                                 throw new IllegalArgumentException("Invalid format specifier: %" + formatString.substring(index, j + 1));
                             }
-                            int zeroPad = Integer.valueOf(formatString.substring(index, j));
+                            int zeroPad = Integer.parseInt(formatString.substring(index, j));
                             Object arg = argIterator.next();
                             if (!(arg instanceof Long) && !(arg instanceof Integer) && !(arg instanceof BigInteger))
                             {
@@ -143,7 +143,7 @@ public class PureStringFormat
                             {
                                 throw new IllegalArgumentException("Invalid format specifier: %" + formatString.substring(index, j + 1));
                             }
-                            int precision = Integer.valueOf(formatString.substring(index, j));
+                            int precision = Integer.parseInt(formatString.substring(index, j));
                             Object arg = argIterator.next();
                             if (!(arg instanceof Double) && !(arg instanceof Float) && !(arg instanceof BigDecimal))
                             {
@@ -171,7 +171,7 @@ public class PureStringFormat
         }
         if (argIterator.hasNext())
         {
-            throw new RuntimeException(new PureExecutionException("Unused format args. [" + Iterate.sizeOf(formatArgs) + "] arguments provided to expression \"" + formatString + "\""));
+            throw new PureExecutionException("Unused format args. [" + Iterate.sizeOf(formatArgs) + "] arguments provided to expression \"" + formatString + "\"");
         }
         return builder.toString();
     }

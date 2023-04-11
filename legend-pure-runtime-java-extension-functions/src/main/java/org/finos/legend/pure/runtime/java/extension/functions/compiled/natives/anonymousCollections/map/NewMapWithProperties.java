@@ -15,8 +15,8 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.anonymousCollections.map;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
@@ -33,10 +33,7 @@ public class NewMapWithProperties extends AbstractNativeFunctionGeneric
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
         String param = transformedParams.get(0);
-
-        ListIterable<String> params = "null".equals(param)
-                ? FastList.newListWith("Lists.mutable.<String>empty()", transformedParams.get(1))
-                : transformedParams;
+        ListIterable<String> params = "null".equals(param) ? Lists.immutable.with("Lists.immutable.<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?,?>>empty()", transformedParams.get(1)) : transformedParams;
         return super.build(topLevelElement, functionExpression, params, processorContext);
     }
 }

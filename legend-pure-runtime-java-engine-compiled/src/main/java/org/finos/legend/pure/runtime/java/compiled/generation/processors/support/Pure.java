@@ -24,7 +24,6 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.block.procedure.checked.CheckedProcedure;
-import org.eclipse.collections.impl.set.strategy.mutable.UnifiedSetWithHashingStrategy;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.StringIterate;
 import org.finos.legend.pure.m3.coreinstance.Package;
@@ -847,7 +846,7 @@ public class Pure
 
         if (eqlFn == null)
         {
-            MutableSet<Object> set = new UnifiedSetWithHashingStrategy<>(PureEqualsHashingStrategy.HASHING_STRATEGY);
+            MutableSet<Object> set = PureEqualsHashingStrategy.newMutableSet();
             return list.select((keyFn == null) ? set::add : i -> set.add(evaluate(es, keyFn, bridge, i)), Lists.mutable.empty());
         }
 

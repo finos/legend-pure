@@ -23,9 +23,6 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.set.strategy.mutable.UnifiedSetWithHashingStrategy;
-import org.eclipse.collections.impl.utility.Iterate;
-import org.eclipse.collections.impl.utility.LazyIterate;
-import org.eclipse.collections.impl.utility.ListIterate;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
 import org.finos.legend.pure.m3.compiler.visibility.AccessLevel;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -48,7 +45,6 @@ import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtensionLo
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.ClassJsonFactoryProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.FunctionProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureEqualsHashingStrategy;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.EnumProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.ClassImplIncrementalCompilationProcessor;
@@ -170,21 +166,20 @@ public final class JavaSourceCodeGenerator
         this.directoryToWriteFilesTo = directoryToWriteFilesTo;
         this.includePureStackTrace = includePureStackTrace;
         this.externalAPIPackage = externalAPIPackage;
-        UnifiedSetWithHashingStrategy<CompiledExtension> set = new UnifiedSetWithHashingStrategy<CompiledExtension>(new HashingStrategy<CompiledExtension>()
+        this.extensions = new UnifiedSetWithHashingStrategy<>(new HashingStrategy<CompiledExtension>()
         {
             @Override
-            public int computeHashCode(CompiledExtension compiledExtension)
+            public int computeHashCode(CompiledExtension extension)
             {
-                return compiledExtension.getClass().hashCode();
+                return extension.getClass().hashCode();
             }
 
             @Override
-            public boolean equals(CompiledExtension compiledExtension, CompiledExtension e1)
+            public boolean equals(CompiledExtension extension1, CompiledExtension extension2)
             {
-                return compiledExtension.getClass() == e1.getClass();
+                return extension1.getClass() == extension2.getClass();
             }
-        });
-        this.extensions = set.withAll(CompiledExtensionLoader.extensions()).withAll(providedExtensions).toList();
+        }).withAll(CompiledExtensionLoader.extensions()).withAll(providedExtensions).toList();
     }
 
     public JavaSourceCodeGenerator(ProcessorSupport processorSupport, CodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> extensions, String name, String externalAPIPackage, boolean generateCompilerExtensionCode)

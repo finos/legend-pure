@@ -10,15 +10,13 @@ import org.eclipse.collections.api.block.HashingStrategy;
 import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.block.procedure.Procedure;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.api.ordered.OrderedIterable;
 import org.eclipse.collections.api.ordered.ReversibleIterable;
+import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.lazy.AbstractLazyIterable;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.eclipse.collections.impl.map.strategy.mutable.UnifiedMapWithHashingStrategy;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.LazyIterate;
@@ -31,8 +29,6 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Nil;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.router.RoutedValueSpecification;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -43,13 +39,16 @@ import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m3.tools.StatisticsUtil;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.*;
-import org.finos.legend.pure.runtime.java.compiled.compiler.PureDynamicReactivateException;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.DateTime;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.Year;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.YearMonth;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Bridge;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Pure;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Reactivator;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureEqualsHashingStrategy;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
@@ -62,9 +61,23 @@ import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.util.*;
-import java.util.concurrent.*;
+import java.nio.charset.StandardCharsets;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.TimeZone;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport.getPureGeneratedClassName;
 
@@ -90,11 +103,11 @@ public class FunctionsHelper
     {
         try
         {
-            return new String(AESCipherUtil.encrypt(key, value.getBytes()));
+            return new String(AESCipherUtil.encrypt(key, value.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
         }
         catch (Exception e)
         {
-            throw new PureExecutionException("Error ciphering value '" + value + "' with key '" + key + "'.");
+            throw new PureExecutionException("Error ciphering value '" + value + "' with key '" + key + "'.", e);
         }
     }
 
@@ -102,11 +115,11 @@ public class FunctionsHelper
     {
         try
         {
-            return new String(AESCipherUtil.decrypt(key, value.getBytes()));
+            return new String(AESCipherUtil.decrypt(key, value.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
         }
         catch (Exception e)
         {
-            throw new PureExecutionException("Error deciphering value '" + value + "' with key '" + key + "'.");
+            throw new PureExecutionException("Error deciphering value '" + value + "' with key '" + key + "'.", e);
         }
     }
     // Crypto ----------------------------------------------------------------
@@ -456,7 +469,7 @@ public class FunctionsHelper
         }
         catch (Exception e)
         {
-            throw new PureExecutionException(sourceInformation, e.getMessage());
+            throw new PureExecutionException(sourceInformation, e.getMessage(), e);
         }
     }
 
@@ -468,7 +481,7 @@ public class FunctionsHelper
         }
         catch (Exception e)
         {
-            throw new PureExecutionException(sourceInformation, e.getMessage());
+            throw new PureExecutionException(sourceInformation, e.getMessage(), e);
         }
     }
 
@@ -508,7 +521,7 @@ public class FunctionsHelper
         }
         catch (Exception e)
         {
-            throw new PureExecutionException(sourceInformation, e.getMessage());
+            throw new PureExecutionException(sourceInformation, e.getMessage(), e);
         }
     }
     // DATE-TIME --------------------------------------------------------------
@@ -546,10 +559,7 @@ public class FunctionsHelper
         {
             return (Long) number;
         }
-        else
-        {
-            return (long) Math.floor(number.doubleValue());
-        }
+        return (long) Math.floor(number.doubleValue());
     }
 
     public static Long ceiling(Number number)
@@ -558,10 +568,7 @@ public class FunctionsHelper
         {
             return (Long) number;
         }
-        else
-        {
-            return (long) Math.ceil(number.doubleValue());
-        }
+        return (long) Math.ceil(number.doubleValue());
     }
 
     public static Long round(Number number)
@@ -570,27 +577,20 @@ public class FunctionsHelper
         {
             return (Long) number;
         }
-        else
+
+        double toRound = number.doubleValue();
+        if (toRound == 0x1.fffffffffffffp-2) // greatest double value less than 0.5
         {
-            double toRound = number.doubleValue();
-            if (toRound == 0x1.fffffffffffffp-2) // greatest double value less than 0.5
-            {
-                return 0L;
-            }
-            else
-            {
-                toRound += 0.5d;
-                double floor = Math.floor(toRound);
-                if ((floor == toRound) && ((floor % 2) != 0))
-                {
-                    return ((long) floor - 1);
-                }
-                else
-                {
-                    return (long) floor;
-                }
-            }
+            return 0L;
         }
+
+        toRound += 0.5d;
+        double floor = Math.floor(toRound);
+        if ((floor == toRound) && ((floor % 2) != 0))
+        {
+            return ((long) floor - 1);
+        }
+        return (long) floor;
     }
 
     public static Number round(Number number, long scale)
@@ -599,7 +599,7 @@ public class FunctionsHelper
         {
             return round((Double) number, scale);
         }
-        else if (number instanceof BigDecimal)
+        if (number instanceof BigDecimal)
         {
             return round((BigDecimal) number, scale);
         }
@@ -627,8 +627,7 @@ public class FunctionsHelper
         double result = Math.sqrt(input);
         if (Double.isNaN(result))
         {
-            throw new PureExecutionException(sourceInformation,
-                    "Unable to compute sqrt of " + input);
+            throw new PureExecutionException(sourceInformation, "Unable to compute sqrt of " + input);
         }
         return result;
     }
@@ -744,7 +743,7 @@ public class FunctionsHelper
             return ListHelper.subList((ListIterable<T>) list, 0, end);
         }
 
-        MutableList<T> result = FastList.newList(end);
+        MutableList<T> result = Lists.mutable.ofInitialCapacity(end);
         result.addAllIterable(LazyIterate.take(list, end));
         return result;
     }
@@ -780,7 +779,7 @@ public class FunctionsHelper
             return ListHelper.subList((ListIterable<T>) list, toDrop, size);
         }
 
-        MutableList<T> result = FastList.newList(size - toDrop);
+        MutableList<T> result = Lists.mutable.ofInitialCapacity(size - toDrop);
         result.addAllIterable(LazyIterate.drop(list, toDrop));
         return result;
     }
@@ -840,7 +839,7 @@ public class FunctionsHelper
             return Lists.immutable.empty();
         }
         int num = (int) n;
-        MutableList<T> elements = FastList.newList(num);
+        MutableList<T> elements = Lists.mutable.ofInitialCapacity(num);
         for (; num > 0; num--)
         {
             elements.add(element);
@@ -850,7 +849,7 @@ public class FunctionsHelper
 
     public static <T> RichIterable<T> slice(T element, long low, long high, SourceInformation sourceInformation)
     {
-        return ((element == null) || (low > 0) || (high <= 0)) ? Lists.immutable.<T>empty() : Lists.immutable.with(element);
+        return ((element == null) || (low > 0) || (high <= 0)) ? Lists.immutable.empty() : Lists.immutable.with(element);
     }
 
     public static <T> RichIterable<T> slice(RichIterable<T> collection, long low, long high, SourceInformation sourceInformation)
@@ -886,7 +885,7 @@ public class FunctionsHelper
             return ListHelper.subList((ListIterable<T>) collection, start, end);
         }
 
-        MutableList<T> result = FastList.newList(end - start);
+        MutableList<T> result = Lists.mutable.ofInitialCapacity(end - start);
         result.addAllIterable(LazyIterate.drop(collection, start).take(end - start));
         return result;
     }
@@ -899,41 +898,20 @@ public class FunctionsHelper
         }
         if (!(instances instanceof Iterable))
         {
-            return instances.equals(object) ? 0L : -1L;
+            return CompiledSupport.equal(object, instances) ? 0L : -1L;
         }
         return indexOf((Iterable<?>) instances, object);
     }
 
     public static long indexOf(Iterable<?> instances, Object object)
     {
-        if (instances == null)
-        {
-            return -1L;
-        }
-        if (instances instanceof OrderedIterable)
-        {
-            return ((OrderedIterable<?>) instances).indexOf(object);
-        }
-        if (instances instanceof List)
-        {
-            return ((List<?>) instances).indexOf(object);
-        }
-        long index = 0L;
-        for (Object instance : instances)
-        {
-            if (Objects.equals(instance, object))
-            {
-                return index;
-            }
-            index++;
-        }
-        return -1L;
+        return (instances == null) ? -1L : Iterate.detectIndex(instances, i -> CompiledSupport.equal(object, i));
     }
 
     public static <T> RichIterable<? extends T> removeAllOptimized(RichIterable<? extends T> main, RichIterable<? extends T> other)
     {
-        Set<?> set = (other instanceof Set) ? (Set<?>) other : Sets.mutable.withAll(other);
-        return main.reject(set::contains);
+        MutableSet<Object> toRemove = PureEqualsHashingStrategy.newMutableSet().withAll(other);
+        return main.reject(toRemove::contains);
     }
 
     public static TreeNode replaceTreeNode(TreeNode instance, TreeNode targetNode, TreeNode subTree)
@@ -947,71 +925,66 @@ public class FunctionsHelper
         return result;
     }
 
-    public static void replaceTreeNodeCopy(TreeNode instance, TreeNode result, TreeNode targetNode, TreeNode
-            subTree)
+    public static void replaceTreeNodeCopy(TreeNode instance, TreeNode result, TreeNode targetNode, TreeNode subTree)
     {
-        result._childrenData(FastList.newList());
-
-        for (TreeNode child : instance._childrenData())
+        MutableList<TreeNode> newChildren = Lists.mutable.empty();
+        instance._childrenData().forEach(child ->
         {
             if (child == targetNode)
             {
-                result._childrenDataAdd(subTree);
+                newChildren.add(subTree);
             }
             else
             {
                 TreeNode newCopy = child.copy();
                 replaceTreeNodeCopy(child, newCopy, targetNode, subTree);
-                result._childrenDataAdd(newCopy);
+                newChildren.add(newCopy);
             }
-        }
+        });
+        result._childrenData(newChildren);
     }
-    public static PureMap putAllPairs(PureMap pureMap, RichIterable pairs)
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public static PureMap putAllPairs(PureMap pureMap, RichIterable<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?>> pairs)
     {
         Map map = pureMap.getMap();
-        MutableMap newOne = map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : new UnifiedMap(map);
-        for (Object po : pairs)
-        {
-            org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair p = (org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair) po;
-            newOne.put(p._first(), p._second());
-        }
+        MutableMap<Object, Object> newOne = (map instanceof UnifiedMapWithHashingStrategy) ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : Maps.mutable.withMap(map);
+        pairs.forEach(p -> newOne.put(p._first(), p._second()));
         return new PureMap(newOne);
     }
 
-    public static PureMap putAllPairs(PureMap
-                                              pureMap, org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair pair)
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public static PureMap putAllPairs(PureMap pureMap, org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?> pair)
     {
         Map map = pureMap.getMap();
-        MutableMap newOne = map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : new UnifiedMap(map);
+        MutableMap<Object, Object> newOne = (map instanceof UnifiedMapWithHashingStrategy) ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : Maps.mutable.withMap(map);
         newOne.put(pair._first(), pair._second());
         return new PureMap(newOne);
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public static PureMap putAllMaps(PureMap pureMap, PureMap other)
     {
         Map map = pureMap.getMap();
-        MutableMap newOne = map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : new UnifiedMap(map);
+        MutableMap<Object, Object> newOne = (map instanceof UnifiedMapWithHashingStrategy) ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : Maps.mutable.withMap(map);
         newOne.putAll(other.getMap());
         return new PureMap(newOne);
     }
 
-    public static PureMap replaceAll(PureMap pureMap, RichIterable pairs)
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public static PureMap replaceAll(PureMap pureMap, RichIterable<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?>> pairs)
     {
         Map map = pureMap.getMap();
-        MutableMap newOne = map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy(((UnifiedMapWithHashingStrategy) map).hashingStrategy()) : new UnifiedMap();
-        for (Object po : pairs)
-        {
-            org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair p = (org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair) po;
-            newOne.put(p._first(), p._second());
-        }
+        MutableMap<Object, Object> newOne = map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy) map).hashingStrategy()) : Maps.mutable.empty();
+        pairs.forEach(p -> newOne.put(p._first(), p._second()));
         return new PureMap(newOne);
     }
 
-    public static PureMap replaceAll(PureMap
-                                             pureMap, org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair pair)
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public static PureMap replaceAll(PureMap pureMap, org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?> pair)
     {
         Map map = pureMap.getMap();
-        MutableMap newOne = map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy(((UnifiedMapWithHashingStrategy) map).hashingStrategy()) : new UnifiedMap();
+        MutableMap<Object, Object> newOne = map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy) map).hashingStrategy()) : Maps.mutable.empty();
         newOne.put(pair._first(), pair._second());
         return new PureMap(newOne);
     }
@@ -1020,21 +993,17 @@ public class FunctionsHelper
     {
         return list.detect(e -> id.equals(((CoreInstance) e).getName()));
     }
-    public static PureMap newMap(RichIterable pairs, ExecutionSupport es)
+
+    public static PureMap newMap(RichIterable<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?>> pairs, ExecutionSupport es)
     {
-        MutableMap<Object, Object> map = UnifiedMapWithHashingStrategy.newMap(PureEqualsHashingStrategy.HASHING_STRATEGY);
-        for (Object po : pairs)
-        {
-            org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair p = (org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair) po;
-            map.put(p._first(), p._second());
-        }
+        MutableMap<Object, Object> map = PureEqualsHashingStrategy.newMutableMap();
+        pairs.forEach(p -> map.put(p._first(), p._second()));
         return new PureMap(map);
     }
 
-    public static PureMap newMap(org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair
-                                         p, ExecutionSupport es)
+    public static PureMap newMap(org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?> p, ExecutionSupport es)
     {
-        MutableMap<Object, Object> map = UnifiedMapWithHashingStrategy.newMap(PureEqualsHashingStrategy.HASHING_STRATEGY);
+        MutableMap<Object, Object> map = PureEqualsHashingStrategy.newMutableMap();
         if (p != null)
         {
             map.put(p._first(), p._second());
@@ -1042,63 +1011,55 @@ public class FunctionsHelper
         return new PureMap(map);
     }
 
-    private static class PropertyHashingStrategy implements HashingStrategy
+    private static class PropertyHashingStrategy implements HashingStrategy<Object>
     {
-        RichIterable<Property> properties;
-        ExecutionSupport es;
-        Bridge bridge;
+        private final RichIterable<? extends Property<?, ?>> properties;
+        private final ExecutionSupport es;
+        private final Bridge bridge;
 
-        PropertyHashingStrategy(RichIterable<Property> properties, Bridge bridge, ExecutionSupport es)
+        PropertyHashingStrategy(RichIterable<? extends Property<?, ?>> properties, Bridge bridge, ExecutionSupport es)
         {
             this.properties = properties;
             this.bridge = bridge;
             this.es = es;
         }
 
-        PropertyHashingStrategy(Property property, ExecutionSupport es)
+        PropertyHashingStrategy(Property<?, ?> property, ExecutionSupport es)
         {
-            this.properties = FastList.newListWith(property);
-            this.es = es;
+            this(Lists.immutable.with(property), null, es);
         }
 
         @Override
         public int computeHashCode(Object o)
         {
             int hashCode = 0;
-            for (Property value : this.properties)
+            for (Property<?, ?> property : this.properties)
             {
-                hashCode = (31 * hashCode) + CompiledSupport.safeHashCode(Pure.evaluate(this.es, value, bridge, o));
+                hashCode = (31 * hashCode) + CompiledSupport.safeHashCode(evaluateProperty(property, o));
             }
             return hashCode;
         }
 
         @Override
-        public boolean equals(Object o, Object e1)
+        public boolean equals(Object obj1, Object obj2)
         {
-            for (Property value : this.properties)
-            {
-                if (!Pure.evaluate(this.es, value, bridge, o).equals(Pure.evaluate(this.es, value, bridge, e1)))
-                {
-                    return false;
-                }
-            }
-            return true;
+            return this.properties.allSatisfy(p -> CompiledSupport.equal(evaluateProperty(p, obj1), evaluateProperty(p, obj2)));
         }
 
+        private Object evaluateProperty(Property<?, ?> property, Object obj)
+        {
+            return Pure.evaluate(this.es, property, this.bridge, obj);
+        }
     }
-    public static PureMap newMap(RichIterable pairs, Property property, ExecutionSupport es)
+
+    public static PureMap newMap(RichIterable<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?>> pairs, Property<?, ?> property, ExecutionSupport es)
     {
         MutableMap<Object, Object> map = UnifiedMapWithHashingStrategy.newMap(new PropertyHashingStrategy(property, es));
-        for (Object po : pairs)
-        {
-            org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair p = (org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair) po;
-            map.put(p._first(), p._second());
-        }
+        pairs.forEach(p -> map.put(p._first(), p._second()));
         return new PureMap(map);
     }
 
-    public static PureMap newMap(org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair
-                                         pair, Property property, ExecutionSupport es)
+    public static PureMap newMap(org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?> pair, Property<?, ?> property, ExecutionSupport es)
     {
         MutableMap<Object, Object> map = UnifiedMapWithHashingStrategy.newMap(new PropertyHashingStrategy(property, es));
         if (pair != null)
@@ -1108,14 +1069,10 @@ public class FunctionsHelper
         return new PureMap(map);
     }
 
-    public static PureMap newMap(RichIterable pairs, RichIterable properties, Bridge bridge, ExecutionSupport es)
+    public static PureMap newMap(RichIterable<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?>> pairs, RichIterable<? extends Property<?, ?>> properties, Bridge bridge, ExecutionSupport es)
     {
         MutableMap<Object, Object> map = UnifiedMapWithHashingStrategy.newMap(new PropertyHashingStrategy(properties, bridge, es));
-        for (Object po : pairs)
-        {
-            org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair p = (org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair) po;
-            map.put(p._first(), p._second());
-        }
+        pairs.forEach(p -> map.put(p._first(), p._second()));
         return new PureMap(map);
     }
     // COLLECTION ---------------------------------------------------------------
@@ -1140,16 +1097,14 @@ public class FunctionsHelper
 
     public static String functionDescriptorToId(String functionDescriptor, SourceInformation sourceInformation)
     {
-        String id;
         try
         {
-            id = FunctionDescriptor.functionDescriptorToId(functionDescriptor);
+            return FunctionDescriptor.functionDescriptorToId(functionDescriptor);
         }
         catch (InvalidFunctionDescriptorException e)
         {
             throw new PureExecutionException(sourceInformation, "Invalid function descriptor: " + functionDescriptor, e);
         }
-        return id;
     }
 
     public static boolean isValidFunctionDescriptor(String possiblyFunctionDescriptor)
@@ -1170,6 +1125,7 @@ public class FunctionsHelper
         }
         return sourceRegistry.getSource(sourceName).isImmutable();
     }
+
     public static Object buildSourceInformation(RichIterable<?> coreInstance, ClassLoader globalClassLoader)
     {
         return buildSourceInformation(coreInstance.getAny(), globalClassLoader);
@@ -1207,12 +1163,7 @@ public class FunctionsHelper
 
     public static RichIterable<Type> getGeneralizations(Type type, ExecutionSupport es)
     {
-        MutableList<Type> generalizations = FastList.newList();
-        for (CoreInstance superType : org.finos.legend.pure.m3.navigation.type.Type.getGeneralizationResolutionOrder(type, ((CompiledExecutionSupport) es).getProcessorSupport()))
-        {
-            generalizations.add((Type) superType);
-        }
-        return generalizations;
+        return org.finos.legend.pure.m3.navigation.type.Type.getGeneralizationResolutionOrder(type, ((CompiledExecutionSupport) es).getProcessorSupport()).collect(t -> (Type) t);
     }
 
     public static Tag tag(Profile profile, String tag)
@@ -1297,9 +1248,9 @@ public class FunctionsHelper
         return chunk(text, (int) size);
     }
 
-    private static RichIterable<String> chunk(final String text, final int size)
+    private static RichIterable<String> chunk(String text, int size)
     {
-        final int length = text.length();
+        int length = text.length();
         if (length == 0)
         {
             return Lists.immutable.empty();
@@ -1325,12 +1276,18 @@ public class FunctionsHelper
             }
 
             @Override
-            public void each(Procedure<? super String> procedure)
+            public void forEach(Consumer<? super String> consumer)
             {
                 for (int i = 0; i < length; i += size)
                 {
-                    procedure.value(text.substring(i, Math.min(i + size, length)));
+                    consumer.accept(text.substring(i, Math.min(i + size, length)));
                 }
+            }
+
+            @Override
+            public void each(Procedure<? super String> procedure)
+            {
+                forEach((Consumer<? super String>) procedure);
             }
 
             @Override
@@ -1411,22 +1368,23 @@ public class FunctionsHelper
 
 
     // Collections --------------------------------------------------------------
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public static PureMap put(PureMap pureMap, Object key, Object val)
     {
         Map map = pureMap.getMap();
-        MutableMap newOne = map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : new UnifiedMap(map);
+        MutableMap<Object, Object> newOne = map instanceof UnifiedMapWithHashingStrategy ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy<?, ?>) map).hashingStrategy(), map) : Maps.mutable.withMap(map);
         newOne.put(key, val);
         return new PureMap(newOne);
     }
 
     public static RichIterable values(PureMap map)
     {
-        return map.getMap().valuesView().toList();
+        return Lists.mutable.withAll(map.getMap().values());
     }
 
     public static RichIterable keys(PureMap map)
     {
-        return map.getMap().keysView().toList();
+        return Lists.mutable.withAll(map.getMap().keySet());
     }
     // Collections --------------------------------------------------------------
 
@@ -1475,7 +1433,7 @@ public class FunctionsHelper
         return val;
     }
 
-    public static Object rawEvalProperty(Property property, Object value, SourceInformation sourceInformation)
+    public static Object rawEvalProperty(Property<?, ?> property, Object value, SourceInformation sourceInformation)
     {
         try
         {
@@ -1485,14 +1443,13 @@ public class FunctionsHelper
         {
             throw new PureExecutionException(sourceInformation, "Can't find the property '" + property._name() + "' in the class " + CompiledSupport.getPureClassName(value));
         }
-        catch (Exception e)
+        catch (IllegalAccessException e)
         {
             throw new RuntimeException(e);
         }
     }
-    public static Object dynamicMatchWith(Object
-                                                  obj, RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>>
-                                                  funcs, Object var, Bridge bridge, ExecutionSupport es)
+
+    public static Object dynamicMatchWith(Object obj, RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>> funcs, Object var, Bridge bridge, ExecutionSupport es)
     {
         return Pure.dynamicMatch(obj, funcs, var, true, bridge, es);
     }
@@ -1524,53 +1481,38 @@ public class FunctionsHelper
         }
     });
 
-    public static Object traceSpan(final ExecutionSupport es,
-                                   final org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function function,
-                                   final String operationName,
-                                   final org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function funcToGetTags,
-                                   final boolean tagsCritical,
+    public static Object traceSpan(ExecutionSupport es,
+                                   org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> function,
+                                   String operationName,
+                                   org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> funcToGetTags,
+                                   boolean tagsCritical,
                                    Bridge bridge)
     {
         if (!GlobalTracer.isRegistered())
         {
-            return Pure.evaluate(es, function, bridge, org.eclipse.collections.impl.factory.Lists.mutable.empty());
+            return Pure.evaluate(es, function, bridge, Lists.mutable.empty());
         }
 
         Span span = GlobalTracer.get().buildSpan(operationName).start();
         try (Scope scope = GlobalTracer.get().scopeManager().activate(span))
         {
-            if (funcToGetTags != null)
+            if ((funcToGetTags != null) && (span != null))
             {
                 try
                 {
-                    Future<?> future = traceAsyncExecutor.submit(new Runnable()
+                    Future<?> future = traceAsyncExecutor.submit(() ->
                     {
-                        @Override
-                        public void run()
+                        try (Scope scope1 = GlobalTracer.get().scopeManager().activate(span))
                         {
-                            try (Scope scope = GlobalTracer.get().scopeManager().activate(span))
-                            {
-                                MutableMap<?, ?> tags = ((PureMap) Pure.evaluate(es, funcToGetTags, bridge, org.eclipse.collections.impl.factory.Lists.mutable.empty())).getMap();
-                                for (Map.Entry entry : tags.entrySet())
-                                {
-                                    String tag = (String) entry.getKey();
-                                    String value = (String) entry.getValue();
-                                    if (span != null)
-                                    {
-                                        span.setTag(tag, value);
-                                    }
-                                }
-                            }
+                            MutableMap<?, ?> tags = ((PureMap) Pure.evaluate(es, funcToGetTags, bridge, Lists.mutable.empty())).getMap();
+                            tags.forEachKeyValue((tag, value) -> span.setTag((String) tag, (String) value));
                         }
                     });
                     future.get(60, TimeUnit.SECONDS);
                 }
                 catch (TimeoutException e)
                 {
-                    if (span != null)
-                    {
-                        span.setTag("Exception", String.format("Timeout received before tags could be resolved"));
-                    }
+                    span.setTag("Exception", "Timeout received before tags could be resolved");
                 }
                 catch (InterruptedException e)
                 {
@@ -1580,15 +1522,12 @@ public class FunctionsHelper
                 {
                     if (tagsCritical)
                     {
-                        throw new RuntimeException(e);
+                        throw (e instanceof RuntimeException) ? (RuntimeException) e : new RuntimeException(e);
                     }
-                    if (span != null)
-                    {
-                        span.setTag("Exception", String.format("Unable to resolve tags - [%s]", e.getMessage()));
-                    }
+                    span.setTag("Exception", "Unable to resolve tags - [" + e.getMessage() + "]");
                 }
             }
-            return Pure.evaluate(es, function, bridge, org.eclipse.collections.impl.factory.Lists.mutable.empty());
+            return Pure.evaluate(es, function, bridge, Lists.mutable.empty());
         }
         finally
         {
@@ -1602,9 +1541,7 @@ public class FunctionsHelper
 
 
 
-    public static Object alloyTest(ExecutionSupport
-                                           es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function
-                                           alloyTest, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function regular, Bridge bridge)
+    public static Object alloyTest(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> alloyTest, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> regular, Bridge bridge)
     {
         String host = System.getProperty("alloy.test.server.host");
         long port = System.getProperty("alloy.test.server.port") == null ? -1 : Long.parseLong(System.getProperty("alloy.test.server.port"));
@@ -1617,9 +1554,7 @@ public class FunctionsHelper
         return host != null ? Pure.evaluate(es, alloyTest, bridge, clientVersion, serverVersion, host, port) : Pure.evaluate(es, regular, bridge);
     }
 
-    public static Object legendTest(ExecutionSupport
-                                            es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function
-                                            alloyTest, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function regular, Bridge bridge)
+    public static Object legendTest(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> alloyTest, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> regular, Bridge bridge)
     {
         String host = System.getProperty("legend.test.server.host");
         long port = System.getProperty("legend.test.server.port") == null ? -1 : Long.parseLong(System.getProperty("legend.test.server.port"));
@@ -1647,5 +1582,4 @@ public class FunctionsHelper
         }
         return host != null ? Pure.evaluate(es, alloyTest, bridge, clientVersion, serverVersion, serializationKind, host, port) : Pure.evaluate(es, regular, bridge);
     }
-
 }

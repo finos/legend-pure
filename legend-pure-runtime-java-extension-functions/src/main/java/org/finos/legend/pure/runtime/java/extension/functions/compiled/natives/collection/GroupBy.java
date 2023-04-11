@@ -77,7 +77,7 @@ public class GroupBy extends AbstractNative implements Native
         String inputString = transformedParams.get(0);
         String listEmpty = "new Root_meta_pure_functions_collection_List_Impl<" + valueType + ">(\"Anonymous\")";
         String listType = FullJavaPaths.List + "<" + valueType + ">";
-        String mapEmpty = "new org.eclipse.collections.impl.map.strategy.mutable.UnifiedMapWithHashingStrategy<" + keyType + ", " + listType + ">(org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureEqualsHashingStrategy.HASHING_STRATEGY)";
+        String mapEmpty = "org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureEqualsHashingStrategy.<" + keyType + ", " + listType + ">newMutableMap()";
         String mapType = "org.eclipse.collections.api.map.MutableMap<" + keyType + ", " + listType + ">";
         String injectIntoFnType = "DefendedFunction2<" + mapType + ", " + valueType + ", " + mapType + ">";
 
@@ -105,8 +105,8 @@ public class GroupBy extends AbstractNative implements Native
                 "            @Override\n" +
                 "            public Object value(Object p1, final Object p2, final ExecutionSupport es)\n" +
                 "            {\n" +
-                "                final " + FullJavaPaths.Function+ " func = p2 instanceof java.util.List?(" + FullJavaPaths.Function + ")((java.util.List)p2).get(0):(" + FullJavaPaths.Function + ")p2;\n" +
-                "                return new PureMap(CompiledSupport.toPureCollection(p1).injectInto(new org.eclipse.collections.impl.map.strategy.mutable.UnifiedMapWithHashingStrategy<Object, " + FullJavaPaths.List + "<Object>>(org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureEqualsHashingStrategy.HASHING_STRATEGY), new " + injectIntoFnType + "()\n" +
+                "                final " + FullJavaPaths.Function + " func = p2 instanceof java.util.List?(" + FullJavaPaths.Function + ")((java.util.List)p2).get(0):(" + FullJavaPaths.Function + ")p2;\n" +
+                "                return new PureMap(CompiledSupport.toPureCollection(p1).injectInto(org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureEqualsHashingStrategy.<Object, " + FullJavaPaths.List + "<Object>>newMutableMap(), new " + injectIntoFnType + "()\n" +
                 "                {\n" +
                 "                    PureFunction1<Object,Object> funcC = (PureFunction1<Object,Object>) CoreGen.getSharedPureFunction(func, es);\n" +
                 "                    public " + mapType + " value(" + mapType + " collector, final Object _var)\n" +
@@ -114,7 +114,7 @@ public class GroupBy extends AbstractNative implements Native
                 "                        collector.getIfAbsentPut(funcC.value(_var, es), new Root_meta_pure_functions_collection_List_Impl<Object>(\"Anonymous\"))._valuesAdd(_var);\n" +
                 "                        return collector;\n" +
                 "                    }\n" +
-                "                }));\n"+
+                "                }));\n" +
                 "            }\n" +
                 "        }";
     }
