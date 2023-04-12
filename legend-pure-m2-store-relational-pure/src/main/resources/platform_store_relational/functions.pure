@@ -87,6 +87,7 @@ function meta::relational::metamodel::datatype::dataTypeToSqlText(type: meta::re
         a : meta::relational::metamodel::datatype::Array[1] | 'ARRAY',
         v : meta::relational::metamodel::datatype::Varbinary[1] | format('VARBINARY(%d)', $v.size),
         s : meta::relational::metamodel::datatype::SemiStructured[1] | 'SEMISTRUCTURED',
+        j : meta::relational::metamodel::datatype::Json[1] | 'JSON',
         d : meta::relational::metamodel::datatype::DbSpecificDataType[1] | $d.dbSpecificSql
     ]);
 }
@@ -111,6 +112,7 @@ function meta::relational::metamodel::datatype::dataTypeToCompatiblePureType(typ
         b : meta::relational::metamodel::datatype::Bit[1] | Boolean,
         r : meta::relational::metamodel::datatype::Real[1] | Float,
         s : meta::relational::metamodel::datatype::SemiStructured[1] | String,
+        j : meta::relational::metamodel::datatype::Json[1] | String,
         d : meta::relational::metamodel::datatype::DbSpecificDataType[1] | $d.coreDataType->dataTypeToCompatiblePureType()
     ]);
 }
