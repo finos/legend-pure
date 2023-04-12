@@ -105,6 +105,12 @@ public abstract class CodeRepository
         return new ScratchCodeRepository();
     }
 
+    public static CodeRepository newWelcomeCodeRepository()
+    {
+        return new WelcomeCodeRepository();
+    }
+
+
     public static CodeRepository newScratchCodeRepository(String name)
     {
         return new ScratchCodeRepository(name);
@@ -185,7 +191,7 @@ public abstract class CodeRepository
             {
                 // could not make progress - there must be a visibility loop
                 StringBuilder builder = new StringBuilder("Could not consistently order the following repositories:");
-                remaining.keysView().toSortedListBy(CodeRepository::getName)
+                remaining.keysView().toSortedListBy(x -> x.getName() == null ? "" : x.getName())
                         .forEach(r -> remaining.get(r).collect(CodeRepository::getName).sortThis().appendString(builder.append(" ").append(r.getName()), " (visible: ", ", ", "),"));
                 builder.deleteCharAt(builder.length() - 1);
                 throw new RuntimeException(builder.toString());

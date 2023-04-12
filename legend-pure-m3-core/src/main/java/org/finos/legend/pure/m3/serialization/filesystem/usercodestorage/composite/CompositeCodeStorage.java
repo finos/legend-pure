@@ -280,9 +280,7 @@ public class CompositeCodeStorage implements MutableVersionControlledCodeStorage
     {
         if (!path.isEmpty() && (path.charAt(0) == '/'))
         {
-            int index = path.indexOf('/', 1);
-            String rootPath = index != -1 ? path.substring(1, index) : path.substring(1);
-            return this.repositoriesByName.get(rootPath);
+            return this.repositoriesByName.get(CodeStorageTools.getInitialPathElement(path));
         }
         return null;
     }

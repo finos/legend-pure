@@ -31,6 +31,6 @@ public final class ScratchCodeRepository extends CodeRepository
     @Override
     public boolean isVisible(CodeRepository other)
     {
-        return true;
+        return !(other instanceof WelcomeCodeRepository);
     }
 }

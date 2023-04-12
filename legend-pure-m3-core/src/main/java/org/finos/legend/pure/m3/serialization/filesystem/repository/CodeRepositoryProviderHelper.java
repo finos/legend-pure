@@ -28,12 +28,14 @@ public class CodeRepositoryProviderHelper
 {
     public static Predicate<String> notPlatformAndCoreString = c -> !c.startsWith("platform") && !c.startsWith("core");
     public static Predicate<CodeRepository> notPlatformAndCore = c -> notPlatformAndCoreString.accept(c.getName());
+    public static Predicate<String> platformAndCoreString = c -> c.startsWith("platform") || c.startsWith("core");
+    public static Predicate<CodeRepository> platformAndCore = c -> platformAndCoreString.accept(c.getName());
 
     public static RichIterable<CodeRepository> findCodeRepositories(Path directory)
     {
         try
         {
-            return Files.walk(directory, 1).filter(p -> p.endsWith("definition.json")).collect(Collectors.toCollection(Lists.mutable::empty)).collect(GenericCodeRepository::build);
+            return Files.walk(directory, 1).filter(p -> p.toString().endsWith("definition.json")).collect(Collectors.toCollection(Lists.mutable::empty)).collect(GenericCodeRepository::build);
         }
         catch (Exception e)
         {
