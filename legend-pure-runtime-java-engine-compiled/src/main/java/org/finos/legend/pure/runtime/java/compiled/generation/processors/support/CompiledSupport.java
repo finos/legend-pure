@@ -922,11 +922,17 @@ public class CompiledSupport
     public static boolean eq(Number left, Number right)
     {
         // TODO make this more sophisticated
-        if (left instanceof BigDecimal && right instanceof Double ||
-                left instanceof Double && right instanceof BigDecimal)
+        if ((left instanceof BigDecimal && right instanceof Double) ||
+            (left instanceof Double && right instanceof BigDecimal))
         {
             return false;
         }
+
+        if ((left instanceof Byte) || (right instanceof Byte))
+        {
+            return (left.getClass() == right.getClass()) && (left.byteValue() == right.byteValue());
+        }
+
         left = left.equals(-0.0d) ? 0.0d : left;
         right = right.equals(-0.0d) ? 0.0d : right;
         return left.equals(right) || left.toString().equals(right.toString());
@@ -1050,6 +1056,11 @@ public class CompiledSupport
         return primitiveToString(value);
     }
 
+    public static String pureToString(byte value, ExecutionSupport es)
+    {
+        return primitiveToString(value);
+    }
+
     public static String pureToString(int value, ExecutionSupport es)
     {
         return primitiveToString(value);
@@ -1155,6 +1166,11 @@ public class CompiledSupport
     public static String primitiveToString(boolean value)
     {
         return value ? ModelRepository.BOOLEAN_TRUE : ModelRepository.BOOLEAN_FALSE;
+    }
+
+    public static String primitiveToString(byte value)
+    {
+        return Byte.toString(value);
     }
 
     public static String primitiveToString(int value)

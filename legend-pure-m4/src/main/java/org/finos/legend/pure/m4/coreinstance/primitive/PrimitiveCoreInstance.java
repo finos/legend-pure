@@ -435,4 +435,9 @@ public abstract class PrimitiveCoreInstance<T> extends AbstractCoreInstance
     {
         return new BinaryCoreInstance(value, classifier, internalSyntheticId);
     }
+
+    public static ByteCoreInstance newByteCoreInstance(Byte value, CoreInstance classifier, int internalSyntheticId)
+    {
+        return new ByteCoreInstance(value, classifier, internalSyntheticId);
+    }
 }
