@@ -15,6 +15,7 @@
 package org.finos.legend.pure.m3.serialization.grammar.v1;
 
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -47,7 +48,7 @@ public class TestByteCompilation extends AbstractPureTestWithCoreCompiledPlatfor
     @Test
     public void testByteUsageAsClassProperty()
     {
-        PureCompilationException e = Assert.assertThrows(PureCompilationExcetion.class, () -> compileTestSource("fromString.pure",
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure",
                     "Class myClassWithByteProperty\n" +
                             "{\n" +
                             "   prop: Byte[1];\n" +
