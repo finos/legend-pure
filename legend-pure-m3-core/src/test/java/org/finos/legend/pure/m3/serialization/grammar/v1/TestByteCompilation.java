@@ -47,18 +47,11 @@ public class TestByteCompilation extends AbstractPureTestWithCoreCompiledPlatfor
     @Test
     public void testByteUsageAsClassProperty()
     {
-        try
-        {
-            compileTestSource("fromString.pure",
+        PureCompilationException e = Assert.assertThrows(PureCompilationExcetion.class, () -> compileTestSource("fromString.pure",
                     "Class myClassWithByteProperty\n" +
                             "{\n" +
                             "   prop: Byte[1];\n" +
-                            "}");
-            Assert.fail("Expected a exception");
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:fromString.pure line:3 column:4), \"The property 'prop' has type of 'Byte'. 'Byte' type is not supported for property.\"", e.getMessage());
-        }
+                            "}"));
+        Assert.assertEquals("Compilation error at (resource:fromString.pure line:3 column:4), \"The property 'prop' has type of 'Byte'. 'Byte' type is not supported for property.\"", e.getMessage());
     }
 }
