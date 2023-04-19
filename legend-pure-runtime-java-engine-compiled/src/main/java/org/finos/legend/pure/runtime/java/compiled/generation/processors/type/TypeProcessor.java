@@ -214,6 +214,10 @@ public class TypeProcessor
             {
                 return "org.finos.legend.pure.m4.coreinstance.primitive.byteStream.PureByteStream";
             }
+            case M3Paths.Byte:
+            {
+                return primitiveIfPossible ? "byte" : "java.lang.Byte";
+            }
             default:
             {
                 return null;

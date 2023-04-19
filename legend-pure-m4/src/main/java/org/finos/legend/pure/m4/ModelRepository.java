@@ -29,6 +29,7 @@ import org.finos.legend.pure.m4.coreinstance.factory.CoreInstanceFactory;
 import org.finos.legend.pure.m4.coreinstance.factory.MultipassCoreInstanceFactory;
 import org.finos.legend.pure.m4.coreinstance.primitive.BinaryCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.BooleanCoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.ByteCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.DateCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.DecimalCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.FloatCoreInstance;
@@ -68,6 +69,7 @@ public class ModelRepository
     public static final String BOOLEAN_TYPE_NAME = "Boolean";
     public static final String BINARY_TYPE_NAME = "Binary";
     public static final String BYTE_STREAM_TYPE_NAME = "ByteStream";
+    public static final String BYTE_TYPE_NAME = "Byte";
     public static final String DATE_TYPE_NAME = "Date";
     public static final String STRICT_DATE_TYPE_NAME = "StrictDate";
     public static final String DATETIME_TYPE_NAME = "DateTime";
@@ -77,7 +79,7 @@ public class ModelRepository
     public static final String DECIMAL_TYPE_NAME = "Decimal";
     public static final String INTEGER_TYPE_NAME = "Integer";
     public static final String STRING_TYPE_NAME = "String";
-    public static final ImmutableSet<String> PRIMITIVE_TYPE_NAMES = Sets.immutable.with(BOOLEAN_TYPE_NAME, BYTE_STREAM_TYPE_NAME, DATE_TYPE_NAME, STRICT_DATE_TYPE_NAME, DATETIME_TYPE_NAME, LATEST_DATE_TYPE_NAME, STRICT_TIME_TYPE_NAME, FLOAT_TYPE_NAME, DECIMAL_TYPE_NAME, INTEGER_TYPE_NAME, STRING_TYPE_NAME, BINARY_TYPE_NAME);
+    public static final ImmutableSet<String> PRIMITIVE_TYPE_NAMES = Sets.immutable.with(BOOLEAN_TYPE_NAME, BYTE_STREAM_TYPE_NAME, DATE_TYPE_NAME, STRICT_DATE_TYPE_NAME, DATETIME_TYPE_NAME, LATEST_DATE_TYPE_NAME, STRICT_TIME_TYPE_NAME, FLOAT_TYPE_NAME, DECIMAL_TYPE_NAME, INTEGER_TYPE_NAME, STRING_TYPE_NAME, BINARY_TYPE_NAME, BYTE_TYPE_NAME);
 
 
     public static final String BOOLEAN_TRUE = "true";
@@ -743,6 +745,26 @@ public class ModelRepository
     private BinaryCoreInstance newBinaryInstance(byte[] value, CoreInstance classifier, int internalSyntheticId)
     {
         return PrimitiveCoreInstance.newBinaryCoreInstance(value, classifier, internalSyntheticId);
+    }
+
+    public ByteCoreInstance newByteCoreInstance(byte value)
+    {
+        return newByteInstance(value);
+    }
+
+    private ByteCoreInstance newByteInstance(byte value)
+    {
+        return newByteInstance(value, getOrCreateTopLevel(BYTE_TYPE_NAME, null));
+    }
+
+    private ByteCoreInstance newByteInstance(byte value, CoreInstance classifier)
+    {
+        return newByteInstance(value, classifier, nextId());
+    }
+
+    private ByteCoreInstance newByteInstance(byte value, CoreInstance classifier, int internalSyntheticId)
+    {
+        return PrimitiveCoreInstance.newByteCoreInstance(value, classifier, internalSyntheticId);
     }
 
     private void registerNewInstanceInTransaction(CoreInstance newInstance)
