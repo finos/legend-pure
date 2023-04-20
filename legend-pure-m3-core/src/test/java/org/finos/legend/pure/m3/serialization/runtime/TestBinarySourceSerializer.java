@@ -24,14 +24,15 @@ import org.eclipse.collections.api.multimap.list.MutableListMultimap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.factory.primitive.IntObjectMaps;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -44,13 +45,13 @@ public class TestBinarySourceSerializer extends AbstractPureTestWithCoreCompiled
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), getFactoryRegistryOverride(), getOptions(), getExtra(), false);
+        setUpRuntime(getFunctionExecution(), new CompositeCodeStorage(new ClassLoaderCodeStorage(getCodeRepositories())), getFactoryRegistryOverride(), getOptions(), getExtra(), false);
     }
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
-        return Lists.immutable.with(CodeRepository.newPlatformCodeRepository(),
-                GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME));
+        return Lists.immutable.with(CodeRepositoryProviderHelper.findPlatformCodeRepository(),
+                GenericCodeRepository.build("test", "test(::.*)?", "platform"));
     }
 
     @Test

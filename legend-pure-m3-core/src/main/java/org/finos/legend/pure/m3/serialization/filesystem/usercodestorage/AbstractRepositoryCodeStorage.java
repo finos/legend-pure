@@ -20,7 +20,7 @@ public abstract class AbstractRepositoryCodeStorage implements RepositoryCodeSto
 
     protected static String relativizeToRepo(String repoName, String path)
     {
-        return relativizeToRepo(repoName, path, path.startsWith(CodeStorage.ROOT_PATH) ? CodeStorage.ROOT_PATH.length() : 0);
+        return relativizeToRepo(repoName, path, path.startsWith(RepositoryCodeStorage.ROOT_PATH) ? RepositoryCodeStorage.ROOT_PATH.length() : 0);
     }
 
     protected static String relativizeToRepo(String repoName, String path, int startIndex)

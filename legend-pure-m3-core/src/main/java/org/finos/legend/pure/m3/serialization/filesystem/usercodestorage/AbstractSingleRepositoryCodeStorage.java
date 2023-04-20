@@ -30,9 +30,27 @@ public abstract class AbstractSingleRepositoryCodeStorage extends AbstractReposi
     }
 
     @Override
-    public RichIterable<CodeRepository> getRepositories()
+    public RichIterable<CodeRepository> getAllRepositories()
     {
         return Lists.immutable.with(this.repository);
+    }
+
+    @Override
+    public CodeRepository getRepository(String name)
+    {
+        return this.repository.getName().equals(name) ? this.repository : null;
+    }
+
+    @Override
+    public CodeRepository getRepositoryForPath(String path)
+    {
+        if (!path.isEmpty() && (path.charAt(0) == '/'))
+        {
+            int index = path.indexOf('/', 1);
+            String rootPath = index != -1 ? path.substring(1, index) : path.substring(1);
+            return this.repository.getName().equals(rootPath) ? this.repository : null;
+        }
+        return null;
     }
 
     @Override
@@ -45,7 +63,7 @@ public abstract class AbstractSingleRepositoryCodeStorage extends AbstractReposi
     {
         try
         {
-            appendable.append(CodeStorage.ROOT_PATH);
+            appendable.append(RepositoryCodeStorage.ROOT_PATH);
             appendable.append(this.repository.getName());
         }
         catch (IOException e)

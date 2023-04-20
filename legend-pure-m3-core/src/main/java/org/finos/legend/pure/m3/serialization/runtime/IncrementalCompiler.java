@@ -43,12 +43,11 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportG
 import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.imports.Imports;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.CoreInstanceFactoriesRegistry;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.pattern.URLPatternLibrary;
@@ -81,12 +80,12 @@ public abstract class IncrementalCompiler implements SourceEventHandler
         {
             throw new RuntimeException("Instance " + object.getName() + " of type " + object.getClassifier().getName() + " has no source information. This needs to be fixed");
         }
-        return PureCodeStorage.getSourceRepoName(sourceInformation.getSourceId());
+        return CompositeCodeStorage.getSourceRepoName(sourceInformation.getSourceId());
     };
 
     final InlineDSLLibrary dslLibrary;
     final ParserLibrary library;
-    final CodeStorage codeStorage;
+    final RepositoryCodeStorage codeStorage;
     final ModelRepository modelRepository;
     final Context context = new Context();
     M3ProcessorSupport processorSupport;
@@ -107,7 +106,7 @@ public abstract class IncrementalCompiler implements SourceEventHandler
     final Message message;
     final URLPatternLibrary urlPatternLibrary;
 
-    IncrementalCompiler(RichIterable<? extends Parser> parsers, RichIterable<? extends InlineDSL> inlineDSLs, CodeStorage codeStorage, URLPatternLibrary urlPatternLibrary, Message message, CoreInstanceFactoryRegistry factoryRegistryOverride, ForkJoinPool forkJoinPool, boolean isTransactionalByDefault)
+    IncrementalCompiler(RichIterable<? extends Parser> parsers, RichIterable<? extends InlineDSL> inlineDSLs, RepositoryCodeStorage codeStorage, URLPatternLibrary urlPatternLibrary, Message message, CoreInstanceFactoryRegistry factoryRegistryOverride, ForkJoinPool forkJoinPool, boolean isTransactionalByDefault)
     {
         this.message = message;
         this.urlPatternLibrary = urlPatternLibrary;

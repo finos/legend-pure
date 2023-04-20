@@ -97,7 +97,6 @@ public class Generate
             this.message.setMessage("Generating and compiling Java source code ...");
         }
 
-        compiledSourcesByRepo = ReposWithBadDependencies.combineReposWithBadDependencies(compiledSourcesByRepo);
         Counter sourceCounter = new Counter();
         compiledSourcesByRepo.forEach((compileGroup, sources) -> sourceCounter.add(sources.size()));
         int totalSourceCount = sourceCounter.getCount();
@@ -123,6 +122,10 @@ public class Generate
 
     public void generateExternalizableAPI(JavaSourceCodeGenerator sourceCodeGenerator, String pack)
     {
+        if (this.message != null)
+        {
+            this.message.setMessage("Generating Externalizable API in package '" + pack + "'");
+        }
         this.externalizableSources = sourceCodeGenerator.generateExternalizableAPI(pack).toImmutable();
     }
 

@@ -20,17 +20,13 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.SourceMutation;
-import org.finos.legend.pure.m3.compiler.postprocessing.inference.PrintTypeInferenceObserver;
-import org.finos.legend.pure.m3.compiler.postprocessing.inference.TestTypeInferenceObserver;
-import org.finos.legend.pure.m3.compiler.postprocessing.inference.TypeInferenceContext;
-import org.finos.legend.pure.m3.compiler.postprocessing.inference.TypeInferenceObserver;
-import org.finos.legend.pure.m3.compiler.postprocessing.inference.VoidTypeInferenceObserver;
+import org.finos.legend.pure.m3.compiler.postprocessing.inference.*;
 import org.finos.legend.pure.m3.compiler.postprocessing.observer.CombinedPostProcessorObserver;
 import org.finos.legend.pure.m3.compiler.postprocessing.observer.PostProcessorObserver;
 import org.finos.legend.pure.m3.compiler.postprocessing.observer.VoidPostProcessorObserver;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningDates;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
@@ -52,9 +48,9 @@ public class ProcessorState extends MatcherState
     private final TypeInferenceObserver typeInferenceObserver;
     private final URLPatternLibrary URLPatternLibrary;
     private final SourceMutation sourceMutation = new SourceMutation();
-    private final CodeStorage codeStorage;
+    private final RepositoryCodeStorage codeStorage;
 
-    public ProcessorState(VariableContext variableContext, ParserLibrary parserLibrary, InlineDSLLibrary inlineDSLLibrary, ProcessorSupport processorSupport, URLPatternLibrary URLPatternLibrary, CodeStorage codeStorage, Message message, PostProcessorObserver observer)
+    public ProcessorState(VariableContext variableContext, ParserLibrary parserLibrary, InlineDSLLibrary inlineDSLLibrary, ProcessorSupport processorSupport, URLPatternLibrary URLPatternLibrary, RepositoryCodeStorage codeStorage, Message message, PostProcessorObserver observer)
     {
         super(processorSupport);
         this.variableContext = (variableContext == null) ? VariableContext.newVariableContext() : variableContext;
@@ -68,12 +64,12 @@ public class ProcessorState extends MatcherState
         this.codeStorage = codeStorage;
     }
 
-    public ProcessorState(VariableContext variableContext, ParserLibrary parserLibrary, InlineDSLLibrary inlineDSLLibrary, ProcessorSupport processorSupport, URLPatternLibrary URLPatternLibrary, CodeStorage codeStorage, Message message)
+    public ProcessorState(VariableContext variableContext, ParserLibrary parserLibrary, InlineDSLLibrary inlineDSLLibrary, ProcessorSupport processorSupport, URLPatternLibrary URLPatternLibrary, RepositoryCodeStorage codeStorage, Message message)
     {
         this(variableContext, parserLibrary, inlineDSLLibrary, processorSupport, URLPatternLibrary, codeStorage, message, null);
     }
 
-    public CodeStorage getCodeStorage()
+    public RepositoryCodeStorage getCodeStorage()
     {
         return this.codeStorage;
     }

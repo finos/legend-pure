@@ -20,7 +20,7 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
@@ -85,7 +85,7 @@ public class JavaModelFactoryGenerator
                 .withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories())
                 .build().getRepositories();
         System.out.println("   Repositories: " + repositoriesForCompilation.collect(CodeRepository::getName).makeString("[", ", ", "]"));
-        PureCodeStorage codeStorage = new PureCodeStorage(null, new ClassLoaderCodeStorage(repositoriesForCompilation));
+        CompositeCodeStorage codeStorage = new CompositeCodeStorage(new ClassLoaderCodeStorage(repositoriesForCompilation));
         ClassLoaderPureGraphCache graphCache = new ClassLoaderPureGraphCache();
         PureRuntime runtime = new PureRuntimeBuilder(codeStorage).withCache(graphCache).setTransactionalByDefault(false).buildAndTryToInitializeFromCache();
         if (!runtime.isInitialized())

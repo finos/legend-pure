@@ -23,9 +23,14 @@ public final class ScratchCodeRepository extends CodeRepository
         super(NAME, null);
     }
 
+    ScratchCodeRepository(String name)
+    {
+        super(name, null);
+    }
+
     @Override
     public boolean isVisible(CodeRepository other)
     {
-        return true;
+        return !(other instanceof WelcomeCodeRepository);
     }
 }

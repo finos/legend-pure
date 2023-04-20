@@ -21,7 +21,7 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -46,8 +46,8 @@ public class Visibility
         {
             return true;
         }
-        String repositoryName = PureCodeStorage.getSourceRepoName(sourceId);
-        CodeRepository repository = codeRepositories == null || repositoryName == null ? null : codeRepositories.select(r -> r.getName().equals(repositoryName)).getFirst();
+        String repositoryName = CompositeCodeStorage.getSourceRepoName(sourceId);
+        CodeRepository repository = codeRepositories == null || repositoryName == null ? null : codeRepositories.select(r -> repositoryName.equals(r.getName())).getFirst();
         return isVisibleInRepository(instance, repository, codeRepositories, processorSupport);
     }
 
@@ -78,7 +78,7 @@ public class Visibility
             {
                 return true;
             }
-            for (CodeRepository repo : PureCodeStorage.getVisibleRepositories(codeRepositories, repository))
+            for (CodeRepository repo : CompositeCodeStorage.getVisibleRepositories(codeRepositories, repository))
             {
                 if (repo.isPackageAllowed(packagePath))
                 {
@@ -94,13 +94,13 @@ public class Visibility
             throw new RuntimeException("Cannot test visibility for an instance with no source information: " + instance);
         }
 
-        String instanceRepositoryName = PureCodeStorage.getSourceRepoName(sourceInfo.getSourceId());
+        String instanceRepositoryName = CompositeCodeStorage.getSourceRepoName(sourceInfo.getSourceId());
         if (instanceRepositoryName == null)
         {
             return false;
         }
 
-        CodeRepository instanceRepository = codeRepositories.select(r -> r.getName().equals(instanceRepositoryName)).getFirst();
+        CodeRepository instanceRepository = codeRepositories.select(r -> instanceRepositoryName.equals(r.getName())).getFirst();
         return (instanceRepository != null) && repository.isVisible(instanceRepository);
     }
 

@@ -25,19 +25,20 @@ import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.eclipse.collections.impl.utility.Iterate;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.imports.Imports;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ExternalReferenceSerializerLibrary;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
 import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
@@ -55,14 +56,14 @@ public class TestBinaryModelSourceSerializer extends AbstractPureTestWithCoreCom
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), getFactoryRegistryOverride(), getOptions(), getExtra(), false);
+        setUpRuntime(getFunctionExecution(), new CompositeCodeStorage(new ClassLoaderCodeStorage(getCodeRepositories())), getFactoryRegistryOverride(), getOptions(), getExtra(), false);
     }
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
-        return Lists.immutable.with(CodeRepository.newPlatformCodeRepository(),
-                GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME),
-                GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system"));
+        return Lists.immutable.with(CodeRepositoryProviderHelper.findPlatformCodeRepository(),
+                GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform"),
+                GenericCodeRepository.build("test", "test(::.*)?", "platform", "system"));
     }
 
     @After

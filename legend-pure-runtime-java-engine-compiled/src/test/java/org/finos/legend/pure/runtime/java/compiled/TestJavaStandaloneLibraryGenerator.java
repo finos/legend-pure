@@ -4,16 +4,15 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.ListIterate;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.EmptyCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.empty.EmptyCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.statelistener.VoidExecutionActivityListener;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.runtime.java.compiled.compiler.JavaCompilerState;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledProcessorSupport;
@@ -23,6 +22,7 @@ import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegis
 import org.finos.legend.pure.runtime.java.compiled.generation.Generate;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaStandaloneLibraryGenerator;
+import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.VoidLog;
 import org.finos.legend.pure.runtime.java.compiled.metadata.ClassCache;
 import org.finos.legend.pure.runtime.java.compiled.metadata.FunctionCache;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataLazy;
@@ -51,9 +51,9 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
     public static void setUp()
     {
         RichIterable<? extends CodeRepository> repositories = AbstractPureTestWithCoreCompiled.getCodeRepositories();
-        MutableCodeStorage codeStorage = new PureCodeStorage(null,
+        MutableRepositoryCodeStorage codeStorage = new CompositeCodeStorage(
                 new ClassLoaderCodeStorage(repositories),
-                new EmptyCodeStorage(new GenericCodeRepository("test", "test::.*", PlatformCodeRepository.NAME, "platform_functions"), new GenericCodeRepository("other", "other::.*", "test")));
+                new EmptyCodeStorage(new GenericCodeRepository("test", "test::.*", "platform", "platform_functions"), new GenericCodeRepository("other", "other::.*", "test")));
 
         setUpRuntime(codeStorage, JavaModelFactoryRegistryLoader.loader());
 
@@ -109,7 +109,7 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
     @Test
     public void testStandaloneLibraryNoExternal() throws Exception
     {
-        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, null);
+        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, null, new VoidLog());
         Path classesDir = this.temporaryFolder.newFolder("classes").toPath();
         generator.serializeAndWriteDistributedMetadata(classesDir);
         generator.compileAndWriteClasses(classesDir);
@@ -146,7 +146,7 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
     @Test
     public void testGenerateOnly_allRepos() throws Exception
     {
-        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, null);
+        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, null, new VoidLog());
         Path sourcesDir = this.temporaryFolder.newFolder("src", "java").toPath();
         Assert.assertEquals(Lists.fixedSize.empty(), Files.list(sourcesDir).collect(Collectors.toList()));
 
@@ -164,7 +164,7 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
     @Test
     public void testGenerateOnly_oneRepo() throws Exception
     {
-        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, null);
+        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, null, new VoidLog());
         Path sourcesDir = this.temporaryFolder.newFolder("src", "java").toPath();
         Assert.assertEquals(Lists.fixedSize.empty(), Files.list(sourcesDir).collect(Collectors.toList()));
 

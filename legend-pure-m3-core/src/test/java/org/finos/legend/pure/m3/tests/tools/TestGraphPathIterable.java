@@ -19,11 +19,12 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.test.Verify;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.tools.GraphPath;
 import org.finos.legend.pure.m3.tools.GraphPathIterable;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -35,7 +36,7 @@ public class TestGraphPathIterable extends AbstractPureTestWithCoreCompiledPlatf
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), getFactoryRegistryOverride(), getOptions(), getExtra());
+        setUpRuntime(getFunctionExecution(), new CompositeCodeStorage(new ClassLoaderCodeStorage(getCodeRepositories())), getFactoryRegistryOverride(), getOptions(), getExtra());
         compileTestSource("/test/testModel.pure",
                 "import test::domain::*;\n" +
                         "Class test::domain::ClassA\n" +
@@ -52,9 +53,9 @@ public class TestGraphPathIterable extends AbstractPureTestWithCoreCompiledPlatf
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
-        return Lists.immutable.with(CodeRepository.newPlatformCodeRepository(),
-                GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME),
-                GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system"));
+        return Lists.immutable.with(CodeRepositoryProviderHelper.findPlatformCodeRepository(),
+                GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform"),
+                GenericCodeRepository.build("test", "test(::.*)?", "platform", "system"));
     }
 
     @Test

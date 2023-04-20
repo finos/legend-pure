@@ -20,9 +20,11 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.Version;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.VersionControlledCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.serialization.Writer;
 import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
@@ -42,7 +44,7 @@ public class BinaryModelRepositorySerializer
 
     private BinaryModelRepositorySerializer(String platformVersion, String modelVersion, String repositoryName, PureRuntime runtime)
     {
-        if ((repositoryName != null) && !runtime.getCodeStorage().isRepoName(repositoryName))
+        if ((repositoryName != null) && runtime.getCodeStorage().getRepository(repositoryName) == null)
         {
             throw new IllegalArgumentException("Unknown repository: " + repositoryName);
         }
@@ -65,7 +67,7 @@ public class BinaryModelRepositorySerializer
         {
             this.runtime.getSourceRegistry().getSources().forEach(source ->
             {
-                if (PureCodeStorage.isSourceInRepository(source.getId(), this.repositoryName))
+                if (CompositeCodeStorage.isSourceInRepository(source.getId(), this.repositoryName))
                 {
                     stream.reset();
                     SourceSerializationResult result = BinaryModelSourceSerializer.serialize(writer, source, this.runtime);
@@ -94,16 +96,16 @@ public class BinaryModelRepositorySerializer
 
     private String getModelVersion()
     {
-        if (this.modelVersion != null)
+        if (this.modelVersion != null && CodeRepositoryProviderHelper.notPlatformAndCoreString.accept(this.repositoryName))
         {
             return this.modelVersion;
         }
-        if ((this.repositoryName == null) || PlatformCodeRepository.NAME.equals(this.repositoryName))
+        if (this.repositoryName == null || !CodeRepositoryProviderHelper.notPlatformAndCoreString.accept(this.repositoryName))
         {
             return null;
         }
-
-        long repoRevision = this.runtime.getCodeStorage().getCurrentRevision(this.repositoryName);
+        RepositoryCodeStorage codeStorage = this.runtime.getCodeStorage();
+        long repoRevision = codeStorage instanceof VersionControlledCodeStorage ? ((VersionControlledCodeStorage) codeStorage).getCurrentRevision(this.repositoryName) : -1L;
         return (repoRevision == -1L) ? null : ("SNAPSHOT-FROM-SVN-" + repoRevision);
     }
 
@@ -120,11 +122,6 @@ public class BinaryModelRepositorySerializer
     public static void serialize(OutputStream stream, String platformVersion, String modelVersion, String repositoryName, PureRuntime runtime) throws IOException
     {
         new BinaryModelRepositorySerializer(platformVersion, modelVersion, repositoryName, runtime).serialize(stream);
-    }
-
-    public static void serialize(OutputStream stream, String platformVersion, String repositoryName, PureRuntime runtime) throws IOException
-    {
-        serialize(stream, platformVersion, null, repositoryName, runtime);
     }
 
     public static void serialize(OutputStream stream, String repository, PureRuntime runtime) throws IOException

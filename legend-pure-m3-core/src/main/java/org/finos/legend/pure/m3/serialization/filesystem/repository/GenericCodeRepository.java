@@ -49,7 +49,7 @@ public class GenericCodeRepository extends CodeRepository
 
     public GenericCodeRepository(String name, String pattern, Iterable<String> dependencies)
     {
-        this(name, Pattern.compile(pattern), dependencies);
+        this(name, pattern == null ? null : Pattern.compile(pattern), dependencies);
     }
 
     public GenericCodeRepository(String name, String pattern, String... dependencies)

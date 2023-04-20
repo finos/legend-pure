@@ -15,16 +15,15 @@
 package org.finos.legend.pure.m3.serialization.runtime;
 
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.IncrementalCompiler.IncrementalCompilerTransaction;
 import org.finos.legend.pure.m3.serialization.runtime.cache.CompressedMemoryPureGraphCache;
 import org.finos.legend.pure.m3.serialization.runtime.cache.PureGraphCache;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.transaction.framework.ThreadLocalTransactionContext;
@@ -38,7 +37,7 @@ public class TestPureRuntime
     @Test
     public void testLoadSourceDoesNotReload()
     {
-        PureRuntime runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))).build();
+        PureRuntime runtime = new PureRuntimeBuilder(new CompositeCodeStorage(new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository()))).build();
         runtime.loadAndCompileCore();
 
         RuntimeException e = Assert.assertThrows(RuntimeException.class, () -> runtime.loadSource("/platform/pure/grammar/m3.pure"));
@@ -48,7 +47,7 @@ public class TestPureRuntime
     @Test
     public void testM3PureInstancesPopulated()
     {
-        PureRuntime runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))).build();
+        PureRuntime runtime = new PureRuntimeBuilder(new CompositeCodeStorage(new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository()))).build();
         runtime.loadAndCompileCore();
 
         Source m3Pure = runtime.getSourceById("/platform/pure/grammar/m3.pure");
@@ -59,7 +58,7 @@ public class TestPureRuntime
     @Test
     public void testInstancesInContextDuringCaching()
     {
-        MutableCodeStorage codeStorage = new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()));
+        MutableRepositoryCodeStorage codeStorage = new CompositeCodeStorage(new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository()));
 
         PureGraphCache cache = new CompressedMemoryPureGraphCache();
         Assert.assertFalse(cache.getCacheState().isCached());
@@ -76,7 +75,7 @@ public class TestPureRuntime
     @Test
     public void testThreadLocalState()
     {
-        PureRuntime runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))).build();
+        PureRuntime runtime = new PureRuntimeBuilder(new CompositeCodeStorage(new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository()))).build();
         runtime.loadAndCompileCore();
 
         IncrementalCompilerTransaction transaction = runtime.getIncrementalCompiler().newTransaction(true);
@@ -127,7 +126,7 @@ public class TestPureRuntime
     @Test
     public void testCompiles()
     {
-        PureRuntime runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository(), GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME)))).build();
+        PureRuntime runtime = new PureRuntimeBuilder(new CompositeCodeStorage(new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository(), GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform")))).build();
         runtime.loadAndCompileCore();
         runtime.createInMemoryAndCompile(AbstractPureTestWithCoreCompiledPlatform.EXTRA);
 
@@ -141,7 +140,7 @@ public class TestPureRuntime
     @Test
     public void testPartialCompilation()
     {
-        PureRuntime runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))).build();
+        PureRuntime runtime = new PureRuntimeBuilder(new CompositeCodeStorage(new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository()))).build();
         runtime.loadAndCompileCore();
 
         PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> runtime.createInMemoryAndCompile(

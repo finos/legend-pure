@@ -20,7 +20,7 @@ import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -30,13 +30,13 @@ import org.finos.legend.pure.m4.exception.PureCompilationException;
 public class ValidatorState extends MatcherState
 {
     private final ValidationType validationType;
-    private final CodeStorage codeStorage;
+    private final RepositoryCodeStorage codeStorage;
     private CoreInstance rootMapping;
     private final MutableMap<String, CoreInstance> setImplementationsById = Maps.mutable.empty();
     private final MutableMap<String, CoreInstance> enumerationMappingsById = Maps.mutable.empty();
     private final InlineDSLLibrary inlineDSLLibrary;
 
-    public ValidatorState(ValidationType validationType, CodeStorage codeStorage, InlineDSLLibrary inlineDSLLibrary, ProcessorSupport processorSupport)
+    public ValidatorState(ValidationType validationType, RepositoryCodeStorage codeStorage, InlineDSLLibrary inlineDSLLibrary, ProcessorSupport processorSupport)
     {
         super(processorSupport);
         this.validationType = validationType;
@@ -49,7 +49,7 @@ public class ValidatorState extends MatcherState
         return this.validationType;
     }
 
-    public CodeStorage getCodeStorage()
+    public RepositoryCodeStorage getCodeStorage()
     {
         return this.codeStorage;
     }

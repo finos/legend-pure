@@ -17,7 +17,6 @@ package org.finos.legend.pure.runtime.java.compiled.generation;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.impl.Counter;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.runtime.java.compiled.compiler.Compile;
@@ -74,7 +73,6 @@ public class GenerateAndCompile
             this.message.setMessage("Generating and compiling Java source code ...");
         }
 
-        compiledSourcesByRepo = ReposWithBadDependencies.combineReposWithBadDependencies(compiledSourcesByRepo);
         Counter sourceCounter = new Counter();
         compiledSourcesByRepo.forEach((compileGroup, sources) -> sourceCounter.add(sources.size()));
         int totalSourceCount = sourceCounter.getCount();
@@ -106,6 +104,10 @@ public class GenerateAndCompile
 
     void generateAndCompileExternalizableAPI(JavaSourceCodeGenerator sourceCodeGenerator, String externalAPIPackage) throws PureJavaCompileException
     {
+        if (this.message != null)
+        {
+            this.message.setMessage("Generating and compiling Externalizable API in package '" + externalAPIPackage + "'");
+        }
         this.generate.generateExternalizableAPI(sourceCodeGenerator, externalAPIPackage);
         this.compile.compileExternalizableAPI(this.generate.getExternalizableSources());
     }

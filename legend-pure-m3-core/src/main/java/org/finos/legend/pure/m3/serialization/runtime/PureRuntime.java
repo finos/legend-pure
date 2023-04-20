@@ -40,12 +40,8 @@ import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
 import org.finos.legend.pure.m3.navigation.function.InvalidFunctionDescriptorException;
 import org.finos.legend.pure.m3.serialization.PureRuntimeEventHandler;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNodeStatus;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.*;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.MutableVersionControlledCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.UpdateReport;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
@@ -90,7 +86,7 @@ public class PureRuntime
 
     public final ExecutedTestTracker executedTestTracker;
 
-    PureRuntime(MutableCodeStorage codeStorage, PureGraphCache cache,
+    PureRuntime(MutableRepositoryCodeStorage codeStorage, PureGraphCache cache,
                 PureRuntimeStatus pureRuntimeStatus, Message message, CoreInstanceFactoryRegistry factoryRegistryOverride, ForkJoinPool incrementalCompilerForkJoinPool,
                 boolean isTransactionByDefault, boolean useFastCompiler, ExecutedTestTracker executedTestTracker, RuntimeOptions options)
     {
@@ -104,8 +100,8 @@ public class PureRuntime
 
         this.incrementalCompiler =
                 useFastCompiler ?
-                    new IncrementalCompiler_New(parsers, inlineDSLs, codeStorage, this.patternLibrary, message, factoryRegistryOverride, incrementalCompilerForkJoinPool, isTransactionByDefault) :
-                    new IncrementalCompiler_Old(parsers, inlineDSLs, codeStorage, this.patternLibrary, message, factoryRegistryOverride, incrementalCompilerForkJoinPool, isTransactionByDefault);
+                        new IncrementalCompiler_New(parsers, inlineDSLs, codeStorage, this.patternLibrary, message, factoryRegistryOverride, incrementalCompilerForkJoinPool, isTransactionByDefault) :
+                        new IncrementalCompiler_Old(parsers, inlineDSLs, codeStorage, this.patternLibrary, message, factoryRegistryOverride, incrementalCompilerForkJoinPool, isTransactionByDefault);
 
         this.sourceRegistry = new SourceRegistry(codeStorage, this.incrementalCompiler.getParserLibrary(), Lists.fixedSize.<SourceEventHandler>of(this.incrementalCompiler));
 
@@ -191,7 +187,7 @@ public class PureRuntime
         return this.sourceRegistry;
     }
 
-    public MutableCodeStorage getCodeStorage()
+    public MutableRepositoryCodeStorage getCodeStorage()
     {
         return this.sourceRegistry.getCodeStorage();
     }
@@ -232,12 +228,12 @@ public class PureRuntime
 
         try
         {
-            RichIterable<CodeRepository> allPlatform = this.getCodeStorage().getAllRepositories().select(c -> c.getName().startsWith("platform"));
+            RichIterable<CodeRepository> allPlatform = this.getCodeStorage().getAllRepositories().select(c -> c.getName() != null && c.getName().startsWith("platform"));
             MutableList<String> sourcePaths = allPlatform.flatCollect(c -> this.getCodeStorage().getFileOrFiles(c.getName())).toList();
 
             if (message != null)
             {
-                message.setMessage("Loading "+sourcePaths.size()+" sources...");
+                message.setMessage("Loading " + sourcePaths.size() + " sources...");
             }
             MutableList<Source> sources = sourcePaths.collect(this::getOrLoadSource);
 
@@ -289,7 +285,7 @@ public class PureRuntime
             LazyIterable<String> sourcePaths = getCodeStorage().getUserFiles().asLazy();
             if (message != null)
             {
-                message.setMessage("Loading "+sourcePaths.size()+" sources...");
+                message.setMessage("Loading " + sourcePaths.size() + " sources...");
             }
             MutableList<Source> sources = sourcePaths.collect(this::getOrLoadSource).reject(Source.IS_COMPILED).toList();
             compile(sources, postProcessorObserver);
@@ -310,7 +306,7 @@ public class PureRuntime
     {
         this.pureRuntimeStatus.startLoadingAndCompilingSystemFiles();
         MutableList<Source> sources = Lists.mutable.with();
-        MutableCodeStorage codeStorage = getCodeStorage();
+        MutableRepositoryCodeStorage codeStorage = getCodeStorage();
         for (String path : paths)
         {
             codeStorage.getFileOrFiles(path).collect(this::loadSource, sources);
@@ -485,7 +481,7 @@ public class PureRuntime
 
     public void modify(String path, String code)
     {
-        if(this.executedTestTracker != null)
+        if (this.executedTestTracker != null)
         {
             if (this.willModify(path, code))
             {
@@ -504,7 +500,7 @@ public class PureRuntime
         }
         else
         {
-            MutableCodeStorage codeStorage = getCodeStorage();
+            MutableRepositoryCodeStorage codeStorage = getCodeStorage();
             if (!codeStorage.exists(path))
             {
                 throw new IllegalArgumentException("Unknown file: " + path);
@@ -527,7 +523,7 @@ public class PureRuntime
             if (!logical)
             {
                 // TODO Should we throw an error for non-existent files and non-empty folders?
-                MutableCodeStorage codeStorage = getCodeStorage();
+                MutableRepositoryCodeStorage codeStorage = getCodeStorage();
                 if (codeStorage.isFile(sourceId) || codeStorage.isEmptyFolder(sourceId))
                 {
                     codeStorage.deleteFile(sourceId);
@@ -575,7 +571,7 @@ public class PureRuntime
             this.incrementalCompiler.markForUnload(source);
             if (!source.isInMemory())
             {
-                this.getCodeStorage().markAsResolved(path);
+                ((MutableVersionControlledCodeStorage) this.getCodeStorage()).markAsResolved(path);
                 this.cache.deleteCache();
             }
             if (this.executedTestTracker != null)
@@ -587,8 +583,9 @@ public class PureRuntime
 
     public UpdateReport update(String path, long version)
     {
-        MutableCodeStorage codeStorage = getCodeStorage();
-        UpdateReport report = codeStorage.update(path, version);
+        MutableRepositoryCodeStorage codeStorage = getCodeStorage();
+        UpdateReport report = new UpdateReport();
+        ((MutableVersionControlledCodeStorage) this.getCodeStorage()).update(report, path, version);
         if (!report.isEmpty())
         {
             try
@@ -622,7 +619,7 @@ public class PureRuntime
 
     public void commit(ListIterable<String> paths, String message)
     {
-        this.getCodeStorage().commit(paths, message);
+        ((MutableVersionControlledCodeStorage) this.getCodeStorage()).commit(paths, message);
         if (this.executedTestTracker != null)
         {
             this.executedTestTracker.invalidate();
@@ -631,8 +628,8 @@ public class PureRuntime
 
     public void revert(String sourceId)
     {
-        MutableCodeStorage codeStorage = getCodeStorage();
-        for (String possiblyModified : codeStorage.revert(sourceId))
+        MutableRepositoryCodeStorage codeStorage = getCodeStorage();
+        for (String possiblyModified : ((MutableVersionControlledCodeStorage) this.getCodeStorage()).revert(sourceId))
         {
             if (CodeStorageTools.hasPureFileExtension(possiblyModified))
             {
@@ -656,11 +653,11 @@ public class PureRuntime
 
     public RichIterable<String> applyPatch(String path, File patchFile)
     {
-        MutableCodeStorage codeStorage = getCodeStorage();
-        codeStorage.applyPatch(path, patchFile);
-        RichIterable<CodeStorageNode> modifiedUserFiles = codeStorage.getModifiedUserFiles();
+        MutableRepositoryCodeStorage codeStorage = getCodeStorage();
+        ((MutableVersionControlledCodeStorage) this.getCodeStorage()).applyPatch(path, patchFile);
+        RichIterable<CodeStorageNode> modifiedUserFiles = ((MutableVersionControlledCodeStorage) this.getCodeStorage()).getModifiedUserFiles();
         RichIterable<String> rejectFiles = modifiedUserFiles.selectWith(CodeStorageNode.HAS_STATUS, CodeStorageNodeStatus.UNKNOWN).select(CodeStorageNode.IS_REJECT_FILE).collect(CodeStorageNode.GET_PATH);
-        if(!modifiedUserFiles.isEmpty())
+        if (!modifiedUserFiles.isEmpty())
         {
             try
             {
@@ -693,7 +690,7 @@ public class PureRuntime
         return rejectFiles;
     }
 
-    private void loadOrRefreshPureFileContent(MutableCodeStorage codeStorage, String filePath)
+    private void loadOrRefreshPureFileContent(MutableRepositoryCodeStorage codeStorage, String filePath)
     {
         if (CodeStorageTools.hasPureFileExtension(filePath) && codeStorage.isFile(filePath))
         {
@@ -884,10 +881,11 @@ public class PureRuntime
     {
         if (!CodeStorageTools.isPureFilePath(path))
         {
-            throw new IllegalArgumentException("Not a " + CodeStorage.PURE_FILE_EXTENSION + " file: " + path);
+            throw new IllegalArgumentException("Not a " + RepositoryCodeStorage.PURE_FILE_EXTENSION + " file: " + path);
         }
-        MutableCodeStorage codeStorage = getCodeStorage();
-        boolean immutable = this.forceImmutable || PlatformCodeRepository.NAME.equals(codeStorage.getRepoName(path)); // TODO do something smarter here
+        MutableRepositoryCodeStorage codeStorage = getCodeStorage();
+        CodeRepository repo = codeStorage.getRepositoryForPath(path);
+        boolean immutable = this.forceImmutable || (repo != null && repo.getName() != null && repo.getName().startsWith("platform")); // TODO do something smarter here
         if (Source.isInMemory(path))
         {
             throw new RuntimeException("'" + path + "' should not be in memory!");
@@ -908,7 +906,7 @@ public class PureRuntime
             }
         }
 
-        MutableCodeStorage codeStorage = getCodeStorage();
+        MutableRepositoryCodeStorage codeStorage = getCodeStorage();
         for (String path : codeStorage.getUserFiles())
         {
             if (!this.sourceRegistry.hasSource(path))

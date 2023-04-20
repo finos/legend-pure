@@ -17,7 +17,8 @@ package org.finos.legend.pure.m3.serialization.filesystem.genericrepository;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.impl.test.Verify;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
@@ -32,9 +33,9 @@ public class TestGenericRepository
     public void testRepositoryDetection()
     {
         RichIterable<CodeRepository> repositoryList = CodeRepositoryProviderHelper.findCodeRepositories();
-        Assert.assertEquals(2, repositoryList.size());
+        Assert.assertEquals(3, repositoryList.size());
         Verify.assertAllSatisfy(repositoryList, r -> r instanceof GenericCodeRepository);
-        Verify.assertSetsEqual(Sets.mutable.with("test_generic_repository", "other_test_generic_repository"), repositoryList.collect(CodeRepository::getName).toSet());
+        Verify.assertSetsEqual(Sets.mutable.with("platform", "test_generic_repository", "other_test_generic_repository"), repositoryList.collect(CodeRepository::getName).toSet());
     }
 
     @Test
@@ -51,8 +52,8 @@ public class TestGenericRepository
     public void testBuildCodeStorage() throws Exception
     {
         RichIterable<CodeRepository> repositoryList = CodeRepositoryProviderHelper.findCodeRepositories();
-        PureCodeStorage codeStorage = PureCodeStorage.createCodeStorage(new File("").toPath(), repositoryList);
-        Verify.assertSetsEqual(Sets.mutable.with("test_generic_repository", "other_test_generic_repository"), codeStorage.getAllRepoNames().toSet());
-        Verify.assertSetsEqual(Sets.mutable.with("/test_generic_repository/testBla.pure", "/other_test_generic_repository/test.pure"), codeStorage.getUserFiles().toSet());
+        CompositeCodeStorage codeStorage = new CompositeCodeStorage(new ClassLoaderCodeStorage(repositoryList));
+        Verify.assertSetsEqual(Sets.mutable.with("platform", "test_generic_repository", "other_test_generic_repository"), codeStorage.getAllRepositories().collect(CodeRepository::getName).toSet());
+        Verify.assertSetsEqual(Sets.mutable.with("/test_generic_repository/testBla.pure", "/other_test_generic_repository/test.pure"), codeStorage.getUserFiles().toSet().select(c -> !c.startsWith("/platform")));
     }
 }

@@ -20,8 +20,9 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.utility.internal.IterableIterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.welcome.WelcomeCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.GraphLoader;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
@@ -76,8 +77,8 @@ public class FSGraphLoaderPureGraphCache extends AbstractFSDirectoryPureGraphCac
     @Override
     public boolean buildFromCaches(ModelRepository modelRepository, SourceRegistry sources, ParserLibrary library, Context context, ProcessorSupport processorSupport, Message message)
     {
-        CodeStorage codeStorage = this.pureRuntime.getCodeStorage();
-        MutableList<String> repoNames = codeStorage.getAllRepoNames().toSortedList(new RepositoryComparator(codeStorage.getAllRepositories()));
+        RepositoryCodeStorage codeStorage = this.pureRuntime.getCodeStorage();
+        MutableList<String> repoNames = codeStorage.getAllRepositories().collect(CodeRepository::getName).toSortedList(new RepositoryComparator(codeStorage.getAllRepositories()));
         if (shouldAddRootRepo())
         {
             repoNames.add(ROOT_REPOSITORY_NAME);
@@ -96,7 +97,7 @@ public class FSGraphLoaderPureGraphCache extends AbstractFSDirectoryPureGraphCac
     @Override
     protected void writeCaches()
     {
-        RichIterable<String> repoNames = this.pureRuntime.getCodeStorage().getAllRepoNames();
+        RichIterable<String> repoNames = this.pureRuntime.getCodeStorage().getAllRepositories().collect(CodeRepository::getName);
         if (shouldAddRootRepo())
         {
             repoNames = repoNames.toList().with(null);
@@ -166,7 +167,7 @@ public class FSGraphLoaderPureGraphCache extends AbstractFSDirectoryPureGraphCac
 
     private boolean shouldAddRootRepo()
     {
-        return this.pureRuntime.getCodeStorage().isFile(PureCodeStorage.WELCOME_FILE_PATH);
+        return this.pureRuntime.getCodeStorage().isFile(WelcomeCodeStorage.WELCOME_FILE_PATH);
     }
 
     private Path getRepositoryJarPath(String repositoryName)

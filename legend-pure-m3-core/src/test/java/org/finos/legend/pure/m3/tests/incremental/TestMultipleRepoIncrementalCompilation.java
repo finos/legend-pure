@@ -15,22 +15,22 @@
 package org.finos.legend.pure.m3.tests.incremental;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.TestCodeRepositoryWithDependencies;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.Objects;
+import java.nio.file.Path;
 
 public class TestMultipleRepoIncrementalCompilation extends AbstractPureTestWithCoreCompiledPlatform
 {
@@ -51,13 +51,13 @@ public class TestMultipleRepoIncrementalCompilation extends AbstractPureTestWith
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
-        MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
+        MutableList<CodeRepository> repositories = Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
         CodeRepository platform = repositories.detect(x -> x.getName().equals("platform"));
-        CodeRepository functions = repositories.detect(x -> x.getName().equals("platform_functions"));
-        CodeRepository core = new TestCodeRepositoryWithDependencies("zcore", null, Sets.mutable.with(platform));
-        CodeRepository system = new TestCodeRepositoryWithDependencies("system", null, Sets.mutable.with(platform, core, functions).select(Objects::nonNull));
-        CodeRepository model = new TestCodeRepositoryWithDependencies("model", null, Sets.mutable.with(platform, core, system, functions).select(Objects::nonNull));
-        CodeRepository other = new TestCodeRepositoryWithDependencies("datamart_other", null, Sets.mutable.with(platform, core, system, model, functions).select(Objects::nonNull));
+        CodeRepository core = new GenericCodeRepository("zcore", null, "platform");
+        CodeRepository system = new GenericCodeRepository("system", null, "platform", "zcore");
+        CodeRepository model = new GenericCodeRepository("model", null, "platform", "zcore", "system");
+        CodeRepository other = new GenericCodeRepository("datamart_other", null, "platform", "zcore", "system", "model");
+        repositories.add(platform);
         repositories.add(core);
         repositories.add(system);
         repositories.add(model);
@@ -65,9 +65,9 @@ public class TestMultipleRepoIncrementalCompilation extends AbstractPureTestWith
         return repositories;
     }
 
-    protected static MutableCodeStorage getCodeStorage()
+    protected static MutableRepositoryCodeStorage getCodeStorage()
     {
-        return new PureCodeStorage(null, new ClassLoaderCodeStorage(getCodeRepositories()));
+        return new CompositeCodeStorage(new ClassLoaderCodeStorage(getCodeRepositories()));
     }
 
     @Test

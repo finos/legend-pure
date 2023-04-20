@@ -25,7 +25,7 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.imports.Imports;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
@@ -195,7 +195,7 @@ class DistributedBinaryRepositorySerializer extends DistributedBinaryGraphSerial
 
     private boolean isInRepository(String sourceId)
     {
-        return PureCodeStorage.isSourceInRepository(sourceId, getRepositoryName());
+        return CompositeCodeStorage.isSourceInRepository(sourceId, getRepositoryName());
     }
 
     private static boolean isFromSource(CoreInstance instance, Source source)

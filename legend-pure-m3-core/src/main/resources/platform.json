@@ -1,0 +1,5 @@
+{
+  "name" : "platform",
+  "pattern" : "((meta)|(system)|(apps::pure))(::.*)?",
+  "dependencies" : []
+}

@@ -21,6 +21,7 @@ import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
+import org.eclipse.collections.api.partition.PartitionIterable;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.set.strategy.mutable.UnifiedSetWithHashingStrategy;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
@@ -34,7 +35,8 @@ import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.VersionControlledCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
@@ -54,7 +56,6 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.me
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.measureUnit.UnitProcessor;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -141,7 +142,7 @@ public final class JavaSourceCodeGenerator
 
     private final ProcessorSupport processorSupport;
     private final IdBuilder idBuilder;
-    private final CodeStorage codeStorage;
+    private final RepositoryCodeStorage codeStorage;
     private final boolean writeFilesToDisk;
     private final Path directoryToWriteFilesTo;
     private final String externalAPIPackage;
@@ -156,7 +157,7 @@ public final class JavaSourceCodeGenerator
 
     private final String name;
 
-    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, IdBuilder idBuilder, CodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> providedExtensions, String name, String externalAPIPackage, boolean generateCompilerExtensionCode)
+    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, IdBuilder idBuilder, RepositoryCodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> providedExtensions, String name, String externalAPIPackage, boolean generateCompilerExtensionCode)
     {
         this.name = name;
         this.processorSupport = processorSupport;
@@ -182,7 +183,7 @@ public final class JavaSourceCodeGenerator
         }).withAll(CompiledExtensionLoader.extensions()).withAll(providedExtensions).toList();
     }
 
-    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, CodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> extensions, String name, String externalAPIPackage, boolean generateCompilerExtensionCode)
+    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, RepositoryCodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> extensions, String name, String externalAPIPackage, boolean generateCompilerExtensionCode)
     {
         this(processorSupport, null, codeStorage, writeFilesToDisk, directoryToWriteFilesTo, includePureStackTrace, extensions, name, externalAPIPackage, generateCompilerExtensionCode);
     }
@@ -462,7 +463,7 @@ public final class JavaSourceCodeGenerator
                     }
                     // We only want to execute if the related repository is available.
                     // Otherwise the type are not in the model and the instanceOf code will fail later.
-                    this.extensions.select(c -> this.codeStorage.isRepoName(c.getRelatedRepository())).flatCollect(CompiledExtension::getExtraPackageableElementProcessors).forEach(e -> e.value(coreInstance, this, processorContext));
+                    this.extensions.select(c -> this.codeStorage.getRepository(c.getRelatedRepository()) != null).flatCollect(CompiledExtension::getExtraPackageableElementProcessors).forEach(e -> e.value(coreInstance, this, processorContext));
                 }
                 catch (PureCompilationException e)
                 {
@@ -505,16 +506,8 @@ public final class JavaSourceCodeGenerator
 
     private String buildExternalizableFunctionClass(RichIterable<String> functionDefinitions)
     {
-        try
-        {
-            java.lang.Class<?> externalClass = Thread.currentThread().getContextClassLoader().loadClass("org.finos.legend.pure.runtime.java.compiled.generation.ExternalClassBuilder");
-            Method method = externalClass.getMethod("buildExternalizableFunctionClass", RichIterable.class, String.class, RichIterable.class);
-            return (String) method.invoke(null, functionDefinitions, EXTERNAL_FUNCTIONS_CLASS_NAME, this.codeStorage.getAllRepoNames());
-        }
-        catch (ReflectiveOperationException e)
-        {
-            throw new RuntimeException(e);
-        }
+        PartitionIterable<CodeRepository> sortedRepos = this.codeStorage.getAllRepositories().partition(p -> this.codeStorage.getOriginalCodeStorage(p) instanceof VersionControlledCodeStorage);
+        return ExternalClassBuilder.buildExternalizableFunctionClass(functionDefinitions, EXTERNAL_FUNCTIONS_CLASS_NAME, sortedRepos.getSelected().collect(CodeRepository::getName), sortedRepos.getRejected().collect(CodeRepository::getName));
     }
 
     private String buildPureCompiledLambda(ProcessorContext processorContext)

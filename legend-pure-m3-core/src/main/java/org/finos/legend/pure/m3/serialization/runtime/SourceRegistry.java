@@ -20,37 +20,35 @@ import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.ConcurrentMutableMap;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
-import org.eclipse.collections.impl.utility.ListIterate;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.navigation.NavigationHandler;
 import org.finos.legend.pure.m4.serialization.Writer;
 
 import java.io.OutputStream;
-import java.util.List;
 import java.util.regex.Pattern;
 
 public class SourceRegistry
 {
-    private final MutableCodeStorage codeStorage;
+    private final MutableRepositoryCodeStorage codeStorage;
     private final ImmutableList<SourceEventHandler> sourceEventHandlers;
     private final ConcurrentMutableMap<String, Source> sourcesById = ConcurrentHashMap.newMap();
     private final ParserLibrary parserLibrary;
 
-    public SourceRegistry(MutableCodeStorage codeStorage, ParserLibrary parserLibrary, Iterable<? extends SourceEventHandler> sourceEventHandlers)
+    public SourceRegistry(MutableRepositoryCodeStorage codeStorage, ParserLibrary parserLibrary, Iterable<? extends SourceEventHandler> sourceEventHandlers)
     {
         this.codeStorage = codeStorage;
         this.parserLibrary = parserLibrary;
         this.sourceEventHandlers = Lists.immutable.withAll(sourceEventHandlers);
     }
 
-    public SourceRegistry(MutableCodeStorage codeStorage, ParserLibrary parserLibrary, SourceEventHandler... sourceEventHandlers)
+    public SourceRegistry(MutableRepositoryCodeStorage codeStorage, ParserLibrary parserLibrary, SourceEventHandler... sourceEventHandlers)
     {
         this(codeStorage, parserLibrary, Lists.immutable.with(sourceEventHandlers));
     }
 
-    public MutableCodeStorage getCodeStorage()
+    public MutableRepositoryCodeStorage getCodeStorage()
     {
         return this.codeStorage;
     }

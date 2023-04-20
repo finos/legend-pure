@@ -20,17 +20,14 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.welcome.WelcomeCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.GraphLoader;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.SourceRegistry;
-import org.finos.legend.pure.m3.serialization.runtime.binary.BinaryModelRepositorySerializer;
-import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJar;
-import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJarLibrary;
-import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJars;
-import org.finos.legend.pure.m3.serialization.runtime.binary.SimplePureRepositoryJarLibrary;
+import org.finos.legend.pure.m3.serialization.runtime.binary.*;
 import org.finos.legend.pure.m4.ModelRepository;
 
 import java.io.ByteArrayOutputStream;
@@ -66,12 +63,8 @@ public class MemoryGraphLoaderPureGraphCache extends AbstractPureGraphCache
     {
         long newSize = 0;
         MutableList<PureRepositoryJar> newJars = Lists.mutable.empty();
-        CodeStorage codeStorage = this.pureRuntime.getCodeStorage();
-        RichIterable<String> repoNames = codeStorage.getAllRepoNames();
-        if (codeStorage.isFile(PureCodeStorage.WELCOME_FILE_PATH))
-        {
-            repoNames = repoNames.toList().with(null);
-        }
+        RepositoryCodeStorage codeStorage = this.pureRuntime.getCodeStorage();
+        RichIterable<String> repoNames = codeStorage.getAllRepositories().collect(CodeRepository::getName);
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         for (String repoName : repoNames)
         {

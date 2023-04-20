@@ -37,20 +37,14 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Concre
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValueInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.SimpleFunctionExpression;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpressionInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.*;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.tools.GrammarInfoStub;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.type.Type;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.runtime.navigation.NavigationHandler;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -106,7 +100,7 @@ public class Source
         }
         synchronized (this.lock)
         {
-            MutableCodeStorage codeStorage = this.sourceRegistry.getCodeStorage();
+            MutableRepositoryCodeStorage codeStorage = this.sourceRegistry.getCodeStorage();
             if (codeStorage.exists(this.id))
             {
                 String currentContent = this.content;

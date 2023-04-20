@@ -35,12 +35,8 @@ import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.ReferenceUsage;
 import org.finos.legend.pure.m3.coreinstance.Package;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.*;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.navigation.function.FunctionType;
@@ -48,7 +44,7 @@ import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.type.Type;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.serialization.runtime.PrintPureRuntimeStatus;
@@ -85,12 +81,12 @@ public abstract class AbstractCompiledStateIntegrityTest
     protected static CoreInstance enumStubClass;
 
     @Deprecated
-    protected static void initialize(MutableCodeStorage codeStorage, RichIterable<? extends Parser> parsers, RichIterable<? extends InlineDSL> inlineDSLs)
+    protected static void initialize(MutableRepositoryCodeStorage codeStorage, RichIterable<? extends Parser> parsers, RichIterable<? extends InlineDSL> inlineDSLs)
     {
         initialize(codeStorage);
     }
 
-    protected static void initialize(MutableCodeStorage codeStorage)
+    protected static void initialize(MutableRepositoryCodeStorage codeStorage)
     {
         runtime = new PureRuntimeBuilder(codeStorage)
                 .withRuntimeStatus(new PrintPureRuntimeStatus(System.out))

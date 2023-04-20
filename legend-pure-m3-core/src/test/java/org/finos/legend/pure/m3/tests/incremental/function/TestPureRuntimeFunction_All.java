@@ -16,14 +16,14 @@ package org.finos.legend.pure.m3.tests.incremental.function;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -33,14 +33,14 @@ public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompile
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), getFactoryRegistryOverride(), getOptions(), getExtra());
+        setUpRuntime(getFunctionExecution(), new CompositeCodeStorage(new ClassLoaderCodeStorage(getCodeRepositories())), getFactoryRegistryOverride(), getOptions(), getExtra());
     }
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
         MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
-        CodeRepository system = GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME, "platform_functions");
-        CodeRepository test = GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system", "platform_functions");
+        CodeRepository system = GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform", "platform_functions");
+        CodeRepository test = GenericCodeRepository.build("test", "test(::.*)?", "platform", "system", "platform_functions");
         repositories.add(system);
         repositories.add(test);
         return repositories;

@@ -30,6 +30,9 @@ public class PureJarMojo extends AbstractMojo
     @Parameter
     private String purePlatformVersion;
 
+    @Parameter
+    private String modelVersion;
+
     @Parameter(readonly = true, defaultValue = "${project.build.outputDirectory}")
     private File outputDirectory;
 
@@ -54,6 +57,7 @@ public class PureJarMojo extends AbstractMojo
                     this.excludedRepositories,
                     this.extraRepositories,
                     this.purePlatformVersion,
+                    this.modelVersion,
                     this.sourceDirectory,
                     this.outputDirectory,
                     new Log()

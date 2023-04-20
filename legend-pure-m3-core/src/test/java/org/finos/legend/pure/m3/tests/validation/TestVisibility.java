@@ -18,18 +18,18 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.compiler.visibility.AccessLevel;
 import org.finos.legend.pure.m3.compiler.visibility.Visibility;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.SVNCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
@@ -68,21 +68,20 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
-        return Lists.immutable.with(
-                SVNCodeRepository.newDatamartCodeRepository("dtm"),
-                SVNCodeRepository.newDatamartCodeRepository("datamt"),
-                SVNCodeRepository.newModelCodeRepository(""),
-                SVNCodeRepository.newModelCodeRepository("candidate", Sets.immutable.with("")),
-                SVNCodeRepository.newModelCodeRepository("legacy", Sets.immutable.with("")),
-                SVNCodeRepository.newModelValidationCodeRepository(),
-                SVNCodeRepository.newSystemCodeRepository(),
-                CodeRepository.newPlatformCodeRepository()
+        return Lists.immutable.<CodeRepository>with(
+                GenericCodeRepository.build("datamart_dtm", "((datamarts::dtm::(domain|mapping|store))|(apps::dtm))(::.*)?", "platform", "system", "model", "model_legacy"),
+                GenericCodeRepository.build("datamart_datamt", "((datamarts::datamt::(domain|mapping|store))|(apps::datamt))(::.*)?", "platform", "system", "model", "model_legacy"),
+                GenericCodeRepository.build("model", "(model::(domain|mapping|store|producers|consumers|external)||(apps::model))(::.*)?", "platform", "system"),
+                GenericCodeRepository.build("model_candidate", "(model_candidate::(domain|mapping|store|producers|consumers|external)||(apps::model_candidate))(::.*)?", "platform", "system", "model"),
+                GenericCodeRepository.build("model_legacy", "(model_legacy::(domain|mapping|store|producers|consumers|external)||(apps::model_legacy))(::.*)?", "platform", "system", "model"),
+                GenericCodeRepository.build("model_validation", "(model::producers)(::.*)?", "platform", "system", "model"),
+                GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform")
         ).newWithAll(CodeRepositoryProviderHelper.findCodeRepositories());
     }
 
-    protected static MutableCodeStorage getCodeStorage()
+    protected static MutableRepositoryCodeStorage getCodeStorage()
     {
-        return new PureCodeStorage(null, new ClassLoaderCodeStorage(getCodeRepositories()));
+        return new CompositeCodeStorage(new ClassLoaderCodeStorage(getCodeRepositories()));
     }
 
     // No repo visibility (not visible in any repo)

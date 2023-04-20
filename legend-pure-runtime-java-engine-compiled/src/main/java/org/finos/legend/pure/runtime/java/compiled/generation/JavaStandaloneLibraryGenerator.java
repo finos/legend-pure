@@ -23,7 +23,7 @@ import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.utility.Iterate;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.RepositoryComparator;
@@ -33,6 +33,7 @@ import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompileExcep
 import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompiler;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
+import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.Log;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphSerializer;
 import org.finos.legend.pure.runtime.java.compiled.statelistener.VoidJavaCompilerEventObserver;
@@ -52,13 +53,15 @@ public class JavaStandaloneLibraryGenerator
     private final Iterable<? extends CompiledExtension> extensions;
     private final boolean addExternalAPI;
     private final String externalAPIPackage;
+    private final Log log;
 
-    private JavaStandaloneLibraryGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage)
+    private JavaStandaloneLibraryGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, Log log)
     {
         this.runtime = runtime;
         this.extensions = extensions;
         this.addExternalAPI = addExternalAPI;
         this.externalAPIPackage = externalAPIPackage;
+        this.log = log;
     }
 
     public PureJavaCompiler compile(String repo, boolean writeJavaSourcesToDisk, Path pathToWriteTo) throws PureJavaCompileException
@@ -166,13 +169,28 @@ public class JavaStandaloneLibraryGenerator
 
     private PureJavaCompiler compile(SortedMap<String, MutableList<Source>> sourcesToCompile, boolean modularMetadataIds, boolean writeJavaSourcesToDisk, Path pathToWriteTo) throws PureJavaCompileException
     {
-        GenerateAndCompile generateAndCompile = new GenerateAndCompile();
+        GenerateAndCompile generateAndCompile = new GenerateAndCompile(new Message("")
+        {
+            @Override
+            public void setMessage(String message)
+            {
+                if (!message.startsWith("Generating Java sources"))
+                {
+                    log.info("  " + message);
+                }
+            }
+        });
+
         if (modularMetadataIds)
         {
             generateAndCompile.generateAndCompileJavaCodeForSources(sourcesToCompile, group -> getSourceCodeGenerator(group, writeJavaSourcesToDisk, pathToWriteTo));
             if (this.addExternalAPI)
             {
                 generateAndCompile.generateAndCompileExternalizableAPI(getSourceCodeGenerator(null, writeJavaSourcesToDisk, pathToWriteTo), this.externalAPIPackage);
+            }
+            else
+            {
+                log.info("Skipping External API generation");
             }
         }
         else
@@ -183,19 +201,38 @@ public class JavaStandaloneLibraryGenerator
             {
                 generateAndCompile.generateAndCompileExternalizableAPI(javaSourceCodeGenerator, this.externalAPIPackage);
             }
+            else
+            {
+                log.info("Skipping External API generation");
+            }
         }
         return generateAndCompile.getPureJavaCompiler();
     }
 
     private Generate generateOnly(SortedMap<String, MutableList<Source>> sourcesToCompile, boolean modularMetadataIds, boolean writeJavaSourcesToDisk, Path pathToWriteTo)
     {
-        Generate generate = new Generate();
+        Generate generate = new Generate(new Message("")
+        {
+            @Override
+            public void setMessage(String message)
+            {
+                if (!message.startsWith("Generating Java sources"))
+                {
+                    log.info("  " + message);
+                }
+            }
+        });
+
         if (modularMetadataIds)
         {
             generate.generateJavaCodeForSources(sourcesToCompile, group -> getSourceCodeGenerator(group, writeJavaSourcesToDisk, pathToWriteTo));
             if (this.addExternalAPI)
             {
                 generate.generateExternalizableAPI(getSourceCodeGenerator(null, writeJavaSourcesToDisk, pathToWriteTo), this.externalAPIPackage);
+            }
+            else
+            {
+                log.info("Skipping External API generation");
             }
         }
         else
@@ -205,6 +242,10 @@ public class JavaStandaloneLibraryGenerator
             if (this.addExternalAPI)
             {
                 generate.generateExternalizableAPI(javaSourceCodeGenerator, this.externalAPIPackage);
+            }
+            else
+            {
+                log.info("Skipping External API generation");
             }
         }
         return generate;
@@ -225,7 +266,7 @@ public class JavaStandaloneLibraryGenerator
 
     private SortedMap<String, MutableList<Source>> getSourcesToCompile(String repo)
     {
-        if (!this.runtime.getCodeStorage().isRepoName(repo))
+        if (this.runtime.getCodeStorage().getRepository(repo) == null)
         {
             throw new IllegalArgumentException("Repository \"" + repo + "\" is not present");
         }
@@ -239,9 +280,9 @@ public class JavaStandaloneLibraryGenerator
 
     private SortedMap<String, MutableList<Source>> getSourcesToCompile(Set<String> repos)
     {
-        if (!Iterate.allSatisfy(repos, this.runtime.getCodeStorage()::isRepoName))
+        if (!Iterate.allSatisfy(repos, r -> this.runtime.getCodeStorage().getRepository(r) != null))
         {
-            MutableList<String> missingRepos = Iterate.reject(repos, this.runtime.getCodeStorage()::isRepoName, Lists.mutable.empty()).sortThis();
+            MutableList<String> missingRepos = Iterate.reject(repos, c -> this.runtime.getCodeStorage().getRepository(c) != null, Lists.mutable.empty()).sortThis();
             throw new IllegalArgumentException(missingRepos.makeString("The following repositories are not present: ", ", ", ""));
         }
         return getSourcesToCompile(repos::contains);
@@ -259,10 +300,10 @@ public class JavaStandaloneLibraryGenerator
     {
         MutableMap<String, MutableList<Source>> sourcesByRepo = Maps.mutable.empty();
         this.runtime.getSourceRegistry().getSources().forEach((repoFilter == null) ?
-                s -> sourcesByRepo.getIfAbsentPut(PureCodeStorage.getSourceRepoName(s.getId()), Lists.mutable::empty).add(s) :
+                s -> sourcesByRepo.getIfAbsentPut(CompositeCodeStorage.getSourceRepoName(s.getId()), Lists.mutable::empty).add(s) :
                 s ->
                 {
-                    String repo = PureCodeStorage.getSourceRepoName(s.getId());
+                    String repo = CompositeCodeStorage.getSourceRepoName(s.getId());
                     if (repoFilter.test(repo))
                     {
                         sourcesByRepo.getIfAbsentPut(repo, Lists.mutable::empty).add(s);
@@ -271,9 +312,9 @@ public class JavaStandaloneLibraryGenerator
         return sourcesByRepo;
     }
 
-    public static JavaStandaloneLibraryGenerator newGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage)
+    public static JavaStandaloneLibraryGenerator newGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, Log log)
     {
-        return new JavaStandaloneLibraryGenerator(runtime, extensions, addExternalAPI, externalAPIPackage);
+        return new JavaStandaloneLibraryGenerator(runtime, extensions, addExternalAPI, externalAPIPackage, log);
     }
 
     public static PureJavaCompiler compileOnly(MapIterable<? extends String, ? extends Iterable<? extends StringJavaSource>> javaSources, ListIterable<? extends StringJavaSource> externalizableSources, boolean addExternalAPI) throws PureJavaCompileException

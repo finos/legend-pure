@@ -38,7 +38,7 @@ import org.finos.legend.pure.m3.execution.OutputWriter;
 import org.finos.legend.pure.m3.navigation.*;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.serialization.PureRuntimeEventHandler;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
 import org.finos.legend.pure.m3.serialization.grammar.CoreInstanceFactoriesRegistry;
@@ -511,7 +511,7 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
         if (this.runtime.isInitialized())
         {
             // Group sources by repo and separate platform sources
-            MutableListMultimap<String, Source> sourcesByRepo = this.sourceRegistry.getSources().groupBy((Source source) -> PureCodeStorage.getSourceRepoName(source.getId()), Multimaps.mutable.list.<String, Source>empty());
+            MutableListMultimap<String, Source> sourcesByRepo = this.sourceRegistry.getSources().groupBy((Source source) -> CompositeCodeStorage.getSourceRepoName(source.getId()), Multimaps.mutable.list.<String, Source>empty());
 
             // Generate and compile Java code
             this.javaCompilerEventHandler.generateAndCompileJavaCode(TreeSortedMap.newMap(new RepositoryComparator(this.runtime.getCodeStorage().getAllRepositories()), sourcesByRepo.toMap()));

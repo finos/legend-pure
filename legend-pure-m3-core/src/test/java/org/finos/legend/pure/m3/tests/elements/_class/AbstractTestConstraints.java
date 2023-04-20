@@ -18,18 +18,20 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.TestCodeRepositoryWithDependencies;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.nio.file.Path;
 
 public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCompiled
 {
@@ -1255,12 +1257,12 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
         assertPureException(PureExecutionException.class, "Constraint :[differentName] violated in the Class MyClass", "/test/repro.pure", 24, 5, 24, 5, 24, 146, e);
     }
 
-    protected static MutableCodeStorage getCodeStorage()
+    protected static MutableRepositoryCodeStorage getCodeStorage()
     {
         MutableList<CodeRepository> repositories = Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
-        CodeRepository test = new TestCodeRepositoryWithDependencies("test", null, repositories.detect(d -> d.getName().equals("platform")));
+        CodeRepository test = new GenericCodeRepository("test", null, "platform");
         repositories.add(test);
-        return new PureCodeStorage(null, new ClassLoaderCodeStorage(repositories));
+        return new CompositeCodeStorage(new ClassLoaderCodeStorage(repositories));
     }
 
     public static Pair<String, String> getExtra()

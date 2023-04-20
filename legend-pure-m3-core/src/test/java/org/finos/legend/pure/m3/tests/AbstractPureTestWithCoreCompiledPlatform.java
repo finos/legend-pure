@@ -18,11 +18,12 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 
 public class AbstractPureTestWithCoreCompiledPlatform extends AbstractPureTestWithCoreCompiled
 {
@@ -81,17 +82,17 @@ public class AbstractPureTestWithCoreCompiledPlatform extends AbstractPureTestWi
 
     public static void setUpRuntime(Pair<String, String> extra, RichIterable<? extends CodeRepository> codeRepositories)
     {
-        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), codeRepositories), getFactoryRegistryOverride(), getOptions(), extra);
+        setUpRuntime(getFunctionExecution(), new CompositeCodeStorage(new ClassLoaderCodeStorage(codeRepositories)), getFactoryRegistryOverride(), getOptions(), extra);
     }
 
-    protected static MutableCodeStorage getCodeStorage()
+    protected static MutableRepositoryCodeStorage getCodeStorage()
     {
-        return PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories());
+        return new CompositeCodeStorage(new ClassLoaderCodeStorage(getCodeRepositories()));
     }
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
-        return Lists.immutable.with(CodeRepository.newPlatformCodeRepository(), GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME));
+        return Lists.immutable.with(CodeRepositoryProviderHelper.findPlatformCodeRepository(), GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform"));
     }
 
 }

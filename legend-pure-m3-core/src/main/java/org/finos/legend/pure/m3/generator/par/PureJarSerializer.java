@@ -18,11 +18,11 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.utility.LazyIterate;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.fs.FSCodeStorage;
@@ -45,22 +45,12 @@ public class PureJarSerializer
 {
     public static final String ARCHIVE_FILE_EXTENSION = "par";
 
-    @Deprecated
-    public static void writePureRepositoryJars(Path outputDirectory, Path sourceDirectory, String platformVersion, Iterable<CodeRepository> repositories, Log log) throws IOException
+    public static void writePureRepositoryJars(Path outputDirectory, Path sourceDirectory, String platformVersion, String modelVersion, CodeRepositorySet repositories, Log log) throws IOException
     {
-        CodeRepositorySet resolvedRepositories = CodeRepositorySet.newBuilder()
-                .withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories())
-                .build()
-                .subset(LazyIterate.collect(repositories, CodeRepository::getName));
-        writePureRepositoryJars(outputDirectory, sourceDirectory, platformVersion, resolvedRepositories, log);
+        writePureRepositoryJars(outputDirectory, sourceDirectory, platformVersion, modelVersion, repositories, Thread.currentThread().getContextClassLoader(), log);
     }
 
-    public static void writePureRepositoryJars(Path outputDirectory, Path sourceDirectory, String platformVersion, CodeRepositorySet repositories, Log log) throws IOException
-    {
-        writePureRepositoryJars(outputDirectory, sourceDirectory, platformVersion, repositories, Thread.currentThread().getContextClassLoader(), log);
-    }
-
-    public static void writePureRepositoryJars(Path outputDirectory, Path sourceDirectory, String platformVersion, CodeRepositorySet repositories, ClassLoader classLoader, Log log) throws IOException
+    public static void writePureRepositoryJars(Path outputDirectory, Path sourceDirectory, String platformVersion, String modelVersion, CodeRepositorySet repositories, ClassLoader classLoader, Log log) throws IOException
     {
         PureRuntime runtime;
         RichIterable<CodeRepository> repositoriesToSerialize;
@@ -68,12 +58,12 @@ public class PureJarSerializer
         {
             log.info("    *Building code storage leveraging the class loader (as sourceDirectory is not specified)");
             ClassLoaderCodeStorage cs = new ClassLoaderCodeStorage(classLoader, repositories.getRepositories());
-            log.info("      " + cs.getRepositories().collect(CodeRepository::getName) + " - " + cs.getUserFiles().size() + " files");
-            MutableCodeStorage codeStorage = new PureCodeStorage(null, cs);
+            log.info("      " + cs.getAllRepositories().collect(CodeRepository::getName) + " - " + cs.getUserFiles().size() + " files");
+            MutableRepositoryCodeStorage codeStorage = new CompositeCodeStorage(cs);
 
             Message message = getMessage(log, "      ");
             log.info("    *Starting file compilation");
-            runtime = new PureRuntimeBuilder(codeStorage).setTransactionalByDefault(false).buildAndInitialize(message);
+            runtime = new PureRuntimeBuilder(codeStorage).withMessage(message).setTransactionalByDefault(false).buildAndInitialize(message);
             repositoriesToSerialize = repositories.getRepositories();
             log.info("      -> Finished compilation");
         }
@@ -91,7 +81,7 @@ public class PureJarSerializer
             log.info("    *Loading the following repo from PARs: " + repositoriesWithoutSource.collect(CodeRepository::getName));
 
             // Build the runtime
-            MutableCodeStorage codeStorage = new PureCodeStorage(sourceDirectory, allCodeStorage.toArray(new RepositoryCodeStorage[0]));
+            MutableRepositoryCodeStorage codeStorage = new CompositeCodeStorage(allCodeStorage.toArray(new RepositoryCodeStorage[0]));
             runtime = new PureRuntimeBuilder(codeStorage).setTransactionalByDefault(false).build();
 
             // Load the PARS
@@ -102,7 +92,7 @@ public class PureJarSerializer
 
             // Compile Sources
             log.info("    *Starting file compilation");
-            codeStoragesFromSource.forEach(r -> log.info("      " + r.getRepositories().collect(CodeRepository::getName) + " - " + r.getUserFiles().size() + " files (from: " + ((FSCodeStorage) r).getRoot() + ")"));
+            codeStoragesFromSource.forEach(r -> log.info("      " + r.getAllRepositories().collect(CodeRepository::getName) + " - " + r.getUserFiles().size() + " files (from: " + ((FSCodeStorage) r).getRoot() + ")"));
             repositoriesWithSource.forEach(repository ->
             {
                 Path path = sourceDirectory.resolve(repository.getName());
@@ -126,7 +116,7 @@ public class PureJarSerializer
             log.info("      Writing " + outputFile);
             try (OutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(outputFile)))
             {
-                BinaryModelRepositorySerializer.serialize(outputStream, platformVersion, null, repositoryName, runtime);
+                BinaryModelRepositorySerializer.serialize(outputStream, platformVersion, modelVersion, repositoryName, runtime);
             }
         }
     }
@@ -138,7 +128,10 @@ public class PureJarSerializer
             @Override
             public void setMessage(String message)
             {
-                log.info(prefix + message);
+                if (!message.startsWith("Binding") && !message.startsWith("Parsing") && !message.startsWith("Unbinding"))
+                {
+                    log.info(prefix + message);
+                }
             }
         };
     }

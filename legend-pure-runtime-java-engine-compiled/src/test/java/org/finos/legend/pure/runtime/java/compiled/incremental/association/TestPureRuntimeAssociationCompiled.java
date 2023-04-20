@@ -16,10 +16,10 @@ package org.finos.legend.pure.runtime.java.compiled.incremental.association;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.tuple.Pair;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.tests.incremental.association.TestPureRuntimeAssociation;
 import org.finos.legend.pure.runtime.java.compiled.CompiledClassloaderStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.CompiledMetadataStateVerifier;
@@ -32,7 +32,7 @@ public class TestPureRuntimeAssociationCompiled extends TestPureRuntimeAssociati
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), JavaModelFactoryRegistryLoader.loader(), getOptions(), getExtra());
+        setUpRuntime(getFunctionExecution(), new CompositeCodeStorage(new ClassLoaderCodeStorage(getCodeRepositories())), JavaModelFactoryRegistryLoader.loader(), getOptions(), getExtra());
     }
 
     protected static FunctionExecution getFunctionExecution()

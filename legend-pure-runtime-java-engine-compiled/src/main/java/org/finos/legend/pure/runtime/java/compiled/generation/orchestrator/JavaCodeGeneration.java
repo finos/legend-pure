@@ -6,14 +6,15 @@ import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
+import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.ParserService;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
@@ -69,6 +70,8 @@ public class JavaCodeGeneration
                 Sets.mutable.empty(),
                 GenerationType.modular,
                 false,
+                false,
+                args.length == 4 ? args[3] : "",
                 true,
                 true,
                 true,
@@ -86,6 +89,8 @@ public class JavaCodeGeneration
                             Set<String> extraRepositories,
                             JavaCodeGeneration.GenerationType generationType,
                             boolean skip,
+                            boolean addExternalAPI,
+                            String externalAPIPackage,
                             boolean generateMetadata,
                             boolean useSingleDir,
                             boolean generateSources,
@@ -111,6 +116,7 @@ public class JavaCodeGeneration
         log.info("  Excluded repositories: " + excludedRepositories);
         log.info("  Extra repositories: " + extraRepositories);
         log.info("  Generation type: " + generationType);
+        log.info("  Generate External API: '" + addExternalAPI + "' in package '" + externalAPIPackage + "'");
 
         try
         {
@@ -152,18 +158,14 @@ public class JavaCodeGeneration
             }
 
             // Generate metadata and Java sources
-            long startGenerating = System.nanoTime();
-            log.info("  Start generating Java classes");
-            Generate generate = generate(startGenerating, allRepositories, selectedRepositories, distributedMetadataDirectory, codegenDirectory, generateMetadata, generationType, generateSources, log);
-            log.info(String.format("  Finished generating Java classes (%.9fs)", durationSinceInSeconds(startGenerating)));
-
+            Generate generate = generate(System.nanoTime(), allRepositories, selectedRepositories, distributedMetadataDirectory, codegenDirectory, generateMetadata, addExternalAPI, externalAPIPackage, generationType, generateSources, log);
 
             // Compile Java sources
             if (!preventJavaCompilation)
             {
                 long startCompilation = System.nanoTime();
                 log.info("  Start compiling Java classes");
-                PureJavaCompiler compiler = compileJavaSources(startCompilation, generate, log);
+                PureJavaCompiler compiler = compileJavaSources(startCompilation, generate, addExternalAPI, log);
                 writeJavaClassFiles(startCompilation, compiler, classesDirectory, log);
                 log.info(String.format("  Finished compiling Java classes (%.9fs)", durationSinceInSeconds(startCompilation)));
             }
@@ -255,7 +257,7 @@ public class JavaCodeGeneration
         return selected;
     }
 
-    private static Generate generate(long start, CodeRepositorySet allRepositories, SetIterable<String> selectedRepositories, Path distributedMetadataDirectory, Path codegenDirectory, boolean generateMetadata, GenerationType generationType, boolean generateSources, Log log)
+    private static Generate generate(long start, CodeRepositorySet allRepositories, SetIterable<String> selectedRepositories, Path distributedMetadataDirectory, Path codegenDirectory, boolean generateMetadata, boolean addExternalAPI, String externalAPIPackage, GenerationType generationType, boolean generateSources, Log log)
     {
         // Initialize runtime
         PureRuntime runtime = initializeRuntime(start, allRepositories, selectedRepositories, log);
@@ -288,7 +290,7 @@ public class JavaCodeGeneration
         Generate generate;
         try
         {
-            JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, JavaPackageAndImportBuilder.externalizablePackage());
+            JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), addExternalAPI, externalAPIPackage, log);
             switch (generationType)
             {
                 case monolithic:
@@ -322,10 +324,19 @@ public class JavaCodeGeneration
             log.info("  Beginning Pure initialization");
             RichIterable<CodeRepository> repositoriesForCompilation = allRepositories.subset(selectedRepositories).getRepositories();
 
+            Message message = new Message("")
+            {
+                @Override
+                public void setMessage(String message)
+                {
+                    log.info(message);
+                }
+            };
+
             // Initialize from PAR files cache
-            PureCodeStorage codeStorage = new PureCodeStorage(null, new ClassLoaderCodeStorage(Thread.currentThread().getContextClassLoader(), repositoriesForCompilation));
+            CompositeCodeStorage codeStorage = new CompositeCodeStorage(new ClassLoaderCodeStorage(Thread.currentThread().getContextClassLoader(), repositoriesForCompilation));
             ClassLoaderPureGraphCache graphCache = new ClassLoaderPureGraphCache(Thread.currentThread().getContextClassLoader());
-            PureRuntime runtime = new PureRuntimeBuilder(codeStorage).withCache(graphCache).setTransactionalByDefault(false).buildAndTryToInitializeFromCache();
+            PureRuntime runtime = new PureRuntimeBuilder(codeStorage).withMessage(message).withCache(graphCache).setTransactionalByDefault(false).buildAndTryToInitializeFromCache();
             if (!runtime.isInitialized())
             {
                 CacheState cacheState = graphCache.getCacheState();
@@ -339,8 +350,8 @@ public class JavaCodeGeneration
                 }
                 log.info("    Initialization from caches failed - compiling from scratch");
                 runtime.reset();
-                runtime.loadAndCompileCore();
-                runtime.loadAndCompileSystem();
+                runtime.loadAndCompileCore(message);
+                runtime.loadAndCompileSystem(message);
             }
             log.info(String.format("    Finished Pure initialization (%.9fs)", durationSinceInSeconds(start)));
             return runtime;
@@ -400,13 +411,13 @@ public class JavaCodeGeneration
         }
     }
 
-    private static PureJavaCompiler compileJavaSources(long start, Generate generate, Log log)
+    private static PureJavaCompiler compileJavaSources(long start, Generate generate, boolean addExternalAPI, Log log)
     {
         String compilationStep = "Pure compiled mode Java code compilation";
         long compilationStart = startStep(compilationStep, log);
         try
         {
-            PureJavaCompiler compiler = JavaStandaloneLibraryGenerator.compileOnly(generate.getJavaSourcesByGroup(), generate.getExternalizableSources(), false);
+            PureJavaCompiler compiler = JavaStandaloneLibraryGenerator.compileOnly(generate.getJavaSourcesByGroup(), generate.getExternalizableSources(), addExternalAPI);
             completeStep(compilationStep, compilationStart, log);
             return compiler;
         }

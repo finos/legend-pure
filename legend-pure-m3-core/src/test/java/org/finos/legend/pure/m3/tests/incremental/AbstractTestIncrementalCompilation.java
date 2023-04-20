@@ -16,33 +16,35 @@ package org.finos.legend.pure.m3.tests.incremental;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.TestCodeRepositoryWithDependencies;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.nio.file.Path;
+
 public abstract class AbstractTestIncrementalCompilation extends AbstractPureTestWithCoreCompiled
 {
-    protected static MutableCodeStorage getCodeStorage()
+    protected static MutableRepositoryCodeStorage getCodeStorage()
     {
         MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
         CodeRepository platform = repositories.detect(x -> x.getName().equals("platform"));
-        CodeRepository core = new TestCodeRepositoryWithDependencies("x_core", null, platform);
-        CodeRepository system = new TestCodeRepositoryWithDependencies("system", null, platform, core);
-        CodeRepository model = new TestCodeRepositoryWithDependencies("model", null, platform, core, system);
-        CodeRepository other = new TestCodeRepositoryWithDependencies("datamart_other", null, platform, core, system, model);
+        CodeRepository core = new GenericCodeRepository("x_core", null, "platform");
+        CodeRepository system = new GenericCodeRepository("system", null, "platform", "x_core");
+        CodeRepository model = new GenericCodeRepository("model", null, "platform", "x_core", "system");
+        CodeRepository other = new GenericCodeRepository("datamart_other", null, "platform", "x_core", "system", "model");
         repositories.add(core);
         repositories.add(system);
         repositories.add(model);
         repositories.add(other);
-        return new PureCodeStorage(null, new ClassLoaderCodeStorage(repositories));
+        return new CompositeCodeStorage(new ClassLoaderCodeStorage(repositories));
     }
 
     @After

@@ -37,22 +37,14 @@ import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.AbstractMultipleRepositoryCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.ImmutableRepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.*;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.tools.FileTools;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.JarURLConnection;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.*;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -69,14 +61,8 @@ public class ClassLoaderCodeStorage extends AbstractMultipleRepositoryCodeStorag
 {
     private static final ConcurrentMutableMap<String, ImmutableMap<String, ClassLoaderCodeStorageNode>> MAIN_CLASS_LOADER_CACHE = ConcurrentHashMap.newMap();
 
-    private static final Predicate<CodeStorageNode> IS_PURE_FILE = new Predicate<CodeStorageNode>()
-    {
-        @Override
-        public boolean accept(CodeStorageNode node)
-        {
-            return !node.isDirectory() && CodeStorageTools.isPureFilePath(node.getPath());
-        }
-    };
+    private static final Predicate<CodeStorageNode> IS_PURE_FILE = node -> !node.isDirectory() && CodeStorageTools.isPureFilePath(node.getPath());
+
 
     private static final Function<URL, ResourceType> GET_RESOURCE_TYPE = new CheckedFunction<URL, ResourceType>()
     {
@@ -87,14 +73,7 @@ public class ClassLoaderCodeStorage extends AbstractMultipleRepositoryCodeStorag
         }
     };
 
-    private static final Function<String, ClassLoaderDirectoryNode> NEW_DIR_NODE = new Function<String, ClassLoaderDirectoryNode>()
-    {
-        @Override
-        public ClassLoaderDirectoryNode valueOf(String path)
-        {
-            return new ClassLoaderDirectoryNode(path);
-        }
-    };
+    private static final Function<String, ClassLoaderDirectoryNode> NEW_DIR_NODE = ClassLoaderDirectoryNode::new;
 
     private final ClassLoader classLoader;
     private volatile ImmutableMap<String, ImmutableMap<String, ClassLoaderCodeStorageNode>> nodesByPathByRepo; //NOSONAR we actually want to protect the pointer
@@ -165,7 +144,7 @@ public class ClassLoaderCodeStorage extends AbstractMultipleRepositoryCodeStorag
     public RichIterable<String> getUserFiles()
     {
         initializeNodes();
-        return getRepositoryNames().flatCollect(new Function<String, RichIterable<String>>()
+        return getAllRepositories().collect(CodeRepository::getName).flatCollect(new Function<String, RichIterable<String>>()
         {
             @Override
             public RichIterable<String> valueOf(String repoName)
@@ -340,7 +319,7 @@ public class ClassLoaderCodeStorage extends AbstractMultipleRepositoryCodeStorag
 
     private ImmutableMap<String, ImmutableMap<String, ClassLoaderCodeStorageNode>> buildNodeMap() throws IOException
     {
-        RichIterable<String> repositoryNames = getRepositoryNames();
+        RichIterable<String> repositoryNames = getAllRepositories().collect(CodeRepository::getName);
         final MutableMap<String, ImmutableMap<String, ClassLoaderCodeStorageNode>> result = UnifiedMap.newMap(repositoryNames.size());
         final boolean canUseCache = canUseMainClassLoaderCache();
         if (canUseCache)
@@ -487,7 +466,7 @@ public class ClassLoaderCodeStorage extends AbstractMultipleRepositoryCodeStorag
                                     {
                                         throw new RuntimeException("Invalid URL for repository '" + repository + "': " + url);
                                     }
-                                    collectFromPath(CodeStorage.ROOT_PATH, path, pathURLs);
+                                    collectFromPath(RepositoryCodeStorage.ROOT_PATH, path, pathURLs);
                                 }
                             }
                             break;
@@ -512,7 +491,7 @@ public class ClassLoaderCodeStorage extends AbstractMultipleRepositoryCodeStorag
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Error initializing " + getClass().getSimpleName() + " for repositories: " + getRepositoryNames().toSortedList(), e);
+            throw new RuntimeException("Error initializing " + getClass().getSimpleName() + " for repositories: " + getAllRepositories().collect(CodeRepository::getName).toSortedList(), e);
         }
         return pathURLs;
     }

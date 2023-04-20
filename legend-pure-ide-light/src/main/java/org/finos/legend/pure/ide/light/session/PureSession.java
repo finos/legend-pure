@@ -26,14 +26,11 @@ import org.finos.legend.pure.m3.SourceMutation;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.execution.test.TestCollection;
 import org.finos.legend.pure.m3.execution.test.TestRunner;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
-import org.finos.legend.pure.m3.serialization.runtime.ExecutedTestTracker;
-import org.finos.legend.pure.m3.serialization.runtime.Message;
-import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
-import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
-import org.finos.legend.pure.m3.serialization.runtime.Source;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.welcome.WelcomeCodeStorage;
+import org.finos.legend.pure.m3.serialization.runtime.*;
 import org.finos.legend.pure.m3.statelistener.VoidExecutionActivityListener;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -58,11 +55,12 @@ import static org.finos.legend.pure.ide.light.helpers.response.ExceptionTranslat
 public class PureSession
 {
     private PureRuntime pureRuntime;
-    public MutableCodeStorage codeStorage;
+    public MutableRepositoryCodeStorage codeStorage;
     private FunctionExecution functionExecution;
     private SourceLocationConfiguration sourceLocationConfiguration;
     private final ConcurrentMutableMap<Integer, TestRunnerWrapper> testRunnersById = ConcurrentHashMap.newMap();
     private final AtomicInteger executionCount = new AtomicInteger(0);
+    private static final Pattern LINE_SPLITTER = Pattern.compile("^", Pattern.MULTILINE);
 
     public Message message = new Message("");
 
@@ -70,24 +68,19 @@ public class PureSession
 
     public PureSession(SourceLocationConfiguration sourceLocationConfiguration, MutableList<RepositoryCodeStorage> repos)
     {
-        this.sourceLocationConfiguration = sourceLocationConfiguration;
-        this.repos = repos;
-        this.initialize();
-    }
-
-    private static final Pattern LINE_SPLITTER = Pattern.compile("^", Pattern.MULTILINE);
-
-    private FunctionExecution initialize()
-    {
-        String rootPath = Optional.ofNullable(sourceLocationConfiguration)
-            .flatMap(s -> Optional.ofNullable(s.welcomeFileDirectory))
-            .orElse(System.getProperty("java.io.tmpdir"));
-
-        this.functionExecution = new FunctionExecutionInterpreted(VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER);
-
         try
         {
-            this.codeStorage = new PureCodeStorage(Paths.get(rootPath), this.repos.toArray(new RepositoryCodeStorage[0]));
+            this.sourceLocationConfiguration = sourceLocationConfiguration;
+
+            String rootPath = Optional.ofNullable(sourceLocationConfiguration)
+                    .flatMap(s -> Optional.ofNullable(s.welcomeFileDirectory))
+                    .orElse(System.getProperty("java.io.tmpdir"));
+
+            this.repos = Lists.mutable.withAll(repos).with(new WelcomeCodeStorage(Paths.get(rootPath)));
+
+            this.functionExecution = new FunctionExecutionInterpreted(VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER);
+
+            this.codeStorage = new CompositeCodeStorage(this.repos.toArray(new RepositoryCodeStorage[0]));
             this.pureRuntime = new PureRuntimeBuilder(this.codeStorage).withMessage(this.message).setUseFastCompiler(true).build();
             this.functionExecution.init(this.pureRuntime, this.message);
             this.codeStorage.initialize(this.message);
@@ -96,10 +89,10 @@ public class PureSession
         {
             throw new RuntimeException(e);
         }
-        return this.functionExecution;
     }
 
-    public MutableCodeStorage getCodeStorage()
+
+    public MutableRepositoryCodeStorage getCodeStorage()
     {
         return this.codeStorage;
     }

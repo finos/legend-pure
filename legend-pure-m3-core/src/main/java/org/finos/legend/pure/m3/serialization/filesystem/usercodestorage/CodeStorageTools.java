@@ -31,7 +31,7 @@ public class CodeStorageTools
 
     public static boolean isRootPath(String path)
     {
-        return CodeStorage.ROOT_PATH.equals(path);
+        return RepositoryCodeStorage.ROOT_PATH.equals(path);
     }
 
     public static boolean isValidPath(String path)
@@ -60,9 +60,9 @@ public class CodeStorageTools
         {
             return false;
         }
-        int extLen = CodeStorage.PURE_FILE_EXTENSION.length();
+        int extLen = RepositoryCodeStorage.PURE_FILE_EXTENSION.length();
         int offset = path.length() - extLen;
-        return (offset >= 0) && path.regionMatches(true, offset, CodeStorage.PURE_FILE_EXTENSION, 0, extLen);
+        return (offset >= 0) && path.regionMatches(true, offset, RepositoryCodeStorage.PURE_FILE_EXTENSION, 0, extLen);
     }
 
     public static String getInitialPathElement(String path)
@@ -74,29 +74,30 @@ public class CodeStorageTools
 
         int start = (path.charAt(0) == '/') ? 1 : 0;
         int end = path.indexOf('/', start);
-        return (end == -1) ? path.substring(start) : path.substring(start, end);
+        String value = (end == -1) ? path.substring(start) : path.substring(start, end);
+        return value.endsWith(".pure") ? null : value;
     }
 
     public static String canonicalizePath(String path)
     {
         if (path == null)
         {
-            return CodeStorage.ROOT_PATH;
+            return RepositoryCodeStorage.ROOT_PATH;
         }
         String canonicalPath = path.trim();
         if (canonicalPath.isEmpty())
         {
-            return CodeStorage.ROOT_PATH;
+            return RepositoryCodeStorage.ROOT_PATH;
         }
-        if (canonicalPath.endsWith(CodeStorage.PATH_SEPARATOR))
+        if (canonicalPath.endsWith(RepositoryCodeStorage.PATH_SEPARATOR))
         {
-            if (canonicalPath.startsWith(CodeStorage.ROOT_PATH))
+            if (canonicalPath.startsWith(RepositoryCodeStorage.ROOT_PATH))
             {
                 return canonicalPath;
             }
-            return CodeStorage.ROOT_PATH + canonicalPath.substring(0, canonicalPath.length() - CodeStorage.PATH_SEPARATOR.length());
+            return RepositoryCodeStorage.ROOT_PATH + canonicalPath.substring(0, canonicalPath.length() - RepositoryCodeStorage.PATH_SEPARATOR.length());
         }
-        return canonicalPath.startsWith(CodeStorage.ROOT_PATH) ? canonicalPath : (CodeStorage.ROOT_PATH + canonicalPath);
+        return canonicalPath.startsWith(RepositoryCodeStorage.ROOT_PATH) ? canonicalPath : (RepositoryCodeStorage.ROOT_PATH + canonicalPath);
     }
 
     public static boolean isCanonicalPath(String path)
@@ -120,7 +121,7 @@ public class CodeStorageTools
             return paths[0];
         }
 
-        String separator = CodeStorage.PATH_SEPARATOR;
+        String separator = RepositoryCodeStorage.PATH_SEPARATOR;
         int separatorLength = separator.length();
 
         int lastPathIndex = pathCount - 1;

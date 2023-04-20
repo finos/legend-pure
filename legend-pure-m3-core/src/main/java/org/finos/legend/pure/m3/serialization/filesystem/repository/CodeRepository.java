@@ -20,6 +20,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.list.mutable.ListAdapter;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.welcome.WelcomeCodeStorage;
 
 import java.util.List;
 import java.util.regex.Pattern;
@@ -79,13 +80,13 @@ public abstract class CodeRepository
             return false;
         }
 
-        return this.name.equals(((CodeRepository) other).getName());
+        return this.name != null && this.name.equals(((CodeRepository) other).getName());
     }
 
     @Override
     public int hashCode()
     {
-        return this.name.hashCode();
+        return this.name == null ? 0 : this.name.hashCode();
     }
 
     @Override
@@ -96,17 +97,23 @@ public abstract class CodeRepository
 
     protected static boolean isValidRepositoryName(String name)
     {
-        return (name != null) && VALID_REPO_NAME_PATTERN.matcher(name).matches();
-    }
-
-    public static CodeRepository newPlatformCodeRepository()
-    {
-        return new PlatformCodeRepository();
+        return name == null || VALID_REPO_NAME_PATTERN.matcher(name).matches();
     }
 
     public static CodeRepository newScratchCodeRepository()
     {
         return new ScratchCodeRepository();
+    }
+
+    public static CodeRepository newWelcomeCodeRepository()
+    {
+        return new WelcomeCodeRepository();
+    }
+
+
+    public static CodeRepository newScratchCodeRepository(String name)
+    {
+        return new ScratchCodeRepository(name);
     }
 
     /**
@@ -184,7 +191,7 @@ public abstract class CodeRepository
             {
                 // could not make progress - there must be a visibility loop
                 StringBuilder builder = new StringBuilder("Could not consistently order the following repositories:");
-                remaining.keysView().toSortedListBy(CodeRepository::getName)
+                remaining.keysView().toSortedListBy(x -> x.getName() == null ? "" : x.getName())
                         .forEach(r -> remaining.get(r).collect(CodeRepository::getName).sortThis().appendString(builder.append(" ").append(r.getName()), " (visible: ", ", ", "),"));
                 builder.deleteCharAt(builder.length() - 1);
                 throw new RuntimeException(builder.toString());

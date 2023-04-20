@@ -58,6 +58,12 @@ public class PureCompiledJarMojo extends AbstractMojo
     @Parameter
     private Set<String> extraRepositories;
 
+    @Parameter(defaultValue = "false")
+    private boolean addExternalAPI;
+
+    @Parameter(defaultValue = "org.finos.legend.pure.generated")
+    private String externalAPIPackage;
+
     @Parameter(defaultValue = "true")
     private boolean generateMetadata;
 
@@ -108,7 +114,7 @@ public class PureCompiledJarMojo extends AbstractMojo
         try
         {
             Thread.currentThread().setContextClassLoader(buildClassLoader(this.project, savedClassLoader, log));
-            JavaCodeGeneration.doIt(repositories, excludedRepositories, extraRepositories, generationType, skip, generateMetadata, useSingleDir, generateSources, false, preventJavaCompilation, classesDirectory, targetDirectory, log);
+            JavaCodeGeneration.doIt(repositories, excludedRepositories, extraRepositories, generationType, skip, addExternalAPI, externalAPIPackage, generateMetadata, useSingleDir, generateSources, false, preventJavaCompilation, classesDirectory, targetDirectory, log);
         }
         catch (Exception e)
         {

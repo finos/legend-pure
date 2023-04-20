@@ -17,7 +17,7 @@ package org.finos.legend.pure.runtime.java.compiled.execution;
 import org.eclipse.collections.api.RichIterable;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.CompilerEventHandler;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
@@ -41,7 +41,7 @@ public class JavaCompilerEventHandler implements CompilerEventHandler
     private volatile boolean javaGeneratedAndCompiled = false;
 
     private final ProcessorSupport processorSupport;
-    private final CodeStorage codeStorage;
+    private final RepositoryCodeStorage codeStorage;
 
     private final Message message;
 
@@ -57,7 +57,7 @@ public class JavaCompilerEventHandler implements CompilerEventHandler
 
     private final Iterable<? extends CompiledExtension> extensions;
 
-    private JavaCompilerEventHandler(ProcessorSupport processorSupport, CodeStorage codeStorage, Message message, boolean includePureStackTrace, JavaCompilerEventObserver observer, Iterable<? extends CompiledExtension> extensions)
+    private JavaCompilerEventHandler(ProcessorSupport processorSupport, RepositoryCodeStorage codeStorage, Message message, boolean includePureStackTrace, JavaCompilerEventObserver observer, Iterable<? extends CompiledExtension> extensions)
     {
         this.processorSupport = processorSupport;
         this.codeStorage = codeStorage;

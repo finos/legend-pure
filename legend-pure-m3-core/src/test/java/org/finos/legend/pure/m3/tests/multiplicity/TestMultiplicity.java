@@ -14,24 +14,20 @@
 
 package org.finos.legend.pure.m3.tests.multiplicity;
 
-import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Maps;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.*;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -49,7 +45,7 @@ public class TestMultiplicity
     @BeforeClass
     public static void setUp()
     {
-        runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))).build();
+        runtime = new PureRuntimeBuilder(new CompositeCodeStorage(new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository()))).build();
         runtime.loadAndCompileCore();
         repository = runtime.getModelRepository();
         support = runtime.getProcessorSupport();

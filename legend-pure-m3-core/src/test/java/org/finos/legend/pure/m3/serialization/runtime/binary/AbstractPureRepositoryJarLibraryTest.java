@@ -28,12 +28,11 @@ import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.test.Verify;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.Version;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.Writer;
 import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
@@ -58,7 +57,7 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
     @Before
     public void setUpLibrary() throws IOException
     {
-        this.library = buildLibrary(runtime, PlatformCodeRepository.NAME);
+        this.library = buildLibrary(runtime, "platform");
     }
 
     @Test
@@ -126,7 +125,7 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
     @Test
     public void testReadRepository()
     {
-        testReadRepositories(runtime, this.library, PlatformCodeRepository.NAME);
+        testReadRepositories(runtime, this.library, "platform");
     }
 
     @Test

@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage;
+package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.empty;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.*;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 
 import java.io.InputStream;
@@ -151,7 +152,7 @@ public class EmptyCodeStorage extends AbstractMultipleRepositoryCodeStorage
 
     private String resolveToRepoName(String path)
     {
-        String nameWithoutSlash = path.startsWith(CodeStorage.ROOT_PATH) ? path.substring(CodeStorage.ROOT_PATH.length()) : path;
+        String nameWithoutSlash = path.startsWith(RepositoryCodeStorage.ROOT_PATH) ? path.substring(RepositoryCodeStorage.ROOT_PATH.length()) : path;
         return this.repositories.containsKey(nameWithoutSlash) ? nameWithoutSlash : null;
     }
 

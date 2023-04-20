@@ -37,7 +37,7 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
@@ -49,12 +49,12 @@ import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class PostProcessor
 {
-    public static SourceMutation process(Iterable<? extends CoreInstance> newInstancesConsolidated, ModelRepository modelRepository, ParserLibrary parserLibrary, InlineDSLLibrary inlineDSLLibrary, CodeStorage codeStorage, Context context, ProcessorSupport processorSupport, URLPatternLibrary URLPatternLibrary, Message message) throws PureCompilationException
+    public static SourceMutation process(Iterable<? extends CoreInstance> newInstancesConsolidated, ModelRepository modelRepository, ParserLibrary parserLibrary, InlineDSLLibrary inlineDSLLibrary, RepositoryCodeStorage codeStorage, Context context, ProcessorSupport processorSupport, URLPatternLibrary URLPatternLibrary, Message message) throws PureCompilationException
     {
         return process(newInstancesConsolidated, modelRepository, parserLibrary, inlineDSLLibrary, codeStorage, context, processorSupport, URLPatternLibrary, message, null);
     }
 
-    public static SourceMutation process(Iterable<? extends CoreInstance> newInstancesConsolidated, ModelRepository modelRepository, ParserLibrary parserLibrary, InlineDSLLibrary inlineDSLLibrary, CodeStorage codeStorage, Context context, ProcessorSupport processorSupport, URLPatternLibrary URLPatternLibrary, Message message, PostProcessorObserver observer) throws PureCompilationException
+    public static SourceMutation process(Iterable<? extends CoreInstance> newInstancesConsolidated, ModelRepository modelRepository, ParserLibrary parserLibrary, InlineDSLLibrary inlineDSLLibrary, RepositoryCodeStorage codeStorage, Context context, ProcessorSupport processorSupport, URLPatternLibrary URLPatternLibrary, Message message, PostProcessorObserver observer) throws PureCompilationException
     {
         CoreInstance concreteFunctionDefinition = processorSupport.package_getByUserPath(M3Paths.ConcreteFunctionDefinition);
         CoreInstance nativeFunction = processorSupport.package_getByUserPath(M3Paths.NativeFunction);

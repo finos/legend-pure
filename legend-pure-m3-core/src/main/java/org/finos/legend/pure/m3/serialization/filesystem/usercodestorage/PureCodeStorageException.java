@@ -12,23 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m3.serialization.filesystem.repository;
+package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage;
 
-import java.util.regex.Pattern;
-
-public final class PlatformCodeRepository extends CodeRepository
+public class PureCodeStorageException extends RuntimeException
 {
-    public static final String NAME = "platform";
-    private static final Pattern PACKAGE_PATTERN = Pattern.compile("((meta)|(system)|(apps::pure))(::.*)?");
-
-    PlatformCodeRepository()
+    public PureCodeStorageException(String message, Throwable cause)
     {
-        super(NAME, PACKAGE_PATTERN);
+        super(message, cause);
     }
 
-    @Override
-    public boolean isVisible(CodeRepository other)
+    public PureCodeStorageException(String message)
     {
-        return (this == other) || (other instanceof PlatformCodeRepository);
+        super(message);
     }
 }

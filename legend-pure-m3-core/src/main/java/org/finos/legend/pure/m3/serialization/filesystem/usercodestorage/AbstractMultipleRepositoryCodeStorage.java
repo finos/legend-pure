@@ -41,17 +41,25 @@ public abstract class AbstractMultipleRepositoryCodeStorage extends AbstractRepo
     }
 
     @Override
-    public RichIterable<CodeRepository> getRepositories()
+    public RichIterable<CodeRepository> getAllRepositories()
     {
         return this.repositories.valuesView();
     }
 
-    protected RichIterable<String> getRepositoryNames()
+    @Override
+    public CodeRepository getRepositoryForPath(String path)
     {
-        return this.repositories.keysView();
+        if (!path.isEmpty() && (path.charAt(0) == '/'))
+        {
+            int index = path.indexOf('/', 1);
+            String rootPath = index != -1 ? path.substring(1, index) : path.substring(1);
+            return this.repositories.get(rootPath);
+        }
+        return null;
     }
 
-    protected CodeRepository getRepositoryByName(String name)
+    @Override
+    public CodeRepository getRepository(String name)
     {
         return this.repositories.get(name);
     }

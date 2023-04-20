@@ -17,16 +17,18 @@ package org.finos.legend.pure.m3.tests.function.base.lang;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.TestCodeRepositoryWithDependencies;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.nio.file.Path;
 
 public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 {
@@ -344,14 +346,11 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
         return (t instanceof Exception) ? (Exception) t : null;
     }
 
-    protected static MutableCodeStorage getCodeStorage()
+    protected static MutableRepositoryCodeStorage getCodeStorage()
     {
         MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
-        CodeRepository platform = repositories.detect(x -> x.getName().equals("platform"));
-        CodeRepository functions = repositories.detect(x -> x.getName().equals("platform_functions"));
-        CodeRepository test = new TestCodeRepositoryWithDependencies("test", null, platform, functions);
-        repositories.add(test);
-        return new PureCodeStorage(null, new ClassLoaderCodeStorage(repositories));
+        repositories.add(new GenericCodeRepository("test", null, "platform", "platform_functions"));
+        return new CompositeCodeStorage(new ClassLoaderCodeStorage(repositories));
     }
 
     public static Pair<String, String> getExtra()

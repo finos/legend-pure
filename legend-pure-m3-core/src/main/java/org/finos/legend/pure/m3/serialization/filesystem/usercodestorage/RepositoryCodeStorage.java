@@ -15,7 +15,6 @@
 package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 
@@ -23,18 +22,26 @@ import java.io.InputStream;
 
 public interface RepositoryCodeStorage
 {
-    Function<RepositoryCodeStorage, RichIterable<CodeRepository>> GET_REPOSITORIES = new Function<RepositoryCodeStorage, RichIterable<CodeRepository>>()
-    {
-        @Override
-        public RichIterable<CodeRepository> valueOf(RepositoryCodeStorage codeStorage)
-        {
-            return codeStorage.getRepositories();
-        }
-    };
+    String PATH_SEPARATOR = "/";
+    String ROOT_PATH = PATH_SEPARATOR;
+    String PURE_FILE_EXTENSION = ".pure";
 
     void initialize(Message message);
 
-    RichIterable<CodeRepository> getRepositories();
+    RichIterable<CodeRepository> getAllRepositories();
+
+    default RepositoryCodeStorage getOriginalCodeStorage(CodeRepository codeRepository)
+    {
+        if (getRepository(codeRepository.getName()) == null)
+        {
+            throw new RuntimeException("The code storage " + this.getClass() + " doesn't contain the repository '" + codeRepository.getName() + "'");
+        }
+        return this;
+    }
+
+    CodeRepository getRepository(String name);
+
+    CodeRepository getRepositoryForPath(String path);
 
     CodeStorageNode getNode(String path);
 

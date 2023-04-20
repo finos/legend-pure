@@ -20,10 +20,10 @@ import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tools.test.ToFix;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -36,7 +36,7 @@ public class TestQualifiedProperty extends AbstractPureTestWithCoreCompiled
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), JavaModelFactoryRegistryLoader.loader(), getOptions(), getExtra());
+        setUpRuntime(getFunctionExecution(), new CompositeCodeStorage(new ClassLoaderCodeStorage(getCodeRepositories())), JavaModelFactoryRegistryLoader.loader(), getOptions(), getExtra());
     }
 
     @After
@@ -117,8 +117,8 @@ public class TestQualifiedProperty extends AbstractPureTestWithCoreCompiled
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
         MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
-        CodeRepository system = GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME);
-        CodeRepository test = GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system");
+        CodeRepository system = GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform");
+        CodeRepository test = GenericCodeRepository.build("test", "test(::.*)?", "platform", "system");
         repositories.add(system);
         repositories.add(test);
         return repositories;

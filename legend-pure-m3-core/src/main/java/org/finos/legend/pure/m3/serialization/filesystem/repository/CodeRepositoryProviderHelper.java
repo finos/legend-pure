@@ -15,13 +15,49 @@
 package org.finos.legend.pure.m3.serialization.filesystem.repository;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.impl.utility.Iterate;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ServiceLoader;
+import java.util.stream.Collectors;
 
 public class CodeRepositoryProviderHelper
 {
+    public static Predicate<String> notPlatformAndCoreString = c -> !c.startsWith("platform") && !c.startsWith("core");
+    public static Predicate<CodeRepository> notPlatformAndCore = c -> notPlatformAndCoreString.accept(c.getName());
+    public static Predicate<String> platformAndCoreString = c -> c.startsWith("platform") || c.startsWith("core");
+    public static Predicate<CodeRepository> platformAndCore = c -> platformAndCoreString.accept(c.getName());
+
+    public static RichIterable<CodeRepository> findCodeRepositories(Path directory)
+    {
+        try
+        {
+            return Files.walk(directory, 1).filter(p -> p.toString().endsWith("definition.json")).collect(Collectors.toCollection(Lists.mutable::empty)).collect(GenericCodeRepository::build);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static RichIterable<CodeRepository> allCodeRepositories(Path directory)
+    {
+        return Lists.mutable.withAll(findCodeRepositories()).withAll(findCodeRepositories(directory));
+    }
+
+    /**
+     * Find platform code repository accessible via a {@linkplain CodeRepositoryProvider}.
+     *
+     * @return platform code repositories
+     */
+    public static CodeRepository findPlatformCodeRepository()
+    {
+        return findCodeRepositories(false).select(c -> "platform".equals(c.getName())).getFirst();
+    }
+
     /**
      * Find all code repositories accessible via a {@linkplain CodeRepositoryProvider}.
      *
@@ -74,11 +110,11 @@ public class CodeRepositoryProviderHelper
         {
             serviceLoader.reload();
         }
-        return Iterate.collect(serviceLoader, CodeRepositoryProvider::repository, Lists.mutable.empty());
+        return Iterate.flatCollect(serviceLoader, CodeRepositoryProvider::repositories, Lists.mutable.empty());
     }
 
     public static boolean isCoreRepository(CodeRepository codeRepository)
     {
-        return codeRepository != null && codeRepository.getName().startsWith("core");
+        return codeRepository != null && codeRepository.getName() != null && codeRepository.getName().startsWith("core");
     }
 }

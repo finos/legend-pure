@@ -16,19 +16,20 @@ package org.finos.legend.pure.m2.ds.mapping.test;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.TestCodeRepositoryWithDependencies;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.nio.file.Path;
 
 public class TestVisibility extends AbstractPureMappingTestWithCoreCompiled
 {
@@ -52,10 +53,9 @@ public class TestVisibility extends AbstractPureMappingTestWithCoreCompiled
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
         RichIterable<? extends CodeRepository> repositories = AbstractPureTestWithCoreCompiled.getCodeRepositories();
-        CodeRepository core = new TestCodeRepositoryWithDependencies("core", null, Sets.mutable.with(repositories.detect(r -> r.getName().equals("platform"))));
-        CodeRepository system = new TestCodeRepositoryWithDependencies("system", null, Sets.mutable.with(repositories.detect(r -> r.getName().equals("platform")), repositories.detect(r -> r.getName().equals("platform_dsl_mapping")), core));
-        CodeRepository model = new TestCodeRepositoryWithDependencies("model", null, Sets.mutable.with(repositories.detect(r -> r.getName().equals("platform")), core, system));
-        CodeRepository other = new TestCodeRepositoryWithDependencies("datamart_datamt", null, Sets.mutable.with(repositories.detect(r -> r.getName().equals("platform")), repositories.detect(r -> r.getName().equals("platform_dsl_mapping")), core, system, model));
+        CodeRepository system = new GenericCodeRepository("system", null, "platform", "platform_dsl_mapping");
+        CodeRepository model = new GenericCodeRepository("model", null, "platform", "system");
+        CodeRepository other = new GenericCodeRepository("datamart_datamt", null, "platform", "platform_dsl_mapping", "system", "model");
         MutableList<CodeRepository> r = Lists.mutable.withAll(repositories);
         r.add(system);
         r.add(model);
@@ -63,9 +63,9 @@ public class TestVisibility extends AbstractPureMappingTestWithCoreCompiled
         return r;
     }
 
-    protected static MutableCodeStorage getCodeStorage()
+    protected static MutableRepositoryCodeStorage getCodeStorage()
     {
-        return new PureCodeStorage(null, new ClassLoaderCodeStorage(getCodeRepositories()));
+        return new CompositeCodeStorage(new ClassLoaderCodeStorage(getCodeRepositories()));
     }
 
     @Test

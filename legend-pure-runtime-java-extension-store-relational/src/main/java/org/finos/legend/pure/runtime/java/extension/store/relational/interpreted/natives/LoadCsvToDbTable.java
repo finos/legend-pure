@@ -30,29 +30,29 @@ import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.runtime.java.extension.store.relational.CsvReader;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
-import org.finos.legend.pure.runtime.java.extension.store.relational.CsvReader;
 
 import java.util.Stack;
 
 public class LoadCsvToDbTable extends NativeFunction
 {
-    private final CodeStorage codeStorage;
+    private final RepositoryCodeStorage codeStorage;
     private final ModelRepository repository;
     private final Message message;
 
     private static final int _500_MB_SIZE_LIMIT = 500;
 
-    public LoadCsvToDbTable(CodeStorage codeStorage, ModelRepository repository, Message message)
+    public LoadCsvToDbTable(RepositoryCodeStorage codeStorage, ModelRepository repository, Message message)
     {
         this.codeStorage = codeStorage;
         this.repository = repository;
@@ -76,7 +76,7 @@ public class LoadCsvToDbTable extends NativeFunction
         return ValueSpecificationBootstrap.wrapValueSpecification(Lists.immutable.<CoreInstance>with(), true, processorSupport);
     }
 
-    public static Iterable<ListIterable<?>> getCsvIterable(CodeStorage codeStorage, SourceInformation sourceInformation, final String filePath, final String tableName, CoreInstance numberOfRows,
+    public static Iterable<ListIterable<?>> getCsvIterable(RepositoryCodeStorage codeStorage, SourceInformation sourceInformation, final String filePath, final String tableName, CoreInstance numberOfRows,
                                                            final ListIterable<? extends CoreInstance> columns, final ListIterable<String> columnTypes, int sizeLimitMb)
     {
         Integer rowLimit = numberOfRows == null ? null : Integer.valueOf(numberOfRows.getName());

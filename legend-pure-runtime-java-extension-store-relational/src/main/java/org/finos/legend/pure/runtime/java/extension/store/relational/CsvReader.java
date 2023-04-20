@@ -20,7 +20,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.bouncycastle.util.Arrays;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 import java.io.File;
@@ -35,13 +35,13 @@ public class CsvReader
     protected static final int ONE_MB_SIZE_LIMIT = 1;
     protected static final long MEGA_BYTE = 1024 * 1024L;
 
-    public static Iterable<CSVRecord> readCsv(CodeStorage codeStorage, SourceInformation sourceForError, String filePath,
+    public static Iterable<CSVRecord> readCsv(RepositoryCodeStorage codeStorage, SourceInformation sourceForError, String filePath,
                                               Integer rowLimit)
     {
         return readCsv(codeStorage, sourceForError, filePath, ONE_MB_SIZE_LIMIT, rowLimit);
     }
 
-    public static Iterable<CSVRecord> readCsv(CodeStorage codeStorage, SourceInformation sourceForError, String filePath,
+    public static Iterable<CSVRecord> readCsv(RepositoryCodeStorage codeStorage, SourceInformation sourceForError, String filePath,
                                               int sizeLimitMegabytes, Integer rowLimit)
     {
         try
