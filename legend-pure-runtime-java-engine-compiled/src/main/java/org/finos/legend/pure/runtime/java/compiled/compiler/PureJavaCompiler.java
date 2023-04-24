@@ -140,7 +140,7 @@ public class PureJavaCompiler
             // if this JVM is version 9 or newer, we use the --release option
             options.with("--release").with(versionString);
         }
-
+        options.add("-XDuseUnsharedTable=true");
         return options;
     }
 
