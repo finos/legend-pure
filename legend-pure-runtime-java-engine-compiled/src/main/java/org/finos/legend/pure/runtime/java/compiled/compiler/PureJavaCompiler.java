@@ -18,6 +18,7 @@ import io.github.classgraph.ClassGraph;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
+import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.Log;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -85,10 +86,10 @@ public class PureJavaCompiler
         this.dynamicManager.writeClassJavaSourcesToJar(outputStream);
     }
 
-    public void writeClassJavaSources(Path directory) throws IOException
+    public void writeClassJavaSources(Path directory, Log log) throws IOException
     {
-        this.coreManager.writeClassJavaSources(directory);
-        this.dynamicManager.writeClassJavaSources(directory);
+        this.coreManager.writeClassJavaSources(directory, log);
+        this.dynamicManager.writeClassJavaSources(directory, log);
     }
 
     public static void compile(JavaCompiler compiler, Iterable<? extends StringJavaSource> javaSources, JavaFileManager fileManager) throws PureJavaCompileException

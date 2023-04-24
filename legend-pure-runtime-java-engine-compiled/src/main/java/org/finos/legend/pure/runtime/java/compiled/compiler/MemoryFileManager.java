@@ -18,10 +18,14 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.collection.MutableCollection;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
+import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.Log;
 
+import javax.tools.*;
+import javax.tools.JavaFileObject.Kind;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -35,13 +39,6 @@ import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-import javax.tools.FileObject;
-import javax.tools.ForwardingJavaFileManager;
-import javax.tools.JavaCompiler;
-import javax.tools.JavaFileObject;
-import javax.tools.JavaFileObject.Kind;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.StandardLocation;
 
 public class MemoryFileManager extends ForwardingJavaFileManager<StandardJavaFileManager>
 {
@@ -212,15 +209,31 @@ public class MemoryFileManager extends ForwardingJavaFileManager<StandardJavaFil
         }
     }
 
-    public void writeClassJavaSources(Path directory) throws IOException
+    public void writeClassJavaSources(Path directory, Log log) throws IOException
     {
-        writeClassJavaSources(directory, false);
+        writeClassJavaSources(directory, false, log);
     }
 
-    public void writeClassJavaSources(Path directory, boolean includeClassesFromParent) throws IOException
+    public void writeClassJavaSources(Path directory, boolean includeClassesFromParent, Log log) throws IOException
     {
-        for (ClassJavaSource source : getAllClassJavaSources(includeClassesFromParent))
+        RichIterable<ClassJavaSource> classJavaSources = getAllClassJavaSources(includeClassesFromParent);
+        int total = classJavaSources.size();
+        log.info("  Saving " + total + " classes to " + directory);
+        int count = 0;
+        long start = System.currentTimeMillis();
+        Set<Integer> displayed = Sets.mutable.empty();
+        for (ClassJavaSource source : classJavaSources)
         {
+            // Progress ----
+            count++;
+            int percentage = count * 100 / total;
+            int val = percentage / 10;
+            if (!displayed.contains(val))
+            {
+                displayed.add(val);
+                log.info("    completed " + percentage + "% in " + ((float) (System.currentTimeMillis() - start) / 1000) + "s");
+            }
+            // Progress ----
             Path path = directory.resolve(source.getName().substring(1));
             Files.createDirectories(path.getParent());
             Files.write(path, source.getBytes());
