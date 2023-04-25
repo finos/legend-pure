@@ -23,6 +23,7 @@ import org.finos.legend.pure.runtime.java.compiled.compiler.Compile;
 import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompileException;
 import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompiler;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
+import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.VoidLog;
 import org.finos.legend.pure.runtime.java.compiled.statelistener.JavaCompilerEventObserver;
 
 import java.util.SortedMap;
@@ -86,7 +87,7 @@ public class GenerateAndCompile
                     ListIterable<StringJavaSource> compileGroupJavaSources = this.generate.generate(compileGroup, sources, sourceCodeGeneratorFn.apply(compileGroup), sourceCounter, totalSourceCount);
                     try
                     {
-                        this.compile.compile(compileGroup, compileGroupJavaSources);
+                        this.compile.compile(compileGroup, compileGroupJavaSources, new VoidLog());
                     }
                     catch (PureJavaCompileException e)
                     {

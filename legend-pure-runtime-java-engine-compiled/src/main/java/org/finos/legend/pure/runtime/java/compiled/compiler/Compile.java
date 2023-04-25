@@ -18,6 +18,7 @@ import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.tuple.Pair;
+import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.Log;
 import org.finos.legend.pure.runtime.java.compiled.statelistener.JavaCompilerEventObserver;
 import org.finos.legend.pure.runtime.java.compiled.statelistener.VoidJavaCompilerEventObserver;
 
@@ -37,15 +38,16 @@ public class Compile
         this(pureJavaCompiler, null);
     }
 
-    public void compileJavaCodeForSources(Iterable<? extends Pair<? extends String, ? extends Iterable<? extends StringJavaSource>>> javaSourcesByCompileGroup) throws PureJavaCompileException
+    public void compileJavaCodeForSources(Iterable<? extends Pair<? extends String, ? extends Iterable<? extends StringJavaSource>>> javaSourcesByCompileGroup, Log log) throws PureJavaCompileException
     {
         for (Pair<? extends String, ? extends Iterable<? extends StringJavaSource>> javaSources : javaSourcesByCompileGroup)
         {
-            compile(javaSources.getOne(), javaSources.getTwo());
+            log.info("    Compiling group " + javaSources.getOne());
+            compile(javaSources.getOne(), javaSources.getTwo(), log);
         }
     }
 
-    public void compile(String compileGroup, Iterable<? extends StringJavaSource> javaSources) throws PureJavaCompileException
+    public void compile(String compileGroup, Iterable<? extends StringJavaSource> javaSources, Log log) throws PureJavaCompileException
     {
         this.observer.startCompilingJavaFiles(compileGroup);
         MutableMap<String, StringJavaSource> javaSourcesByName = Maps.mutable.empty();
@@ -57,10 +59,13 @@ public class Compile
                 throw new RuntimeException("Java source " + javaSource.getName() + " defined more than once with different code.\n\nSOURCE 1:\n" + oldSource.getCode() + "\n\n\n==================\nSOURCE 2:\n" + javaSource.getCode());
             }
         });
+        long start = System.currentTimeMillis();
+        log.info("      compiling " + javaSourcesByName.valuesView().size() + " sources");
         if (javaSourcesByName.notEmpty())
         {
             this.pureJavaCompiler.compile(javaSourcesByName.valuesView());
         }
+        log.info("      finished in " + ((float) (System.currentTimeMillis() - start) / 1000) + "s");
         this.observer.endCompilingJavaFiles(compileGroup);
     }
 

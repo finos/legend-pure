@@ -417,7 +417,7 @@ public class JavaCodeGeneration
         long compilationStart = startStep(compilationStep, log);
         try
         {
-            PureJavaCompiler compiler = JavaStandaloneLibraryGenerator.compileOnly(generate.getJavaSourcesByGroup(), generate.getExternalizableSources(), addExternalAPI);
+            PureJavaCompiler compiler = JavaStandaloneLibraryGenerator.compileOnly(generate.getJavaSourcesByGroup(), generate.getExternalizableSources(), addExternalAPI, log);
             completeStep(compilationStep, compilationStart, log);
             return compiler;
         }
@@ -433,7 +433,7 @@ public class JavaCodeGeneration
         long writeClassFilesStart = startStep(writeClassFilesStep, log);
         try
         {
-            compiler.writeClassJavaSources(classesDirectory.toPath());
+            compiler.writeClassJavaSources(classesDirectory.toPath(), log);
             completeStep(writeClassFilesStep, writeClassFilesStart, log);
         }
         catch (Exception e)

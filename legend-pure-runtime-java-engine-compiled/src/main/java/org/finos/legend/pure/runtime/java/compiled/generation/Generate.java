@@ -27,6 +27,8 @@ import org.eclipse.collections.impl.map.ordered.mutable.OrderedMapAdapter;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
+import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.Log;
+import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.VoidLog;
 import org.finos.legend.pure.runtime.java.compiled.statelistener.JavaCompilerEventObserver;
 import org.finos.legend.pure.runtime.java.compiled.statelistener.VoidJavaCompilerEventObserver;
 
@@ -90,7 +92,7 @@ public class Generate
         return javaSources;
     }
 
-    void generateJavaCodeForSources(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo, Function<? super String, ? extends JavaSourceCodeGenerator> sourceCodeGeneratorFn)
+    void generateJavaCodeForSources(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo, Function<? super String, ? extends JavaSourceCodeGenerator> sourceCodeGeneratorFn, Log log)
     {
         if (this.message != null)
         {
@@ -105,19 +107,26 @@ public class Generate
             sourceCounter.reset();
             compiledSourcesByRepo.forEach((compileGroup, sources) ->
             {
+                log.info("    Generating Java sources for group: " + compileGroup);
                 if (sources.notEmpty())
                 {
+                    long start = System.currentTimeMillis();
                     JavaSourceCodeGenerator sourceCodeGenerator = sourceCodeGeneratorFn.apply(compileGroup);
                     ListIterable<StringJavaSource> compileGroupJavaSources = generate(compileGroup, sources, sourceCodeGenerator, sourceCounter, totalSourceCount);
                     this.javaSourcesByGroup.put(compileGroup, compileGroupJavaSources.toImmutable());
+                    log.info("      generated " + compileGroupJavaSources.size() + " sources in " + ((float) (System.currentTimeMillis() - start) / 1000) + "s");
+                }
+                else
+                {
+                    log.info("      generated 0 sources (input sources is empty).");
                 }
             });
         }
     }
 
-    public void generateJavaCodeForSources(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo, JavaSourceCodeGenerator sourceCodeGenerator)
+    public void generateJavaCodeForSources(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo, JavaSourceCodeGenerator sourceCodeGenerator, Log log)
     {
-        generateJavaCodeForSources(compiledSourcesByRepo, compileGroup -> sourceCodeGenerator);
+        generateJavaCodeForSources(compiledSourcesByRepo, compileGroup -> sourceCodeGenerator, log);
     }
 
     public void generateExternalizableAPI(JavaSourceCodeGenerator sourceCodeGenerator, String pack)

@@ -129,10 +129,10 @@ public class JavaStandaloneLibraryGenerator
         return compile(false, null);
     }
 
-    public void compileAndWriteClasses(Path directory) throws IOException, PureJavaCompileException
+    public void compileAndWriteClasses(Path directory, Log log) throws IOException, PureJavaCompileException
     {
         PureJavaCompiler compiler = compile();
-        compiler.writeClassJavaSources(directory);
+        compiler.writeClassJavaSources(directory, log);
     }
 
     public void compileAndWriteClasses(JarOutputStream jarOutputStream) throws IOException, PureJavaCompileException
@@ -190,7 +190,7 @@ public class JavaStandaloneLibraryGenerator
             }
             else
             {
-                log.info("Skipping External API generation");
+                log.info("    Skipping External API generation");
             }
         }
         else
@@ -203,7 +203,7 @@ public class JavaStandaloneLibraryGenerator
             }
             else
             {
-                log.info("Skipping External API generation");
+                log.info("    Skipping External API generation");
             }
         }
         return generateAndCompile.getPureJavaCompiler();
@@ -225,27 +225,27 @@ public class JavaStandaloneLibraryGenerator
 
         if (modularMetadataIds)
         {
-            generate.generateJavaCodeForSources(sourcesToCompile, group -> getSourceCodeGenerator(group, writeJavaSourcesToDisk, pathToWriteTo));
+            generate.generateJavaCodeForSources(sourcesToCompile, group -> getSourceCodeGenerator(group, writeJavaSourcesToDisk, pathToWriteTo), log);
             if (this.addExternalAPI)
             {
                 generate.generateExternalizableAPI(getSourceCodeGenerator(null, writeJavaSourcesToDisk, pathToWriteTo), this.externalAPIPackage);
             }
             else
             {
-                log.info("Skipping External API generation");
+                log.info("    Skipping External API generation");
             }
         }
         else
         {
             JavaSourceCodeGenerator javaSourceCodeGenerator = getSourceCodeGenerator(null, writeJavaSourcesToDisk, pathToWriteTo);
-            generate.generateJavaCodeForSources(sourcesToCompile, javaSourceCodeGenerator);
+            generate.generateJavaCodeForSources(sourcesToCompile, javaSourceCodeGenerator, log);
             if (this.addExternalAPI)
             {
                 generate.generateExternalizableAPI(javaSourceCodeGenerator, this.externalAPIPackage);
             }
             else
             {
-                log.info("Skipping External API generation");
+                log.info("    Skipping External API generation");
             }
         }
         return generate;
@@ -317,15 +317,15 @@ public class JavaStandaloneLibraryGenerator
         return new JavaStandaloneLibraryGenerator(runtime, extensions, addExternalAPI, externalAPIPackage, log);
     }
 
-    public static PureJavaCompiler compileOnly(MapIterable<? extends String, ? extends Iterable<? extends StringJavaSource>> javaSources, ListIterable<? extends StringJavaSource> externalizableSources, boolean addExternalAPI) throws PureJavaCompileException
+    public static PureJavaCompiler compileOnly(MapIterable<? extends String, ? extends Iterable<? extends StringJavaSource>> javaSources, ListIterable<? extends StringJavaSource> externalizableSources, boolean addExternalAPI, Log log) throws PureJavaCompileException
     {
-        return compileOnly(javaSources.keyValuesView(), externalizableSources, addExternalAPI);
+        return compileOnly(javaSources.keyValuesView(), externalizableSources, addExternalAPI, log);
     }
 
-    public static PureJavaCompiler compileOnly(Iterable<? extends Pair<? extends String, ? extends Iterable<? extends StringJavaSource>>> javaSources, ListIterable<? extends StringJavaSource> externalizableSources, boolean addExternalAPI) throws PureJavaCompileException
+    public static PureJavaCompiler compileOnly(Iterable<? extends Pair<? extends String, ? extends Iterable<? extends StringJavaSource>>> javaSources, ListIterable<? extends StringJavaSource> externalizableSources, boolean addExternalAPI, Log log) throws PureJavaCompileException
     {
         Compile compile = new Compile(new PureJavaCompiler(new Message("")), VoidJavaCompilerEventObserver.VOID_JAVA_COMPILER_EVENT_OBSERVER);
-        compile.compileJavaCodeForSources(javaSources);
+        compile.compileJavaCodeForSources(javaSources, log);
         if (addExternalAPI)
         {
             compile.compileExternalizableAPI(externalizableSources);
