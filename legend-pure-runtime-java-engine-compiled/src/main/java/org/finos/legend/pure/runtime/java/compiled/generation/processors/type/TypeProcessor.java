@@ -206,6 +206,10 @@ public class TypeProcessor
             {
                 return "org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap";
             }
+            case M3Paths.Binary:
+            {
+                return "byte[]";
+            }
             case M3Paths.ByteStream:
             {
                 return "org.finos.legend.pure.m4.coreinstance.primitive.byteStream.PureByteStream";
