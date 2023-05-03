@@ -27,6 +27,7 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
 import org.finos.legend.pure.m4.coreinstance.factory.CoreInstanceFactory;
 import org.finos.legend.pure.m4.coreinstance.factory.MultipassCoreInstanceFactory;
+import org.finos.legend.pure.m4.coreinstance.primitive.BinaryCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.BooleanCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.ByteCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.DateCoreInstance;
@@ -66,6 +67,7 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 public class ModelRepository
 {
     public static final String BOOLEAN_TYPE_NAME = "Boolean";
+    public static final String BINARY_TYPE_NAME = "Binary";
     public static final String BYTE_STREAM_TYPE_NAME = "ByteStream";
     public static final String BYTE_TYPE_NAME = "Byte";
     public static final String DATE_TYPE_NAME = "Date";
@@ -77,7 +79,7 @@ public class ModelRepository
     public static final String DECIMAL_TYPE_NAME = "Decimal";
     public static final String INTEGER_TYPE_NAME = "Integer";
     public static final String STRING_TYPE_NAME = "String";
-    public static final ImmutableSet<String> PRIMITIVE_TYPE_NAMES = Sets.immutable.with(BOOLEAN_TYPE_NAME, BYTE_STREAM_TYPE_NAME, DATE_TYPE_NAME, STRICT_DATE_TYPE_NAME, DATETIME_TYPE_NAME, LATEST_DATE_TYPE_NAME, STRICT_TIME_TYPE_NAME, FLOAT_TYPE_NAME, DECIMAL_TYPE_NAME, INTEGER_TYPE_NAME, STRING_TYPE_NAME, BYTE_TYPE_NAME);
+    public static final ImmutableSet<String> PRIMITIVE_TYPE_NAMES = Sets.immutable.with(BOOLEAN_TYPE_NAME, BYTE_STREAM_TYPE_NAME, DATE_TYPE_NAME, STRICT_DATE_TYPE_NAME, DATETIME_TYPE_NAME, LATEST_DATE_TYPE_NAME, STRICT_TIME_TYPE_NAME, FLOAT_TYPE_NAME, DECIMAL_TYPE_NAME, INTEGER_TYPE_NAME, STRING_TYPE_NAME, BINARY_TYPE_NAME, BYTE_TYPE_NAME);
 
 
     public static final String BOOLEAN_TRUE = "true";
@@ -723,6 +725,26 @@ public class ModelRepository
     private StringCoreInstance newStringInstance(String value, CoreInstance classifier, int internalSyntheticId)
     {
         return PrimitiveCoreInstance.newStringCoreInstance(value, classifier, internalSyntheticId);
+    }
+
+    public BinaryCoreInstance newBinaryCoreInstance(byte[] value)
+    {
+        return newBinaryInstance(value);
+    }
+
+    private BinaryCoreInstance newBinaryInstance(byte[] value)
+    {
+        return newBinaryInstance(value, getOrCreateTopLevel(BINARY_TYPE_NAME, null));
+    }
+
+    private BinaryCoreInstance newBinaryInstance(byte[] value, CoreInstance classifier)
+    {
+        return newBinaryInstance(value, classifier, nextId());
+    }
+
+    private BinaryCoreInstance newBinaryInstance(byte[] value, CoreInstance classifier, int internalSyntheticId)
+    {
+        return PrimitiveCoreInstance.newBinaryCoreInstance(value, classifier, internalSyntheticId);
     }
 
     public ByteCoreInstance newByteCoreInstance(byte value)
