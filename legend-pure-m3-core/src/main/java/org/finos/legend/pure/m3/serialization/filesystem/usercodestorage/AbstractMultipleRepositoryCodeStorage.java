@@ -23,7 +23,7 @@ import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeReposito
 
 public abstract class AbstractMultipleRepositoryCodeStorage extends AbstractRepositoryCodeStorage
 {
-    protected final ImmutableMap<String, CodeRepository> repositories;
+    protected volatile ImmutableMap<String, CodeRepository> repositories;
 
     protected AbstractMultipleRepositoryCodeStorage(Iterable<? extends CodeRepository> repositories)
     {
@@ -64,13 +64,18 @@ public abstract class AbstractMultipleRepositoryCodeStorage extends AbstractRepo
         return this.repositories.get(name);
     }
 
+    protected void replaceRepositories(ImmutableMap<String, CodeRepository> repositories)
+    {
+        this.repositories = repositories;
+    }
+
     @Override
     protected boolean hasRepo(String name)
     {
         return this.repositories.containsKey(name);
     }
 
-    private static ImmutableMap<String, CodeRepository> indexRepositories(Iterable<? extends CodeRepository> repositories)
+    protected static ImmutableMap<String, CodeRepository> indexRepositories(Iterable<? extends CodeRepository> repositories)
     {
         MutableMap<String, CodeRepository> index = Maps.mutable.empty();
         repositories.forEach(repository ->
