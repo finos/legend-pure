@@ -28,8 +28,6 @@ import org.finos.legend.pure.runtime.java.extension.store.relational.shared.Conn
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.DataSource;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.DataSourceConnectionDisplayInfo;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
 
