@@ -36,13 +36,16 @@ public class TestDatabaseConnect extends PerThreadPoolableConnectionProvider
     public static final String TEST_DB_HOST_NAME = "local";
     private static final String TEST_DB_NAME = "pure-h2-test-Db";
     private static final DataSource TEST_DATA_SOURCE = new DataSource(TEST_DB_HOST_NAME, -1, TEST_DB_NAME, null);
-
+    private static final String DEFAULT_H2_PROPERTIES = System.getProperty("legend.test.h2.properties",
+            ";NON_KEYWORDS=ANY,ASYMMETRIC,AUTHORIZATION,CURRENT_PATH,CURRENT_ROLE,DAY,DEFAULT,HOUR,MINUTE,MONTH,SECOND,SESSION_USER,SET,SOME,SYMMETRIC,SYSTEM_USER,TO,UESCAPE,USER,TO,YEAR");
     private static final Function0<String> CONNECTION_URL = new Function0<String>()
     {
         @Override
         public String value()
         {
-            return System.getProperty("legend.test.h2.port") != null ? "jdbc:h2:tcp://127.0.0.1:" + System.getProperty("legend.test.h2.port") + "/mem:testDB" : "jdbc:h2:mem:;ALIAS_COLUMN_NAME=TRUE";
+            return System.getProperty("legend.test.h2.port") != null ?
+                    "jdbc:h2:tcp://127.0.0.1:" + System.getProperty("legend.test.h2.port") + "/mem:testDB" : "jdbc:h2:mem:"
+                    + DEFAULT_H2_PROPERTIES;
         }
     };
 

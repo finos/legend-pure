@@ -42,7 +42,7 @@ public abstract class AbstractTestPureDBFunction extends AbstractPureTestWithCor
                         "Database mydb()\n"
         );
         PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> compileAndExecute("test():Any[0..1]"));
-        assertPureException(PureExecutionException.class, Pattern.compile("Error executing sql query; SQL reason: Syntax error in SQL statement \"CREATE LOCAL TEMPORARY TABLE \\(\\[\\*]COL INT\\) ?\"; expected \"identifier\"; SQL statement:\n" +
+        assertPureException(PureExecutionException.class, Pattern.compile("Error executing sql query; SQL reason: Syntax error in SQL statement \"Create LOCAL TEMPORARY TABLE \\[\\*]\\(col INT\\) ?\"; expected \"identifier\"; SQL statement:\n" +
                 "Create LOCAL TEMPORARY TABLE \\(col INT\\) \\[42001-\\d++]; SQL error code: 42001; SQL state: 42001"), 8, 4, e);
     }
 
@@ -84,7 +84,7 @@ public abstract class AbstractTestPureDBFunction extends AbstractPureTestWithCor
                         "Database mydb()\n"
         );
         PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> compileAndExecute("test():Any[0..1]"));
-        assertPureException(PureExecutionException.class, Pattern.compile("Error executing sql query; SQL reason: Table \"TT\" not found; SQL statement:\n" +
-                "select \\* from tt \\[42102-\\d++]; SQL error code: 42102; SQL state: 42S02"), 8, 4, e);
+        assertPureException(PureExecutionException.class, Pattern.compile("Error executing sql query; SQL reason: Table \"TT\" not found \\(this database is empty\\); SQL statement:\n" +
+                "select \\* from tt \\[42104-\\d++]; SQL error code: 42104; SQL state: 42S04"), 8, 4, e);
     }
 }
