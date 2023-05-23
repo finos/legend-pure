@@ -36,13 +36,13 @@ function meta::pure::functions::asserts::assertInstanceOf(instance:Any[1], type:
 
 
 
-function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertInstanceOf():Any[*]
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertInstanceOf():Boolean[1]
 {
     assertInstanceOf(1, Integer);
     assertInstanceOf('the quick' + ' ' + 'brown fox', String);
 }
 
-function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertInstanceOfDates():Any[*]
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertInstanceOfDates():Boolean[1]
 {
     assertInstanceOf(%2015-03-14, Date);
     assertInstanceOf(%2015-03-14, StrictDate);

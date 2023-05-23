@@ -35,7 +35,7 @@ function meta::pure::functions::asserts::assertSize(collection:Any[*], size:Inte
 }
 
 
-function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertSize():Any[*]
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertSize():Boolean[1]
 {
     assertSize([1, 2, 3], 3);
     assertSize(['a', 'b'], 2);

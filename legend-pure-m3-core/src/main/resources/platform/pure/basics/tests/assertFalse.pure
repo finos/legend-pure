@@ -32,28 +32,28 @@ function meta::pure::functions::asserts::assertFalse(condition:Boolean[1], messa
 
 
 
-function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertFalse():Any[*]
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertFalse():Boolean[1]
 {
     assertFalse(false);
     assertFalse(2 == 3);
     assertFalse((1 + 2) == 4);
 }
 
-function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertFalseWithMessage():Any[*]
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertFalseWithMessage():Boolean[1]
 {
     assertFalse(false, 'Test message');
     assertFalse(2 == 3, 'Test message');
     assertFalse((1 + 2) == 4, 'Test message');
 }
 
-function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertFalseWithFormat():Any[*]
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertFalseWithFormat():Boolean[1]
 {
     assertFalse(false, 'Test message: %s', [true]);
     assertFalse(2 == 3, 'Test message: %s', [true]);
     assertFalse((1 + 2) == 4, 'Test message: %s', [true]);
 }
 
-function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertFalseWithLambda():Any[*]
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertFalseWithLambda():Boolean[1]
 {
     assertFalse(false, | 'Test message');
     assertFalse(2 == 3, | format('Test message %s', [true]));

@@ -35,7 +35,7 @@ function meta::pure::functions::asserts::assertSameElements(expected:Any[*], act
 }
 
 
-function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertSameElements():Any[*]
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertSameElements():Boolean[1]
 {
     assertSameElements([1, 2], [1, 2]);
     assertSameElements([1, 2], [2, 1]);
