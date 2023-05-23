@@ -263,7 +263,7 @@ public class FileManagement
 
             return Response.ok((StreamingOutput) outputStream ->
             {
-                outputStream.write(this.transformContent(content, codeStorage.getRepositoryForPath(filePath)  instanceof ImmutableRepositoryCodeStorage));
+                outputStream.write(this.transformContent(content, codeStorage.getOriginalCodeStorage(codeStorage.getRepositoryForPath(filePath)) instanceof ImmutableRepositoryCodeStorage));
                 outputStream.close();
             }).build();
         }
@@ -313,7 +313,7 @@ public class FileManagement
         builder.append("{\"li_attr\":{\"id\":\"file_");
         builder.append(path);
         builder.append("\",\"path\":\"").append(path).append("\",\"file\":false,\"repo\":true");
-        builder.append(",\"RO\":").append(codeStorage.getRepositoryForPath(path) instanceof ImmutableRepositoryCodeStorage);
+        builder.append(",\"RO\":").append(codeStorage.getOriginalCodeStorage(codeStorage.getRepositoryForPath(path)) instanceof ImmutableRepositoryCodeStorage);
         builder.append("},\"text\":\"");
         builder.append(repo.getName());
         if (currentRevision >= 0)
@@ -338,7 +338,7 @@ public class FileManagement
         builder.append("{\"li_attr\":{\"id\":\"file_");
         builder.append(path);
         builder.append("\",\"path\":\"").append(path).append("\",\"file\":false");
-        builder.append(",\"RO\":").append(codeStorage.getRepositoryForPath(path) instanceof ImmutableRepositoryCodeStorage);
+        builder.append(",\"RO\":").append(codeStorage.getOriginalCodeStorage(codeStorage.getRepositoryForPath(path)) instanceof ImmutableRepositoryCodeStorage);
         builder.append("},\"text\":\"");
         builder.append(directory.getName());
         builder.append("\",\"state\":\"closed\",\"children\":").append(!codeStorage.isEmptyFolder(path)).append("}");
@@ -349,7 +349,7 @@ public class FileManagement
         builder.append("{\"li_attr\":{\"id\":\"file_");
         builder.append(path);
         builder.append("\",\"path\":\"").append(path).append("\",\"file\":true");
-        builder.append(",\"RO\":").append(codeStorage.getRepositoryForPath(path) instanceof ImmutableRepositoryCodeStorage);
+        builder.append(",\"RO\":").append(codeStorage.getOriginalCodeStorage(codeStorage.getRepositoryForPath(path)) instanceof ImmutableRepositoryCodeStorage);
 
         if (file.getStatus() != CodeStorageNodeStatus.NORMAL)
         {

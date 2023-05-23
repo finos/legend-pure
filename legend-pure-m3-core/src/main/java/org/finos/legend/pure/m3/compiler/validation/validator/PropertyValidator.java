@@ -118,10 +118,6 @@ public class PropertyValidator implements MatchRunner<Property>
         {
             throw new PureCompilationException(property.getSourceInformation(), "The property '" + org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(property) + "' has type of 'Binary'. 'Binary' type is not supported for property.");
         }
-        if (processorSupport.type_isPrimitiveType(type) && ModelRepository.BYTE_STREAM_TYPE_NAME.equals(type.getName()))
-        {
-            throw new PureCompilationException(property.getSourceInformation(), "The property '" + org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(property) + "' has type of 'ByteStream'. 'ByteStream' type is not supported for property.");
-        }
         if (processorSupport.type_isPrimitiveType(type) && ModelRepository.BYTE_TYPE_NAME.equals(type.getName()))
         {
             throw new PureCompilationException(property.getSourceInformation(), "The property '" + org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(property) + "' has type of 'Byte'. 'Byte' type is not supported for property.");

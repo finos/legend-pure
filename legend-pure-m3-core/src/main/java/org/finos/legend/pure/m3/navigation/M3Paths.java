@@ -35,7 +35,6 @@ public class M3Paths
     public static final String AssociationProjection = "meta::pure::metamodel::relationship::AssociationProjection";
     public static final String Binary = ModelRepository.BINARY_TYPE_NAME;
     public static final String Boolean = ModelRepository.BOOLEAN_TYPE_NAME;
-    public static final String ByteStream = ModelRepository.BYTE_STREAM_TYPE_NAME;
     public static final String Byte = ModelRepository.BYTE_TYPE_NAME;
     public static final String Class = "meta::pure::metamodel::type::Class";
     public static final String ClassConstraintValueSpecificationContext = "meta::pure::metamodel::valuespecification::ClassConstraintValueSpecificationContext";

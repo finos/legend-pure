@@ -117,7 +117,7 @@
         <javax.servlet.version>3.1.0</javax.servlet.version>
         <snakeyaml.version>1.33</snakeyaml.version>
         <guava.version>30.0-jre</guava.version>
-        <h2.version>1.4.200</h2.version>
+        <h2.version>2.1.214</h2.version>
 
         <!-- Plugin -->
         <jacoco.maven.plugin.version>0.8.5</jacoco.maven.plugin.version>
