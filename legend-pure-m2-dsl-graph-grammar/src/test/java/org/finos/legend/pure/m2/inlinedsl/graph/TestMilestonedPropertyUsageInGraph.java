@@ -23,7 +23,8 @@ import org.junit.Test;
 public class TestMilestonedPropertyUsageInGraph extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime();
     }
 
@@ -38,7 +39,7 @@ public class TestMilestonedPropertyUsageInGraph extends AbstractPureTestWithCore
     {
         try
         {
-            this.runtime.createInMemorySource("file.pure", "import meta::test::milestoning::domain::*;\n" +
+            runtime.createInMemorySource("file.pure", "import meta::test::milestoning::domain::*;\n" +
                     "Class meta::test::milestoning::domain::Product{\n" +
                     "   classification : Classification[1];\n" +
                     "}\n" +
@@ -49,7 +50,7 @@ public class TestMilestonedPropertyUsageInGraph extends AbstractPureTestWithCore
                     "{\n" +
                     "   print(#{Product{classification{classificationType}}}#)" +
                     "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -57,7 +58,7 @@ public class TestMilestonedPropertyUsageInGraph extends AbstractPureTestWithCore
             Assert.assertEquals("Compilation error at (resource:file.pure line:10 column:20), \"The system can't find a match for the property / qualified property: classification(). No-Arg milestoned property: 'classification' is not supported yet in graph fetch flow! It needs to be supplied with [businessDate] parameters\"", e.getMessage());
         }
 
-        this.runtime.modify("file.pure", "import meta::test::milestoning::domain::*;\n" +
+        runtime.modify("file.pure", "import meta::test::milestoning::domain::*;\n" +
                 "Class meta::test::milestoning::domain::Product{\n" +
                 "   classification : Classification[1];\n" +
                 "}\n" +
@@ -68,7 +69,7 @@ public class TestMilestonedPropertyUsageInGraph extends AbstractPureTestWithCore
                 "{\n" +
                 "   print(#{Product{classification(%latest){classificationType}}}#, 1)" +
                 "}\n");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
@@ -76,7 +77,7 @@ public class TestMilestonedPropertyUsageInGraph extends AbstractPureTestWithCore
     {
         try
         {
-            this.runtime.createInMemorySource("file.pure", "import meta::test::milestoning::domain::*;\n" +
+            runtime.createInMemorySource("file.pure", "import meta::test::milestoning::domain::*;\n" +
                     "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                     "   classification : Classification[1];\n" +
                     "}\n" +
@@ -87,7 +88,7 @@ public class TestMilestonedPropertyUsageInGraph extends AbstractPureTestWithCore
                     "{\n" +
                     "   print(#{Product{classification{classificationType}}}#)" +
                     "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -95,7 +96,7 @@ public class TestMilestonedPropertyUsageInGraph extends AbstractPureTestWithCore
             Assert.assertEquals("Compilation error at (resource:file.pure line:10 column:20), \"No-Arg milestoned property: 'classification' is not supported yet in graph fetch flow! It needs to be supplied with [businessDate] parameters\"", e.getMessage());
         }
 
-        this.runtime.modify("file.pure", "import meta::test::milestoning::domain::*;\n" +
+        runtime.modify("file.pure", "import meta::test::milestoning::domain::*;\n" +
                 "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                 "   classification : Classification[1];\n" +
                 "}\n" +
@@ -106,6 +107,6 @@ public class TestMilestonedPropertyUsageInGraph extends AbstractPureTestWithCore
                 "{\n" +
                 "   print(#{Product{classification(%2015-01-01){classificationType}}}#, 1)" +
                 "}\n");
-        this.runtime.compile();
+        runtime.compile();
     }
 }

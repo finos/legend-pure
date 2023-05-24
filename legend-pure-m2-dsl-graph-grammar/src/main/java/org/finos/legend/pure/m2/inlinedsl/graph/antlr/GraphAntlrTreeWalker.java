@@ -23,8 +23,8 @@ import org.finos.legend.pure.m2.inlinedsl.graph.serialization.grammar.GraphParse
 import org.finos.legend.pure.m2.inlinedsl.graph.serialization.grammar.GraphParser.ScalarParameterContext;
 import org.finos.legend.pure.m2.inlinedsl.graph.serialization.grammar.GraphParserBaseVisitor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 
 
 public class GraphAntlrTreeWalker extends GraphParserBaseVisitor<String>
@@ -67,7 +67,7 @@ public class GraphAntlrTreeWalker extends GraphParserBaseVisitor<String>
         SourceInformation propertySourceInfo = this.sourceInformation.getPureSourceInformation(graphPathContext.identifier().start, graphPathContext.identifier().start, graphPathContext.identifier().stop);
 
         MutableList<String> subTrees = FastList.newList();
-        if(graphPathContext.graphDefinition() != null)
+        if (graphPathContext.graphDefinition() != null)
         {
             for (GraphPathContext subGraphPathContext : graphPathContext.graphDefinition().graphPaths().graphPath())
             {
@@ -76,23 +76,23 @@ public class GraphAntlrTreeWalker extends GraphParserBaseVisitor<String>
         }
 
         MutableList<String> parameters = FastList.newList();
-        if(graphPathContext.propertyParameters() != null)
+        if (graphPathContext.propertyParameters() != null)
         {
-            for(ParameterContext parameterContext : graphPathContext.propertyParameters().parameter())
+            for (ParameterContext parameterContext : graphPathContext.propertyParameters().parameter())
             {
                 parameters.add(this.visitParameterContext(parameterContext));
             }
         }
 
         String subType = "";
-        if(graphPathContext.subtype() != null)
+        if (graphPathContext.subtype() != null)
         {
             SourceInformation subTypeSourceInfo = this.sourceInformation.getPureSourceInformation(graphPathContext.subtype().qualifiedName().start, graphPathContext.subtype().qualifiedName().start, graphPathContext.subtype().qualifiedName().stop);
             subType = "^meta::pure::metamodel::import::ImportStub " + subTypeSourceInfo.toM4String() + " (importGroup = system::imports::" + this.importId._name() + ", idOrPath = '" + graphPathContext.subtype().qualifiedName().getText() + "')";
         }
 
         String alias = "";
-        if(graphPathContext.alias() != null)
+        if (graphPathContext.alias() != null)
         {
             alias = graphPathContext.alias().STRING().getText();
         }
@@ -110,13 +110,13 @@ public class GraphAntlrTreeWalker extends GraphParserBaseVisitor<String>
     private String visitParameterContext(ParameterContext parameterContext)
     {
         MutableList<String> values = FastList.newList();
-        if(parameterContext.scalarParameter() != null)
+        if (parameterContext.scalarParameter() != null)
         {
             values.add(this.visitScalarParameterContext(parameterContext.scalarParameter()));
         }
         else
         {
-            for(ScalarParameterContext scalarParameterContext : parameterContext.collectionParameter().scalarParameter())
+            for (ScalarParameterContext scalarParameterContext : parameterContext.collectionParameter().scalarParameter())
             {
                 values.add(this.visitScalarParameterContext(scalarParameterContext));
             }
@@ -126,17 +126,17 @@ public class GraphAntlrTreeWalker extends GraphParserBaseVisitor<String>
 
     private String visitScalarParameterContext(ScalarParameterContext scalarParameterContext)
     {
-        if(scalarParameterContext.enumReference() != null)
+        if (scalarParameterContext.enumReference() != null)
         {
             SourceInformation enumSourceInfo = this.sourceInformation.getPureSourceInformation(scalarParameterContext.enumReference().qualifiedName().start, scalarParameterContext.enumReference().identifier().start, scalarParameterContext.enumReference().identifier().stop);
-            SourceInformation enumerationSourceInfo =  this.sourceInformation.getPureSourceInformation(scalarParameterContext.enumReference().qualifiedName().start, scalarParameterContext.enumReference().qualifiedName().start, scalarParameterContext.enumReference().qualifiedName().stop);
+            SourceInformation enumerationSourceInfo = this.sourceInformation.getPureSourceInformation(scalarParameterContext.enumReference().qualifiedName().start, scalarParameterContext.enumReference().qualifiedName().start, scalarParameterContext.enumReference().qualifiedName().stop);
 
             return "^meta::pure::metamodel::import::EnumStub " + enumSourceInfo.toM4String() + " (" +
                     "enumName = '" + scalarParameterContext.enumReference().identifier().getText() + "', " +
                     "enumeration = ^meta::pure::metamodel::import::ImportStub " + enumerationSourceInfo.toM4String() + " (importGroup = system::imports::" + this.importId._name() + ", idOrPath = '" + scalarParameterContext.enumReference().qualifiedName().getText() + "')" +
                     ")";
         }
-        if(scalarParameterContext.variable() != null)
+        if (scalarParameterContext.variable() != null)
         {
             SourceInformation variableSourceInfo = this.sourceInformation.getPureSourceInformation(scalarParameterContext.variable().identifier().getStart());
             return "^meta::pure::metamodel::valuespecification::VariableExpression " + variableSourceInfo.toM4String() + " (" +

@@ -18,12 +18,7 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m2.inlinedsl.graph.M2GraphPaths;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
-import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.compiler.validation.ValidatorState;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.graphFetch.GraphFetchTree;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.graphFetch.PropertyGraphFetchTree;
@@ -34,15 +29,20 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.G
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class RootGraphFetchTreeValidator implements MatchRunner<RootGraphFetchTree>
+public class RootGraphFetchTreeValidator implements MatchRunner<RootGraphFetchTree<?>>
 {
     @Override
     public String getClassName()
@@ -51,21 +51,14 @@ public class RootGraphFetchTreeValidator implements MatchRunner<RootGraphFetchTr
     }
 
     @Override
-    public void run(RootGraphFetchTree instance, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
+    public void run(RootGraphFetchTree<?> instance, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
-        ValidatorState validatorState = (ValidatorState)state;
+        ValidatorState validatorState = (ValidatorState) state;
         final ProcessorSupport processorSupport = validatorState.getProcessorSupport();
 
-        Function<CoreInstance, CoreInstance> extractGenericTypeFunction = new Function<CoreInstance, CoreInstance>()
-        {
-            @Override
-            public CoreInstance valueOf(CoreInstance instance)
-            {
-                return Instance.instanceOf(instance, M3Paths.ValueSpecification, processorSupport)
-                        ? Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.genericType, processorSupport)
-                        : Instance.extractGenericTypeFromInstance(instance, processorSupport);
-            }
-        };
+        Function<CoreInstance, CoreInstance> extractGenericTypeFunction = instance1 -> Instance.instanceOf(instance1, M3Paths.ValueSpecification, processorSupport)
+                ? Instance.getValueForMetaPropertyToOneResolved(instance1, M3Properties.genericType, processorSupport)
+                : Instance.extractGenericTypeFromInstance(instance1, processorSupport);
 
         for (GraphFetchTree child : instance._subTrees())
         {
@@ -75,8 +68,8 @@ public class RootGraphFetchTreeValidator implements MatchRunner<RootGraphFetchTr
 
     private void validatePropertyGraphFetchTrees(PropertyGraphFetchTree propertyGraphFetchTree, ProcessorSupport processorSupport, Function<CoreInstance, CoreInstance> extractGenericTypeFunction)
     {
-        AbstractProperty property = (AbstractProperty)ImportStub.withImportStubByPass(propertyGraphFetchTree._propertyCoreInstance(), processorSupport);
-        RichIterable<? extends VariableExpression> valueSpecifications = ((FunctionType)processorSupport.function_getFunctionType(property))._parameters();
+        AbstractProperty<?> property = (AbstractProperty<?>) ImportStub.withImportStubByPass(propertyGraphFetchTree._propertyCoreInstance(), processorSupport);
+        RichIterable<? extends VariableExpression> valueSpecifications = ((FunctionType) processorSupport.function_getFunctionType(property))._parameters();
         ListIterable<? extends VariableExpression> parameterSpecifications = valueSpecifications.toList().subList(1, valueSpecifications.size());
         ListIterable<? extends ValueSpecification> parameters = propertyGraphFetchTree._parameters().toList();
 
@@ -92,7 +85,7 @@ public class RootGraphFetchTreeValidator implements MatchRunner<RootGraphFetchTr
 
             if (parameter instanceof InstanceValue)
             {
-                ListIterable<? extends CoreInstance> values = ImportStub.withImportStubByPasses(((InstanceValue)parameter)._valuesCoreInstance().toList(), processorSupport);
+                ListIterable<? extends CoreInstance> values = ImportStub.withImportStubByPasses(((InstanceValue) parameter)._valuesCoreInstance().toList(), processorSupport);
                 GenericType genericTypeSpecified = valueSpecification._genericType();
 
                 CoreInstance type = values.size() == 1 ?
@@ -109,14 +102,14 @@ public class RootGraphFetchTreeValidator implements MatchRunner<RootGraphFetchTr
             i++;
         }
 
-        FunctionType functionType = (FunctionType)processorSupport.function_getFunctionType(property);
+        FunctionType functionType = (FunctionType) processorSupport.function_getFunctionType(property);
         CoreInstance returnType = ImportStub.withImportStubByPass(functionType._returnType()._rawTypeCoreInstance(), processorSupport);
         CoreInstance subTypeClass = ImportStub.withImportStubByPass(propertyGraphFetchTree._subTypeCoreInstance(), processorSupport);
         if (subTypeClass != null)
         {
-            if(!Type.subTypeOf(subTypeClass, returnType, processorSupport))
+            if (!Type.subTypeOf(subTypeClass, returnType, processorSupport))
             {
-                throw new PureCompilationException(propertyGraphFetchTree._subTypeCoreInstance().getSourceInformation(),  "The type "+ subTypeClass.getName() + " is not compatible with " + returnType.getName());
+                throw new PureCompilationException(propertyGraphFetchTree._subTypeCoreInstance().getSourceInformation(), "The type " + subTypeClass.getName() + " is not compatible with " + returnType.getName());
             }
         }
 

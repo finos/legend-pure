@@ -29,8 +29,8 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class RootGraphFetchTreeUnbind implements MatchRunner<RootGraphFetchTree>
@@ -45,7 +45,7 @@ public class RootGraphFetchTreeUnbind implements MatchRunner<RootGraphFetchTree>
     public void run(RootGraphFetchTree instance, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
         ProcessorSupport processorSupport = state.getProcessorSupport();
-        for(GraphFetchTree subTree : instance._subTrees())
+        for (GraphFetchTree subTree : instance._subTrees())
         {
             this.unbindPropertyGraphFetchTree((PropertyGraphFetchTree) subTree, instance, state, matcher);
         }
@@ -89,7 +89,7 @@ public class RootGraphFetchTreeUnbind implements MatchRunner<RootGraphFetchTree>
             matcher.fullMatch(vs, state);
         }
 
-        for(GraphFetchTree subTree : propertyGraphFetchTree._subTrees())
+        for (GraphFetchTree subTree : propertyGraphFetchTree._subTrees())
         {
             this.unbindPropertyGraphFetchTree((PropertyGraphFetchTree) subTree, mainTree, state, matcher);
         }
