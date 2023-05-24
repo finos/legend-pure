@@ -14,15 +14,15 @@
 
 package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1;
 
-import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.OperationLexer;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.antlr.OperationGraphBuilder;
@@ -100,7 +100,7 @@ public class OperationParser implements Parser
     @Override
     public RichIterable<MatchRunner> getProcessors()
     {
-        return FastList.<MatchRunner>newListWith( new OperationSetImplementationProcessor());
+        return FastList.newListWith(new OperationSetImplementationProcessor());
     }
 
     @Override
@@ -112,7 +112,7 @@ public class OperationParser implements Parser
     @Override
     public RichIterable<MatchRunner> getUnLoadUnbinders()
     {
-        return FastList.<MatchRunner>newListWith(new OperationSetImplementationUnbind());
+        return FastList.newListWith(new OperationSetImplementationUnbind());
     }
 
     @Override
@@ -155,7 +155,7 @@ public class OperationParser implements Parser
     {
         AntlrDescriptiveErrorListener pureErrorListener = new AntlrDescriptiveErrorListener(sourceInformation);
 
-        OperationLexer lexer = new OperationLexer(new ANTLRInputStream(code));
+        OperationLexer lexer = new OperationLexer(CharStreams.fromString(code));
         lexer.removeErrorListeners();
         lexer.addErrorListener(pureErrorListener);
 

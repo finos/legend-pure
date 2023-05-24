@@ -113,12 +113,12 @@ public class XStoreParser implements Parser
         throw new UnsupportedOperationException("Not Supported!");
     }
 
-    public String parseMapping(String content, String id ,String extendsId, String setSourceInfo, boolean root, String classPath, String classSourceInfo, String mappingPath, String sourceName, int offsetLine, String importId, ModelRepository repository, Context context) throws PureParserException
+    public String parseMapping(String content, String id, String extendsId, String setSourceInfo, boolean root, String classPath, String classSourceInfo, String mappingPath, String sourceName, int offsetLine, String importId, ModelRepository repository, Context context) throws PureParserException
     {
         M3AntlrParser parser = new M3AntlrParser();
         M3ProcessorSupport processorSupport = new M3ProcessorSupport(context, repository);
-        String mappingName = mappingPath.replace("::","_");
-        String classMappingName = classPath.replace("::","_");
+        String mappingName = mappingPath.replace("::", "_");
+        String classMappingName = classPath.replace("::", "_");
         AntlrContextToM3CoreInstance.LambdaContext lambdaContext = new AntlrContextToM3CoreInstance.LambdaContext(mappingName + '_' + classMappingName + (id == null ? "" : '_' + id));
         TemporaryPureSetImplementation arg = parser.parseMappingInfo(content, classPath, lambdaContext, sourceName, offsetLine, importId, repository, processorSupport, context);
         return "^meta::pure::mapping::xStore::XStoreAssociationImplementation" + setSourceInfo + "(" +
@@ -130,7 +130,7 @@ public class XStoreParser implements Parser
                         (propertyStubCoreInstancePair.sourceMappingId == null ? "" : "                                         sourceSetImplementationId='" + propertyStubCoreInstancePair.sourceMappingId + "',") +
                         (propertyStubCoreInstancePair.targetMappingId == null ? "" : "                                         targetSetImplementationId='" + propertyStubCoreInstancePair.targetMappingId + "',") +
                         "                                         crossExpression=^meta::pure::metamodel::function::LambdaFunction " + lambdaContext.getLambdaFunctionUniqueName() + ' ' + propertyStubCoreInstancePair.expression.getSourceInformation().toM4String() + " (" +
-                        "                                                           classifierGenericType=^meta::pure::metamodel::type::generics::GenericType " + propertyStubCoreInstancePair.expression.getSourceInformation().toM4String()+ " (rawType=meta::pure::metamodel::function::LambdaFunction, typeArguments=^meta::pure::metamodel::type::generics::GenericType " + propertyStubCoreInstancePair.expression.getSourceInformation().toM4String() + " (rawType = ^meta::pure::metamodel::type::FunctionType " + propertyStubCoreInstancePair.expression.getSourceInformation().toM4String() + " ()))," +
+                        "                                                           classifierGenericType=^meta::pure::metamodel::type::generics::GenericType " + propertyStubCoreInstancePair.expression.getSourceInformation().toM4String() + " (rawType=meta::pure::metamodel::function::LambdaFunction, typeArguments=^meta::pure::metamodel::type::generics::GenericType " + propertyStubCoreInstancePair.expression.getSourceInformation().toM4String() + " (rawType = ^meta::pure::metamodel::type::FunctionType " + propertyStubCoreInstancePair.expression.getSourceInformation().toM4String() + " ()))," +
                         "                                                           expressionSequence=" + M3AntlrParser.process(propertyStubCoreInstancePair.expression, processorSupport) + ")" +
                         "                                                                   )\n").makeString(",") +
                 "])";

@@ -16,8 +16,8 @@ package org.finos.legend.pure.m2.ds.mapping.test;
 
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
 import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -25,7 +25,8 @@ import org.junit.Test;
 public class TestNamespaces extends AbstractPureMappingTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime();
     }
 
@@ -35,9 +36,9 @@ public class TestNamespaces extends AbstractPureMappingTestWithCoreCompiled
         compileTestSource("mapping1.pure",
                 "###Mapping\n" +
                         "Mapping test::MyMapping ()");
-        CoreInstance myMapping = this.runtime.getCoreInstance("test::MyMapping");
+        CoreInstance myMapping = runtime.getCoreInstance("test::MyMapping");
         Assert.assertNotNull(myMapping);
-        Assert.assertTrue(Instance.instanceOf(myMapping, M2MappingPaths.Mapping, this.processorSupport));
+        Assert.assertTrue(Instance.instanceOf(myMapping, M2MappingPaths.Mapping, processorSupport));
 
         try
         {

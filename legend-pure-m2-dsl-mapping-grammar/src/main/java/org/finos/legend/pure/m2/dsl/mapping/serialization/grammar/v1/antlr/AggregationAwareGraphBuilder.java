@@ -122,7 +122,7 @@ public class AggregationAwareGraphBuilder extends AggregationAwareParserBaseVisi
         return null;
     }
 
-    final public BooleanObjectPair<Pair<String, String>> parseAggregateSpecification(String content, int beginLine, int index)
+    public final BooleanObjectPair<Pair<String, String>> parseAggregateSpecification(String content, int beginLine, int index)
     {
         M3AntlrParser parser = new M3AntlrParser();
         M3ProcessorSupport processorSupport = new M3ProcessorSupport(this.context, this.repository);
@@ -140,7 +140,7 @@ public class AggregationAwareGraphBuilder extends AggregationAwareParserBaseVisi
         MutableList<String> aggregationFunctionSpecifications = temporarySpecification.aggregationFunctionSpecifications.collect(aggregationFunctionSpecification ->
                 "^meta::pure::mapping::aggregationAware::AggregationFunctionSpecification " + aggregationFunctionSpecification.sourceInformation.toM4String() + " (" +
                         "mapFn=^meta::pure::metamodel::function::LambdaFunction " + lambdaContext.getLambdaFunctionUniqueName() + " " + aggregationFunctionSpecification.mapExpression.getSourceInformation().toM4String() + " (" +
-                        "classifierGenericType=^meta::pure::metamodel::type::generics::GenericType " + aggregationFunctionSpecification.mapExpression.getSourceInformation().toM4String()+ " (rawType=meta::pure::metamodel::function::LambdaFunction, typeArguments=^meta::pure::metamodel::type::generics::GenericType " + aggregationFunctionSpecification.mapExpression.getSourceInformation().toM4String()+ " (rawType = ^meta::pure::metamodel::type::FunctionType " + aggregationFunctionSpecification.mapExpression.getSourceInformation().toM4String() + " ()))," +
+                        "classifierGenericType=^meta::pure::metamodel::type::generics::GenericType " + aggregationFunctionSpecification.mapExpression.getSourceInformation().toM4String() + " (rawType=meta::pure::metamodel::function::LambdaFunction, typeArguments=^meta::pure::metamodel::type::generics::GenericType " + aggregationFunctionSpecification.mapExpression.getSourceInformation().toM4String() + " (rawType = ^meta::pure::metamodel::type::FunctionType " + aggregationFunctionSpecification.mapExpression.getSourceInformation().toM4String() + " ()))," +
                         "expressionSequence=" + M3AntlrParser.process(aggregationFunctionSpecification.mapExpression, processorSupport) +
                         ")," +
                         "aggregateFn=^meta::pure::metamodel::function::LambdaFunction " + lambdaContext.getLambdaFunctionUniqueName() + " " + aggregationFunctionSpecification.aggregateExpression.getSourceInformation().toM4String() + " (" +

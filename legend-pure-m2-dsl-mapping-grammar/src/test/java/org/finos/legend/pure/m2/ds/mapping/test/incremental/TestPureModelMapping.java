@@ -36,14 +36,14 @@ public class TestPureModelMapping extends AbstractPureMappingTestWithCoreCompile
     private static final String TEST_MAPPING_SOURCE_ID2 = "testMapping2.pure";
 
     private static final ImmutableMap<String, String> TEST_SOURCES = Maps.immutable.with(TEST_MODEL_SOURCE_ID1,
-                    "Class Firm\n" +
+            "Class Firm\n" +
                     "{\n" +
                     "  legalName : String[1];" +
                     "  other : Integer[1];\n" +
                     "  other1 : Float[1];\n" +
                     "}",
             TEST_MODEL_SOURCE_ID2,
-                    "Enum MyEnum\n" +
+            "Enum MyEnum\n" +
                     "{\n" +
                     "   a,b\n" +
                     "}\n" +
@@ -107,10 +107,11 @@ public class TestPureModelMapping extends AbstractPureMappingTestWithCoreCompile
                     "            legalName : $src.name\n" +
                     "         }\n" +
                     ")"
-);
+    );
 
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime();
     }
 
@@ -129,18 +130,18 @@ public class TestPureModelMapping extends AbstractPureMappingTestWithCoreCompile
     @Test
     public void testPureModelMapping_ModelWithDiffPropertiesShouldNotCompile() throws Exception
     {
-        this.runtime.createInMemoryAndCompile(TEST_SOURCES);
-        this.runtime.delete(TEST_MAPPING_SOURCE_ID2);
-        this.runtime.compile();
-        int size = this.runtime.getModelRepository().serialize().length;
+        runtime.createInMemoryAndCompile(TEST_SOURCES);
+        runtime.delete(TEST_MAPPING_SOURCE_ID2);
+        runtime.compile();
+        int size = runtime.getModelRepository().serialize().length;
 
         for (int i = 1; i <= TEST_COUNT; i++)
         {
-            this.runtime.delete(TEST_MODEL_SOURCE_ID1);
+            runtime.delete(TEST_MODEL_SOURCE_ID1);
             try
             {
-                this.runtime.createInMemoryAndCompile(TEST_SOURCES_WITH_TYPO);
-                this.runtime.compile();
+                runtime.createInMemoryAndCompile(TEST_SOURCES_WITH_TYPO);
+                runtime.compile();
                 Assert.fail("Expected compilation exception on iteration #" + i);
             }
             catch (Exception e)
@@ -150,10 +151,10 @@ public class TestPureModelMapping extends AbstractPureMappingTestWithCoreCompile
                         TEST_MAPPING_SOURCE_ID1, 6, 13, 6, 13, 6, 21, e);
             }
 
-            this.runtime.delete(TEST_MODEL_SOURCE_ID1);
-            this.runtime.createInMemoryAndCompile(Tuples.pair(TEST_MODEL_SOURCE_ID1, TEST_SOURCES.get(TEST_MODEL_SOURCE_ID1)));
-            this.runtime.compile();
-            Assert.assertEquals("Graph size mismatch at iteration #" + i, size, this.repository.serialize().length);
+            runtime.delete(TEST_MODEL_SOURCE_ID1);
+            runtime.createInMemoryAndCompile(Tuples.pair(TEST_MODEL_SOURCE_ID1, TEST_SOURCES.get(TEST_MODEL_SOURCE_ID1)));
+            runtime.compile();
+            Assert.assertEquals("Graph size mismatch at iteration #" + i, size, repository.serialize().length);
         }
     }
 
@@ -161,16 +162,16 @@ public class TestPureModelMapping extends AbstractPureMappingTestWithCoreCompile
     @Test
     public void testPureModelMapping_WithErrorShouldNotCompile() throws Exception
     {
-        this.runtime.createInMemoryAndCompile(TEST_SOURCES);
-        int size = this.runtime.getModelRepository().serialize().length;
+        runtime.createInMemoryAndCompile(TEST_SOURCES);
+        int size = runtime.getModelRepository().serialize().length;
 
         for (int i = 1; i <= TEST_COUNT; i++)
         {
-            this.runtime.delete(TEST_MAPPING_SOURCE_ID1);
+            runtime.delete(TEST_MAPPING_SOURCE_ID1);
             try
             {
-                this.runtime.createInMemoryAndCompile(TEST_MAPPING_SOURCE_WITH_ERROR);
-                this.runtime.compile();
+                runtime.createInMemoryAndCompile(TEST_MAPPING_SOURCE_WITH_ERROR);
+                runtime.compile();
                 Assert.fail("Expected compilation exception on iteration #" + i);
             }
             catch (Exception e)
@@ -180,26 +181,26 @@ public class TestPureModelMapping extends AbstractPureMappingTestWithCoreCompile
                         TEST_MAPPING_SOURCE_ID1, 6, 36, 6, 36, 6, 39, e);
             }
 
-            this.runtime.delete(TEST_MAPPING_SOURCE_ID1);
-            this.runtime.createInMemoryAndCompile(Tuples.pair(TEST_MAPPING_SOURCE_ID1, TEST_SOURCES.get(TEST_MAPPING_SOURCE_ID1)));
-            this.runtime.compile();
-            Assert.assertEquals("Graph size mismatch at iteration #" + i, size, this.repository.serialize().length);
+            runtime.delete(TEST_MAPPING_SOURCE_ID1);
+            runtime.createInMemoryAndCompile(Tuples.pair(TEST_MAPPING_SOURCE_ID1, TEST_SOURCES.get(TEST_MAPPING_SOURCE_ID1)));
+            runtime.compile();
+            Assert.assertEquals("Graph size mismatch at iteration #" + i, size, repository.serialize().length);
         }
     }
 
     @Test
     public void testPureModelMapping_WithErrorNoSourceShouldNotCompile() throws Exception
     {
-        this.runtime.createInMemoryAndCompile(TEST_SOURCES);
-        int size = this.runtime.getModelRepository().serialize().length;
+        runtime.createInMemoryAndCompile(TEST_SOURCES);
+        int size = runtime.getModelRepository().serialize().length;
 
         for (int i = 1; i <= TEST_COUNT; i++)
         {
-            this.runtime.delete(TEST_MAPPING_SOURCE_ID2);
+            runtime.delete(TEST_MAPPING_SOURCE_ID2);
             try
             {
-                this.runtime.createInMemoryAndCompile(TEST_MAPPING_SOURCE_NO_SOURCE__ERROR);
-                this.runtime.compile();
+                runtime.createInMemoryAndCompile(TEST_MAPPING_SOURCE_NO_SOURCE__ERROR);
+                runtime.compile();
                 Assert.fail("Expected compilation exception on iteration #" + i);
             }
             catch (Exception e)
@@ -209,25 +210,25 @@ public class TestPureModelMapping extends AbstractPureMappingTestWithCoreCompile
                         TEST_MAPPING_SOURCE_ID2, 6, 26, 6, 26, 6, 28, e);
             }
 
-            this.runtime.delete(TEST_MAPPING_SOURCE_ID2);
-            this.runtime.createInMemoryAndCompile(Tuples.pair(TEST_MAPPING_SOURCE_ID2, TEST_SOURCES.get(TEST_MAPPING_SOURCE_ID2)));
-            this.runtime.compile();
-            Assert.assertEquals("Graph size mismatch at iteration #" + i, size, this.repository.serialize().length);
+            runtime.delete(TEST_MAPPING_SOURCE_ID2);
+            runtime.createInMemoryAndCompile(Tuples.pair(TEST_MAPPING_SOURCE_ID2, TEST_SOURCES.get(TEST_MAPPING_SOURCE_ID2)));
+            runtime.compile();
+            Assert.assertEquals("Graph size mismatch at iteration #" + i, size, repository.serialize().length);
         }
     }
 
     @Test
     public void testPureModelMapping_WithErrorWrongSourceShouldNotCompile() throws Exception
     {
-        this.runtime.createInMemoryAndCompile(TEST_SOURCES);
-        int size = this.runtime.getModelRepository().serialize().length;
+        runtime.createInMemoryAndCompile(TEST_SOURCES);
+        int size = runtime.getModelRepository().serialize().length;
 
         for (int i = 1; i <= TEST_COUNT; i++)
         {
-            this.runtime.delete(TEST_MODEL_SOURCE_ID2);
+            runtime.delete(TEST_MODEL_SOURCE_ID2);
             try
             {
-                this.runtime.compile();
+                runtime.compile();
                 Assert.fail("Expected compilation exception on iteration #" + i);
             }
             catch (Exception e)
@@ -237,9 +238,9 @@ public class TestPureModelMapping extends AbstractPureMappingTestWithCoreCompile
                         TEST_MAPPING_SOURCE_ID2, 6, 18, 6, 18, 6, 27, e);
             }
 
-            this.runtime.createInMemoryAndCompile(Tuples.pair(TEST_MODEL_SOURCE_ID2, TEST_SOURCES.get(TEST_MODEL_SOURCE_ID2)));
-            this.runtime.compile();
-            Assert.assertEquals("Graph size mismatch at iteration #" + i, size, this.repository.serialize().length);
+            runtime.createInMemoryAndCompile(Tuples.pair(TEST_MODEL_SOURCE_ID2, TEST_SOURCES.get(TEST_MODEL_SOURCE_ID2)));
+            runtime.compile();
+            Assert.assertEquals("Graph size mismatch at iteration #" + i, size, repository.serialize().length);
         }
     }
 
@@ -251,14 +252,13 @@ public class TestPureModelMapping extends AbstractPureMappingTestWithCoreCompile
                         .createInMemorySource("s2.pure", "Class B {b: String[1];} ")
                         .createInMemorySource("s3.pure", "###Mapping\n Mapping map(A : Pure {~src B\na: $src.bc.c})")
                         .createInMemorySource("s4.pure", "Class C {c: String[1];} \n Association BC {bc: C[1]; cb: B[1];}")
-                        .compile()
-                ,
+                        .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("s4.pure", "Class\n C {c: String[1];} \n Association BC {bc: C[1]; cb: B[1];}")
                         .compile()
                         .updateSource("s4.pure", "Class C {c: String[1];} \n Association BC {bc: C[1]; cb: B[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -335,8 +335,8 @@ public class TestPureModelMapping extends AbstractPureMappingTestWithCoreCompile
                         .compile()
                         .updateSource("enumerationMappingCode.pure", enumerationMappingCode)
                         .compile(),
-                this.runtime,
-                this.functionExecution,
+                runtime,
+                functionExecution,
                 this.getAdditionalVerifiers()
         );
     }
@@ -410,8 +410,8 @@ public class TestPureModelMapping extends AbstractPureMappingTestWithCoreCompile
                         .compileWithExpectedCompileFailure("The transformer 'StateMapping' is unknown or is not of type EnumerationMapping in the Mapping 'my::modelMapping' for property state", "modelMappingCode.pure", 12, 7)
                         .updateSource("enumerationMappingCode.pure", enumerationMappingCode)
                         .compile(),
-                this.runtime,
-                this.functionExecution,
+                runtime,
+                functionExecution,
                 this.getAdditionalVerifiers()
         );
     }

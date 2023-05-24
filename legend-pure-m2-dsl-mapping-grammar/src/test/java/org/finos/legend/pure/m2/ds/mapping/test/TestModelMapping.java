@@ -14,22 +14,29 @@
 
 package org.finos.legend.pure.m2.ds.mapping.test;
 
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.EnumerationMapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.modelToModel.PureInstanceSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.modelToModel.PurePropertyMapping;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.tools.test.ToFix;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
 {
     GraphWalker graphWalker;
+
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime();
     }
 
@@ -44,14 +51,14 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
     @Before
     public void setUpRelational()
     {
-        this.graphWalker = new GraphWalker(this.runtime, this.processorSupport);
+        this.graphWalker = new GraphWalker(runtime, processorSupport);
     }
 
     @Test
     public void testLiteralMapping()
     {
-        this.runtime.createInMemorySource("model.pure",
-                        "Enum myEnum" +
+        runtime.createInMemorySource("model.pure",
+                "Enum myEnum" +
                         "{" +
                         "   a,b" +
                         "}" +
@@ -78,15 +85,15 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                 "    enumVal : myEnum.a\n" +
                 "  }\n" +
                 ")";
-        this.runtime.createInMemorySource("mapping.pure", source);
-        this.runtime.compile();
+        runtime.createInMemorySource("mapping.pure", source);
+        runtime.compile();
         assertSetSourceInformation(source, "Firm");
     }
 
     @Test
     public void testLiteralEnumErrorMapping()
     {
-        this.runtime.createInMemorySource("model.pure",
+        runtime.createInMemorySource("model.pure",
                 "Enum myEnum" +
                         "{" +
                         "   a,b" +
@@ -96,7 +103,7 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         "  enumVal : myEnum[1];" +
                         "}");
 
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "###Mapping\n" +
                         "Mapping test::TestMapping\n" +
                         "(\n" +
@@ -107,14 +114,14 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         ")");
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail("Expected compilation exception");
         }
         catch (PureCompilationException e)
         {
-                this.assertPureException(PureCompilationException.class,
-                        "The enum value 'z' can't be found in the enumeration myEnum",
-                        "mapping.pure", 6, 22, 6, 22, 6, 22, e);
+            assertPureException(PureCompilationException.class,
+                    "The enum value 'z' can't be found in the enumeration myEnum",
+                    "mapping.pure", 6, 22, 6, 22, 6, 22, e);
 
         }
     }
@@ -124,7 +131,7 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
     {
         try
         {
-            this.runtime.createInMemorySource("model.pure",
+            runtime.createInMemorySource("model.pure",
                     "###Mapping\n" +
                             "Mapping my::query::TestMapping\n" +
                             "(\n" +
@@ -148,12 +155,12 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                             "      )\n" +
                             "   ]" +
                             ")");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail("Expected compilation exception");
         }
         catch (PureParserException e)
         {
-            this.assertPureException(PureParserException.class,
+            assertPureException(PureParserException.class,
                     "Grammar Tests in Mapping currently not supported in Pure",
                     "model.pure", 4, 1, 4, 1, 4, 12, e);
         }
@@ -162,12 +169,11 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
     @Test
     public void testMappingWithSource()
     {
-        this.runtime.createInMemorySource("model.pure",
-                        "Class Firm" +
+        runtime.createInMemorySource("model.pure",
+                "Class Firm" +
                         "{" +
                         "  legalName : String[1];" +
                         "}" +
-                        "" +
                         "Class pack::FirmSource" +
                         "{" +
                         "   name : String[1];" +
@@ -182,21 +188,20 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                 "    legalName : $src.name\n" +
                 "  }\n" +
                 ")";
-        this.runtime.createInMemorySource("mapping.pure", source);
-        this.runtime.compile();
+        runtime.createInMemorySource("mapping.pure", source);
+        runtime.compile();
         assertSetSourceInformation(source, "Firm");
     }
 
     @Test
     public void testMappingWithSourceInt()
     {
-        this.runtime.createInMemorySource("model.pure",
+        runtime.createInMemorySource("model.pure",
                 "Class Firm" +
                         "{" +
                         "  legalName : String[1];" +
                         "  val : Integer[1];" +
                         "}" +
-                        "" +
                         "Class AB" +
                         "{" +
                         "   vale : Integer[1];" +
@@ -212,15 +217,15 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                 "    val : $src.vale\n" +
                 "  }\n" +
                 ")";
-        this.runtime.createInMemorySource("mapping.pure", source);
-        this.runtime.compile();
+        runtime.createInMemorySource("mapping.pure", source);
+        runtime.compile();
         assertSetSourceInformation(source, "Firm");
     }
 
     @Test
     public void testProjectionClassMapping()
     {
-        this.runtime.createInMemorySource("model.pure",
+        runtime.createInMemorySource("model.pure",
                 "Enum myEnum" +
                         "{" +
                         "   a,b" +
@@ -233,8 +238,7 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         "  date : Date[1];" +
                         "  f_val :Float[1];" +
                         "  enumVal : myEnum[1];" +
-                        "}" +
-                        "");
+                        "}");
 
         String source = "###Mapping\n" +
                 "Mapping test::TestMapping\n" +
@@ -249,30 +253,29 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                 "    enumVal : myEnum.a\n" +
                 "  }\n" +
                 ")";
-        this.runtime.createInMemorySource("mapping.pure", source);
-        this.runtime.createInMemorySource("projection.pure", "Class FirmProjection projects Firm\n" +
+        runtime.createInMemorySource("mapping.pure", source);
+        runtime.createInMemorySource("projection.pure", "Class FirmProjection projects Firm\n" +
                 "{\n" +
                 "   *" +
                 "}");
-        this.runtime.compile();
+        runtime.compile();
         assertSetSourceInformation(source, "FirmProjection");
     }
 
     @Test
     public void testMappingWithSourceWrongProperty()
     {
-        this.runtime.createInMemorySource("model.pure",
+        runtime.createInMemorySource("model.pure",
                 "Class Firm" +
                         "{" +
                         "  legalName : String[1];" +
                         "}" +
-                        "" +
                         "Class pack::FirmSource" +
                         "{" +
                         "   name : String[1];" +
                         "}");
 
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "###Mapping\n" +
                         "Mapping test::TestMapping\n" +
                         "(\n" +
@@ -284,12 +287,12 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         ")");
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail("Expected compilation exception");
         }
         catch (PureCompilationException e)
         {
-            this.assertPureException(PureCompilationException.class,
+            assertPureException(PureCompilationException.class,
                     "Can't find the property 'nameX' in the class pack::FirmSource",
                     "mapping.pure", 6, 22, 6, 22, 6, 26, e);
 
@@ -299,13 +302,13 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
     @Test
     public void testMappingWithSourceError()
     {
-        this.runtime.createInMemorySource("model.pure",
-                        "Class Firm" +
+        runtime.createInMemorySource("model.pure",
+                "Class Firm" +
                         "{" +
                         "  legalName : String[1];" +
                         "}");
 
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "###Mapping\n" +
                         "Mapping test::TestMapping\n" +
                         "(\n" +
@@ -317,12 +320,12 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         ")");
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail("Expected compilation exception");
         }
         catch (PureCompilationException e)
         {
-            this.assertPureException(PureCompilationException.class,
+            assertPureException(PureCompilationException.class,
                     "pack::FirmSource has not been defined!",
                     "mapping.pure", 5, 10, 5, 10, 5, 13, e);
 
@@ -332,13 +335,13 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
     @Test
     public void testMappingWithTypeMismatch()
     {
-        this.runtime.createInMemorySource("model.pure",
+        runtime.createInMemorySource("model.pure",
                 "Class Firm" +
                         "{" +
                         "  legalName : String[1];" +
                         "}");
 
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "###Mapping\n" +
                         "Mapping test::TestMapping\n" +
                         "(\n" +
@@ -349,12 +352,12 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         ")");
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail("Expected compilation exception");
         }
         catch (PureCompilationException e)
         {
-            this.assertPureException(PureCompilationException.class,
+            assertPureException(PureCompilationException.class,
                     "Type Error: 'Integer' not a subtype of 'String'",
                     "mapping.pure", 5, 17, 5, 17, 5, 17, e);
 
@@ -365,13 +368,13 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
     @Test
     public void testMappingWithMultiplicityMismatch()
     {
-        this.runtime.createInMemorySource("model.pure",
+        runtime.createInMemorySource("model.pure",
                 "Class Firm" +
                         "{" +
                         "  legalName : String[1];" +
                         "}");
 
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "###Mapping\n" +
                         "Mapping test::TestMapping\n" +
                         "(\n" +
@@ -382,12 +385,12 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         ")");
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail("Expected compilation exception");
         }
         catch (PureCompilationException e)
         {
-            this.assertPureException(PureCompilationException.class,
+            assertPureException(PureCompilationException.class,
                     "Multiplicity Error ' The property 'legalName' has a multiplicity range of [1] when the given expression has a multiplicity range of [2]",
                     "mapping.pure", 5, 17, 5, 17, 5, 25, e);
 
@@ -398,8 +401,8 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
     @Test
     public void testFilter()
     {
-        this.runtime.createInMemorySource("model.pure",
-                        "Class Firm" +
+        runtime.createInMemorySource("model.pure",
+                "Class Firm" +
                         "{" +
                         "  legalName : String[1];" +
                         "}" +
@@ -418,25 +421,25 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                 "    legalName : $src.val\n" +
                 "  }\n" +
                 ")";
-        this.runtime.createInMemorySource("mapping.pure", source);
-        this.runtime.compile();
+        runtime.createInMemorySource("mapping.pure", source);
+        runtime.compile();
         assertSetSourceInformation(source, "Firm");
         CoreInstance mapping = this.graphWalker.getMapping("test::TestMapping");
         Assert.assertNotNull(mapping);
         Assert.assertNotNull(mapping.getSourceInformation());
-        Assert.assertEquals(2,mapping.getSourceInformation().getStartLine());
-        Assert.assertEquals(10,mapping.getSourceInformation().getEndLine());
-        CoreInstance classMapping = this.graphWalker.getClassMappingById(mapping,"firm");
+        Assert.assertEquals(2, mapping.getSourceInformation().getStartLine());
+        Assert.assertEquals(10, mapping.getSourceInformation().getEndLine());
+        CoreInstance classMapping = this.graphWalker.getClassMappingById(mapping, "firm");
         Assert.assertNotNull(classMapping);
         Assert.assertNotNull(classMapping.getSourceInformation());
-        Assert.assertEquals(4,classMapping.getSourceInformation().getStartLine());
-        Assert.assertEquals(9,classMapping.getSourceInformation().getEndLine());
+        Assert.assertEquals(4, classMapping.getSourceInformation().getStartLine());
+        Assert.assertEquals(9, classMapping.getSourceInformation().getEndLine());
     }
 
     @Test
     public void testFilterError()
     {
-        this.runtime.createInMemorySource("model.pure",
+        runtime.createInMemorySource("model.pure",
                 "Class Firm" +
                         "{" +
                         "  legalName : String[1];" +
@@ -446,7 +449,7 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         "   val : String[1];" +
                         "}");
 
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "###Mapping\n" +
                         "Mapping test::TestMapping\n" +
                         "(\n" +
@@ -459,12 +462,12 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         ")");
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail("Expected a compilation error");
         }
         catch (PureCompilationException e)
         {
-            this.assertPureException(PureCompilationException.class,
+            assertPureException(PureCompilationException.class,
                     "Can't find the property 'valX' in the class FirmSource",
                     "mapping.pure", 6, 18, 6, 18, 6, 21, e);
 
@@ -475,7 +478,7 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
     @Test
     public void testFilterTypeError()
     {
-        this.runtime.createInMemorySource("model.pure",
+        runtime.createInMemorySource("model.pure",
                 "Class Firm" +
                         "{" +
                         "  legalName : String[1];" +
@@ -485,7 +488,7 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         "   val : String[1];" +
                         "}");
 
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "###Mapping\n" +
                         "Mapping test::TestMapping\n" +
                         "(\n" +
@@ -498,12 +501,12 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         ")");
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail("Expected a compilation error");
         }
         catch (PureCompilationException e)
         {
-            this.assertPureException(PureCompilationException.class,
+            assertPureException(PureCompilationException.class,
                     "A filter should be a Boolean expression",
                     "mapping.pure", 6, 18, 6, 18, 6, 20, e);
 
@@ -513,7 +516,7 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
     @Test
     public void testComplexTypePropertyMapping()
     {
-        this.runtime.createInMemorySource("model.pure",
+        runtime.createInMemorySource("model.pure",
                 "Class Person" +
                         "{" +
                         "   firms : Firm[*];" +
@@ -521,7 +524,7 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         "Class Firm" +
                         "{" +
                         "  legalName : String[1];" +
-                        "}"+
+                        "}" +
                         "Class _Person" +
                         "{" +
                         "   firms : _Firm[*];" +
@@ -545,15 +548,15 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                 "    firms : $src.firms" +
                 "  }\n" +
                 ")";
-        this.runtime.createInMemorySource("mapping.pure", source);
-        this.runtime.compile();
+        runtime.createInMemorySource("mapping.pure", source);
+        runtime.compile();
         assertSetSourceInformation(source, "Firm");
     }
 
     @Test
     public void testComplexTypePropertyMappingError()
     {
-        this.runtime.createInMemorySource("model.pure",
+        runtime.createInMemorySource("model.pure",
                 "Class Person" +
                         "{" +
                         "   firms : Firm[*];" +
@@ -561,7 +564,7 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         "Class Firm" +
                         "{" +
                         "  legalName : String[1];" +
-                        "}"+
+                        "}" +
                         "Class _Person" +
                         "{" +
                         "   name : String[1];" +
@@ -572,7 +575,7 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         "  legalName : String[1];" +
                         "}");
 
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "###Mapping\n" +
                         "Mapping test::TestMapping\n" +
                         "(\n" +
@@ -589,12 +592,12 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         ")");
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail("Expected a compilation error");
         }
         catch (PureCompilationException e)
         {
-            this.assertPureException(PureCompilationException.class,
+            assertPureException(PureCompilationException.class,
                     "Type Error: '_Person' is not '_Firm'",
                     "mapping.pure", 11, 18, 11, 18, 11, 22, e);
 
@@ -604,7 +607,7 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
     @Test
     public void testComplexTypePropertyMappingWithWrongTargetIdError()
     {
-        this.runtime.createInMemorySource("model.pure",
+        runtime.createInMemorySource("model.pure",
                 "Class Person" +
                         "{" +
                         "   firms : Firm[*];" +
@@ -612,7 +615,7 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         "Class Firm" +
                         "{" +
                         "  legalName : String[1];" +
-                        "}"+
+                        "}" +
                         "Class _Person" +
                         "{" +
                         "   name : String[1];" +
@@ -623,7 +626,7 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         "  legalName : String[1];" +
                         "}");
 
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "###Mapping\n" +
                         "Mapping test::TestMapping\n" +
                         "(\n" +
@@ -640,12 +643,12 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         ")");
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail("Expected a compilation error");
         }
         catch (PureCompilationException e)
         {
-            this.assertPureException(PureCompilationException.class,
+            assertPureException(PureCompilationException.class,
                     "The set implementation 'f2' is unknown in the mapping 'TestMapping'",
                     "mapping.pure", 11, 5, 11, 5, 11, 9, e);
 
@@ -655,8 +658,8 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
     @Test
     public void testMilestonedMappingWithLatestDate()
     {
-        this.runtime.createInMemorySource("model.pure",
-                        "Class Firm\n" +
+        runtime.createInMemorySource("model.pure",
+                "Class Firm\n" +
                         "{\n" +
                         "  legalName : String[1];\n" +
                         "  employees : Person[*];\n" +
@@ -681,15 +684,15 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                 "    employeeNames : $src.employees(%latest)->map(e | $e.name)\n" +
                 "  }\n" +
                 ")";
-        this.runtime.createInMemorySource("mapping.pure", source);
-        this.runtime.compile();
+        runtime.createInMemorySource("mapping.pure", source);
+        runtime.compile();
         assertSetSourceInformation(source, "TargetFirm");
     }
 
     @Test
     public void testM2MMappingWithEnumerationMapping()
     {
-        this.runtime.createInMemorySource("model.pure",
+        runtime.createInMemorySource("model.pure",
                 "###Pure\n" +
                         "import my::*;\n" +
                         "\n" +
@@ -712,7 +715,7 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         "}"
         );
 
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "###Mapping\n" +
                         "import my::*;\n" +
                         "\n" +
@@ -735,8 +738,8 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
 
         try
         {
-            this.runtime.compile();
-            Mapping mapping = (Mapping)this.runtime.getCoreInstance("my::modelMapping");
+            runtime.compile();
+            Mapping mapping = (Mapping) runtime.getCoreInstance("my::modelMapping");
             PureInstanceSetImplementation m2mMapping = mapping._classMappings().selectInstancesOf(PureInstanceSetImplementation.class).getFirst();
 
             PurePropertyMapping purePropertyMapping1 = m2mMapping._propertyMappings().selectInstancesOf(PurePropertyMapping.class).getFirst();
@@ -746,7 +749,7 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
             Assert.assertNotNull(purePropertyMapping2._transformer());
             Assert.assertTrue(purePropertyMapping2._transformer() instanceof EnumerationMapping);
 
-            EnumerationMapping transformer = (EnumerationMapping)purePropertyMapping2._transformer();
+            EnumerationMapping transformer = (EnumerationMapping) purePropertyMapping2._transformer();
             Assert.assertEquals("StateMapping", transformer._name());
             Assert.assertEquals("my::State", PackageableElement.getUserPathForPackageableElement(transformer._enumeration()));
             Assert.assertEquals(2, transformer._enumValueMappings().size());
@@ -760,7 +763,7 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
     @Test
     public void testM2MMappingWithInvalidEnumerationMapping()
     {
-        this.runtime.createInMemorySource("model.pure",
+        runtime.createInMemorySource("model.pure",
                 "###Pure\n" +
                         "import my::*;\n" +
                         "\n" +
@@ -789,7 +792,7 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         "}\n"
         );
 
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "###Mapping\n" +
                         "import my::*;\n" +
                         "\n" +
@@ -812,7 +815,7 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
 
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -861,203 +864,201 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
     @Test
     public void testMappingWithMerge()
     {
-    String  source =
-               "Class  example::SourcePersonWithFirstName\n" +
-                "{\n" +
-                "   id:Integer[1];\n" +
-                "   firstName:String[1];\n" +
-                "}\n" +
-                "\n" +
-                "\n" +
-                "Class example::SourcePersonWithLastName\n" +
-                "{\n" +
-                "   id:Integer[1];\n" +
-                "   lastName:String[1];\n" +
-                "}\n" +
-              "Class example::Person\n" +
-                "{\n" +
-                "   firstName:String[1];\n" +
-                "   lastName:String[1];\n" +
-                "}\n" +
+        String source =
+                "Class  example::SourcePersonWithFirstName\n" +
+                        "{\n" +
+                        "   id:Integer[1];\n" +
+                        "   firstName:String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "\n" +
+                        "Class example::SourcePersonWithLastName\n" +
+                        "{\n" +
+                        "   id:Integer[1];\n" +
+                        "   lastName:String[1];\n" +
+                        "}\n" +
+                        "Class example::Person\n" +
+                        "{\n" +
+                        "   firstName:String[1];\n" +
+                        "   lastName:String[1];\n" +
+                        "}\n" +
 
-                "\n" +
-              "function meta::pure::router::operations::merge(o:meta::pure::mapping::OperationSetImplementation[1]):meta::pure::mapping::SetImplementation[*] {[]}\n" +
+                        "\n" +
+                        "function meta::pure::router::operations::merge(o:meta::pure::mapping::OperationSetImplementation[1]):meta::pure::mapping::SetImplementation[*] {[]}\n" +
 
-                "###Mapping\n" +
-                "Mapping  example::MergeModelMappingSourceWithMatch\n" +
-                "(\n" +
-                "   *example::Person : Operation\n" +
-                "           {\n" +
-          "             meta::pure::router::operations::merge_OperationSetImplementation_1__SetImplementation_MANY_([p1,p2,p3],{p1:example::SourcePersonWithFirstName[1], p2:example::SourcePersonWithLastName[1],p4:example::SourcePersonWithLastName[1] | $p1.id ==  $p2.id })\n" +
+                        "###Mapping\n" +
+                        "Mapping  example::MergeModelMappingSourceWithMatch\n" +
+                        "(\n" +
+                        "   *example::Person : Operation\n" +
+                        "           {\n" +
+                        "             meta::pure::router::operations::merge_OperationSetImplementation_1__SetImplementation_MANY_([p1,p2,p3],{p1:example::SourcePersonWithFirstName[1], p2:example::SourcePersonWithLastName[1],p4:example::SourcePersonWithLastName[1] | $p1.id ==  $p2.id })\n" +
 
-                "           }\n" +
-                "\n" +
-                "   example::Person[p1] : Pure\n" +
-                "            {\n" +
-                "               ~src example::SourcePersonWithFirstName\n" +
-                "               firstName : $src.firstName\n" +
-                "            }\n" +
-                "\n" +
-                "   example::Person[p2] : Pure\n" +
-                "            {\n" +
-                "               ~src example::SourcePersonWithLastName\n" +
-                       "        lastName :  $src.lastName\n" +
-                "            }\n" +
-                "   example::Person[p3] : Pure\n" +
-                "            {\n" +
-                "               ~src example::SourcePersonWithLastName\n" +
-                "        lastName :  $src.lastName\n" +
-                "            }\n" +
+                        "           }\n" +
+                        "\n" +
+                        "   example::Person[p1] : Pure\n" +
+                        "            {\n" +
+                        "               ~src example::SourcePersonWithFirstName\n" +
+                        "               firstName : $src.firstName\n" +
+                        "            }\n" +
+                        "\n" +
+                        "   example::Person[p2] : Pure\n" +
+                        "            {\n" +
+                        "               ~src example::SourcePersonWithLastName\n" +
+                        "        lastName :  $src.lastName\n" +
+                        "            }\n" +
+                        "   example::Person[p3] : Pure\n" +
+                        "            {\n" +
+                        "               ~src example::SourcePersonWithLastName\n" +
+                        "        lastName :  $src.lastName\n" +
+                        "            }\n" +
 
-                "\n" +
-                ")";
+                        "\n" +
+                        ")";
 
 
-        this.runtime.createInMemorySource("mapping.pure", source);
-        this.runtime.compile();
+        runtime.createInMemorySource("mapping.pure", source);
+        runtime.compile();
     }
 
- @Test
+    @Test
     public void testMappingWithMergeInvalidReturn()
     {
-    String  source =
-               "Class  example::SourcePersonWithFirstName\n" +
-                "{\n" +
-                "   id:Integer[1];\n" +
-                "   firstName:String[1];\n" +
-                "}\n" +
-                "\n" +
-                "\n" +
-                "Class example::SourcePersonWithLastName\n" +
-                "{\n" +
-                "   id:Integer[1];\n" +
-                "   lastName:String[1];\n" +
-                "}\n" +
-              "Class example::Person\n" +
-                "{\n" +
-                "   firstName:String[1];\n" +
-                "   lastName:String[1];\n" +
-                "}\n" +
+        String source =
+                "Class  example::SourcePersonWithFirstName\n" +
+                        "{\n" +
+                        "   id:Integer[1];\n" +
+                        "   firstName:String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "\n" +
+                        "Class example::SourcePersonWithLastName\n" +
+                        "{\n" +
+                        "   id:Integer[1];\n" +
+                        "   lastName:String[1];\n" +
+                        "}\n" +
+                        "Class example::Person\n" +
+                        "{\n" +
+                        "   firstName:String[1];\n" +
+                        "   lastName:String[1];\n" +
+                        "}\n" +
 
-                "\n" +
-              "function meta::pure::router::operations::merge(o:meta::pure::mapping::OperationSetImplementation[1]):meta::pure::mapping::SetImplementation[*] {[]}\n" +
+                        "\n" +
+                        "function meta::pure::router::operations::merge(o:meta::pure::mapping::OperationSetImplementation[1]):meta::pure::mapping::SetImplementation[*] {[]}\n" +
 
-                "###Mapping\n" +
-                "Mapping  example::MergeModelMappingSourceWithMatch\n" +
-                "(\n" +
-                "   *example::Person : Operation\n" +
-                "           {\n" +
-          "             meta::pure::router::operations::merge_OperationSetImplementation_1__SetImplementation_MANY_([p1,p2,p3],{p1:example::SourcePersonWithFirstName[1], p2:example::SourcePersonWithLastName[1],p4:example::SourcePersonWithLastName[1] |  'test' })\n" +
+                        "###Mapping\n" +
+                        "Mapping  example::MergeModelMappingSourceWithMatch\n" +
+                        "(\n" +
+                        "   *example::Person : Operation\n" +
+                        "           {\n" +
+                        "             meta::pure::router::operations::merge_OperationSetImplementation_1__SetImplementation_MANY_([p1,p2,p3],{p1:example::SourcePersonWithFirstName[1], p2:example::SourcePersonWithLastName[1],p4:example::SourcePersonWithLastName[1] |  'test' })\n" +
 
-                "           }\n" +
-                "\n" +
-                "   example::Person[p1] : Pure\n" +
-                "            {\n" +
-                "               ~src example::SourcePersonWithFirstName\n" +
-                "               firstName : $src.firstName\n" +
-                "            }\n" +
-                "\n" +
-                "   example::Person[p2] : Pure\n" +
-                "            {\n" +
-                "               ~src example::SourcePersonWithLastName\n" +
-                       "        lastName :  $src.lastName\n" +
-                "            }\n" +
-                "   example::Person[p3] : Pure\n" +
-                "            {\n" +
-                "               ~src example::SourcePersonWithLastName\n" +
-                "        lastName :  $src.lastName\n" +
-                "            }\n" +
+                        "           }\n" +
+                        "\n" +
+                        "   example::Person[p1] : Pure\n" +
+                        "            {\n" +
+                        "               ~src example::SourcePersonWithFirstName\n" +
+                        "               firstName : $src.firstName\n" +
+                        "            }\n" +
+                        "\n" +
+                        "   example::Person[p2] : Pure\n" +
+                        "            {\n" +
+                        "               ~src example::SourcePersonWithLastName\n" +
+                        "        lastName :  $src.lastName\n" +
+                        "            }\n" +
+                        "   example::Person[p3] : Pure\n" +
+                        "            {\n" +
+                        "               ~src example::SourcePersonWithLastName\n" +
+                        "        lastName :  $src.lastName\n" +
+                        "            }\n" +
 
-                "\n" +
-                ")";
+                        "\n" +
+                        ")";
 
 
-
-        this.runtime.createInMemorySource("mapping.pure", source);
+        runtime.createInMemorySource("mapping.pure", source);
 
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail("Expected compilation exception");
         }
         catch (PureCompilationException e)
         {
-                this.assertPureException(PureCompilationException.class,
-                        "Merge validation function for class: Person does not return Boolean",
-                        "mapping.pure", 23, 5, 23, 14, 26, 12, e);
+            assertPureException(PureCompilationException.class,
+                    "Merge validation function for class: Person does not return Boolean",
+                    "mapping.pure", 23, 5, 23, 14, 26, 12, e);
 
         }
     }
 
-     @Test
+    @Test
     public void testMappingWithMergeInvalidParameter()
     {
-    String  source =
-               "Class  example::SourcePersonWithFirstName\n" +
-                "{\n" +
-                "   id:Integer[1];\n" +
-                "   firstName:String[1];\n" +
-                "}\n" +
-                "\n" +
-                "\n" +
-                "Class example::SourcePersonWithLastName\n" +
-                "{\n" +
-                "   id:Integer[1];\n" +
-                "   lastName:String[1];\n" +
-                "}\n" +
-              "Class example::Person\n" +
-                "{\n" +
-                "   id:Integer[1];\n" +
-                "   firstName:String[1];\n" +
-                "   lastName:String[1];\n" +
-                "}\n" +
+        String source =
+                "Class  example::SourcePersonWithFirstName\n" +
+                        "{\n" +
+                        "   id:Integer[1];\n" +
+                        "   firstName:String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "\n" +
+                        "Class example::SourcePersonWithLastName\n" +
+                        "{\n" +
+                        "   id:Integer[1];\n" +
+                        "   lastName:String[1];\n" +
+                        "}\n" +
+                        "Class example::Person\n" +
+                        "{\n" +
+                        "   id:Integer[1];\n" +
+                        "   firstName:String[1];\n" +
+                        "   lastName:String[1];\n" +
+                        "}\n" +
 
-                "\n" +
-              "function meta::pure::router::operations::merge(o:meta::pure::mapping::OperationSetImplementation[1]):meta::pure::mapping::SetImplementation[*] {[]}\n" +
+                        "\n" +
+                        "function meta::pure::router::operations::merge(o:meta::pure::mapping::OperationSetImplementation[1]):meta::pure::mapping::SetImplementation[*] {[]}\n" +
 
-                "###Mapping\n" +
-                "Mapping  example::MergeModelMappingSourceWithMatch\n" +
-                "(\n" +
-                "   *example::Person : Operation\n" +
-                "           {\n" +
-          "             meta::pure::router::operations::merge_OperationSetImplementation_1__SetImplementation_MANY_([p1,p2,p3],{p1:example::Person[1], p2:example::SourcePersonWithLastName[1],p4:example::SourcePersonWithLastName[1] | $p1.id ==  $p2.id })\n" +
+                        "###Mapping\n" +
+                        "Mapping  example::MergeModelMappingSourceWithMatch\n" +
+                        "(\n" +
+                        "   *example::Person : Operation\n" +
+                        "           {\n" +
+                        "             meta::pure::router::operations::merge_OperationSetImplementation_1__SetImplementation_MANY_([p1,p2,p3],{p1:example::Person[1], p2:example::SourcePersonWithLastName[1],p4:example::SourcePersonWithLastName[1] | $p1.id ==  $p2.id })\n" +
 
-                "           }\n" +
-                "\n" +
-                "   example::Person[p1] : Pure\n" +
-                "            {\n" +
-                "               ~src example::SourcePersonWithFirstName\n" +
-                "               firstName : $src.firstName\n" +
-                "            }\n" +
-                "\n" +
-                "   example::Person[p2] : Pure\n" +
-                "            {\n" +
-                "               ~src example::SourcePersonWithLastName\n" +
-                       "        lastName :  $src.lastName\n" +
-                "            }\n" +
-                "   example::Person[p3] : Pure\n" +
-                "            {\n" +
-                "               ~src example::SourcePersonWithLastName\n" +
-                "        lastName :  $src.lastName\n" +
-                "            }\n" +
+                        "           }\n" +
+                        "\n" +
+                        "   example::Person[p1] : Pure\n" +
+                        "            {\n" +
+                        "               ~src example::SourcePersonWithFirstName\n" +
+                        "               firstName : $src.firstName\n" +
+                        "            }\n" +
+                        "\n" +
+                        "   example::Person[p2] : Pure\n" +
+                        "            {\n" +
+                        "               ~src example::SourcePersonWithLastName\n" +
+                        "        lastName :  $src.lastName\n" +
+                        "            }\n" +
+                        "   example::Person[p3] : Pure\n" +
+                        "            {\n" +
+                        "               ~src example::SourcePersonWithLastName\n" +
+                        "        lastName :  $src.lastName\n" +
+                        "            }\n" +
 
-                "\n" +
-                ")";
+                        "\n" +
+                        ")";
 
 
-
-        this.runtime.createInMemorySource("mapping.pure", source);
+        runtime.createInMemorySource("mapping.pure", source);
 
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail("Expected compilation exception");
         }
         catch (PureCompilationException e)
         {
-                this.assertPureException(PureCompilationException.class,
-                        "Merge validation function for class: Person has an invalid parameter. All parameters must be a src class of a merged set",
-                        "mapping.pure", 24, 5, 24, 14, 27, 12, e);
+            assertPureException(PureCompilationException.class,
+                    "Merge validation function for class: Person has an invalid parameter. All parameters must be a src class of a merged set",
+                    "mapping.pure", 24, 5, 24, 14, 27, 12, e);
 
         }
     }

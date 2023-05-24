@@ -46,7 +46,7 @@ public class TestPureRuntimeAggregationAwareMapping extends AbstractPureMappingT
                     "{\n" +
                     "   salesDate: FiscalCalendar[1];\n" +
                     "   netRevenue: Float[1];\n" +
-                    "}\n"+
+                    "}\n" +
                     "function meta::pure::functions::math::sum(numbers:Float[*]):Float[1]\n" +
                     "{\n" +
                     "    $numbers->plus();\n" +
@@ -78,7 +78,7 @@ public class TestPureRuntimeAggregationAwareMapping extends AbstractPureMappingT
                     "{\n" +
                     "   salesDate: FiscalCalendar[1];\n" +
                     "   netRevenue: Float[1];\n" +
-                    "}"+
+                    "}" +
                     "function meta::pure::functions::math::sum(numbers:Float[*]):Float[1]\n" +
                     "{\n" +
                     "    $numbers->plus();\n" +
@@ -206,7 +206,8 @@ public class TestPureRuntimeAggregationAwareMapping extends AbstractPureMappingT
     private static final String function = "function myFunction(d: FiscalCalendar[1]) : FiscalCalendar[1] {$d}";
 
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime();
     }
 
@@ -222,8 +223,8 @@ public class TestPureRuntimeAggregationAwareMapping extends AbstractPureMappingT
     public void testCreateAndDeleteAggregationAwareMapping() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("source1.pure", model).compile(),
-                new RuntimeTestScriptBuilder().createInMemorySource("source2.pure", mapping).compile().deleteSource("source2.pure").compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                new RuntimeTestScriptBuilder().createInMemorySource("source2.pure", mapping).compile().deleteSource("source2.pure").compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -234,8 +235,8 @@ public class TestPureRuntimeAggregationAwareMapping extends AbstractPureMappingT
                         .updateSource("source1.pure", modelWithSalesPersonDimension)
                         .compile()
                         .updateSource("source1.pure", model)
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -246,8 +247,8 @@ public class TestPureRuntimeAggregationAwareMapping extends AbstractPureMappingT
                         .updateSource("source1.pure", modelWithSalesPersonDimension).updateSource("source2.pure", mappingWithSalesPersonDimension)
                         .compile()
                         .updateSource("source1.pure", model).updateSource("source2.pure", mapping)
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -258,7 +259,7 @@ public class TestPureRuntimeAggregationAwareMapping extends AbstractPureMappingT
                         .updateSource("source3.pure", "//" + function)
                         .compileWithExpectedCompileFailure("The system can't find a match for the function: myFunction(_:FiscalCalendar[1])", "source2.pure", 18, 36)
                         .updateSource("source3.pure", function)
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 }

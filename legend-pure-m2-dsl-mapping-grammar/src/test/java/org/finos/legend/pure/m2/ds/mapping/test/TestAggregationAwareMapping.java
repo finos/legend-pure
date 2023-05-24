@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m2.ds.mapping.test;
 
-
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.InstanceSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.SetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.aggregationAware.AggregationAwareSetImplementation;
@@ -29,7 +28,8 @@ import java.util.Comparator;
 public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime();
     }
 
@@ -105,17 +105,10 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
                 "      }\n" +
                 "   }\n" +
                 ")";
-        this.runtime.createInMemorySource("mapping.pure", source);
-        this.runtime.compile();
+        runtime.createInMemorySource("mapping.pure", source);
+        runtime.compile();
 
-        InstanceSetImplementation setImpl = (InstanceSetImplementation)((org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping)this.runtime.getCoreInstance("map"))._classMappings().toSortedList(new Comparator<SetImplementation>()
-        {
-            @Override
-            public int compare(SetImplementation o1, SetImplementation o2)
-            {
-                return o1._id().compareTo(o2._id());
-            }
-        }).get(0);
+        InstanceSetImplementation setImpl = (InstanceSetImplementation) ((org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping) runtime.getCoreInstance("map"))._classMappings().toSortedListBy(SetImplementation::_id).get(0);
 
         Assert.assertTrue(setImpl instanceof AggregationAwareSetImplementation);
 
@@ -127,12 +120,12 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
         Assert.assertEquals("a_Main", aggSetImpl._mainSetImplementation()._id());
 
         Assert.assertNotNull(aggSetImpl._aggregateSetImplementations());
-        Assert.assertTrue(aggSetImpl._aggregateSetImplementations().size() == 1);
+        Assert.assertEquals(1, aggSetImpl._aggregateSetImplementations().size());
 
         Assert.assertNotNull(aggSetImpl._aggregateSetImplementations().toList().get(0)._aggregateSpecification());
         Assert.assertTrue(aggSetImpl._aggregateSetImplementations().toList().get(0)._aggregateSpecification()._canAggregate());
-        Assert.assertTrue(aggSetImpl._aggregateSetImplementations().toList().get(0)._aggregateSpecification()._groupByFunctions().size() == 1);
-        Assert.assertTrue(aggSetImpl._aggregateSetImplementations().toList().get(0)._aggregateSpecification()._aggregateValues().size() == 1);
+        Assert.assertEquals(1, aggSetImpl._aggregateSetImplementations().toList().get(0)._aggregateSpecification()._groupByFunctions().size());
+        Assert.assertEquals(1, aggSetImpl._aggregateSetImplementations().toList().get(0)._aggregateSpecification()._aggregateValues().size());
 
         Assert.assertTrue(aggSetImpl._aggregateSetImplementations().toList().get(0)._setImplementation() instanceof PureInstanceSetImplementation);
         Assert.assertEquals("a_Aggregate_0", aggSetImpl._aggregateSetImplementations().toList().get(0)._setImplementation()._id());
@@ -227,10 +220,10 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
                 "      }\n" +
                 "   }\n" +
                 ")";
-        this.runtime.createInMemorySource("mapping.pure", source);
-        this.runtime.compile();
+        runtime.createInMemorySource("mapping.pure", source);
+        runtime.compile();
 
-        InstanceSetImplementation setImpl = (InstanceSetImplementation)((org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping)this.runtime.getCoreInstance("map"))._classMappings().toSortedList(new Comparator<SetImplementation>()
+        InstanceSetImplementation setImpl = (InstanceSetImplementation) ((org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping) runtime.getCoreInstance("map"))._classMappings().toSortedList(new Comparator<SetImplementation>()
         {
             @Override
             public int compare(SetImplementation o1, SetImplementation o2)
@@ -249,20 +242,20 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
         Assert.assertEquals("a_Main", aggSetImpl._mainSetImplementation()._id());
 
         Assert.assertNotNull(aggSetImpl._aggregateSetImplementations());
-        Assert.assertTrue(aggSetImpl._aggregateSetImplementations().size() == 2);
+        Assert.assertEquals(2, aggSetImpl._aggregateSetImplementations().size());
 
         Assert.assertNotNull(aggSetImpl._aggregateSetImplementations().toList().get(0)._aggregateSpecification());
         Assert.assertFalse(aggSetImpl._aggregateSetImplementations().toList().get(0)._aggregateSpecification()._canAggregate());
-        Assert.assertTrue(aggSetImpl._aggregateSetImplementations().toList().get(0)._aggregateSpecification()._groupByFunctions().size() == 2);
-        Assert.assertTrue(aggSetImpl._aggregateSetImplementations().toList().get(0)._aggregateSpecification()._aggregateValues().size() == 1);
+        Assert.assertEquals(2, aggSetImpl._aggregateSetImplementations().toList().get(0)._aggregateSpecification()._groupByFunctions().size());
+        Assert.assertEquals(1, aggSetImpl._aggregateSetImplementations().toList().get(0)._aggregateSpecification()._aggregateValues().size());
 
         Assert.assertTrue(aggSetImpl._aggregateSetImplementations().toList().get(0)._setImplementation() instanceof PureInstanceSetImplementation);
         Assert.assertEquals("a_Aggregate_0", aggSetImpl._aggregateSetImplementations().toList().get(0)._setImplementation()._id());
 
         Assert.assertNotNull(aggSetImpl._aggregateSetImplementations().toList().get(1)._aggregateSpecification());
         Assert.assertTrue(aggSetImpl._aggregateSetImplementations().toList().get(1)._aggregateSpecification()._canAggregate());
-        Assert.assertTrue(aggSetImpl._aggregateSetImplementations().toList().get(1)._aggregateSpecification()._groupByFunctions().size() == 1);
-        Assert.assertTrue(aggSetImpl._aggregateSetImplementations().toList().get(1)._aggregateSpecification()._aggregateValues().size() == 1);
+        Assert.assertEquals(1, aggSetImpl._aggregateSetImplementations().toList().get(1)._aggregateSpecification()._groupByFunctions().size());
+        Assert.assertEquals(1, aggSetImpl._aggregateSetImplementations().toList().get(1)._aggregateSpecification()._aggregateValues().size());
 
         Assert.assertTrue(aggSetImpl._aggregateSetImplementations().toList().get(1)._setImplementation() instanceof PureInstanceSetImplementation);
         Assert.assertEquals("a_Aggregate_1", aggSetImpl._aggregateSetImplementations().toList().get(1)._setImplementation()._id());
@@ -358,10 +351,10 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
                 "      }\n" +
                 "   }\n" +
                 ")";
-        this.runtime.createInMemorySource("mapping.pure", source);
-        this.runtime.compile();
+        runtime.createInMemorySource("mapping.pure", source);
+        runtime.compile();
 
-        InstanceSetImplementation setImpl = (InstanceSetImplementation)((org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping)this.runtime.getCoreInstance("map"))._classMappings().toSortedList(new Comparator<SetImplementation>()
+        InstanceSetImplementation setImpl = (InstanceSetImplementation) ((org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping) runtime.getCoreInstance("map"))._classMappings().toSortedList(new Comparator<SetImplementation>()
         {
             @Override
             public int compare(SetImplementation o1, SetImplementation o2)
@@ -380,20 +373,20 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
         Assert.assertEquals("a_Main", aggSetImpl._mainSetImplementation()._id());
 
         Assert.assertNotNull(aggSetImpl._aggregateSetImplementations());
-        Assert.assertTrue(aggSetImpl._aggregateSetImplementations().size() == 2);
+        Assert.assertEquals(2, aggSetImpl._aggregateSetImplementations().size());
 
         Assert.assertNotNull(aggSetImpl._aggregateSetImplementations().toList().get(0)._aggregateSpecification());
         Assert.assertFalse(aggSetImpl._aggregateSetImplementations().toList().get(0)._aggregateSpecification()._canAggregate());
-        Assert.assertTrue(aggSetImpl._aggregateSetImplementations().toList().get(0)._aggregateSpecification()._groupByFunctions().size() == 2);
-        Assert.assertTrue(aggSetImpl._aggregateSetImplementations().toList().get(0)._aggregateSpecification()._aggregateValues().size() == 1);
+        Assert.assertEquals(2, aggSetImpl._aggregateSetImplementations().toList().get(0)._aggregateSpecification()._groupByFunctions().size());
+        Assert.assertEquals(1, aggSetImpl._aggregateSetImplementations().toList().get(0)._aggregateSpecification()._aggregateValues().size());
 
         Assert.assertTrue(aggSetImpl._aggregateSetImplementations().toList().get(0)._setImplementation() instanceof PureInstanceSetImplementation);
         Assert.assertEquals("a_Aggregate_0", aggSetImpl._aggregateSetImplementations().toList().get(0)._setImplementation()._id());
 
         Assert.assertNotNull(aggSetImpl._aggregateSetImplementations().toList().get(1)._aggregateSpecification());
         Assert.assertTrue(aggSetImpl._aggregateSetImplementations().toList().get(1)._aggregateSpecification()._canAggregate());
-        Assert.assertTrue(aggSetImpl._aggregateSetImplementations().toList().get(1)._aggregateSpecification()._groupByFunctions().size() == 1);
-        Assert.assertTrue(aggSetImpl._aggregateSetImplementations().toList().get(1)._aggregateSpecification()._aggregateValues().size() == 2);
+        Assert.assertEquals(1, aggSetImpl._aggregateSetImplementations().toList().get(1)._aggregateSpecification()._groupByFunctions().size());
+        Assert.assertEquals(2, aggSetImpl._aggregateSetImplementations().toList().get(1)._aggregateSpecification()._aggregateValues().size());
 
         Assert.assertTrue(aggSetImpl._aggregateSetImplementations().toList().get(1)._setImplementation() instanceof PureInstanceSetImplementation);
         Assert.assertEquals("a_Aggregate_1", aggSetImpl._aggregateSetImplementations().toList().get(1)._setImplementation()._id());
@@ -402,7 +395,7 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
     @Test
     public void testAggregationAwareMappingErrorInMainSetImplementationTarget()
     {
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "###Pure\n" +
                         "Class Sales\n" +
                         "{\n" +
@@ -468,7 +461,7 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
                         ")");
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -480,7 +473,7 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
     @Test
     public void testAggregationAwareMappingErrorInMainSetImplementationProperty()
     {
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "###Pure\n" +
                         "Class Sales\n" +
                         "{\n" +
@@ -546,7 +539,7 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
                         ")");
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -558,7 +551,7 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
     @Test
     public void testAggregationAwareMappingErrorInAggregateViewTarget()
     {
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "###Pure\n" +
                         "Class Sales\n" +
                         "{\n" +
@@ -624,7 +617,7 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
                         ")");
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -636,7 +629,7 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
     @Test
     public void testAggregationAwareMappingErrorInAggregateViewProperty()
     {
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "###Pure\n" +
                         "Class Sales\n" +
                         "{\n" +
@@ -702,7 +695,7 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
                         ")");
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -714,7 +707,7 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
     @Test
     public void testAggregationAwareMappingErrorInAggregateViewModelOperationGroupByFunction()
     {
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "###Pure\n" +
                         "Class Sales\n" +
                         "{\n" +
@@ -777,7 +770,7 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
                         ")");
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -789,7 +782,7 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
     @Test
     public void testAggregationAwareMappingErrorInAggregateViewModelOperationAggregateFunction()
     {
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "###Pure\n" +
                         "Class Sales\n" +
                         "{\n" +
@@ -852,7 +845,7 @@ public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCore
                         ")");
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)

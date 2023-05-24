@@ -14,12 +14,11 @@
 
 package org.finos.legend.pure.m2.ds.mapping.test;
 
-
 import org.eclipse.collections.api.block.predicate.Predicate2;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingProperties;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -129,7 +128,6 @@ public class GraphWalker
         return null;
     }
 
-
     private boolean isNamePropertyValueEqual(CoreInstance each, String columnName)
     {
         return this.comparePropertyValue(each, M3Properties.name, columnName);
@@ -140,13 +138,6 @@ public class GraphWalker
         return this.getOne(each, property).getName().equals(columnName);
     }
 
-    protected Predicate2<CoreInstance, String> CoreInstanceNamePropertyValuePredicate = new Predicate2<CoreInstance, String>()
-    {
-        @Override
-        public boolean accept(CoreInstance coreInstance, String value)
-        {
-            return  GraphWalker.this.isNamePropertyValueEqual(coreInstance, value);
-        }
-    };
+    protected Predicate2<CoreInstance, String> CoreInstanceNamePropertyValuePredicate = this::isNamePropertyValueEqual;
 }
 

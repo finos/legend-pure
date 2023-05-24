@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m2.ds.mapping.test.incremental;
 
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.finos.legend.pure.m2.ds.mapping.test.AbstractPureMappingTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
@@ -135,7 +135,8 @@ public class TestPureRuntimeXStoreMapping extends AbstractPureMappingTestWithCor
                     "}\n";
 
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime();
     }
 
@@ -152,39 +153,39 @@ public class TestPureRuntimeXStoreMapping extends AbstractPureMappingTestWithCor
     public void testCreateAndDeleteMappingProperties() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(Maps.mutable.with("source1.pure", model)).compile(),
-                new RuntimeTestScriptBuilder().createInMemorySources(Maps.mutable.with("source3.pure", initialMapping, "source4.pure", relational)).compile().deleteSource("source3.pure").deleteSource("source4.pure").compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                new RuntimeTestScriptBuilder().createInMemorySources(Maps.mutable.with("source3.pure", initialMapping, "source4.pure", relational)).compile().deleteSource("source3.pure").deleteSource("source4.pure").compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
     public void testCreateAndDeleteAssoXStoreMapping() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(Maps.mutable.with("source1.pure", model, "source3.pure", initialMapping, "source4.pure", relational)).compile(),
-                new RuntimeTestScriptBuilder().updateSource("source3.pure", mappingWithAssociation).compile().updateSource("source3.pure", initialMapping).compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                new RuntimeTestScriptBuilder().updateSource("source3.pure", mappingWithAssociation).compile().updateSource("source3.pure", initialMapping).compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
     public void testCreateAndDeleteAssoXStoreMappingWithInclude() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(Maps.mutable.with("source1.pure", model, "source3.pure", baseMapping, "source4.pure", relational, "source5.pure", mainMapping)).compile(),
-                new RuntimeTestScriptBuilder().deleteSource("source5.pure").compile().createInMemorySource("source5.pure", mainMapping).compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                new RuntimeTestScriptBuilder().deleteSource("source5.pure").compile().createInMemorySource("source5.pure", mainMapping).compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
     public void testCreateAndDeleteAssoXStoreMappingErrorDeleteParent() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(Maps.mutable.with("source1.pure", model, "source3.pure", baseMapping, "source4.pure", relational, "source5.pure", mainMapping)).compile(),
-                new RuntimeTestScriptBuilder().updateSource("source3.pure", baseMappingEmpty).compileWithExpectedCompileFailure("Unable to find source class mapping (id:e) for property 'firm' in Association mapping 'Firm_Person'. Make sure that you have specified a valid Class mapping id as the source id and target id, using the syntax 'property[sourceId, targetId]: ...'.", null, 7, 7).updateSource("source3.pure", baseMapping).compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                new RuntimeTestScriptBuilder().updateSource("source3.pure", baseMappingEmpty).compileWithExpectedCompileFailure("Unable to find source class mapping (id:e) for property 'firm' in Association mapping 'Firm_Person'. Make sure that you have specified a valid Class mapping id as the source id and target id, using the syntax 'property[sourceId, targetId]: ...'.", null, 7, 7).updateSource("source3.pure", baseMapping).compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
     public void testCreateAndDeleteAssoXStoreMappingErrorDeleteSuperType() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(Maps.mutable.with("source1.pure", modelInheritance, "source3.pure", modelInheritanceSuper, "source4.pure", relational, "source5.pure", inheritanceMapping)).compile(),
-                new RuntimeTestScriptBuilder().updateSource("source3.pure", modelInheritanceSuper2).compileWithExpectedCompileFailure("The property 'id' is unknown in the Element 'Firm'", null, 5, 19).updateSource("source3.pure", modelInheritanceSuper).compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                new RuntimeTestScriptBuilder().updateSource("source3.pure", modelInheritanceSuper2).compileWithExpectedCompileFailure("The property 'id' is unknown in the Element 'Firm'", null, 5, 19).updateSource("source3.pure", modelInheritanceSuper).compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 }
