@@ -89,4 +89,8 @@ function <<test.Test>> meta::pure::functions::math::tests::round::testDecimalRou
     assertEq(-3.142d, round(-3.14159d, 3));
 }
 
-
+function <<test.Test>> meta::pure::functions::math::tests::round::testFloatRoundWithScale():Boolean[1]
+{
+    assertEq(17.0, round(17.3, 0));
+    assertEq(-17.4, round(-17.36, 1));
+}

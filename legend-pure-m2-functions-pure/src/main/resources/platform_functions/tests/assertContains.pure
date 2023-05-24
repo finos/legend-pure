@@ -37,7 +37,7 @@ function meta::pure::functions::asserts::assertContains(collection:Any[*], value
     assert($collection->contains($value), $message);
 }
 
-function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertContains():Any[*]
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertContains():Boolean[1]
 {
     assertContains([1, 2, 5, 2, 'a', true, %2014-02-01, 'c'], true);
     assertContains([1, 2, 5, 2, 'a', true, %2014-02-01, 'c'], %2014-02-01);

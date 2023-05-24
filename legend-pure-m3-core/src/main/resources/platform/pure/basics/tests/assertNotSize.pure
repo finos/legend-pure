@@ -34,7 +34,7 @@ function meta::pure::functions::asserts::assertNotSize(collection:Any[*], size:I
 
 
 
-function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertNotSize():Any[*]
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertNotSize():Boolean[1]
 {
     assertNotSize([1, 2, 3], 1);
     assertNotSize(['a', 'b'], 5);

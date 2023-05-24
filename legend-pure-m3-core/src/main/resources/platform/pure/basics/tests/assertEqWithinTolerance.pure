@@ -35,7 +35,7 @@ function meta::pure::functions::asserts::assertEqWithinTolerance(expected:Number
 }
 
 
-function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertWithToleranceExactMatch():Any[*]
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertWithToleranceExactMatch():Boolean[1]
 {
     assertEqWithinTolerance(1, 1, 0);
     assertEqWithinTolerance(1, 1, 0.0);
@@ -61,7 +61,7 @@ function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertW
     assertEqWithinTolerance(-3.14159, -3.14159, 0.0);
 }
 
-function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertWithToleranceInexactMatch():Any[*]
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertWithToleranceInexactMatch():Boolean[1]
 {
     assertEqWithinTolerance(1, 0, 1);
     assertEqWithinTolerance(1, 0, 10);

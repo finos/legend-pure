@@ -38,13 +38,13 @@ function meta::pure::functions::asserts::assertEquals(expected:Any[*], actual:An
 
 
 
-function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertEquals():Any[*]
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertEquals():Boolean[1]
 {
     assertEquals(1, 1);
     assertEquals('aaa', 'aaa');
 }
 
-function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertEqualsWithCollections():Any[*]
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertEqualsWithCollections():Boolean[1]
 {
     assertEquals([1, 2], [1, 2]);
     assertEquals(['aaa'], ['aaa']);

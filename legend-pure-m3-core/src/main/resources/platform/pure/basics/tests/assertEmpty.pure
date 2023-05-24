@@ -37,7 +37,7 @@ function meta::pure::functions::asserts::assertEmpty(collection:Any[*], message:
 
 
 
-function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertEmpty():Any[*]
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertEmpty():Boolean[1]
 {
    assertEmpty([]);
    assertEmpty([1, 2, 3]->filter(x | $x == 5));

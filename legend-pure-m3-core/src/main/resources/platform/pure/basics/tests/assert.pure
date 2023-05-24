@@ -38,14 +38,14 @@ function meta::pure::functions::asserts::assertFalse(condition:Boolean[1]):Boole
 
 
 
-function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessWithoutMessage():Any[*]
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessWithoutMessage():Boolean[1]
 {
    assert(true);
    assert(2 == 2);
    assert((1 + 2) == 3);
 }
 
-function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessWithFormattedMessage():Any[*]
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessWithFormattedMessage():Boolean[1]
 {
    assert(true, 'Test message: %s', [true]);
    assert(2 == 2, 'Test message: %s', [true]);

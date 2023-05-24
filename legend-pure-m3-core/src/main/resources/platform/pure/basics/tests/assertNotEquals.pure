@@ -38,13 +38,13 @@ function meta::pure::functions::asserts::assertNotEquals(notExpected:Any[*], act
 
 
 
-function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertNotEquals():Any[*]
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertNotEquals():Boolean[1]
 {
     assertNotEquals(1, 2);
     assertNotEquals('aaa', 'bbb');
 }
 
-function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertNotEqualsCollection():Any[*]
+function <<test.Test>> meta::pure::functions::asserts::tests::testSuccessAssertNotEqualsCollection():Boolean[1]
 {
     assertNotEquals([1, 3, 2], [2, 4, 1, 5]);
     assertNotEquals([1, 2], [2, 1]);
