@@ -1,39 +1,50 @@
+// Copyright 2023 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package org.finos.legend.pure.runtime.java.extension.functions.interpreted;
 
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.impl.tuple.Tuples;
-
-import org.finos.legend.pure.runtime.java.interpreted.extension.BaseInterpretedExtension;
-
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.AlloyTest;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.LegendTest;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.Profile;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.anonymousCollections.ReplaceTreeNode;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.anonymousCollections.map.ConstructorForPairList;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.anonymousCollections.map.GetIfAbsentPutWithKey;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.anonymousCollections.map.GetMapStats;
-import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.anonymousCollections.map.Keys;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.anonymousCollections.map.KeyValues;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.anonymousCollections.map.Keys;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.anonymousCollections.map.Put;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.anonymousCollections.map.PutAllMaps;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.anonymousCollections.map.PutAllPairs;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.anonymousCollections.map.ReplaceAll;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.anonymousCollections.map.Values;
-import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.anonymousCollections.ReplaceTreeNode;
-
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.cipher.Cipher;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.cipher.Decipher;
-
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Drop;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Exists;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.ForAll;
-import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.IndexOf;
-import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Repeat;
-import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Last;
-import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Take;
-import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Drop;
-import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Slice;
-import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Zip;
-import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.RemoveAllOptimized;
-import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Reverse;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Get;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.GroupBy;
-
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.IndexOf;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Last;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.RemoveAllOptimized;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Repeat;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Reverse;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Slice;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Take;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Zip;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.date.AdjustDate;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.date.DateDiff;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.date.DatePart;
@@ -55,17 +66,12 @@ import org.finos.legend.pure.runtime.java.extension.functions.interpreted.native
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.date.Today;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.date.WeekOfYear;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.date.Year;
-
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.hash.Hash;
-
-import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.io.http.Http;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.io.ReadFile;
-
-import org.finos.legend.pure.runtime.java.interpreted.natives.basics.lang.Match;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.io.http.Http;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.lang.MutateAdd;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.lang.RawEvalProperty;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.lang.RemoveOverride;
-
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.ArcCosine;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.ArcSine;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.ArcTangent;
@@ -86,7 +92,6 @@ import org.finos.legend.pure.runtime.java.extension.functions.interpreted.native
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Tangent;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.ToDecimal;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.ToFloat;
-
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.CanReactivateDynamically;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.CompileValueSpecification;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.Deactivate;
@@ -101,18 +106,15 @@ import org.finos.legend.pure.runtime.java.extension.functions.interpreted.native
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.NewEnumeration;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.NewLambdaFunction;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.NewProperty;
-import org.finos.legend.pure.runtime.java.interpreted.natives.basics.meta.NewUnit;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.OpenVariableValues;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.Reactivate;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.SourceInformation;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.Stereotype;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.SubTypeOf;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.Tag;
-
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.runtime.CurrentUserId;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.runtime.Guid;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.runtime.IsOptionSet;
-
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.Chunk;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.Contains;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.DecodeBase64;
@@ -129,13 +131,9 @@ import org.finos.legend.pure.runtime.java.extension.functions.interpreted.native
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.ToLower;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.ToUpper;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.Trim;
-
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.tracing.TraceSpan;
-
-import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.AlloyTest;
-import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.LegendTest;
-import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.Profile;
-
+import org.finos.legend.pure.runtime.java.interpreted.extension.BaseInterpretedExtension;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.lang.Match;
 
 public class FunctionExtensionInterpreted extends BaseInterpretedExtension
 {
@@ -314,4 +312,3 @@ public class FunctionExtensionInterpreted extends BaseInterpretedExtension
         return new FunctionExtensionInterpreted();
     }
 }
-

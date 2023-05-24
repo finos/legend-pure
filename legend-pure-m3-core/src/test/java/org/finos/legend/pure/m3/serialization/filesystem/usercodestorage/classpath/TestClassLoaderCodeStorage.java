@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath;
 
-import org.eclipse.collections.impl.factory.Sets;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.impl.test.Verify;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
@@ -24,6 +24,12 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeSto
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.UncheckedIOException;
+import java.util.Objects;
 
 public class TestClassLoaderCodeStorage
 {
@@ -99,30 +105,32 @@ public class TestClassLoaderCodeStorage
     }
 
     @Test
-    public void testGetContentAsText()
+    public void testGetContentAsText() throws Exception
     {
-        String code = "// Copyright 2020 Goldman Sachs\n" +
-                "//\n" +
-                "// Licensed under the Apache License, Version 2.0 (the \"License\");\n" +
-                "// you may not use this file except in compliance with the License.\n" +
-                "// You may obtain a copy of the License at\n" +
-                "//\n" +
-                "//      http://www.apache.org/licenses/LICENSE-2.0\n" +
-                "//\n" +
-                "// Unless required by applicable law or agreed to in writing, software\n" +
-                "// distributed under the License is distributed on an \"AS IS\" BASIS,\n" +
-                "// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n" +
-                "// See the License for the specific language governing permissions and\n" +
-                "// limitations under the License.\n" +
-                "\n" +
-                "function test::level1::testFn():Any[*]\n" +
-                "{\n" +
-                "    'ok' + 'z'\n" +
-                "}";
+        String level1_pure = readResource("test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure");
+        String m3_pure = readResource("platform/pure/grammar/m3.pure");
+        Assert.assertEquals(level1_pure, this.testCodeStorage.getContentAsText("/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure"));
+        Assert.assertEquals(m3_pure, this.platformCodeStorage.getContentAsText("/platform/pure/grammar/m3.pure"));
+        Assert.assertEquals(level1_pure, this.combinedCodeStorage.getContentAsText("/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure"));
+    }
 
-        Assert.assertEquals(code.replaceAll("\\r",""), this.testCodeStorage.getContentAsText("/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure").replaceAll("\\r",""));
-        Assert.assertNotNull("Unable to load content for file on classpath", this.platformCodeStorage.getContentAsText("/platform/pure/grammar/m3.pure"));
-        Assert.assertEquals(code.replaceAll("\\r",""), this.combinedCodeStorage.getContentAsText("/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure").replaceAll("\\r",""));
+    private String readResource(String resourceName)
+    {
+        try (Reader reader = new InputStreamReader(Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResourceAsStream(resourceName))))
+        {
+            StringBuilder builder = new StringBuilder();
+            char[] buffer = new char[8192];
+            int read;
+            while ((read = reader.read(buffer)) != -1)
+            {
+                builder.append(buffer, 0, read);
+            }
+            return builder.toString();
+        }
+        catch (IOException e)
+        {
+            throw new UncheckedIOException("Error reading resource: " + resourceName, e);
+        }
     }
 
     @Test
@@ -133,15 +141,17 @@ public class TestClassLoaderCodeStorage
         Verify.assertSetsEqual(Sets.mutable.with("platform", "test"), this.combinedCodeStorage.getAllRepositories().collect(CodeRepository::getName).toSet());
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testInvalidNode()
     {
-        this.testCodeStorage.getFiles("/made/up/invalid/path");
+        RuntimeException e = Assert.assertThrows(RuntimeException.class, () -> this.testCodeStorage.getFiles("/made/up/invalid/path"));
+        Assert.assertEquals("Cannot find path '/made/up/invalid/path'", e.getMessage());
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testInvalidNodeContent()
     {
-        this.testCodeStorage.getFileOrFiles("/made/up/invalid/path");
+        RuntimeException e = Assert.assertThrows(RuntimeException.class, () -> this.testCodeStorage.getFileOrFiles("/made/up/invalid/path"));
+        Assert.assertEquals("Cannot find path '/made/up/invalid/path'", e.getMessage());
     }
 }

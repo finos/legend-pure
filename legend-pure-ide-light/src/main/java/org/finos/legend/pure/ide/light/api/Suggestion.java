@@ -1,10 +1,26 @@
+// Copyright 2023 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package org.finos.legend.pure.ide.light.api;
 
 import io.swagger.annotations.Api;
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.ide.light.helpers.response.ExceptionTranslation;
 import org.finos.legend.pure.ide.light.session.PureSession;
 import org.finos.legend.pure.m3.coreinstance.Package;
@@ -26,6 +42,10 @@ import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.json.simple.JSONValue;
 
+import java.io.ByteArrayOutputStream;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.POST;
@@ -33,13 +53,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
-import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 @Api(tags = "Suggestion")
 @Path("/")
@@ -191,7 +204,7 @@ public class Suggestion
         ProcessorSupport processorSupport = runtime.getProcessorSupport();
         // NOTE: here we take into account: first, the imported packages in scope, then the root package (::) and lastly
         // the auto imported packages in the global scope
-        MutableList<String> allPackagePaths = Lists.adapt(input.importPaths).with("::").withAll(AUTO_IMPORTS).distinct();
+        MutableList<String> allPackagePaths = Lists.mutable.withAll(input.importPaths).with("::").withAll(AUTO_IMPORTS).distinct();
 
         try
         {
@@ -286,7 +299,7 @@ public class Suggestion
         ProcessorSupport processorSupport = runtime.getProcessorSupport();
         // NOTE: here we take into account: first, the imported packages in scope, then the root package (::) and lastly
         // the auto imported packages in the global scope
-        MutableList<String> allPackagePaths = Lists.adapt(input.importPaths).withAll(AUTO_IMPORTS).distinct();
+        MutableList<String> allPackagePaths = Lists.mutable.withAll(input.importPaths).withAll(AUTO_IMPORTS).distinct();
         MutableList<String> paths = input.path.contains("::") ? Lists.mutable.of(input.path) : allPackagePaths.collect(pkg -> pkg.concat("::" + input.path));
 
         try
@@ -396,7 +409,7 @@ public class Suggestion
     {
         PureRuntime runtime = this.session.getPureRuntime();
         ProcessorSupport processorSupport = runtime.getProcessorSupport();
-        MutableList<String> packagePaths = Lists.adapt(input.importPaths).withAll(AUTO_IMPORTS).distinct();
+        MutableList<String> packagePaths = Lists.mutable.withAll(input.importPaths).withAll(AUTO_IMPORTS).distinct();
 
         try
         {
@@ -472,12 +485,11 @@ public class Suggestion
                                               @Context HttpServletResponse response)
     {
         PureRuntime runtime = this.session.getPureRuntime();
-
         try
         {
             Source source = runtime.getSourceById(input.sourceId);
             ListIterable<CoreInstance> functionsOrLambdas = source.findFunctionsOrLambasAt(input.line, input.column);
-            Set<String> varNames = new HashSet<>();
+            MutableSet<String> varNames = Sets.mutable.empty();
 
             for (CoreInstance fn : functionsOrLambdas)
             {
@@ -502,7 +514,7 @@ public class Suggestion
                     varNames.add(var._name());
                 }
             }
-            List<String> suggestions = new ArrayList<>(varNames);
+            MutableList<String> suggestions = Lists.mutable.withAll(varNames);
 
             return Response.ok((StreamingOutput) outputStream ->
             {

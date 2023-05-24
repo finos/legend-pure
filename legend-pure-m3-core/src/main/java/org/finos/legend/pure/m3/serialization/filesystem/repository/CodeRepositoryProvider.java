@@ -15,7 +15,7 @@
 package org.finos.legend.pure.m3.serialization.filesystem.repository;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.factory.Lists;
 
 public interface CodeRepositoryProvider
 {
@@ -26,12 +26,11 @@ public interface CodeRepositoryProvider
         {
             throw new RuntimeException("Either repository() or repositories() need to be implemented!");
         }
-        return Lists.mutable.with(repository);
+        return Lists.immutable.with(repository);
     }
 
     default CodeRepository repository()
     {
         return null;
     }
-
 }
