@@ -92,6 +92,7 @@ public class ExecuteInDb extends NativeFunction
         sqlTypeToPureType.put(Types.DATE, M3Paths.StrictDate);
         sqlTypeToPureType.put(Types.TIME, M3Paths.DateTime);
         sqlTypeToPureType.put(Types.TIMESTAMP, M3Paths.DateTime);
+        sqlTypeToPureType.put(Types.TIMESTAMP_WITH_TIMEZONE, M3Paths.DateTime);
 
         sqlTypeToPureType.put(Types.BOOLEAN, M3Paths.Boolean);
         sqlTypeToPureType.put(Types.BIT, M3Paths.Boolean);
@@ -283,6 +284,7 @@ public class ExecuteInDb extends NativeFunction
                             break;
                         }
                         case Types.TIMESTAMP:
+                        case Types.TIMESTAMP_WITH_TIMEZONE:
                         {
                             java.sql.Timestamp timestamp = rs.getTimestamp(i, calendar);
                             if (timestamp != null)
