@@ -27,7 +27,7 @@ class ScopeInfo
     public ScopeInfo(String database, Token schema, Token tableAlias, Token column, boolean parseView)
     {
         this(database, schema, tableAlias, column);
-        this.parseView=parseView;
+        this.parseView = parseView;
     }
 
     public ScopeInfo(String database, Token schema, Token tableAlias, Token column)

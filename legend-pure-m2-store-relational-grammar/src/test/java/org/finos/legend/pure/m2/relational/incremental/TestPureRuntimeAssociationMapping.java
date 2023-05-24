@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m2.relational.incremental;
 
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.finos.legend.pure.m2.relational.AbstractPureRelationalTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
@@ -144,60 +144,59 @@ public class TestPureRuntimeAssociationMapping extends AbstractPureRelationalTes
     public void testCreateAndDeleteAssociationMappingSameFile() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                        Maps.mutable.with("source1.pure", INITIAL_DATA, "source2.pure", ASSOCIATION,
-                                "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
+                                Maps.mutable.with("source1.pure", INITIAL_DATA, "source2.pure", ASSOCIATION,
+                                        "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source4.pure", MAPPING_WITH_ASSOCIATION)
                         .compile()
                         .updateSource("source4.pure", INITIAL_MAPPING)
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
     public void testDeleteAssociation() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                        Maps.mutable.with("source1.pure", INITIAL_DATA, "source2.pure", ASSOCIATION,
-                                "source3.pure", STORE, "source4.pure", MAPPING_WITH_ASSOCIATION))
+                                Maps.mutable.with("source1.pure", INITIAL_DATA, "source2.pure", ASSOCIATION,
+                                        "source3.pure", STORE, "source4.pure", MAPPING_WITH_ASSOCIATION))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("source2.pure")
                         .compileWithExpectedCompileFailure("Firm_Person has not been defined!", "source4.pure", 15, 5)
                         .createInMemorySource("source2.pure", ASSOCIATION)
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
     public void testCreateAndDeleteAssociationMappingWithIncludes() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                        Maps.mutable.with("source1.pure", INITIAL_DATA, "source2.pure", ASSOCIATION,
-                                "source3.pure", STORE, "source4.pure", MAPPING1).withKeyValue("source5.pure", MAPPING2))
+                                Maps.mutable.with("source1.pure", INITIAL_DATA, "source2.pure", ASSOCIATION,
+                                        "source3.pure", STORE, "source4.pure", MAPPING1).withKeyValue("source5.pure", MAPPING2))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .createInMemorySource("mapping3.pure", MAPPING3)
                         .compile()
                         .deleteSource("mapping3.pure")
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
     public void testDeleteAndRecreateStore() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                        Maps.mutable.with("source1.pure", INITIAL_DATA, "source2.pure", ASSOCIATION,
-                                "source3.pure", STORE, "source4.pure", MAPPING1).withKeyValue("source5.pure", MAPPING2).withKeyValue("mapping3.pure", MAPPING3))
+                                Maps.mutable.with("source1.pure", INITIAL_DATA, "source2.pure", ASSOCIATION,
+                                        "source3.pure", STORE, "source4.pure", MAPPING1).withKeyValue("source5.pure", MAPPING2).withKeyValue("mapping3.pure", MAPPING3))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("source3.pure")
                         .compileWithExpectedCompileFailure(null, null, 0, 0)
                         .createInMemorySource("source3.pure", STORE)
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
-
 }

@@ -391,8 +391,8 @@ public class TestPureRuntimeClassMapping extends AbstractPureRelationalTestWithC
                         .compileWithExpectedCompileFailure("The column 'employeeCount' can't be found in the table 'orgTable'", null, 10, 69)
                         .deleteSource(RELATIONAL_DB_SOURCE_ID)
                         .createInMemorySource(RELATIONAL_DB_SOURCE_ID, getComplexDatabase(ORG_TABLE))
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
 

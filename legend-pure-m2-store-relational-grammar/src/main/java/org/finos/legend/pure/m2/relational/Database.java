@@ -14,39 +14,39 @@
 
 package org.finos.legend.pure.m2.relational;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.set.mutable.UnifiedSet;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.processor.DatabaseProcessor;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.RelationalOperationElement;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Schema;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.join.Join;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.Table;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.View;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 
 public class Database
 {
     public static SetIterable<org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database> getAllIncludedDBs(org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database database, ProcessorSupport processorSupport)
     {
-        ListIterable<org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database> includes = (ListIterable<org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database>)ImportStub.withImportStubByPasses(database._includesCoreInstance().toList(), processorSupport);
+        ListIterable<org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database> includes = (ListIterable<org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database>) ImportStub.withImportStubByPasses(database._includesCoreInstance().toList(), processorSupport);
         if (includes.isEmpty())
         {
             return Sets.immutable.with(database);
         }
 
-        MutableSet<org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database> results = UnifiedSet.<org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database>newSet(includes.size() + 1).with(database);
+        MutableSet<org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database> results = Sets.mutable.<org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database>ofInitialCapacity(includes.size() + 1).with(database);
         collectIncludedDBs(results, includes, processorSupport);
         return results;
     }
@@ -55,26 +55,26 @@ public class Database
     {
         for (CoreInstance db : databases)
         {
-            if (results.add((org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database)db))
+            if (results.add((org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database) db))
             {
-                ListIterable<? extends CoreInstance> includes = ImportStub.withImportStubByPasses(((org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database)db)._includesCoreInstance().toList(), processorSupport);
+                ListIterable<? extends CoreInstance> includes = ImportStub.withImportStubByPasses(((org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database) db)._includesCoreInstance().toList(), processorSupport);
                 collectIncludedDBs(results, includes, processorSupport);
             }
         }
     }
 
-    public static CoreInstance findTable(org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database database, final String schemaName, final String tableName, final ProcessorSupport processorSupport)
+    public static CoreInstance findTable(org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database database, String schemaName, String tableName, ProcessorSupport processorSupport)
     {
         MutableList<CoreInstance> tables = Lists.mutable.empty();
         for (org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database db : getAllIncludedDBs(database, processorSupport))
         {
-            Schema schema = db._schemas().selectWith(DatabaseProcessor.SCHEMA_NAME_PREDICATE, schemaName).toList().getFirst();
+            Schema schema = db._schemas().detect(s -> schemaName.equals(s._name()));
             if (schema != null)
             {
-                CoreInstance table = schema._tables().selectWith(DatabaseProcessor.NAMED_RELATION_NAME_PREDICATE, tableName).toList().getFirst();
+                CoreInstance table = schema._tables().detect(t -> tableName.equals(t._name()));
                 if (table == null)
                 {
-                    table = schema._views().selectWith(DatabaseProcessor.NAMED_RELATION_NAME_PREDICATE, tableName).toList().getFirst();
+                    table = schema._views().detect(v -> tableName.equals(v._name()));
                 }
                 if (table != null)
                 {
@@ -151,18 +151,18 @@ public class Database
             Schema tableSchema = null;
             if (table instanceof Table)
             {
-                tableName = ((Table)table)._name();
-                tableSchema = ((Table)table)._schema();
+                tableName = ((Table) table)._name();
+                tableSchema = ((Table) table)._schema();
             }
             else if (table instanceof View)
             {
-                tableName = ((View)table)._name();
-                tableSchema = ((View)table)._schema();
+                tableName = ((View) table)._name();
+                tableSchema = ((View) table)._schema();
             }
             if (tableSchema != null)
             {
                 String tableSchemaName = tableSchema._name();
-                org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database tableDB = (org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database)ImportStub.withImportStubByPass(tableSchema._databaseCoreInstance(), processorSupport);
+                org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database tableDB = (org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database) ImportStub.withImportStubByPass(tableSchema._databaseCoreInstance(), processorSupport);
                 if (tableDB != null)
                 {
                     writeDatabaseName(appendable, tableDB, true);
@@ -177,7 +177,7 @@ public class Database
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -186,7 +186,7 @@ public class Database
         try
         {
             String joinName = join._name();
-            org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database joinDB = (org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database)ImportStub.withImportStubByPass(join._databaseCoreInstance() , processorSupport);
+            org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database joinDB = (org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database) ImportStub.withImportStubByPass(join._databaseCoreInstance(), processorSupport);
             if (joinDB != null)
             {
                 writeDatabaseName(appendable, joinDB, true);
@@ -199,7 +199,7 @@ public class Database
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -220,7 +220,7 @@ public class Database
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 }

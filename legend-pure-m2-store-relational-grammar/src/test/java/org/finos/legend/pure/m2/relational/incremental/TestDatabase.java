@@ -22,7 +22,6 @@ import org.junit.Test;
 
 public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
 {
-
     @Test
     public void testDatabase() throws Exception
     {
@@ -35,16 +34,16 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
                 "   )\n" +
                 "   View myView\n" +
                 "   (\n" +
-                "       ~filter MyTableNameNotNullFilter"+
+                "       ~filter MyTableNameNotNullFilter" +
                 "       myTableName : myTable.name\n" +
                 "   )\n" +
-                "Filter MyTableNameNotNullFilter(myTable.name is not null)"+
+                "Filter MyTableNameNotNullFilter(myTable.name is not null)" +
                 ")";
-        this.runtime.createInMemorySource("sourceId.pure", relationalDB);
-        this.runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{assert(1 == db->meta::relational::metamodel::schema('default').tables->size(), |'');}");
+        runtime.createInMemorySource("sourceId.pure", relationalDB);
+        runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{assert(1 == db->meta::relational::metamodel::schema('default').tables->size(), |'');}");
 
-        this.runtime.compile();
-        int size = this.runtime.getModelRepository().serialize().length;
+        runtime.compile();
+        int size = runtime.getModelRepository().serialize().length;
 
         CoreInstance db = processorSupport.package_getByUserPath("db");
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany("schemas").size());
@@ -52,7 +51,7 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete("sourceId.pure");
+            runtime.delete("sourceId.pure");
             try
             {
                 this.compileAndExecute("test():Boolean[1]");
@@ -63,8 +62,8 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
                 Assert.assertEquals("Compilation error at (resource:userId.pure line:1 column:40), \"db has not been defined!\"", e.getMessage());
             }
 
-            this.runtime.createInMemorySource("sourceId.pure", relationalDB);
-            this.runtime.compile();
+            runtime.createInMemorySource("sourceId.pure", relationalDB);
+            runtime.compile();
             Assert.assertEquals(size, runtime.getModelRepository().serialize().length);
 
             db = processorSupport.package_getByUserPath("db");
@@ -89,23 +88,23 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
                 "       myTableName : myTable.name\n" +
                 "   )\n" +
                 ")";
-        String relationalDB1= String.format(relationalDB,"db");
-        String relationalDB2= String.format(relationalDB,"db2");
-        this.runtime.createInMemorySource("sourceId.pure", relationalDB1);
-        this.runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{assert(1 == db->meta::relational::metamodel::schema('default').tables->size(), |'');}");
+        String relationalDB1 = String.format(relationalDB, "db");
+        String relationalDB2 = String.format(relationalDB, "db2");
+        runtime.createInMemorySource("sourceId.pure", relationalDB1);
+        runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{assert(1 == db->meta::relational::metamodel::schema('default').tables->size(), |'');}");
 
-        this.runtime.compile();
+        runtime.compile();
         CoreInstance db = processorSupport.package_getByUserPath("db");
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany("schemas").size());
         Assert.assertEquals(1, db.getValueForMetaPropertyToMany("schemas").getFirst().getValueForMetaPropertyToMany("tables").size());
-        int size = this.runtime.getModelRepository().serialize().length;
+        int size = runtime.getModelRepository().serialize().length;
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete("sourceId.pure");
+            runtime.delete("sourceId.pure");
             try
             {
-                this.runtime.compile();
+                runtime.compile();
                 Assert.fail();
             }
             catch (Exception e)
@@ -115,8 +114,8 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
 
             try
             {
-                this.runtime.createInMemorySource("sourceId.pure", relationalDB2);
-                this.runtime.compile();
+                runtime.createInMemorySource("sourceId.pure", relationalDB2);
+                runtime.compile();
                 Assert.fail();
             }
             catch (Exception e)
@@ -124,9 +123,9 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
                 Assert.assertEquals("Compilation error at (resource:userId.pure line:1 column:40), \"db has not been defined!\"", e.getMessage());
             }
 
-            this.runtime.delete("sourceId.pure");
-            this.runtime.createInMemorySource("sourceId.pure", relationalDB1);
-            this.runtime.compile();
+            runtime.delete("sourceId.pure");
+            runtime.createInMemorySource("sourceId.pure", relationalDB1);
+            runtime.compile();
             Assert.assertEquals(size, runtime.getModelRepository().serialize().length);
             db = processorSupport.package_getByUserPath("db");
             Assert.assertEquals(1, db.getValueForMetaPropertyToMany("schemas").size());
@@ -164,25 +163,25 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
                 "       )\n" +
                 "   )" +
                 ")\n";
-        this.runtime.createInMemorySource("sourceId.pure", relationalDB);
+        runtime.createInMemorySource("sourceId.pure", relationalDB);
 
-        this.runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{\n" +
+        runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{\n" +
                 "     assert(1 == db->meta::relational::metamodel::schema('default'), |'');\n" +
                 "     assert(1 == db->meta::relational::metamodel::schema('mySchema1').tables->size(), |'');\n" +
                 "     assert(1 == db->meta::relational::metamodel::schema('mySchema2').tables->size(), |'');\n" +
                 "}");
 
-        this.runtime.compile();
+        runtime.compile();
         CoreInstance db = processorSupport.package_getByUserPath("db");
         Assert.assertEquals(2, db.getValueForMetaPropertyToMany("schemas").size());
-        int size = this.runtime.getModelRepository().serialize().length;
+        int size = runtime.getModelRepository().serialize().length;
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete("sourceId.pure");
+            runtime.delete("sourceId.pure");
             try
             {
-                this.runtime.compile();
+                runtime.compile();
                 Assert.fail();
             }
             catch (Exception e)
@@ -190,8 +189,8 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
                 Assert.assertEquals("Compilation error at (resource:userId.pure line:2 column:18), \"db has not been defined!\"", e.getMessage());
             }
 
-            this.runtime.createInMemorySource("sourceId.pure", relationalDB);
-            this.runtime.compile();
+            runtime.createInMemorySource("sourceId.pure", relationalDB);
+            runtime.compile();
             db = processorSupport.package_getByUserPath("db");
             Assert.assertEquals(2, db.getValueForMetaPropertyToMany("schemas").size());
             Assert.assertEquals(size, runtime.getModelRepository().serialize().length);
@@ -228,27 +227,27 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
                 "   )" +
                 "   Join testJoin(mySchema1.myTable.name = mySchema2.myTable2.id)" +
                 ")\n";
-        this.runtime.createInMemorySource("sourceId.pure", relationalDB);
+        runtime.createInMemorySource("sourceId.pure", relationalDB);
 
-        this.runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{\n" +
+        runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{\n" +
                 "     assert([] == db->meta::relational::metamodel::schema('default'), |'');\n" +
                 "     assert(1 == db->meta::relational::metamodel::schema('mySchema1').tables->size(), |'');\n" +
                 "     assert(1 == db->meta::relational::metamodel::schema('mySchema2').tables->size(), |'');\n" +
                 "}");
 
-        this.runtime.compile();
+        runtime.compile();
 
         CoreInstance db = processorSupport.package_getByUserPath("db");
         Assert.assertEquals(2, db.getValueForMetaPropertyToMany("schemas").size());
 
-        int size = this.runtime.getModelRepository().serialize().length;
+        int size = runtime.getModelRepository().serialize().length;
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete("sourceId.pure");
+            runtime.delete("sourceId.pure");
             try
             {
-                this.runtime.compile();
+                runtime.compile();
                 Assert.fail();
             }
             catch (Exception e)
@@ -256,9 +255,9 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
                 Assert.assertEquals("Compilation error at (resource:userId.pure line:2 column:19), \"db has not been defined!\"", e.getMessage());
             }
 
-            this.runtime.createInMemorySource("sourceId.pure", relationalDB);
-            this.runtime.compile();
-            Assert.assertEquals(size, this.repository.serialize().length);
+            runtime.createInMemorySource("sourceId.pure", relationalDB);
+            runtime.compile();
+            Assert.assertEquals(size, repository.serialize().length);
             db = processorSupport.package_getByUserPath("db");
             Assert.assertEquals(2, db.getValueForMetaPropertyToMany("schemas").size());
         }
@@ -267,33 +266,32 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
     @Test
     public void testDatabaseIncludes() throws Exception
     {
-        String content = "###Relational\n"+
-                         "Database db1\n" +
-                         "(\n" +
-                         "   Table myTable1\n" +
-                         "   (\n" +
-                         "       name VARCHAR(200) PRIMARY KEY\n" +
-                         "   )\n" +
-                         "   View myView1\n" +
-                         "   (\n" +
-                         "       myTableName : myTable1.name\n" +
-                         "   )\n" +
-                         ")\n" +
-                         "###Relational\n"+
-                         "Database db2\n" +
-                         "(\n" +
-                         "   Table myTable2\n" +
-                         "   (\n" +
-                         "       name VARCHAR(200) PRIMARY KEY\n" +
-                         "   )\n" +
-                         "   View myView2\n" +
-                         "   (\n" +
-                         "       myTableName : myTable2.name\n" +
-                         "   )\n" +
-                         ")\n" +
-                         "";
-        this.runtime.createInMemorySource("sourceId.pure", content);
-        this.runtime.createInMemorySource("userId.pure", "###Relational\n" +
+        String content = "###Relational\n" +
+                "Database db1\n" +
+                "(\n" +
+                "   Table myTable1\n" +
+                "   (\n" +
+                "       name VARCHAR(200) PRIMARY KEY\n" +
+                "   )\n" +
+                "   View myView1\n" +
+                "   (\n" +
+                "       myTableName : myTable1.name\n" +
+                "   )\n" +
+                ")\n" +
+                "###Relational\n" +
+                "Database db2\n" +
+                "(\n" +
+                "   Table myTable2\n" +
+                "   (\n" +
+                "       name VARCHAR(200) PRIMARY KEY\n" +
+                "   )\n" +
+                "   View myView2\n" +
+                "   (\n" +
+                "       myTableName : myTable2.name\n" +
+                "   )\n" +
+                ")\n";
+        runtime.createInMemorySource("sourceId.pure", content);
+        runtime.createInMemorySource("userId.pure", "###Relational\n" +
                 "Database db\n" +
                 "(" +
                 "   include db1\n" +
@@ -307,15 +305,15 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
                 "###Pure\n" +
                 "function test():Boolean[1]{assert(1 == db->meta::relational::metamodel::schema('default').tables->size(), |'');}");
 
-        this.runtime.compile();
-        int size = this.runtime.getModelRepository().serialize().length;
+        runtime.compile();
+        int size = runtime.getModelRepository().serialize().length;
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete("sourceId.pure");
+            runtime.delete("sourceId.pure");
             try
             {
-                this.runtime.compile();
+                runtime.compile();
                 Assert.fail();
             }
             catch (Exception e)
@@ -323,16 +321,16 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
                 Assert.assertEquals("Compilation error at (resource:userId.pure line:3 column:13), \"db1 has not been defined!\"", e.getMessage());
             }
 
-            this.runtime.createInMemorySource("sourceId.pure", content);
-            this.runtime.compile();
-            Assert.assertEquals(size, this.runtime.getModelRepository().serialize().length);
+            runtime.createInMemorySource("sourceId.pure", content);
+            runtime.compile();
+            Assert.assertEquals(size, runtime.getModelRepository().serialize().length);
         }
     }
 
     @Test
     public void testDatabaseIncludesWithExplicitDBReferenceInJoin() throws Exception
     {
-        String content1 = "###Relational\n"+
+        String content1 = "###Relational\n" +
                 "Database test::db1\n" +
                 "(\n" +
                 "   Table myTable1\n" +
@@ -348,7 +346,7 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
                 "       myTableName : myTable1.name\n" +
                 "   )\n" +
                 ")\n";
-        String content2 = "###Relational\n"+
+        String content2 = "###Relational\n" +
                 "Database test::db1\n" +
                 "(\n" +
                 "   Table myTable1\n" +
@@ -368,8 +366,8 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
                 "       myTableName : myTable1.name\n" +
                 "   )\n" +
                 ")\n";
-        this.runtime.createInMemorySource("sourceId.pure", content1);
-        this.runtime.createInMemorySource("userId.pure", "###Relational\n" +
+        runtime.createInMemorySource("sourceId.pure", content1);
+        runtime.createInMemorySource("userId.pure", "###Relational\n" +
                 "Database test::db\n" +
                 "(" +
                 "   include test::db1\n" +
@@ -386,16 +384,16 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
                 "  assert(1 == db->meta::relational::metamodel::schema('default').tables->size(), |'');\n" +
                 "}\n");
 
-        this.runtime.compile();
-        int size = this.runtime.getModelRepository().serialize().length;
+        runtime.compile();
+        int size = runtime.getModelRepository().serialize().length;
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.modify("sourceId.pure", content2);
-            this.runtime.compile();
-            this.runtime.modify("sourceId.pure", content1);
-            this.runtime.compile();
-            Assert.assertEquals(size, this.runtime.getModelRepository().serialize().length);
+            runtime.modify("sourceId.pure", content2);
+            runtime.compile();
+            runtime.modify("sourceId.pure", content1);
+            runtime.compile();
+            Assert.assertEquals(size, runtime.getModelRepository().serialize().length);
         }
     }
 
@@ -419,14 +417,14 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
                 ")";
         compileTestSource(store1SourceId, store1Code);
         compileTestSource(store2SourceId, store2Code);
-        int size = this.repository.serialize().length;
+        int size = repository.serialize().length;
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete(store1SourceId);
+            runtime.delete(store1SourceId);
             try
             {
-                this.runtime.compile();
+                runtime.compile();
                 Assert.fail("Expected compilation error");
             }
             catch (Exception e)
@@ -434,7 +432,7 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
                 assertPureException(PureCompilationException.class, "test::TopDB has not been defined!", store2SourceId, 5, 18, e);
             }
             compileTestSource(store1SourceId, store1Code);
-            Assert.assertEquals("Failed on iteration #" + i, size, this.repository.serialize().length);
+            Assert.assertEquals("Failed on iteration #" + i, size, repository.serialize().length);
         }
     }
 
@@ -461,14 +459,14 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
                 ")";
         compileTestSource(store1SourceId, store1Code);
         compileTestSource(store2SourceId, store2Code);
-        int size = this.repository.serialize().length;
+        int size = repository.serialize().length;
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete(store1SourceId);
+            runtime.delete(store1SourceId);
             try
             {
-                this.runtime.compile();
+                runtime.compile();
                 Assert.fail("Expected compilation error");
             }
             catch (Exception e)
@@ -476,7 +474,7 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
                 assertPureException(PureCompilationException.class, "test::TopDB has not been defined!", store2SourceId, 5, 18, e);
             }
             compileTestSource(store1SourceId, store1Code);
-            Assert.assertEquals("Failed on iteration #" + i, size, this.repository.serialize().length);
+            Assert.assertEquals("Failed on iteration #" + i, size, repository.serialize().length);
         }
     }
 

@@ -36,7 +36,7 @@ public class FilterMappingUnloadWalker implements MatchRunner<FilterMapping>
     public void run(FilterMapping filterMapping, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
         RelationalInstanceSetImplementation mappingOwner = filterMapping._setMappingOwner();
-        if(mappingOwner != null)
+        if (mappingOwner != null)
         {
             matcher.fullMatch(mappingOwner, state);
         }

@@ -14,76 +14,72 @@
 
 package org.finos.legend.pure.m2.relational;
 
-
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingProperties;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.MappingParser;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.RelationalParser;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.compiler.validation.ValidationType;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.serialization.Loader;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
 import org.finos.legend.pure.m3.statelistener.VoidM3M4StateListener;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-
 public class TestExtendGrammar extends AbstractPureRelationalTestWithCoreCompiled
 {
-
     private RelationalGraphWalker graphWalker;
 
     @Before
     public void setUpRelational()
     {
-        this.graphWalker = new RelationalGraphWalker(this.runtime, this.processorSupport);
+        this.graphWalker = new RelationalGraphWalker(runtime, processorSupport);
     }
-
 
     @Test
     public void testExtend()
     {
-            Loader.parseM3(
-                    "import other::*;\n" +
-                            "\n" +
-                            "Class other::Person\n" +
-                            "{\n" +
-                            "    name:String[1];\n" +
-                            "    otherInfo:String[1];\n" +
-                            "}\n" +
+        Loader.parseM3(
+                "import other::*;\n" +
+                        "\n" +
+                        "Class other::Person\n" +
+                        "{\n" +
+                        "    name:String[1];\n" +
+                        "    otherInfo:String[1];\n" +
+                        "}\n" +
 
-                            "###Relational\n" +
-                            "Database mapping::db(\n" +
-                            "   Table employeeTable\n" +
-                            "   (\n" +
-                            "    id INT PRIMARY KEY,\n" +
-                            "    name VARCHAR(200),\n" +
-                            "    firm VARCHAR(200),\n" +
-                            "    otherInfo VARCHAR(200),\n" +
-                            "    postcode VARCHAR(10)\n" +
-                            "   )\n" +
-                            ")\n" +
-                            "###Mapping\n" +
-                            "import other::*;\n" +
-                            "import mapping::*;\n" +
-                            "Mapping mappingPackage::myMapping\n" +
-                            "(\n" +
+                        "###Relational\n" +
+                        "Database mapping::db(\n" +
+                        "   Table employeeTable\n" +
+                        "   (\n" +
+                        "    id INT PRIMARY KEY,\n" +
+                        "    name VARCHAR(200),\n" +
+                        "    firm VARCHAR(200),\n" +
+                        "    otherInfo VARCHAR(200),\n" +
+                        "    postcode VARCHAR(10)\n" +
+                        "   )\n" +
+                        ")\n" +
+                        "###Mapping\n" +
+                        "import other::*;\n" +
+                        "import mapping::*;\n" +
+                        "Mapping mappingPackage::myMapping\n" +
+                        "(\n" +
                         "    *Person[superClass]: Relational\n" +
                         "    {\n" +
                         "       name : [db]employeeTable.name \n" +
                         "    }\n" +
                         "    Person[p_subclass] extends [superClass]: Relational\n" +
-                            "    {\n" +
-                            "       otherInfo: [db]employeeTable.otherInfo\n" +
-                            "    }\n" +
-                            ")\n", this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-            this.runtime.compile();
+                        "    {\n" +
+                        "       otherInfo: [db]employeeTable.otherInfo\n" +
+                        "    }\n" +
+                        ")\n", repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+        runtime.compile();
 
 
         CoreInstance mapping = this.graphWalker.getMapping("mappingPackage::myMapping");
@@ -142,8 +138,8 @@ public class TestExtendGrammar extends AbstractPureRelationalTestWithCoreCompile
                         "    MyPerson[p_subclass] extends [superClass]: Relational\n" +
                         "    {\n" +
                         "    }\n" +
-                        ")\n", this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-        this.runtime.compile();
+                        ")\n", repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+        runtime.compile();
 
 
         CoreInstance mapping = this.graphWalker.getMapping("mappingPackage::myMapping");
@@ -206,8 +202,8 @@ public class TestExtendGrammar extends AbstractPureRelationalTestWithCoreCompile
                             "    MyPerson[p_subclass] extends [superClass]: Relational\n" +
                             "    {\n" +
                             "    }\n" +
-                            ")\n", this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-            this.runtime.compile();
+                            ")\n", repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+            runtime.compile();
         }
         catch (Exception e)
         {
@@ -252,8 +248,8 @@ public class TestExtendGrammar extends AbstractPureRelationalTestWithCoreCompile
                             "    {\n" +
                             "       otherInfo: [db]employeeTable.otherInfo\n" +
                             "    }\n" +
-                            ")\n", this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-            this.runtime.compile();
+                            ")\n", repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+            runtime.compile();
             Assert.fail(" this should not compile!");
         }
         catch (Exception e)
@@ -302,8 +298,8 @@ public class TestExtendGrammar extends AbstractPureRelationalTestWithCoreCompile
                         "    {\n" +
                         "       otherInfo: [db]employeeTable.otherInfo\n" +
                         "    }\n" +
-                        ")\n", this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-        this.runtime.compile();
+                        ")\n", repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+        runtime.compile();
 
 
     }
@@ -349,8 +345,8 @@ public class TestExtendGrammar extends AbstractPureRelationalTestWithCoreCompile
                             "    {\n" +
                             "       otherInfo: [db]employeeTable.otherInfo\n" +
                             "    }\n" +
-                            ")\n", this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-            this.runtime.compile();
+                            ")\n", repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -393,8 +389,8 @@ public class TestExtendGrammar extends AbstractPureRelationalTestWithCoreCompile
                             "    {\n" +
                             "       otherInfo: [db]employeeTable.otherInfo\n" +
                             "    }\n" +
-                            ")\n", this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-            this.runtime.compile();
+                            ")\n", repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+            runtime.compile();
             Assert.fail("this should not compile");
         }
         catch (Exception e)
@@ -439,8 +435,8 @@ public class TestExtendGrammar extends AbstractPureRelationalTestWithCoreCompile
                             "    {\n" +
                             "       otherInfo: [db]employeeTable.otherInfo\n" +
                             "    }\n" +
-                            ")\n", this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-            this.runtime.compile();
+                            ")\n", repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+            runtime.compile();
             Assert.fail("this should not parse");
         }
         catch (Exception e)
@@ -488,8 +484,8 @@ public class TestExtendGrammar extends AbstractPureRelationalTestWithCoreCompile
                             "    {\n" +
                             "       otherInfo: [db]employeeTable.otherInfo\n" +
                             "    }\n" +
-                            ")\n", this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-            this.runtime.compile();
+                            ")\n", repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+            runtime.compile();
 
             Assert.fail();
 
@@ -545,14 +541,13 @@ public class TestExtendGrammar extends AbstractPureRelationalTestWithCoreCompile
                             "    {\n" +
                             "       otherInfo: [db]employeeTable.otherInfo\n" +
                             "    }\n" +
-                            ")\n", this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-            this.runtime.compile();
+                            ")\n", repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+            runtime.compile();
             Assert.fail("this should not compile");
         }
         catch (Exception e)
         {
             assertPureException(PureCompilationException.class, "Class [Person] != [Firm], when [p_subclass] extends [ 'f1'] they must map the same class", "fromString.pure", 33, 5, e);
         }
-
-    }
+   }
 }

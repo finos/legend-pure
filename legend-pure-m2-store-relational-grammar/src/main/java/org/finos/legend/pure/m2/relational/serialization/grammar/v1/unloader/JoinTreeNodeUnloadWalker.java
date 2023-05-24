@@ -34,7 +34,7 @@ public class JoinTreeNodeUnloadWalker implements MatchRunner<JoinTreeNode>
     @Override
     public void run(JoinTreeNode joinTreeNode, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
-        if(joinTreeNode._setMappingOwner() != null)
+        if (joinTreeNode._setMappingOwner() != null)
         {
             matcher.fullMatch(joinTreeNode._setMappingOwner(), state);
         }

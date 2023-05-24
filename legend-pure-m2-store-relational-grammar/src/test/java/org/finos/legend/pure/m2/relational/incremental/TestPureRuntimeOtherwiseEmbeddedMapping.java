@@ -33,7 +33,7 @@ public class TestPureRuntimeOtherwiseEmbeddedMapping extends AbstractPureRelatio
             "{\n" +
             "    legalName:String[1];\n" +
             "    otherInformation:String[1];\n" +
-            "}\n" ;
+            "}\n";
 
 
     private static final String STORE =
@@ -55,7 +55,7 @@ public class TestPureRuntimeOtherwiseEmbeddedMapping extends AbstractPureRelatio
                     "    other VARCHAR(200)\n" +
                     "   )\n" +
                     "   Join PersonFirmJoin(employeeFirmDenormTable.firmId = FirmInfoTable.id)\n" +
-                    ")\n" ;
+                    ")\n";
 
     private static final String STORE_NO_JOIN =
             "###Relational\n" +
@@ -75,7 +75,7 @@ public class TestPureRuntimeOtherwiseEmbeddedMapping extends AbstractPureRelatio
                     "    name VARCHAR(200),\n" +
                     "    other VARCHAR(200)\n" +
                     "   )\n" +
-                    ")\n" ;
+                    ")\n";
 
     private static final String INITIAL_MAPPING =
             "###Mapping\n" +
@@ -160,34 +160,32 @@ public class TestPureRuntimeOtherwiseEmbeddedMapping extends AbstractPureRelatio
                     ")\n";
 
 
-
-
     @Test
     public void testCreateAndDeleteOtherwiseEmbeddedMappingSameFile()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                        Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
+                                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source4.pure", MAPPING_WITH_JOIN)
                         .compile()
                         .updateSource("source4.pure", INITIAL_MAPPING)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
     public void testChangeOtherwiseTargetMapping()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
+                                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source4.pure", MAPPING1)
                         .compileWithExpectedCompileFailure("Invalid Otherwise mapping found for 'firm' property, targetId firm2 does not exists.", "source4.pure", 14, 9)
                         .updateSource("source4.pure", INITIAL_MAPPING)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
 
@@ -195,14 +193,14 @@ public class TestPureRuntimeOtherwiseEmbeddedMapping extends AbstractPureRelatio
     public void testDeleteAndRecreateStore()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                        Maps.mutable.with("source1.pure", INITIAL_DATA, "source2.pure",STORE, "source3.pure", INITIAL_MAPPING))
+                                Maps.mutable.with("source1.pure", INITIAL_DATA, "source2.pure", STORE, "source3.pure", INITIAL_MAPPING))
                         .compile(),
                 new RuntimeTestScriptBuilder()
-                        .updateSource("source2.pure",STORE_NO_JOIN)
+                        .updateSource("source2.pure", STORE_NO_JOIN)
                         .compileWithExpectedCompileFailure(null, null, 0, 0)
                         .updateSource("source2.pure", STORE)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
 
@@ -210,13 +208,13 @@ public class TestPureRuntimeOtherwiseEmbeddedMapping extends AbstractPureRelatio
     public void testChangeOtherwisePropertyMappingFromJoinToOther()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                Maps.mutable.with("source1.pure", INITIAL_DATA, "source2.pure",STORE, "source3.pure", INITIAL_MAPPING))
+                                Maps.mutable.with("source1.pure", INITIAL_DATA, "source2.pure", STORE, "source3.pure", INITIAL_MAPPING))
                         .compile(),
                 new RuntimeTestScriptBuilder()
-                        .updateSource("source3.pure",MAPPING2)
+                        .updateSource("source3.pure", MAPPING2)
                         .compileWithExpectedParserFailure("expected: '@' found: 'employeeFirmDenormTable'", "source3.pure", 17, 35)
                         .updateSource("source3.pure", INITIAL_MAPPING)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 }

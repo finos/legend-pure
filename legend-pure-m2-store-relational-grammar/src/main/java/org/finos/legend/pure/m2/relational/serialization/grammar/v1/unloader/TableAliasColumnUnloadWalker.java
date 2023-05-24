@@ -34,7 +34,7 @@ public class TableAliasColumnUnloadWalker implements MatchRunner<TableAliasColum
     @Override
     public void run(TableAliasColumn tableAliasColumn, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
-        if(tableAliasColumn._setMappingOwner() != null)
+        if (tableAliasColumn._setMappingOwner() != null)
         {
             matcher.fullMatch(tableAliasColumn._setMappingOwner(), state);
         }

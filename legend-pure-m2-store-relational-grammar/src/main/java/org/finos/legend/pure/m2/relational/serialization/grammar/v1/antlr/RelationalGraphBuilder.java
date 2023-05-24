@@ -14,6 +14,14 @@
 
 package org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr;
 
+import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.misc.Interval;
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.list.mutable.FastList;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.IRelationalParser;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.AssociationMappingContext;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.BusinessMilestoningFromContext;
@@ -79,13 +87,6 @@ import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.Relati
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.ViewContext;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.processor.ColumnDataTypeFactory;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.processor.ColumnDataTypeFactory.ColumnDataTypeException;
-import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.misc.Interval;
-import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.ParsingUtils;
@@ -94,6 +95,7 @@ import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformati
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 import java.util.List;
+import java.util.Objects;
 
 public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParserBaseVisitor<String>
 {
@@ -103,7 +105,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
 
     private String dbImport;
 
-    private ParserLibrary parserLibrary;
+    private final ParserLibrary parserLibrary;
 
     public RelationalGraphBuilder(String importId, AntlrSourceInformation sourceInformation, ParserLibrary parserLibrary)
     {
@@ -241,7 +243,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
         return localMappingPropertyFirstMul == null && localMappingPropertySecondMul == null ?
                 "" :
                 "localMappingPropertyMultiplicity = ^meta::pure::metamodel::multiplicity::Multiplicity(" +
-                        "   lowerBound=^meta::pure::metamodel::multiplicity::MultiplicityValue(value=" + (localMappingPropertySecondMul == null || localMappingPropertyFirstMul == null? "0" : localMappingPropertyFirstMul.getText()) + ")," +
+                        "   lowerBound=^meta::pure::metamodel::multiplicity::MultiplicityValue(value=" + (localMappingPropertySecondMul == null || localMappingPropertyFirstMul == null ? "0" : localMappingPropertyFirstMul.getText()) + ")," +
                         "   upperBound=^meta::pure::metamodel::multiplicity::MultiplicityValue(" + (secondOne.getText().equals("*") ? "" : "value=" + secondOne.getText()) + ")" +
                         "),";
     }
@@ -259,7 +261,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
 
     private String visitNonePlusSingleMappingLineBlock(NonePlusSingleMappingLineContext ctx, ScopeInfo scopeInfo, String id, String mappingPath)
     {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         Token propertyName = ctx.identifier().getStart();
         String primaryKeyBlock = null;
         String embeddedResult = "";
@@ -295,17 +297,17 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
                 inlineSetId = ctx.embeddedMapping().inline().identifier().getStart();
             }
             buffer.append(otherwisePropertyMappings.isEmpty() ?
-                    embeddedResult.isEmpty() ?
-                            "^meta::relational::mapping::InlineEmbeddedRelationalInstanceSetImplementation" :
-                            "^meta::relational::mapping::EmbeddedRelationalInstanceSetImplementation" :
-                    "^meta::relational::mapping::OtherwiseEmbeddedRelationalInstanceSetImplementation")
-                    .append(sourceInformation.getPureSourceInformation(propertyName).toM4String())
+                            embeddedResult.isEmpty() ?
+                                    "^meta::relational::mapping::InlineEmbeddedRelationalInstanceSetImplementation" :
+                                    "^meta::relational::mapping::EmbeddedRelationalInstanceSetImplementation" :
+                            "^meta::relational::mapping::OtherwiseEmbeddedRelationalInstanceSetImplementation")
+                    .append(this.sourceInformation.getPureSourceInformation(propertyName).toM4String())
                     .append("(root = false,")
                     .append(targetId == null ? "" : "id = '" + targetId.getText() + "',")
                     .append(targetId == null ? "" : "targetSetImplementationId = '" + targetId.getText() + "',")
-                    .append("parent = ^meta::pure::metamodel::import::ImportStub (importGroup=system::imports::" + importId + ", idOrPath='" + mappingPath + "'),")
+                    .append("parent = ^meta::pure::metamodel::import::ImportStub (importGroup=system::imports::").append(this.importId).append(", idOrPath='").append(mappingPath).append("'),")
                     .append(primaryKeyBlock == null ? "" : "primaryKey=" + primaryKeyBlock + ",")
-                    .append("property = '" + propertyName.getText() + "'")
+                    .append("property = '").append(propertyName.getText()).append("'")
                     .append(embeddedResult.isEmpty() ? "" : ",propertyMappings = [" + embeddedResult + "]");
             if (otherwisePropertyMappings.isEmpty())
             {
@@ -313,7 +315,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
             }
             else
             {
-                buffer.append(", otherwisePropertyMapping = " + otherwisePropertyMappings + ")");
+                buffer.append(", otherwisePropertyMapping = ").append(otherwisePropertyMappings).append(")");
             }
             return buffer.toString();
         }
@@ -339,7 +341,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
     private String visitOtherwisePropertyMapping(OtherwisePropertyMappingContext ctx, Token propertyName, ScopeInfo scopeInfo)
     {
         Token targetId = ctx.identifier().getStart();
-        String relationalOperation = visitOtherwiseJoinBlock(ctx.otherwiseJoin(), "", FastList.<String>newList(), scopeInfo);
+        String relationalOperation = visitOtherwiseJoinBlock(ctx.otherwiseJoin(), scopeInfo);
 
         return "^meta::relational::mapping::RelationalPropertyMapping" + sourceInformation.getPureSourceInformation(propertyName).toM4String() + "(" +
                 "        property = '" + propertyName.getText() + "'," +
@@ -348,7 +350,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
                 ")";
     }
 
-    private String visitOtherwiseJoinBlock(OtherwiseJoinContext otherwiseJoinContext, String database, FastList<String> strings, ScopeInfo scopeInfo)
+    private String visitOtherwiseJoinBlock(OtherwiseJoinContext otherwiseJoinContext, ScopeInfo scopeInfo)
     {
         String db = "";
         String joins;
@@ -806,8 +808,8 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
         for (ViewColumnMappingLineContext vcmp : ctx.viewColumnMappingLine())
         {
             Pair<String, String> pair = visitViewColumnMappingLine(vcmp, scopeInfo, pks);
-            columnBuilder.append(pair.getOne() + ",");
-            buffer.append(pair.getTwo() + ",");
+            columnBuilder.append(pair.getOne()).append(",");
+            buffer.append(pair.getTwo()).append(",");
         }
         ParsingUtils.removeLastCommaCharacterIfPresent(columnBuilder);
         ParsingUtils.removeLastCommaCharacterIfPresent(buffer);
@@ -1250,7 +1252,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
         String type = ctx.identifier().getText();
         org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.MilestoningContentContext contentCtx = ctx.milestoningContent();
         String content = contentCtx.start.getInputStream().getText(Interval.of(contentCtx.start.getStartIndex(), contentCtx.stop.getStopIndex()));
-        List<String> results = relationalParsers.collect(relationalParser -> ((IRelationalParser) relationalParser).parseMilestoningDefinition(type, content, sourceInformation.getSourceName(), srcInfo.getLine() - 1, srcInfo.getEndColumn() + 1, this.importId)).reject(x -> x == null).toList();
+        List<String> results = relationalParsers.collect(relationalParser -> ((IRelationalParser) relationalParser).parseMilestoningDefinition(type, content, sourceInformation.getSourceName(), srcInfo.getLine() - 1, srcInfo.getEndColumn() + 1, this.importId)).reject(Objects::isNull, Lists.mutable.empty());
         if (results.size() == 1)
         {
             return results.get(0);
