@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
-
 import java.util.GregorianCalendar;
 
 public interface PureDate extends Comparable<PureDate>

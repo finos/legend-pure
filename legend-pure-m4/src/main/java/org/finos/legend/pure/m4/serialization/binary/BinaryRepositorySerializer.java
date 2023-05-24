@@ -408,7 +408,7 @@ public class BinaryRepositorySerializer
         }
         IntermediateNode node = new IntermediateNode(id, classifierId, name, compileState, sourceInformation);
         int propertiesCount = reader.readInt();
-        for (int i = 0; i < propertiesCount ; i++)
+        for (int i = 0; i < propertiesCount; i++)
         {
             int propertyId = reader.readInt();
             int[] valueIds = reader.readIntArray();

@@ -58,7 +58,7 @@ public class TestPureStrictTime
     {
         try
         {
-            StrictTimeFunctions.newPureStrictTime( 10, 26, 33, null);
+            StrictTimeFunctions.newPureStrictTime(10, 26, 33, null);
             Assert.fail("Expected exception");
         }
         catch (IllegalArgumentException e)
@@ -78,7 +78,7 @@ public class TestPureStrictTime
 
         try
         {
-            StrictTimeFunctions.newPureStrictTime( 10, 26, 33, "789as9898");
+            StrictTimeFunctions.newPureStrictTime(10, 26, 33, "789as9898");
             Assert.fail("Expected exception");
         }
         catch (IllegalArgumentException e)
@@ -88,7 +88,7 @@ public class TestPureStrictTime
 
         try
         {
-            StrictTimeFunctions.newPureStrictTime( 10, 26, 33, "-789");
+            StrictTimeFunctions.newPureStrictTime(10, 26, 33, "-789");
             Assert.fail("Expected exception");
         }
         catch (IllegalArgumentException e)

@@ -16,7 +16,8 @@ package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
 import org.eclipse.collections.impl.utility.StringIterate;
 
-public abstract class TimeFunctions {
+public abstract class TimeFunctions
+{
     public static void validateHour(int hour)
     {
         if ((hour < 0) || (hour > 23))

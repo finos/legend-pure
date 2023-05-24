@@ -16,6 +16,11 @@ package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
 import org.finos.legend.pure.m4.ModelRepository;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -162,6 +167,26 @@ public class DateFunctions extends TimeFunctions
     public static DateTime fromSQLTimestamp(java.sql.Timestamp timestamp)
     {
         return DateWithSubsecond.fromSQLTimestamp(timestamp);
+    }
+
+    public static DateTime fromInstant(Instant instant)
+    {
+        return fromInstant(instant, 9);
+    }
+
+    public static DateTime fromInstant(Instant instant, int subsecondPrecision)
+    {
+        return DateWithSubsecond.fromLocalDateTime(LocalDateTime.ofInstant(instant, ZoneOffset.UTC), subsecondPrecision);
+    }
+
+    /**
+     * Returns a StrictDate of today in UTC.
+     *
+     * @return today UTC
+     */
+    public static StrictDate today()
+    {
+        return StrictDate.fromLocalDate(LocalDate.now(Clock.systemUTC()));
     }
 
     static int getYearDays(int year)

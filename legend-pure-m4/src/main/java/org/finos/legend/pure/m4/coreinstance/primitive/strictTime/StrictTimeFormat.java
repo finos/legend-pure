@@ -16,8 +16,8 @@ package org.finos.legend.pure.m4.coreinstance.primitive.strictTime;
 
 import java.io.IOException;
 
-
-public class StrictTimeFormat {
+public class StrictTimeFormat
+{
     static final char STRICT_TIME_SEPARATOR = ':';
     private static final char STRICT_TIME_PREFIX = '%';
 
@@ -134,16 +134,15 @@ public class StrictTimeFormat {
         appendTwoDigitInt(appendable, time.getHour());
         appendable.append(STRICT_TIME_SEPARATOR);
         appendTwoDigitInt(appendable, time.getMinute());
-        if(time.hasSecond())
+        if (time.hasSecond())
         {
             appendable.append(STRICT_TIME_SEPARATOR);
             appendTwoDigitInt(appendable, time.getSecond());
-            if(time.hasSubsecond())
+            if (time.hasSubsecond())
             {
                 appendable.append('.');
                 appendable.append(time.getSubsecond());
             }
-
         }
     }
 
@@ -253,7 +252,7 @@ public class StrictTimeFormat {
             String subsecond = string.substring(previous, index);
             return StrictTimeWithSubsecond.newStrictTimeWithSubsecond(hour, minute, second, subsecond);
         }
-        else if(index < end)
+        else if (index < end)
         {
             throwInvalidStrictTimeString("Error parsing second", string, start, end);
         }

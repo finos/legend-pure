@@ -29,24 +29,24 @@ public class TestCoreM4
         ModelRepository repository = new ModelRepository();
         try
         {
-            new M4Parser().parse(   "^Class Class\n" +
-                                    "{\n" +
-                                    "    Element.properties[name] : 'Class'\n" +
-                                    "}\n" +
-                                    "^Class String" +
-                                    "{" +
-                                    "}\n" +
-                                    "^Class Element\n" +
-                                    "{\n" +
-                                    "    Element.properties[name] : 'Element',\n" +
-                                    "    Class.properties[properties] :\n" +
-                                    "        [\n" +
-                                    "            ^Property name\n" +
-                                    "                {\n" +
-                                    "                    Property.properties[type] : String\n" +
-                                    "                }\n" +
-                                    "        ]\n" +
-                                    "}\n", repository, new VoidM4StateListener());
+            new M4Parser().parse("^Class Class\n" +
+                    "{\n" +
+                    "    Element.properties[name] : 'Class'\n" +
+                    "}\n" +
+                    "^Class String" +
+                    "{" +
+                    "}\n" +
+                    "^Class Element\n" +
+                    "{\n" +
+                    "    Element.properties[name] : 'Element',\n" +
+                    "    Class.properties[properties] :\n" +
+                    "        [\n" +
+                    "            ^Property name\n" +
+                    "                {\n" +
+                    "                    Property.properties[type] : String\n" +
+                    "                }\n" +
+                    "        ]\n" +
+                    "}\n", repository, new VoidM4StateListener());
 
             Assert.assertEquals("Class_0 instance Class_0\n" +
                     "    name_6(Property_5):\n" +
@@ -80,74 +80,74 @@ public class TestCoreM4
     public void testSimpleConsistent() throws Exception
     {
         ModelRepository repository = new ModelRepository();
-        new M4Parser().parse(   "^Class PrimitiveType\n" +
-                                "{\n" +
-                                "}\n" +
-                                "\n" +
-                                "^PrimitiveType String\n" +
-                                "{\n" +
-                                "}\n" +
-                                "\n" +
-                                "^Class Class\n" +
-                                "{\n" +
-                                "    Element.properties[name] : 'Class',\n" +
-                                "    Class.properties[properties] :\n" +
-                                "        [\n" +
-                                "            ^Property properties\n" +
-                                "                {\n" +
-                                "                    Property.properties[type] : Property\n" +
-                                "                }\n" +
-                                "        ]\n" +
-                                "}\n" +
-                                "\n" +
-                                "^Class Element\n" +
-                                "{\n" +
-                                "    Element.properties[name] : 'Element',\n" +
-                                "    Class.properties[properties] :\n" +
-                                "        [\n" +
-                                "            ^Property name\n" +
-                                "                {\n" +
-                                "                    Property.properties[type] : String\n" +
-                                "                }\n" +
-                                "        ]\n" +
-                                "}\n" +
-                                "\n" +
-                                "^Class Property\n" +
-                                "{\n" +
-                                "    Element.properties[name] : 'Property',\n" +
-                                "    Class.properties[properties] :\n" +
-                                "        [\n" +
-                                "            ^Property type\n" +
-                                "                {\n" +
-                                "                    Property.properties[type] : Class\n" +
-                                "                }\n" +
-                                "        ]\n" +
-                                "}\n", repository, new VoidM4StateListener());
+        new M4Parser().parse("^Class PrimitiveType\n" +
+                "{\n" +
+                "}\n" +
+                "\n" +
+                "^PrimitiveType String\n" +
+                "{\n" +
+                "}\n" +
+                "\n" +
+                "^Class Class\n" +
+                "{\n" +
+                "    Element.properties[name] : 'Class',\n" +
+                "    Class.properties[properties] :\n" +
+                "        [\n" +
+                "            ^Property properties\n" +
+                "                {\n" +
+                "                    Property.properties[type] : Property\n" +
+                "                }\n" +
+                "        ]\n" +
+                "}\n" +
+                "\n" +
+                "^Class Element\n" +
+                "{\n" +
+                "    Element.properties[name] : 'Element',\n" +
+                "    Class.properties[properties] :\n" +
+                "        [\n" +
+                "            ^Property name\n" +
+                "                {\n" +
+                "                    Property.properties[type] : String\n" +
+                "                }\n" +
+                "        ]\n" +
+                "}\n" +
+                "\n" +
+                "^Class Property\n" +
+                "{\n" +
+                "    Element.properties[name] : 'Property',\n" +
+                "    Class.properties[properties] :\n" +
+                "        [\n" +
+                "            ^Property type\n" +
+                "                {\n" +
+                "                    Property.properties[type] : Class\n" +
+                "                }\n" +
+                "        ]\n" +
+                "}\n", repository, new VoidM4StateListener());
 
         repository.validate(new VoidM4StateListener());
 
         Assert.assertEquals("Class_0 instance Class_0\n" +
-                            "    name_8(Property_4):\n" +
-                            "        Class_3 instance String_2\n" +
-                            "    properties_5(Property_4):\n" +
-                            "        properties_5 instance Property_4\n" +
-                            "            type_10(Property_4):\n" +
-                            "                Property_4 instance Class_0\n" +
-                            "                    name_8(Property_4):\n" +
-                            "                        Property_9 instance String_2\n" +
-                            "                    properties_5(Property_4):\n" +
-                            "                        type_10 instance Property_4\n" +
-                            "                            type_10(Property_4):\n" +
-                            "                                Class_0 instance Class_0\n" +
-                            "                                    [...]", repository.getTopLevel("Class").printFull(""));
+                "    name_8(Property_4):\n" +
+                "        Class_3 instance String_2\n" +
+                "    properties_5(Property_4):\n" +
+                "        properties_5 instance Property_4\n" +
+                "            type_10(Property_4):\n" +
+                "                Property_4 instance Class_0\n" +
+                "                    name_8(Property_4):\n" +
+                "                        Property_9 instance String_2\n" +
+                "                    properties_5(Property_4):\n" +
+                "                        type_10 instance Property_4\n" +
+                "                            type_10(Property_4):\n" +
+                "                                Class_0 instance Class_0\n" +
+                "                                    [...]", repository.getTopLevel("Class").printFull(""));
 
         Assert.assertEquals("Element_6 instance Class_0\n" +
-                            "    name_8(Property_4):\n" +
-                            "        Element_7 instance String_2\n" +
-                            "    properties_5(Property_4):\n" +
-                            "        name_8 instance Property_4\n" +
-                            "            type_10(Property_4):\n" +
-                            "                String_2 instance PrimitiveType_1", repository.getTopLevel("Element").printFull(""));
+                "    name_8(Property_4):\n" +
+                "        Element_7 instance String_2\n" +
+                "    properties_5(Property_4):\n" +
+                "        name_8 instance Property_4\n" +
+                "            type_10(Property_4):\n" +
+                "                String_2 instance PrimitiveType_1", repository.getTopLevel("Element").printFull(""));
 
     }
 
@@ -155,7 +155,7 @@ public class TestCoreM4
     public void testNameSpacing() throws Exception
     {
         ModelRepository repository = new ModelRepository();
-        String body =   "^Class Class\n" +
+        String body = "^Class Class\n" +
                 "{\n" +
                 "    Class.properties[properties] :\n" +
                 "        [\n" +
@@ -215,17 +215,17 @@ public class TestCoreM4
                 "\n" +
                 "}";
 
-        new M4Parser().parse(body , repository, new VoidM4StateListener());
+        new M4Parser().parse(body, repository, new VoidM4StateListener());
         repository.validate(new VoidM4StateListener());
 
         Assert.assertEquals("T_9 instance ClassTest_8", repository.getTopLevel("T").printFull(""));
 
         Assert.assertEquals("Root_6 instance Package_4\n" +
-                            "    children_5(Property_1):\n" +
-                            "        subPackage_7 instance Package_4\n" +
-                            "            children_5(Property_1):\n" +
-                            "                ClassTest_8 instance Class_0\n" +
-                            "                NewInstance_10 instance Class_0", repository.getTopLevel("Root").printFull(""));
+                "    children_5(Property_1):\n" +
+                "        subPackage_7 instance Package_4\n" +
+                "            children_5(Property_1):\n" +
+                "                ClassTest_8 instance Class_0\n" +
+                "                NewInstance_10 instance Class_0", repository.getTopLevel("Root").printFull(""));
     }
 
 
@@ -233,63 +233,62 @@ public class TestCoreM4
     public void testCodeLineAnnotation()
     {
         ModelRepository repository = new ModelRepository();
-        new M4Parser().parse(   "^Class Class ?[a/b/c/file.txt:1,3,1,9,8,9]? \n" +
-                                "{\n" +
-                                "    Element.properties[name] : 'Class',\n" +
-                                "    Class.properties[properties] :\n" +
-                                "        [\n" +
-                                "            ^Property properties\n" +
-                                "                {\n" +
-                                "                    Property.properties[type] : Property\n" +
-                                "                }\n" +
-                                "        ]\n" +
-                                "}\n" +
-                                "^Class String" +
-                                "{" +
-                                "}" +
-                                "^Class Property" +
-                                "{\n" +
-                                "    Class.properties[properties] :\n" +
-                                "        [\n" +
-                                "            ^Property type\n" +
-                                "                {\n" +
-                                "                    Property.properties[type] : String\n" +
-                                "                }\n" +
-                                "        ]\n" +
-                                "}" +
-                                "^Class Element ?[otherElement:4,5,4,11,10,19]?\n" +
-                                "{\n" +
-                                "    Element.properties[name] : 'Element',\n" +
-                                "    Class.properties[properties] :\n" +
-                                "        [\n" +
-                                "            ^Property name ?[file:5,7,5,7,14,22]?\n" +
-                                "                {\n" +
-                                "                    Property.properties[type] : String\n" +
-                                "                }\n" +
-                                "        ]\n" +
-                                "}\n", repository, new VoidM4StateListener());
+        new M4Parser().parse("^Class Class ?[a/b/c/file.txt:1,3,1,9,8,9]? \n" +
+                "{\n" +
+                "    Element.properties[name] : 'Class',\n" +
+                "    Class.properties[properties] :\n" +
+                "        [\n" +
+                "            ^Property properties\n" +
+                "                {\n" +
+                "                    Property.properties[type] : Property\n" +
+                "                }\n" +
+                "        ]\n" +
+                "}\n" +
+                "^Class String" +
+                "{" +
+                "}" +
+                "^Class Property" +
+                "{\n" +
+                "    Class.properties[properties] :\n" +
+                "        [\n" +
+                "            ^Property type\n" +
+                "                {\n" +
+                "                    Property.properties[type] : String\n" +
+                "                }\n" +
+                "        ]\n" +
+                "}" +
+                "^Class Element ?[otherElement:4,5,4,11,10,19]?\n" +
+                "{\n" +
+                "    Element.properties[name] : 'Element',\n" +
+                "    Class.properties[properties] :\n" +
+                "        [\n" +
+                "            ^Property name ?[file:5,7,5,7,14,22]?\n" +
+                "                {\n" +
+                "                    Property.properties[type] : String\n" +
+                "                }\n" +
+                "        ]\n" +
+                "}\n", repository, new VoidM4StateListener());
 
         Assert.assertEquals("Class_0(a/b/c/file.txt:1,3,1,9,8,9) instance Class_0(a/b/c/file.txt:1,3,1,9,8,9)\n" +
-                            "    name_8(file:5,7,5,7,14,22)(Property_3):\n" +
-                            "        Class_2 instance String_1\n" +
-                            "    properties_4(Property_3):\n" +
-                            "        properties_4 instance Property_3\n" +
-                            "            type_5(Property_3):\n" +
-                            "                Property_3 instance Class_0(a/b/c/file.txt:1,3,1,9,8,9)\n" +
-                            "                    properties_4(Property_3):\n" +
-                            "                        type_5 instance Property_3\n" +
-                            "                            type_5(Property_3):\n" +
-                            "                                String_1 instance Class_0(a/b/c/file.txt:1,3,1,9,8,9)", repository.getTopLevel("Class").printFull(""));
+                "    name_8(file:5,7,5,7,14,22)(Property_3):\n" +
+                "        Class_2 instance String_1\n" +
+                "    properties_4(Property_3):\n" +
+                "        properties_4 instance Property_3\n" +
+                "            type_5(Property_3):\n" +
+                "                Property_3 instance Class_0(a/b/c/file.txt:1,3,1,9,8,9)\n" +
+                "                    properties_4(Property_3):\n" +
+                "                        type_5 instance Property_3\n" +
+                "                            type_5(Property_3):\n" +
+                "                                String_1 instance Class_0(a/b/c/file.txt:1,3,1,9,8,9)", repository.getTopLevel("Class").printFull(""));
 
         Assert.assertEquals("Element_6(otherElement:4,5,4,11,10,19) instance Class_0(a/b/c/file.txt:1,3,1,9,8,9)\n" +
-                            "    name_8(file:5,7,5,7,14,22)(Property_3):\n" +
-                            "        Element_7 instance String_1\n" +
-                            "    properties_4(Property_3):\n" +
-                            "        name_8(file:5,7,5,7,14,22) instance Property_3\n" +
-                            "            type_5(Property_3):\n" +
-                            "                String_1 instance Class_0(a/b/c/file.txt:1,3,1,9,8,9)", repository.getTopLevel("Element").printFull(""));
+                "    name_8(file:5,7,5,7,14,22)(Property_3):\n" +
+                "        Element_7 instance String_1\n" +
+                "    properties_4(Property_3):\n" +
+                "        name_8(file:5,7,5,7,14,22) instance Property_3\n" +
+                "            type_5(Property_3):\n" +
+                "                String_1 instance Class_0(a/b/c/file.txt:1,3,1,9,8,9)", repository.getTopLevel("Element").printFull(""));
     }
-
 
 
     @Test
@@ -297,54 +296,54 @@ public class TestCoreM4
     {
         ModelRepository repository = new ModelRepository();
         new M4Parser().parse("^Root.children[core].children[Package] Root\n" +
-                             "{\n" +
-                             "    Root.children[core].children[Any].properties[name] : 'Root',\n" +
-                             "    Root.children[core].children[Package].properties[children] : [\n" +
-                             "                                        ^Root.children[core].children[Package] core\n" +
-                             "                                        {\n" +
-                             "                                            Root.children[core].children[Any].properties[name] : 'core',\n" +
-                             "                                            Root.children[core].children[Package].properties[children] : []\n" +
-                             "                                        }\n" +
-                             "                                    ]\n" +
-                             "}\n" +
-                             "^Root.children[core].children[Class] Property @Root.children[core].children" +
-                             "{" +
-                             "}" +
-                             "^Root.children[core].children[Class] String" +
-                             "{" +
-                             "}" +
-                             "^Root.children[core].children[Class] Package @Root.children[core].children\n" +
-                             "{\n" +
-                             "    Root.children[core].children[Any].properties[name] : 'Package',\n" +
-                             "    Root.children[core].children[Class].properties[properties] :\n" +
-                             "        [\n" +
-                             "            ^Root.children[core].children[Property] children\n" +
-                             "            {\n" +
-                             "                Root.children[core].children[Any].properties[name] : 'children'\n" +
-                             "            }\n" +
-                             "        ]\n" +
-                             "}\n" +
-                             "^Root.children[core].children[Class] Class @Root.children[core].children\n" +
-                             "{\n" +
-                             "    Root.children[core].children[Class].properties[properties] :\n" +
-                             "        [\n" +
-                             "            ^Root.children[core].children[Property] properties\n" +
-                             "                {\n" +
-                             "                    Root.children[core].children[Any].properties[name] : 'properties'\n" +
-                             "                }\n" +
-                             "        ]" +
-                             "}" +
-                             "^Root.children[core].children[Class] Any @Root.children[core].children\n" +
-                             "{\n" +
-                             "    Root.children[core].children[Any].properties[name] : 'Any',\n" +
-                             "    Root.children[core].children[Class].properties[properties] :\n" +
-                             "        [\n" +
-                             "            ^Root.children[core].children[Property] name\n" +
-                             "                {\n" +
-                             "                    Root.children[core].children[Any].properties[name] : 'classifierGenericType'\n" +
-                             "                }\n" +
-                             "        ]\n" +
-                             "}\n", repository, new VoidM4StateListener());
+                "{\n" +
+                "    Root.children[core].children[Any].properties[name] : 'Root',\n" +
+                "    Root.children[core].children[Package].properties[children] : [\n" +
+                "                                        ^Root.children[core].children[Package] core\n" +
+                "                                        {\n" +
+                "                                            Root.children[core].children[Any].properties[name] : 'core',\n" +
+                "                                            Root.children[core].children[Package].properties[children] : []\n" +
+                "                                        }\n" +
+                "                                    ]\n" +
+                "}\n" +
+                "^Root.children[core].children[Class] Property @Root.children[core].children" +
+                "{" +
+                "}" +
+                "^Root.children[core].children[Class] String" +
+                "{" +
+                "}" +
+                "^Root.children[core].children[Class] Package @Root.children[core].children\n" +
+                "{\n" +
+                "    Root.children[core].children[Any].properties[name] : 'Package',\n" +
+                "    Root.children[core].children[Class].properties[properties] :\n" +
+                "        [\n" +
+                "            ^Root.children[core].children[Property] children\n" +
+                "            {\n" +
+                "                Root.children[core].children[Any].properties[name] : 'children'\n" +
+                "            }\n" +
+                "        ]\n" +
+                "}\n" +
+                "^Root.children[core].children[Class] Class @Root.children[core].children\n" +
+                "{\n" +
+                "    Root.children[core].children[Class].properties[properties] :\n" +
+                "        [\n" +
+                "            ^Root.children[core].children[Property] properties\n" +
+                "                {\n" +
+                "                    Root.children[core].children[Any].properties[name] : 'properties'\n" +
+                "                }\n" +
+                "        ]" +
+                "}" +
+                "^Root.children[core].children[Class] Any @Root.children[core].children\n" +
+                "{\n" +
+                "    Root.children[core].children[Any].properties[name] : 'Any',\n" +
+                "    Root.children[core].children[Class].properties[properties] :\n" +
+                "        [\n" +
+                "            ^Root.children[core].children[Property] name\n" +
+                "                {\n" +
+                "                    Root.children[core].children[Any].properties[name] : 'classifierGenericType'\n" +
+                "                }\n" +
+                "        ]\n" +
+                "}\n", repository, new VoidM4StateListener());
         repository.validate(new VoidM4StateListener());
     }
 }

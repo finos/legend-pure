@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
+import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
@@ -143,5 +144,10 @@ public final class StrictDate extends AbstractDateWithDay
     public static StrictDate fromCalendar(GregorianCalendar calendar)
     {
         return new StrictDate(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH));
+    }
+
+    static StrictDate fromLocalDate(LocalDate date)
+    {
+        return new StrictDate(date.getYear(), date.getMonthValue(), date.getDayOfMonth());
     }
 }

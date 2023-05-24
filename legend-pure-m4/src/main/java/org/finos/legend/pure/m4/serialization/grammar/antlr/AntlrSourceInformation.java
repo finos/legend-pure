@@ -19,7 +19,6 @@ import org.antlr.v4.runtime.Token;
 
 public class AntlrSourceInformation
 {
-
     private final int offsetLine;
     private final int offsetColumn;
 
@@ -57,7 +56,9 @@ public class AntlrSourceInformation
     public SourceInformation getPureSourceInformation(int beginLine, int beginColumn, int endLine, int endColumn)
     {
         if (!this.addLines)
+        {
             return null;
+        }
         int offsetColumn = beginLine == 1 ? this.offsetColumn : 0;
         int endColumnWithOffset = endColumn + offsetColumn + 1;
         int beginLineWithOffset = beginLine + offsetLine;
@@ -74,7 +75,9 @@ public class AntlrSourceInformation
     public SourceInformation getPureSourceInformation(Token firstToken, Token middleToken, Token endToken)
     {
         if (!this.addLines)
+        {
             return null;
+        }
         int offsetColumn = firstToken.getLine() == 1 ? this.offsetColumn : 0;
         return new SourceInformation(this.sourceName, firstToken.getLine() + this.offsetLine, firstToken.getCharPositionInLine() + 1 + offsetColumn, middleToken.getLine() + this.offsetLine, middleToken.getCharPositionInLine() + 1 + offsetColumn, endToken.getLine() + this.offsetLine, (endToken == middleToken ? endToken.getCharPositionInLine() + endToken.getText().length() - 1 : endToken.getCharPositionInLine()) + 1 + offsetColumn);
     }
