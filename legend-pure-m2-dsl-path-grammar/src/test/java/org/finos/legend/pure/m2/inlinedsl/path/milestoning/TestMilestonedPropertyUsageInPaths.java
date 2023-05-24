@@ -25,7 +25,8 @@ import org.junit.rules.ExpectedException;
 public class TestMilestonedPropertyUsageInPaths extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime();
     }
 
@@ -44,7 +45,7 @@ public class TestMilestonedPropertyUsageInPaths extends AbstractPureTestWithCore
         this.expectedEx.expect(PureCompilationException.class);
         this.expectedEx.expectMessage("Compilation error at (resource:sourceId.pure line:10 column:20), \"No-Arg milestoned property: 'classification' must be either called in a milestoning context or supplied with [businessDate] parameters");
 
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[1];\n" +
@@ -55,10 +56,9 @@ public class TestMilestonedPropertyUsageInPaths extends AbstractPureTestWithCore
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   print(#/Product/classification/classificationType#)" +
-                        "}\n" +
-                        "");
+                        "}\n");
 
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
@@ -67,7 +67,7 @@ public class TestMilestonedPropertyUsageInPaths extends AbstractPureTestWithCore
         this.expectedEx.expect(PureCompilationException.class);
         this.expectedEx.expectMessage("Compilation error at (resource:sourceId.pure line:13 column:46), \"No-Arg milestoned property: 'exchange' must be either called in a milestoning context or supplied with [businessDate] parameters");
 
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[1];\n" +
@@ -81,10 +81,9 @@ public class TestMilestonedPropertyUsageInPaths extends AbstractPureTestWithCore
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   print(#/Product/classificationAllVersions/exchange/exchangeName#)" +
-                        "}\n" +
-                        "");
+                        "}\n");
 
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
@@ -93,7 +92,7 @@ public class TestMilestonedPropertyUsageInPaths extends AbstractPureTestWithCore
         this.expectedEx.expect(PureCompilationException.class);
         this.expectedEx.expectMessage("Compilation error at (resource:sourceId.pure line:13 column:35), \"No-Arg milestoned property: 'exchange' must be either called in a milestoning context or supplied with [businessDate] parameters");
 
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[1];\n" +
@@ -107,115 +106,114 @@ public class TestMilestonedPropertyUsageInPaths extends AbstractPureTestWithCore
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   print(#/Product/classification/exchange/exchangeName#)" +
-                        "}\n" +
-                        "");
+                        "}\n");
 
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void testMilestoningContextAllowedToPropagateFromAllThroughProjectToNoArgMilestonedPropertyInLambdaPath() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[1];\n" +
-                        "   classificationDp(bd:Date[1]){^Classification(businessDate=$bd)}:Classification[0..1];\n"+
+                        "   classificationDp(bd:Date[1]){^Classification(businessDate=$bd)}:Classification[0..1];\n" +
                         "}\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Classification{\n" +
                         "   classificationName : String[0..1];\n" +
-                        "}\n"+
+                        "}\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
-                        "let date=%2015;\n"+
-                        "  {|Product.all($date)->project([#/Product/classification/classificationName#])};\n"+
-                        "}\n"+
+                        "let date=%2015;\n" +
+                        "  {|Product.all($date)->project([#/Product/classification/classificationName#])};\n" +
+                        "}\n" +
                         "function project<K>(set:K[*], functions:Function<{K[1]->Any[*]}>[*]):Any[0..1]\n" +
                         "{\n" +
-                        " []"  +
+                        " []" +
                         "}\n");
 
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void testMilestoningContextAllowedToPropagateFromAllThroughFilterAndProjectToNoArgMilestonedPropertyInLambdaPath() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[1];\n" +
-                        "   classificationDp(bd:Date[1]){^Classification(businessDate=$bd)}:Classification[0..1];\n"+
+                        "   classificationDp(bd:Date[1]){^Classification(businessDate=$bd)}:Classification[0..1];\n" +
                         "}\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Classification{\n" +
                         "   classificationName : String[0..1];\n" +
-                        "}\n"+
+                        "}\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
-                        "  {|Product.all(%2015)->filter(p|!$p->isEmpty())->project([#/Product/classification/classificationName#])}\n"+
-                        "}\n"+
+                        "  {|Product.all(%2015)->filter(p|!$p->isEmpty())->project([#/Product/classification/classificationName#])}\n" +
+                        "}\n" +
                         "function project<K>(set:K[*], functions:Function<{K[1]->Any[*]}>[*]):Any[0..1]\n" +
                         "{\n" +
-                        " []"  +
+                        " []" +
                         "}\n");
 
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void testNoProcessingErrorWhenMilestoningContextAllowedToPropagateFromAllThroughFilterAndProjectAndOverridenInMilestonedPropertyWithDateParamInOneOfManyLambdaPaths() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[1];\n" +
-                        "   classificationDp(bd:Date[1]){^Classification(businessDate=$bd)}:Classification[0..1];\n"+
+                        "   classificationDp(bd:Date[1]){^Classification(businessDate=$bd)}:Classification[0..1];\n" +
                         "   nonTemporalClassification : NonTemporalClassification[0..1];\n" +
                         "}\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Classification{\n" +
                         "   classificationName : String[0..1];\n" +
                         "   system : ClassificationSystem[0..1];\n" +
-                        "}\n"+
+                        "}\n" +
                         "Class meta::test::milestoning::domain::NonTemporalClassification{\n" +
                         "   classificationName : String[0..1];\n" +
-                        "}\n"+
+                        "}\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::ClassificationSystem{\n" +
                         "   systemName : String[0..1];\n" +
-                        "}\n"+
+                        "}\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
-                        "  {|Product.all(%2015)->filter(p|!$p->isEmpty())->project([#/Product/nonTemporalClassification/classificationName#,#/Product/classification(%2016-1-1)/system/systemName#])}\n"+
-                        "}\n"+
+                        "  {|Product.all(%2015)->filter(p|!$p->isEmpty())->project([#/Product/nonTemporalClassification/classificationName#,#/Product/classification(%2016-1-1)/system/systemName#])}\n" +
+                        "}\n" +
                         "function project<K>(set:K[*], functions:Function<{K[1]->Any[*]}>[*]):Any[0..1]\n" +
                         "{\n" +
-                        " []"  +
+                        " []" +
                         "}\n");
 
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void testMilestoningContextAllowedToPropagateFromAllThroughFilterAndProjectToNoArgMilestonedPropertyInOneOfManyLambdaPaths() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[1];\n" +
-                        "   name: String[0..1];\n"+
-                        "   classificationDp(bd:Date[1]){^Classification(businessDate=$bd)}:Classification[0..1];\n"+
+                        "   name: String[0..1];\n" +
+                        "   classificationDp(bd:Date[1]){^Classification(businessDate=$bd)}:Classification[0..1];\n" +
                         "}\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Classification{\n" +
                         "   classificationName : String[0..1];\n" +
-                        "}\n"+
+                        "}\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
-                        "  {|Product.all(%2015)->project([#/Product/name#,#/Product/classification/classificationName#])}\n"+
-                        "}\n"+
+                        "  {|Product.all(%2015)->project([#/Product/name#,#/Product/classification/classificationName#])}\n" +
+                        "}\n" +
                         "function project<K>(set:K[*], functions:Function<{K[1]->Any[*]}>[*]):Any[0..1]\n" +
                         "{\n" +
-                        " []"  +
+                        " []" +
                         "}\n");
 
-        this.runtime.compile();
+        runtime.compile();
     }
 }

@@ -15,8 +15,8 @@
 package org.finos.legend.pure.m2.inlinedsl.path;
 
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -25,7 +25,8 @@ import org.junit.Test;
 public class TestPathParsing extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime();
     }
 
