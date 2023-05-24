@@ -24,12 +24,14 @@ import org.junit.Test;
 public class TestPureRuntimeClass_InCast extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("sourceId.pure");
         runtime.delete("userId.pure");
     }
@@ -38,14 +40,14 @@ public class TestPureRuntimeClass_InCast extends AbstractPureTestWithCoreCompile
     public void testPureRuntimeClassUsedInCast() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{name:String[1];} Class B extends A{}")
-                        .createInMemorySource("userId.pure", "function test():String[1]{let b = ^B(name='OMG!')->cast(@A);'ok';}" )
+                        .createInMemorySource("userId.pure", "function test():String[1]{let b = ^B(name='OMG!')->cast(@A);'ok';}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
                         .compileWithExpectedCompileFailure("B has not been defined!", "userId.pure", 1, 36)
                         .createInMemorySource("sourceId.pure", "Class A{name:String[1];} Class B extends A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
     }
 
@@ -62,7 +64,7 @@ public class TestPureRuntimeClass_InCast extends AbstractPureTestWithCoreCompile
                         .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 58)
                         .updateSource("sourceId.pure", "Class A{name:String[1];} Class B extends A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
     }
 }

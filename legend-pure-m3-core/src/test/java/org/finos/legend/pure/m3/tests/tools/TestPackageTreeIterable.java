@@ -14,34 +14,35 @@
 
 package org.finos.legend.pure.m3.tests.tools;
 
-import java.util.Iterator;
-
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.test.Verify;
 import org.eclipse.collections.impl.utility.LazyIterate;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.coreinstance.Package;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.tools.PackageTreeIterable;
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.Iterator;
+
 public class TestPackageTreeIterable extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @Test
     public void testAllPackagesReached_DepthFirst()
     {
-        MutableSet<Package> expected = Sets.mutable.withAll(LazyIterate.selectInstancesOf(GraphNodeIterable.fromModelRepository(this.repository), Package.class));
-        PackageTreeIterable it = PackageTreeIterable.newRootPackageTreeIterable(this.repository, true);
+        MutableSet<Package> expected = Sets.mutable.withAll(LazyIterate.selectInstancesOf(GraphNodeIterable.fromModelRepository(repository), Package.class));
+        PackageTreeIterable it = PackageTreeIterable.newRootPackageTreeIterable(repository, true);
         MutableSet<Package> actual = Sets.mutable.withAll(it);
         Verify.assertNotEmpty(actual);
         Verify.assertSetsEqual(expected, actual);
@@ -50,8 +51,8 @@ public class TestPackageTreeIterable extends AbstractPureTestWithCoreCompiledPla
     @Test
     public void testAllPackagesReached_BreadthFirst()
     {
-        MutableSet<Package> expected = Sets.mutable.withAll(LazyIterate.selectInstancesOf(GraphNodeIterable.fromModelRepository(this.repository), Package.class));
-        PackageTreeIterable it = PackageTreeIterable.newRootPackageTreeIterable(this.repository, false);
+        MutableSet<Package> expected = Sets.mutable.withAll(LazyIterate.selectInstancesOf(GraphNodeIterable.fromModelRepository(repository), Package.class));
+        PackageTreeIterable it = PackageTreeIterable.newRootPackageTreeIterable(repository, false);
         MutableSet<Package> actual = Sets.mutable.withAll(it);
         Verify.assertNotEmpty(actual);
         Verify.assertSetsEqual(expected, actual);
@@ -60,7 +61,7 @@ public class TestPackageTreeIterable extends AbstractPureTestWithCoreCompiledPla
     @Test
     public void testDepthFirst()
     {
-        PackageTreeIterable depthFirst = PackageTreeIterable.newRootPackageTreeIterable(this.repository, true);
+        PackageTreeIterable depthFirst = PackageTreeIterable.newRootPackageTreeIterable(repository, true);
         Iterator<Package> it = depthFirst.iterator();
         Package previous = it.next();
         while (it.hasNext())
@@ -81,7 +82,7 @@ public class TestPackageTreeIterable extends AbstractPureTestWithCoreCompiledPla
     @Test
     public void testBreadthFirst()
     {
-        PackageTreeIterable breadthFirst = PackageTreeIterable.newRootPackageTreeIterable(this.repository, false);
+        PackageTreeIterable breadthFirst = PackageTreeIterable.newRootPackageTreeIterable(repository, false);
         Iterator<Package> it = breadthFirst.iterator();
         Package previous = it.next();
         String previousPath = PackageableElement.getUserPathForPackageableElement(previous);

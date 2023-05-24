@@ -15,11 +15,11 @@
 package org.finos.legend.pure.m3.serialization.runtime;
 
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.IncrementalCompiler.IncrementalCompilerTransaction;
 import org.finos.legend.pure.m3.serialization.runtime.cache.CompressedMemoryPureGraphCache;
 import org.finos.legend.pure.m3.serialization.runtime.cache.PureGraphCache;
@@ -29,8 +29,6 @@ import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.transaction.framework.ThreadLocalTransactionContext;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.nio.file.Paths;
 
 public class TestPureRuntime
 {
@@ -100,6 +98,7 @@ public class TestPureRuntime
         }
         catch (InterruptedException ignore)
         {
+            // ignore
         }
 
         Assert.assertNull("Function is not found", otherThreadFunctionAccessor.getFunctionInstance());
@@ -118,6 +117,7 @@ public class TestPureRuntime
         }
         catch (InterruptedException ignore)
         {
+            // ignore
         }
 
         Assert.assertNotNull("Another thread can access core instances that have been committed", otherThreadFunctionAccessor.getFunctionInstance());
@@ -144,9 +144,9 @@ public class TestPureRuntime
         runtime.loadAndCompileCore();
 
         PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> runtime.createInMemoryAndCompile(
-                    Tuples.pair("/platform/testFile.pure", "function meta::pure::testFn():String[1] {'the quick brown fox'}"),
-                    Tuples.pair("testBad.pure", "function sandbox::testFn2():Integer[1] { 1 + '7'}")
-            ));
+                Tuples.pair("/platform/testFile.pure", "function meta::pure::testFn():String[1] {'the quick brown fox'}"),
+                Tuples.pair("testBad.pure", "function sandbox::testFn2():Integer[1] { 1 + '7'}")
+        ));
 
         Assert.assertNotNull(e.getSourceInformation());
         Assert.assertEquals("testBad.pure", e.getSourceInformation().getSourceId());

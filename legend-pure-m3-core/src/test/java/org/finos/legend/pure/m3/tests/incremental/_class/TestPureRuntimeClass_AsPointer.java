@@ -42,14 +42,14 @@ public class TestPureRuntimeClass_AsPointer extends AbstractPureTestWithCoreComp
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
                         .createInMemorySource("userId.pure", "function f():Class<Any>[1]{A}" +
-                                "function test():Boolean[1]{assert(Class == f()->genericType().rawType, |'')}" )
+                                "function test():Boolean[1]{assert(Class == f()->genericType().rawType, |'')}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
                         .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 28)
                         .createInMemorySource("sourceId.pure", "Class A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -57,14 +57,14 @@ public class TestPureRuntimeClass_AsPointer extends AbstractPureTestWithCoreComp
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
                         .createInMemorySource("userId.pure", "function f():Class<Any>[*]{[A,A]}" +
-                                "function test():Boolean[1]{assert(Class == f()->genericType().rawType, |'')}" )
+                                "function test():Boolean[1]{assert(Class == f()->genericType().rawType, |'')}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
                         .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 29)
                         .createInMemorySource("sourceId.pure", "Class A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -82,7 +82,7 @@ public class TestPureRuntimeClass_AsPointer extends AbstractPureTestWithCoreComp
                         .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 28)
                         .updateSource("sourceId.pure", "Class A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -96,7 +96,7 @@ public class TestPureRuntimeClass_AsPointer extends AbstractPureTestWithCoreComp
                         .compile()
                         .createInMemorySource("sourceId.pure", "function f():Class<Any>[1]{A}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
         Assert.assertEquals("A instance Class\n" +
                 "    classifierGenericType(Property):\n" +
@@ -111,6 +111,6 @@ public class TestPureRuntimeClass_AsPointer extends AbstractPureTestWithCoreComp
                 "        Root instance Package\n" +
                 "    referenceUsages(Property):\n" +
                 "        Anonymous_StripedId instance ReferenceUsage\n" +
-                "            [... >0]", this.runtime.getCoreInstance("A").printWithoutDebug("", 0));
+                "            [... >0]", runtime.getCoreInstance("A").printWithoutDebug("", 0));
     }
 }

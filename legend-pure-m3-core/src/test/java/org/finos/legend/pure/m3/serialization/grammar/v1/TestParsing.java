@@ -16,11 +16,11 @@ package org.finos.legend.pure.m3.serialization.grammar.v1;
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.impl.test.Verify;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.junit.After;
@@ -32,12 +32,14 @@ public class TestParsing extends AbstractPureTestWithCoreCompiledPlatform
 {
 
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("fromString.pure");
     }
 
@@ -66,20 +68,20 @@ public class TestParsing extends AbstractPureTestWithCoreCompiledPlatform
                 "{\n" +
                 "   []\n" +
                 "}\n");
-        CoreInstance function = this.runtime.getFunction("go():Any[*]");
+        CoreInstance function = runtime.getFunction("go():Any[*]");
         Assert.assertNotNull(function);
-        ListIterable<? extends CoreInstance> expressions = Instance.getValueForMetaPropertyToManyResolved(function, M3Properties.expressionSequence, this.processorSupport);
+        ListIterable<? extends CoreInstance> expressions = Instance.getValueForMetaPropertyToManyResolved(function, M3Properties.expressionSequence, processorSupport);
         Verify.assertSize(1, expressions);
         CoreInstance expression = expressions.get(0);
-        Assert.assertTrue(Instance.instanceOf(expression, M3Paths.InstanceValue, this.processorSupport));
+        Assert.assertTrue(Instance.instanceOf(expression, M3Paths.InstanceValue, processorSupport));
 
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(expression, M3Properties.values, this.processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(expression, M3Properties.values, processorSupport));
 
-        CoreInstance genericType = Instance.getValueForMetaPropertyToOneResolved(expression, M3Properties.genericType, this.processorSupport);
-        Assert.assertSame(this.processorSupport.type_BottomType(), Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(genericType, M3Properties.typeArguments, this.processorSupport));
+        CoreInstance genericType = Instance.getValueForMetaPropertyToOneResolved(expression, M3Properties.genericType, processorSupport);
+        Assert.assertSame(processorSupport.type_BottomType(), Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(genericType, M3Properties.typeArguments, processorSupport));
 
-        CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(expression, M3Properties.multiplicity, this.processorSupport);
+        CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(expression, M3Properties.multiplicity, processorSupport);
         Assert.assertTrue(Multiplicity.isMultiplicityConcrete(multiplicity));
         Assert.assertEquals(0, Multiplicity.multiplicityLowerBoundToInt(multiplicity));
         Assert.assertEquals(0, Multiplicity.multiplicityUpperBoundToInt(multiplicity));

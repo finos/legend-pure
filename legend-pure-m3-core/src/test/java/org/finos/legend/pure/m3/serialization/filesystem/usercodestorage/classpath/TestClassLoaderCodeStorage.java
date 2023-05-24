@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 public class TestClassLoaderCodeStorage
@@ -116,7 +117,7 @@ public class TestClassLoaderCodeStorage
 
     private String readResource(String resourceName)
     {
-        try (Reader reader = new InputStreamReader(Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResourceAsStream(resourceName))))
+        try (Reader reader = new InputStreamReader(Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResourceAsStream(resourceName)), StandardCharsets.UTF_8))
         {
             StringBuilder builder = new StringBuilder();
             char[] buffer = new char[8192];

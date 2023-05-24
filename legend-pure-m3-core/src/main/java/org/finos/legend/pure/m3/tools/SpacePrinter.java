@@ -20,18 +20,19 @@ import org.eclipse.collections.impl.map.mutable.primitive.IntObjectHashMap;
 public class SpacePrinter
 {
     private static MutableIntObjectMap<String> map = IntObjectHashMap.newMap();
+
     static
     {
-        String str="";
-        for (int i=0;i<120;i++)
+        String str = "";
+        for (int i = 0; i < 120; i++)
         {
-            map.put(i,str);
+            map.put(i, str);
             str += " ";
         }
     }
 
     public static String print(String txt, int max)
     {
-        return txt+map.get(max-txt.length());
+        return txt + map.get(max - txt.length());
     }
 }

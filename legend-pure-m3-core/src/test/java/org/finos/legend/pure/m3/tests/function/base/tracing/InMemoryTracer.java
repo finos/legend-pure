@@ -21,8 +21,8 @@ import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.propagation.Format;
 import io.opentracing.tag.Tag;
+import org.eclipse.collections.api.factory.Maps;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
@@ -30,7 +30,7 @@ import java.util.UUID;
 public class InMemoryTracer implements Tracer
 {
     private InMemoryScopeManager scopeManager = new InMemoryScopeManager();
-    private Map<String, Span> spanByOperationName = new HashMap<>();
+    private final Map<String, Span> spanByOperationName = Maps.mutable.empty();
 
     @Override
     public ScopeManager scopeManager()
@@ -76,11 +76,13 @@ public class InMemoryTracer implements Tracer
 
     }
 
-    public Map<Object, Object> getTags(String operationName) {
-        return ((InMemorySpan)spanByOperationName.get(operationName)).getTags();
+    public Map<Object, Object> getTags(String operationName)
+    {
+        return ((InMemorySpan) spanByOperationName.get(operationName)).getTags();
     }
 
-    public void reset() {
+    public void reset()
+    {
         spanByOperationName.clear();
         scopeManager = new InMemoryScopeManager();
     }
@@ -90,9 +92,9 @@ public class InMemoryTracer implements Tracer
         return spanByOperationName.containsKey(operationName);
     }
 
-    public class InMemoryScopeManager implements ScopeManager {
-
-        private InMemoryScope currentScope  = new InMemoryScope();
+    public class InMemoryScopeManager implements ScopeManager
+    {
+        private final InMemoryScope currentScope = new InMemoryScope();
 
         @Override
         public Scope activate(Span span)
@@ -121,14 +123,13 @@ public class InMemoryTracer implements Tracer
         }
     }
 
-    public class InMemoryScope implements  Scope {
-
+    public class InMemoryScope implements Scope
+    {
         private Span span;
 
         @Override
         public void close()
         {
-
         }
 
         @Override
@@ -137,15 +138,16 @@ public class InMemoryTracer implements Tracer
             return span;
         }
 
-        public void set(Span span) {
+        public void set(Span span)
+        {
             this.span = span;
         }
     }
 
-    public class InMemorySpanBuilder implements SpanBuilder {
-
-        private Span span = new InMemorySpan();
-        private InMemoryScopeManager scopeManager;
+    public class InMemorySpanBuilder implements SpanBuilder
+    {
+        private final Span span = new InMemorySpan();
+        private final InMemoryScopeManager scopeManager;
 
         public InMemorySpanBuilder(String operationName, InMemoryScopeManager scopeManager)
         {
@@ -230,11 +232,11 @@ public class InMemoryTracer implements Tracer
         }
     }
 
-    public class InMemorySpan implements Span {
-
-        private InMemorySpanContext context = new InMemorySpanContext();
-        private Map<Object, Object> tags = new HashMap<>();
-        private Map<String, ?> log = new HashMap<>();
+    public static class InMemorySpan implements Span
+    {
+        private final InMemorySpanContext context = new InMemorySpanContext();
+        private final Map<Object, Object> tags = Maps.mutable.empty();
+        private final Map<String, ?> log = Maps.mutable.empty();
         private String operationName;
 
         @Override
@@ -254,7 +256,8 @@ public class InMemoryTracer implements Tracer
         public Span setTag(String name, boolean value)
         {
             tags.put(name, value);
-            return this;        }
+            return this;
+        }
 
         @Override
         public Span setTag(String name, Number value)
@@ -336,11 +339,11 @@ public class InMemoryTracer implements Tracer
         }
     }
 
-    public static class InMemorySpanContext implements SpanContext {
-
-        private HashMap<String, String> items = new HashMap<>();
-        private String traceId = UUID.randomUUID().toString();
-        private String spanId = UUID.randomUUID().toString();
+    public static class InMemorySpanContext implements SpanContext
+    {
+        private final Map<String, String> items = Maps.mutable.empty();
+        private final String traceId = UUID.randomUUID().toString();
+        private final String spanId = UUID.randomUUID().toString();
 
         @Override
         public String toTraceId()
@@ -371,5 +374,3 @@ public class InMemoryTracer implements Tracer
         }
     }
 }
-
-

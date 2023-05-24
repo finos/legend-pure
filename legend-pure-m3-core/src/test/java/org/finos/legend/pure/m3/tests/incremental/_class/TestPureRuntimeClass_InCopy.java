@@ -24,12 +24,14 @@ import org.junit.Test;
 public class TestPureRuntimeClass_InCopy extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("sourceId.pure");
         runtime.delete("userId.pure");
     }
@@ -45,10 +47,8 @@ public class TestPureRuntimeClass_InCopy extends AbstractPureTestWithCoreCompile
                         .compileWithExpectedCompileFailure("The system can't find a match for the function: getA()", "userId.pure", 1, 35)
                         .createInMemorySource("sourceId.pure", "Class A{name:String[1];} function getA():A[1]{^A(name='ok')}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
-
-   }
-
+                runtime, functionExecution, this.getAdditionalVerifiers());
+    }
 
     @Test
     public void testPureRuntimeClassUsedInCopyWithWrongProperty() throws Exception
@@ -63,8 +63,6 @@ public class TestPureRuntimeClass_InCopy extends AbstractPureTestWithCoreCompile
                         .compileWithExpectedCompileFailure("The property 'name' can't be found in the type 'A' or in its hierarchy.", "userId.pure", 1, 46)
                         .updateSource("sourceId.pure", "Class A{name:String[1];} function getA():A[1]{^A(name='ok')}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
-
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
-
 }

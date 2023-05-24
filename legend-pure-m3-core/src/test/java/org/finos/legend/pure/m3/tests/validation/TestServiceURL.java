@@ -24,12 +24,14 @@ import org.junit.Test;
 public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("fromString.pure");
     }
 
@@ -70,33 +72,31 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
 //        }
 //    }
 
-
-
     @Test
     public void testSimpleHappyPath()
     {
-        compileTestSource("fromString.pure","function {service.url='/testURL/{param}'} myFunc(param:String[1]):String[1]\n" +
-                          "{\n" +
-                          "   'ee';\n" +
-                          "}\n");
+        compileTestSource("fromString.pure", "function {service.url='/testURL/{param}'} myFunc(param:String[1]):String[1]\n" +
+                "{\n" +
+                "   'ee';\n" +
+                "}\n");
     }
 
     @Test
     public void testRegExpHappyPath()
     {
-        compileTestSource("fromString.pure","function {service.url='/testURL/{param:a(b)*c}'} myFunc(param:String[1]):String[1]\n" +
-                          "{\n" +
-                          "   'ee';\n" +
-                          "}\n");
+        compileTestSource("fromString.pure", "function {service.url='/testURL/{param:a(b)*c}'} myFunc(param:String[1]):String[1]\n" +
+                "{\n" +
+                "   'ee';\n" +
+                "}\n");
     }
 
     @Test
     public void testVariableNameNonOrdered()
     {
-        compileTestSource("fromString.pure","function {service.url='/testURL/{param}/{param2}'} myFunc(param2:String[1], param:String[1]):String[1]\n" +
-                          "{\n" +
-                          "   'ee';\n" +
-                          "}\n");
+        compileTestSource("fromString.pure", "function {service.url='/testURL/{param}/{param2}'} myFunc(param2:String[1], param:String[1]):String[1]\n" +
+                "{\n" +
+                "   'ee';\n" +
+                "}\n");
     }
 
     @Test
@@ -105,7 +105,7 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
 
         try
         {
-            compileTestSource("fromString.pure","function {service.url='/testURL/{param}'} myFunc(param:String[1], otherOne:String[1]):String[1]\n" +
+            compileTestSource("fromString.pure", "function {service.url='/testURL/{param}'} myFunc(param:String[1], otherOne:String[1]):String[1]\n" +
                     "{\n" +
                     "   'ee';\n" +
                     "}\n");
@@ -122,7 +122,7 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testOptionalArguments()
     {
-        compileTestSource("fromString.pure","function {service.url='/testURL/{param}'} myFunc(param:String[1], otherOne:String[0..1]):String[1]\n" +
+        compileTestSource("fromString.pure", "function {service.url='/testURL/{param}'} myFunc(param:String[1], otherOne:String[0..1]):String[1]\n" +
                 "{\n" +
                 "   'ee';\n" +
                 "}\n");
@@ -133,7 +133,7 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","function {service.url='/testURL/{param}'} myFunc(param:String[0..1], otherOne:String[0..1]):String[1]\n" +
+            compileTestSource("fromString.pure", "function {service.url='/testURL/{param}'} myFunc(param:String[0..1], otherOne:String[0..1]):String[1]\n" +
                     "{\n" +
                     "   'ee';\n" +
                     "}\n");
@@ -148,10 +148,10 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testZeroToManyQueryParameters()
     {
-        compileTestSource("fromString.pure","function {service.url='/testURL/{param}'} myFunc(param:String[1], otherOne:String[*]):String[1]\n" +
-            "{\n" +
-            "   'ee';\n" +
-            "}\n");
+        compileTestSource("fromString.pure", "function {service.url='/testURL/{param}'} myFunc(param:String[1], otherOne:String[*]):String[1]\n" +
+                "{\n" +
+                "   'ee';\n" +
+                "}\n");
     }
 
     @Test
@@ -159,7 +159,7 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","function {service.url='/testURL}'} myFunc(param:String[1..*], otherOne:String[0..1]):String[1]\n" +
+            compileTestSource("fromString.pure", "function {service.url='/testURL}'} myFunc(param:String[1..*], otherOne:String[0..1]):String[1]\n" +
                     "{\n" +
                     "   'ee';\n" +
                     "}\n");
@@ -176,7 +176,7 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","function {service.url='/testURL/{param}'} myFunc(param:String[*], otherOne:String[0..1]):String[1]\n" +
+            compileTestSource("fromString.pure", "function {service.url='/testURL/{param}'} myFunc(param:String[*], otherOne:String[0..1]):String[1]\n" +
                     "{\n" +
                     "   'ee';\n" +
                     "}\n");
@@ -193,7 +193,7 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","function {service.url='/testURL/{param}}'} myFunc(param:String[1..*], otherOne:String[0..1]):String[1]\n" +
+            compileTestSource("fromString.pure", "function {service.url='/testURL/{param}}'} myFunc(param:String[1..*], otherOne:String[0..1]):String[1]\n" +
                     "{\n" +
                     "   'ee';\n" +
                     "}\n");
@@ -208,7 +208,7 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testNoURIArguments()
     {
-        compileTestSource("fromString.pure","function {service.url='/testURL'} myFunc(param:String[0..1], otherOne:String[0..1]):String[1]\n" +
+        compileTestSource("fromString.pure", "function {service.url='/testURL'} myFunc(param:String[0..1], otherOne:String[0..1]):String[1]\n" +
                 "{\n" +
                 "   'ee';\n" +
                 "}\n");
@@ -217,7 +217,7 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testPrimitiveArgsInURI()
     {
-        compileTestSource("fromString.pure","function {service.url='/testURL/{s}/{d}/{dt}/{sd}/{b}/{i}/{f}'} myFunc(s:String[1], d:Date[1], dt:DateTime[1], sd:StrictDate[1], b:Boolean[1], i:Integer[1], f:Float[1]):String[1]\n" +
+        compileTestSource("fromString.pure", "function {service.url='/testURL/{s}/{d}/{dt}/{sd}/{b}/{i}/{f}'} myFunc(s:String[1], d:Date[1], dt:DateTime[1], sd:StrictDate[1], b:Boolean[1], i:Integer[1], f:Float[1]):String[1]\n" +
                 "{\n" +
                 "   'ee';\n" +
                 "}\n");
@@ -226,18 +226,18 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testEnumArgInURI()
     {
-        compileTestSource("fromString.pure","Enum MyEnum {VALUE1}" +
-                        "" +
-                        "function {service.url='/testURL/{enum}'} myFunc(enum:MyEnum[1]):String[1]\n" +
-                        "{\n" +
-                        "   'ee';\n" +
-                        "}\n");
+        compileTestSource("fromString.pure", "Enum MyEnum {VALUE1}" +
+                "" +
+                "function {service.url='/testURL/{enum}'} myFunc(enum:MyEnum[1]):String[1]\n" +
+                "{\n" +
+                "   'ee';\n" +
+                "}\n");
     }
 
     @Test
     public void testPrimitiveArgsInQueryParameters()
     {
-        compileTestSource("fromString.pure","function {service.url='/testURL'} myFunc(s:String[0..1], d:Date[0..1], dt:DateTime[0..1], sd:StrictDate[0..1], b:Boolean[0..1], i:Integer[0..1], f:Float[0..1]):String[1]\n" +
+        compileTestSource("fromString.pure", "function {service.url='/testURL'} myFunc(s:String[0..1], d:Date[0..1], dt:DateTime[0..1], sd:StrictDate[0..1], b:Boolean[0..1], i:Integer[0..1], f:Float[0..1]):String[1]\n" +
                 "{\n" +
                 "   'ee';\n" +
                 "}\n");
@@ -246,7 +246,7 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testEnumInQueryParameters()
     {
-        compileTestSource("fromString.pure","Enum MyEnum {VALUE1}" +
+        compileTestSource("fromString.pure", "Enum MyEnum {VALUE1}" +
                 "" +
                 "function {service.url='/testURL}'} myFunc(enum:MyEnum[0..1]):String[1]\n" +
                 "{\n" +
@@ -259,7 +259,7 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","" +
+            compileTestSource("fromString.pure", "" +
                     "Class MyClass {}" +
                     "function {service.url='/testURL'} myFunc(param:MyClass[0..1]):String[1]\n" +
                     "{\n" +
@@ -278,7 +278,7 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","" +
+            compileTestSource("fromString.pure", "" +
                     "Class MyClass {}" +
                     "function {service.url='/testURL/{param}'} myFunc(param:MyClass[1]):String[1]\n" +
                     "{\n" +
@@ -297,10 +297,10 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","function {service.url='/testURL/{param:testReg{b}'} myFunc(param:String[1]):String[1]\n" +
-                              "{\n" +
-                              "   'ee';\n" +
-                              "}\n");
+            compileTestSource("fromString.pure", "function {service.url='/testURL/{param:testReg{b}'} myFunc(param:String[1]):String[1]\n" +
+                    "{\n" +
+                    "   'ee';\n" +
+                    "}\n");
             Assert.fail();
         }
         catch (RuntimeException e)
@@ -314,10 +314,10 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","function {service.url='/testURL/{param}'} myFunc(param:String[1]):Integer[1]\n" +
-                              "{\n" +
-                              "   1;\n" +
-                              "}\n");
+            compileTestSource("fromString.pure", "function {service.url='/testURL/{param}'} myFunc(param:String[1]):Integer[1]\n" +
+                    "{\n" +
+                    "   1;\n" +
+                    "}\n");
             Assert.fail();
         }
         catch (RuntimeException e)
@@ -330,14 +330,14 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     public void testServiceReturnReturnType()
     {
         // verify that this compiles
-        compileTestSource("fromString.pure","Class EmptyResult<T> extends ServiceResult<T|0>" +
-                          "{" +
-                          "}" +
-                          "" +
-                          "function {service.url='/testURL/{param}'} myFunc(param:String[1]):EmptyResult<Any>[1]\n" +
-                          "{\n" +
-                          "   ^EmptyResult<Any>();\n" +
-                          "}\n");
+        compileTestSource("fromString.pure", "Class EmptyResult<T> extends ServiceResult<T|0>" +
+                "{" +
+                "}" +
+                "" +
+                "function {service.url='/testURL/{param}'} myFunc(param:String[1]):EmptyResult<Any>[1]\n" +
+                "{\n" +
+                "   ^EmptyResult<Any>();\n" +
+                "}\n");
     }
 
     @Test
@@ -345,10 +345,10 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","function {service.url='/testURL/{param}'} myFunc(param:String[1]):String[*]\n" +
-                              "{\n" +
-                              "   1;\n" +
-                              "}\n");
+            compileTestSource("fromString.pure", "function {service.url='/testURL/{param}'} myFunc(param:String[1]):String[*]\n" +
+                    "{\n" +
+                    "   1;\n" +
+                    "}\n");
             Assert.fail();
         }
         catch (RuntimeException e)
@@ -362,14 +362,14 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","function {service.url='/hello/{param:testReg}'} myFunc(param:String[1]):String[1]\n" +
-                              "{\n" +
-                              "   'ee';\n" +
-                              "}\n" +
-                              "function {service.url='/hello/{param:testReg}'} myFunc3(param:String[1]):String[1]\n" +
-                              "{\n" +
-                              "   'ee';\n" +
-                              "}\n");
+            compileTestSource("fromString.pure", "function {service.url='/hello/{param:testReg}'} myFunc(param:String[1]):String[1]\n" +
+                    "{\n" +
+                    "   'ee';\n" +
+                    "}\n" +
+                    "function {service.url='/hello/{param:testReg}'} myFunc3(param:String[1]):String[1]\n" +
+                    "{\n" +
+                    "   'ee';\n" +
+                    "}\n");
             Assert.fail();
         }
         catch (RuntimeException e)
@@ -383,7 +383,7 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","function {service.url='/hello/{param}'} myFunc(param:String[1]):String[1]\n" +
+            compileTestSource("fromString.pure", "function {service.url='/hello/{param}'} myFunc(param:String[1]):String[1]\n" +
                     "{\n" +
                     "   'ee';\n" +
                     "}\n" +
@@ -404,7 +404,7 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","function {service.url='/hello'} myFunc(param:String[0..1]):String[1]\n" +
+            compileTestSource("fromString.pure", "function {service.url='/hello'} myFunc(param:String[0..1]):String[1]\n" +
                     "{\n" +
                     "   'ee';\n" +
                     "}\n" +
@@ -425,10 +425,10 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","function {service.url='hello/{param:testReg}'} myFunc(param:String[1]):String[1]\n" +
-                              "{\n" +
-                              "   'ee';\n" +
-                              "}\n");
+            compileTestSource("fromString.pure", "function {service.url='hello/{param:testReg}'} myFunc(param:String[1]):String[1]\n" +
+                    "{\n" +
+                    "   'ee';\n" +
+                    "}\n");
             Assert.fail();
         }
         catch (RuntimeException e)
@@ -442,10 +442,10 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","function {service.url='/hello{param:testReg}'} myFunc(param:String[1]):String[1]\n" +
-                              "{\n" +
-                              "   'ee';\n" +
-                              "}\n");
+            compileTestSource("fromString.pure", "function {service.url='/hello{param:testReg}'} myFunc(param:String[1]):String[1]\n" +
+                    "{\n" +
+                    "   'ee';\n" +
+                    "}\n");
             Assert.fail();
         }
         catch (RuntimeException e)
@@ -457,9 +457,9 @@ public class TestServiceURL extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void keyStructureNoParams()
     {
-        compileTestSource("fromString.pure","function {service.url='/hello'} myFunc():String[1]\n" +
-                          "{\n" +
-                          "   'ee';\n" +
-                          "}\n");
+        compileTestSource("fromString.pure", "function {service.url='/hello'} myFunc():String[1]\n" +
+                "{\n" +
+                "   'ee';\n" +
+                "}\n");
     }
 }

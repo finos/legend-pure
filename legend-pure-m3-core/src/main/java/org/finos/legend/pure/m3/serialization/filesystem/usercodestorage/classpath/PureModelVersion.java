@@ -29,14 +29,14 @@ public class PureModelVersion
         {
             Properties properties = new Properties();
             URL url = PureModelVersion.class.getResource("/" + name);
-            try(InputStream stream = url.openStream())
+            try (InputStream stream = url.openStream())
             {
                 properties.load(stream);
                 String versionAsString = properties.getProperty("version");
                 return (versionAsString == null) ? 0L : Long.parseLong(versionAsString);
             }
         }
-        catch (Exception e)
+        catch (Exception ignore)
         {
             return 0L;
         }

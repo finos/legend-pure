@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m3.compiler.unload.unbind;
 
-
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.constraint.Constraint;
@@ -32,17 +31,17 @@ public class ElementWithConstraintsUnbind implements MatchRunner<ElementWithCons
     {
         return M3Paths.ElementWithConstraints;
     }
+
     @Override
     public void run(ElementWithConstraints instance, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
         for (Constraint constraint : instance._constraints())
         {
             matcher.fullMatch(constraint._functionDefinition()._expressionSequence().getFirst(), state);
-            if(constraint._messageFunction() != null)
+            if (constraint._messageFunction() != null)
             {
                 matcher.fullMatch(constraint._messageFunction()._expressionSequence().getFirst(), state);
             }
         }
     }
-
 }

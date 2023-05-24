@@ -14,28 +14,27 @@
 
 package org.finos.legend.pure.m3.serialization.grammar.top;
 
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.atn.PredictionMode;
 import org.eclipse.collections.api.multimap.list.ListMultimap;
 import org.eclipse.collections.api.multimap.list.MutableListMultimap;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrDescriptiveErrorListener;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.PureAntlrErrorStrategy;
 import org.finos.legend.pure.m3.serialization.grammar.top.antlr.TopAntlrLexer;
 import org.finos.legend.pure.m3.serialization.grammar.top.antlr.TopAntlrParser;
 import org.finos.legend.pure.m3.serialization.runtime.SourceState;
 import org.finos.legend.pure.m3.statelistener.M3M4StateListener;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
-import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.atn.PredictionMode;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrDescriptiveErrorListener;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureAntlrErrorStrategy;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 public class TopParser
 {
-
     public ListMultimap<Parser, CoreInstance> parse(String code, String sourceName, ModelRepository repository, ParserLibrary parserLibrary, M3M4StateListener listener, Context context, SourceState oldState) throws PureParserException
     {
         return parseDefinition(true, code, sourceName, repository, parserLibrary, listener, context, oldState);
@@ -55,7 +54,7 @@ public class TopParser
         AntlrSourceInformation sourceInformation = new AntlrSourceInformation(0, 0, sourceName);
         AntlrDescriptiveErrorListener pureErrorListener = new AntlrDescriptiveErrorListener(sourceInformation);
 
-        TopAntlrLexer lexer = new TopAntlrLexer(new ANTLRInputStream(code));
+        TopAntlrLexer lexer = new TopAntlrLexer(CharStreams.fromString(code));
         lexer.removeErrorListeners();
         lexer.addErrorListener(pureErrorListener);
 

@@ -15,21 +15,21 @@
 package org.finos.legend.pure.m3.compiler.validation.validator;
 
 import org.eclipse.collections.api.list.ListIterable;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.DefaultValue;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.DefaultValue;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class PropertyValidator implements MatchRunner<Property>
@@ -51,7 +51,8 @@ public class PropertyValidator implements MatchRunner<Property>
         GenericTypeValidator.validateGenericType(property._genericType(), processorSupport);
         validateAllowedPrimitiveType(property, processorSupport);
 
-        if(property._defaultValue() != null) {
+        if (property._defaultValue() != null)
+        {
             validateDefaultValue(property, property._defaultValue(), processorSupport);
         }
     }
@@ -70,7 +71,7 @@ public class PropertyValidator implements MatchRunner<Property>
         CoreInstance instanceGenericType = Instance.extractGenericTypeFromInstance(instance, processorSupport);
         if (!GenericType.subTypeOf(instanceGenericType, propertyReturnGenericType, processorSupport))
         {
-            throw new PureCompilationException(instance.getSourceInformation(), "Property: '" + org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(property) + "' / Type Error: '" + GenericType.print(instanceGenericType, processorSupport) + "' not a subtype of '" +  GenericType.print(propertyReturnGenericType, processorSupport) + "'");
+            throw new PureCompilationException(instance.getSourceInformation(), "Property: '" + org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(property) + "' / Type Error: '" + GenericType.print(instanceGenericType, processorSupport) + "' not a subtype of '" + GenericType.print(propertyReturnGenericType, processorSupport) + "'");
         }
     }
 
@@ -82,7 +83,7 @@ public class PropertyValidator implements MatchRunner<Property>
 
         if (!GenericType.subTypeOf(instanceGenericType, propertyReturnGenericType, processorSupport))
         {
-            throw new PureCompilationException(instance.getSourceInformation(), "Default value for property: '" + org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(property) + "' / Type Error: '" + GenericType.print(instanceGenericType, processorSupport) + "' not a subtype of '" +  GenericType.print(propertyReturnGenericType, processorSupport) + "'");
+            throw new PureCompilationException(instance.getSourceInformation(), "Default value for property: '" + org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(property) + "' / Type Error: '" + GenericType.print(instanceGenericType, processorSupport) + "' not a subtype of '" + GenericType.print(propertyReturnGenericType, processorSupport) + "'");
         }
     }
 
@@ -98,10 +99,11 @@ public class PropertyValidator implements MatchRunner<Property>
 
     private static void validateDefaultValueMultiplicityRange(DefaultValue defaultValue, Property property, ProcessorSupport processorSupport) throws PureCompilationException
     {
-        ListIterable<? extends CoreInstance> values =  org.finos.legend.pure.m3.navigation.property.Property.getDefaultValue(defaultValue);
+        ListIterable<? extends CoreInstance> values = org.finos.legend.pure.m3.navigation.property.Property.getDefaultValue(defaultValue);
         CoreInstance propertyMultiplicity = Instance.getValueForMetaPropertyToOneResolved(processorSupport.function_getFunctionType(property), M3Properties.returnMultiplicity, processorSupport);
 
-        if (Multiplicity.multiplicityLowerBoundToInt(propertyMultiplicity) == 0) {
+        if (Multiplicity.multiplicityLowerBoundToInt(propertyMultiplicity) == 0)
+        {
             throw new PureCompilationException(property.getSourceInformation(), "Default values are supported only for mandatory fields, and property '" + org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(property) + "' is optional.");
         }
 

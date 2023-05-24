@@ -14,16 +14,16 @@
 
 package org.finos.legend.pure.m3.tests;
 
-import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MapIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.junit.Assert;
 
 public final class RuntimeTestScriptBuilder extends RuntimeActionRunner
@@ -46,7 +46,7 @@ public final class RuntimeTestScriptBuilder extends RuntimeActionRunner
         return this;
     }
 
-    public RuntimeTestScriptBuilder createInMemorySources(MapIterable<String,String> sources)
+    public RuntimeTestScriptBuilder createInMemorySources(MapIterable<String, String> sources)
     {
         this.addAction(new CreateInMemorySource(sources));
         return this;
@@ -114,7 +114,7 @@ public final class RuntimeTestScriptBuilder extends RuntimeActionRunner
 
     public RuntimeTestScriptBuilder executeFunctionWithExpectedExecutionFailureandAssertions(String functionId, String message, String sourceId, int lineNumber, int columnNumber, ListIterable<String> processed, ListIterable<String> notProcessed, ListIterable<String> removed)
     {
-        this.addAction(new ExpectedExecutionExceptionAndAssertions(new ExecuteFunction(functionId), message, sourceId, lineNumber, columnNumber,  processed, notProcessed, removed));
+        this.addAction(new ExpectedExecutionExceptionAndAssertions(new ExecuteFunction(functionId), message, sourceId, lineNumber, columnNumber, processed, notProcessed, removed));
         return this;
     }
 
@@ -152,9 +152,9 @@ public final class RuntimeTestScriptBuilder extends RuntimeActionRunner
 
     private class CreateInMemorySource implements RuntimeAction
     {
-        private final MapIterable<String,String> sources;
+        private final MapIterable<String, String> sources;
 
-        private CreateInMemorySource(MapIterable<String,String> sources)
+        private CreateInMemorySource(MapIterable<String, String> sources)
         {
             this.sources = sources;
         }
@@ -171,9 +171,9 @@ public final class RuntimeTestScriptBuilder extends RuntimeActionRunner
 
     private class UpdateSource implements RuntimeAction
     {
-        private final MapIterable<String,String> sources;
+        private final MapIterable<String, String> sources;
 
-        private UpdateSource(MapIterable<String,String> sources)
+        private UpdateSource(MapIterable<String, String> sources)
         {
             this.sources = sources;
         }
@@ -254,6 +254,7 @@ public final class RuntimeTestScriptBuilder extends RuntimeActionRunner
             super(action, message, sourceId, lineNumber, columnNumber, PureParserException.class);
         }
     }
+
     private class ExpectedExecutionException extends ExpectedException
     {
         private ExpectedExecutionException(RuntimeAction action, String message, String sourceId, int lineNumber, int columnNumber)
@@ -375,19 +376,19 @@ public final class RuntimeTestScriptBuilder extends RuntimeActionRunner
                     AbstractPureTestWithCoreCompiledPlatform.assertPureException(this.exceptionClass, this.message,
                             this.sourceId, this.lineNumber, this.columnNumber, e);
                 }
-                for(String path : this.processed)
+                for (String path : this.processed)
                 {
                     CoreInstance instance = pureRuntime.getCoreInstance(path);
                     Assert.assertTrue(instance.hasBeenProcessed());
                 }
 
-                for(String path : this.notProcessed)
+                for (String path : this.notProcessed)
                 {
                     CoreInstance instance = pureRuntime.getCoreInstance(path);
                     Assert.assertFalse(instance.hasBeenProcessed());
                 }
 
-                for(String path : this.removed)
+                for (String path : this.removed)
                 {
                     CoreInstance instance = pureRuntime.getCoreInstance(path);
                     Assert.assertNull(instance);

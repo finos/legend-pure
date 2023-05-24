@@ -25,12 +25,14 @@ import org.junit.Test;
 public class TestVariableScope extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("fromString.pure");
     }
 
@@ -58,9 +60,9 @@ public class TestVariableScope extends AbstractPureTestWithCoreCompiledPlatform
         try
         {
             compileTestSource("fromString.pure", "function func(s:String[1]):String[1]\n" +
-                                                       "{\n" +
-                                                       "    let s = 'New';\n" +
-                                                       "}");
+                    "{\n" +
+                    "    let s = 'New';\n" +
+                    "}");
             Assert.fail();
         }
         catch (Exception e)

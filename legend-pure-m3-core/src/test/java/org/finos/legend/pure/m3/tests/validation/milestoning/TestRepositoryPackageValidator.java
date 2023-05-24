@@ -24,12 +24,14 @@ import org.junit.Test;
 public class TestRepositoryPackageValidator extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("testSource.pure");
     }
 
@@ -38,7 +40,7 @@ public class TestRepositoryPackageValidator extends AbstractPureTestWithCoreComp
     {
         try
         {
-            this.compileTestSource(
+            compileTestSource(
                     "testSource.pure",
                     "function Root::hello():Any[*]\n" +
                             "{\n" +
@@ -58,7 +60,7 @@ public class TestRepositoryPackageValidator extends AbstractPureTestWithCoreComp
     {
         try
         {
-            this.compileTestSource(
+            compileTestSource(
                     "testSource.pure",
                     "function Root::a::hello():Any[*]\n" +
                             "{\n" +
@@ -78,7 +80,7 @@ public class TestRepositoryPackageValidator extends AbstractPureTestWithCoreComp
     {
         try
         {
-            this.compileTestSource(
+            compileTestSource(
                     "testSource.pure",
                     "function a::Root::hello():Any[*]\n" +
                             "{\n" +
@@ -98,7 +100,7 @@ public class TestRepositoryPackageValidator extends AbstractPureTestWithCoreComp
     {
         try
         {
-            this.compileTestSource(
+            compileTestSource(
                     "testSource.pure",
                     "function a::Root::b::hello():Any[*]\n" +
                             "{\n" +

@@ -24,12 +24,14 @@ import org.junit.Test;
 public class TestImportConflict extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("fromString.pure");
     }
 
@@ -40,19 +42,19 @@ public class TestImportConflict extends AbstractPureTestWithCoreCompiledPlatform
         {
             compileTestSource("fromString.pure",
                     "import a::*;\n" +
-                    "import b::*;\n" +
-                    "Class a::Employee\n" +
-                    "{\n" +
-                    "   a:String[1];\n" +
-                    "}\n" +
-                    "Class b::Employee\n" +
-                    "{\n" +
-                    "    b: String[1];\n" +
-                    "}\n" +
-                    "function test():Nil[0]\n" +
-                    "{\n" +
-                    "    print(Employee);\n" +
-                    "}\n");
+                            "import b::*;\n" +
+                            "Class a::Employee\n" +
+                            "{\n" +
+                            "   a:String[1];\n" +
+                            "}\n" +
+                            "Class b::Employee\n" +
+                            "{\n" +
+                            "    b: String[1];\n" +
+                            "}\n" +
+                            "function test():Nil[0]\n" +
+                            "{\n" +
+                            "    print(Employee);\n" +
+                            "}\n");
             Assert.fail("Expected a compilation error");
         }
         catch (Exception e)
@@ -66,15 +68,15 @@ public class TestImportConflict extends AbstractPureTestWithCoreCompiledPlatform
     {
         runtime.createInMemorySource("fromString.pure",
                 "import a::*;\n" +
-                "import a::*;\n" +
-                "Class a::Employee\n" +
-                "{\n" +
-                "   a:String[1];\n" +
-                "}\n" +
-                "function test():Nil[0]\n" +
-                "{\n" +
-                "    print(Employee,1);\n" +
-                "}\n");
+                        "import a::*;\n" +
+                        "Class a::Employee\n" +
+                        "{\n" +
+                        "   a:String[1];\n" +
+                        "}\n" +
+                        "function test():Nil[0]\n" +
+                        "{\n" +
+                        "    print(Employee,1);\n" +
+                        "}\n");
         runtime.compile();
     }
 }

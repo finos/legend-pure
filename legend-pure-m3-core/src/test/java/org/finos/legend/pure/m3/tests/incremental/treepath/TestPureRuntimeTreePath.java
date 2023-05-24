@@ -14,13 +14,12 @@
 
 package org.finos.legend.pure.m3.tests.incremental.treepath;
 
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
-import org.finos.legend.pure.m3.tests.RuntimeVerifier.FunctionExecutionStateVerifier;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -28,12 +27,14 @@ import org.junit.Test;
 public class TestPureRuntimeTreePath extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("userId.pure");
         runtime.delete("sourceId.pure");
         runtime.delete("funcId.pure");
@@ -47,11 +48,11 @@ public class TestPureRuntimeTreePath extends AbstractPureTestWithCoreCompiledPla
     {
         String source = "Class A{version : Integer[1];}";
         String sourceId = "sourceId.pure";
-        this.runtime.createInMemorySource(sourceId, source);
-        this.runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{print(#A{+[version]}#,0);true;}");
-        this.runtime.compile();
+        runtime.createInMemorySource(sourceId, source);
+        runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{print(#A{+[version]}#,0);true;}");
+        runtime.compile();
 
-        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(this.runtime, this.functionExecution,
+        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(runtime, functionExecution,
                 Lists.fixedSize.of(Tuples.pair(sourceId, source)), "A has not been defined!", "userId.pure", 1, 35);
     }
 
@@ -61,11 +62,11 @@ public class TestPureRuntimeTreePath extends AbstractPureTestWithCoreCompiledPla
         String source = "Class A{version : Integer[1];}";
         String badSource = "Class A{vers : Integer[1];}";
         String sourceId = "sourceId.pure";
-        this.runtime.createInMemorySource(sourceId, source);
-        this.runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{print(#A{+[version]}#,0);true;}");
-        this.runtime.compile();
+        runtime.createInMemorySource(sourceId, source);
+        runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{print(#A{+[version]}#,0);true;}");
+        runtime.compile();
 
-        RuntimeVerifier.replaceWithCompileErrorCompileAndReloadMultipleTimesIsStable(this.runtime,
+        RuntimeVerifier.replaceWithCompileErrorCompileAndReloadMultipleTimesIsStable(runtime,
                 Lists.fixedSize.of(Tuples.pair(sourceId, badSource)), "The property 'version' can't be found in the type 'A' (or any supertype).",
                 "userId.pure", 1, 39);
 
@@ -77,11 +78,11 @@ public class TestPureRuntimeTreePath extends AbstractPureTestWithCoreCompiledPla
         String source = "Class A{version : Integer[1];}";
         String badSource = "Class A{vers : Integer[1];}";
         String sourceId = "sourceId.pure";
-        this.runtime.createInMemorySource(sourceId, source);
-        this.runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{print(#A{>myVersion[$this.version]}#,0);true;}");
-        this.runtime.compile();
+        runtime.createInMemorySource(sourceId, source);
+        runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{print(#A{>myVersion[$this.version]}#,0);true;}");
+        runtime.compile();
 
-        RuntimeVerifier.replaceWithCompileErrorCompileAndReloadMultipleTimesIsStable(this.runtime,
+        RuntimeVerifier.replaceWithCompileErrorCompileAndReloadMultipleTimesIsStable(runtime,
                 Lists.fixedSize.of(Tuples.pair(sourceId, badSource)), "Can't find the property 'version' in the class A",
                 "userId.pure", 1, 54);
 
@@ -98,12 +99,12 @@ public class TestPureRuntimeTreePath extends AbstractPureTestWithCoreCompiledPla
         String badSource = "";
         String sourceId = "sourceId.pure";
         String funcId = "funcId.pure";
-        this.runtime.createInMemorySource(sourceId, source);
-        this.runtime.createInMemorySource(funcId, functionSource);
-        this.runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{print(#A{>myVersion[$this.version->nice()]}#,0);true;}");
-        this.runtime.compile();
+        runtime.createInMemorySource(sourceId, source);
+        runtime.createInMemorySource(funcId, functionSource);
+        runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{print(#A{>myVersion[$this.version->nice()]}#,0);true;}");
+        runtime.compile();
 
-        RuntimeVerifier.replaceWithCompileErrorCompileAndReloadMultipleTimesIsStable(this.runtime,
+        RuntimeVerifier.replaceWithCompileErrorCompileAndReloadMultipleTimesIsStable(runtime,
                 Lists.fixedSize.of(Tuples.pair(funcId, badSource)), "The system can't find a match for the function: nice(_:String[1])",
                 "userId.pure", 1, 63);
 
@@ -130,11 +131,11 @@ public class TestPureRuntimeTreePath extends AbstractPureTestWithCoreCompiledPla
                 "    COUNTRY\n" +
                 "}";
         String sourceId = "sourceId.pure";
-        this.runtime.createInMemorySource(sourceId, source);
-        this.runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{print(#EntityWithLocations{locationsByType(GeographicEntityType[*]){*}}#,0);true;}");
-        this.runtime.compile();
+        runtime.createInMemorySource(sourceId, source);
+        runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{print(#EntityWithLocations{locationsByType(GeographicEntityType[*]){*}}#,0);true;}");
+        runtime.compile();
 
-        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(this.runtime, this.functionExecution,
+        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(runtime, functionExecution,
                 Lists.fixedSize.of(Tuples.pair(sourceId, source)), "EntityWithLocations has not been defined!", "userId.pure", 1, 35);
     }
 
@@ -164,8 +165,8 @@ public class TestPureRuntimeTreePath extends AbstractPureTestWithCoreCompiledPla
                         .deleteSource(userId)
                         .compile()
                         .createInMemorySource(userId, treeSource)
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
 
@@ -199,8 +200,8 @@ public class TestPureRuntimeTreePath extends AbstractPureTestWithCoreCompiledPla
                         .deleteSource(userId)
                         .compile()
                         .createInMemorySource(userId, treeSource)
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -241,8 +242,8 @@ public class TestPureRuntimeTreePath extends AbstractPureTestWithCoreCompiledPla
                         .deleteSource(treeSourceId)
                         .createInMemorySource("profile.pure", profile)
                         .createInMemorySource(treeSourceId, treeSource)
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -288,8 +289,8 @@ public class TestPureRuntimeTreePath extends AbstractPureTestWithCoreCompiledPla
                         .deleteSource(treeSourceId)
                         .createInMemorySource("profile.pure", profile)
                         .createInMemorySource(treeSourceId, treeSource)
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -333,8 +334,8 @@ public class TestPureRuntimeTreePath extends AbstractPureTestWithCoreCompiledPla
                         .compileWithExpectedCompileFailure("GeographicEntityType has not been defined!", sourceId, 11, 12)
                         .deleteSource(invalidEnumSourceId)
                         .createInMemorySource(enumSourceId, enumSource)
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -385,8 +386,8 @@ public class TestPureRuntimeTreePath extends AbstractPureTestWithCoreCompiledPla
                         .compileWithExpectedCompileFailure("GeographicEntityType has not been defined!", sourceId, 16, 12)
                         .deleteSource(invalidEnumSourceId)
                         .createInMemorySource(enumSourceId, enumSource)
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 }
 

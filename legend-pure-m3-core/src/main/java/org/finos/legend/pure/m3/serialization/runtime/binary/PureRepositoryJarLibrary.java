@@ -21,27 +21,39 @@ import org.eclipse.collections.api.set.SetIterable;
 public interface PureRepositoryJarLibrary
 {
     String getPlatformVersion();
+
     String getModelVersion();
 
     boolean isKnownRepository(String repositoryName);
+
     boolean isKnownFile(String filePath);
+
     boolean isKnownInstance(String instancePath);
 
     byte[] readFile(String filePath);
+
     MapIterable<String, byte[]> readFiles(String... filePaths);
+
     MapIterable<String, byte[]> readFiles(Iterable<String> filePaths);
 
     MapIterable<String, byte[]> readRepositoryFiles(String repositoryName);
+
     MapIterable<String, byte[]> readRepositoryFiles(String... repositoryNames);
+
     MapIterable<String, byte[]> readRepositoryFiles(Iterable<String> repositoryNames);
 
     MapIterable<String, byte[]> readAllFiles();
+
     RichIterable<String> getAllFiles();
+
     RichIterable<String> getRepositoryFiles(String repositoryName);
+
     RichIterable<String> getDirectoryFiles(String directory);
 
     SetIterable<String> getRequiredFiles(String instancePath);
+
     SetIterable<String> getRequiredFiles(String... instancePaths);
+
     SetIterable<String> getRequiredFiles(Iterable<String> instancePaths);
 
     /**

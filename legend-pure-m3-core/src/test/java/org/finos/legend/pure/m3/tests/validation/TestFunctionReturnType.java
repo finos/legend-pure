@@ -24,12 +24,14 @@ import org.junit.Test;
 public class TestFunctionReturnType extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("testSource.pure");
         runtime.delete("testSource1.pure");
         runtime.delete("testSource2.pure");
@@ -43,17 +45,17 @@ public class TestFunctionReturnType extends AbstractPureTestWithCoreCompiledPlat
         {
             compileTestSource("testSource.pure",
                     "Class A\n" +
-                    "{\n" +
-                    "   name : String[1];\n" +
-                    "}\n" +
-                    "Class B extends A\n" +
-                    "{\n" +
-                    "   moreName : String[1];\n" +
-                    "}\n" +
-                    "function funcWithReturn():B[1]\n" +
-                    "{\n" +
-                    "   ^A(name='aaa');\n" +
-                    "}\n");
+                            "{\n" +
+                            "   name : String[1];\n" +
+                            "}\n" +
+                            "Class B extends A\n" +
+                            "{\n" +
+                            "   moreName : String[1];\n" +
+                            "}\n" +
+                            "function funcWithReturn():B[1]\n" +
+                            "{\n" +
+                            "   ^A(name='aaa');\n" +
+                            "}\n");
             Assert.fail("Expected compilation exception");
         }
         catch (Exception e)
@@ -69,17 +71,17 @@ public class TestFunctionReturnType extends AbstractPureTestWithCoreCompiledPlat
         {
             compileTestSource("testSource.pure",
                     "Class b::A\n" +
-                    "{\n" +
-                    "   name : String[1];\n" +
-                    "}\n" +
-                    "Class c::A\n" +
-                    "{\n" +
-                    "   moreName : String[1];\n" +
-                    "}\n" +
-                    "function funcWithReturn():c::A[1]\n" +
-                    "{\n" +
-                    "   ^b::A(name='aaa');\n" +
-                    "}\n");
+                            "{\n" +
+                            "   name : String[1];\n" +
+                            "}\n" +
+                            "Class c::A\n" +
+                            "{\n" +
+                            "   moreName : String[1];\n" +
+                            "}\n" +
+                            "function funcWithReturn():c::A[1]\n" +
+                            "{\n" +
+                            "   ^b::A(name='aaa');\n" +
+                            "}\n");
             Assert.fail("Expected compilation exception");
         }
         catch (Exception e)
@@ -149,7 +151,7 @@ public class TestFunctionReturnType extends AbstractPureTestWithCoreCompiledPlat
     {
         // This should compile
         compileTestSource("testSource1.pure",
-                        "function func1WithReturn<T>(t:T[*]):List<T>[1]\n" +
+                "function func1WithReturn<T>(t:T[*]):List<T>[1]\n" +
                         "{\n" +
                         "  ^List<T>(values=$t)\n" +
                         "}\n");

@@ -21,5 +21,6 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.Rev
 public interface RepositoryRevisionCache
 {
     LongList getAllRevisions(String path);
+
     RichIterable<Revision> getRevisionsByPath(RichIterable<String> paths);
 }

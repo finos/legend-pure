@@ -30,20 +30,21 @@ public class XLSXOutputWriter implements OutputWriter<Object>
 
     private final OutputWriter writer;
 
-    public XLSXOutputWriter(OutputWriter writer) {
+    public XLSXOutputWriter(OutputWriter writer)
+    {
         this.writer = writer;
     }
 
     @Override
     public void write(Object result, OutputStream outputStream) throws IOException
     {
-        try (
-                InputStream is = XLSXOutputWriter.class.getResourceAsStream(XLSX_TEMPLATE);
-                ZipInputStream zis = new ZipInputStream(is);
-                ZipOutputStream zos = new ZipOutputStream(outputStream)
-        ){
+        try (InputStream is = XLSXOutputWriter.class.getResourceAsStream(XLSX_TEMPLATE);
+             ZipInputStream zis = new ZipInputStream(is);
+             ZipOutputStream zos = new ZipOutputStream(outputStream))
+        {
             ZipEntry zipEntry;
-            while ((zipEntry = zis.getNextEntry()) != null) {
+            while ((zipEntry = zis.getNextEntry()) != null)
+            {
                 zos.putNextEntry(new ZipEntry(zipEntry.getName()));
                 IOUtils.copy(zis, zos);
                 zos.closeEntry();

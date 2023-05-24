@@ -16,20 +16,26 @@ package org.finos.legend.pure.m3.tests.elements.association;
 
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.tools.test.ToFix;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.exception.PureException;
-import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("fromString.pure");
         runtime.delete("fromString2.pure");
     }
@@ -39,7 +45,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","Class Product\n" +
+            compileTestSource("fromString.pure", "Class Product\n" +
                     "{\n" +
                     "   name : String[1];\n" +
                     "}\n" +
@@ -66,7 +72,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","Class Product\n" +
+            compileTestSource("fromString.pure", "Class Product\n" +
                     "{\n" +
                     "   name : String[1];\n" +
                     "}\n" +
@@ -95,7 +101,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","Class Product\n" +
+            compileTestSource("fromString.pure", "Class Product\n" +
                     "{\n" +
                     "   name : String[1];\n" +
                     "}\n" +
@@ -118,7 +124,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","Class Product\n" +
+            compileTestSource("fromString.pure", "Class Product\n" +
                     "{\n" +
                     "   name : String[1];\n" +
                     "}\n" +
@@ -146,7 +152,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","Class Product\n" +
+            compileTestSource("fromString.pure", "Class Product\n" +
                     "{\n" +
                     "   name : String[1];\n" +
                     "}\n" +
@@ -170,8 +176,9 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     }
 
     @Test
-    public void testAssociationWithValidQualifiedPropertyIsProcessedWithoutError() {
-        compileTestSource("fromString.pure","Class Product\n" +
+    public void testAssociationWithValidQualifiedPropertyIsProcessedWithoutError()
+    {
+        compileTestSource("fromString.pure", "Class Product\n" +
                 "{\n" +
                 "   name : String[1];\n" +
                 "}\n" +
@@ -197,7 +204,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","Class Product\n" +
+            compileTestSource("fromString.pure", "Class Product\n" +
                     "{\n" +
                     "   name : String[1];\n" +
                     "}\n" +
@@ -237,7 +244,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","Class Product\n" +
+            compileTestSource("fromString.pure", "Class Product\n" +
                     "{\n" +
                     "   name : String[1];\n" +
                     "}\n" +
@@ -277,7 +284,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","Class Product\n" +
+            compileTestSource("fromString.pure", "Class Product\n" +
                     "{\n" +
                     "   name : String[1];\n" +
                     "   orderVersions : OrderVersion[*];\n" +
@@ -296,7 +303,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
                     "Class Synonym\n" +
                     "{\n" +
                     "   name : String[1];\n" +
-                    "}"+
+                    "}" +
                     "Class OrderVersion\n" +
                     "{\n" +
                     "   id : String[1];\n" +
@@ -322,7 +329,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","Class Product\n" +
+            compileTestSource("fromString.pure", "Class Product\n" +
                     "{\n" +
                     "   name : String[1];\n" +
                     "}\n" +
@@ -362,10 +369,10 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","Class Product\n" +
+            compileTestSource("fromString.pure", "Class Product\n" +
                     "{\n" +
                     "   name : String[1];\n" +
-                    "   synonymsByName(st:String[1]){$this.synonyms->filter(s | $s.name == $st)->toOne()}: Synonym[1];"+
+                    "   synonymsByName(st:String[1]){$this.synonyms->filter(s | $s.name == $st)->toOne()}: Synonym[1];" +
                     "}\n" +
                     "\n" +
                     "Association ProdSyn\n" +

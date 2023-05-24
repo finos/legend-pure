@@ -24,12 +24,14 @@ import org.junit.Test;
 public class TestPureRuntimeAssociation_UseProperty extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("userId.pure");
         runtime.delete("sourceId.pure");
     }
@@ -48,7 +50,7 @@ public class TestPureRuntimeAssociation_UseProperty extends AbstractPureTestWith
                         .compileWithExpectedCompileFailure("Can't find the property 'b' in the class test::A", "userId.pure", 4, 48)
                         .createInMemorySource("sourceId.pure", "Association a {a:test::A[0..1];b:test::B[0..1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
     }
 
@@ -69,7 +71,7 @@ public class TestPureRuntimeAssociation_UseProperty extends AbstractPureTestWith
                         .compileWithExpectedCompileFailure("Can't find the property 'b' in the class test::A", "userId.pure", 4, 48)
                         .updateSource("sourceId.pure", "Association a {a:test::A[0..1];b:test::B[0..1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
     }
 }

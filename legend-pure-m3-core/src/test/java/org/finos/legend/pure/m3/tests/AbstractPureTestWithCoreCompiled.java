@@ -33,7 +33,13 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.Mutable
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
-import org.finos.legend.pure.m3.serialization.runtime.*;
+import org.finos.legend.pure.m3.serialization.runtime.GraphLoader;
+import org.finos.legend.pure.m3.serialization.runtime.Message;
+import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
+import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
+import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeStatus;
+import org.finos.legend.pure.m3.serialization.runtime.RuntimeOptions;
+import org.finos.legend.pure.m3.serialization.runtime.VoidPureRuntimeStatus;
 import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJarLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.binary.SimplePureRepositoryJarLibrary;
 import org.finos.legend.pure.m4.ModelRepository;
@@ -200,7 +206,7 @@ public abstract class AbstractPureTestWithCoreCompiled
 
         if (loadFromCache)
         {
-            PureRepositoryJarLibrary jarLibrary = SimplePureRepositoryJarLibrary.newLibrary(GraphLoader.findJars(Lists.mutable.withAll(codeRepositories.select(c->c.getName() != null && (c.getName().startsWith("platform") || c.getName().startsWith("core"))).collect(CodeRepository::getName)), Thread.currentThread().getContextClassLoader(), message));
+            PureRepositoryJarLibrary jarLibrary = SimplePureRepositoryJarLibrary.newLibrary(GraphLoader.findJars(Lists.mutable.withAll(codeRepositories.select(c -> c.getName() != null && (c.getName().startsWith("platform") || c.getName().startsWith("core"))).collect(CodeRepository::getName)), Thread.currentThread().getContextClassLoader(), message));
             GraphLoader loader = new GraphLoader(runtime.getModelRepository(), runtime.getContext(), runtime.getIncrementalCompiler().getParserLibrary(), runtime.getIncrementalCompiler().getDslLibrary(), runtime.getSourceRegistry(), runtime.getURLPatternLibrary(), jarLibrary);
             loader.loadAll(message);
         }

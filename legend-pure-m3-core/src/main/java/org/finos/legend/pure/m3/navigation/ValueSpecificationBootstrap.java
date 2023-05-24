@@ -17,8 +17,8 @@ package org.finos.legend.pure.m3.navigation;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.predicate.Predicate2;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.valuespecification.InstanceValueProcessor;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
@@ -26,8 +26,8 @@ import org.finos.legend.pure.m3.navigation.measure.Measure;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 
 import java.math.BigDecimal;
@@ -36,22 +36,9 @@ import java.math.BigInteger;
 public class ValueSpecificationBootstrap
 {
 
-    private static final Predicate2<CoreInstance, ProcessorSupport> IS_NON_EXECUTABLE_VAL_SPEC = new Predicate2<CoreInstance, ProcessorSupport>()
-    {
-        @Override
-        public boolean accept(CoreInstance coreInstance, ProcessorSupport processorSupport)
-        {
-            return processorSupport.instance_instanceOf(coreInstance, M3Paths.ValueSpecification) && !ValueSpecification.isExecutable(coreInstance, processorSupport);
-        }
-    };
-    private static final Function<CoreInstance, ListIterable<CoreInstance>> EXTRACT_CORE_INSTANCE_VALUES = new Function<CoreInstance, ListIterable<CoreInstance>>()
-    {
-        @Override
-        public ListIterable<CoreInstance> valueOf(CoreInstance o)
-        {
-            return (ListIterable<CoreInstance>) o.getValueForMetaPropertyToMany(M3Properties.values);
-        }
-    };
+    private static final Predicate2<CoreInstance, ProcessorSupport> IS_NON_EXECUTABLE_VAL_SPEC = (coreInstance, processorSupport) -> processorSupport.instance_instanceOf(coreInstance, M3Paths.ValueSpecification) && !ValueSpecification.isExecutable(coreInstance, processorSupport);
+
+    private static final Function<CoreInstance, ListIterable<CoreInstance>> EXTRACT_CORE_INSTANCE_VALUES = o -> (ListIterable<CoreInstance>) o.getValueForMetaPropertyToMany(M3Properties.values);
 
     public static CoreInstance wrapValueSpecification(CoreInstance value, boolean executable, ProcessorSupport processorSupport)
     {
@@ -86,7 +73,7 @@ public class ValueSpecificationBootstrap
 
     public static CoreInstance wrapValueSpecification_ForFunctionReturnValue(CoreInstance functionReturnGenericType, ListIterable<? extends CoreInstance> values, boolean executable, final ProcessorSupport processorSupport)
     {
-        if(values.size() > 2 && GenericType.isGenericTypeFullyConcrete(functionReturnGenericType, processorSupport))
+        if (values.size() > 2 && GenericType.isGenericTypeFullyConcrete(functionReturnGenericType, processorSupport))
         {
             CoreInstance firstValGenericType = Instance.extractGenericTypeFromInstance(values.getFirst(), processorSupport);
 
@@ -175,11 +162,11 @@ public class ValueSpecificationBootstrap
     {
         if (value == null)
         {
-            return wrapInstanceMany(Lists.immutable.<CoreInstance>with(), null, null, type, processorSupport);
+            return wrapInstanceMany(Lists.immutable.with(), null, null, type, processorSupport);
         }
         else
         {
-            CoreInstance inst =  processorSupport.newEphemeralAnonymousCoreInstance(type);
+            CoreInstance inst = processorSupport.newEphemeralAnonymousCoreInstance(type);
             Instance.addValueToProperty(inst, M3Properties.values, value, processorSupport);
             Instance.addValueToProperty(inst, M3Properties.genericType, GenericType.copyGenericType(Instance.extractGenericTypeFromInstance(value, processorSupport), processorSupport), processorSupport);
             Instance.addValueToProperty(inst, M3Properties.multiplicity, processorSupport.package_getByUserPath(M3Paths.PureOne), processorSupport);

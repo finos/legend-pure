@@ -25,12 +25,14 @@ import org.junit.rules.ExpectedException;
 public class TestGetAllVersionsValidator extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("sourceId.pure");
     }
 
@@ -51,12 +53,13 @@ public class TestGetAllVersionsValidator extends AbstractPureTestWithCoreCompile
         validateGetAllVersionsIsNotPermittedForNonTemporalTypes(true);
     }
 
-    public void validateGetAllVersionsIsNotPermittedForNonTemporalTypes(boolean isTemporal){
+    public void validateGetAllVersionsIsNotPermittedForNonTemporalTypes(boolean isTemporal)
+    {
 
         String temporalStereotype = isTemporal ? "<<temporal.processingtemporal>>" : "";
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;" +
-                        "Class "+temporalStereotype+" meta::test::milestoning::domain::Product{\n" +
+                        "Class " + temporalStereotype + " meta::test::milestoning::domain::Product{\n" +
                         "   id : Integer[1];\n" +
                         "}" +
                         "function go():Any[*]\n" +
@@ -65,6 +68,6 @@ public class TestGetAllVersionsValidator extends AbstractPureTestWithCoreCompile
                         "}" +
                         "");
 
-        this.runtime.compile();
+        runtime.compile();
     }
 }

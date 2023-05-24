@@ -24,127 +24,129 @@ import org.junit.Test;
 public class TestPureRuntimePackage extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         setUp();
     }
 
     @Test
     public void testPackageRemovedWhenEmpty()
     {
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package2"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package2::TestClass"));
-        int size = this.repository.serialize().length;
+        Assert.assertNull(runtime.getCoreInstance("test_package1"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package2"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package2::TestClass"));
+        int size = repository.serialize().length;
 
         compileTestSource("source.pure", "Class test_package1::test_package2::TestClass {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package2"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package2::TestClass"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package2"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package2::TestClass"));
 
-        this.runtime.delete("source.pure");
-        this.runtime.compile();
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package2"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package2::TestClass"));
-        Assert.assertEquals(size, this.repository.serialize().length);
+        runtime.delete("source.pure");
+        runtime.compile();
+        Assert.assertNull(runtime.getCoreInstance("test_package1"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package2"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package2::TestClass"));
+        Assert.assertEquals(size, repository.serialize().length);
     }
 
     @Test
     public void testPackageNotRemovedWhenNotEmpty()
     {
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package2"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package2::TestClass1"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package2::TestClass2"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package2"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package2::TestClass1"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package2::TestClass2"));
 
         compileTestSource("source1.pure", "Class test_package1::test_package2::TestClass1 {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package2"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package2::TestClass1"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package2::TestClass2"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package2"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package2::TestClass1"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package2::TestClass2"));
 
         compileTestSource("source2.pure", "Class test_package1::test_package2::TestClass2 {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package2"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package2::TestClass1"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package2::TestClass2"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package2"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package2::TestClass1"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package2::TestClass2"));
 
-        this.runtime.delete("source1.pure");
-        this.runtime.compile();
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package2"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package2::TestClass1"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package2::TestClass2"));
+        runtime.delete("source1.pure");
+        runtime.compile();
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package2"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package2::TestClass1"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package2::TestClass2"));
     }
 
     @Test
     public void testMixedPackageRemovedAndNot()
     {
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package2"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package3"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package2::TestClass1"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package3::TestClass2"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package2"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package3"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package2::TestClass1"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package3::TestClass2"));
 
         compileTestSource("source1.pure", "Class test_package1::test_package2::TestClass1 {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package2"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package3"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package2::TestClass1"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package3::TestClass2"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package2"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package3"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package2::TestClass1"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package3::TestClass2"));
 
         compileTestSource("source2.pure", "Class test_package1::test_package3::TestClass2 {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package2"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package3"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package2::TestClass1"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package3::TestClass2"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package2"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package3"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package2::TestClass1"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package3::TestClass2"));
 
-        this.runtime.delete("source1.pure");
-        this.runtime.compile();
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package2"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package3"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package2::TestClass1"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package3::TestClass2"));
+        runtime.delete("source1.pure");
+        runtime.compile();
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package2"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package3"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package2::TestClass1"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package3::TestClass2"));
     }
 
     @Test
     public void testPackageWithReferenceRemoved()
     {
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package2"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package3"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package2::TestClass"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package3::testFn__Package_1_"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package2"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package3"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package2::TestClass"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package3::testFn__Package_1_"));
 
         compileTestSource("source1.pure", "Class test_package1::test_package2::TestClass {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package2"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package3"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package2::TestClass"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_package3::testFn__Package_1_"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package2"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package3"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package2::TestClass"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_package3::testFn__Package_1_"));
 
         compileTestSource("source2.pure",
                 "function test_package1::test_package3::testFn():Package[1]\n" +
                         "{\n" +
                         "   test_package1::test_package2\n" +
                         "}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package2"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package3"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package2::TestClass"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_package3::testFn__Package_1_"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package2"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package3"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package2::TestClass"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package3::testFn__Package_1_"));
 
-        this.runtime.delete("source1.pure");
+        runtime.delete("source1.pure");
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail("Expected compile exception");
         }
         catch (Exception e)
@@ -162,31 +164,31 @@ public class TestPureRuntimePackage extends AbstractPureTestWithCoreCompiledPlat
                 "   test_name : String[1];\n" +
                 "}";
 
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_name"));
-        Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_name::TestClass1"));
-        int beforeSize = this.repository.serialize().length;
+        Assert.assertNull(runtime.getCoreInstance("test_package1"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_name"));
+        Assert.assertNull(runtime.getCoreInstance("test_package1::test_name::TestClass1"));
+        int beforeSize = repository.serialize().length;
 
         compileTestSource(sourceId, sourceCode);
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_name"));
-        Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_name::TestClass1"));
-        int afterSize = this.repository.serialize().length;
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_name"));
+        Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_name::TestClass1"));
+        int afterSize = repository.serialize().length;
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete(sourceId);
-            this.runtime.compile();
-            Assert.assertNull(this.runtime.getCoreInstance("test_package1"));
-            Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_name"));
-            Assert.assertNull(this.runtime.getCoreInstance("test_package1::test_name::TestClass1"));
-            Assert.assertEquals("Failed on iteration #" + i, beforeSize, this.repository.serialize().length);
+            runtime.delete(sourceId);
+            runtime.compile();
+            Assert.assertNull(runtime.getCoreInstance("test_package1"));
+            Assert.assertNull(runtime.getCoreInstance("test_package1::test_name"));
+            Assert.assertNull(runtime.getCoreInstance("test_package1::test_name::TestClass1"));
+            Assert.assertEquals("Failed on iteration #" + i, beforeSize, repository.serialize().length);
 
             compileTestSource(sourceId, sourceCode);
-            Assert.assertNotNull(this.runtime.getCoreInstance("test_package1"));
-            Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_name"));
-            Assert.assertNotNull(this.runtime.getCoreInstance("test_package1::test_name::TestClass1"));
-            Assert.assertEquals("Failed on iteration #" + i, afterSize, this.repository.serialize().length);
+            Assert.assertNotNull(runtime.getCoreInstance("test_package1"));
+            Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_name"));
+            Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_name::TestClass1"));
+            Assert.assertEquals("Failed on iteration #" + i, afterSize, repository.serialize().length);
         }
     }
 }

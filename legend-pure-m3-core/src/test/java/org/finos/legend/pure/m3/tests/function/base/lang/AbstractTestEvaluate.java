@@ -15,13 +15,13 @@
 package org.finos.legend.pure.m3.tests.function.base.lang;
 
 import org.eclipse.collections.api.factory.Lists;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.exception.PureException;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -32,7 +32,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
     {
         try
         {
-            compileTestSource("fromString.pure","function myFunc(s:Integer[1]):String[1]\n" +
+            compileTestSource("fromString.pure", "function myFunc(s:Integer[1]):String[1]\n" +
                     "{\n" +
                     "    $s->toString();\n" +
                     "}\n" +
@@ -45,7 +45,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
         }
         catch (RuntimeException e)
         {
-            this.assertExceptionInformation(e, "Error during dynamic function evaluation. The type String is not compatible with the type Integer" ,7,39, this.checkLineNumbers());
+            this.assertExceptionInformation(e, "Error during dynamic function evaluation. The type String is not compatible with the type Integer", 7, 39, this.checkLineNumbers());
         }
     }
 
@@ -54,7 +54,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
     {
         try
         {
-            compileTestSource("fromString.pure","Class Wave\n" +
+            compileTestSource("fromString.pure", "Class Wave\n" +
                     "{\n" +
                     "    wavelength: Float[1];\n" +
                     "}\n" +
@@ -89,7 +89,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
     {
         try
         {
-            compileTestSource("fromString.pure","Class Wave\n" +
+            compileTestSource("fromString.pure", "Class Wave\n" +
                     "{\n" +
                     "    wavelength: Float[1];\n" +
                     "}\n" +
@@ -126,7 +126,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
     @Test
     public void testEvaluateAnyWrongMultiplicity()
     {
-        compileTestSource("fromString.pure","function myFunc(s:String[1], p:String[1]):String[1]\n" +
+        compileTestSource("fromString.pure", "function myFunc(s:String[1], p:String[1]):String[1]\n" +
                 "{\n" +
                 "    $s;\n" +
                 "}\n" +
@@ -161,7 +161,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
     @Test
     public void testEvaluateViolateLowerBound()
     {
-        compileTestSource("fromString.pure","function myFunc(s:String[2..10], p:String[0..3]):String[1]\n" +
+        compileTestSource("fromString.pure", "function myFunc(s:String[2..10], p:String[0..3]):String[1]\n" +
                 "{\n" +
                 "    $s->joinStrings('');\n" +
                 "}\n" +
@@ -196,7 +196,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
     @Test
     public void testEvaluateViolateUpperBound()
     {
-        compileTestSource("fromString.pure","function myFunc(s:String[0..5], p:String[0..3]):String[1]\n" +
+        compileTestSource("fromString.pure", "function myFunc(s:String[0..5], p:String[0..3]):String[1]\n" +
                 "{\n" +
                 "    $s->joinStrings('');\n" +
                 "}\n" +
@@ -231,7 +231,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
     @Test
     public void testEvaluateUnboundedMultiplicity()
     {
-        compileTestSource("fromString.pure","function myFunc(s:String[*], x:Integer[1]):String[1]\n" +
+        compileTestSource("fromString.pure", "function myFunc(s:String[*], x:Integer[1]):String[1]\n" +
                 "{\n" +
                 "    $s->joinStrings('');\n" +
                 "}\n" +
@@ -259,7 +259,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
     {
         try
         {
-            compileTestSource("fromString.pure","function myFunc():Boolean[1]\n" +
+            compileTestSource("fromString.pure", "function myFunc():Boolean[1]\n" +
                     "{\n" +
                     "    fail('Failed');\n" +
                     "}\n" +
@@ -278,13 +278,14 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
     }
 
     @Test
-    public void testEvaluateEval() {
+    public void testEvaluateEval()
+    {
         compileTestSource("fromString.pure",
                 "function test():Any[*]\n" +
                         "{\n" +
                         "  assert([] == evaluate_Function_1__List_MANY__Any_MANY_->eval(first_T_MANY__T_$0_1$_, list([])), |'');" +
                         "  assert(1 == evaluate_Function_1__List_MANY__Any_MANY_->eval(first_T_MANY__T_$0_1$_, list([1,2,3])), |'');" +
-                        "}" );
+                        "}");
         this.execute("test():Any[*]");
     }
 
@@ -298,7 +299,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
                         "]" +
                         "{" +
                         "   lastName:String[1];" +
-                        "}"+
+                        "}" +
                         "function testNew():Any[*]\n" +
                         "{\n" +
                         "   let t = ^Employee(lastName = 'AAAAAA');" +
@@ -350,7 +351,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
 
         SourceInformation sourceInfo = originalPE.getSourceInformation();
         Assert.assertNotNull(sourceInfo);
-        if(checkLineNumbers)
+        if (checkLineNumbers)
         {
             Assert.assertEquals(lineNo, sourceInfo.getLine());
             Assert.assertEquals(columnNo, sourceInfo.getColumn());

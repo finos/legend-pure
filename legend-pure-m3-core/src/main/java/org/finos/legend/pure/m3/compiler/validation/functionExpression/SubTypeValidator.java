@@ -15,13 +15,13 @@
 package org.finos.legend.pure.m3.compiler.validation.functionExpression;
 
 import org.eclipse.collections.api.list.ListIterable;
-import org.finos.legend.pure.m3.navigation.generictype.match.GenericTypeMatch;
-import org.finos.legend.pure.m3.navigation.generictype.match.NullMatchBehavior;
-import org.finos.legend.pure.m3.navigation.generictype.match.ParameterMatchBehavior;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.generictype.match.GenericTypeMatch;
+import org.finos.legend.pure.m3.navigation.generictype.match.NullMatchBehavior;
+import org.finos.legend.pure.m3.navigation.generictype.match.ParameterMatchBehavior;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class SubTypeValidator
@@ -33,7 +33,7 @@ public class SubTypeValidator
         GenericType typeToCastTo = valueSpecifications.get(1)._genericType();
         if (!GenericTypeMatch.genericTypeMatches(sourceGenericType, typeToCastTo, true, NullMatchBehavior.ERROR, ParameterMatchBehavior.MATCH_CAUTIOUSLY, ParameterMatchBehavior.MATCH_CAUTIOUSLY, processorSupport))
         {
-            throw new PureCompilationException(instance.getSourceInformation(), "The type "+ org.finos.legend.pure.m3.navigation.generictype.GenericType.print(sourceGenericType, processorSupport) + " is not compatible with "+ org.finos.legend.pure.m3.navigation.generictype.GenericType.print(typeToCastTo, processorSupport));
+            throw new PureCompilationException(instance.getSourceInformation(), "The type " + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(sourceGenericType, processorSupport) + " is not compatible with " + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(typeToCastTo, processorSupport));
         }
     }
 }

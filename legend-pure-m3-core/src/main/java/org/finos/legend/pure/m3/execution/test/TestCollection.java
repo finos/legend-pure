@@ -17,48 +17,24 @@ package org.finos.legend.pure.m3.execution.test;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.block.factory.Predicates;
-import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.execution.ExecutionPlatformRegistry;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.StringCoreInstance;
 
 public class TestCollection
 {
-    private static final Predicate<? super CoreInstance> DEFAULT_FILTER_PREDICATE = Predicates.alwaysTrue();
-    private static final Predicate<TestCollection> HAS_TESTS = new Predicate<TestCollection>()
-    {
-        @Override
-        public boolean accept(TestCollection testCollection)
-        {
-            return testCollection.hasTests();
-        }
-    };
-    private static final Predicate<TestCollection> HAS_TO_FIXES = new Predicate<TestCollection>()
-    {
-        @Override
-        public boolean accept(TestCollection testCollection)
-        {
-            return testCollection.hasToFix();
-        }
-    };
-    private static final Predicate<TestCollection> HAS_TEST_CONTENT = new Predicate<TestCollection>()
-    {
-        @Override
-        public boolean accept(TestCollection testCollection)
-        {
-            return testCollection.hasTestContent();
-        }
-    };
+    private static final Predicate<? super CoreInstance> DEFAULT_FILTER_PREDICATE = c -> true;
 
     private final CoreInstance pkg;
     private String testParameterizationId;
@@ -98,7 +74,7 @@ public class TestCollection
      */
     public boolean hasTests()
     {
-        return this.testFunctions.notEmpty() || this.subCollections.anySatisfy(HAS_TESTS);
+        return this.testFunctions.notEmpty() || this.subCollections.anySatisfy(TestCollection::hasTests);
     }
 
     /**
@@ -109,7 +85,7 @@ public class TestCollection
      */
     public boolean hasToFix()
     {
-        return this.toFixFunctions.notEmpty() || this.subCollections.anySatisfy(HAS_TO_FIXES);
+        return this.toFixFunctions.notEmpty() || this.subCollections.anySatisfy(TestCollection::hasToFix);
     }
 
     /**
@@ -126,7 +102,7 @@ public class TestCollection
                 this.beforeFunctions.notEmpty() ||
                 this.afterFunctions.notEmpty() ||
                 this.alloyOnlyFunctions.notEmpty() ||
-                this.subCollections.anySatisfy(HAS_TEST_CONTENT);
+                this.subCollections.anySatisfy(TestCollection::hasTestContent);
     }
 
     /**
@@ -247,10 +223,9 @@ public class TestCollection
 
     public RichIterable<CoreInstance> getPureAndAlloyOnlyFunctions()
     {
-        MutableList result = Lists.mutable.with();
-        for (CoreInstance c: this.testFunctions) {result.add(c);}
-        for (CoreInstance c: this.alloyOnlyFunctions) {result.add(c);}
-        return result.asUnmodifiable();
+        return Lists.mutable.withAll(this.testFunctions)
+                .withAll(this.alloyOnlyFunctions)
+                .asUnmodifiable();
     }
 
     /**
@@ -364,7 +339,7 @@ public class TestCollection
         }
     }
 
-    private void pruneBeforeAfters(final ProcessorSupport processorSupport)
+    private void pruneBeforeAfters(ProcessorSupport processorSupport)
     {
         Predicates<CoreInstance> isParentOfAnIncludedTest = new Predicates<CoreInstance>()
         {
@@ -381,30 +356,18 @@ public class TestCollection
         this.afterFunctions = this.afterFunctions.reject(isParentOfAnIncludedTest);
     }
 
-    private boolean containsTestInPackage(final String packageName, final ProcessorSupport processorSupport)
+    private boolean containsTestInPackage(String packageName, ProcessorSupport processorSupport)
     {
-        Predicates<CoreInstance> functionIsInOrBelowPackage = new Predicates<CoreInstance>()
+        Predicate<CoreInstance> functionIsInOrBelowPackage = testFunction ->
         {
-            @Override
-            public boolean accept(CoreInstance testFunction)
-            {
-                CoreInstance pkg = Instance.getValueForMetaPropertyToOneResolved(testFunction, M3Properties._package, processorSupport);
-                String functionPackageName = PackageableElement.getUserPathForPackageableElement(pkg);
-                return functionPackageName.startsWith(packageName);
-            }
+            CoreInstance pkg = Instance.getValueForMetaPropertyToOneResolved(testFunction, M3Properties._package, processorSupport);
+            String functionPackageName = PackageableElement.getUserPathForPackageableElement(pkg);
+            return functionPackageName.startsWith(packageName);
         };
 
-        Predicate<? super TestCollection> subcollectionContainTestInPackage = new Predicates<TestCollection>()
-        {
-            @Override
-            public boolean accept(TestCollection child)
-            {
-                return child.containsTestInPackage(packageName, processorSupport);
-            }
-        };
-
-        return this.testFunctions.anySatisfy(functionIsInOrBelowPackage) || this.alloyOnlyFunctions.anySatisfy(functionIsInOrBelowPackage)
-                || this.subCollections.anySatisfy(subcollectionContainTestInPackage);
+        return this.testFunctions.anySatisfy(functionIsInOrBelowPackage) ||
+                this.alloyOnlyFunctions.anySatisfy(functionIsInOrBelowPackage) ||
+                this.subCollections.anySatisfy(child -> child.containsTestInPackage(packageName, processorSupport));
     }
 
     private void findPackageTests(ProcessorSupport processorSupport, Function<CoreInstance, TestCollection> pureTestCollectionGenerator)
@@ -472,19 +435,19 @@ public class TestCollection
         testCollection.testFunctionParam = Instance.getValueForMetaPropertyToOneResolved(pureTestCollection, TestTools.TEST_COLLECTION_TEST_FUNCTION_PARAM, processorSupport);
         testCollection.testFunctionParamCustomizer = Instance.getValueForMetaPropertyToOneResolved(pureTestCollection, TestTools.TEST_COLLECTION_TEST_FUNCTION_PARAM_CUSTOMIZER, processorSupport);
 
-        for (CoreInstance testFunction: Instance.getValueForMetaPropertyToManyResolved(pureTestCollection, TestTools.TEST_COLLECTION_TEST_FUNCTIONS, processorSupport))
+        for (CoreInstance testFunction : Instance.getValueForMetaPropertyToManyResolved(pureTestCollection, TestTools.TEST_COLLECTION_TEST_FUNCTIONS, processorSupport))
         {
             testCollection.testFunctions.add(testFunction);
         }
-        for (CoreInstance beforeFunction: Instance.getValueForMetaPropertyToManyResolved(pureTestCollection, TestTools.TEST_COLLECTION_BEFORE_FUNCTIONS, processorSupport))
+        for (CoreInstance beforeFunction : Instance.getValueForMetaPropertyToManyResolved(pureTestCollection, TestTools.TEST_COLLECTION_BEFORE_FUNCTIONS, processorSupport))
         {
             testCollection.beforeFunctions.add(beforeFunction);
         }
-        for (CoreInstance afterFunction: Instance.getValueForMetaPropertyToManyResolved(pureTestCollection, TestTools.TEST_COLLECTION_AFTER_FUNCTIONS, processorSupport))
+        for (CoreInstance afterFunction : Instance.getValueForMetaPropertyToManyResolved(pureTestCollection, TestTools.TEST_COLLECTION_AFTER_FUNCTIONS, processorSupport))
         {
             testCollection.afterFunctions.add(afterFunction);
         }
-        for (CoreInstance subCollection: Instance.getValueForMetaPropertyToManyResolved(pureTestCollection, TestTools.TEST_COLLECTION_SUB_COLLECTIONS, processorSupport))
+        for (CoreInstance subCollection : Instance.getValueForMetaPropertyToManyResolved(pureTestCollection, TestTools.TEST_COLLECTION_SUB_COLLECTIONS, processorSupport))
         {
             testCollection.subCollections.add(collectTestsFromPureRecursive(subCollection, processorSupport));
         }
@@ -505,19 +468,19 @@ public class TestCollection
         testCollection.testFunctionParam = getField(pureTestCollection, TestTools.TEST_COLLECTION_TEST_FUNCTION_PARAM);
         testCollection.testFunctionParamCustomizer = (CoreInstance) getField(pureTestCollection, TestTools.TEST_COLLECTION_TEST_FUNCTION_PARAM_CUSTOMIZER);
 
-        for (Object testFunction: (RichIterable) getField(pureTestCollection, TestTools.TEST_COLLECTION_TEST_FUNCTIONS))
+        for (Object testFunction : (RichIterable<?>) getField(pureTestCollection, TestTools.TEST_COLLECTION_TEST_FUNCTIONS))
         {
             testCollection.testFunctions.add((CoreInstance) testFunction);
         }
-        for (Object beforeFunction: (RichIterable) getField(pureTestCollection, TestTools.TEST_COLLECTION_BEFORE_FUNCTIONS))
+        for (Object beforeFunction : (RichIterable<?>) getField(pureTestCollection, TestTools.TEST_COLLECTION_BEFORE_FUNCTIONS))
         {
             testCollection.beforeFunctions.add((CoreInstance) beforeFunction);
         }
-        for (Object afterFunction: (RichIterable) getField(pureTestCollection, TestTools.TEST_COLLECTION_AFTER_FUNCTIONS))
+        for (Object afterFunction : (RichIterable<?>) getField(pureTestCollection, TestTools.TEST_COLLECTION_AFTER_FUNCTIONS))
         {
             testCollection.afterFunctions.add((CoreInstance) afterFunction);
         }
-        for (Object subCollection: (RichIterable) getField(pureTestCollection, TestTools.TEST_COLLECTION_SUB_COLLECTIONS))
+        for (Object subCollection : (RichIterable<?>) getField(pureTestCollection, TestTools.TEST_COLLECTION_SUB_COLLECTIONS))
         {
             testCollection.subCollections.add(collectTestsFromPureRecursive(subCollection));
         }
@@ -605,7 +568,7 @@ public class TestCollection
     /**
      * Collect tests from the given package and all sub-packages.
      *
-     * @param pkg     test package
+     * @param pkg test package
      * @return test collection
      */
     public static TestCollection collectTests(CoreInstance pkg, ProcessorSupport processorSupport)
@@ -663,17 +626,10 @@ public class TestCollection
      * @param extraPredicate         extra predicate
      * @return test collection
      */
-    public static TestCollection collectTests(String path, ProcessorSupport processorSupport, final Class<? extends FunctionExecution> executionPlatformClass, final Predicate<CoreInstance> extraPredicate)
+    public static TestCollection collectTests(String path, ProcessorSupport processorSupport, Class<? extends FunctionExecution> executionPlatformClass, Predicate<CoreInstance> extraPredicate)
     {
-        final Predicate<CoreInstance> basePredicate = getFilterPredicateForExecutionPlatformClass(executionPlatformClass, processorSupport);
-        return collectTests(path, processorSupport, new Predicate<CoreInstance>()
-        {
-            @Override
-            public boolean accept(CoreInstance coreInstance)
-            {
-                return basePredicate.accept(coreInstance) && extraPredicate.accept(coreInstance);
-            }
-        });
+        Predicate<CoreInstance> basePredicate = getFilterPredicateForExecutionPlatformClass(executionPlatformClass, processorSupport);
+        return collectTests(path, processorSupport, i -> basePredicate.accept(i) && extraPredicate.accept(i));
     }
 
     /**
@@ -692,7 +648,7 @@ public class TestCollection
     /**
      * Collect tests from the given package and all sub-packages.
      *
-     * @param pkgPath    test package path
+     * @param pkgPath test package path
      * @return test collection
      */
     public static TestCollection collectTests(String pkgPath, ProcessorSupport processorSupport)
@@ -728,7 +684,7 @@ public class TestCollection
      * @param executionPlatformName execution platform name
      * @return execution platform filter predicate
      */
-    private static Predicate<CoreInstance> getFilterPredicateForExecutionPlatform(final String executionPlatformName, final ProcessorSupport processorSupport)
+    private static Predicate<CoreInstance> getFilterPredicateForExecutionPlatform(String executionPlatformName, ProcessorSupport processorSupport)
     {
         if (executionPlatformName == null)
         {
@@ -744,28 +700,18 @@ public class TestCollection
         };
     }
 
-    public static Predicate<? super CoreInstance> getFilterPredicateForAlloyExclusion(final ProcessorSupport processorSupport)
+    public static Predicate<? super CoreInstance> getFilterPredicateForAlloyExclusion(ProcessorSupport processorSupport)
     {
-        return (Predicate<? super CoreInstance>)(System.getProperty("alloy.test.server.host") != null || System.getProperty("legend.test.server.host") != null ? new Predicate<CoreInstance>()
-        {
-            @Override
-            public boolean accept(CoreInstance coreInstance)
-            {
-                return !TestTools.hasExcludeAlloyStereotype(coreInstance, processorSupport);
-            }
-        } : DEFAULT_FILTER_PREDICATE);
+        return (System.getProperty("alloy.test.server.host") != null || System.getProperty("legend.test.server.host") != null) ?
+                i -> !TestTools.hasExcludeAlloyStereotype(i, processorSupport) :
+                DEFAULT_FILTER_PREDICATE;
     }
 
-    public static Predicate<? super CoreInstance> getFilterPredicateForAlloyTextModeExclusion(final ProcessorSupport processorSupport)
+    public static Predicate<? super CoreInstance> getFilterPredicateForAlloyTextModeExclusion(ProcessorSupport processorSupport)
     {
-        return (Predicate<? super CoreInstance>)("text".equals(System.getProperty("legend.test.serializationKind")) &&
-                (System.getProperty("alloy.test.server.host") != null || System.getProperty("legend.test.server.host") != null) ? new Predicate<CoreInstance>()
-        {
-            @Override
-            public boolean accept(CoreInstance coreInstance)
-            {
-                return  !TestTools.hasExcludeAlloyTextModeStereotype(coreInstance, processorSupport);
-            }
-        } : DEFAULT_FILTER_PREDICATE);
+        return ("text".equals(System.getProperty("legend.test.serializationKind")) &&
+                (System.getProperty("alloy.test.server.host") != null || System.getProperty("legend.test.server.host") != null)) ?
+                i -> !TestTools.hasExcludeAlloyTextModeStereotype(i, processorSupport) :
+                DEFAULT_FILTER_PREDICATE;
     }
 }

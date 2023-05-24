@@ -17,17 +17,21 @@ package org.finos.legend.pure.m3.serialization.runtime;
 public interface PureRuntimeStatus
 {
     void startRuntimeInitialization();
+
     void finishRuntimeInitialization();
 
     void startLoadingAndCompilingCore();
+
     void finishedLoadingAndCompilingCore();
 
     void startLoadingAndCompilingSystemFiles();
+
     void finishedLoadingAndCompilingSystemFiles();
 
     void createOrUpdateMemorySource(String id, String content);
 
     void modifySource(String sourceId, String code);
+
     void deleteSource(String sourceId);
 
     void moveSource(String sourceId, String destinationId);

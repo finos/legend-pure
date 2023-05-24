@@ -136,7 +136,7 @@ public class IdUtils
             throw new RuntimeException("Invalid id: \"" + id + "\"", e);
         }
 
-        byte[] hostAddressAsBytes = Arrays.copyOfRange(decodedId,0, (decodedId.length-16));
+        byte[] hostAddressAsBytes = Arrays.copyOfRange(decodedId, 0, (decodedId.length - 16));
 
         ByteBuffer buffer = ByteBuffer.allocate(8);
         buffer.put(decodedId, decodedId.length - 16, 8);

@@ -15,25 +15,20 @@
 package org.finos.legend.pure.m3.tools.tree;
 
 import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.list.mutable.FastList;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public abstract class GenericTreeNode implements TreeNode<GenericTreeNode>, Comparable<GenericTreeNode>
 {
-    public static final Function<GenericTreeNode, Object> TO_OBJECT = new Function<GenericTreeNode, Object>()
-    {
-        public Object valueOf(GenericTreeNode genericTreeNode)
-        {
-            return genericTreeNode.object;
-        }
-    };
+    public static final Function<GenericTreeNode, Object> TO_OBJECT = genericTreeNode -> genericTreeNode.object;
 
     protected Object object;
     private GenericTreeNode parent;
-    private final MutableList<GenericTreeNode> children = FastList.newList();
+    private final MutableList<GenericTreeNode> children = Lists.mutable.empty();
 
     protected GenericTreeNode(Object object)
     {
@@ -69,12 +64,6 @@ public abstract class GenericTreeNode implements TreeNode<GenericTreeNode>, Comp
         child.parent = this;
     }
 
-//    @Override
-//    public GenericTreeNode getParent()
-//    {
-//        return this.parent;
-//    }
-
     @Override
     public MutableList<GenericTreeNode> getChildren()
     {
@@ -86,13 +75,7 @@ public abstract class GenericTreeNode implements TreeNode<GenericTreeNode>, Comp
     {
         return this.children.get(index);
     }
-//
-//    @Override
-//    public int getChildCount()
-//    {
-//        return this.children.size();
-//    }
-//
+
     @Override
     public boolean isLeaf()
     {
@@ -144,7 +127,7 @@ public abstract class GenericTreeNode implements TreeNode<GenericTreeNode>, Comp
 
         GenericTreeNode that = (GenericTreeNode) o;
 
-        if (this.object == null ? that.object != null : !this.object.equals(that.object))
+        if (!Objects.equals(this.object, that.object))
         {
             return false;
         }

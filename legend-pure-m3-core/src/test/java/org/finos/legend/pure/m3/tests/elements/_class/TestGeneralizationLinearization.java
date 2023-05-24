@@ -14,8 +14,6 @@
 
 package org.finos.legend.pure.m3.tests.elements._class;
 
-import java.util.regex.Pattern;
-
 import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
@@ -26,15 +24,19 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.regex.Pattern;
+
 public class TestGeneralizationLinearization extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("fromString.pure");
     }
 
@@ -124,7 +126,7 @@ public class TestGeneralizationLinearization extends AbstractPureTestWithCoreCom
     {
         try
         {
-            compileTestSource("fromString.pure",code);
+            compileTestSource("fromString.pure", code);
             Assert.fail("Expected compilation error from:\n" + code);
         }
         catch (RuntimeException e)
@@ -134,9 +136,10 @@ public class TestGeneralizationLinearization extends AbstractPureTestWithCoreCom
     }
 
     @Test
-    public void testGetTopMostNonTopTypeGeneralizationsWithOneOrphanType() {
+    public void testGetTopMostNonTopTypeGeneralizationsWithOneOrphanType()
+    {
         String pureSource = "Class A{}";
-        compileTestSource("fromString.pure",pureSource);
+        compileTestSource("fromString.pure", pureSource);
         CoreInstance classA = this.runtime.getCoreInstance("A");
         MutableSet<CoreInstance> leafTypes = Type.getTopMostNonTopTypeGeneralizations(classA, this.processorSupport);
         Assert.assertEquals(1, leafTypes.size());
@@ -144,7 +147,8 @@ public class TestGeneralizationLinearization extends AbstractPureTestWithCoreCom
     }
 
     @Test
-    public void testGetTopMostNonTopTypeGeneralizationsInComplexStructureWithOneSharedParent() {
+    public void testGetTopMostNonTopTypeGeneralizationsInComplexStructureWithOneSharedParent()
+    {
         //     F
         //   /   \
         //  D     E
@@ -159,7 +163,7 @@ public class TestGeneralizationLinearization extends AbstractPureTestWithCoreCom
                 "Class D extends F {}\n" +
                 "Class E extends F {}\n" +
                 "Class F {}";
-        compileTestSource("fromString.pure",pureSource);
+        compileTestSource("fromString.pure", pureSource);
         CoreInstance classA = this.runtime.getCoreInstance("A");
         MutableSet<CoreInstance> leafTypes = Type.getTopMostNonTopTypeGeneralizations(classA, this.processorSupport);
         Assert.assertEquals(1, leafTypes.size());
@@ -167,7 +171,8 @@ public class TestGeneralizationLinearization extends AbstractPureTestWithCoreCom
     }
 
     @Test
-    public void testGetTopMostNonTopTypeGeneralizationsInComplexStructureWithMultipleParents() {
+    public void testGetTopMostNonTopTypeGeneralizationsInComplexStructureWithMultipleParents()
+    {
         //  D     E
         //   \  /  |
         //    B    C
@@ -179,7 +184,7 @@ public class TestGeneralizationLinearization extends AbstractPureTestWithCoreCom
                 "Class C extends E {}\n" +
                 "Class D {}\n" +
                 "Class E {}";
-        compileTestSource("fromString.pure",pureSource);
+        compileTestSource("fromString.pure", pureSource);
         CoreInstance classA = this.runtime.getCoreInstance("A");
         MutableSet<CoreInstance> leafTypes = Type.getTopMostNonTopTypeGeneralizations(classA, this.processorSupport);
         Assert.assertEquals(2, leafTypes.size());

@@ -39,7 +39,9 @@ public class Unbinder
         Runnable messageRunnable;
         if (message == null)
         {
-            messageRunnable = () -> {};
+            messageRunnable = () ->
+            {
+            };
         }
         else
         {

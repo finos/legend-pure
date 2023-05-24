@@ -22,5 +22,6 @@ import org.finos.legend.pure.m4.exception.PureCompilationException;
 public interface MatchRunner<T extends CoreInstance>
 {
     void run(T instance, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException;
+
     String getClassName();
 }

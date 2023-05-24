@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m3.tests.elements.property;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
@@ -24,15 +24,18 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform {
+public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
+{
 
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("defaultValueSource.pure");
     }
 
@@ -72,7 +75,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform {
                 + "\n"
         );
 
-        CoreInstance classA = this.runtime.getCoreInstance("test::A");
+        CoreInstance classA = runtime.getCoreInstance("test::A");
 
         CoreInstance stringProperty = classA.getValueInValueForMetaPropertyToMany(M3Properties.properties, "stringProperty");
         CoreInstance classProperty = classA.getValueInValueForMetaPropertyToMany(M3Properties.properties, "classProperty");

@@ -80,14 +80,14 @@ class ClassLoaderURLFileNode extends ClassLoaderFileNode
                     {
                         return -1;
                     }
-                    JarEntry entry = ((JarURLConnection)connection).getJarEntry();
+                    JarEntry entry = ((JarURLConnection) connection).getJarEntry();
                     long size = entry.getSize();   //NOSONAR JARs are trusted
-                    return (size > 0) ? (int)size : -1;
+                    return (size > 0) ? (int) size : -1;
                 }
                 case "file":
                 {
                     Path path = Paths.get(this.url.toURI());
-                    return (int)Files.size(path);
+                    return (int) Files.size(path);
                 }
                 default:
                 {
@@ -95,7 +95,7 @@ class ClassLoaderURLFileNode extends ClassLoaderFileNode
                 }
             }
         }
-        catch (IOException|URISyntaxException e)
+        catch (IOException | URISyntaxException ignore)
         {
             return -1;
         }

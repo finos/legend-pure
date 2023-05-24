@@ -25,8 +25,8 @@ import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ExternalR
 import org.finos.legend.pure.m3.serialization.runtime.navigation.NavigationHandler;
 import org.finos.legend.pure.m3.statelistener.M3M4StateListener;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 public interface Parser extends CoreInstanceFactoriesRegistry
@@ -45,6 +45,7 @@ public interface Parser extends CoreInstanceFactoriesRegistry
     String getName();
 
     void parse(String string, String sourceName, boolean addLines, int offset, ModelRepository repository, MutableList<CoreInstance> coreInstancesResult, M3M4StateListener listener, Context context, int count, SourceState oldState) throws PureParserException;
+
     String parseMapping(String content, String id, String extendsId, String setSourceInfo, boolean root, String classPath, String classSourceInfo, String mappingPath, String sourceName, int offset, String importId, ModelRepository repository, Context context) throws PureParserException;
 
     /**
@@ -56,10 +57,15 @@ public interface Parser extends CoreInstanceFactoriesRegistry
     Parser newInstance(ParserLibrary library);
 
     RichIterable<MatchRunner> getProcessors();
+
     RichIterable<MatchRunner> getUnLoadWalkers();
+
     RichIterable<MatchRunner> getUnLoadUnbinders();
+
     RichIterable<MatchRunner> getValidators();
+
     RichIterable<NavigationHandler> getNavigationHandlers();
+
     RichIterable<ExternalReferenceSerializer> getExternalReferenceSerializers();
 
     /**

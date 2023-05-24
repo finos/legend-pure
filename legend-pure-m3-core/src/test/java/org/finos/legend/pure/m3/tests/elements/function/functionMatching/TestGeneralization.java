@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m3.tests.elements.function.functionMatching;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -24,7 +24,8 @@ import org.junit.Test;
 public class TestGeneralization extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
@@ -77,5 +78,4 @@ public class TestGeneralization extends AbstractPureTestWithCoreCompiledPlatform
                     PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE, 21, 4, e);
         }
     }
-
 }

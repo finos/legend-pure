@@ -22,15 +22,19 @@ public interface M3StateListener
     void startInit();
 
     void startParsingM3(String fileLocation);
+
     void finishedParsingM3(String fileLocation);
 
     void startProcessingIncludes();
+
     void finishedProcessingIncludes(SetIterable<? extends CoreInstance> coreImports);
 
     void startPostProcessingGraph();
+
     void finishedPostProcessingGraph();
 
     void startValidation();
+
     void finishedValidation();
 
     void finishedInit();

@@ -32,29 +32,29 @@ public class ReflectionTools
         }
     }
 
-    public static Class load(String str)
+    public static Class<?> load(String str)
     {
         try
         {
             ClassLoader classLoader = ReflectionTools.class.getClassLoader();
             return classLoader.loadClass(str);
         }
-        catch(Exception e)
+        catch (Exception ignore)
         {
             //e.printStackTrace();
         }
         return null;
     }
 
-    public static Field field(Class cl, String prop)
+    public static Field field(Class<?> cl, String prop)
     {
         try
         {
             Field[] fs = cl.getDeclaredFields();
             Field f = null;
-            for (Field of: fs)
+            for (Field of : fs)
             {
-                if(of.getName().equals(prop))
+                if (of.getName().equals(prop))
                 {
                     f = of;
                     break;
@@ -63,7 +63,7 @@ public class ReflectionTools
 
             if (f == null)
             {
-                throw new RuntimeException("Property '"+prop+"' not found in class "+cl.getName());
+                throw new RuntimeException("Property '" + prop + "' not found in class " + cl.getName());
             }
 
             f.setAccessible(true);
@@ -74,7 +74,7 @@ public class ReflectionTools
 
             return f;
         }
-        catch(Exception e)
+        catch (Exception ignore)
         {
             //e.printStackTrace();
         }
@@ -88,7 +88,7 @@ public class ReflectionTools
             Class<?> x = load(str);
             Objects.requireNonNull(field(x, prop)).set(null, null);
         }
-        catch(Exception e)
+        catch (Exception ignore)
         {
             //e.printStackTrace();
         }

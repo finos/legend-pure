@@ -23,112 +23,114 @@ import org.junit.Test;
 public class TestIdem extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("sourceId.pure");
     }
 
     @Test
     public void testClass() throws Exception
     {
-        int size = this.repository.serialize().length;
+        int size = repository.serialize().length;
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.createInMemorySource("sourceId.pure", "Class U{b:String[1];}");
-            this.runtime.compile();
-            this.runtime.delete("sourceId.pure");
-            this.runtime.compile();
-            Assert.assertEquals("Failed on iteration #" + i, size, this.repository.serialize().length);
+            runtime.createInMemorySource("sourceId.pure", "Class U{b:String[1];}");
+            runtime.compile();
+            runtime.delete("sourceId.pure");
+            runtime.compile();
+            Assert.assertEquals("Failed on iteration #" + i, size, repository.serialize().length);
         }
     }
 
     @Test
     public void testFunction() throws Exception
     {
-        int size = this.repository.serialize().length;
+        int size = repository.serialize().length;
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.createInMemorySource("sourceId.pure", "function go():Nil[0]{[]}");
-            this.runtime.compile();
-            this.runtime.delete("sourceId.pure");
-            this.runtime.compile();
-            Assert.assertEquals("Failed on iteration #" + i, size, this.repository.serialize().length);
+            runtime.createInMemorySource("sourceId.pure", "function go():Nil[0]{[]}");
+            runtime.compile();
+            runtime.delete("sourceId.pure");
+            runtime.compile();
+            Assert.assertEquals("Failed on iteration #" + i, size, repository.serialize().length);
         }
     }
 
     @Test
     public void testPropertyCollectUsage() throws Exception
     {
-        int size = this.repository.serialize().length;
+        int size = repository.serialize().length;
         for (int i = 0; i < 1; i++)
         {
-            this.runtime.createInMemorySource("sourceId.pure", "function go():Any[*]{ConcreteFunctionDefinition.all().name}");
-            this.runtime.compile();
-            this.runtime.delete("sourceId.pure");
-            this.runtime.compile();
-            Assert.assertEquals("Failed on iteration #" + i, size, this.repository.serialize().length);
+            runtime.createInMemorySource("sourceId.pure", "function go():Any[*]{ConcreteFunctionDefinition.all().name}");
+            runtime.compile();
+            runtime.delete("sourceId.pure");
+            runtime.compile();
+            Assert.assertEquals("Failed on iteration #" + i, size, repository.serialize().length);
         }
     }
 
     @Test
     public void testFunctionWithBody() throws Exception
     {
-        int size = this.repository.serialize().length;
+        int size = repository.serialize().length;
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.createInMemorySource("sourceId.pure", "function a():Integer[1]{1+1}");
-            this.runtime.compile();
-            this.runtime.delete("sourceId.pure");
-            this.runtime.compile();
-            Assert.assertEquals("Failed on iteration #" + i, size, this.repository.serialize().length);
+            runtime.createInMemorySource("sourceId.pure", "function a():Integer[1]{1+1}");
+            runtime.compile();
+            runtime.delete("sourceId.pure");
+            runtime.compile();
+            Assert.assertEquals("Failed on iteration #" + i, size, repository.serialize().length);
         }
     }
 
     @Test
     public void testProfile() throws Exception
     {
-        int size = this.repository.serialize().length;
+        int size = repository.serialize().length;
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.createInMemorySource("sourceId.pure", "Profile p {tags:[a,b];}");
-            this.runtime.compile();
-            this.runtime.delete("sourceId.pure");
-            this.runtime.compile();
-            Assert.assertEquals("Failed on iteration #" + i, size, this.repository.serialize().length);
+            runtime.createInMemorySource("sourceId.pure", "Profile p {tags:[a,b];}");
+            runtime.compile();
+            runtime.delete("sourceId.pure");
+            runtime.compile();
+            Assert.assertEquals("Failed on iteration #" + i, size, repository.serialize().length);
         }
     }
 
     @Test
     public void testAssociation() throws Exception
     {
-        int size = this.repository.serialize().length;
+        int size = repository.serialize().length;
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.createInMemorySource("sourceId.pure", "Class A{}\n" +
-                                                     "Class B{}\n" +
-                                                     "Association a {a:A[1];b:B[1];}");
-            this.runtime.compile();
-            this.runtime.delete("sourceId.pure");
-            this.runtime.compile();
-            Assert.assertEquals("Failed on iteration #" + i, size, this.repository.serialize().length);
+            runtime.createInMemorySource("sourceId.pure", "Class A{}\n" +
+                    "Class B{}\n" +
+                    "Association a {a:A[1];b:B[1];}");
+            runtime.compile();
+            runtime.delete("sourceId.pure");
+            runtime.compile();
+            Assert.assertEquals("Failed on iteration #" + i, size, repository.serialize().length);
         }
     }
 
     @Test
     public void testEnumeration() throws Exception
     {
-        int size = this.repository.serialize().length;
+        int size = repository.serialize().length;
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.createInMemorySource("sourceId.pure", "Enum e {A}");
-            this.runtime.compile();
-            this.runtime.delete("sourceId.pure");
-            this.runtime.compile();
-            Assert.assertEquals("Failed on iteration #" + i, size, this.repository.serialize().length);
+            runtime.createInMemorySource("sourceId.pure", "Enum e {A}");
+            runtime.compile();
+            runtime.delete("sourceId.pure");
+            runtime.compile();
+            Assert.assertEquals("Failed on iteration #" + i, size, repository.serialize().length);
         }
     }
 }

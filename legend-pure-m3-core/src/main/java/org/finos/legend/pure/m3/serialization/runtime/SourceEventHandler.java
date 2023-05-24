@@ -17,6 +17,8 @@ package org.finos.legend.pure.m3.serialization.runtime;
 public interface SourceEventHandler
 {
     void deleteSource(Source source);
+
     void updateSource(Source source, String oldContent);
+
     void moveSource(Source source, Source destination);
 }

@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m3.tests.elements.function.inference;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
@@ -25,7 +25,8 @@ import org.junit.Test;
 public class TestReturnInference extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
 
         //set observer
@@ -33,7 +34,8 @@ public class TestReturnInference extends AbstractPureTestWithCoreCompiledPlatfor
     }
 
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("fromString.pure");
     }
 

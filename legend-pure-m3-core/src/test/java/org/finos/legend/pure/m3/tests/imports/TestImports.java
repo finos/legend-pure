@@ -32,12 +32,14 @@ import java.util.Collection;
 public class TestImports extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("/platform/pure/graph.pure");
     }
 
@@ -45,10 +47,10 @@ public class TestImports extends AbstractPureTestWithCoreCompiledPlatform
     public void testGetImportGroupsForSource()
     {
         String sourceId = "/platform/pure/anonymousCollections.pure";
-        Source source = this.runtime.getSourceById(sourceId);
+        Source source = runtime.getSourceById(sourceId);
         Assert.assertNotNull("Could not find source: " + sourceId, source);
 
-        ListIterable<? extends CoreInstance> selectedImportGroups = Imports.getImportGroupsForSource(sourceId, this.processorSupport);
+        ListIterable<? extends CoreInstance> selectedImportGroups = Imports.getImportGroupsForSource(sourceId, processorSupport);
         Verify.assertSize(1, selectedImportGroups);
         Assert.assertEquals(Source.importForSourceName(sourceId, 1), selectedImportGroups.get(0).getName());
     }
@@ -57,7 +59,7 @@ public class TestImports extends AbstractPureTestWithCoreCompiledPlatform
     public void testIsImportGroupForSource()
     {
         String sourceId = "/platform/pure/anonymousCollections.pure";
-        Source source = this.runtime.getSourceById(sourceId);
+        Source source = runtime.getSourceById(sourceId);
         Assert.assertNotNull("Could not find source: " + sourceId, source);
 
         Predicate2<CoreInstance, String> isImportGroupForSourcePredicate = new Predicate2<CoreInstance, String>()
@@ -69,7 +71,7 @@ public class TestImports extends AbstractPureTestWithCoreCompiledPlatform
             }
         };
 
-        CoreInstance imports = this.processorSupport.package_getByUserPath("system::imports");
+        CoreInstance imports = processorSupport.package_getByUserPath("system::imports");
         ListIterable<? extends CoreInstance> importGroups = imports.getValueForMetaPropertyToMany(M3Properties.children);
 
         ListIterable<? extends CoreInstance> selectedImportGroups = importGroups.selectWith(isImportGroupForSourcePredicate, sourceId);
@@ -78,18 +80,18 @@ public class TestImports extends AbstractPureTestWithCoreCompiledPlatform
 
         ListIterable<? extends CoreInstance> rejectedImportGroups = importGroups.rejectWith(isImportGroupForSourcePredicate, sourceId);
         Verify.assertNotEmpty(rejectedImportGroups);
-        Verify.assertContains("coreImport", (Collection<String>)rejectedImportGroups.collect(CoreInstance.GET_NAME));
+        Verify.assertContains("coreImport", (Collection<String>) rejectedImportGroups.collect(CoreInstance::getName));
     }
 
     @Test
     public void testGetImportGroupBaseName()
     {
         String sourceId = "/platform/pure/anonymousCollections.pure";
-        Source source = this.runtime.getSourceById(sourceId);
+        Source source = runtime.getSourceById(sourceId);
         Assert.assertNotNull("Could not find source: " + sourceId, source);
 
         String importGroupName = Source.importForSourceName(sourceId, 1);
-        CoreInstance imports = this.processorSupport.package_getByUserPath("system::imports");
+        CoreInstance imports = processorSupport.package_getByUserPath("system::imports");
         CoreInstance importGroup = imports.getValueInValueForMetaPropertyToMany(M3Properties.children, importGroupName);
         Assert.assertNotNull("Could not find import group: " + importGroupName, importGroup);
 

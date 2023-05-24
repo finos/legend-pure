@@ -16,13 +16,17 @@ package org.finos.legend.pure.m3.serialization.runtime;
 
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 
 @Ignore
 public class TestUnbindingScope extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
@@ -42,10 +46,10 @@ public class TestUnbindingScope extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    []\n" +
                         "}\n");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn():A[*]");
+        CoreInstance testFn = runtime.getFunction("test::testFn():A[*]");
         Assert.assertTrue(testFn.hasBeenValidated());
-        this.runtime.delete("/test/source1.pure");
-        this.runtime.getIncrementalCompiler().unload();
+        runtime.delete("/test/source1.pure");
+        runtime.getIncrementalCompiler().unload();
         Assert.assertFalse(testFn.hasBeenProcessed());
     }
 
@@ -63,10 +67,10 @@ public class TestUnbindingScope extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    []\n" +
                         "}\n");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn():List[*]");
+        CoreInstance testFn = runtime.getFunction("test::testFn():List[*]");
         Assert.assertTrue(testFn.hasBeenValidated());
-        this.runtime.delete("/test/source1.pure");
-        this.runtime.getIncrementalCompiler().unload();
+        runtime.delete("/test/source1.pure");
+        runtime.getIncrementalCompiler().unload();
         Assert.assertFalse(testFn.hasBeenProcessed());
     }
 
@@ -84,10 +88,10 @@ public class TestUnbindingScope extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    []\n" +
                         "}\n");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn(A[1]):String[*]");
+        CoreInstance testFn = runtime.getFunction("test::testFn(A[1]):String[*]");
         Assert.assertTrue(testFn.hasBeenValidated());
-        this.runtime.delete("/test/source1.pure");
-        this.runtime.getIncrementalCompiler().unload();
+        runtime.delete("/test/source1.pure");
+        runtime.getIncrementalCompiler().unload();
         Assert.assertFalse(testFn.hasBeenProcessed());
     }
 
@@ -105,10 +109,10 @@ public class TestUnbindingScope extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    []\n" +
                         "}\n");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn(List[1]):String[*]");
+        CoreInstance testFn = runtime.getFunction("test::testFn(List[1]):String[*]");
         Assert.assertTrue(testFn.hasBeenValidated());
-        this.runtime.delete("/test/source1.pure");
-        this.runtime.getIncrementalCompiler().unload();
+        runtime.delete("/test/source1.pure");
+        runtime.getIncrementalCompiler().unload();
         Assert.assertFalse(testFn.hasBeenProcessed());
     }
 
@@ -126,10 +130,10 @@ public class TestUnbindingScope extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    ^A(name=$name)\n" +
                         "}\n");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn(String[1]):Any[1]");
+        CoreInstance testFn = runtime.getFunction("test::testFn(String[1]):Any[1]");
         Assert.assertTrue(testFn.hasBeenValidated());
-        this.runtime.delete("/test/source1.pure");
-        this.runtime.getIncrementalCompiler().unload();
+        runtime.delete("/test/source1.pure");
+        runtime.getIncrementalCompiler().unload();
         Assert.assertFalse(testFn.hasBeenProcessed());
     }
 
@@ -147,10 +151,10 @@ public class TestUnbindingScope extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    ^List<A>()\n" +
                         "}\n");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn(String[1]):Any[1]");
+        CoreInstance testFn = runtime.getFunction("test::testFn(String[1]):Any[1]");
         Assert.assertTrue(testFn.hasBeenValidated());
-        this.runtime.delete("/test/source1.pure");
-        this.runtime.getIncrementalCompiler().unload();
+        runtime.delete("/test/source1.pure");
+        runtime.getIncrementalCompiler().unload();
         Assert.assertFalse(testFn.hasBeenProcessed());
     }
 
@@ -168,10 +172,10 @@ public class TestUnbindingScope extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    $a->cast(@A).name\n" +
                         "}\n");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn(Any[1]):String[1]");
+        CoreInstance testFn = runtime.getFunction("test::testFn(Any[1]):String[1]");
         Assert.assertTrue(testFn.hasBeenValidated());
-        this.runtime.delete("/test/source1.pure");
-        this.runtime.getIncrementalCompiler().unload();
+        runtime.delete("/test/source1.pure");
+        runtime.getIncrementalCompiler().unload();
         Assert.assertFalse(testFn.hasBeenProcessed());
     }
 
@@ -189,10 +193,10 @@ public class TestUnbindingScope extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    $a->cast(@List<A>).values->map(v | $v.name)\n" +
                         "}\n");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn(Any[1]):String[*]");
+        CoreInstance testFn = runtime.getFunction("test::testFn(Any[1]):String[*]");
         Assert.assertTrue(testFn.hasBeenValidated());
-        this.runtime.delete("/test/source1.pure");
-        this.runtime.getIncrementalCompiler().unload();
+        runtime.delete("/test/source1.pure");
+        runtime.getIncrementalCompiler().unload();
         Assert.assertFalse(testFn.hasBeenProcessed());
     }
 
@@ -220,10 +224,10 @@ public class TestUnbindingScope extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    $name->newA()->getAName()\n" +
                         "}\n");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn(String[1]):String[1]");
+        CoreInstance testFn = runtime.getFunction("test::testFn(String[1]):String[1]");
         Assert.assertTrue(testFn.hasBeenValidated());
-        this.runtime.delete("/test/source1.pure");
-        this.runtime.getIncrementalCompiler().unload();
+        runtime.delete("/test/source1.pure");
+        runtime.getIncrementalCompiler().unload();
         Assert.assertFalse(testFn.hasBeenProcessed());
     }
 
@@ -246,10 +250,10 @@ public class TestUnbindingScope extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    $name->newA()\n" +
                         "}\n");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn(String[1]):Any[1]");
+        CoreInstance testFn = runtime.getFunction("test::testFn(String[1]):Any[1]");
         Assert.assertTrue(testFn.hasBeenValidated());
-        this.runtime.delete("/test/source1.pure");
-        this.runtime.getIncrementalCompiler().unload();
+        runtime.delete("/test/source1.pure");
+        runtime.getIncrementalCompiler().unload();
         Assert.assertFalse(testFn.hasBeenProcessed());
     }
 
@@ -267,10 +271,10 @@ public class TestUnbindingScope extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    $names->map(name | ^A(name=$name))\n" +
                         "}\n");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn(String[*]):Any[*]");
+        CoreInstance testFn = runtime.getFunction("test::testFn(String[*]):Any[*]");
         Assert.assertTrue(testFn.hasBeenValidated());
-        this.runtime.delete("/test/source1.pure");
-        this.runtime.getIncrementalCompiler().unload();
+        runtime.delete("/test/source1.pure");
+        runtime.getIncrementalCompiler().unload();
         Assert.assertFalse(testFn.hasBeenProcessed());
     }
 
@@ -288,10 +292,10 @@ public class TestUnbindingScope extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    $things->map(thing | $thing->cast(@A).name)\n" +
                         "}\n");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn(Any[*]):String[*]");
+        CoreInstance testFn = runtime.getFunction("test::testFn(Any[*]):String[*]");
         Assert.assertTrue(testFn.hasBeenValidated());
-        this.runtime.delete("/test/source1.pure");
-        this.runtime.getIncrementalCompiler().unload();
+        runtime.delete("/test/source1.pure");
+        runtime.getIncrementalCompiler().unload();
         Assert.assertFalse(testFn.hasBeenProcessed());
     }
 
@@ -319,10 +323,10 @@ public class TestUnbindingScope extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    $names->map(name | $name->newA()->getAName())\n" +
                         "}\n");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn(String[*]):String[*]");
+        CoreInstance testFn = runtime.getFunction("test::testFn(String[*]):String[*]");
         Assert.assertTrue(testFn.hasBeenValidated());
-        this.runtime.delete("/test/source1.pure");
-        this.runtime.getIncrementalCompiler().unload();
+        runtime.delete("/test/source1.pure");
+        runtime.getIncrementalCompiler().unload();
         Assert.assertFalse(testFn.hasBeenProcessed());
     }
 
@@ -345,10 +349,10 @@ public class TestUnbindingScope extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    $names->map(name | $name->newA())\n" +
                         "}\n");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn(String[*]):Any[*]");
+        CoreInstance testFn = runtime.getFunction("test::testFn(String[*]):Any[*]");
         Assert.assertTrue(testFn.hasBeenValidated());
-        this.runtime.delete("/test/source1.pure");
-        this.runtime.getIncrementalCompiler().unload();
+        runtime.delete("/test/source1.pure");
+        runtime.getIncrementalCompiler().unload();
         Assert.assertFalse(testFn.hasBeenProcessed());
     }
 
@@ -368,10 +372,10 @@ public class TestUnbindingScope extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    $string\n" +
                         "}\n");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn(String[1]):String[1]");
+        CoreInstance testFn = runtime.getFunction("test::testFn(String[1]):String[1]");
         Assert.assertTrue(testFn.hasBeenValidated());
-        this.runtime.delete("/test/source1.pure");
-        this.runtime.getIncrementalCompiler().unload();
+        runtime.delete("/test/source1.pure");
+        runtime.getIncrementalCompiler().unload();
         Assert.assertTrue(testFn.hasBeenValidated());
     }
 
@@ -394,12 +398,12 @@ public class TestUnbindingScope extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    $string->getName()\n" +
                         "}\n");
-        CoreInstance getName = this.runtime.getFunction("test::getName(String[1]):String[1]");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn(String[1]):String[1]");
+        CoreInstance getName = runtime.getFunction("test::getName(String[1]):String[1]");
+        CoreInstance testFn = runtime.getFunction("test::testFn(String[1]):String[1]");
         Assert.assertTrue(getName.hasBeenValidated());
         Assert.assertTrue(testFn.hasBeenValidated());
-        this.runtime.delete("/test/source1.pure");
-        this.runtime.getIncrementalCompiler().unload();
+        runtime.delete("/test/source1.pure");
+        runtime.getIncrementalCompiler().unload();
         Assert.assertFalse(getName.hasBeenProcessed());
         Assert.assertTrue(testFn.hasBeenValidated());
     }
@@ -420,10 +424,10 @@ public class TestUnbindingScope extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    $string->split('\\t')->testJoinStrings()\n" +
                         "}\n");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn(String[1]):String[1]");
+        CoreInstance testFn = runtime.getFunction("test::testFn(String[1]):String[1]");
         Assert.assertTrue(testFn.hasBeenValidated());
-        this.runtime.delete("/test/source1.pure");
-        this.runtime.getIncrementalCompiler().unload();
+        runtime.delete("/test/source1.pure");
+        runtime.getIncrementalCompiler().unload();
         Assert.assertFalse(testFn.hasBeenProcessed());
     }
 
@@ -441,10 +445,10 @@ public class TestUnbindingScope extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    $strings->map(string | $string->split('\\t')->testJoinStrings())\n" +
                         "}\n");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn(String[*]):String[*]");
+        CoreInstance testFn = runtime.getFunction("test::testFn(String[*]):String[*]");
         Assert.assertTrue(testFn.hasBeenValidated());
-        this.runtime.delete("/test/source1.pure");
-        this.runtime.getIncrementalCompiler().unload();
+        runtime.delete("/test/source1.pure");
+        runtime.getIncrementalCompiler().unload();
         Assert.assertFalse(testFn.hasBeenProcessed());
     }
 
@@ -464,10 +468,10 @@ public class TestUnbindingScope extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    $string->replace('a', 'b')\n" +
                         "}\n");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn(String[1]):String[1]");
+        CoreInstance testFn = runtime.getFunction("test::testFn(String[1]):String[1]");
         Assert.assertTrue(testFn.hasBeenValidated());
-        this.runtime.delete("/test/source1.pure");
-        this.runtime.getIncrementalCompiler().unload();
+        runtime.delete("/test/source1.pure");
+        runtime.getIncrementalCompiler().unload();
         Assert.assertTrue(testFn.hasBeenValidated());
     }
 
@@ -490,12 +494,12 @@ public class TestUnbindingScope extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    $string->split('\\n')->replaceTabsWithSpaces()\n" +
                         "}\n");
-        CoreInstance replaceTabsWithSpaces = this.runtime.getFunction("test::replaceTabsWithSpaces(String[*]):String[*]");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn(String[1]):String[*]");
+        CoreInstance replaceTabsWithSpaces = runtime.getFunction("test::replaceTabsWithSpaces(String[*]):String[*]");
+        CoreInstance testFn = runtime.getFunction("test::testFn(String[1]):String[*]");
         Assert.assertTrue(replaceTabsWithSpaces.hasBeenValidated());
         Assert.assertTrue(testFn.hasBeenValidated());
-        this.runtime.delete("/test/source1.pure");
-        this.runtime.getIncrementalCompiler().unload();
+        runtime.delete("/test/source1.pure");
+        runtime.getIncrementalCompiler().unload();
         Assert.assertFalse(replaceTabsWithSpaces.hasBeenProcessed());
         Assert.assertTrue(testFn.hasBeenValidated());
     }

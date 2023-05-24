@@ -28,18 +28,18 @@ public abstract class AbstractTestMutateAdd extends AbstractPureTestWithCoreComp
         try
         {
             this.compileTestSource("Class SimpleClass{att:String[*];}\n"
-                            +"function test():Any[*]\n"
-                            +"{\n"
-                            +"  let sc = ^SimpleClass();\n"
-                            +"  $sc->mutateAdd('nonExistingAttribute', [42, 1]);"
-                            +"}");
+                    + "function test():Any[*]\n"
+                    + "{\n"
+                    + "  let sc = ^SimpleClass();\n"
+                    + "  $sc->mutateAdd('nonExistingAttribute', [42, 1]);"
+                    + "}");
             this.execute("test():Any[*]");
             Assert.fail("Expected cast error");
         }
         catch (Exception e)
         {
             PureException pureException = ThrowableTools.findTopThrowableOfClass(e, PureException.class);
-            this.assertPureException("Cannot find property 'nonExistingAttribute' on SimpleClass",pureException);
+            this.assertPureException("Cannot find property 'nonExistingAttribute' on SimpleClass", pureException);
         }
     }
 

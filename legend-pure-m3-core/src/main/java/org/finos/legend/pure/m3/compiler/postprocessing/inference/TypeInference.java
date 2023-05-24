@@ -121,7 +121,7 @@ public class TypeInference
         }
 
         ListIterable<? extends VariableExpression> parameters = ListHelper.wrapListIterable(lambdaFunctionType._parameters());
-        for (int j = 0 ; j < parameters.size(); j++)
+        for (int j = 0; j < parameters.size(); j++)
         {
             VariableExpression param = parameters.get(j);
             if (param._genericType() == null)

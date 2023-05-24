@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr;
 
-
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 

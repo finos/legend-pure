@@ -24,12 +24,14 @@ import org.junit.Test;
 public class TestSubType extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("src.pure");
     }
 
@@ -40,15 +42,15 @@ public class TestSubType extends AbstractPureTestWithCoreCompiledPlatform
         {
             compileTestSource("src.pure",
                     "Class A{}\n" +
-                    "Class B extends A{}\n" +
-                    "Class C{}\n" +
-                    "native function meta::pure::functions::lang::subType<T|m>(source:Any[m], object:T[1]):T[m];\n" +
-                    "function testFunc():C[1]\n" +
-                    "{\n" +
-                    "   let a = ^B()->subType(@C);" +
-                    "}");
+                            "Class B extends A{}\n" +
+                            "Class C{}\n" +
+                            "native function meta::pure::functions::lang::subType<T|m>(source:Any[m], object:T[1]):T[m];\n" +
+                            "function testFunc():C[1]\n" +
+                            "{\n" +
+                            "   let a = ^B()->subType(@C);" +
+                            "}");
 
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail("Expected compilation exception");
         }
         catch (Exception e)
@@ -64,15 +66,15 @@ public class TestSubType extends AbstractPureTestWithCoreCompiledPlatform
         {
             compileTestSource("src.pure",
                     "Class A{}\n" +
-                    "Class B extends A{}\n" +
-                    "Class C{}\n" +
-                    "native function meta::pure::functions::lang::subType<T|m>(source:Any[m], object:T[1]):T[m];\n" +
-                    "function testFunc():A[1]\n" +
-                    "{\n" +
-                    "   let a = ^B()->subType(@A);" +
-                    "}");
+                            "Class B extends A{}\n" +
+                            "Class C{}\n" +
+                            "native function meta::pure::functions::lang::subType<T|m>(source:Any[m], object:T[1]):T[m];\n" +
+                            "function testFunc():A[1]\n" +
+                            "{\n" +
+                            "   let a = ^B()->subType(@A);" +
+                            "}");
 
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail("Expected compilation exception");
         }
         catch (Exception e)
@@ -86,14 +88,14 @@ public class TestSubType extends AbstractPureTestWithCoreCompiledPlatform
     {
         compileTestSource("src.pure",
                 "Class A{}\n" +
-                "Class B extends A{}\n" +
-                "Class C{}\n" +
-                "native function meta::pure::functions::lang::subType<T|m>(source:Any[m], object:T[1]):T[m];\n" +
-                "function testFunc():A[1]\n" +
-                "{\n" +
-                "   let a = ^A()->subType(@B);" +
-                "}");
+                        "Class B extends A{}\n" +
+                        "Class C{}\n" +
+                        "native function meta::pure::functions::lang::subType<T|m>(source:Any[m], object:T[1]):T[m];\n" +
+                        "function testFunc():A[1]\n" +
+                        "{\n" +
+                        "   let a = ^A()->subType(@B);" +
+                        "}");
 
-        this.runtime.compile();
+        runtime.compile();
     }
 }

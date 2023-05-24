@@ -16,6 +16,7 @@ package org.finos.legend.pure.m3;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.multimap.list.ListMultimap;
 import org.eclipse.collections.api.multimap.list.MutableListMultimap;
 import org.eclipse.collections.api.set.MutableSet;
@@ -24,28 +25,20 @@ import org.eclipse.collections.api.set.primitive.IntSet;
 import org.eclipse.collections.api.set.primitive.MutableIntSet;
 import org.eclipse.collections.api.tuple.primitive.IntIntPair;
 import org.eclipse.collections.impl.factory.Multimaps;
-import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.factory.primitive.IntSets;
 import org.eclipse.collections.impl.tuple.primitive.PrimitiveTuples;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m3.serialization.runtime.SourceRegistry;
-import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 
 import java.util.regex.Pattern;
 
 public class SourceMutation
 {
-    public static final Predicate<CoreInstance> IS_MARKED_FOR_DELETION = new Predicate<CoreInstance>()
-    {
-        @Override
-        public boolean accept(CoreInstance instance)
-        {
-            return isMarkedForDeletion(instance);
-        }
-    };
+    public static final Predicate<CoreInstance> IS_MARKED_FOR_DELETION = SourceMutation::isMarkedForDeletion;
 
     private static final CompileState MARKED_FOR_DELETION = CompileState.COMPILE_EVENT_EXTRA_STATE_2;
     private static final Pattern LINE_SPLITTER = Pattern.compile("^", Pattern.MULTILINE);
@@ -102,10 +95,10 @@ public class SourceMutation
                 StringBuilder buffer = new StringBuilder(file.length());
                 for (int i = 0; i < lines.length; i++)
                 {
-                        if (!set.contains(i+1))
-                        {
-                            buffer.append(lines[i]);
-                        }
+                    if (!set.contains(i + 1))
+                    {
+                        buffer.append(lines[i]);
+                    }
                 }
                 pureRuntime.modify(sourceId, buffer.toString());
             }
