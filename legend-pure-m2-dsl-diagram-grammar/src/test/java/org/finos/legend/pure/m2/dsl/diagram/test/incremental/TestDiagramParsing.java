@@ -14,7 +14,8 @@
 
 package org.finos.legend.pure.m2.dsl.diagram.test.incremental;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.block.predicate.Predicate;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.diagram.AssociationView;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.diagram.TypeView;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.ReferenceUsage;
@@ -24,11 +25,10 @@ import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
-import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.predicate.Predicate;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -39,7 +39,8 @@ import java.lang.reflect.Field;
 public class TestDiagramParsing extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime();
     }
 
@@ -52,9 +53,9 @@ public class TestDiagramParsing extends AbstractPureTestWithCoreCompiled
 
     private Parser getRuntimeDiagramParser() throws NoSuchFieldException, IllegalAccessException
     {
-        Field field = this.runtime.getSourceRegistry().getClass().getDeclaredField("parserLibrary");
+        Field field = runtime.getSourceRegistry().getClass().getDeclaredField("parserLibrary");
         field.setAccessible(true);
-        ParserLibrary parserLibrary = (ParserLibrary)field.get(this.runtime.getSourceRegistry());
+        ParserLibrary parserLibrary = (ParserLibrary) field.get(runtime.getSourceRegistry());
         Parser parser = parserLibrary.getParser("Diagram");
 
         return parser;
@@ -495,20 +496,20 @@ public class TestDiagramParsing extends AbstractPureTestWithCoreCompiled
     {
         compileTestSource("###Diagram\n" +
                 "Diagram test::pure::TestDiagram {}\n");
-        CoreInstance diagram = this.runtime.getCoreInstance("test::pure::TestDiagram");
+        CoreInstance diagram = runtime.getCoreInstance("test::pure::TestDiagram");
         Assert.assertNotNull(diagram);
 
-        CoreInstance geometry = Instance.getValueForMetaPropertyToOneResolved(diagram, "rectangleGeometry", this.processorSupport);
+        CoreInstance geometry = Instance.getValueForMetaPropertyToOneResolved(diagram, "rectangleGeometry", processorSupport);
         Assert.assertNotNull(diagram);
 
-        CoreInstance width = Instance.getValueForMetaPropertyToOneResolved(geometry, "width", this.processorSupport);
+        CoreInstance width = Instance.getValueForMetaPropertyToOneResolved(geometry, "width", processorSupport);
         Assert.assertNotNull(width);
-        Assert.assertTrue(Instance.instanceOf(width, "Float", this.processorSupport));
+        Assert.assertTrue(Instance.instanceOf(width, "Float", processorSupport));
         Assert.assertEquals("0.0", width.getName());
 
-        CoreInstance height = Instance.getValueForMetaPropertyToOneResolved(geometry, "height", this.processorSupport);
+        CoreInstance height = Instance.getValueForMetaPropertyToOneResolved(geometry, "height", processorSupport);
         Assert.assertNotNull(height);
-        Assert.assertTrue(Instance.instanceOf(height, "Float", this.processorSupport));
+        Assert.assertTrue(Instance.instanceOf(height, "Float", processorSupport));
         Assert.assertEquals("0.0", height.getName());
     }
 
@@ -516,42 +517,42 @@ public class TestDiagramParsing extends AbstractPureTestWithCoreCompiled
     public void testPropertyViewWithPropertyNamedPosition()
     {
         compileTestSource("testModel.pure",
-                          "Class test::pure::TestClass1\n" +
-                          "{\n" +
-                          "    position:test::pure::TestClass2[1];\n" +
-                          "}\n" +
-                          "\n" +
-                          "Class test::pure::TestClass2\n" +
-                          "{\n" +
-                          "}\n");
+                "Class test::pure::TestClass1\n" +
+                        "{\n" +
+                        "    position:test::pure::TestClass2[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class test::pure::TestClass2\n" +
+                        "{\n" +
+                        "}\n");
         compileTestSource("testDiagram.pure",
-                          "###Diagram\n" +
-                          "Diagram test::pure::TestDiagram(width=10.0, height=10.0)\n" +
-                          "{\n" +
-                          "    TypeView TestClass1_1(type=test::pure::TestClass1, stereotypesVisible=true, attributesVisible=true,\n" +
-                          "                          attributeStereotypesVisible=true, attributeTypesVisible=true,\n" +
-                          "                          color=#FFFFCC, lineWidth=1.0,\n" +
-                          "                          position=(874.0, 199.46875), width=353.0, height=57.1875)\n" +
-                          "    TypeView TestClass2_2(type=test::pure::TestClass2, stereotypesVisible=true, attributesVisible=true,\n" +
-                          "                          attributeStereotypesVisible=true, attributeTypesVisible=true,\n" +
-                          "                          color=#FFFFCC, lineWidth=1.0,\n" +
-                          "                          position=(75.0, 97.1875), width=113.0, height=57.1875)\n" +
-                          "    PropertyView TestClass1_position_1(property=test::pure::TestClass1.position, stereotypesVisible=true, nameVisible=false,\n" +
-                          "                                       color=#000000, lineWidth=1.0,\n" +
-                          "                                       lineStyle=SIMPLE, points=[(132.5, 77.0), (155.2, 77.0)],\n" +
-                          "                                       label='Employment',\n" +
-                          "                                       source=TestClass1_1,\n" +
-                          "                                       target=TestClass2_2,\n" +
-                          "                                       propertyPosition=(132.5, 76.2),\n" +
-                          "                                       multiplicityPosition=(132.5, 80.0))\n" +
-                          "}\n");
-        CoreInstance testClass1 = this.runtime.getCoreInstance("test::pure::TestClass1");
-        CoreInstance positionProp = this.processorSupport.class_findPropertyUsingGeneralization(testClass1, "position");
+                "###Diagram\n" +
+                        "Diagram test::pure::TestDiagram(width=10.0, height=10.0)\n" +
+                        "{\n" +
+                        "    TypeView TestClass1_1(type=test::pure::TestClass1, stereotypesVisible=true, attributesVisible=true,\n" +
+                        "                          attributeStereotypesVisible=true, attributeTypesVisible=true,\n" +
+                        "                          color=#FFFFCC, lineWidth=1.0,\n" +
+                        "                          position=(874.0, 199.46875), width=353.0, height=57.1875)\n" +
+                        "    TypeView TestClass2_2(type=test::pure::TestClass2, stereotypesVisible=true, attributesVisible=true,\n" +
+                        "                          attributeStereotypesVisible=true, attributeTypesVisible=true,\n" +
+                        "                          color=#FFFFCC, lineWidth=1.0,\n" +
+                        "                          position=(75.0, 97.1875), width=113.0, height=57.1875)\n" +
+                        "    PropertyView TestClass1_position_1(property=test::pure::TestClass1.position, stereotypesVisible=true, nameVisible=false,\n" +
+                        "                                       color=#000000, lineWidth=1.0,\n" +
+                        "                                       lineStyle=SIMPLE, points=[(132.5, 77.0), (155.2, 77.0)],\n" +
+                        "                                       label='Employment',\n" +
+                        "                                       source=TestClass1_1,\n" +
+                        "                                       target=TestClass2_2,\n" +
+                        "                                       propertyPosition=(132.5, 76.2),\n" +
+                        "                                       multiplicityPosition=(132.5, 80.0))\n" +
+                        "}\n");
+        CoreInstance testClass1 = runtime.getCoreInstance("test::pure::TestClass1");
+        CoreInstance positionProp = processorSupport.class_findPropertyUsingGeneralization(testClass1, "position");
         Assert.assertNotNull(positionProp);
 
-        CoreInstance diagram = this.runtime.getCoreInstance("test::pure::TestDiagram");
-        CoreInstance propView = Instance.getValueForMetaPropertyToOneResolved(diagram, M3Properties.propertyViews, this.processorSupport);
-        CoreInstance viewProp = Instance.getValueForMetaPropertyToOneResolved(propView, M3Properties.property, this.processorSupport);
+        CoreInstance diagram = runtime.getCoreInstance("test::pure::TestDiagram");
+        CoreInstance propView = Instance.getValueForMetaPropertyToOneResolved(diagram, M3Properties.propertyViews, processorSupport);
+        CoreInstance viewProp = Instance.getValueForMetaPropertyToOneResolved(propView, M3Properties.property, processorSupport);
         Assert.assertSame(positionProp, viewProp);
     }
 
@@ -559,46 +560,46 @@ public class TestDiagramParsing extends AbstractPureTestWithCoreCompiled
     public void testDiagramWithVariousWhiteSpace()
     {
         compileTestSource("testModel.pure",
-                          "Class test::pure::TestClass1\n" +
-                          "{\n" +
-                          "    position:test::pure::TestClass2[1];\n" +
-                          "}\n" +
-                          "\n" +
-                          "Class test::pure::TestClass2\n" +
-                          "{\n" +
-                          "}\n");
+                "Class test::pure::TestClass1\n" +
+                        "{\n" +
+                        "    position:test::pure::TestClass2[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class test::pure::TestClass2\n" +
+                        "{\n" +
+                        "}\n");
         compileTestSource("testDiagram.pure",
-                          "###Diagram\n" +
-                          "Diagram test::pure::TestDiagram(width=10.0, height=10.0)\n" +
-                          "{\n" +
-                          "    TypeView TestClass1_1(type=test::pure::TestClass1, stereotypesVisible=\n\r" +
-                          "                                                     true, attributesVisible=true,\n" +
-                          "                          attributeStereotypesVisible     =    true, attributeTypesVisible=true,\n" +
-                          "                                    color=#FFFFCC, lineWidth=\r" +
-                          "                                                            1.0,\n" +
-                          "                                    position \n\r" +
-                          "                                       =(874.0, 199.46875), width   \r\n" +
-                          "                                         =353.0, height=57.1875)\n" +
-                          "    TypeView TestClass2_2(type=test::pure::TestClass2, stereotypesVisible=true, attributesVisible=true,\n" +
-                          "                                    attributeStereotypesVisible=true, attributeTypesVisible=true,\n" +
-                          "                                    color=#FFFFCC, lineWidth=1.0,\n" +
-                          "                                    position=(75.0, 97.1875), width=113.0, height=57.1875)\n" +
-                          "    PropertyView TestClass1_position_1(property=test::pure::TestClass1.position, stereotypesVisible=true, nameVisible=false,\n" +
-                          "                                                 color=#000000, lineWidth=1.0,\n" +
-                          "                                                 lineStyle=SIMPLE, points=[(132.5, 77.0), (155.2, 77.0)],\n" +
-                          "                                                 label='Employment',\n" +
-                          "                                                 source=TestClass1_1,\n" +
-                          "                                                 target=TestClass2_2,\n" +
-                          "                                                 propertyPosition=(132.5, 76.2),\n" +
-                          "                                                 multiplicityPosition=(132.5, 80.0))\n" +
-                          "}\n");
-        CoreInstance testClass1 = this.runtime.getCoreInstance("test::pure::TestClass1");
-        CoreInstance positionProp = this.processorSupport.class_findPropertyUsingGeneralization(testClass1, "position");
+                "###Diagram\n" +
+                        "Diagram test::pure::TestDiagram(width=10.0, height=10.0)\n" +
+                        "{\n" +
+                        "    TypeView TestClass1_1(type=test::pure::TestClass1, stereotypesVisible=\n\r" +
+                        "                                                     true, attributesVisible=true,\n" +
+                        "                          attributeStereotypesVisible     =    true, attributeTypesVisible=true,\n" +
+                        "                                    color=#FFFFCC, lineWidth=\r" +
+                        "                                                            1.0,\n" +
+                        "                                    position \n\r" +
+                        "                                       =(874.0, 199.46875), width   \r\n" +
+                        "                                         =353.0, height=57.1875)\n" +
+                        "    TypeView TestClass2_2(type=test::pure::TestClass2, stereotypesVisible=true, attributesVisible=true,\n" +
+                        "                                    attributeStereotypesVisible=true, attributeTypesVisible=true,\n" +
+                        "                                    color=#FFFFCC, lineWidth=1.0,\n" +
+                        "                                    position=(75.0, 97.1875), width=113.0, height=57.1875)\n" +
+                        "    PropertyView TestClass1_position_1(property=test::pure::TestClass1.position, stereotypesVisible=true, nameVisible=false,\n" +
+                        "                                                 color=#000000, lineWidth=1.0,\n" +
+                        "                                                 lineStyle=SIMPLE, points=[(132.5, 77.0), (155.2, 77.0)],\n" +
+                        "                                                 label='Employment',\n" +
+                        "                                                 source=TestClass1_1,\n" +
+                        "                                                 target=TestClass2_2,\n" +
+                        "                                                 propertyPosition=(132.5, 76.2),\n" +
+                        "                                                 multiplicityPosition=(132.5, 80.0))\n" +
+                        "}\n");
+        CoreInstance testClass1 = runtime.getCoreInstance("test::pure::TestClass1");
+        CoreInstance positionProp = processorSupport.class_findPropertyUsingGeneralization(testClass1, "position");
         Assert.assertNotNull(positionProp);
 
-        CoreInstance diagram = this.runtime.getCoreInstance("test::pure::TestDiagram");
-        CoreInstance propView = Instance.getValueForMetaPropertyToOneResolved(diagram, M3Properties.propertyViews, this.processorSupport);
-        CoreInstance viewProp = Instance.getValueForMetaPropertyToOneResolved(propView, M3Properties.property, this.processorSupport);
+        CoreInstance diagram = runtime.getCoreInstance("test::pure::TestDiagram");
+        CoreInstance propView = Instance.getValueForMetaPropertyToOneResolved(diagram, M3Properties.propertyViews, processorSupport);
+        CoreInstance viewProp = Instance.getValueForMetaPropertyToOneResolved(propView, M3Properties.property, processorSupport);
         Assert.assertSame(positionProp, viewProp);
     }
 
@@ -873,21 +874,21 @@ public class TestDiagramParsing extends AbstractPureTestWithCoreCompiled
         compileTestSource("testDiagram.pure",
                 source);
 
-        Class typeViewClass = (Class)this.runtime.getCoreInstance("meta::pure::diagram::TypeView");
+        Class typeViewClass = (Class) runtime.getCoreInstance("meta::pure::diagram::TypeView");
         RichIterable<? extends ReferenceUsage> typeViewReferenceUsages = typeViewClass._referenceUsages().select(new Predicate<ReferenceUsage>()
-                {
-                    @Override
-                    public boolean accept(ReferenceUsage usage)
-                    {
-                        return usage._owner() instanceof TypeView;
-                    }
-                });
+        {
+            @Override
+            public boolean accept(ReferenceUsage usage)
+            {
+                return usage._owner() instanceof TypeView;
+            }
+        });
 
         String[] lines = source.split("\n");
         for (ReferenceUsage referenceUsage : typeViewReferenceUsages)
         {
             SourceInformation sourceInformation = referenceUsage.getSourceInformation();
-            Assert.assertEquals("TypeView", lines[sourceInformation.getLine()-1].substring(sourceInformation.getColumn() -1, sourceInformation.getColumn() + "TypeView".length() - 1));
+            Assert.assertEquals("TypeView", lines[sourceInformation.getLine() - 1].substring(sourceInformation.getColumn() - 1, sourceInformation.getColumn() + "TypeView".length() - 1));
         }
     }
 
@@ -959,7 +960,7 @@ public class TestDiagramParsing extends AbstractPureTestWithCoreCompiled
         compileTestSource("testDiagram.pure", source);
         String[] lines = source.split("\n");
 
-        Association associationView = (Association)this.runtime.getCoreInstance("meta::pure::diagram::DiagramAssociationViews");
+        Association associationView = (Association) runtime.getCoreInstance("meta::pure::diagram::DiagramAssociationViews");
         RichIterable<? extends ReferenceUsage> associationViewReferenceUsages = associationView._referenceUsages().select(new Predicate<ReferenceUsage>()
         {
             @Override
@@ -974,7 +975,7 @@ public class TestDiagramParsing extends AbstractPureTestWithCoreCompiled
             Assert.assertEquals("DiagramAssociationViews", lines[sourceInformation.getLine() - 1].substring(sourceInformation.getColumn() - 1, sourceInformation.getColumn() + "DiagramAssociationViews".length() - 1));
         }
 
-        associationView = (Association)this.runtime.getCoreInstance("meta::pure::diagram::DiagramTypeViews");
+        associationView = (Association) runtime.getCoreInstance("meta::pure::diagram::DiagramTypeViews");
         associationViewReferenceUsages = associationView._referenceUsages().select(new Predicate<ReferenceUsage>()
         {
             @Override

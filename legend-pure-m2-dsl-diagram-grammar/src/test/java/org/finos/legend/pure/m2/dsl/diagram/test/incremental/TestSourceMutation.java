@@ -14,13 +14,13 @@
 
 package org.finos.legend.pure.m2.dsl.diagram.test.incremental;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.eclipse.collections.impl.factory.Sets;
+import org.eclipse.collections.impl.test.Verify;
 import org.finos.legend.pure.m3.SourceMutation;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.test.Verify;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -29,7 +29,8 @@ import org.junit.Test;
 public class TestSourceMutation extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime();
     }
 
@@ -59,12 +60,12 @@ public class TestSourceMutation extends AbstractPureTestWithCoreCompiled
         Assert.assertEquals(4, m.getLineRangesToRemoveByFile().get("testDiagram.pure").get(0).getOne());
         Assert.assertEquals(7, m.getLineRangesToRemoveByFile().get("testDiagram.pure").get(0).getTwo());
 
-        CoreInstance testDiagram = this.runtime.getCoreInstance("test::pure::TestDiagram");
+        CoreInstance testDiagram = runtime.getCoreInstance("test::pure::TestDiagram");
         Assert.assertNotNull(testDiagram);
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.typeViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.associationViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.propertyViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.generalizationViews, this.processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.typeViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.associationViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.propertyViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.generalizationViews, processorSupport));
     }
 
     @Test
@@ -101,12 +102,12 @@ public class TestSourceMutation extends AbstractPureTestWithCoreCompiled
         Assert.assertEquals(12, m.getLineRangesToRemoveByFile().get("testDiagram.pure").get(0).getOne());
         Assert.assertEquals(21, m.getLineRangesToRemoveByFile().get("testDiagram.pure").get(0).getTwo());
 
-        CoreInstance testDiagram = this.runtime.getCoreInstance("test::pure::TestDiagram");
+        CoreInstance testDiagram = runtime.getCoreInstance("test::pure::TestDiagram");
         Assert.assertNotNull(testDiagram);
-        Verify.assertSize(2, Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.typeViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.associationViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.propertyViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.generalizationViews, this.processorSupport));
+        Verify.assertSize(2, Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.typeViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.associationViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.propertyViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.generalizationViews, processorSupport));
     }
 
     @Test
@@ -141,12 +142,12 @@ public class TestSourceMutation extends AbstractPureTestWithCoreCompiled
         Assert.assertEquals(12, m.getLineRangesToRemoveByFile().get("testDiagram.pure").get(0).getOne());
         Assert.assertEquals(19, m.getLineRangesToRemoveByFile().get("testDiagram.pure").get(0).getTwo());
 
-        CoreInstance testDiagram = this.runtime.getCoreInstance("test::pure::TestDiagram");
+        CoreInstance testDiagram = runtime.getCoreInstance("test::pure::TestDiagram");
         Assert.assertNotNull(testDiagram);
-        Verify.assertSize(2, Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.typeViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.associationViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.propertyViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.generalizationViews, this.processorSupport));
+        Verify.assertSize(2, Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.typeViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.associationViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.propertyViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.generalizationViews, processorSupport));
     }
 
     @Test
@@ -179,12 +180,12 @@ public class TestSourceMutation extends AbstractPureTestWithCoreCompiled
         Assert.assertEquals(12, m.getLineRangesToRemoveByFile().get("testDiagram.pure").get(1).getOne());
         Assert.assertEquals(16, m.getLineRangesToRemoveByFile().get("testDiagram.pure").get(1).getTwo());
 
-        CoreInstance testDiagram = this.runtime.getCoreInstance("test::pure::TestDiagram");
+        CoreInstance testDiagram = runtime.getCoreInstance("test::pure::TestDiagram");
         Assert.assertNotNull(testDiagram);
-        Verify.assertSize(1, Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.typeViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.associationViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.propertyViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.generalizationViews, this.processorSupport));
+        Verify.assertSize(1, Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.typeViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.associationViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.propertyViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.generalizationViews, processorSupport));
     }
 
     @Test
@@ -216,12 +217,12 @@ public class TestSourceMutation extends AbstractPureTestWithCoreCompiled
         Assert.assertEquals(12, m.getLineRangesToRemoveByFile().get("testDiagram.pure").get(0).getOne());
         Assert.assertEquals(16, m.getLineRangesToRemoveByFile().get("testDiagram.pure").get(0).getTwo());
 
-        CoreInstance testDiagram = this.runtime.getCoreInstance("test::pure::TestDiagram");
+        CoreInstance testDiagram = runtime.getCoreInstance("test::pure::TestDiagram");
         Assert.assertNotNull(testDiagram);
-        Verify.assertSize(2, Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.typeViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.associationViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.propertyViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.generalizationViews, this.processorSupport));
+        Verify.assertSize(2, Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.typeViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.associationViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.propertyViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.generalizationViews, processorSupport));
     }
 
     @Test
@@ -264,12 +265,12 @@ public class TestSourceMutation extends AbstractPureTestWithCoreCompiled
         Assert.assertEquals(12, m.getLineRangesToRemoveByFile().get("testDiagram.pure").get(0).getOne());
         Assert.assertEquals(21, m.getLineRangesToRemoveByFile().get("testDiagram.pure").get(0).getTwo());
 
-        CoreInstance testDiagram = this.runtime.getCoreInstance("test::pure::TestDiagram");
+        CoreInstance testDiagram = runtime.getCoreInstance("test::pure::TestDiagram");
         Assert.assertNotNull(testDiagram);
-        Verify.assertSize(2, Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.typeViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.associationViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.propertyViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.generalizationViews, this.processorSupport));
+        Verify.assertSize(2, Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.typeViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.associationViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.propertyViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.generalizationViews, processorSupport));
     }
 
     @Test
@@ -283,7 +284,6 @@ public class TestSourceMutation extends AbstractPureTestWithCoreCompiled
                         "  toTC1_1 : test::pure::TestClass1[*];\n" +
                         "  toTC2_1 : test::pure::TestClass2[*];\n" +
                         "}\n" +
-                        "" +
                         "###Diagram\n" +
                         "Diagram test::pure::TestDiagram(width=10.0, height=10.0)\n" +
                         "{\n" +
@@ -310,7 +310,7 @@ public class TestSourceMutation extends AbstractPureTestWithCoreCompiled
         Verify.assertEmpty(m1.getMarkedForDeletion());
         Verify.assertEmpty(m1.getModifiedFiles());
 
-        this.runtime.modify("testFile.pure",
+        runtime.modify("testFile.pure",
                 "Class test::pure::TestClass1 {}\n" +
                         "Class test::pure::TestClass3 {}\n" +
                         "Association test::pure::TestAssociation\n" +
@@ -341,7 +341,7 @@ public class TestSourceMutation extends AbstractPureTestWithCoreCompiled
                         "                                    targetPropertyPosition=(155.2, 76.2),\n" +
                         "                                    targetMultiplicityPosition=(155.2, 80.0))\n" +
                         "}\n");
-        SourceMutation m2 = this.runtime.compile();
+        SourceMutation m2 = runtime.compile();
 
         Verify.assertSetsEqual(Sets.mutable.with("testFile.pure"), m2.getModifiedFiles().toSet());
         Verify.assertSize(2, m2.getLineRangesToRemoveByFile().get("testFile.pure"));
@@ -350,11 +350,11 @@ public class TestSourceMutation extends AbstractPureTestWithCoreCompiled
         Assert.assertEquals(20, m2.getLineRangesToRemoveByFile().get("testFile.pure").get(1).getOne());
         Assert.assertEquals(29, m2.getLineRangesToRemoveByFile().get("testFile.pure").get(1).getTwo());
 
-        CoreInstance testDiagram = this.runtime.getCoreInstance("test::pure::TestDiagram");
+        CoreInstance testDiagram = runtime.getCoreInstance("test::pure::TestDiagram");
         Assert.assertNotNull(testDiagram);
-        Verify.assertSize(1, Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.typeViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.associationViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.propertyViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.generalizationViews, this.processorSupport));
+        Verify.assertSize(1, Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.typeViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.associationViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.propertyViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(testDiagram, M3Properties.generalizationViews, processorSupport));
     }
 }

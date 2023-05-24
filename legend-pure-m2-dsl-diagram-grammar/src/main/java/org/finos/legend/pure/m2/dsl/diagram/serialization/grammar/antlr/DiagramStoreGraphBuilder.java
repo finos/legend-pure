@@ -16,6 +16,7 @@ package org.finos.legend.pure.m2.dsl.diagram.serialization.grammar.antlr;
 
 import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RuleContext;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.predicate.Predicate;
@@ -23,6 +24,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.list.mutable.ListAdapter;
+import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m2.dsl.diagram.M2DiagramPaths;
 import org.finos.legend.pure.m2.dsl.diagram.serialization.grammar.DiagramAntlrParser;
 import org.finos.legend.pure.m2.dsl.diagram.serialization.grammar.DiagramAntlrParserBaseVisitor;
@@ -43,7 +45,7 @@ import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 import java.util.List;
 
-public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
+public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor<String>
 {
     private final ModelRepository repository;
     private final int count;
@@ -96,7 +98,7 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
 
         boolean hasPackage = !"".equals(diagramPath);
 
-        StringBuilder builder = new StringBuilder("^" + M2DiagramPaths.Diagram + " ");
+        StringBuilder builder = new StringBuilder("^").append(M2DiagramPaths.Diagram).append(" ");
         builder.append(diagramName);
         builder.append(' ');
         builder.append(sourceInformation.getPureSourceInformation(ctx.start, ctx.qualifiedDiagramName().diagramIdentifier().getStart(), ctx.CURLY_BRACKET_CLOSE().getSymbol()).toM4String());
@@ -107,10 +109,7 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
             builder.append('@');
             builder.append(diagramPath);
         }
-        builder.append("(name='");
-        builder.append(diagramName);
-        builder.append("', package=");
-        builder.append(hasPackage ? diagramPath : "::");
+        builder.append("(name='").append(diagramName).append("', package=").append(hasPackage ? diagramPath : "::");
 
         for (DiagramAntlrParser.TypeViewContext twctx : typeViewContexts)
         {
@@ -169,22 +168,19 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
     {
         String generalizationViewName = generalizationViewContext.diagramIdentifier().getText();
 
-        StringBuilder builder = new StringBuilder("^" + M3Paths.GeneralizationView + " ");
+        StringBuilder builder = new StringBuilder("^").append(M3Paths.GeneralizationView).append(" ");
         builder.append(sourceInformation.getPureSourceInformation(generalizationViewContext.getStart(), generalizationViewContext.diagramIdentifier().getStart(), generalizationViewContext.getStop()).toM4String());
 
         // Id
-        builder.append("(id='");
-        builder.append(generalizationViewName);
-        builder.append("'");
+        builder.append("(id='").append(generalizationViewName).append("'");
 
         // Diagram
-        builder.append(", diagram=");
-        builder.append(diagramFullQualifiedName);
+        builder.append(", diagram=").append(diagramFullQualifiedName);
 
         MutableList<DiagramAntlrParser.GeneralizationViewPropertyContext> generalizationViewPropertyContexts = ListAdapter.adapt(generalizationViewContext.generalizationViewProperty());
         // Geometry
         DiagramAntlrParser.GeneralizationViewPropertyContext lineStylePropertyContext = propertyContext(generalizationViewPropertyContexts, IS_GENERALIZATIONVIEW_LINE_STYLE_PROPERTY, "lineStyle", generalizationViewContext.diagramIdentifier());
-        builder.append(", geometry=^" + M2DiagramPaths.LineGeometry + "(style=" + M2DiagramPaths.LineStyle + ".");
+        builder.append(", geometry=^").append(M2DiagramPaths.LineGeometry).append("(style=").append(M2DiagramPaths.LineStyle).append(".");
         builder.append(lineStylePropertyContext.diagramIdentifier().getText());
         DiagramAntlrParser.GeneralizationViewPropertyContext pointsPropertyContext = propertyContext(generalizationViewPropertyContexts, IS_GENERALIZATIONVIEW_POINTS_PROPERTY, "points", generalizationViewContext.diagramIdentifier());
         builder.append(", points=[");
@@ -192,11 +188,11 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
         {
             if (i == 0)
             {
-                builder.append("^" + M2DiagramPaths.Point + "(x=");
+                builder.append("^").append(M2DiagramPaths.Point).append("(x=");
             }
             else
             {
-                builder.append(", ^" + M2DiagramPaths.Point + "(x=");
+                builder.append(", ^").append(M2DiagramPaths.Point).append("(x=");
             }
             builder.append(pointsPropertyContext.FLOAT(i).getText());
             builder.append(", y=");
@@ -207,7 +203,7 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
 
         // Rendering
         DiagramAntlrParser.GeneralizationViewPropertyContext colorPropertyContext = propertyContext(generalizationViewPropertyContexts, IS_GENERALIZATIONVIEW_COLOR_PROPERTY, "color", generalizationViewContext.diagramIdentifier());
-        builder.append(", rendering=^" + M2DiagramPaths.Rendering + "(color='");
+        builder.append(", rendering=^").append(M2DiagramPaths.Rendering).append("(color='");
         builder.append(colorPropertyContext.COLOR_STRING().getText());
         DiagramAntlrParser.GeneralizationViewPropertyContext lineWidthPropertyContext = propertyContext(generalizationViewPropertyContexts, IS_GENERALIZATIONVIEW_LINE_WIDTH_PROPERTY, "lineWidth", generalizationViewContext.diagramIdentifier());
         builder.append("', lineWidth=");
@@ -256,10 +252,10 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
         // Property
         DiagramAntlrParser.PropertyViewPropertyContext propertyViewPropertyContext = propertyContext(propertyViewPropertyContexts, IS_PROPERTYVIEW_PROPERTY_PROPERTY, "property", propertyViewContext.diagramIdentifier());
         builder.append(", property=");
-        builder.append("^"+M3Paths.PropertyStub+" ");
+        builder.append("^" + M3Paths.PropertyStub + " ");
         builder.append(sourceInformation.getPureSourceInformation(propertyViewPropertyContext.qualifiedDiagramName().diagramPackagePath() != null ? propertyViewPropertyContext.qualifiedDiagramName().diagramPackagePath().diagramIdentifier(0).getStart() : propertyViewPropertyContext.qualifiedDiagramName().diagramIdentifier().getStart(), propertyViewPropertyContext.diagramIdentifier().getStart(), propertyViewPropertyContext.diagramIdentifier().getStop()).toM4String());
         builder.append(" (owner=");
-        builder.append("^"+M3Paths.ImportStub+" ");
+        builder.append("^" + M3Paths.ImportStub + " ");
         builder.append(sourceInformation.getPureSourceInformation(propertyViewPropertyContext.qualifiedDiagramName().getStart(), propertyViewPropertyContext.qualifiedDiagramName().diagramIdentifier().getStart(), propertyViewPropertyContext.qualifiedDiagramName().diagramIdentifier().getStop()).toM4String());
         builder.append(" (importGroup=system::imports::");
         builder.append(importId);
@@ -271,7 +267,7 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
 
         // Association visibility
         DiagramAntlrParser.PropertyViewPropertyContext stereotypesVisiblePropertyContext = propertyContext(propertyViewPropertyContexts, IS_PROPERTYVIEW_STEREOTYPES_VISIBLE_PROPERTY, "stereotypesVisible", propertyViewContext.diagramIdentifier());
-        builder.append(", visibility=^" + M2DiagramPaths.AssociationVisibility + "(visibleStereotype=");
+        builder.append(", visibility=^").append(M2DiagramPaths.AssociationVisibility).append("(visibleStereotype=");
         builder.append(stereotypesVisiblePropertyContext.BOOLEAN().getText());
         DiagramAntlrParser.PropertyViewPropertyContext nameVisiblePropertyContext = propertyContext(propertyViewPropertyContexts, IS_PROPERTYVIEW_NAME_VISIBLE_PROPERTY, "nameVisible", propertyViewContext.diagramIdentifier());
         builder.append(", visibleName=");
@@ -280,7 +276,7 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
 
         // Geometry
         DiagramAntlrParser.PropertyViewPropertyContext lineStylePropertyContext = propertyContext(propertyViewPropertyContexts, IS_PROPERTYVIEW_LINE_STYLE_PROPERTY, "lineStyle", propertyViewContext.diagramIdentifier());
-        builder.append(", geometry=^" + M2DiagramPaths.LineGeometry + "(style="+M2DiagramPaths.LineStyle+".");
+        builder.append(", geometry=^" + M2DiagramPaths.LineGeometry + "(style=" + M2DiagramPaths.LineStyle + ".");
         builder.append(lineStylePropertyContext.diagramIdentifier().getText());
         DiagramAntlrParser.PropertyViewPropertyContext pointsPropertyContext = propertyContext(propertyViewPropertyContexts, IS_PROPERTYVIEW_POINTS_PROPERTY, "points", propertyViewContext.diagramIdentifier());
         builder.append(", points=[");
@@ -331,12 +327,12 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
 
         // Property/multiplicity position
         DiagramAntlrParser.PropertyViewPropertyContext propertyPositionPropertyContext = propertyContext(propertyViewPropertyContexts, IS_PROPERTYVIEW_PROP_POSITION_PROPERTY, "propertyPosition", propertyViewContext.diagramIdentifier());
-        builder.append(", view=^" + M2DiagramPaths.AssociationPropertyView + "(propertyLocation=^"+M2DiagramPaths.Point+"(x=");
+        builder.append(", view=^" + M2DiagramPaths.AssociationPropertyView + "(propertyLocation=^" + M2DiagramPaths.Point + "(x=");
         builder.append(propertyPositionPropertyContext.FLOAT(0).getText());
         builder.append(", y=");
         builder.append(propertyPositionPropertyContext.FLOAT(1).getText());
         DiagramAntlrParser.PropertyViewPropertyContext multiplicityPositionPropertyContext = propertyContext(propertyViewPropertyContexts, IS_PROPERTYVIEW_MULT_POSITION_PROPERTY, "multiplicityPosition", propertyViewContext.diagramIdentifier());
-        builder.append("), multiplicityLocation=^"+M2DiagramPaths.Point+"(x=");
+        builder.append("), multiplicityLocation=^" + M2DiagramPaths.Point + "(x=");
         builder.append(multiplicityPositionPropertyContext.FLOAT(0));
         builder.append(", y=");
         builder.append(multiplicityPositionPropertyContext.FLOAT(1));
@@ -350,7 +346,7 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
     {
         String associationViewName = associationViewContext.diagramIdentifier().getText();
 
-        StringBuilder builder = new StringBuilder("^"+M2DiagramPaths.AssociationView+" ");
+        StringBuilder builder = new StringBuilder("^" + M2DiagramPaths.AssociationView + " ");
         builder.append(sourceInformation.getPureSourceInformation(associationViewContext.getStart(), associationViewContext.diagramIdentifier().getStart(), associationViewContext.getStop()).toM4String());
 
         // Id
@@ -366,7 +362,7 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
         // Association
         DiagramAntlrParser.AssociationViewPropertyContext associationPropertyContext = propertyContext(associationViewPropertyContexts, IS_ASSOCIATIONVIEW_ASSOCIATION_PROPERTY, "association", associationViewContext.diagramIdentifier());
         builder.append(", association=");
-        builder.append("^"+M3Paths.ImportStub+" ");
+        builder.append("^").append(M3Paths.ImportStub).append(" ");
         builder.append(sourceInformation.getPureSourceInformation(associationPropertyContext.qualifiedDiagramName().diagramPackagePath() != null ? associationPropertyContext.qualifiedDiagramName().diagramPackagePath().diagramIdentifier(0).getStart() : associationPropertyContext.qualifiedDiagramName().diagramIdentifier().getStart(), associationPropertyContext.qualifiedDiagramName().diagramIdentifier().getStart(), associationPropertyContext.qualifiedDiagramName().diagramIdentifier().getStop()).toM4String());
         builder.append(" (importGroup=system::imports::");
         builder.append(importId);
@@ -376,7 +372,7 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
 
         // Association visibility
         DiagramAntlrParser.AssociationViewPropertyContext stereotypesVisiblePropertyContext = propertyContext(associationViewPropertyContexts, IS_ASSOCIATIONVIEW_STEREOTYPES_VISIBLE_PROPERTY, "stereotypesVisible", associationViewContext.diagramIdentifier());
-        builder.append(", visibility=^"+M2DiagramPaths.AssociationVisibility+"(visibleStereotype=");
+        builder.append(", visibility=^").append(M2DiagramPaths.AssociationVisibility).append("(visibleStereotype=");
         builder.append(stereotypesVisiblePropertyContext.BOOLEAN().getText());
         DiagramAntlrParser.AssociationViewPropertyContext nameVisiblePropertyContext = propertyContext(associationViewPropertyContexts, IS_ASSOCIATIONVIEW_NAME_VISIBLE_PROPERTY, "nameVisible", associationViewContext.diagramIdentifier());
         builder.append(", visibleName=");
@@ -385,7 +381,7 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
 
         // Geometry
         DiagramAntlrParser.AssociationViewPropertyContext lineStylePropertyContext = propertyContext(associationViewPropertyContexts, IS_ASSOCIATIONVIEW_LINE_STYLE_PROPERTY, "lineStyle", associationViewContext.diagramIdentifier());
-        builder.append(", geometry=^"+M2DiagramPaths.LineGeometry+"(style="+M2DiagramPaths.LineStyle+".");
+        builder.append(", geometry=^").append(M2DiagramPaths.LineGeometry).append("(style=").append(M2DiagramPaths.LineStyle).append(".");
         builder.append(lineStylePropertyContext.diagramIdentifier().getText());
         DiagramAntlrParser.AssociationViewPropertyContext pointsPropertyContext = propertyContext(associationViewPropertyContexts, IS_ASSOCIATIONVIEW_POINTS_PROPERTY, "points", associationViewContext.diagramIdentifier());
         builder.append(", points=[");
@@ -393,11 +389,11 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
         {
             if (i == 0)
             {
-                builder.append("^"+M2DiagramPaths.Point+"(x=");
+                builder.append("^").append(M2DiagramPaths.Point).append("(x=");
             }
             else
             {
-                builder.append(", ^"+M2DiagramPaths.Point+"(x=");
+                builder.append(", ^").append(M2DiagramPaths.Point).append("(x=");
             }
             builder.append(pointsPropertyContext.FLOAT(i).getText());
             builder.append(", y=");
@@ -409,7 +405,7 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
 
         // Rendering
         DiagramAntlrParser.AssociationViewPropertyContext colorPropertyContext = propertyContext(associationViewPropertyContexts, IS_ASSOCIATIONVIEW_COLOR_PROPERTY, "color", associationViewContext.diagramIdentifier());
-        builder.append(", rendering=^"+M2DiagramPaths.Rendering+"(color='");
+        builder.append(", rendering=^").append(M2DiagramPaths.Rendering).append("(color='");
         builder.append(colorPropertyContext.COLOR_STRING().getText());
         DiagramAntlrParser.AssociationViewPropertyContext lineWidthPropertyContext = propertyContext(associationViewPropertyContexts, IS_ASSOCIATIONVIEW_LINE_WIDTH_PROPERTY, "lineWidth", associationViewContext.diagramIdentifier());
         builder.append("', lineWidth=");
@@ -437,12 +433,12 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
 
         // Source position
         DiagramAntlrParser.AssociationViewPropertyContext sourcePropertyPositionPropertyContext = propertyContext(associationViewPropertyContexts, IS_ASSOCIATIONVIEW_SOURCE_PROP_POSITION_PROPERTY, "sourcePropertyPosition", associationViewContext.diagramIdentifier());
-        builder.append(", sourcePropertyView=^"+M2DiagramPaths.AssociationPropertyView+"(propertyLocation=^"+M2DiagramPaths.Point+"(x=");
+        builder.append(", sourcePropertyView=^").append(M2DiagramPaths.AssociationPropertyView).append("(propertyLocation=^").append(M2DiagramPaths.Point).append("(x=");
         builder.append(sourcePropertyPositionPropertyContext.FLOAT(0).getText());
         builder.append(", y=");
         builder.append(sourcePropertyPositionPropertyContext.FLOAT(1).getText());
         DiagramAntlrParser.AssociationViewPropertyContext sourceMultiplicityPositionPropertyContext = propertyContext(associationViewPropertyContexts, IS_ASSOCIATIONVIEW_SOURCE_MULT_POSITION_PROPERTY, "sourceMultiplicityPosition", associationViewContext.diagramIdentifier());
-        builder.append("), multiplicityLocation=^"+M2DiagramPaths.Point+"(x=");
+        builder.append("), multiplicityLocation=^").append(M2DiagramPaths.Point).append("(x=");
         builder.append(sourceMultiplicityPositionPropertyContext.FLOAT(0).getText());
         builder.append(", y=");
         builder.append(sourceMultiplicityPositionPropertyContext.FLOAT(1).getText());
@@ -450,12 +446,12 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
 
         // Target position
         DiagramAntlrParser.AssociationViewPropertyContext targetPropertyPositionPropertyContext = propertyContext(associationViewPropertyContexts, IS_ASSOCIATIONVIEW_TARGET_PROP_POSITION_PROPERTY, "targetPropertyPosition", associationViewContext.diagramIdentifier());
-        builder.append(", targetPropertyView=^"+M2DiagramPaths.AssociationPropertyView+"(propertyLocation=^"+M2DiagramPaths.Point+"(x=");
+        builder.append(", targetPropertyView=^").append(M2DiagramPaths.AssociationPropertyView).append("(propertyLocation=^").append(M2DiagramPaths.Point).append("(x=");
         builder.append(targetPropertyPositionPropertyContext.FLOAT(0).getText());
         builder.append(", y=");
         builder.append(targetPropertyPositionPropertyContext.FLOAT(1).getText());
         DiagramAntlrParser.AssociationViewPropertyContext targetMultiplicityPositionPropertyContext = propertyContext(associationViewPropertyContexts, IS_ASSOCIATIONVIEW_TARGET_MULT_POSITION_PROPERTY, "targetMultiplicityPosition", associationViewContext.diagramIdentifier());
-        builder.append("), multiplicityLocation=^"+M2DiagramPaths.Point+"(x=");
+        builder.append("), multiplicityLocation=^").append(M2DiagramPaths.Point).append("(x=");
         builder.append(targetMultiplicityPositionPropertyContext.FLOAT(0).getText());
         builder.append(", y=");
         builder.append(targetMultiplicityPositionPropertyContext.FLOAT(1).getText());
@@ -469,7 +465,7 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
 
         String typeViewName = typeViewContext.diagramIdentifier().getText();
 
-        StringBuilder builder = new StringBuilder("^"+M2DiagramPaths.TypeView+" ");
+        StringBuilder builder = new StringBuilder("^" + M2DiagramPaths.TypeView + " ");
         builder.append(sourceInformation.getPureSourceInformation(typeViewContext.getStart(), typeViewContext.diagramIdentifier().getStart(), typeViewContext.getStop()).toM4String());
         // Id
         builder.append("(id='");
@@ -483,8 +479,8 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
 
         // Type
         DiagramAntlrParser.TypeViewPropertyContext typePropertyContext = propertyContext(typeViewPropertyContexts, IS_TYPEVIEW_TYPE_PROPERTY, "type", typeViewContext.diagramIdentifier());
-        builder.append(", " + typePropertyContext.TYPE().getText());
-        builder.append("^"+M3Paths.ImportStub+" ");
+        builder.append(", ").append(typePropertyContext.TYPE().getText());
+        builder.append("^").append(M3Paths.ImportStub).append(" ");
         builder.append(sourceInformation.getPureSourceInformation(typePropertyContext.qualifiedDiagramName().diagramPackagePath() != null ? typePropertyContext.qualifiedDiagramName().diagramPackagePath().diagramIdentifier(0).getStart() : typePropertyContext.qualifiedDiagramName().diagramIdentifier().getStart(), typePropertyContext.qualifiedDiagramName().diagramIdentifier().getStart(), typePropertyContext.qualifiedDiagramName().diagramIdentifier().getStop()).toM4String());
         builder.append(" (importGroup=system::imports::");
         builder.append(importId);
@@ -494,7 +490,7 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
 
         // Type visibility
         DiagramAntlrParser.TypeViewPropertyContext stereotypesVisiblePropertyContext = propertyContext(typeViewPropertyContexts, IS_TYPEVIEW_STEREOTYPES_VISIBLE_PROPERTY, "stereotypesVisible", typeViewContext.diagramIdentifier());
-        builder.append(", typeVisibility=^"+M2DiagramPaths.TypeVisibility+"(visibleStereotype=");
+        builder.append(", typeVisibility=^").append(M2DiagramPaths.TypeVisibility).append("(visibleStereotype=");
         builder.append(stereotypesVisiblePropertyContext.BOOLEAN().getText());
         DiagramAntlrParser.TypeViewPropertyContext attributesVisiblePropertyContext = propertyContext(typeViewPropertyContexts, IS_TYPEVIEW_ATTRIBUTES_VISIBLE_PROPERTY, "attributesVisible", typeViewContext.diagramIdentifier());
         builder.append(", visibleAttributeCompartment=");
@@ -503,7 +499,7 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
 
         // Attribute visibility
         DiagramAntlrParser.TypeViewPropertyContext attributeStereotypesVisiblePropertyContext = propertyContext(typeViewPropertyContexts, IS_TYPEVIEW_ATTRIBUTE_STEREOTYPES_VISIBLE_PROPERTY, "attributeStereotypesVisible", typeViewContext.diagramIdentifier());
-        builder.append(", attributeVisibility=^"+M2DiagramPaths.AttributeVisibility+"(visibleStereotype=");
+        builder.append(", attributeVisibility=^").append(M2DiagramPaths.AttributeVisibility).append("(visibleStereotype=");
         builder.append(attributeStereotypesVisiblePropertyContext.BOOLEAN().getText());
         DiagramAntlrParser.TypeViewPropertyContext attributeTypesVisiblePropertyContext = propertyContext(typeViewPropertyContexts, IS_TYPEVIEW_ATTRIBUTE_TYPES_VISIBLE_PROPERTY, "attributeTypesVisible", typeViewContext.diagramIdentifier());
         builder.append(", visibleTypes=");
@@ -512,7 +508,7 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
 
         // Rendering
         DiagramAntlrParser.TypeViewPropertyContext colorPropertyContext = propertyContext(typeViewPropertyContexts, IS_TYPEVIEW_COLOR_PROPERTY, "color", typeViewContext.diagramIdentifier());
-        builder.append(", rendering=^"+M2DiagramPaths.Rendering+"(color='");
+        builder.append(", rendering=^").append(M2DiagramPaths.Rendering).append("(color='");
         builder.append(colorPropertyContext.COLOR_STRING().getText());
         DiagramAntlrParser.TypeViewPropertyContext lineWidthPropertyContext = propertyContext(typeViewPropertyContexts, IS_TYPEVIEW_LINE_WIDTH_PROPERTY, "lineWidth", typeViewContext.diagramIdentifier());
         builder.append("', lineWidth=");
@@ -521,7 +517,7 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
 
         // Position
         DiagramAntlrParser.TypeViewPropertyContext positionPropertyContext = propertyContext(typeViewPropertyContexts, IS_TYPEVIEW_POSITION_PROPERTY, "position", typeViewContext.diagramIdentifier());
-        builder.append(", position=^"+M2DiagramPaths.Point+"(x=");
+        builder.append(", position=^").append(M2DiagramPaths.Point).append("(x=");
         builder.append(positionPropertyContext.FLOAT(0).getText());
         builder.append(", y=");
         builder.append(positionPropertyContext.FLOAT(1).getText());
@@ -529,7 +525,7 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
 
         // Rectangle geometry
         DiagramAntlrParser.TypeViewPropertyContext widthPropertyContext = propertyContext(typeViewPropertyContexts, IS_TYPEVIEW_WIDTH_PROPERTY, "width", typeViewContext.diagramIdentifier());
-        builder.append(", rectangleGeometry=^"+M2DiagramPaths.RectangleGeometry+"(width=");
+        builder.append(", rectangleGeometry=^").append(M2DiagramPaths.RectangleGeometry).append("(width=");
         builder.append(widthPropertyContext.FLOAT(0).getText());
         DiagramAntlrParser.TypeViewPropertyContext heightPropertyContext = propertyContext(typeViewPropertyContexts, IS_TYPEVIEW_HEIGHT_PROPERTY, "height", typeViewContext.diagramIdentifier());
         builder.append(", height=");
@@ -1049,16 +1045,6 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
 
     public String packageToString(List<DiagramAntlrParser.DiagramIdentifierContext> identifier)
     {
-        ListIterable<DiagramAntlrParser.DiagramIdentifierContext> path = ListAdapter.adapt(identifier);
-        return path.collect(new Function<DiagramAntlrParser.DiagramIdentifierContext, String>()
-        {
-            @Override
-            public String valueOf(DiagramAntlrParser.DiagramIdentifierContext identifierContext)
-            {
-                return identifierContext.getText();
-
-            }
-        }).makeString("::");
+        return LazyIterate.collect(identifier, RuleContext::getText).makeString("::");
     }
-
 }

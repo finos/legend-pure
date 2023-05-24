@@ -15,8 +15,8 @@
 package org.finos.legend.pure.m2.dsl.diagram.test.incremental;
 
 import org.finos.legend.pure.m2.dsl.diagram.M2DiagramPaths;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.junit.Assert;
@@ -26,7 +26,8 @@ import org.junit.Test;
 public class TestDiagramValidation extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime();
     }
 
@@ -36,9 +37,9 @@ public class TestDiagramValidation extends AbstractPureTestWithCoreCompiled
         compileTestSource("diagram1.pure",
                 "###Diagram\n" +
                         "Diagram test::MyDiagram {}");
-        CoreInstance myDiagram = this.runtime.getCoreInstance("test::MyDiagram");
+        CoreInstance myDiagram = runtime.getCoreInstance("test::MyDiagram");
         Assert.assertNotNull(myDiagram);
-        Assert.assertTrue(Instance.instanceOf(myDiagram, M2DiagramPaths.Diagram, this.processorSupport));
+        Assert.assertTrue(Instance.instanceOf(myDiagram, M2DiagramPaths.Diagram, processorSupport));
 
         try
         {
