@@ -16,7 +16,8 @@ package org.finos.legend.pure.runtime.java.extension.external.shared.conversion;
 
 public abstract class MapConversion<F, T> implements Conversion<F, T>
 {
-    public MapConversion() {
+    public MapConversion()
+    {
     }
 
     @Override

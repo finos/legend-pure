@@ -22,7 +22,8 @@ public abstract class UnitConversion<F, T> implements Conversion<F, T>
     protected final String unitKeyName = "unit";
     protected final String valueKeyName = "value";
 
-    public UnitConversion(CoreInstance type) {
+    public UnitConversion(CoreInstance type)
+    {
         this.type = type;
     }
 
