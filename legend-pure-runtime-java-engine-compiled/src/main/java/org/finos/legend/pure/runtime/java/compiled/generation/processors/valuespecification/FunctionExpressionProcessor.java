@@ -14,9 +14,9 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -72,7 +72,7 @@ public class FunctionExpressionProcessor
                     FunctionProcessor.functionNameToJava(function) + "_withConstraints(" + SourceInfoProcessor.sourceInfoToString(functionExpression.getSourceInformation()) + (parameters.isEmpty() ? "" : ",") + parameters + ")";
             String qualifiedFunctionCall = IdBuilder.sourceToId(function.getSourceInformation()) + "." + functionCall;
             String possiblyWrappedFunctionCall = new ExecWrapper(processorContext, qualifiedFunctionCall, functionExpression).withShouldCast(shouldCast).withCastType(castType).possiblyGeneratePureStackTrace();
-            if(shouldCast && GenericType.isGenericTypeFullyConcrete(genericType, true, support))
+            if (shouldCast && GenericType.isGenericTypeFullyConcrete(genericType, true, support))
             {
                 castType = TypeProcessor.typeToJavaObjectSingle(genericType, true, support);
                 String interfaceString = TypeProcessor.pureTypeToJava(genericType, false, false, true, support);
@@ -107,11 +107,11 @@ public class FunctionExpressionProcessor
         {
             CoreInstance firstParam = Instance.getValueForMetaPropertyToManyResolved(functionExpression, M3Properties.parametersValues, processorContext.getSupport()).getFirst();
             String processedOwnerInstance = ValueSpecificationProcessor.processValueSpecification(topLevelElement, firstParam, processorContext);
-            return ("this".equals(processedOwnerInstance)?"": processedOwnerInstance + ".") +
+            return ("this".equals(processedOwnerInstance) ? "" : processedOwnerInstance + ".") +
                     JavaTools.makeValidJavaIdentifier(Instance.getValueForMetaPropertyToOneResolved(function, M3Properties.name, support).getName())
-                   + "(" +
-                            processFunctionParameterValues(topLevelElement, functionExpression, true, processorContext)
-                   + ")";
+                    + "(" +
+                    processFunctionParameterValues(topLevelElement, functionExpression, true, processorContext)
+                    + ")";
         }
         throw new RuntimeException("To Code! " + function.print(""));
     }
@@ -119,7 +119,7 @@ public class FunctionExpressionProcessor
     private static String processFunctionParameterValues(CoreInstance topLevelElement, CoreInstance functionExpression, boolean qualifier, ProcessorContext processorContext)
     {
         ProcessorSupport support = processorContext.getSupport();
-        MutableList<String> result = FastList.newList();
+        MutableList<String> result = Lists.mutable.empty();
 
         CoreInstance function = Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.func, support);
         ListIterable<? extends CoreInstance> parameters = Instance.getValueForMetaPropertyToManyResolved(processorContext.getSupport().function_getFunctionType(function), M3Properties.parameters, processorContext.getSupport());
@@ -135,7 +135,7 @@ public class FunctionExpressionProcessor
                 CoreInstance parameterMultiplicity = Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.multiplicity, support);
                 CoreInstance parameterGenericType = Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.genericType, support);
                 CoreInstance parameterValue = parameterValues.get(index);
-                result.add(ValueSpecificationProcessor.possiblyConvertProcessedValueSpecificationToCollection(ValueSpecificationProcessor.processValueSpecification(topLevelElement, parameterValue, processorContext), parameterMultiplicity,  parameterGenericType, processorContext.getSupport().valueSpecification_instanceOf(parameterValue, M3Paths.Nil) && parameterGenericType != null && GenericType.isGenericTypeConcrete(parameterGenericType, processorContext.getSupport()), processorContext));
+                result.add(ValueSpecificationProcessor.possiblyConvertProcessedValueSpecificationToCollection(ValueSpecificationProcessor.processValueSpecification(topLevelElement, parameterValue, processorContext), parameterMultiplicity, parameterGenericType, processorContext.getSupport().valueSpecification_instanceOf(parameterValue, M3Paths.Nil) && parameterGenericType != null && GenericType.isGenericTypeConcrete(parameterGenericType), processorContext));
             }
         }
         return result.with("es").makeString(",");

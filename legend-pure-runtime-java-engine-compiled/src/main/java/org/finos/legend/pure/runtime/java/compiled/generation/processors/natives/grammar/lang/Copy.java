@@ -29,7 +29,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.Ty
 
 public class Copy extends AbstractNative
 {
-    public Copy() {
+    public Copy()
+    {
         super("copy_T_1__String_1__T_1_", "copy_T_1__String_1__KeyExpression_MANY__T_1_");
     }
 
@@ -46,16 +47,19 @@ public class Copy extends AbstractNative
 
         String copyObject;
 
-        if (transformedParams.size() == 3) {
+        if (transformedParams.size() == 3)
+        {
 
             ListIterable<? extends CoreInstance> keyValues = Instance.getValueForMetaPropertyToManyResolved(parametersValues.get(2), M3Properties.values, processorSupport);
             copyObject = "CompiledSupport.<" + type + ">copy(" + transformedParams.get(0) + ", " +
                     NativeFunctionProcessor.buildM4SourceInformation(sourceInformation)
                     + ")" + InstantiationHelpers.manageKeyValues(genericType, Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(0), M3Properties.genericType, M3Properties.rawType, processorSupport), keyValues, processorContext);
-        } else {
-            copyObject =  "CompiledSupport.<" + type + ">copy(" + transformedParams.get(0) + ")";
+        }
+        else
+        {
+            copyObject = "CompiledSupport.<" + type + ">copy(" + transformedParams.get(0) + ")";
         }
 
-        return _Class.computeConstraintsInHierarchy(_class,processorSupport).isEmpty()? copyObject: "((" + type + ")Pure.handleValidation(false,"+ copyObject+"," + SourceInfoProcessor.sourceInfoToString(sourceInformation)+",es))";
+        return _Class.computeConstraintsInHierarchy(_class, processorSupport).isEmpty() ? copyObject : "((" + type + ")Pure.handleValidation(false," + copyObject + "," + SourceInfoProcessor.sourceInfoToString(sourceInformation) + ",es))";
     }
 }

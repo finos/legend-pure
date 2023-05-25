@@ -19,7 +19,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 
 public class Substring extends AbstractNativeFunctionGeneric
 {
-    public Substring() {
+    public Substring()
+    {
         super(getMethod(CompiledSupport.class, "substring", String.class, Number.class, Number.class),
                 "substring_String_1__Integer_1__Integer_1__String_1_", "substring_String_1__Integer_1__String_1_");
     }

@@ -15,13 +15,9 @@
 package org.finos.legend.pure.runtime.java.compiled.execution;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.block.factory.Predicates;
-import org.eclipse.collections.impl.block.function.checked.CheckedFunction;
-import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
-import org.eclipse.collections.impl.set.mutable.UnifiedSet;
+import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.finos.legend.pure.m3.coreinstance.BaseCoreInstance;
 import org.finos.legend.pure.m3.execution.AbstractConsole;
 import org.finos.legend.pure.m3.navigation.Printer;
@@ -30,29 +26,12 @@ import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Objects;
+import java.util.function.Predicate;
 
 public class ConsoleCompiled extends AbstractConsole
 {
     private static final String TAB = "    ";
-
-    private static final Predicate<Field> fieldSelection = new Predicate<Field>()
-    {
-        @Override
-        public boolean accept(Field field)
-        {
-            String fieldName = field.getName();
-            return !Modifier.isStatic(field.getModifiers()) && !"__id".equals(fieldName) && !"package".equals(fieldName);
-        }
-    };
-
-    private static final Function<Field, String> fieldName = new Function<Field, String>()
-    {
-        @Override
-        public String valueOf(Field field)
-        {
-            return field.getName();
-        }
-    };
 
     private final Predicate<Object> isExcluded;
 
@@ -63,7 +42,7 @@ public class ConsoleCompiled extends AbstractConsole
 
     public ConsoleCompiled()
     {
-        this(Predicates.alwaysFalse());
+        this(o -> false);
     }
 
     public void print(Object content, int max)
@@ -76,7 +55,7 @@ public class ConsoleCompiled extends AbstractConsole
 
     public static String toString(Object content, int max)
     {
-        return toString(content, max, Predicates.alwaysFalse());
+        return toString(content, max, o -> false);
     }
 
     public static String toString(Object content, int max, Predicate<Object> isExcluded)
@@ -87,7 +66,7 @@ public class ConsoleCompiled extends AbstractConsole
         }
         if (content instanceof RichIterable)
         {
-            RichIterable<?> collection = (RichIterable<?>)content;
+            RichIterable<?> collection = (RichIterable<?>) content;
             int size = collection.size();
             switch (size)
             {
@@ -97,17 +76,13 @@ public class ConsoleCompiled extends AbstractConsole
                 }
                 case 1:
                 {
-                    Object element = collection.getFirst();
+                    Object element = collection.getAny();
                     return processTopLevelValue(element, max, isExcluded);
                 }
                 default:
                 {
                     StringBuilder builder = new StringBuilder("[");
-                    for (Object object : collection)
-                    {
-                        builder.append("\n   ");
-                        builder.append(processTopLevelValue(object, max, isExcluded));
-                    }
+                    collection.forEach(o -> builder.append("\n   ").append(processTopLevelValue(o, max, isExcluded)));
                     builder.append("\n]");
                     return builder.toString();
                 }
@@ -121,17 +96,17 @@ public class ConsoleCompiled extends AbstractConsole
         if (object instanceof String)
         {
             String objectStr = object.toString();
-            return ("\n".equals(objectStr) || objectStr.isEmpty()) ? objectStr : "\'" + objectStr + "\'";
+            return ("\n".equals(objectStr) || objectStr.isEmpty()) ? objectStr : "'" + objectStr + "'";
         }
         if (object instanceof Boolean || object instanceof Number || object instanceof PureDate)
         {
             return object.toString();
         }
 
-        return processOneValue(object, UnifiedSet.newSet(), "", 0, max, isExcluded);
+        return processOneValue(object, Sets.mutable.empty(), "", 0, max, isExcluded);
     }
 
-    private static String processOneValue(final Object content, final MutableSet<Object> processed, final String space, final int current, final int max, final Predicate<Object> isExcluded)
+    private static String processOneValue(Object content, MutableSet<Object> processed, String space, int current, int max, Predicate<Object> isExcluded)
     {
         if (content == null)
         {
@@ -139,83 +114,88 @@ public class ConsoleCompiled extends AbstractConsole
         }
         if (content instanceof String || content instanceof Boolean || content instanceof Long)
         {
-            return space+content+" instance "+content.getClass().getSimpleName();
+            return space + content + " instance " + content.getClass().getSimpleName();
         }
         if (content instanceof RichIterable)
         {
-            return ((RichIterable<?>)content).collect(new Function<Object, String>()
-            {
-                @Override
-                public String valueOf(Object o)
-                {
-                    return processOneValue(o, processed, space, current + 1, max, isExcluded);
-                }
-            }).makeString("\n");
+            return ((RichIterable<?>) content).collect(o -> processOneValue(o, processed, space, current + 1, max, isExcluded)).makeString("\n");
         }
         if (content instanceof BaseCoreInstance)
         {
-            return Printer.print((BaseCoreInstance)content, space, max, new CompiledProcessorSupport(null, null, null));
+            return Printer.print((BaseCoreInstance) content, space, max, new CompiledProcessorSupport(null, null, null));
         }
-        try
+        if (processed.add(content))
         {
-            if (processed.add(content))
+            if (current > max)
             {
-                return (current <= max) ? space + getId(content) + " instance " + getType(content) + "\n" +
-                        ArrayAdapter.adapt(content.getClass().getFields()).select(fieldSelection).sortThisBy(fieldName).collect(new CheckedFunction<Field, String>()
+                return space + "[>" + max + "] " + safeGetId(content) + " instance " + getType(content);
+            }
+            return ArrayIterate.select(content.getClass().getFields(), ConsoleCompiled::selectField)
+                    .sortThisBy(Field::getName)
+                    .collect(field ->
+                    {
+                        field.setAccessible(true);
+                        Object result;
+                        try
                         {
-                            @Override
-                            public String safeValueOf(Field field) throws IllegalAccessException
+                            result = field.get(content);
+                        }
+                        catch (IllegalAccessException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
+                        if (result == null)
+                        {
+                            return null;
+                        }
+                        if (result instanceof RichIterable)
+                        {
+                            if (((RichIterable<?>) result).isEmpty())
                             {
-                                field.setAccessible(true);
-                                Object result = field.get(content);
-                                if (result != null)
-                                {
-                                    if (result instanceof RichIterable)
-                                    {
-                                        if (((RichIterable)result).isEmpty())
-                                        {
-                                            return null;
-                                        }
-                                    }
-
-                                    String toPrint;
-                                    if (isExcluded.accept(result))
-                                    {
-                                        toPrint = space + TAB + TAB + "[X] " + getId(result) + " instance " + getType(result);
-                                    }
-                                    else
-                                    {
-                                        toPrint = processOneValue(result, processed, space + TAB + TAB, current + 1, max, isExcluded);
-                                    }
-
-                                    return space + TAB + field.getName().substring(1) + "(Property):\n" + toPrint;
-                                }
                                 return null;
                             }
-                        }).select(Predicates.notNull()).makeString("\n") : space + "[>" + max + "] " + getId(content) + " instance " + getType(content);
-            }
-            return space + "[_] " + getId(content) + " instance " + getType(content);
+                        }
+
+                        String toPrint;
+                        if (isExcluded.test(result))
+                        {
+                            toPrint = space + TAB + TAB + "[X] " + safeGetId(result) + " instance " + getType(result);
+                        }
+                        else
+                        {
+                            toPrint = processOneValue(result, processed, space + TAB + TAB, current + 1, max, isExcluded);
+                        }
+
+                        return space + TAB + field.getName().substring(1) + "(Property):\n" + toPrint;
+                    })
+                    .select(Objects::nonNull)
+                    .makeString(space + safeGetId(content) + " instance " + getType(content) + "\n", "\n", "");
+        }
+        return space + "[_] " + safeGetId(content) + " instance " + getType(content);
+    }
+
+    private static boolean selectField(Field field)
+    {
+        String fieldName = field.getName();
+        return !Modifier.isStatic(field.getModifiers()) && !"__id".equals(fieldName) && !"package".equals(fieldName);
+    }
+
+    private static String getType(Object content)
+    {
+        try
+        {
+            Field f = content.getClass().getField("tempTypeName");
+            f.setAccessible(true);
+            return (String) f.get(null);
+        }
+        catch (NoSuchFieldException e)
+        {
+            return content.getClass().getName();
         }
         catch (IllegalAccessException e)
         {
             throw new RuntimeException(e);
         }
-    }
-
-    private static String getType(Object content) throws IllegalAccessException
-    {
-        String typeName;
-        try
-        {
-            Field f = content.getClass().getField("tempTypeName");
-            f.setAccessible(true);
-            typeName = (String)f.get(null);
-        }
-        catch (NoSuchFieldException e)
-        {
-            typeName = content.getClass().getName();
-        }
-        return typeName;
     }
 
     public static String getId(Object obj) throws IllegalAccessException
@@ -224,12 +204,24 @@ public class ConsoleCompiled extends AbstractConsole
         {
             Field field = obj.getClass().getField("__id");
             field.setAccessible(true);
-            String result = (String)field.get(obj);
+            String result = (String) field.get(obj);
             return ModelRepository.possiblyReplaceAnonymousId(result);
         }
         catch (NoSuchFieldException e)
         {
             return obj.toString();
+        }
+    }
+
+    private static String safeGetId(Object obj)
+    {
+        try
+        {
+            return getId(obj);
+        }
+        catch (IllegalAccessException e)
+        {
+            throw new RuntimeException(e);
         }
     }
 

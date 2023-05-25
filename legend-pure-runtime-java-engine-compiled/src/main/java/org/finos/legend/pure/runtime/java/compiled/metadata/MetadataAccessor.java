@@ -30,13 +30,21 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
 public interface MetadataAccessor
 {
     Class<?> getClass(String fullPath);
+
     Measure getMeasure(String fullPath);
+
     Unit getUnit(String fullPath);
+
     Enumeration<?> getEnumeration(String fullPath);
+
     PrimitiveType getPrimitiveType(String name);
+
     ConcreteFunctionDefinition<?> getConcreteFunctionDefinition(String name);
+
     LambdaFunction<?> getLambdaFunction(String id);
+
     org.finos.legend.pure.m3.coreinstance.Package getPackage(String path);
+
     org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum getEnum(String enumerationName, String enumName);
 
     @SuppressWarnings("unchecked")

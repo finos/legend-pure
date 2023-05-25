@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation;
 
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Sets;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
 import org.finos.legend.pure.m3.coreinstance.M3CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.M3PlatformCoreInstanceFactoryRegistry;
@@ -37,7 +37,7 @@ public class JavaPackageAndImportBuilder
     private static final String CODE_GEN_PACKAGE_PREFIX = CODE_GEN_PACKAGE_NAME + ".";
     private static final String BASE_PACKAGE_FOLDER = CODE_GEN_PACKAGE_NAME.replace('.', '/');
 
-    public final static SetIterable<String> M3_CLASSES = Sets.mutable
+    public static final SetIterable<String> M3_CLASSES = Sets.mutable
             .withAll(M3CoreInstanceFactoryRegistry.ALL_PATHS)
             .withAll(M3PlatformCoreInstanceFactoryRegistry.ALL_PATHS)
             .withAll(CompiledExtensionLoader.extensions().flatCollect(CompiledExtension::getExtraCorePath));

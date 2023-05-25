@@ -25,7 +25,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 
 public class Is extends AbstractNative
 {
-    public Is() {
+    public Is()
+    {
         super("is_Any_1__Any_1__Boolean_1_");
     }
 

@@ -25,8 +25,10 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 public interface GetterOverrideExecutor
 {
     GetterOverride __getterOverrideToOneExec(PureFunction2Wrapper f2);
-    GetterOverride __getterOverrideToManyExec(PureFunction2Wrapper f2);
-    Object executeToOne(CoreInstance instance, String fullSystemClassName, String propertyName);
-    ListIterable executeToMany(CoreInstance instance, String fullSystemClassName, String propertyName);
 
+    GetterOverride __getterOverrideToManyExec(PureFunction2Wrapper f2);
+
+    Object executeToOne(CoreInstance instance, String fullSystemClassName, String propertyName);
+
+    ListIterable executeToMany(CoreInstance instance, String fullSystemClassName, String propertyName);
 }

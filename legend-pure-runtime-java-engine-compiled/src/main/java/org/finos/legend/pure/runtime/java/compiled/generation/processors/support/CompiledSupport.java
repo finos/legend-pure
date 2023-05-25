@@ -106,6 +106,7 @@ public class CompiledSupport
     private static final String TEMP_TYPE_NAME = "tempTypeName";
 
     private static final DecimalFormat DECIMAL_FORMAT;
+
     static
     {
         DecimalFormat format = new DecimalFormat("0.0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
@@ -874,6 +875,7 @@ public class CompiledSupport
                 return this.value;
             }
         }
+
         Comparator<ElementWithKey> comparator = (comp == null) ?
                 (left, right) -> compareInt(left.getKey(), right.getKey()) :
                 (left, right) -> comp.execute(Lists.immutable.with(left.getKey(), right.getKey()), es).intValue();

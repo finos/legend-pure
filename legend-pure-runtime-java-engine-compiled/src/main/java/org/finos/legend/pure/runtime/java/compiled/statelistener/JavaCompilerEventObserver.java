@@ -20,8 +20,10 @@ import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 public interface JavaCompilerEventObserver
 {
     void startGeneratingJavaFiles(String compileGroup);
+
     void endGeneratingJavaFiles(String compileGroup, RichIterable<StringJavaSource> sources);
 
     void startCompilingJavaFiles(String compileGroup);
+
     void endCompilingJavaFiles(String compileGroup);
 }

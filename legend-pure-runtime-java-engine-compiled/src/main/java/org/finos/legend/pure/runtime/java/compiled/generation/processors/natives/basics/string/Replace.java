@@ -19,7 +19,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 
 public class Replace extends AbstractNativeFunctionGeneric
 {
-    public Replace() {
+    public Replace()
+    {
         super(getMethod(CompiledSupport.class, "replace"), "replace_String_1__String_1__String_1__String_1_");
     }
 }

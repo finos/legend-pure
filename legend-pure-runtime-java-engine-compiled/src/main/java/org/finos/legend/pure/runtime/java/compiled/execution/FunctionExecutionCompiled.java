@@ -17,11 +17,11 @@ package org.finos.legend.pure.runtime.java.compiled.execution;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.multimap.list.MutableListMultimap;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.map.sorted.mutable.TreeSortedMap;
@@ -35,14 +35,23 @@ import org.finos.legend.pure.m3.execution.Console;
 import org.finos.legend.pure.m3.execution.ExecutionPlatform;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.execution.OutputWriter;
-import org.finos.legend.pure.m3.navigation.*;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.serialization.PureRuntimeEventHandler;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.CoreInstanceFactoriesRegistry;
-import org.finos.legend.pure.m3.serialization.runtime.*;
+import org.finos.legend.pure.m3.serialization.runtime.Message;
+import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
+import org.finos.legend.pure.m3.serialization.runtime.RepositoryComparator;
+import org.finos.legend.pure.m3.serialization.runtime.Source;
+import org.finos.legend.pure.m3.serialization.runtime.SourceRegistry;
 import org.finos.legend.pure.m3.statelistener.ExecutionActivityListener;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -129,9 +138,11 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
         this.extraSupportedTypes = runtime.getIncrementalCompiler().getParserLibrary().getParsers().flatCollect(CoreInstanceFactoriesRegistry::getCoreInstanceFactoriesRegistry).flatCollect(CoreInstanceFactoryRegistry::allManagedTypes).toSet();
 
         CodeRepositorySet codeRepositorySet = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(Thread.currentThread().getContextClassLoader(), true)).build();
-        this.extensions.forEach(c -> {if (!(codeRepositorySet.hasRepository(c.getRelatedRepository())))
+        this.extensions.forEach(c ->
+        {
+            if (!(codeRepositorySet.hasRepository(c.getRelatedRepository())))
             {
-                throw new RuntimeException("The repository "+c.getRelatedRepository()+" related to the extension "+c.getClass().getSimpleName()+" can't be found");
+                throw new RuntimeException("The repository " + c.getRelatedRepository() + " related to the extension " + c.getClass().getSimpleName() + " can't be found");
             }
         });
     }
@@ -331,18 +342,18 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
     {
         try
         {
-            Class instanceValueClass = classLoader.loadClass(FullJavaPaths.InstanceValue_Impl);
+            Class<?> instanceValueClass = classLoader.loadClass(FullJavaPaths.InstanceValue_Impl);
             Object instanceValueObject = instanceValueClass.getConstructor(String.class).newInstance("ID");
             MutableList _values = (MutableList) instanceValueClass.getDeclaredField("_values").get(instanceValueObject);
             _values.add(first);
 
             CoreInstance type = getType(first, metadata);
 
-            Class genericTypeClass = classLoader.loadClass(FullJavaPaths.GenericType_Impl);
+            Class<?> genericTypeClass = classLoader.loadClass(FullJavaPaths.GenericType_Impl);
             Object genericTypeObject = genericTypeClass.getConstructor(String.class).newInstance("ID");
             genericTypeClass.getDeclaredField("_rawType").set(genericTypeObject, type);
 
-            Class valSpecClass = classLoader.loadClass(FullJavaPaths.ValueSpecification_Impl);
+            Class<?> valSpecClass = classLoader.loadClass(FullJavaPaths.ValueSpecification_Impl);
             valSpecClass.getDeclaredField("_genericType").set(instanceValueObject, genericTypeObject);
 
             return (CoreInstance) instanceValueObject;
@@ -383,7 +394,7 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
     {
         // Manage Parameters ----------------------------
         ListIterable<? extends CoreInstance> parameters = Instance.getValueForMetaPropertyToManyResolved(processorSupport.function_getFunctionType(functionDefinition), M3Properties.parameters, processorSupport);
-        Class[] paramClasses = new Class[parameters.size()];
+        Class<?>[] paramClasses = new Class<?>[parameters.size()];
         Object[] params = new Object[parameters.size()];
         Metadata metamodel = this.metadataCompilerEventHandler.getMetadata();
         int i = 0;
@@ -406,7 +417,7 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
                 paramClasses[i] = CompiledSupport.convertFunctionTypeStringToClass(t, cl);
                 if (val instanceof MutableList)
                 {
-                    MutableList valList = (MutableList) val;
+                    MutableList<?> valList = (MutableList<?>) val;
                     if (valList.size() != 1)
                     {
                         throw new RuntimeException("Expected exactly one value, found " + valList.size());
@@ -420,7 +431,7 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
                 paramClasses[i] = CompiledSupport.loadClass(className, cl);
                 if (val instanceof MutableList)
                 {
-                    MutableList valList = (MutableList) val;
+                    MutableList<?> valList = (MutableList<?>) val;
                     switch (valList.size())
                     {
                         case 0:

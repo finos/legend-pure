@@ -15,7 +15,6 @@
 package org.finos.legend.pure.runtime.java.compiled.statelistener;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.primitive.IntFunction;
 import org.finos.legend.pure.m3.tools.TimePrinter;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataEventObserver;
@@ -24,18 +23,8 @@ import java.io.PrintStream;
 
 public class PrintJavaCompilerEventObserver implements JavaCompilerEventObserver, MetadataEventObserver
 {
-    private static final IntFunction<StringJavaSource> JAVA_SOURCE_SIZE_FUNCTION = new IntFunction<StringJavaSource>()
-    {
-        @Override
-        public int intValueOf(StringJavaSource stringJavaSource)
-        {
-            return stringJavaSource.size();
-        }
-    };
     private long time;
-    private PrintStream printStream;
-    private static String space="";
-    private static String tab="  ";
+    private final PrintStream printStream;
 
     public PrintJavaCompilerEventObserver(PrintStream out)
     {
@@ -65,14 +54,14 @@ public class PrintJavaCompilerEventObserver implements JavaCompilerEventObserver
     @Override
     public void endGeneratingJavaFiles(String compileGroup, RichIterable<StringJavaSource> sources)
     {
-        this.printStream.println("Finished Generating " + sources.size() + " \""  + compileGroup + "\" Java Files (" + TimePrinter.makeItHuman(System.nanoTime() - this.time) + ") " + sources.sumOfInt(JAVA_SOURCE_SIZE_FUNCTION) + " bytes\n");
+        this.printStream.println("Finished Generating " + sources.size() + " \"" + compileGroup + "\" Java Files (" + TimePrinter.makeItHuman(System.nanoTime() - this.time) + ") " + sources.sumOfInt(StringJavaSource::size) + " bytes\n");
     }
 
     @Override
     public void startCompilingJavaFiles(String compileGroup)
     {
         this.time = System.nanoTime();
-        this.printStream.println("Start Compiling \""  + compileGroup + "\" Java Files");
+        this.printStream.println("Start Compiling \"" + compileGroup + "\" Java Files");
     }
 
     @Override

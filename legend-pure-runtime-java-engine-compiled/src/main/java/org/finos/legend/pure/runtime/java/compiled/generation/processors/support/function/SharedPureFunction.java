@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function;
 
-
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 

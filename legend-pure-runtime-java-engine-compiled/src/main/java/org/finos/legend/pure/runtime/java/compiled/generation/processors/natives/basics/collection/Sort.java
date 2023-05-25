@@ -22,7 +22,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 
 public class Sort extends AbstractNativeFunctionGeneric
 {
-    public Sort() {
+    public Sort()
+    {
         super(getMethod(CompiledSupport.class, "toSorted"), false, true, false, "sort_T_m__Function_$0_1$__Function_$0_1$__T_m_");
     }
 

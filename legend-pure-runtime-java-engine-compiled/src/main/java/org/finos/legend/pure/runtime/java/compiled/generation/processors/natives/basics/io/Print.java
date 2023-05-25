@@ -14,12 +14,10 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.io;
 
-import org.apache.commons.lang3.StringUtils;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
 
 public class Print extends AbstractNative
 {
@@ -31,7 +29,7 @@ public class Print extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return "CompiledSupport.print(((CompiledExecutionSupport)es).getConsole(), " + StringUtils.join(transformedParams, ", ") + ")";
+        return transformedParams.makeString("CompiledSupport.print(((CompiledExecutionSupport)es).getConsole(), ", ", ", ")");
     }
 
     public String buildBody()
@@ -41,7 +39,7 @@ public class Print extends AbstractNative
                 "            @Override\n" +
                 "            public Object value(Object value, Long depth, ExecutionSupport es)\n" +
                 "            {\n" +
-                "                return CompiledSupport.print(((CompiledExecutionSupport)es).getConsole(), value, depth);"+
+                "                return CompiledSupport.print(((CompiledExecutionSupport)es).getConsole(), value, depth);" +
                 "            }\n" +
                 "        }";
     }

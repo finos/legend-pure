@@ -15,16 +15,16 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.orchestrator;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
@@ -42,16 +42,16 @@ import java.nio.file.Paths;
  */
 public class JavaModelFactoryGenerator
 {
-    public static void main(String[] args) throws Exception
+    public static void main(String... args) throws Exception
     {
         System.out.println("Generating Java Factory for Parser");
         String name = args[0];
         String parserClass = args[1];
         Path output = Paths.get(args[2]);
-        System.out.println("   name:"+name);
-        System.out.println("   parser class:"+parserClass);
-        System.out.println("   output:"+output);
-        MutableList<String> parsers = Lists.mutable.with(parserClass.replaceAll("\\n","").replaceAll("\\r","").split(","));
+        System.out.println("   name:" + name);
+        System.out.println("   parser class:" + parserClass);
+        System.out.println("   output:" + output);
+        MutableList<String> parsers = Lists.mutable.with(parserClass.replaceAll("\\n", "").replaceAll("\\r", "").split(","));
         MutableSet<String> allTypes = Sets.mutable.empty();
         parsers.forEach(p ->
         {
@@ -60,11 +60,11 @@ public class JavaModelFactoryGenerator
                 Object parser = Class.forName(p.trim()).getConstructor().newInstance();
                 if (parser instanceof Parser)
                 {
-                    allTypes.addAll(((Parser)parser).getCoreInstanceFactoriesRegistry().flatCollect(CoreInstanceFactoryRegistry::allManagedTypes).toSet());
+                    allTypes.addAll(((Parser) parser).getCoreInstanceFactoriesRegistry().flatCollect(CoreInstanceFactoryRegistry::allManagedTypes).toSet());
                 }
                 else
                 {
-                    allTypes.addAll(((InlineDSL)parser).getCoreInstanceFactoriesRegistry().flatCollect(CoreInstanceFactoryRegistry::allManagedTypes).toSet());
+                    allTypes.addAll(((InlineDSL) parser).getCoreInstanceFactoriesRegistry().flatCollect(CoreInstanceFactoryRegistry::allManagedTypes).toSet());
                 }
             }
             catch (Exception e)
@@ -74,7 +74,7 @@ public class JavaModelFactoryGenerator
         });
 
 
-        System.out.println("   managed types: "+allTypes);
+        System.out.println("   managed types: " + allTypes);
         gen(System.nanoTime(), output, name, allTypes);
         System.out.println("Finished generating Java Factory");
     }

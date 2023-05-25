@@ -21,9 +21,9 @@ import org.junit.Test;
 
 public class TestJavaPrimitiveTypeMapping
 {
-
     @Test
-    public void testChunk() {
+    public void testChunk()
+    {
         doTest("hello", new String[]{"hello"});
         doTest("helloworld", new String[]{"hello", "world"});
         doTest("hello\\\\world", new String[]{"hello", "\\\\wor", "ld"}); //split with escape at start of chunk
@@ -31,7 +31,8 @@ public class TestJavaPrimitiveTypeMapping
         doTest("ello\\\"world", new String[]{"ello", "\\\"worl", "d"}); //split in middle of escape
     }
 
-    private void doTest(String value, String[] expected) {
+    private void doTest(String value, String[] expected)
+    {
         ListIterable<String> chunks = JavaPurePrimitiveTypeMapping.chunk(value, 5);
 
         Assert.assertArrayEquals(expected, chunks.toArray());

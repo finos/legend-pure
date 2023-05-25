@@ -27,22 +27,15 @@ public class TestDspClassloading
     public static final String JAVA_MAP_CLASS = "java.util.Map";
 
     @Test
-    public void testDspClassloadingWithoutGSCollections()
+    public void testDspClassloadingWithoutGSCollections() throws Exception
     {
-        Class<?> pureMapClass, pureCacheMapClass, gsCollectionsMutableMapClass;
-        Constructor<?> pureCacheMapConstructor, pureMapConstructor;
-        try {
-            pureMapClass = getClass().getClassLoader().loadClass(PURE_MAP_CLASS);
-            pureCacheMapClass = getClass().getClassLoader().loadClass(PURE_CACHE_MAP_CLASS);
-            gsCollectionsMutableMapClass = getClass().getClassLoader().loadClass(JAVA_MAP_CLASS);
-            pureCacheMapConstructor = pureCacheMapClass.getConstructor(int.class, long.class, TimeUnit.class);
-            pureMapConstructor = pureMapClass.getConstructor(gsCollectionsMutableMapClass);
-            Object pureCacheMapInstance = pureCacheMapConstructor.newInstance(1, 2, TimeUnit.SECONDS);
-            Object pureMapInstance = pureMapConstructor.newInstance(pureCacheMapInstance);
-            Assert.assertNotNull(pureMapInstance);
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
-        }
-
+        Class<?> pureMapClass = getClass().getClassLoader().loadClass(PURE_MAP_CLASS);
+        Class<?> pureCacheMapClass = getClass().getClassLoader().loadClass(PURE_CACHE_MAP_CLASS);
+        Class<?> gsCollectionsMutableMapClass = getClass().getClassLoader().loadClass(JAVA_MAP_CLASS);
+        Constructor<?> pureCacheMapConstructor = pureCacheMapClass.getConstructor(int.class, long.class, TimeUnit.class);
+        Constructor<?> pureMapConstructor = pureMapClass.getConstructor(gsCollectionsMutableMapClass);
+        Object pureCacheMapInstance = pureCacheMapConstructor.newInstance(1, 2, TimeUnit.SECONDS);
+        Object pureMapInstance = pureMapConstructor.newInstance(pureCacheMapInstance);
+        Assert.assertNotNull(pureMapInstance);
     }
 }

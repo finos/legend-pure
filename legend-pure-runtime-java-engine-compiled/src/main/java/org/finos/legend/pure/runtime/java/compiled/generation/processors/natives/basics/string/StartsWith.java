@@ -19,7 +19,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 
 public class StartsWith extends AbstractNativeFunctionGeneric
 {
-    public StartsWith() {
+    public StartsWith()
+    {
         super(getMethod(CompiledSupport.class, "startsWith"), "startsWith_String_1__String_1__Boolean_1_");
     }
 }

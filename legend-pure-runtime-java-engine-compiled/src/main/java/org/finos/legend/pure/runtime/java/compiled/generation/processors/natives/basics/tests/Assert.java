@@ -14,8 +14,9 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.tests;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.list.mutable.FastList;
+import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
@@ -24,22 +25,23 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.Fu
 
 public class Assert extends AbstractNativeFunctionGeneric
 {
-    public Assert() {
+    public Assert()
+    {
         super(getMethod(CompiledSupport.class, "pureAssert"), true, true, false, "assert_Boolean_1__Function_1__Boolean_1_");
     }
 
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        FastList<String> params = FastList.newListWith(
+        MutableList<String> params = Lists.mutable.with(
                 transformedParams.get(0),
                 "CoreGen.getSharedPureFunction(" + transformedParams.get(1) + ", es)");
-
         return super.build(topLevelElement, functionExpression, params, processorContext);
     }
 
     @Override
-    public String buildBody() {
+    public String buildBody()
+    {
         return "new DefendedPureFunction2<Boolean, " + FullJavaPaths.Function + ", Object>()\n" +
                 "        {\n" +
                 "            @Override\n" +

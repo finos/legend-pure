@@ -49,7 +49,7 @@ import java.util.Set;
 
 public class JavaCodeGeneration
 {
-    public static void main(String args[]) throws Exception
+    public static void main(String... args) throws Exception
     {
         Log log = new Log()
         {

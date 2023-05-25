@@ -19,7 +19,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 
 public class Split extends AbstractNativeFunctionGeneric
 {
-    public Split() {
-        super(getMethod(CompiledSupport.class, "split") , "split_String_1__String_1__String_MANY_");
+    public Split()
+    {
+        super(getMethod(CompiledSupport.class, "split"), "split_String_1__String_1__String_MANY_");
     }
 }

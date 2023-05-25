@@ -25,14 +25,18 @@ import org.junit.BeforeClass;
 public class TestRuntimeTypeManagementCompiled extends AbstractTestEvaluateTypeManagement
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         AbstractPureTestWithCoreCompiled.setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
     }
+
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         AbstractPureTestWithCoreCompiled.runtime.delete("inferenceTest.pure");
     }
-     protected static FunctionExecution getFunctionExecution()
+
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

@@ -15,7 +15,6 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
@@ -42,6 +41,7 @@ public class ClassProcessor
     {
         return PLATFORM_FILES.contains(PackageableElement.getUserPathForPackageableElement(_class));
     }
+
     public static final Predicate<CoreInstance> IS_PLATFORM_CLASS = ClassProcessor::isPlatformClass;
 
     public static RichIterable<CoreInstance> processClass(CoreInstance classGenericType, ProcessorContext processorContext, boolean addJavaSerializationSupport, String pureExternalPackage)
@@ -97,14 +97,7 @@ public class ClassProcessor
 
     static String typeParameters(CoreInstance _class)
     {
-        return _class.getValueForMetaPropertyToMany(M3Properties.typeParameters).collect(new Function<CoreInstance, String>()
-        {
-            @Override
-            public String valueOf(CoreInstance coreInstance)
-            {
-                return coreInstance.getValueForMetaPropertyToOne(M3Properties.name).getName();
-            }
-        }).makeString(",");
+        return _class.getValueForMetaPropertyToMany(M3Properties.typeParameters).collect(ci -> ci.getValueForMetaPropertyToOne(M3Properties.name).getName()).makeString(",");
     }
 
     static boolean isLazy(CoreInstance _class)

@@ -16,13 +16,13 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.native
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
 
 public class Format extends AbstractNative
 {
-    public Format() {
+    public Format()
+    {
         super("format_String_1__Any_MANY__String_1_");
     }
 

@@ -165,7 +165,7 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
         Assert.assertEquals(Lists.fixedSize.empty(), Files.list(sourcesDir).collect(Collectors.toList()));
 
         Generate generate = generator.generateOnly(true, sourcesDir);
-        Assert.assertEquals(Lists.fixedSize.with( "test_generic_repository", "other_test_generic_repository", "test", "other", "platform").sortThis(), generate.getJavaSourcesByGroup().keysView().toList().sortThis());
+        Assert.assertEquals(Lists.fixedSize.with("test_generic_repository", "other_test_generic_repository", "test", "other", "platform").sortThis(), generate.getJavaSourcesByGroup().keysView().toList().sortThis());
         Assert.assertNotEquals(Lists.immutable.empty(), generate.getJavaSourcesByGroup().get("test"));
         Assert.assertNotEquals(Lists.immutable.empty(), generate.getJavaSourcesByGroup().get("other"));
 

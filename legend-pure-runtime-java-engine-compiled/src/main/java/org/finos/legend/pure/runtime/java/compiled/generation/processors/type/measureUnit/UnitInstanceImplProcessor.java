@@ -49,7 +49,7 @@ public class UnitInstanceImplProcessor
             "import org.finos.legend.pure.runtime.java.compiled.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.*;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n"+
+            "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ReflectiveCoreInstance;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ValCoreInstance;\n" +
@@ -68,7 +68,7 @@ public class UnitInstanceImplProcessor
 
     public static String buildValSetterAndGetter(String interfaceName)
     {
-        return  "    public java.lang.Number _val;\n" +
+        return "    public java.lang.Number _val;\n" +
                 "    public " + interfaceName + " _val(java.lang.Number val)\n" +
                 "    {\n" +
                 "        this._val = val;\n" +
@@ -96,11 +96,11 @@ public class UnitInstanceImplProcessor
     public static String buildUnitImplGetter(String unitTypeInterfaceName, String unitTypeImplName, String simpleName, String originalName, String measureClassName)
     {
         String lowerCasedJavaCompatibleName = UnitProcessor.convertToJavaCompatibleClassName(simpleName.toLowerCase());
-        return  "    public " + unitTypeInterfaceName + " _unit()\n" +
+        return "    public " + unitTypeInterfaceName + " _unit()\n" +
                 "    {\n" +
                 "        if (" + measureClassName + "._" + lowerCasedJavaCompatibleName + "Impl" + " == null)" +
                 "           {\n" +
-                "        " + measureClassName +"._" + lowerCasedJavaCompatibleName + "Impl = new org.finos.legend.pure.generated." + unitTypeImplName + "(\"" + originalName + "\", this.es);\n" +
+                "        " + measureClassName + "._" + lowerCasedJavaCompatibleName + "Impl = new org.finos.legend.pure.generated." + unitTypeImplName + "(\"" + originalName + "\", this.es);\n" +
                 "           }\n" +
                 "        return " + measureClassName + "._" + lowerCasedJavaCompatibleName + "Impl;\n" +
                 "    }\n\n";
@@ -126,10 +126,10 @@ public class UnitInstanceImplProcessor
         String _extends = useJavaInheritance ? allGeneralizations.getFirst() : "ReflectiveCoreInstance";
 
         boolean hasFunctions = !_Class.getQualifiedProperties(unit, processorContext.getSupport()).isEmpty()
-                || !_Class.computeConstraintsInHierarchy(unit,processorContext.getSupport()).isEmpty();
+                || !_Class.computeConstraintsInHierarchy(unit, processorContext.getSupport()).isEmpty();
 
-        return StringJavaSource.newStringJavaSource(_package, className, IMPORTS + (hasFunctions? FUNCTION_IMPORTS :"") + imports +
-                "public class " + classNamePlusTypeParams + " extends " + _extends + " implements " + interfaceNamePlusTypeParams + (isGetterOverride? ", GetterOverrideExecutor" :"") + "\n" +
+        return StringJavaSource.newStringJavaSource(_package, className, IMPORTS + (hasFunctions ? FUNCTION_IMPORTS : "") + imports +
+                "public class " + classNamePlusTypeParams + " extends " + _extends + " implements " + interfaceNamePlusTypeParams + (isGetterOverride ? ", GetterOverrideExecutor" : "") + "\n" +
                 "{\n" +
                 buildMetaInfo(classGenericType, processorSupport, false) +
                 buildSimpleConstructor(unit, className, processorSupport) +
@@ -146,8 +146,8 @@ public class UnitInstanceImplProcessor
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
         String fullId = PackageableElement.getSystemPathForPackageableElement(_class, "::");
         return "    public static final String tempTypeName = \"" + Instance.getValueForMetaPropertyToOneResolved(_class, "name", processorSupport).getName() + "\";\n" +
-                "    private static final String tempFullTypeId = \"" + fullId + "\";\n"+
-                "    private"+ (lazy ? " volatile" : "") +" CoreInstance classifier;\n" +
+                "    private static final String tempFullTypeId = \"" + fullId + "\";\n" +
+                "    private" + (lazy ? " volatile" : "") + " CoreInstance classifier;\n" +
                 "   private ExecutionSupport es;\n";
     }
 
@@ -165,10 +165,10 @@ public class UnitInstanceImplProcessor
 
     private static String buildGetClassifier()
     {
-        return  "    @Override\n" +
+        return "    @Override\n" +
                 "    public CoreInstance getClassifier()\n" +
                 "     {\n" +
-                "        return this.classifier;\n"+
+                "        return this.classifier;\n" +
                 "     }\n";
     }
 
@@ -182,9 +182,9 @@ public class UnitInstanceImplProcessor
                 "        switch (keyName)\n" +
                 "        {\n" +
                 toOneProperties.collect(property -> "            case \"" + property.getName() + "\":\n" +
-                "            {\n" +
-                "                return ValCoreInstance.toCoreInstance(this._" + PrimitiveUtilities.getStringValue(property.getValueForMetaPropertyToOne(M3Properties.name)) + "());\n" +
-                "            }\n").makeString("") +
+                        "            {\n" +
+                        "                return ValCoreInstance.toCoreInstance(this._" + PrimitiveUtilities.getStringValue(property.getValueForMetaPropertyToOne(M3Properties.name)) + "());\n" +
+                        "            }\n").makeString("") +
 
                 "            case \"values\":\n" +
                 "            {\n" +
@@ -198,7 +198,6 @@ public class UnitInstanceImplProcessor
                 "            {\n" +
                 "                return ValCoreInstance.toCoreInstance(tempTypeName);\n" +
                 "            }" +
-
                 "            default:\n" +
                 "            {\n" +
                 "                return super.getValueForMetaPropertyToOne(keyName);\n" +
@@ -210,7 +209,7 @@ public class UnitInstanceImplProcessor
 
     public static String buildGetFullSystemPath()
     {
-        return  "    public String getFullSystemPath()\n" +
+        return "    public String getFullSystemPath()\n" +
                 "    {\n" +
                 "         return tempFullTypeId;\n" +
                 "    }\n";

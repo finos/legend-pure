@@ -14,8 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors;
 
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningFunctions;
@@ -25,8 +23,6 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation.generictype.GenericType;
-import org.finos.legend.pure.m3.navigation.generictype.GenericTypeWithXArguments;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
@@ -49,8 +45,8 @@ public class ClassJsonFactoryProcessor
             "import org.finos.legend.pure.runtime.java.compiled.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.*;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n"+
-            "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.*;\n"+
+            "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n" +
+            "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.*;\n" +
             "import org.finos.legend.pure.m4.coreinstance.SourceInformation;\n" +
             "import org.finos.legend.pure.m3.execution.ExecutionSupport;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.*;\n" +
@@ -85,9 +81,9 @@ public class ClassJsonFactoryProcessor
         return "true";
     }
 
-    public static void processClass(final CoreInstance classGenericType, ProcessorContext processorContext)
+    public static void processClass(CoreInstance classGenericType, ProcessorContext processorContext)
     {
-        final ProcessorSupport processorSupport = processorContext.getSupport();
+        ProcessorSupport processorSupport = processorContext.getSupport();
 
         MutableList<StringJavaSource> classes = processorContext.getClasses();
         MutableSet<CoreInstance> processedClasses = processorContext.getProcessedClasses(ClassJsonFactoryProcessor.class);
@@ -96,9 +92,8 @@ public class ClassJsonFactoryProcessor
         if (!processedClasses.contains(_class) && !processorSupport.instance_instanceOf(_class, M3Paths.DataType))
         {
             processedClasses.add(_class);
-            final String className = TypeProcessor.javaInterfaceForType(_class);
-            final String thisClassName = className;
-            final String userDefinedClassName = PackageableElement.getUserPathForPackageableElement(_class);
+            String className = TypeProcessor.javaInterfaceForType(_class);
+            String userDefinedClassName = PackageableElement.getUserPathForPackageableElement(_class);
             String typeParams = typeParameters(_class);
             // Factory to create objects from Json
             if (shouldGenerate(className))
@@ -114,104 +109,97 @@ public class ClassJsonFactoryProcessor
                                         "         notFound.remove(typeKey);\n"
                         ) +
                         processorSupport.class_getSimpleProperties(_class)
-                                .select(new Predicate<CoreInstance>()
-                                {
-                                    @Override
-                                    public boolean accept(CoreInstance property)
-                                    {
-                                        String name = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.name, processorSupport).getName();
-                                        return !M3Properties.elementOverride.equals(name) && !M3Properties.getterOverrideToOne.equals(name)
-                                                && !M3Properties.getterOverrideToMany.equals(name)
-                                                && !"classifierGenericType".equals(name)
-                                                && !M3Properties.hiddenPayload.equals(name)
-                                                && !M3Properties.constraintsManager.equals(name);
+                                .collectIf(
+                                        property ->
+                                        {
+                                            String name = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.name, processorSupport).getName();
+                                            return !M3Properties.elementOverride.equals(name) && !M3Properties.getterOverrideToOne.equals(name)
+                                                    && !M3Properties.getterOverrideToMany.equals(name)
+                                                    && !"classifierGenericType".equals(name)
+                                                    && !M3Properties.hiddenPayload.equals(name)
+                                                    && !M3Properties.constraintsManager.equals(name);
 
-                                    }
-                                })
-                                .collect(new Function<CoreInstance, Object>()
-                                {
-                                    @Override
-                                    public Object valueOf(CoreInstance property)
-                                    {
-                                        CoreInstance resolved = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.name, processorSupport);
-                                        String name = resolved.getName();
+                                        },
+                                        property ->
+                                        {
+                                            CoreInstance resolved = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.name, processorSupport);
+                                            String name = resolved.getName();
 
-                                        CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.multiplicity, processorSupport);
+                                            CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.multiplicity, processorSupport);
 
-                                        CoreInstance returnType = getPropertyResolvedReturnType(classGenericType, property, processorSupport);
-                                        String typeObject = TypeProcessor.typeToJavaObjectSingle(returnType, false, processorSupport);
+                                            CoreInstance returnType = getPropertyResolvedReturnType(classGenericType, property, processorSupport);
+                                            String typeObject = TypeProcessor.typeToJavaObjectSingle(returnType, false, processorSupport);
 
-                                        CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(returnType, M3Properties.rawType, processorSupport);
-                                        String classFullName = rawType == null ? null : PackageableElement.getSystemPathForPackageableElement(rawType, "::");
-                                        String classFullUserPath = rawType == null ? null : PackageableElement.getUserPathForPackageableElement(rawType);
-                                        String classFullName2 = rawType == null ? null : TypeProcessor.javaInterfaceNameForType(rawType);
+                                            CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(returnType, M3Properties.rawType, processorSupport);
+                                            String classFullName = rawType == null ? null : PackageableElement.getSystemPathForPackageableElement(rawType, "::");
+                                            String classFullUserPath = rawType == null ? null : PackageableElement.getUserPathForPackageableElement(rawType);
+                                            String classFullName2 = rawType == null ? null : TypeProcessor.javaInterfaceNameForType(rawType);
 
-                                        boolean isToOne = Multiplicity.isToOne(multiplicity, false);
+                                            boolean isToOne = Multiplicity.isToOne(multiplicity, false);
 
-                                        String assignment =
-                                                "if(res != null)\n" +
-                                                        "{\n" +
-                                                        "result._" + name + (isToOne ? "" : "Add") + "((" + typeObject + ")res);\n" +
-                                                        "}\n";
+                                            String assignment =
+                                                    "if(res != null)\n" +
+                                                            "{\n" +
+                                                            "result._" + name + (isToOne ? "" : "Add") + "((" + typeObject + ")res);\n" +
+                                                            "}\n";
 
-                                        return "\n" +
-                                                "           notFound.remove(\"" + name + "\");\n" +
-                                                "           if(" + associationCycleConditionCode(classFullName2, "parentClass", processorSupport, property) + ")\n" +
-                                                "           {\n" +
-                                                "               try\n" +
-                                                "               {\n" +
-                                                "                   Object propertyValue = json.get(\"" + MilestoningFunctions.getSourceEdgePointPropertyName(resolved.getName()) + "\");\n" +
-                                                "                   Class __" + name + "Type = " + typeObject + ".class;\n" +
-                                                "                   if (propertyValue instanceof org.json.simple.JSONArray )\n" +
-                                                "                   {\n" +
-                                                "                       org.json.simple.JSONArray jsonArray = (org.json.simple.JSONArray) propertyValue;\n" +
-                                                (shouldPerformMultiplicityChecks(className) ? multiplicityCheckCode("jsonArray", property, processorSupport) : "") +
-                                                "                       for (Object jsonElement : jsonArray)\n" +
-                                                "                       {\n" +
-                                                (shouldGenerate(typeObject) ?
-                                                        "                           if (jsonElement instanceof org.json.simple.JSONObject)\n" +
-                                                                "                           {\n" +
-                                                                "                               org.json.simple.JSONObject jsonObject = (org.json.simple.JSONObject) jsonElement;\n" +
-                                                                "                               __" + name + "Type = Pure.fromJsonResolveType(jsonObject, \"" + classFullName + "\", " + typeObject + ".class, md, typeKey, classLoader);\n" +
-                                                                "                               Object res = JsonParserHelper.fromJson(jsonElement, __" + name + "Type, \"" + classFullName2 + "\", \"" + classFullUserPath + "\", md, classLoader, si, typeKey, failOnUnknownProperties, constraintsOverride, es, \"" + thisClassName + "\");\n" +
-                                                                "                               " + assignment +
-                                                                "                           }\n" +
-                                                                "                           else\n" +
-                                                                "                           {\n"
-                                                        :
-                                                        "                           {\n"
-                                                ) +
-                                                "                               Object res = JsonParserHelper.fromJson(jsonElement, __" + name + "Type, \"" + classFullName2 + "\", \"" + classFullUserPath + "\", md, classLoader, si, typeKey, failOnUnknownProperties, constraintsOverride, es, \"" + thisClassName + "\");\n" +
-                                                "                               " + assignment +
-                                                "                           }\n" +
-                                                "                       }\n" +
-                                                "                   }\n" +
-                                                "                   else\n" +
-                                                "                   {\n" +
-                                                (shouldPerformMultiplicityChecks(className) ? multiplicityCheckCode("propertyValue", property, processorSupport) : "") +
-                                                (shouldGenerate(typeObject) ?
-                                                        "                       if (propertyValue instanceof org.json.simple.JSONObject)\n" +
-                                                                "                       {\n" +
-                                                                "                           org.json.simple.JSONObject jsonObject = (org.json.simple.JSONObject) propertyValue;\n" +
-                                                                "                           __" + name + "Type = Pure.fromJsonResolveType(jsonObject , \"" + classFullName + "\", " + typeObject + ".class, md, typeKey, classLoader);\n" +
-                                                                "                       }\n" : ""
-                                                ) +
-                                                "                       Object res = JsonParserHelper.fromJson(propertyValue, __" + name + "Type, \"" + classFullName2 + "\", \"" + classFullUserPath + "\", md, classLoader, si, typeKey, failOnUnknownProperties, constraintsOverride, es, \"" + thisClassName + "\");\n" +
-                                                "                       " + assignment +
-                                                "                   }\n" +
-                                                "               }\n" +
-                                                "               catch (PureException e)\n" +
-                                                "               {\n" +
-                                                "                   throw new PureCompiledExecutionException(si, \"Error populating property '" + name + "' on class '" + userDefinedClassName + "': \" + e.getInfo());\n" +
-                                                "               } \n" +
-                                                "               catch (Exception e)\n" +
-                                                "               {\n" +
-                                                "                   e.printStackTrace();\n" +
-                                                "                   throw new PureCompiledExecutionException(si, \"Error populating property '" + name + "' on class '" + userDefinedClassName + "'\", e);\n" +
-                                                "               }\n" +
-                                                "           }\n";
-                                    }
-                                }).makeString("")
+                                            return "\n" +
+                                                    "           notFound.remove(\"" + name + "\");\n" +
+                                                    "           if(" + associationCycleConditionCode(classFullName2, "parentClass", processorSupport, property) + ")\n" +
+                                                    "           {\n" +
+                                                    "               try\n" +
+                                                    "               {\n" +
+                                                    "                   Object propertyValue = json.get(\"" + MilestoningFunctions.getSourceEdgePointPropertyName(resolved.getName()) + "\");\n" +
+                                                    "                   Class __" + name + "Type = " + typeObject + ".class;\n" +
+                                                    "                   if (propertyValue instanceof org.json.simple.JSONArray )\n" +
+                                                    "                   {\n" +
+                                                    "                       org.json.simple.JSONArray jsonArray = (org.json.simple.JSONArray) propertyValue;\n" +
+                                                    (shouldPerformMultiplicityChecks(className) ? multiplicityCheckCode("jsonArray", property, processorSupport) : "") +
+                                                    "                       for (Object jsonElement : jsonArray)\n" +
+                                                    "                       {\n" +
+                                                    (shouldGenerate(typeObject) ?
+                                                            "                           if (jsonElement instanceof org.json.simple.JSONObject)\n" +
+                                                                    "                           {\n" +
+                                                                    "                               org.json.simple.JSONObject jsonObject = (org.json.simple.JSONObject) jsonElement;\n" +
+                                                                    "                               __" + name + "Type = Pure.fromJsonResolveType(jsonObject, \"" + classFullName + "\", " + typeObject + ".class, md, typeKey, classLoader);\n" +
+                                                                    "                               Object res = JsonParserHelper.fromJson(jsonElement, __" + name + "Type, \"" + classFullName2 + "\", \"" + classFullUserPath + "\", md, classLoader, si, typeKey, failOnUnknownProperties, constraintsOverride, es, \"" + className + "\");\n" +
+                                                                    "                               " + assignment +
+                                                                    "                           }\n" +
+                                                                    "                           else\n" +
+                                                                    "                           {\n"
+                                                            :
+                                                            "                           {\n"
+                                                    ) +
+                                                    "                               Object res = JsonParserHelper.fromJson(jsonElement, __" + name + "Type, \"" + classFullName2 + "\", \"" + classFullUserPath + "\", md, classLoader, si, typeKey, failOnUnknownProperties, constraintsOverride, es, \"" + className + "\");\n" +
+                                                    "                               " + assignment +
+                                                    "                           }\n" +
+                                                    "                       }\n" +
+                                                    "                   }\n" +
+                                                    "                   else\n" +
+                                                    "                   {\n" +
+                                                    (shouldPerformMultiplicityChecks(className) ? multiplicityCheckCode("propertyValue", property, processorSupport) : "") +
+                                                    (shouldGenerate(typeObject) ?
+                                                            "                       if (propertyValue instanceof org.json.simple.JSONObject)\n" +
+                                                                    "                       {\n" +
+                                                                    "                           org.json.simple.JSONObject jsonObject = (org.json.simple.JSONObject) propertyValue;\n" +
+                                                                    "                           __" + name + "Type = Pure.fromJsonResolveType(jsonObject , \"" + classFullName + "\", " + typeObject + ".class, md, typeKey, classLoader);\n" +
+                                                                    "                       }\n" : ""
+                                                    ) +
+                                                    "                       Object res = JsonParserHelper.fromJson(propertyValue, __" + name + "Type, \"" + classFullName2 + "\", \"" + classFullUserPath + "\", md, classLoader, si, typeKey, failOnUnknownProperties, constraintsOverride, es, \"" + className + "\");\n" +
+                                                    "                       " + assignment +
+                                                    "                   }\n" +
+                                                    "               }\n" +
+                                                    "               catch (PureException e)\n" +
+                                                    "               {\n" +
+                                                    "                   throw new PureCompiledExecutionException(si, \"Error populating property '" + name + "' on class '" + userDefinedClassName + "': \" + e.getInfo());\n" +
+                                                    "               } \n" +
+                                                    "               catch (Exception e)\n" +
+                                                    "               {\n" +
+                                                    "                   e.printStackTrace();\n" +
+                                                    "                   throw new PureCompiledExecutionException(si, \"Error populating property '" + name + "' on class '" + userDefinedClassName + "'\", e);\n" +
+                                                    "               }\n" +
+                                                    "           }\n";
+                                        }).makeString("")
                         + "\n          if(failOnUnknownProperties && !notFound.isEmpty())\n" +
                         "          {\n" +
                         "              String errMsg = (notFound.size() == 1 ? \"Property \" : \"Properties \") + notFound.makeString(\"'\", \"', '\" , \"'\") + \" can't be found in class \" + pureClassName;\n" +
@@ -233,14 +221,7 @@ public class ClassJsonFactoryProcessor
 
     private static String typeParameters(CoreInstance _class)
     {
-        return _class.getValueForMetaPropertyToMany(M3Properties.typeParameters).collect(new Function<CoreInstance, String>()
-        {
-            @Override
-            public String valueOf(CoreInstance coreInstance)
-            {
-                return coreInstance.getValueForMetaPropertyToOne(M3Properties.name).getName();
-            }
-        }).makeString(",");
+        return _class.getValueForMetaPropertyToMany(M3Properties.typeParameters).collect(ci -> ci.getValueForMetaPropertyToOne(M3Properties.name).getName()).makeString(",");
     }
 
     private static boolean shouldGenerate(String className)

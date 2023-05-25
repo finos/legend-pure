@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.model;
 
-
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 

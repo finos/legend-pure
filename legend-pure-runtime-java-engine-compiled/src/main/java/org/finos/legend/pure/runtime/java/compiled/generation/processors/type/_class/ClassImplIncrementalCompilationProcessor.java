@@ -31,18 +31,16 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.Ty
  */
 public class ClassImplIncrementalCompilationProcessor
 {
-
-
     public static final String CLASS_IMPL_SUFFIX = "_CompImpl";
 
     private ClassImplIncrementalCompilationProcessor()
     {
     }
 
-    public static StringJavaSource buildImplementation(String _package, String imports, CoreInstance classGenericType, ProcessorContext processorContext, final ProcessorSupport processorSupport)
+    public static StringJavaSource buildImplementation(String _package, String imports, CoreInstance classGenericType, ProcessorContext processorContext, ProcessorSupport processorSupport)
     {
         processorContext.setClassImplSuffix(CLASS_IMPL_SUFFIX);
-        final CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
+        CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
         String className = JavaPackageAndImportBuilder.buildImplClassNameFromType(_class, CLASS_IMPL_SUFFIX);
         String typeParams = ClassProcessor.typeParameters(_class);
         String typeParamsString = typeParams.isEmpty() ? "" : "<" + typeParams + ">";
@@ -55,13 +53,13 @@ public class ClassImplIncrementalCompilationProcessor
 
         return StringJavaSource.newStringJavaSource(_package, className, ClassImplProcessor.IMPORTS + ClassImplProcessor.FUNCTION_IMPORTS + imports +
                 "import org.finos.legend.pure.m3.coreinstance.BaseM3CoreInstanceFactory;\n" +
-                "public class " + classNamePlusTypeParams + " extends " + _extends + (specialEquals ? " implements org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.JavaCompiledCoreInstance" : "") +"\n" +
+                "public class " + classNamePlusTypeParams + " extends " + _extends + (specialEquals ? " implements org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.JavaCompiledCoreInstance" : "") + "\n" +
                 "{\n" +
                 M3ToJavaGenerator.createClassFactory(className, systemPath) +
                 createClassConstructors(className) +
                 ClassImplProcessor.buildQualifiedProperties(classGenericType, processorContext, processorSupport) +
                 M3ToJavaGenerator.createClassCopyMethod(className, interfaceName + M3ToJavaGenerator.getTypeParams(_class, true)) +
-                ClassImplProcessor.buildEquality(classGenericType, CLASS_IMPL_SUFFIX, true, true, false, processorContext, processorSupport)+
+                ClassImplProcessor.buildEquality(classGenericType, CLASS_IMPL_SUFFIX, true, true, false, processorContext, processorSupport) +
                 "}");
     }
 

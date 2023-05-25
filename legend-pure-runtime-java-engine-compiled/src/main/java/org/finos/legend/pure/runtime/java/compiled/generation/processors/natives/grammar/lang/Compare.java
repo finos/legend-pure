@@ -19,7 +19,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 
 public class Compare extends AbstractNativeFunctionGeneric
 {
-    public Compare() {
+    public Compare()
+    {
         super(getMethod(CompiledSupport.class, "compare"), "compare_T_1__T_1__Integer_1_");
     }
 }
