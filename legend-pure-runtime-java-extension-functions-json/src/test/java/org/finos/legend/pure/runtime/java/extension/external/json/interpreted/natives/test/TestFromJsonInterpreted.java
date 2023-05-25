@@ -16,7 +16,6 @@ package org.finos.legend.pure.runtime.java.extension.external.json.interpreted.n
 
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.json.AbstractTestFromJson;
-import org.finos.legend.pure.runtime.java.extension.external.json.interpreted.JsonExtensionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -24,13 +23,18 @@ import org.junit.BeforeClass;
 public class TestFromJsonInterpreted extends AbstractTestFromJson
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
+
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("fromString.pure");
+        runtime.compile();
     }
+
     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();

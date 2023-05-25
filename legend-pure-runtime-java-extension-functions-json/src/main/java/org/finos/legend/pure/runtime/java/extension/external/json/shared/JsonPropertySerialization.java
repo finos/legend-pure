@@ -14,13 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.extension.external.json.shared;
 
-import org.finos.legend.pure.runtime.java.extension.functions.shared.cipher.AESCipherUtil;
-import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.ClassConversion;
-import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.Conversion;
-import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.PropertySerialization;
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.predicate.Predicate;
-import org.eclipse.collections.api.block.predicate.Predicate2;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
@@ -32,21 +26,15 @@ import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;
+import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.ClassConversion;
+import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.Conversion;
+import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.PropertySerialization;
+import org.finos.legend.pure.runtime.java.extension.functions.shared.cipher.AESCipherUtil;
 
 public abstract class JsonPropertySerialization<T> extends PropertySerialization<T, Object>
 {
     static final Object CYCLE_DETECTED = new Object();
-    private static final Predicate2<CoreInstance, Stereotype> STEREOTYPE_EQUAL_PREDICATE = new Predicate2<CoreInstance, Stereotype>()
-    {
-        @Override
-        public boolean accept(CoreInstance each, Stereotype stereotype)
-        {
-            Stereotype eachStereotype = (Stereotype)each;
-            return eachStereotype._value().equals(stereotype._value()) &&
-                    PackageableElement.getUserPathForPackageableElement(eachStereotype._profile()).equals(PackageableElement.getUserPathForPackageableElement(stereotype._profile()));
-        }
 
-    };
     private Boolean hasCipherStereotype;
     private Boolean hasDecipherStereotype;
 
@@ -61,7 +49,7 @@ public abstract class JsonPropertySerialization<T> extends PropertySerialization
         {
             return this.potentiallyEncryptSerializedValue(this.applyConversion(pureObject, jsonSerializationContext), jsonSerializationContext);
         }
-        else if(jsonSerializationContext.isEnableDecryption())
+        else if (jsonSerializationContext.isEnableDecryption())
         {
             return this.potentiallyDecryptSerializedValue(this.applyConversion(pureObject, jsonSerializationContext), jsonSerializationContext);
         }
@@ -85,7 +73,7 @@ public abstract class JsonPropertySerialization<T> extends PropertySerialization
         {
             if (this.type instanceof PrimitiveType)
             {
-                return this.conversion.apply((T)jsonSerializationContext.extractPrimitiveValue(pureObject), jsonSerializationContext);
+                return this.conversion.apply((T) jsonSerializationContext.extractPrimitiveValue(pureObject), jsonSerializationContext);
             }
             if (this.conversion instanceof ClassConversion && jsonSerializationContext.getVisitedInstances().contains(pureObject))
             {
@@ -93,11 +81,11 @@ public abstract class JsonPropertySerialization<T> extends PropertySerialization
             }
             if (this.getName().equals(M3Properties.rawType) && this.conversion.pureTypeAsString().equals(M3Paths.Type))
             {
-                return MetamodelSerializationOverrides.serializePackageableElement((Any)pureObject, false);
+                return MetamodelSerializationOverrides.serializePackageableElement((Any) pureObject, false);
             }
             if (pureObject instanceof PureMap)
             {
-                return PureMapSerializer.toJson(((PureMap)pureObject), jsonSerializationContext);
+                return PureMapSerializer.toJson(((PureMap) pureObject), jsonSerializationContext);
             }
             if (!(pureObject instanceof CoreInstance))
             {
@@ -143,14 +131,7 @@ public abstract class JsonPropertySerialization<T> extends PropertySerialization
     {
         if (this.hasCipherStereotype == null)
         {
-            this.hasCipherStereotype = this.property._stereotypes().anySatisfy(new Predicate<Stereotype>()
-            {
-                @Override
-                public boolean accept(Stereotype stereotype)
-                {
-                    return encryptionStereotypes.isEmpty() ? "Cipher".equals(stereotype._value()) : encryptionStereotypes.anySatisfyWith(STEREOTYPE_EQUAL_PREDICATE, stereotype);
-                }
-            });
+            this.hasCipherStereotype = this.property._stereotypes().anySatisfy(stereotype -> encryptionStereotypes.isEmpty() ? "Cipher".equals(stereotype._value()) : encryptionStereotypes.anySatisfy(st -> stereotypesEqual(st, stereotype)));
         }
         return this.hasCipherStereotype;
     }
@@ -159,15 +140,15 @@ public abstract class JsonPropertySerialization<T> extends PropertySerialization
     {
         if (this.hasDecipherStereotype == null)
         {
-            this.hasDecipherStereotype = this.property._stereotypes().anySatisfy(new Predicate<Stereotype>()
-            {
-                @Override
-                public boolean accept(Stereotype stereotype)
-                {
-                    return decryptionStereotypes.isEmpty() ? "Decipher".equals(stereotype._value()) : decryptionStereotypes.anySatisfyWith(STEREOTYPE_EQUAL_PREDICATE, stereotype);
-                }
-            });
+            this.hasDecipherStereotype = this.property._stereotypes().anySatisfy(stereotype -> decryptionStereotypes.isEmpty() ? "Decipher".equals(stereotype._value()) : decryptionStereotypes.anySatisfy(st -> stereotypesEqual(st, stereotype)));
         }
         return this.hasDecipherStereotype;
+    }
+
+    private static boolean stereotypesEqual(CoreInstance each, Stereotype stereotype)
+    {
+        Stereotype eachStereotype = (Stereotype) each;
+        return eachStereotype._value().equals(stereotype._value()) &&
+                PackageableElement.getUserPathForPackageableElement(eachStereotype._profile()).equals(PackageableElement.getUserPathForPackageableElement(stereotype._profile()));
     }
 }

@@ -17,5 +17,6 @@ package org.finos.legend.pure.runtime.java.extension.external.json.shared;
 public interface JsonContext
 {
     String getTypeKeyName();
+
     boolean computeQualifiedPropertyConverters();
 }

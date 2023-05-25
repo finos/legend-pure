@@ -15,7 +15,7 @@
 package org.finos.legend.pure.runtime.java.extension.external.json.shared;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.impl.list.mutable.FastList;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.Conversion;
@@ -32,18 +32,15 @@ public class JsonDeserializationMultiplicityMany<T> extends JsonPropertyDeserial
     @Override
     public RichIterable<T> apply(Object jsonValue, ConversionContext context)
     {
-        JsonDeserializationContext jsonDeserializationContext = (JsonDeserializationContext)context;
-        if(jsonValue == null)
+        JsonDeserializationContext jsonDeserializationContext = (JsonDeserializationContext) context;
+        if (jsonValue == null)
         {
-            return new FastList<>();
+            return Lists.immutable.empty();
         }
-        else if(jsonValue instanceof JSONArray)
+        if (jsonValue instanceof JSONArray)
         {
-            return this.applyConversion((JSONArray) jsonValue, jsonDeserializationContext);
+            return applyConversion((JSONArray) jsonValue, jsonDeserializationContext);
         }
-        else
-        {
-            return this.applyConversion(jsonValue, jsonDeserializationContext);
-        }
+        return applyConversion(jsonValue, jsonDeserializationContext);
     }
 }

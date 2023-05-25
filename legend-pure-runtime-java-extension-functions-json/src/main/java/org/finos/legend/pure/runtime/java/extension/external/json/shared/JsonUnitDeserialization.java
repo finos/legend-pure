@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.extension.external.json.shared;
 
-import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.ConversionContext;
 import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.ObjectFactory;
@@ -39,9 +39,9 @@ public class JsonUnitDeserialization<T extends Any> extends UnitConversion<Objec
         JSONArray unitsJsonArray;
         try
         {
-            unitsJsonArray = (JSONArray)((JSONObject)value).get(this.unitKeyName);
-            unitTypeString = ((JSONObject)unitsJsonArray.get(0)).get("unitId").toString();
-            unitTypeExponent = (Number)((JSONObject)unitsJsonArray.get(0)).get("exponentValue");
+            unitsJsonArray = (JSONArray) ((JSONObject) value).get(this.unitKeyName);
+            unitTypeString = ((JSONObject) unitsJsonArray.get(0)).get("unitId").toString();
+            unitTypeExponent = (Number) ((JSONObject) unitsJsonArray.get(0)).get("exponentValue");
         }
         catch (Exception e)
         {
@@ -54,28 +54,27 @@ public class JsonUnitDeserialization<T extends Any> extends UnitConversion<Objec
         }
         if (!Long.valueOf(1).equals(unitTypeExponent))
         {
-            throw new PureExecutionException("Currently non-one exponent for unit is not supported. Got: " + unitTypeExponent.toString() +".");
+            throw new PureExecutionException("Currently non-one exponent for unit is not supported. Got: " + unitTypeExponent.toString() + ".");
         }
         Number unitValue;
         try
         {
-            unitValue = (Number)((JSONObject)value).get(this.valueKeyName);
+            unitValue = (Number) ((JSONObject) value).get(this.valueKeyName);
         }
         catch (ClassCastException cce)
         {
-            throw new PureExecutionException("Value from unitValue field must be of Number type, getting " + ((JSONObject)value).get(this.valueKeyName).getClass().getName() + " type instead.");
+            throw new PureExecutionException("Value from unitValue field must be of Number type, getting " + ((JSONObject) value).get(this.valueKeyName).getClass().getName() + " type instead.");
         }
-        JsonDeserializationContext deserializationContext = (JsonDeserializationContext)context;
+        JsonDeserializationContext deserializationContext = (JsonDeserializationContext) context;
         ObjectFactory objectFactory = deserializationContext.getObjectFactory();
 
         try
         {
-            return (T)objectFactory.newUnitInstance(this.type, unitTypeString, unitValue);
+            return (T) objectFactory.newUnitInstance(this.type, unitTypeString, unitValue);
         }
         catch (Exception e)
         {
             throw new PureExecutionException(deserializationContext.getSourceInformation(), "Could not create new instance of " + this.pureTypeAsString());
         }
-
     }
 }

@@ -15,15 +15,14 @@
 package org.finos.legend.pure.runtime.java.extension.external.json.shared;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.impl.list.mutable.FastList;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.ClassConversion;
 import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.Conversion;
 import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.PropertyDeserialization;
 import org.json.simple.JSONArray;
-
-import java.util.Collection;
 
 public abstract class JsonPropertyDeserialization<T> extends PropertyDeserialization<Object, T>
 {
@@ -32,39 +31,30 @@ public abstract class JsonPropertyDeserialization<T> extends PropertyDeserializa
         super(property, isFromAssociation, conversion, type);
     }
 
+    @SuppressWarnings("unchecked")
     protected RichIterable<T> applyConversion(JSONArray jsonValue, JsonDeserializationContext context)
     {
-        FastList<T> values = new FastList<>();
-        for (Object obj : jsonValue)
-        {
-            values.addAll((Collection<? extends T>)this.applyConversion(obj, context));
-        }
-        return values;
+        return Iterate.flatCollect(jsonValue, v -> applyConversion(v, context), Lists.mutable.empty());
     }
 
     protected RichIterable<T> applyConversion(Object jsonValue, JsonDeserializationContext context)
     {
-        FastList<T> values = new FastList<>();
         Conversion<Object, T> conversion = this.getConversion(jsonValue, context);
         T output = conversion.apply(jsonValue, context);
-        if (output != null)
-        {
-            values.add(output);
-        }
-        return values;
+        return (output == null) ? Lists.immutable.empty() : Lists.immutable.with(output);
     }
 
+    @SuppressWarnings("unchecked")
     private Conversion<Object, T> getConversion(Object jsonValue, JsonDeserializationContext context)
     {
-        Conversion<Object, T> conversion = this.conversion;
-        if (conversion instanceof ClassConversion)
+        if (this.conversion instanceof ClassConversion)
         {
             Type resolvedType = JsonDeserializer.resolveType(this.type, jsonValue, context.getTypeKeyName(), context.getTypeLookup(), context.getSourceInformation());
             if (!resolvedType.equals(this.type))
             {
-                conversion = (Conversion<Object, T>)context.getConversionCache().getConversion(resolvedType, context);
+                return (Conversion<Object, T>) context.getConversionCache().getConversion(resolvedType, context);
             }
         }
-        return conversion;
+        return this.conversion;
     }
 }

@@ -31,6 +31,6 @@ public class JsonSerializationMultiplicityOptional<T> extends JsonPropertySerial
     @Override
     public Object apply(RichIterable<T> pureObject, ConversionContext context)
     {
-        return pureObject.isEmpty() || pureObject.getFirst() == null ? new JSONArray() : this.serialize(pureObject.getFirst(),  (JsonSerializationContext)context);
+        return pureObject.isEmpty() || pureObject.getFirst() == null ? new JSONArray() : this.serialize(pureObject.getFirst(), (JsonSerializationContext) context);
     }
 }

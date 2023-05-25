@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.extension.external.json.shared;
 
-import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.Conversion;
 import org.eclipse.collections.api.RichIterable;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
@@ -26,6 +25,7 @@ import org.finos.legend.pure.m3.navigation.measure.Measure;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;
+import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.Conversion;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONValue;
 
@@ -65,13 +65,13 @@ public class JsonSerializer
     {
         if (pureObject instanceof CoreInstance)
         {
-            Type baseClassType = (pureObject instanceof InstanceValue && Measure.isUnitOrMeasureInstance((CoreInstance)pureObject, processorSupport))? (Type)Instance.getValueForMetaPropertyToOneResolved((CoreInstance)pureObject, M3Properties.genericType, M3Properties.rawType, processorSupport) : (Type)processorSupport.getClassifier((CoreInstance)pureObject);
+            Type baseClassType = (pureObject instanceof InstanceValue && Measure.isUnitOrMeasureInstance((CoreInstance) pureObject, processorSupport)) ? (Type) Instance.getValueForMetaPropertyToOneResolved((CoreInstance) pureObject, M3Properties.genericType, M3Properties.rawType, processorSupport) : (Type) processorSupport.getClassifier((CoreInstance) pureObject);
             Conversion conversion = jsonSerializationContext.getConversionCache().getConversion(baseClassType, jsonSerializationContext);
             return conversion.apply((baseClassType instanceof PrimitiveType) ? jsonSerializationContext.extractPrimitiveValue(pureObject) : pureObject, jsonSerializationContext);
         }
         if (pureObject instanceof PureMap)
         {
-            return PureMapSerializer.toJson((PureMap)pureObject, jsonSerializationContext);
+            return PureMapSerializer.toJson((PureMap) pureObject, jsonSerializationContext);
         }
         return pureObject;
     }

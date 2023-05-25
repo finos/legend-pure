@@ -30,6 +30,6 @@ public class JsonSerializationMultiplicityOne<T> extends JsonPropertySerializati
     @Override
     public Object apply(RichIterable<T> pureObject, ConversionContext context)
     {
-        return this.serialize(pureObject.getFirst(), (JsonSerializationContext)context);
+        return this.serialize(pureObject.getFirst(), (JsonSerializationContext) context);
     }
 }

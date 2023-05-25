@@ -22,7 +22,8 @@ import org.junit.BeforeClass;
 public class TestAssertJsonStringsEqual extends AbstractTestAssertJsonStringsEqual
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
