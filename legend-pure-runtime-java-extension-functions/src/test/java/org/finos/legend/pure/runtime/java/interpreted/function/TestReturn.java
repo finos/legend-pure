@@ -23,7 +23,8 @@ import org.junit.BeforeClass;
 public class TestReturn extends AbstractTestReturn
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
@@ -31,6 +32,7 @@ public class TestReturn extends AbstractTestReturn
     public void cleanRuntime()
     {
         runtime.delete("fromString.pure");
+        runtime.compile();
     }
 
     protected static FunctionExecution getFunctionExecution()

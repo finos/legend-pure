@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.function.base.tools;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -24,7 +24,8 @@ import org.junit.Test;
 public class TestProfile extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
@@ -59,7 +60,7 @@ public class TestProfile extends AbstractPureTestWithCoreCompiled
                 "       +                 5 isEmpty_Any_MANY__Boolean_1_\n" +
                 "       +                 5 toOne_T_MANY__T_1_\n" +
                 "       ##---------------------------- TreeEnd\n" +
-                "################################################## Finished Report ##################################################\n'", this.functionExecution.getConsole().getLine(0));
+                "################################################## Finished Report ##################################################\n'", functionExecution.getConsole().getLine(0));
 
         Assert.assertEquals("D instance Class\n" +
                 "    classifierGenericType(Property):\n" +
@@ -83,10 +84,10 @@ public class TestProfile extends AbstractPureTestWithCoreCompiled
                 "            name(Property):\n" +
                 "                [>1] K instance String\n" +
                 "            package(Property):\n" +
-                "                [>1] C instance Package", this.functionExecution.getConsole().getLine(1));
+                "                [>1] C instance Package", functionExecution.getConsole().getLine(1));
     }
 
-     protected static FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

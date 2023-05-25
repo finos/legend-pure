@@ -33,10 +33,10 @@ public class MutateAdd extends AbstractNative
     {
         SourceInformation sourceInformation = functionExpression.getSourceInformation();
 
-        return "FunctionsGen.mutateAdd("+
+        return "FunctionsGen.mutateAdd(" +
                 transformedParams.get(0) + "," +
-                transformedParams.get(1) +","+
-                "CompiledSupport.toPureCollection(" + transformedParams.get(2) + "),"+
+                transformedParams.get(1) + "," +
+                "CompiledSupport.toPureCollection(" + transformedParams.get(2) + ")," +
                 NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) +
                 ")";
     }

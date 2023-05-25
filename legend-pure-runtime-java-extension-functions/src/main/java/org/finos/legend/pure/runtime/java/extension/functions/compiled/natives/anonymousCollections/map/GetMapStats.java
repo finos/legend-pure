@@ -30,6 +30,6 @@ public class GetMapStats extends AbstractNative
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
         String getIfAbsentCounter = "((PureMap)" + transformedParams.get(0) + ").getStats().getIfAbsentCounter()";
-        return "new Root_meta_pure_functions_collection_MapStats_Impl(\"ID\")._getIfAbsentCounter("+getIfAbsentCounter+")";
+        return "new Root_meta_pure_functions_collection_MapStats_Impl(\"ID\")._getIfAbsentCounter(" + getIfAbsentCounter + ")";
     }
 }

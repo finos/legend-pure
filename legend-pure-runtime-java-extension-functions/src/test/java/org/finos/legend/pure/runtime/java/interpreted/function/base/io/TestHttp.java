@@ -22,7 +22,8 @@ import org.junit.BeforeClass;
 public class TestHttp extends AbstractTestHttp
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 

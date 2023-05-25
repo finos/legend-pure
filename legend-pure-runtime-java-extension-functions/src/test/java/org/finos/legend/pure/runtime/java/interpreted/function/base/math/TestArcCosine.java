@@ -22,7 +22,8 @@ import org.junit.BeforeClass;
 public class TestArcCosine extends AbstractTestArcCosine
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 

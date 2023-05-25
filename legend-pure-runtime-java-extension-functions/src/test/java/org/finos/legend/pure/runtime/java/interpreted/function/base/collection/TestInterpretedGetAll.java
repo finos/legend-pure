@@ -23,13 +23,17 @@ import org.junit.BeforeClass;
 public class TestInterpretedGetAll extends AbstractTestGetAll
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
+
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("fromString.pure");
     }
+
     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();

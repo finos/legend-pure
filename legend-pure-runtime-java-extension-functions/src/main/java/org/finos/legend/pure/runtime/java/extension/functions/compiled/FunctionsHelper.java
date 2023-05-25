@@ -76,9 +76,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -293,12 +292,12 @@ public class FunctionsHelper
 
     public static StrictDate today()
     {
-        return StrictDate.fromCalendar(new GregorianCalendar(GMT));
+        return DateFunctions.today();
     }
 
     public static DateTime now()
     {
-        return (DateTime) DateFunctions.fromDate(new Date());
+        return DateFunctions.fromInstant(Instant.now(), 3);
     }
 
     public static PureDate datePart(PureDate date)

@@ -22,7 +22,8 @@ import org.junit.BeforeClass;
 public class TestDynamicNewGetterOverrideInterpreted extends AbstractTestDynamicNewGetterOverride
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 

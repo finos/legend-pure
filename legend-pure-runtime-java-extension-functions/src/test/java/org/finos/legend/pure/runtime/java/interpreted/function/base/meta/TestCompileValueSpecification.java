@@ -14,10 +14,10 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.function.base.meta;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.tests.function.base.meta.AbstractTestCompileValueSpecification;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.After;
@@ -27,18 +27,23 @@ public class TestCompileValueSpecification extends AbstractTestCompileValueSpeci
 {
 
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
+
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("testSource.pure");
         runtime.delete("exec1.pure");
         runtime.delete("source1.pure");
         runtime.delete("source2.pure");
         runtime.delete("source3.pure");
+        runtime.compile();
     }
-     protected static FunctionExecution getFunctionExecution()
+
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

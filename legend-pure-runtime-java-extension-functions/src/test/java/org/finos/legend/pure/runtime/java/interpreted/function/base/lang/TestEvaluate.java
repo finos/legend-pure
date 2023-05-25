@@ -23,12 +23,16 @@ import org.junit.BeforeClass;
 public class TestEvaluate extends AbstractTestEvaluate
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
+
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("fromString.pure");
+        runtime.compile();
     }
 
     protected static FunctionExecution getFunctionExecution()

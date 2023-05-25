@@ -14,19 +14,13 @@
 
 package org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.date;
 
-
-import java.util.GregorianCalendar;
-import java.util.TimeZone;
-
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 
 public class Today extends NativeDateIndexicalFunction
 {
-    private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
-
     public Today(FunctionExecutionInterpreted functionExecution, ModelRepository repository)
     {
         super(repository);
@@ -35,6 +29,6 @@ public class Today extends NativeDateIndexicalFunction
     @Override
     protected PureDate getDate()
     {
-        return StrictDate.fromCalendar(new GregorianCalendar(GMT));
+        return DateFunctions.today();
     }
 }

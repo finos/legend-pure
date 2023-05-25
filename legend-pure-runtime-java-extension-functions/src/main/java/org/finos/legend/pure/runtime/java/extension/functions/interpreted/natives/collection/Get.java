@@ -14,15 +14,15 @@
 
 package org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.factory.Lists;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
@@ -52,6 +52,6 @@ public class Get extends NativeFunction
                 return ValueSpecificationBootstrap.wrapValueSpecification(value, ValueSpecification.isExecutable(params.get(0), processorSupport), processorSupport);
             }
         }
-        return ValueSpecificationBootstrap.wrapValueSpecification(Lists.immutable.<CoreInstance>empty(), true, processorSupport);
+        return ValueSpecificationBootstrap.wrapValueSpecification(Lists.immutable.empty(), true, processorSupport);
     }
 }

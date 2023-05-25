@@ -23,15 +23,20 @@ import org.junit.BeforeClass;
 public class TestFunctionDescriptorToId extends AbstractTestFunctionDescriptorToId
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
+
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("testModel.pure");
         runtime.delete("testFunc.pure");
+        runtime.compile();
     }
-     protected static FunctionExecution getFunctionExecution()
+
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

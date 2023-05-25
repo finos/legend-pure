@@ -24,7 +24,8 @@ import org.junit.Test;
 public class TestEqualityFunctionIntegrity extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime();
     }
 
@@ -41,9 +42,9 @@ public class TestEqualityFunctionIntegrity extends AbstractPureTestWithCoreCompi
         {
             compileTestSource("testSource.pure",
                     "function is(left:String[1], right:String[1]):Boolean[1]\n" +
-                    "{\n" +
-                    "    true\n" +
-                    "}\n");
+                            "{\n" +
+                            "    true\n" +
+                            "}\n");
             Assert.fail("Expected compilation exception");
         }
         catch (Exception e)

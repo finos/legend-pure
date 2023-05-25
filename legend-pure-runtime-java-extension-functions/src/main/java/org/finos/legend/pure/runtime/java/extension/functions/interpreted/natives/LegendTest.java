@@ -14,10 +14,10 @@
 
 package org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionCoreInstanceWrapper;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
@@ -48,7 +48,7 @@ public class LegendTest extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, final ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         String clientVersion = System.getProperty("legend.test.clientVersion");
         String serverVersion = System.getProperty("legend.test.serverVersion");
@@ -60,11 +60,11 @@ public class LegendTest extends NativeFunction
         {
             if (port == -1)
             {
-                throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "The system variable 'legend.test.server.host' is set to '"+host+"' however 'legend.test.server.port' has not been set!");
+                throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "The system variable 'legend.test.server.host' is set to '" + host + "' however 'legend.test.server.port' has not been set!");
             }
             if (serializationKind == null || !(serializationKind.equals("text") || serializationKind.equals("json")))
             {
-                serializationKind="json";
+                serializationKind = "json";
             }
             if (clientVersion == null)
             {
@@ -74,7 +74,7 @@ public class LegendTest extends NativeFunction
             {
                 throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "The system variable 'legend.test.serverVersion' should be set");
             }
-            MutableList<CoreInstance> fParams = FastList.<CoreInstance>newListWith(
+            MutableList<CoreInstance> fParams = Lists.mutable.with(
                     ValueSpecificationBootstrap.newStringLiteral(this.repository, clientVersion, this.functionExecution.getProcessorSupport()),
                     ValueSpecificationBootstrap.newStringLiteral(this.repository, serverVersion, this.functionExecution.getProcessorSupport()),
                     ValueSpecificationBootstrap.newStringLiteral(this.repository, serializationKind, this.functionExecution.getProcessorSupport()),
@@ -94,7 +94,7 @@ public class LegendTest extends NativeFunction
         else
         {
             return this.functionExecution.executeFunctionExecuteParams(FunctionCoreInstanceWrapper.toFunction(Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport)),
-                    FastList.<CoreInstance>newList(),
+                    Lists.immutable.empty(),
                     resolvedTypeParameters,
                     resolvedMultiplicityParameters,
                     getParentOrEmptyVariableContext(variableContext),
@@ -105,5 +105,4 @@ public class LegendTest extends NativeFunction
 
         }
     }
-
 }

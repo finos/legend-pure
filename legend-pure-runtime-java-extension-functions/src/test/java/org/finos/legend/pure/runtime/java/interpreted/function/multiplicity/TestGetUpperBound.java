@@ -23,9 +23,11 @@ import org.junit.Test;
 public class TestGetUpperBound extends PureExpressionTest
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
+
     @Test
     public void testGetUpperBoundZeroManyError()
     {

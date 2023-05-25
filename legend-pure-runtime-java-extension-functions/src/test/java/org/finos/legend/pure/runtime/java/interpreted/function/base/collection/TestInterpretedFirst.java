@@ -23,13 +23,17 @@ import org.junit.BeforeClass;
 public class TestInterpretedFirst extends AbstractTestFirst
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
+
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("fromString.pure");
     }
+
     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();

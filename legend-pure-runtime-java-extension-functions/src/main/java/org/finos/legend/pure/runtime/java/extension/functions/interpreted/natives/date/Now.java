@@ -14,12 +14,12 @@
 
 package org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.date;
 
-import java.util.Date;
-
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+
+import java.time.Instant;
 
 public class Now extends NativeDateIndexicalFunction
 {
@@ -31,6 +31,6 @@ public class Now extends NativeDateIndexicalFunction
     @Override
     protected PureDate getDate()
     {
-        return DateFunctions.fromDate(new Date());
+        return DateFunctions.fromInstant(Instant.now(), 3);
     }
 }

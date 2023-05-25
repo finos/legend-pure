@@ -21,7 +21,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 
 public class IndexOf extends AbstractNative
 {
-    public IndexOf() {
+    public IndexOf()
+    {
         super("indexOf_String_1__String_1__Integer_1_", "indexOf_String_1__String_1__Integer_1__Integer_1_");
     }
 
@@ -29,7 +30,6 @@ public class IndexOf extends AbstractNative
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
         String fromIndex = transformedParams.size() == 3 ? ",((Long)" + transformedParams.get(2) + ").intValue()" : "";
-
         return "Long.valueOf(((String)" + transformedParams.get(0) + ")" +
                 ".indexOf((String)" + transformedParams.get(1) + fromIndex + "))";
     }

@@ -39,8 +39,8 @@ public class Get extends AbstractNative
     }
 
     @Override
-    public String buildBody() {
-
+    public String buildBody()
+    {
         return "new DefendedPureFunction2<PureMap, Object, Object>()\n" +
                 "        {\n" +
                 "            @Override\n" +

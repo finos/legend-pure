@@ -26,7 +26,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.Ty
 
 public class Zip extends AbstractNativeFunctionGeneric
 {
-    public Zip() {
+    public Zip()
+    {
         super("FunctionsGen.zip", new Class[]{Object.class, Object.class}, "zip_T_MANY__U_MANY__Pair_MANY_");
     }
 
@@ -48,10 +49,10 @@ public class Zip extends AbstractNativeFunctionGeneric
 
     private static String castToIterableIfParamIsNull(String paramStr, CoreInstance param, ProcessorSupport processorSupport)
     {
-        if( Multiplicity.isToZero(Instance.getValueForMetaPropertyToOneResolved(param, M3Properties.multiplicity, processorSupport)))
+        if (Multiplicity.isToZero(Instance.getValueForMetaPropertyToOneResolved(param, M3Properties.multiplicity, processorSupport)))
         {
             String castType = TypeProcessor.typeToJavaObjectWithMul(param.getValueForMetaPropertyToOne(M3Properties.genericType), param.getValueForMetaPropertyToOne(M3Properties.multiplicity), processorSupport);
-            paramStr = "(RichIterable<? extends " + castType  + ">)" + paramStr;
+            return "(RichIterable<? extends " + castType + ">)" + paramStr;
         }
         return paramStr;
     }

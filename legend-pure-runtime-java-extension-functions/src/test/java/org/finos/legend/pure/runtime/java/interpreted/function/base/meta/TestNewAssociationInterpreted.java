@@ -23,14 +23,19 @@ import org.junit.BeforeClass;
 public class TestNewAssociationInterpreted extends AbstractTestNewAssociation
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
+
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("StandardCall.pure");
+        runtime.compile();
     }
-     protected static FunctionExecution getFunctionExecution()
+
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

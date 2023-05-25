@@ -14,25 +14,25 @@
 
 package org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math;
 
-import java.math.BigInteger;
-import java.util.Stack;
-
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
-import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
+import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
+
+import java.math.BigInteger;
+import java.util.Stack;
 
 abstract class AbstractRoundFunction extends NativeFunction
 {
@@ -68,7 +68,7 @@ abstract class AbstractRoundFunction extends NativeFunction
             {
                 // Split the numeric string into integer and decimal parts
                 String integerPart = name.substring(0, decimalIndex);
-                String decimalPart = name.substring(decimalIndex + 1, name.length());
+                String decimalPart = name.substring(decimalIndex + 1);
 
                 // If the decimal part is not zero, then round
                 if (!isZero(decimalPart))
@@ -90,7 +90,7 @@ abstract class AbstractRoundFunction extends NativeFunction
      * @param decimalString decimal part string
      * @return rounded number string
      */
-    abstract protected String roundPositive(String integerString, String decimalString);
+    protected abstract String roundPositive(String integerString, String decimalString);
 
     /**
      * Round the negative number with the given integer and decimal strings.
@@ -101,7 +101,7 @@ abstract class AbstractRoundFunction extends NativeFunction
      * @param decimalString decimal part string
      * @return rounded number string
      */
-    abstract protected String roundNegative(String integerString, String decimalString);
+    protected abstract String roundNegative(String integerString, String decimalString);
 
     /**
      * Return an integer string that is equal to the given integer string
@@ -114,7 +114,7 @@ abstract class AbstractRoundFunction extends NativeFunction
     {
         try
         {
-            long number = Long.valueOf(integerString);
+            long number = Long.parseLong(integerString);
             return (number == Long.MAX_VALUE) ? new BigInteger(integerString).add(ONE).toString() : String.valueOf(number + 1);
         }
         catch (NumberFormatException e)
@@ -134,7 +134,7 @@ abstract class AbstractRoundFunction extends NativeFunction
     {
         try
         {
-            long number = Long.valueOf(integerString);
+            long number = Long.parseLong(integerString);
             return (number == Long.MIN_VALUE) ? new BigInteger(integerString).subtract(ONE).toString() : String.valueOf(number - 1);
         }
         catch (NumberFormatException e)

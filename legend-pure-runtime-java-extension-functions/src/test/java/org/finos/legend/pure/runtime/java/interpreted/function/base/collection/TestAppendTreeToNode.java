@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.function.base.collection;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -24,7 +24,8 @@ import org.junit.Test;
 public class TestAppendTreeToNode extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
@@ -110,7 +111,7 @@ public class TestAppendTreeToNode extends AbstractPureTestWithCoreCompiled
                 "            rawType(Property):\n" +
                 "                [X] MyNode instance Class\n" +
                 "    value(Property):\n" +
-                "        1 instance String", this.functionExecution.getConsole().getLine(0));
+                "        1 instance String", functionExecution.getConsole().getLine(0));
         Assert.assertEquals("Anonymous_StripedId instance MyNode\n" +
                 "    childrenData(Property):\n" +
                 "        Anonymous_StripedId instance MyNode\n" +
@@ -140,7 +141,7 @@ public class TestAppendTreeToNode extends AbstractPureTestWithCoreCompiled
                 "            rawType(Property):\n" +
                 "                [X] MyNode instance Class\n" +
                 "    value(Property):\n" +
-                "        1 instance String", this.functionExecution.getConsole().getLine(1));
+                "        1 instance String", functionExecution.getConsole().getLine(1));
     }
 
     protected static FunctionExecution getFunctionExecution()

@@ -16,19 +16,19 @@ package org.finos.legend.pure.runtime.java.extension.functions.interpreted.nativ
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation.type.Type;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
-import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
+import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
 import java.util.Stack;
@@ -46,12 +46,9 @@ public class SubTypeOf extends NativeFunction
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport)
     {
         return ValueSpecificationBootstrap.newBooleanLiteral(this.modelRepository,
-                Type.subTypeOf
-                        (
-                                Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport),
-                                Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport),
-                                processorSupport
-                        ),
+                Type.subTypeOf(Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport),
+                        Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport),
+                        processorSupport),
                 processorSupport
         );
     }

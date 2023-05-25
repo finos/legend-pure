@@ -14,16 +14,16 @@
 
 package org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.lang;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.PropertyCoreInstanceWrapper;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -36,7 +36,7 @@ import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
 import java.util.Stack;
 
-public class RawEvalProperty  extends NativeFunction
+public class RawEvalProperty extends NativeFunction
 {
     private final FunctionExecutionInterpreted functionExecution;
 
@@ -49,12 +49,12 @@ public class RawEvalProperty  extends NativeFunction
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         CoreInstance functionToApplyTo = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
-        MutableList<CoreInstance> wrappedParameterValues = FastList.newListWith(params.get(1));
-        Property property = PropertyCoreInstanceWrapper.toProperty(functionToApplyTo);
+        MutableList<CoreInstance> wrappedParameterValues = Lists.mutable.with(params.get(1));
+        Property<?, ?> property = PropertyCoreInstanceWrapper.toProperty(functionToApplyTo);
         CoreInstance value = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
-        if(processorSupport.class_findPropertyOrQualifiedPropertyUsingGeneralization(processorSupport.getClassifier(value), property._name()) == null)
+        if (processorSupport.class_findPropertyOrQualifiedPropertyUsingGeneralization(processorSupport.getClassifier(value), property._name()) == null)
         {
-            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Can't find the property '"+ property._name() +"' in the class "+ processorSupport.getClassifier(value).getName());
+            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Can't find the property '" + property._name() + "' in the class " + processorSupport.getClassifier(value).getName());
         }
         return this.functionExecution.executeProperty(property, false, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), profiler, wrappedParameterValues, functionExpressionToUseInStack, instantiationContext, executionSupport);
     }

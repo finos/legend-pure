@@ -32,12 +32,12 @@ public class KeyValues extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return "((PureMap)"+ transformedParams.get(0) +")" + EXPRESSION;
+        return "((PureMap)" + transformedParams.get(0) + ")" + EXPRESSION;
     }
 
     @Override
-    public String buildBody() {
-
+    public String buildBody()
+    {
         return "new DefendedPureFunction1<PureMap, Object>()\n" +
                 "        {\n" +
                 "            @Override\n" +

@@ -16,14 +16,14 @@ package org.finos.legend.pure.runtime.java.extension.functions.interpreted.nativ
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation.profile.Profile;
 import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
@@ -49,7 +49,7 @@ public class Tag extends NativeFunction
         CoreInstance tag = Profile.findTag(profile, tagName);
         if (tag == null)
         {
-            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "The tag '"+tagName+"' can't be found in the profile '"+profile.getName()+"'");
+            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "The tag '" + tagName + "' can't be found in the profile '" + profile.getName() + "'");
         }
         return ValueSpecificationBootstrap.wrapValueSpecification(tag, ValueSpecification.isExecutable(params.get(0), processorSupport), processorSupport);
     }
