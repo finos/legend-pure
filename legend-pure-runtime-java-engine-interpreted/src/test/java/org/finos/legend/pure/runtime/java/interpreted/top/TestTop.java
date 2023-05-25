@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.top;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.After;
@@ -26,7 +26,8 @@ import org.junit.Test;
 public class TestTop extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
@@ -39,7 +40,7 @@ public class TestTop extends AbstractPureTestWithCoreCompiled
     @Test
     public void testSimplePure()
     {
-        compileTestSource("fromString.pure","###Pure\n" +
+        compileTestSource("fromString.pure", "###Pure\n" +
                 "   Class Employee\n" +
                 "   {\n" +
                 "       s:String[1];\n" +
@@ -52,15 +53,15 @@ public class TestTop extends AbstractPureTestWithCoreCompiled
                 "       print('yeah!', 1);\n" +
                 "   }\n");
         this.execute("go():Nil[0]");
-        Assert.assertEquals("'yeah!'", this.functionExecution.getConsole().getLine(0));
+        Assert.assertEquals("'yeah!'", functionExecution.getConsole().getLine(0));
     }
 
     @Test
-    public void testSimplePureWithError() throws Exception
+    public void testSimplePureWithError()
     {
         try
         {
-            compileTestSource("fromString.pure","###Pure\n" +
+            compileTestSource("fromString.pure", "###Pure\n" +
                     "   Class Employee\n" +
                     "   {\n" +
                     "       s:String[1];\n" +

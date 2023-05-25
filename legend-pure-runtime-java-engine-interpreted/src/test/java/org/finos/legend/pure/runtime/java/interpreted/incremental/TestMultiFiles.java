@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.incremental;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -24,22 +24,23 @@ import org.junit.Test;
 public class TestMultiFiles extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
     @Test
-    public void testPureRuntimeFunctionParamDependencies() throws Exception
+    public void testPureRuntimeFunctionParamDependencies()
     {
-        this.runtime.createInMemorySource("sourceId.pure", "function simple():String[1]{'theFunc';}");
-        this.runtime.createInMemorySource("userId.pure", "function go():Nil[0]{print(simple(),1);}");
+        runtime.createInMemorySource("sourceId.pure", "function simple():String[1]{'theFunc';}");
+        runtime.createInMemorySource("userId.pure", "function go():Nil[0]{print(simple(),1);}");
         this.compileAndExecute("go():Nil[0]");
-        Assert.assertEquals("'theFunc'", this.functionExecution.getConsole().getLine(0));
+        Assert.assertEquals("'theFunc'", functionExecution.getConsole().getLine(0));
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete("userId.pure");
-            this.runtime.delete("sourceId.pure");
+            runtime.delete("userId.pure");
+            runtime.delete("sourceId.pure");
 
             try
             {
@@ -51,10 +52,10 @@ public class TestMultiFiles extends AbstractPureTestWithCoreCompiled
                 Assert.assertEquals("The function 'go():Nil[0]' can't be found", e.getMessage());
             }
 
-            this.runtime.createInMemorySource("sourceId.pure", "function simple():String[1]{'theFunc';}");
-            this.runtime.createInMemorySource("userId.pure", "function go():Nil[0]{print(simple(),1);}");
+            runtime.createInMemorySource("sourceId.pure", "function simple():String[1]{'theFunc';}");
+            runtime.createInMemorySource("userId.pure", "function go():Nil[0]{print(simple(),1);}");
             this.compileAndExecute("go():Nil[0]");
-            Assert.assertEquals("'theFunc'", this.functionExecution.getConsole().getLine(0));
+            Assert.assertEquals("'theFunc'", functionExecution.getConsole().getLine(0));
         }
     }
 

@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.incremental.profile;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.After;
@@ -26,7 +26,8 @@ import org.junit.Test;
 public class TestPureRuntimeProfile extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
@@ -38,17 +39,17 @@ public class TestPureRuntimeProfile extends AbstractPureTestWithCoreCompiled
     }
 
     @Test
-    public void testPureRuntimeProfilePointer() throws Exception
+    public void testPureRuntimeProfilePointer()
     {
-        this.runtime.createInMemorySource("sourceId.pure", "Profile testProfile{stereotypes:[s1,s2];}");
-        this.runtime.createInMemorySource("userId.pure", "function a():Profile[1]{testProfile}" +
-                                               "function go():Nil[0]{a();[];}");
+        runtime.createInMemorySource("sourceId.pure", "Profile testProfile{stereotypes:[s1,s2];}");
+        runtime.createInMemorySource("userId.pure", "function a():Profile[1]{testProfile}" +
+                "function go():Nil[0]{a();[];}");
         this.compileAndExecute("go():Nil[0]");
-        int size = this.runtime.getModelRepository().serialize().length;
+        int size = runtime.getModelRepository().serialize().length;
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete("sourceId.pure");
+            runtime.delete("sourceId.pure");
             try
             {
                 this.compileAndExecute("go():Nil[0]");
@@ -59,25 +60,25 @@ public class TestPureRuntimeProfile extends AbstractPureTestWithCoreCompiled
                 assertPureException(PureCompilationException.class, "testProfile has not been defined!", "userId.pure", 1, 25, e);
             }
 
-            this.runtime.createInMemorySource("sourceId.pure", "Profile testProfile{stereotypes:[s1,s2];}");
+            runtime.createInMemorySource("sourceId.pure", "Profile testProfile{stereotypes:[s1,s2];}");
             this.compileAndExecute("go():Nil[0]");
-            Assert.assertEquals("Graph size mismatch", size, this.repository.serialize().length);
+            Assert.assertEquals("Graph size mismatch", size, repository.serialize().length);
         }
     }
 
 
     @Test
-    public void testPureRuntimeProfilePointerError() throws Exception
+    public void testPureRuntimeProfilePointerError()
     {
-        this.runtime.createInMemorySource("sourceId.pure", "Profile testProfile{stereotypes:[s1,s2];}");
-        this.runtime.createInMemorySource("userId.pure", "function a():Profile[1]{testProfile}" +
-                                               "function go():Nil[0]{a();[];}");
+        runtime.createInMemorySource("sourceId.pure", "Profile testProfile{stereotypes:[s1,s2];}");
+        runtime.createInMemorySource("userId.pure", "function a():Profile[1]{testProfile}" +
+                "function go():Nil[0]{a();[];}");
         this.compileAndExecute("go():Nil[0]");
-        int size = this.runtime.getModelRepository().serialize().length;
+        int size = runtime.getModelRepository().serialize().length;
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete("sourceId.pure");
+            runtime.delete("sourceId.pure");
             try
             {
                 this.compileAndExecute("go():Nil[0]");
@@ -90,17 +91,17 @@ public class TestPureRuntimeProfile extends AbstractPureTestWithCoreCompiled
 
             try
             {
-                this.runtime.createInMemorySource("sourceId.pure", "Profile testOtherProfile{stereotypes:[s1,s2];}");
-                this.runtime.compile();
+                runtime.createInMemorySource("sourceId.pure", "Profile testOtherProfile{stereotypes:[s1,s2];}");
+                runtime.compile();
             }
             catch (Exception e)
             {
                 assertPureException(PureCompilationException.class, "testProfile has not been defined!", "userId.pure", 1, 25, e);
             }
         }
-        this.runtime.modify("sourceId.pure", "Profile testProfile{stereotypes:[s1,s2];}");
-        this.runtime.compile();
-        Assert.assertEquals("Graph size mismatch", size, this.repository.serialize().length);
+        runtime.modify("sourceId.pure", "Profile testProfile{stereotypes:[s1,s2];}");
+        runtime.compile();
+        Assert.assertEquals("Graph size mismatch", size, repository.serialize().length);
     }
 
     protected static FunctionExecution getFunctionExecution()

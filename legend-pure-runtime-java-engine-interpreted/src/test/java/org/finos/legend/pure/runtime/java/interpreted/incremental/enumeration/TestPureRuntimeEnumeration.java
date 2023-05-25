@@ -22,18 +22,23 @@ import org.junit.BeforeClass;
 public class TestPureRuntimeEnumeration extends AbstractPureRuntimeEnumerationTest
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime();
     }
+
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("sourceId.pure");
         runtime.delete("userId.pure");
-        try{
+        try
+        {
             runtime.compile();
-        } catch (PureCompilationException e) {
+        }
+        catch (PureCompilationException e)
+        {
             setUp();
         }
     }
-
 }

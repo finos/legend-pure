@@ -19,24 +19,24 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.utility.Iterate;
+import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.compiler.validation.validator.PropertyValidator;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
-import org.finos.legend.pure.m3.compiler.validation.validator.PropertyValidator;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation.property.Property;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
+import org.finos.legend.pure.runtime.java.interpreted.natives.DefaultConstraintHandler;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
-import org.finos.legend.pure.runtime.java.interpreted.natives.DefaultConstraintHandler;
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.lang.New;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
@@ -54,12 +54,11 @@ public class DynamicNew extends NativeFunction
         this.isGenericType = isGenericType;
         this.functionExecution = functionExecutionInterpreted;
     }
+
     public DynamicNew(FunctionExecutionInterpreted functionExecution, ModelRepository repository)
     {
         this(repository, false, functionExecution);
     }
-
-
 
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, final Context context, final ProcessorSupport processorSupport) throws PureExecutionException
@@ -121,18 +120,21 @@ public class DynamicNew extends NativeFunction
         }
 
         // Set default values if the values for any required fields were not provided
-        for (CoreInstance property: propertiesByName)
+        for (CoreInstance property : propertiesByName)
         {
-            if(property.getValueForMetaPropertyToOne(M3Properties.defaultValue) != null && instance.getValueForMetaPropertyToMany(property.getName()).size() == 0)
+            if (property.getValueForMetaPropertyToOne(M3Properties.defaultValue) != null && instance.getValueForMetaPropertyToMany(property.getName()).size() == 0)
             {
                 CoreInstance expression = Property.getDefaultValueExpression(property.getValueForMetaPropertyToOne(M3Properties.defaultValue));
 
                 ListIterable<? extends CoreInstance> values = org.finos.legend.pure.m3.navigation.property.Property.getDefaultValue(property.getValueForMetaPropertyToOne(M3Properties.defaultValue));
                 for (CoreInstance value : values)
                 {
-                    if (Instance.instanceOf(expression, M3Paths.EnumStub, processorSupport)) {
+                    if (Instance.instanceOf(expression, M3Paths.EnumStub, processorSupport))
+                    {
                         Instance.addValueToProperty(instance, property.getName(), value.getValueForMetaPropertyToOne(M3Properties.resolvedEnum), processorSupport);
-                    } else {
+                    }
+                    else
+                    {
                         Instance.addValueToProperty(instance, property.getName(), value, processorSupport);
                     }
                 }
@@ -141,20 +143,20 @@ public class DynamicNew extends NativeFunction
 
         New.updateReverseProperties(instance, functionExpressionToUseInStack.getSourceInformation(), processorSupport);
 
-        CoreInstance override = null ;
+        CoreInstance override = null;
         if (params.size() > 5)
         {
-           override =  processorSupport.newAnonymousCoreInstance(functionExpressionToUseInStack.getSourceInformation(), M3Paths.ConstraintsGetterOverride);
-           Instance.addValueToProperty(override, M3Properties.constraintsManager, Instance.getValueForMetaPropertyToOneResolved(params.get(5), M3Properties.values, processorSupport), processorSupport);
+            override = processorSupport.newAnonymousCoreInstance(functionExpressionToUseInStack.getSourceInformation(), M3Paths.ConstraintsGetterOverride);
+            Instance.addValueToProperty(override, M3Properties.constraintsManager, Instance.getValueForMetaPropertyToOneResolved(params.get(5), M3Properties.values, processorSupport), processorSupport);
         }
         else
         {
-            if(params.size() > 2 )
+            if (params.size() > 2)
             {
-                override =  processorSupport.newAnonymousCoreInstance(functionExpressionToUseInStack.getSourceInformation(), M3Paths.GetterOverride);
+                override = processorSupport.newAnonymousCoreInstance(functionExpressionToUseInStack.getSourceInformation(), M3Paths.GetterOverride);
             }
         }
-        if( override != null)
+        if (override != null)
         {
             Instance.addValueToProperty(override, M3Properties.getterOverrideToOne, Instance.getValueForMetaPropertyToOneResolved(params.get(2), M3Properties.values, processorSupport), processorSupport);
             Instance.addValueToProperty(override, M3Properties.getterOverrideToMany, Instance.getValueForMetaPropertyToOneResolved(params.get(3), M3Properties.values, processorSupport), processorSupport);
@@ -162,6 +164,6 @@ public class DynamicNew extends NativeFunction
             Instance.addValueToProperty(instance, M3Properties.elementOverride, override, processorSupport);
         }
         CoreInstance value = ValueSpecificationBootstrap.wrapValueSpecification(instance, true, processorSupport);
-        return DefaultConstraintHandler.handleConstraints(classifier,  value, functionExpressionToUseInStack.getSourceInformation(), this.functionExecution,resolvedTypeParameters,resolvedMultiplicityParameters,variableContext,functionExpressionToUseInStack,profiler,instantiationContext, executionSupport);
+        return DefaultConstraintHandler.handleConstraints(classifier, value, functionExpressionToUseInStack.getSourceInformation(), this.functionExecution, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
     }
 }

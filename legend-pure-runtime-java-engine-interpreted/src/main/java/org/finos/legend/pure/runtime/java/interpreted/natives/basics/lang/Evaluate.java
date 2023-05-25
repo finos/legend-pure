@@ -14,26 +14,26 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.natives.basics.lang;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.compiler.postprocessing.inference.TypeInference;
-import org.finos.legend.pure.m3.navigation.generictype.GenericType;
-import org.finos.legend.pure.m3.navigation.generictype.match.GenericTypeMatch;
-import org.finos.legend.pure.m3.navigation.generictype.match.ParameterMatchBehavior;
-import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionCoreInstanceWrapper;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionCoreInstanceWrapper;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.generictype.GenericType;
+import org.finos.legend.pure.m3.navigation.generictype.match.GenericTypeMatch;
+import org.finos.legend.pure.m3.navigation.generictype.match.ParameterMatchBehavior;
+import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
@@ -64,15 +64,15 @@ public class Evaluate extends NativeFunction
 
         CoreInstance functionToApplyTo = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
 
-        FunctionType fType = (FunctionType)processorSupport.function_getFunctionType(functionToApplyTo);
+        FunctionType fType = (FunctionType) processorSupport.function_getFunctionType(functionToApplyTo);
         ListIterable<? extends VariableExpression> parametersSignature = fType._parameters().toList();
 
-        MutableList<ValueSpecification> funcParams = FastList.newList();
+        MutableList<ValueSpecification> funcParams = Lists.mutable.ofInitialCapacity(params.size());
         SourceInformation sourceInformation = functionExpressionToUseInStack.getSourceInformation();
         for (int i = 1, size = params.size(); i < size; i++)
         {
-            validateValueToSignature(params.get(i), parametersSignature.get(i-1), sourceInformation, processorSupport);
-            funcParams.add((ValueSpecification)params.get(i));
+            validateValueToSignature(params.get(i), parametersSignature.get(i - 1), sourceInformation, processorSupport);
+            funcParams.add((ValueSpecification) params.get(i));
         }
 
         //---------------------------
@@ -80,9 +80,9 @@ public class Evaluate extends NativeFunction
         //---------------------------
         TypeInference.mapSpecToInstance(parametersSignature, funcParams, resolvedTypeParameters, resolvedMultiplicityParameters, processorSupport);
 
-        CoreInstance result =  Instance.instanceOf(functionToApplyTo, M3Paths.LambdaFunction, processorSupport) ?
-                        this.functionExecution.executeLambda(LambdaFunctionCoreInstanceWrapper.toLambdaFunction(functionToApplyTo), funcParams, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), functionExpressionToUseInStack, profiler, instantiationContext, executionSupport) :
-                        this.functionExecution.executeFunctionExecuteParams(FunctionCoreInstanceWrapper.toFunction(functionToApplyTo), funcParams, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+        CoreInstance result = Instance.instanceOf(functionToApplyTo, M3Paths.LambdaFunction, processorSupport) ?
+                this.functionExecution.executeLambda(LambdaFunctionCoreInstanceWrapper.toLambdaFunction(functionToApplyTo), funcParams, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), functionExpressionToUseInStack, profiler, instantiationContext, executionSupport) :
+                this.functionExecution.executeFunctionExecuteParams(FunctionCoreInstanceWrapper.toFunction(functionToApplyTo), funcParams, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
 
         resolvedTypeParameters.pop();
         resolvedMultiplicityParameters.pop();

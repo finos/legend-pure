@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.interpreted;
 
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
@@ -28,8 +28,10 @@ import org.junit.Test;
 public class TestFunctionExecutionStart extends AbstractPureTestWithCoreCompiled
 {
     static FunctionExecutionInterpreted functionExecution = new FunctionExecutionInterpreted();
+
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
@@ -37,18 +39,19 @@ public class TestFunctionExecutionStart extends AbstractPureTestWithCoreCompiled
     public void cleanRuntime()
     {
         runtime.delete("fromString.pure");
+        runtime.compile();
     }
 
     @Test
     public void testStartWithNotEnoughArguments()
     {
-        compileTestSource("fromString.pure","function testFn(s1:String[1], s2:String[1]):String[1] { $s1 + $s2 }");
-        CoreInstance func = this.runtime.getFunction("testFn(String[1], String[1]):String[1]");
+        compileTestSource("fromString.pure", "function testFn(s1:String[1], s2:String[1]):String[1] { $s1 + $s2 }");
+        CoreInstance func = runtime.getFunction("testFn(String[1], String[1]):String[1]");
         Assert.assertNotNull(func);
 
         try
         {
-            this.functionExecution.start(func, Lists.immutable.<CoreInstance>with());
+            functionExecution.start(func, Lists.immutable.with());
         }
         catch (Exception e)
         {
@@ -57,7 +60,7 @@ public class TestFunctionExecutionStart extends AbstractPureTestWithCoreCompiled
 
         try
         {
-            this.functionExecution.start(func, Lists.immutable.with(ValueSpecificationBootstrap.newStringLiteral(this.repository, "string", this.processorSupport)));
+            functionExecution.start(func, Lists.immutable.with(ValueSpecificationBootstrap.newStringLiteral(repository, "string", processorSupport)));
         }
         catch (Exception e)
         {
@@ -77,12 +80,12 @@ public class TestFunctionExecutionStart extends AbstractPureTestWithCoreCompiled
     @Test
     public void testStartWithTooManyArguments()
     {
-        compileTestSource("fromString.pure","function testFn():String[1] { 'the quick brown fox jumps over the lazy dog' }");
-        CoreInstance func = this.runtime.getFunction("testFn():String[1]");
+        compileTestSource("fromString.pure", "function testFn():String[1] { 'the quick brown fox jumps over the lazy dog' }");
+        CoreInstance func = runtime.getFunction("testFn():String[1]");
         Assert.assertNotNull(func);
         try
         {
-            this.functionExecution.start(func, Lists.mutable.with(ValueSpecificationBootstrap.newStringLiteral(this.repository, "string", this.processorSupport)));
+            functionExecution.start(func, Lists.mutable.with(ValueSpecificationBootstrap.newStringLiteral(repository, "string", processorSupport)));
         }
         catch (Exception e)
         {

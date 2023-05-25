@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.incremental.function;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.After;
@@ -26,7 +26,8 @@ import org.junit.Test;
 public class TestPureRuntimeFunction_AsReturn extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
@@ -40,19 +41,19 @@ public class TestPureRuntimeFunction_AsReturn extends AbstractPureTestWithCoreCo
     @Test
     public void testPureRuntimeFunctionAsReturn() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId.pure", "function sourceFunction():String[1]{'theFunc'}");
-        this.runtime.createInMemorySource("userId.pure", "function test():Function<{->String[1]}>[1]{sourceFunction__String_1_}" +
-                                               "function go():Nil[0]{print(test()->eval(),1)}\n");
+        runtime.createInMemorySource("sourceId.pure", "function sourceFunction():String[1]{'theFunc'}");
+        runtime.createInMemorySource("userId.pure", "function test():Function<{->String[1]}>[1]{sourceFunction__String_1_}" +
+                "function go():Nil[0]{print(test()->eval(),1)}\n");
         this.compileAndExecute("go():Nil[0]");
-        int size = this.runtime.getModelRepository().serialize().length;
-        Assert.assertEquals("'theFunc'", this.functionExecution.getConsole().getLine(0));
+        int size = runtime.getModelRepository().serialize().length;
+        Assert.assertEquals("'theFunc'", functionExecution.getConsole().getLine(0));
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete("sourceId.pure");
+            runtime.delete("sourceId.pure");
             try
             {
-                this.runtime.compile();
+                runtime.compile();
                 Assert.fail();
             }
             catch (Exception e)
@@ -60,33 +61,33 @@ public class TestPureRuntimeFunction_AsReturn extends AbstractPureTestWithCoreCo
                 assertPureException(PureCompilationException.class, "sourceFunction__String_1_ has not been defined!", "userId.pure", 1, 44, e);
             }
 
-            this.runtime.createInMemorySource("sourceId.pure", "function sourceFunction():String[1]{'the New Func!'}");
+            runtime.createInMemorySource("sourceId.pure", "function sourceFunction():String[1]{'the New Func!'}");
             this.compileAndExecute("go():Nil[0]");
-            Assert.assertEquals("'the New Func!'", this.functionExecution.getConsole().getLine(0));
+            Assert.assertEquals("'the New Func!'", functionExecution.getConsole().getLine(0));
         }
-        this.runtime.delete("sourceId.pure");
-        this.runtime.createInMemorySource("sourceId.pure", "function sourceFunction():String[1]{'theFunc'}");
-        this.runtime.compile();
-        Assert.assertEquals("Graph size mismatch", size, this.repository.serialize().length);
+        runtime.delete("sourceId.pure");
+        runtime.createInMemorySource("sourceId.pure", "function sourceFunction():String[1]{'theFunc'}");
+        runtime.compile();
+        Assert.assertEquals("Graph size mismatch", size, repository.serialize().length);
     }
 
 
     @Test
     public void testPureRuntimeFunctionAsReturnWithError() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId.pure", "function sourceFunction():String[1]{'theFunc'}");
-        this.runtime.createInMemorySource("userId.pure", "function test():Function<{->String[1]}>[1]{sourceFunction__String_1_}" +
-                                               "function go():Nil[0]{print(test()->eval(),1)}\n");
+        runtime.createInMemorySource("sourceId.pure", "function sourceFunction():String[1]{'theFunc'}");
+        runtime.createInMemorySource("userId.pure", "function test():Function<{->String[1]}>[1]{sourceFunction__String_1_}" +
+                "function go():Nil[0]{print(test()->eval(),1)}\n");
         this.compileAndExecute("go():Nil[0]");
-        int size = this.runtime.getModelRepository().serialize().length;
-        Assert.assertEquals("'theFunc'", this.functionExecution.getConsole().getLine(0));
+        int size = runtime.getModelRepository().serialize().length;
+        Assert.assertEquals("'theFunc'", functionExecution.getConsole().getLine(0));
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete("sourceId.pure");
+            runtime.delete("sourceId.pure");
             try
             {
-                this.runtime.compile();
+                runtime.compile();
                 Assert.fail();
             }
             catch (Exception e)
@@ -96,8 +97,8 @@ public class TestPureRuntimeFunction_AsReturn extends AbstractPureTestWithCoreCo
 
             try
             {
-                this.runtime.createInMemorySource("sourceId.pure", "function sourceFunction():Integer[1]{1}");
-                this.runtime.compile();
+                runtime.createInMemorySource("sourceId.pure", "function sourceFunction():Integer[1]{1}");
+                runtime.compile();
                 Assert.fail();
             }
             catch (Exception e)
@@ -105,9 +106,9 @@ public class TestPureRuntimeFunction_AsReturn extends AbstractPureTestWithCoreCo
                 assertPureException(PureCompilationException.class, "sourceFunction__String_1_ has not been defined!", "userId.pure", 1, 44, e);
             }
         }
-        this.runtime.modify("sourceId.pure", "function sourceFunction():String[1]{'theFunc'}");
-        this.runtime.compile();
-        Assert.assertEquals("Graph size mismatch", size, this.repository.serialize().length);
+        runtime.modify("sourceId.pure", "function sourceFunction():String[1]{'theFunc'}");
+        runtime.compile();
+        Assert.assertEquals("Graph size mismatch", size, repository.serialize().length);
     }
 
     protected static FunctionExecution getFunctionExecution()

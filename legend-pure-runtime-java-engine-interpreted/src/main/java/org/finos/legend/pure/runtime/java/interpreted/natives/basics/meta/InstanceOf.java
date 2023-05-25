@@ -16,14 +16,14 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.basics.meta;
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation.measure.Measure;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
@@ -47,24 +47,16 @@ public class InstanceOf extends NativeFunction
         CoreInstance sourceRawType = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.genericType, M3Properties.rawType, processorSupport);
         if (Measure.isUnitInstance(params.get(0), processorSupport))
         {
-            return  ValueSpecificationBootstrap.newBooleanLiteral(this.modelRepository,
-                    processorSupport.type_subTypeOf
-                            (
-                                sourceRawType,
-                                Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport)
-                            ),
-                    processorSupport
-            );
+            return ValueSpecificationBootstrap.newBooleanLiteral(this.modelRepository,
+                    processorSupport.type_subTypeOf(sourceRawType, Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport)),
+                    processorSupport);
         }
         return ValueSpecificationBootstrap.newBooleanLiteral(this.modelRepository,
-                Instance.instanceOf
-                        (
-                            Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport),
-                            Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport),
-                                processorSupport
-                        ),
-                processorSupport
-        );
+                Instance.instanceOf(
+                        Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport),
+                        Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport),
+                        processorSupport),
+                processorSupport);
     }
 }
 

@@ -12,16 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m3.test.interpreted.integration.runner;
+package org.finos.legend.pure.runtime.java.interpreted.runner;
 
-import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.test.Verify;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.execution.test.AssertFailTestStatus;
 import org.finos.legend.pure.m3.execution.test.ErrorTestStatus;
@@ -29,6 +26,8 @@ import org.finos.legend.pure.m3.execution.test.SuccessTestStatus;
 import org.finos.legend.pure.m3.execution.test.TestCallBack;
 import org.finos.legend.pure.m3.execution.test.TestRunner;
 import org.finos.legend.pure.m3.execution.test.TestStatus;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.After;
@@ -39,7 +38,8 @@ import org.junit.Test;
 public class TestTestRunner extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
@@ -49,54 +49,36 @@ public class TestTestRunner extends AbstractPureTestWithCoreCompiled
         runtime.delete("fromString.pure");
     }
 
-    private final Function<CoreInstance, String> getPath = new Function<CoreInstance, String>()
-    {
-        @Override
-        public String valueOf(CoreInstance instance)
-        {
-            return PackageableElement.getUserPathForPackageableElement(instance, "::");
-        }
-    };
-
-    private final Function<CallBackGroup, String> getCallBackGroupPath = new Function<CallBackGroup, String>()
-    {
-        @Override
-        public String valueOf(CallBackGroup group)
-        {
-            return getPath.valueOf(group.getFunction());
-        }
-    };
-
     @Test
     public void testRun() throws Exception
     {
-        compileTestSource("fromString.pure","function <<test.Test>> a::b::test():Boolean[1]\n" +
-                        "{\n" +
-                        "   print('1', 1);\n"+
-                        "   assert(true, |'');\n" +
-                        "}\n" +
-                        "\n" +
-                        "function <<test.Test>> a::b::c::test():Boolean[1]\n" +
-                        "{\n" +
-                        "   print('2', 1);\n"+
-                        "   assert(false, |'');\n" +
-                        "}\n" +
-                        "function <<test.Test>> a::b::d::test():Nil[0]\n" +
-                        "{\n" +
-                        "   print('3', 1);\n" +
-                        "   print([1, 2, 3, 4]->at(5), 1);\n" +
-                        "}\n" +
-                        "function ok():Nil[0]\n" +
-                        "{\n" +
-                        "   []\n" +
-                        "}");
+        compileTestSource("fromString.pure", "function <<test.Test>> a::b::test():Boolean[1]\n" +
+                "{\n" +
+                "   print('1', 1);\n" +
+                "   assert(true, |'');\n" +
+                "}\n" +
+                "\n" +
+                "function <<test.Test>> a::b::c::test():Boolean[1]\n" +
+                "{\n" +
+                "   print('2', 1);\n" +
+                "   assert(false, |'');\n" +
+                "}\n" +
+                "function <<test.Test>> a::b::d::test():Nil[0]\n" +
+                "{\n" +
+                "   print('3', 1);\n" +
+                "   print([1, 2, 3, 4]->at(5), 1);\n" +
+                "}\n" +
+                "function ok():Nil[0]\n" +
+                "{\n" +
+                "   []\n" +
+                "}");
         UnitTestTestCallBack callback = new UnitTestTestCallBack();
-        TestRunner testRunner = new TestRunner("::",  this.runtime, this.functionExecution, callback, false);
+        TestRunner testRunner = new TestRunner("::", runtime, functionExecution, callback, false);
         testRunner.run();
 
-        Assert.assertEquals(Sets.immutable.with("a::b::c::test__Boolean_1_", "a::b::d::test__Nil_0_", "a::b::test__Boolean_1_"), callback.getTests().collect(this.getPath).select(c->!c.startsWith("meta")));
+        Assert.assertEquals(Sets.fixedSize.with("a::b::c::test__Boolean_1_", "a::b::d::test__Nil_0_", "a::b::test__Boolean_1_"), callback.getTests().collect(PackageableElement::getUserPathForPackageableElement).select(c -> !c.startsWith("meta")));
 
-        MutableList<CallBackGroup> groups = callback.getGroups().sortThisBy(this.getCallBackGroupPath);
+        MutableList<CallBackGroup> groups = callback.getGroups().sortThisBy(g -> PackageableElement.getUserPathForPackageableElement(g.getFunction()));
 
         Assert.assertEquals("a::b::c::test__Boolean_1_", PackageableElement.getUserPathForPackageableElement(groups.get(0).getFunction(), "::"));
         Assert.assertTrue(groups.get(0).getMessage().startsWith("2"));
@@ -115,61 +97,22 @@ public class TestTestRunner extends AbstractPureTestWithCoreCompiled
     public void testSetup() throws Exception
     {
         compileTestSource("function <<test.BeforePackage>> a::b::setUp():Nil[0]\n" +
-                        "{\n" +
-                        "   print('setup AB', 1);\n" +
-                        "}\n" +
-                        "function <<test.BeforePackage>> a::b::c::setUp():Nil[0]\n" +
-                        "{\n" +
-                        "   print('setup ABC', 1);\n" +
-                        "}\n" +
-                        "function <<test.Test>> a::b::test():Boolean[1]\n" +
-                        "{\n" +
-                        "   print('1', 1);\n"+
-                        "   assert(true, |'');\n" +
-                        "}\n" +
-                        "\n" +
-                        "function <<test.Test>> a::b::c::test():Boolean[1]\n" +
-                        "{\n" +
-                        "   print('2', 1);\n"+
-                        "   assert(false, |'');\n" +
-                        "}\n" +
-                        "function <<test.Test>> a::b::d::test():Nil[0]\n" +
-                        "{\n" +
-                        "   print('3', 1);\n" +
-                        "   print([1, 2, 3, 4]->at(5), 1);\n" +
-                        "}\n" +
-                        "function ok():Nil[0]\n" +
-                        "{\n" +
-                        "   []\n" +
-                        "}");
-        UnitTestTestCallBack callback = new UnitTestTestCallBack();
-        TestRunner testRunner = new TestRunner("a::b::c", this.runtime, this.functionExecution, callback, false);
-        testRunner.run();
-
-        Assert.assertEquals(Sets.immutable.with("a::b::c::test__Boolean_1_"), callback.getTests().collect(this.getPath));
-
-        MutableList<CallBackGroup> groups = callback.getGroups().sortThisBy(this.getCallBackGroupPath);
-
-        Assert.assertEquals("a::b::c::test__Boolean_1_", PackageableElement.getUserPathForPackageableElement(groups.get(0).getFunction(), "::"));
-        Assert.assertTrue(groups.get(0).getMessage().startsWith("2"));
-        Verify.assertInstanceOf(AssertFailTestStatus.class, groups.get(0).getStatus());
-
-        Assert.assertEquals("'setup AB'", this.functionExecution.getConsole().getLine(5));
-        Assert.assertEquals("'setup ABC'", this.functionExecution.getConsole().getLine(6));
-    }
-
-    @Test
-    public void testExclusion()
-    {
-        compileTestSource("fromString.pure","function <<test.Test>> a::b::test():Boolean[1]\n" +
                 "{\n" +
-                "   print('1', 1);\n"+
+                "   print('setup AB', 1);\n" +
+                "}\n" +
+                "function <<test.BeforePackage>> a::b::c::setUp():Nil[0]\n" +
+                "{\n" +
+                "   print('setup ABC', 1);\n" +
+                "}\n" +
+                "function <<test.Test>> a::b::test():Boolean[1]\n" +
+                "{\n" +
+                "   print('1', 1);\n" +
                 "   assert(true, |'');\n" +
                 "}\n" +
                 "\n" +
-                "function <<test.Test>> {test.excludePlatform = 'Interpreted'} a::b::c::test():Boolean[1]\n" +
+                "function <<test.Test>> a::b::c::test():Boolean[1]\n" +
                 "{\n" +
-                "   print('2', 1);\n"+
+                "   print('2', 1);\n" +
                 "   assert(false, |'');\n" +
                 "}\n" +
                 "function <<test.Test>> a::b::d::test():Nil[0]\n" +
@@ -182,12 +125,51 @@ public class TestTestRunner extends AbstractPureTestWithCoreCompiled
                 "   []\n" +
                 "}");
         UnitTestTestCallBack callback = new UnitTestTestCallBack();
-        TestRunner testRunner = new TestRunner("::",  this.runtime, this.functionExecution, callback, false);
+        TestRunner testRunner = new TestRunner("a::b::c", runtime, functionExecution, callback, false);
         testRunner.run();
 
-        Assert.assertEquals(Sets.immutable.with("a::b::d::test__Nil_0_", "a::b::test__Boolean_1_"), callback.getTests().collect(this.getPath).select(c->!c.startsWith("meta")));
+        Assert.assertEquals(Sets.fixedSize.with("a::b::c::test__Boolean_1_"), callback.getTests().collect(PackageableElement::getUserPathForPackageableElement));
 
-        MutableList<CallBackGroup> groups = callback.getGroups().sortThisBy(this.getCallBackGroupPath);
+        MutableList<CallBackGroup> groups = callback.getGroups().sortThisBy(g -> PackageableElement.getUserPathForPackageableElement(g.getFunction()));
+
+        Assert.assertEquals("a::b::c::test__Boolean_1_", PackageableElement.getUserPathForPackageableElement(groups.get(0).getFunction(), "::"));
+        Assert.assertTrue(groups.get(0).getMessage().startsWith("2"));
+        Verify.assertInstanceOf(AssertFailTestStatus.class, groups.get(0).getStatus());
+
+        Assert.assertEquals("'setup AB'", functionExecution.getConsole().getLine(5));
+        Assert.assertEquals("'setup ABC'", functionExecution.getConsole().getLine(6));
+    }
+
+    @Test
+    public void testExclusion()
+    {
+        compileTestSource("fromString.pure", "function <<test.Test>> a::b::test():Boolean[1]\n" +
+                "{\n" +
+                "   print('1', 1);\n" +
+                "   assert(true, |'');\n" +
+                "}\n" +
+                "\n" +
+                "function <<test.Test>> {test.excludePlatform = 'Interpreted'} a::b::c::test():Boolean[1]\n" +
+                "{\n" +
+                "   print('2', 1);\n" +
+                "   assert(false, |'');\n" +
+                "}\n" +
+                "function <<test.Test>> a::b::d::test():Nil[0]\n" +
+                "{\n" +
+                "   print('3', 1);\n" +
+                "   print([1, 2, 3, 4]->at(5), 1);\n" +
+                "}\n" +
+                "function ok():Nil[0]\n" +
+                "{\n" +
+                "   []\n" +
+                "}");
+        UnitTestTestCallBack callback = new UnitTestTestCallBack();
+        TestRunner testRunner = new TestRunner("::", runtime, functionExecution, callback, false);
+        testRunner.run();
+
+        Assert.assertEquals(Sets.fixedSize.with("a::b::d::test__Nil_0_", "a::b::test__Boolean_1_"), callback.getTests().collect(PackageableElement::getUserPathForPackageableElement).select(c -> !c.startsWith("meta")));
+
+        MutableList<CallBackGroup> groups = callback.getGroups().sortThisBy(g -> PackageableElement.getUserPathForPackageableElement(g.getFunction()));
 
         CallBackGroup group = groups.get(0);
         Assert.assertEquals("a::b::d::test__Nil_0_", PackageableElement.getUserPathForPackageableElement(group.getFunction(), "::"));
@@ -208,7 +190,7 @@ public class TestTestRunner extends AbstractPureTestWithCoreCompiled
     private static class UnitTestTestCallBack implements TestCallBack
     {
         private MutableSet<CoreInstance> tests;
-        private final MutableList<CallBackGroup> groups = FastList.newList();
+        private final MutableList<CallBackGroup> groups = Lists.mutable.empty();
 
         @Override
         public void foundTests(Iterable<? extends CoreInstance> tests)
@@ -250,7 +232,7 @@ public class TestTestRunner extends AbstractPureTestWithCoreCompiled
 
         public CoreInstance getFunction()
         {
-            return this.function;
+            return function;
         }
 
         String getMessage()

@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.constraints;
 
-import org.finos.legend.pure.m3.tests.function.base.lang.AbstractTestDynamicNewConstraintsHandler;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.function.base.lang.AbstractTestDynamicNewConstraintsHandler;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -23,7 +23,8 @@ import org.junit.BeforeClass;
 public class TestConstraintHandlerInterpreted extends AbstractTestDynamicNewConstraintsHandler
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 

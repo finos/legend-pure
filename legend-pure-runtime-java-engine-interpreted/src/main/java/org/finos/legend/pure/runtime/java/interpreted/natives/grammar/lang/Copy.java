@@ -14,29 +14,36 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.natives.grammar.lang;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.set.mutable.UnifiedSet;
-import org.finos.legend.pure.m3.navigation.*;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.finos.legend.pure.runtime.java.interpreted.*;
+import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
+import org.finos.legend.pure.runtime.java.interpreted.Executor;
+import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
+import org.finos.legend.pure.runtime.java.interpreted.natives.DefaultConstraintHandler;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
-import org.finos.legend.pure.runtime.java.interpreted.natives.DefaultConstraintHandler;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
 import java.util.Stack;
@@ -45,8 +52,6 @@ public class Copy extends NativeFunction
 {
     private final ModelRepository repository;
     private final FunctionExecutionInterpreted functionExecution;
-
-
 
     public Copy(ModelRepository repository, FunctionExecutionInterpreted functionExecution)
     {
@@ -70,7 +75,7 @@ public class Copy extends NativeFunction
 
         ListIterable<? extends CoreInstance> keyValues = (params.size() > 2) ? Instance.getValueForMetaPropertyToManyResolved(params.get(2), M3Properties.values, processorSupport) : Lists.immutable.<CoreInstance>with();
 
-        MutableSet<CoreInstance> addedValues = UnifiedSet.newSet();
+        MutableSet<CoreInstance> addedValues = Sets.mutable.empty();
 
         MutableMap<CoreInstance, MutableMap> propertyTree = Maps.mutable.empty();
 
@@ -164,7 +169,7 @@ public class Copy extends NativeFunction
 
         this.copy(instance, newInstance, sourceClassifier, addedValues, functionExpressionToUseInStack.getSourceInformation(), processorSupport, instantiationContext, propertyTree);
 
-        if(addedValues.isEmpty())
+        if (addedValues.isEmpty())
         {
             newInstance.setSourceInformation(instance.getSourceInformation());
         }
@@ -183,7 +188,7 @@ public class Copy extends NativeFunction
             instantiationContext.reset();
         }
 
-        return DefaultConstraintHandler.handleConstraints(sourceClassifier,  value, functionExpressionToUseInStack.getSourceInformation(), this.functionExecution,resolvedTypeParameters,resolvedMultiplicityParameters,variableContext,functionExpressionToUseInStack,profiler,instantiationContext, executionSupport);
+        return DefaultConstraintHandler.handleConstraints(sourceClassifier, value, functionExpressionToUseInStack.getSourceInformation(), this.functionExecution, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
 
     }
 
@@ -225,17 +230,8 @@ public class Copy extends NativeFunction
             }
         }
 
-        instantiationContext.registerValidation(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                // Verify that all updated property values meet multiplicity constraints
-                New.validatePropertyValueMultiplicities(newInstance, sourceClassifier, propertiesToValidate, sourceInfoForErrors, processorSupport);
-            }
-        });
-
+        // Verify that all updated property values meet multiplicity constraints
+        instantiationContext.registerValidation(() -> New.validatePropertyValueMultiplicities(newInstance, sourceClassifier, propertiesToValidate, sourceInfoForErrors, processorSupport));
         New.updateReverseProperties(newInstance, sourceInfoForErrors, processorSupport);
-
     }
 }
