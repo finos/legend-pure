@@ -37,6 +37,7 @@ public class FullJavaPaths
     public static final String Function = JavaPackageAndImportBuilder.buildInterfaceReferenceFromUserPath(M3Paths.Function);
     public static final String FunctionDefinition = JavaPackageAndImportBuilder.buildInterfaceReferenceFromUserPath(M3Paths.FunctionDefinition);
     public static final String FunctionType = JavaPackageAndImportBuilder.buildInterfaceReferenceFromUserPath(M3Paths.FunctionType);
+    public static final String FunctionType_Impl = JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath(M3Paths.FunctionType);
     public static final String Generalization = JavaPackageAndImportBuilder.buildInterfaceReferenceFromUserPath(M3Paths.Generalization);
     public static final String GenericType = JavaPackageAndImportBuilder.buildInterfaceReferenceFromUserPath(M3Paths.GenericType);
     public static final String GenericType_Impl = JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath(M3Paths.GenericType);
@@ -62,6 +63,8 @@ public class FullJavaPaths
     public static final String PrimitiveType = JavaPackageAndImportBuilder.buildInterfaceReferenceFromUserPath(M3Paths.PrimitiveType);
     public static final String Property = JavaPackageAndImportBuilder.buildInterfaceReferenceFromUserPath(M3Paths.Property);
     public static final String Property_Impl = JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath(M3Paths.Property);
+    public static final String QualifiedProperty = JavaPackageAndImportBuilder.buildInterfaceReferenceFromUserPath(M3Paths.QualifiedProperty);
+    public static final String QualifiedProperty_Impl = JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath(M3Paths.QualifiedProperty);
 
     public static final String DefaultValue = JavaPackageAndImportBuilder.buildInterfaceReferenceFromUserPath(M3Paths.DefaultValue);
 
@@ -73,6 +76,7 @@ public class FullJavaPaths
 
     public static final String Unit = JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath(M3Paths.Unit);
     public static final String ValueSpecification_Impl = JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath(M3Paths.ValueSpecification);
+    public static final String VariableExpression = JavaPackageAndImportBuilder.buildInterfaceReferenceFromUserPath(M3Paths.VariableExpression);
 
     public static final String List = JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath(M3Paths.List);
 

@@ -110,6 +110,7 @@ import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.m
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.meta.NewEnumeration;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.meta.NewLambdaFunction;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.meta.NewProperty;
+import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.meta.NewQualifiedProperty;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.meta.OpenVariableValues;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.meta.Reactivate;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.meta.SourceInformation;
@@ -513,6 +514,7 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                 new NewEnumeration(),
                 new NewLambdaFunction(),
                 new NewProperty(),
+                new NewQualifiedProperty(),
                 new OpenVariableValues(),
                 new Reactivate(),
                 new SourceInformation(),
