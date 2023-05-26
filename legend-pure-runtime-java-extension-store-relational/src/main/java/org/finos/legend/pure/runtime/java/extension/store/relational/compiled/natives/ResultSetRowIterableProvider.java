@@ -15,11 +15,9 @@
 package org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.statelistener.ExecutionActivityListener;
 import org.finos.legend.pure.m3.tools.MetricsRecorder;
@@ -27,12 +25,12 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.ResultLazyIterable;
-import org.finos.legend.pure.runtime.java.shared.canstreamstate.CanStreamState;
 import org.finos.legend.pure.runtime.java.extension.store.relational.RelationalNativeImplementation;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.ConnectionWithDataSourceInfo;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.IConnectionManagerHandler;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.PureConnectionUtils;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.SQLExceptionHandler;
+import org.finos.legend.pure.runtime.java.shared.canstreamstate.CanStreamState;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -41,6 +39,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
+import java.util.function.Function;
 
 /**
  * Runs the database query and provides the appropriate iterator, streaming or a normal ListIterable
@@ -81,8 +80,7 @@ public class ResultSetRowIterableProvider
             statement.setFetchSize(actualFetchSize);
             connectionManagerHandler.addPotentialDebug(pureConnection, statement);
             connectionManagerHandler.registerStatement(statement, sql, actualFetchSize, queryTimeoutInSeconds);
-            MutableList<String> columns = FastList.newList();
-            ;
+            MutableList<String> columns = Lists.mutable.empty();
 
             try
             {
@@ -119,7 +117,7 @@ public class ResultSetRowIterableProvider
                             while (rs.next())
                             {
                                 rowCount++;
-                                CoreInstance row = processRowFunction.valueOf(RelationalNativeImplementation.processRow(rs, handlers, sqlNull, calendar));
+                                CoreInstance row = processRowFunction.apply(RelationalNativeImplementation.processRow(rs, handlers, sqlNull, calendar));
                                 results.add(row);
 
                                 if (showCheckMaxRows && rowCount > maxRows)
@@ -189,8 +187,9 @@ public class ResultSetRowIterableProvider
                 }
                 listener.relationalActivityCompleted(hostname, port, databaseName, "", sql, "", 0L, 0L, 0L);
             }
-            catch (Exception logException)
+            catch (Exception ignore)
             {
+                // ignore logging exceptions
             }
 
             throw new PureExecutionException(sourceInformation, SQLExceptionHandler.buildExceptionString(e, connection), e);
@@ -206,7 +205,7 @@ public class ResultSetRowIterableProvider
 
         ResultSetIterableContainer(long startTimeInNanos)
         {
-            this(Lists.fixedSize.empty(), Lists.fixedSize.<String>empty(), startTimeInNanos);
+            this(Lists.fixedSize.empty(), Lists.fixedSize.empty(), startTimeInNanos);
         }
 
         ResultSetIterableContainer(RichIterable rowIterable, RichIterable<String> columnNames, long startTimeInNanos)

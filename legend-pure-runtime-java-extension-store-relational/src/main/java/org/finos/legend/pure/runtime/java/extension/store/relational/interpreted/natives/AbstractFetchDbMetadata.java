@@ -23,14 +23,14 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.runtime.java.extension.store.relational.shared.ConnectionWithDataSourceInfo;
+import org.finos.legend.pure.runtime.java.extension.store.relational.shared.IConnectionManagerHandler;
+import org.finos.legend.pure.runtime.java.extension.store.relational.shared.SQLExceptionHandler;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
-import org.finos.legend.pure.runtime.java.extension.store.relational.shared.ConnectionWithDataSourceInfo;
-import org.finos.legend.pure.runtime.java.extension.store.relational.shared.IConnectionManagerHandler;
-import org.finos.legend.pure.runtime.java.extension.store.relational.shared.SQLExceptionHandler;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -101,7 +101,9 @@ public abstract class AbstractFetchDbMetadata extends NativeFunction
                     Instance.addValueToProperty(dataSourceCoreInstance, "name", repository.newStringCoreInstance(dbName), processorSupport);
                     Instance.addValueToProperty(dataSourceCoreInstance, "type", dbType, processorSupport);
                     if (serverPrincipal != null)
+                    {
                         Instance.addValueToProperty(dataSourceCoreInstance, "serverPrincipal", this.repository.newStringCoreInstance(serverPrincipal), processorSupport);
+                    }
 
                     Instance.addValueToProperty(pureResult, "dataSource", dataSourceCoreInstance, processorSupport);
                 }

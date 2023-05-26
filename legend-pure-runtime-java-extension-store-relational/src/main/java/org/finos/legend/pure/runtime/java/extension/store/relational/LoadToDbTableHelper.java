@@ -16,10 +16,9 @@ package org.finos.legend.pure.runtime.java.extension.store.relational;
 
 import org.apache.commons.csv.CSVRecord;
 import org.eclipse.collections.api.LazyIterable;
-import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.utility.StringIterate;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 
@@ -29,42 +28,41 @@ import java.sql.SQLException;
 
 public class LoadToDbTableHelper
 {
-    public static Iterable<ListIterable<?>> collectIterable(LazyIterable iterable, final ListIterable<String> columnTypes, final String filePath, final String tableName)
+    @SuppressWarnings("unchecked")
+    public static Iterable<ListIterable<?>> collectIterable(LazyIterable<?> iterable, ListIterable<String> columnTypes, String filePath, String tableName)
     {
-        return iterable.collect(new Function<Iterable<String>, ListIterable<?>>()
+        return iterable.collect(csvRecord ->
         {
-            @Override
-            public ListIterable<?> valueOf(Iterable<String> csvRecord)
+            MutableList<Object> result = Lists.mutable.empty();
+            int i = 0;
+            for (String str : (Iterable<? extends String>) csvRecord)
             {
-                MutableList<Object> result = FastList.newList();
-                int i = 0;
-                for (String str : csvRecord)
-                    try
+                try
+                {
+                    String type = columnTypes.get(i);
+                    if (StringIterate.isEmpty(str))
                     {
-                        String type = columnTypes.get(i);
-                        if (StringIterate.isEmpty(str))
-                        {
-                            result.add(null);
-                        }
-                        else if ("Integer".equals(type))
-                        {
-                            result.add(Long.valueOf(str));
-                        }
-                        else
-                        {
-                            result.add(str);
-                        }
-                        i++;
+                        result.add(null);
                     }
-                    catch (NumberFormatException ex)
+                    else if ("Integer".equals(type))
                     {
-                        throw new PureExecutionException("Failed to load CSV file " + filePath + " into DB table " + tableName +
-                                ".\n Table requires a " + columnTypes.get(i) + " for column number " + i + ". CSV row:" +
-                                (csvRecord instanceof CSVRecord ? ((CSVRecord)csvRecord).getRecordNumber() : "N/A") + " column:" + (i + 1) +
-                                " failed to convert to " + columnTypes.get(i) + " with error '" + ex.getMessage() + "'", ex);
+                        result.add(Long.valueOf(str));
                     }
-                return result;
+                    else
+                    {
+                        result.add(str);
+                    }
+                    i++;
+                }
+                catch (NumberFormatException ex)
+                {
+                    throw new PureExecutionException("Failed to load CSV file " + filePath + " into DB table " + tableName +
+                            ".\n Table requires a " + columnTypes.get(i) + " for column number " + i + ". CSV row:" +
+                            (csvRecord instanceof CSVRecord ? ((CSVRecord) csvRecord).getRecordNumber() : "N/A") + " column:" + (i + 1) +
+                            " failed to convert to " + columnTypes.get(i) + " with error '" + ex.getMessage() + "'", ex);
+                }
             }
+            return result;
         });
     }
 

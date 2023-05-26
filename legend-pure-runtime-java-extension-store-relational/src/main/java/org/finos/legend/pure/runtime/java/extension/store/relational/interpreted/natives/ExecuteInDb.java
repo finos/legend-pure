@@ -14,13 +14,12 @@
 
 package org.finos.legend.pure.runtime.java.extension.store.relational.interpreted.natives;
 
-import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.map.mutable.primitive.IntObjectHashMap;
+import org.eclipse.collections.api.map.primitive.ImmutableIntObjectMap;
+import org.eclipse.collections.impl.factory.primitive.IntObjectMaps;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -36,16 +35,16 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate;
-import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
-import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
-import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
-import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
-import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 import org.finos.legend.pure.runtime.java.extension.store.relational.LoadToDbTableHelper;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.ConnectionWithDataSourceInfo;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.IConnectionManagerHandler;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.PureConnectionUtils;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.SQLExceptionHandler;
+import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
+import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
+import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
+import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
+import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -61,55 +60,51 @@ import java.util.TimeZone;
 
 public class ExecuteInDb extends NativeFunction
 {
-    private static final MutableIntObjectMap<String> sqlTypeToPureType;
+    private static final ImmutableIntObjectMap<String> sqlTypeToPureType = IntObjectMaps.mutable.<String>empty()
+            .withKeyValue(Types.NULL, M3Paths.Nil)
+
+            .withKeyValue(Types.SMALLINT, M3Paths.Integer)
+            .withKeyValue(Types.TINYINT, M3Paths.Integer)
+            .withKeyValue(Types.INTEGER, M3Paths.Integer)
+            .withKeyValue(Types.BIGINT, M3Paths.Integer)
+
+            .withKeyValue(Types.CHAR, M3Paths.String)
+            .withKeyValue(Types.VARCHAR, M3Paths.String)
+            .withKeyValue(Types.LONGVARCHAR, M3Paths.String)
+            .withKeyValue(Types.NCHAR, M3Paths.String)
+            .withKeyValue(Types.NVARCHAR, M3Paths.String)
+            .withKeyValue(Types.LONGNVARCHAR, M3Paths.String)
+            .withKeyValue(Types.OTHER, M3Paths.String)
+
+            .withKeyValue(Types.REAL, M3Paths.Float)
+            .withKeyValue(Types.DOUBLE, M3Paths.Float)
+            .withKeyValue(Types.DECIMAL, M3Paths.Float)
+            .withKeyValue(Types.NUMERIC, M3Paths.Float)
+            .withKeyValue(Types.FLOAT, M3Paths.Float)
+
+            .withKeyValue(Types.DATE, M3Paths.StrictDate)
+            .withKeyValue(Types.TIME, M3Paths.DateTime)
+            .withKeyValue(Types.TIMESTAMP, M3Paths.DateTime)
+
+            .withKeyValue(Types.BOOLEAN, M3Paths.Boolean)
+            .withKeyValue(Types.BIT, M3Paths.Boolean)
+
+            .withKeyValue(Types.BINARY, M3Paths.String)
+            .withKeyValue(Types.VARBINARY, M3Paths.String)
+            .withKeyValue(Types.LONGVARBINARY, M3Paths.String)
+            .toImmutable();
+
     private static final IConnectionManagerHandler connectionManagerHandler = IConnectionManagerHandler.CONNECTION_MANAGER_HANDLER;
-
-    static
-    {
-        sqlTypeToPureType = IntObjectHashMap.newMap();
-
-        sqlTypeToPureType.put(Types.NULL, M3Paths.Nil);
-
-        sqlTypeToPureType.put(Types.SMALLINT, M3Paths.Integer);
-        sqlTypeToPureType.put(Types.TINYINT, M3Paths.Integer);
-        sqlTypeToPureType.put(Types.INTEGER, M3Paths.Integer);
-        sqlTypeToPureType.put(Types.BIGINT, M3Paths.Integer);
-
-        sqlTypeToPureType.put(Types.CHAR, M3Paths.String);
-        sqlTypeToPureType.put(Types.VARCHAR, M3Paths.String);
-        sqlTypeToPureType.put(Types.LONGVARCHAR, M3Paths.String);
-        sqlTypeToPureType.put(Types.NCHAR, M3Paths.String);
-        sqlTypeToPureType.put(Types.NVARCHAR, M3Paths.String);
-        sqlTypeToPureType.put(Types.LONGNVARCHAR, M3Paths.String);
-        sqlTypeToPureType.put(Types.OTHER, M3Paths.String);
-
-        sqlTypeToPureType.put(Types.REAL, M3Paths.Float);
-        sqlTypeToPureType.put(Types.DOUBLE, M3Paths.Float);
-        sqlTypeToPureType.put(Types.DECIMAL, M3Paths.Float);
-        sqlTypeToPureType.put(Types.NUMERIC, M3Paths.Float);
-        sqlTypeToPureType.put(Types.FLOAT, M3Paths.Float);
-
-        sqlTypeToPureType.put(Types.DATE, M3Paths.StrictDate);
-        sqlTypeToPureType.put(Types.TIME, M3Paths.DateTime);
-        sqlTypeToPureType.put(Types.TIMESTAMP, M3Paths.DateTime);
-
-        sqlTypeToPureType.put(Types.BOOLEAN, M3Paths.Boolean);
-        sqlTypeToPureType.put(Types.BIT, M3Paths.Boolean);
-
-        sqlTypeToPureType.put(Types.BINARY, M3Paths.String);
-        sqlTypeToPureType.put(Types.VARBINARY, M3Paths.String);
-        sqlTypeToPureType.put(Types.LONGVARBINARY, M3Paths.String);
-    }
 
     private final ModelRepository repository;
     private final Message message;
-    private int maxRows;
+    private final int maxRows;
 
     public ExecuteInDb(ModelRepository repository, Message message, int maxRows)
     {
         this.repository = repository;
         this.message = message;
-        this.maxRows = (maxRows < 0) ? 0 : maxRows;
+        this.maxRows = Math.max(maxRows, 0);
     }
 
     @Override
@@ -212,7 +207,9 @@ public class ExecuteInDb extends NativeFunction
                     Instance.addValueToProperty(dataSourceCoreInstance, "name", this.repository.newStringCoreInstance(dbName), processorSupport);
                     Instance.addValueToProperty(dataSourceCoreInstance, "type", dbType, processorSupport);
                     if (serverPrincipal != null)
+                    {
                         Instance.addValueToProperty(dataSourceCoreInstance, "serverPrincipal", this.repository.newStringCoreInstance(serverPrincipal), processorSupport);
+                    }
                     Instance.addValueToProperty(pureResult, "dataSource", dataSourceCoreInstance, processorSupport);
                 }
             }
@@ -243,8 +240,8 @@ public class ExecuteInDb extends NativeFunction
                                                                 long start, int maxRows, ProcessorSupport processorSupport) throws SQLException
     {
         ResultSetMetaData metaData = rs.getMetaData();
-        MutableList<String> columnNames = FastList.newList();
-        MutableList<CoreInstance> columnPureTypes = FastList.newList();
+        MutableList<String> columnNames = Lists.mutable.empty();
+        MutableList<CoreInstance> columnPureTypes = Lists.mutable.empty();
         int count = metaData.getColumnCount();
         for (int i = 1; i <= count; i++)
         {
@@ -259,7 +256,7 @@ public class ExecuteInDb extends NativeFunction
         if (rs.next())
         {
             Instance.addValueToProperty(pureResult, "executionTimeInNanoSecond", repository.newIntegerCoreInstance(System.nanoTime() - start), processorSupport);
-            MutableList<CoreInstance> rows = FastList.newList(maxRows);
+            MutableList<CoreInstance> rows = Lists.mutable.ofInitialCapacity(maxRows);
             int rowNum = 0;
             do
             {
@@ -267,7 +264,7 @@ public class ExecuteInDb extends NativeFunction
                 Instance.addValueToProperty(row, "parent", pureResult, processorSupport);
                 GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone(tz));
 
-                MutableList<CoreInstance> rowValues = FastList.newList(count);
+                MutableList<CoreInstance> rowValues = Lists.mutable.ofInitialCapacity(count);
                 for (int i = 1; i <= count; i++)
                 {
                     CoreInstance value = nullValue;
@@ -388,7 +385,8 @@ public class ExecuteInDb extends NativeFunction
                 Instance.setValuesForProperty(row, M3Properties.values, rowValues, processorSupport);
                 rows.add(row);
                 rowNum++;
-            } while (rs.next() && isRowWithinLimit(rowNum, maxRows));
+            }
+            while (rs.next() && isRowWithinLimit(rowNum, maxRows));
             Instance.setValuesForProperty(pureResult, "rows", rows, processorSupport);
         }
         else
@@ -408,14 +406,7 @@ public class ExecuteInDb extends NativeFunction
         String tableName = Instance.getValueForMetaPropertyToOneResolved(table, M3Properties.name, processorSupport).getName();
         ListIterable<? extends CoreInstance> columns = Instance.getValueForMetaPropertyToManyResolved(table, "columns", processorSupport);
 
-        ListIterable<String> columnNames = columns.collect(new Function<CoreInstance, String>()
-        {
-            @Override
-            public String valueOf(CoreInstance column)
-            {
-                return Instance.getValueForMetaPropertyToOneResolved(column, M3Properties.name, processorSupport).getName();
-            }
-        });
+        ListIterable<String> columnNames = columns.collect(c -> Instance.getValueForMetaPropertyToOneResolved(c, M3Properties.name, processorSupport).getName());
         CoreInstance schema = Instance.getValueForMetaPropertyToOneResolved(table, "schema", processorSupport);
         String schemaName = schema.getValueForMetaPropertyToOne(M3Properties.name).getName();
         StringBuilder sql = LoadToDbTableHelper.buildInsertStatementHeader(schemaName, tableName, columnNames);
@@ -479,6 +470,4 @@ public class ExecuteInDb extends NativeFunction
 
         return pureType;
     }
-
-
 }
