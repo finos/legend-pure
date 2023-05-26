@@ -14,18 +14,19 @@
 
 package org.finos.legend.pure.ide.light.api.execution.function.manager;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
+import javax.servlet.http.HttpServletResponse;
 
 public class HttpServletResponseWriter implements HttpResponseWriter
 {
-    private HttpServletResponse response;
+    private final HttpServletResponse response;
 
     public HttpServletResponseWriter(HttpServletResponse response)
     {
-       this.response = response;
+        this.response = response;
     }
+
     @Override
     public OutputStream getOutputStream() throws IOException
     {
