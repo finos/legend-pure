@@ -15,7 +15,8 @@
 package org.finos.legend.pure.runtime.java.extension.external.json.shared;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.impl.list.mutable.FastList;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
@@ -37,7 +38,7 @@ public class JsonClassSerialization<T extends CoreInstance> extends ClassConvers
 {
     protected RichIterable<JsonQualifiedPropertySerialization<?>> qualifiedPropertySerializations;
 
-    public JsonClassSerialization(Class clazz)
+    public JsonClassSerialization(Class<?> clazz)
     {
         super(clazz);
     }
@@ -76,26 +77,26 @@ public class JsonClassSerialization<T extends CoreInstance> extends ClassConvers
     protected void completeInitialisation(ConversionContext context)
     {
         super.completeInitialisation(context);
-        if(((JsonSerializationContext)context).isSerializeQualifiedProperties())
+        if (((JsonSerializationContext) context).isSerializeQualifiedProperties())
         {
-            this.qualifiedPropertySerializations = this.computeQualifiedPropertyConverters((JsonSerializationContext)context);
+            this.qualifiedPropertySerializations = this.computeQualifiedPropertyConverters((JsonSerializationContext) context);
         }
     }
 
     private RichIterable<JsonQualifiedPropertySerialization<?>> computeQualifiedPropertyConverters(JsonSerializationContext context)
     {
-        FastList<JsonQualifiedPropertySerialization<?>> qualifiedPropertyConversions = new FastList<>();
+        MutableList<JsonQualifiedPropertySerialization<?>> qualifiedPropertyConversions = Lists.mutable.empty();
         RichIterable<QualifiedProperty<?>> qualifiedProperties = this.getQualifiedProperties(context.getProcessorSupport());
-        for (QualifiedProperty qualifiedProperty : qualifiedProperties)
+        for (QualifiedProperty<?> qualifiedProperty : qualifiedProperties)
         {
-            FunctionType functionType = (FunctionType)context.getProcessorSupport().function_getFunctionType(qualifiedProperty);
+            FunctionType functionType = (FunctionType) context.getProcessorSupport().function_getFunctionType(qualifiedProperty);
             if (functionType._parameters().size() <= 1)
             {
                 Type returnType = functionType._returnType()._rawType();
                 Multiplicity returnMultiplicity = functionType._returnMultiplicity();
-                Conversion conversion = context.getConversionCache().getConversion(returnType, context);
+                Conversion<?, ?> conversion = context.getConversionCache().getConversion(returnType, context);
                 Long upperBound = returnMultiplicity._upperBound()._value();
-                Conversion multiplicityConversion;
+                Conversion<?, ?> multiplicityConversion;
                 if (upperBound == null)
                 {
                     multiplicityConversion = new JsonSerializationMultiplicityMany(qualifiedProperty, false, conversion, returnType);
@@ -125,7 +126,7 @@ public class JsonClassSerialization<T extends CoreInstance> extends ClassConvers
     @Override
     public Object apply(T pureObject, ConversionContext context)
     {
-        JsonSerializationContext jsonSerializationContext = (JsonSerializationContext)context;
+        JsonSerializationContext jsonSerializationContext = (JsonSerializationContext) context;
         if (this.isExactType(pureObject, context.getProcessorSupport()))
         {
             return this.serializeProperties(pureObject, jsonSerializationContext);
@@ -150,15 +151,15 @@ public class JsonClassSerialization<T extends CoreInstance> extends ClassConvers
             json.put(jsonSerializationContext.getTypeKeyName(), this.pureTypeAsString());
         }
         boolean shouldApplyMetamodelPropertyFilter = MetamodelSerializationOverrides.applyMetamodelPropertyFilter(this.clazz);
-        if(shouldApplyMetamodelPropertyFilter)
+        if (shouldApplyMetamodelPropertyFilter)
         {
             this.propertyConversions = this.propertyConversions.select(MetamodelSerializationOverrides.computeMetamodelPropertyFilter(this.pureTypeAsString()));
         }
         for (PropertyConversion propertyConversion : this.propertyConversions)
         {
-            Object values = jsonSerializationContext.getValueForProperty(pureObject, (Property)propertyConversion.getProperty(), this.clazz._name());
+            Object values = jsonSerializationContext.getValueForProperty(pureObject, (Property) propertyConversion.getProperty(), this.clazz._name());
             Object serializedValues = propertyConversion.apply(values, jsonSerializationContext);
-            if(this.doNotDropKeyValue(jsonSerializationContext, serializedValues))
+            if (this.doNotDropKeyValue(jsonSerializationContext, serializedValues))
             {
                 json.put(propertyConversion.getName(), serializedValues);
             }
@@ -176,7 +177,7 @@ public class JsonClassSerialization<T extends CoreInstance> extends ClassConvers
 
     private boolean doNotDropKeyValue(JsonSerializationContext jsonSerializationContext, Object serializedValues)
     {
-        return !(jsonSerializationContext.isRemovePropertiesWithEmptyValues() && serializedValues instanceof JSONArray && ((JSONArray)serializedValues).isEmpty()
+        return !(jsonSerializationContext.isRemovePropertiesWithEmptyValues() && serializedValues instanceof JSONArray && ((JSONArray) serializedValues).isEmpty()
                 || serializedValues == JsonPropertySerialization.CYCLE_DETECTED);
     }
 
@@ -187,6 +188,6 @@ public class JsonClassSerialization<T extends CoreInstance> extends ClassConvers
 
     private Conversion resolveTypeAndGetConverter(T pureObject, JsonSerializationContext jsonSerializationContext)
     {
-        return jsonSerializationContext.getConversionCache().getConversion((Type)jsonSerializationContext.getProcessorSupport().getClassifier(pureObject), jsonSerializationContext);
+        return jsonSerializationContext.getConversionCache().getConversion((Type) jsonSerializationContext.getProcessorSupport().getClassifier(pureObject), jsonSerializationContext);
     }
 }

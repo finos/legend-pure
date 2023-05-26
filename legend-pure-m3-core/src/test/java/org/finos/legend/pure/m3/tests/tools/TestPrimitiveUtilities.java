@@ -14,13 +14,13 @@
 
 package org.finos.legend.pure.m3.tests.tools;
 
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.test.Verify;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -28,7 +28,8 @@ import org.junit.Test;
 public class TestPrimitiveUtilities extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
@@ -36,13 +37,13 @@ public class TestPrimitiveUtilities extends AbstractPureTestWithCoreCompiledPlat
     public void testGetPrimitiveTypes()
     {
         MutableSet<CoreInstance> expected = Sets.mutable.empty();
-        for (CoreInstance topLevel : this.repository.getTopLevels())
+        for (CoreInstance topLevel : repository.getTopLevels())
         {
-            if (Instance.instanceOf(topLevel, M3Paths.PrimitiveType, this.processorSupport))
+            if (Instance.instanceOf(topLevel, M3Paths.PrimitiveType, processorSupport))
             {
                 expected.add(topLevel);
             }
         }
-        Verify.assertSetsEqual(expected, PrimitiveUtilities.getPrimitiveTypes(this.repository).toSet());
+        Verify.assertSetsEqual(expected, PrimitiveUtilities.getPrimitiveTypes(repository).toSet());
     }
 }

@@ -26,7 +26,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.Ty
 
 public class At extends AbstractNativeFunctionGeneric
 {
-    public At() {
+    public At()
+    {
         super(getMethod(CompiledSupport.class, "safeGet"), true, false, false, "at_T_MANY__Integer_1__T_1_");
     }
 

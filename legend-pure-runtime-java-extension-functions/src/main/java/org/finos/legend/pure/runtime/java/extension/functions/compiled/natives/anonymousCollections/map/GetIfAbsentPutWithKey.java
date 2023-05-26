@@ -42,7 +42,7 @@ public class GetIfAbsentPutWithKey extends AbstractNative
         CoreInstance param = functionType.getValueForMetaPropertyToMany(M3Properties.parameters).getFirst();
         String type = TypeProcessor.typeToJavaObjectSingle(Instance.getValueForMetaPropertyToOneResolved(param, M3Properties.genericType, processorSupport), true, processorSupport);
 
-        String valueFunc = "new DefendedFunction<" + type + ","+returnType+">(){public "+returnType+" valueOf(" + type + " key){ PureFunction1<" + type + ","+returnType+"> func=(PureFunction1<" + type + ","+returnType+">)CoreGen.getSharedPureFunction(" + transformedParams.get(2) + ",es); ((PureMap)" + transformedParams.get(0) + ").getStats().incrementGetIfAbsentCounter(); return func.value(key,es); }}))";
+        String valueFunc = "new DefendedFunction<" + type + "," + returnType + ">(){public " + returnType + " valueOf(" + type + " key){ PureFunction1<" + type + "," + returnType + "> func=(PureFunction1<" + type + "," + returnType + ">)CoreGen.getSharedPureFunction(" + transformedParams.get(2) + ",es); ((PureMap)" + transformedParams.get(0) + ").getStats().incrementGetIfAbsentCounter(); return func.value(key,es); }}))";
         return "((" + returnType + ")((PureMap)" + transformedParams.get(0) + ").getMap().getIfAbsentPutWithKey(" + transformedParams.get(1) + "," + valueFunc;
     }
 }

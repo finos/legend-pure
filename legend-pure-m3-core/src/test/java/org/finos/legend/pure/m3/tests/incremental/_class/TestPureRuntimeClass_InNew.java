@@ -24,12 +24,14 @@ import org.junit.Test;
 public class TestPureRuntimeClass_InNew extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("sourceId.pure");
         runtime.delete("userId.pure");
         runtime.delete("other.pure");
@@ -46,7 +48,7 @@ public class TestPureRuntimeClass_InNew extends AbstractPureTestWithCoreCompiled
                         .compileWithExpectedCompileFailure("a::b::c::A has not been defined!", "userId.pure", 1, 37)
                         .createInMemorySource("sourceId.pure", "Class a::b::c::A{name:String[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -62,7 +64,7 @@ public class TestPureRuntimeClass_InNew extends AbstractPureTestWithCoreCompiled
                         .compileWithExpectedCompileFailure("The property 'name' can't be found in the type 'A' or in its hierarchy.", "userId.pure", 1, 39)
                         .updateSource("sourceId.pure", "Class a::b::c::A{name:String[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
@@ -77,7 +79,7 @@ public class TestPureRuntimeClass_InNew extends AbstractPureTestWithCoreCompiled
                         .compileWithExpectedCompileFailure("a::b::c::A has not been defined!", "userId.pure", 1, 46)
                         .createInMemorySource("sourceId.pure", "Class a::b::c::A{name:String[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -91,7 +93,7 @@ public class TestPureRuntimeClass_InNew extends AbstractPureTestWithCoreCompiled
                         .compileWithExpectedCompileFailure("B has not been defined!", "userId.pure", 1, 26)
                         .createInMemorySource("sourceId.pure", "Class B{c:B[0..1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
@@ -106,7 +108,7 @@ public class TestPureRuntimeClass_InNew extends AbstractPureTestWithCoreCompiled
                         .compileWithExpectedCompileFailure("a::b::c::Cont has not been defined!", "userId.pure", 1, 37)
                         .createInMemorySource("sourceId.pure", "Class a::b::c::Cont<T>{c:T[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 }

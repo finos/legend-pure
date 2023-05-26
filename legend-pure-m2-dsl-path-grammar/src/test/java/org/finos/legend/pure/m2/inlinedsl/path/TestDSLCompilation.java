@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m2.inlinedsl.path;
 
-
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.junit.After;
 import org.junit.Assert;
@@ -39,15 +38,14 @@ public class TestDSLCompilation extends AbstractPureTestWithCoreCompiled
     @Test
     public void testSimple() throws Exception
     {
-
         try
         {
-            this.runtime.createInMemorySource("file.pure", "Class Person{address:Address[1];} Class Firm<T> {employees : Person[1];address:Address[1];} Class Address{}\n" +
+            runtime.createInMemorySource("file.pure", "Class Person{address:Address[1];} Class Firm<T> {employees : Person[1];address:Address[1];} Class Address{}\n" +
                     "function test():Any[*]\n" +
                     "{\n" +
                     "    print(#/UnknownFirm/employees/address#,2);\n" +
                     "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -57,12 +55,12 @@ public class TestDSLCompilation extends AbstractPureTestWithCoreCompiled
 
         try
         {
-            this.runtime.modify("file.pure", "Class Person{address:Address[1];} Class Firm<T> {employees : Person[1];address:Address[1];} Class Address{}\n" +
+            runtime.modify("file.pure", "Class Person{address:Address[1];} Class Firm<T> {employees : Person[1];address:Address[1];} Class Address{}\n" +
                     "function test():Any[*]\n" +
                     "{\n" +
                     "    print(#/Firm/employees/address#,2);\n" +
                     "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -70,15 +68,14 @@ public class TestDSLCompilation extends AbstractPureTestWithCoreCompiled
             Assert.assertEquals("Compilation error at (resource:file.pure line:4 column:12), \"Type argument mismatch for the class Firm<T> (expected 1, got 0): Firm\"", e.getMessage());
         }
 
-
         try
         {
-            this.runtime.modify("file.pure", "Class Person{address:Address[1];} Class Firm<T> {employees : Person[1];address:Address[1];} Class Address{}\n" +
+            runtime.modify("file.pure", "Class Person{address:Address[1];} Class Firm<T> {employees : Person[1];address:Address[1];} Class Address{}\n" +
                     "function test():Any[*]\n" +
                     "{\n" +
                     "    print(#/Firm<BlaBla>/employees/address#,2);\n" +
                     "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -89,12 +86,12 @@ public class TestDSLCompilation extends AbstractPureTestWithCoreCompiled
 
         try
         {
-            this.runtime.modify("file.pure", "Class Person{address:Address[1];} Class Firm<T> {employees : Person[1];address:Address[1];} Class Address{}\n" +
+            runtime.modify("file.pure", "Class Person{address:Address[1];} Class Firm<T> {employees : Person[1];address:Address[1];} Class Address{}\n" +
                     "function test():Any[*]\n" +
                     "{\n" +
                     "    print(#/Firm<Any>/employee/address#,2);\n" +
                     "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -104,12 +101,12 @@ public class TestDSLCompilation extends AbstractPureTestWithCoreCompiled
 
         try
         {
-            this.runtime.modify("file.pure", "Class Person{address:Address[1];} Class Firm<T> {employees : Person[1];address:Address[1];} Class Address{}\n" +
+            runtime.modify("file.pure", "Class Person{address:Address[1];} Class Firm<T> {employees : Person[1];address:Address[1];} Class Address{}\n" +
                     "function test():Any[*]\n" +
                     "{\n" +
                     "    print(#/Firm/employees/address2#,2);\n" +
                     "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -122,7 +119,7 @@ public class TestDSLCompilation extends AbstractPureTestWithCoreCompiled
     @Test
     public void testPathWithImports() throws Exception
     {
-        this.runtime.createInMemorySource("file.pure", "import meta::relational::tests::mapping::enumeration::model::domain::*;\n" +
+        runtime.createInMemorySource("file.pure", "import meta::relational::tests::mapping::enumeration::model::domain::*;\n" +
                 "Class meta::relational::tests::mapping::enumeration::model::domain::Product\n" +
                 "{\n" +
                 "   description: String[1];\n" +
@@ -147,7 +144,7 @@ public class TestDSLCompilation extends AbstractPureTestWithCoreCompiled
                 "    print(#/Product/description#,2);\n" +
                 "    print(#/Product/synonymsByType(ProductSynonymType.CUSIP)/value!cusip#,2);\n" +
                 "}\n");
-        this.runtime.compile();
+        runtime.compile();
     }
 
 
@@ -155,7 +152,7 @@ public class TestDSLCompilation extends AbstractPureTestWithCoreCompiled
     public void testParameters() throws Exception
     {
 
-        this.runtime.createInMemorySource("file.pure",
+        runtime.createInMemorySource("file.pure",
                 "Class Person\n" +
                         "{\n" +
                         "    firstName : String[1];\n" +
@@ -175,12 +172,12 @@ public class TestDSLCompilation extends AbstractPureTestWithCoreCompiled
 
         try
         {
-            this.runtime.createInMemorySource("function.pure",
+            runtime.createInMemorySource("function.pure",
                     "function test():Any[*]\n" +
                             "{\n" +
                             "    print(#/Person/nameWithTitle()#,2);\n" +
                             "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -191,12 +188,12 @@ public class TestDSLCompilation extends AbstractPureTestWithCoreCompiled
 
         try
         {
-            this.runtime.modify("function.pure",
+            runtime.modify("function.pure",
                     "function test():Any[*]\n" +
                             "{\n" +
                             "    print(#/Person/nameWithTitle(1)#,2);\n" +
                             "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -204,19 +201,19 @@ public class TestDSLCompilation extends AbstractPureTestWithCoreCompiled
             Assert.assertEquals("Compilation error at (resource:function.pure line:3 column:12), \"Parameter type mismatch for function 'nameWithTitle'. Expected:String, Found:Integer\"", e.getMessage());
         }
 
-        this.runtime.modify("function.pure",
+        runtime.modify("function.pure",
                 "function test():Any[*]\n" +
                         "{\n" +
                         "    print(#/Person/nameWithTitle('1')#,2);\n" +
                         "}\n");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void testMultipleParameters() throws Exception
     {
 
-        this.runtime.createInMemorySource("file.pure",
+        runtime.createInMemorySource("file.pure",
                 "Class Person\n" +
                         "{\n" +
                         "    firstName : String[1];\n" +
@@ -241,36 +238,36 @@ public class TestDSLCompilation extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         "}");
 
-        this.runtime.createInMemorySource("function.pure",
+        runtime.createInMemorySource("function.pure",
                 "function test():Any[*]\n" +
                         "{\n" +
                         "    print(#/Person/nameWithPrefixAndSuffix('a', 'b')#,2);\n" +
                         "}\n");
-        this.runtime.compile();
+        runtime.compile();
 
 
-        this.runtime.modify("function.pure",
+        runtime.modify("function.pure",
                 "function test():Any[*]\n" +
                         "{\n" +
                         "    print(#/Person/nameWithPrefixAndSuffix('a', ['a', 'b'])#,2);\n" +
                         "}\n");
-        this.runtime.compile();
+        runtime.compile();
 
-        this.runtime.modify("function.pure",
+        runtime.modify("function.pure",
                 "function test():Any[*]\n" +
                         "{\n" +
                         "    print(#/Person/nameWithPrefixAndSuffix([], ['a', 'b'])#,2);\n" +
                         "}\n");
-        this.runtime.compile();
+        runtime.compile();
 
         try
         {
-            this.runtime.modify("function.pure",
+            runtime.modify("function.pure",
                     "function test():Any[*]\n" +
                             "{\n" +
                             "    print(#/Person/nameWithPrefixAndSuffix('a', [1, 2])#,2);\n" +
                             "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -280,12 +277,12 @@ public class TestDSLCompilation extends AbstractPureTestWithCoreCompiled
 
         try
         {
-            this.runtime.modify("function.pure",
+            runtime.modify("function.pure",
                     "function test():Any[*]\n" +
                             "{\n" +
                             "    print(#/Person/nameWithPrefixAndSuffix('a', [1, 'b'])#,2);\n" +
                             "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -295,12 +292,12 @@ public class TestDSLCompilation extends AbstractPureTestWithCoreCompiled
 
         try
         {
-            this.runtime.modify("function.pure",
+            runtime.modify("function.pure",
                     "function test():Any[*]\n" +
                             "{\n" +
                             "    print(#/Person/nameWithPrefixAndSuffix('a')#,2);\n" +
                             "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -314,18 +311,18 @@ public class TestDSLCompilation extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            this.runtime.createInMemorySource("file.pure",
+            runtime.createInMemorySource("file.pure",
                     "Class <<access.private>> a::Person\n" +
                             "{\n" +
                             "    firstName : String[1];\n" +
                             "}\n");
 
-            this.runtime.createInMemorySource("function.pure",
+            runtime.createInMemorySource("function.pure",
                     "function test():Any[*]\n" +
                             "{\n" +
                             "    print(#/a::Person/firstName#,2);\n" +
                             "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -337,19 +334,18 @@ public class TestDSLCompilation extends AbstractPureTestWithCoreCompiled
     @Test
     public void testMapReturn() throws Exception
     {
-        this.runtime.createInMemorySource("file.pure",
+        runtime.createInMemorySource("file.pure",
                 "Class <<access.private>> Person\n" +
                         "{\n" +
                         "    firstName : String[1];" +
                         "    stuff : Map<String, Integer>[1];\n" +
                         "}\n");
 
-        this.runtime.createInMemorySource("function.pure",
+        runtime.createInMemorySource("function.pure",
                 "function test():Any[*]\n" +
                         "{\n" +
                         "    print(#/Person/stuff#,2);\n" +
                         "}\n");
-        this.runtime.compile();
-
+        runtime.compile();
     }
 }

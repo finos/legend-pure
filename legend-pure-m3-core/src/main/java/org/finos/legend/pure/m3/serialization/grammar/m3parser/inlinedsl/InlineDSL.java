@@ -30,12 +30,17 @@ public interface InlineDSL extends CoreInstanceFactoriesRegistry
     Function<InlineDSL, RichIterable<MatchRunner>> GET_UNLOAD_UNBINDERS = InlineDSL::getUnLoadUnbinders;
 
     String getName();
+
     boolean match(String code);
+
     CoreInstance parse(String code, ImportGroup importId, String fileName, int offsetX, int offsetY, ModelRepository modelRepository, Context context);
 
     RichIterable<MatchRunner> getProcessors();
+
     RichIterable<MatchRunner> getValidators();
+
     RichIterable<MatchRunner> getUnLoadWalkers();
+
     RichIterable<MatchRunner> getUnLoadUnbinders();
 
     VisibilityValidator getVisibilityValidator();

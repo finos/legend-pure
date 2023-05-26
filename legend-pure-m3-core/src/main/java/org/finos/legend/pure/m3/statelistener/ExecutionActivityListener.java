@@ -17,5 +17,6 @@ package org.finos.legend.pure.m3.statelistener;
 public interface ExecutionActivityListener
 {
     void relationalActivityCompleted(String dbHost, Integer dbPort, String dbName, String dbType, String sql, String planInfo, Long executionTime, Long sqlGenerationTime, Long connectionAcquisitionTime);
+
     void routingActivityCompleted(Long routingTimeInNanoSeconds);
 }

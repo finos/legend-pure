@@ -16,18 +16,19 @@ package org.finos.legend.pure.runtime.java.interpreted;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.HashingStrategy;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.map.strategy.mutable.UnifiedMapWithHashingStrategy;
 import org.eclipse.collections.impl.set.strategy.mutable.UnifiedSetWithHashingStrategy;
-import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
 
@@ -63,7 +64,7 @@ public class EqualityUtilities
         if ((left instanceof PrimitiveCoreInstance<?>) && (right instanceof PrimitiveCoreInstance<?>))
         {
             return processorSupport.getClassifier(left).getName().equals(processorSupport.getClassifier(right).getName()) &&
-                    ((PrimitiveCoreInstance<?>)left).getValue().equals(((PrimitiveCoreInstance<?>)right).getValue());
+                    ((PrimitiveCoreInstance<?>) left).getValue().equals(((PrimitiveCoreInstance<?>) right).getValue());
         }
 
         CoreInstance type = processorSupport.getClassifier(left);
@@ -94,7 +95,7 @@ public class EqualityUtilities
         if ((left instanceof PrimitiveCoreInstance<?>) && (right instanceof PrimitiveCoreInstance<?>))
         {
             return processorSupport.getClassifier(left).getName().equals(processorSupport.getClassifier(right).getName()) &&
-                    ((PrimitiveCoreInstance<?>)left).getValue().equals(((PrimitiveCoreInstance<?>)right).getValue());
+                    ((PrimitiveCoreInstance<?>) left).getValue().equals(((PrimitiveCoreInstance<?>) right).getValue());
         }
 
         CoreInstance type = processorSupport.getClassifier(left);
@@ -119,7 +120,7 @@ public class EqualityUtilities
             return false;
         }
 
-        for (CoreInstance key : external.notEmpty()?external:keys)
+        for (CoreInstance key : external.notEmpty() ? external : keys)
         {
             if (!equal(Instance.getValueForMetaPropertyToManyResolved(left, key, processorSupport), Instance.getValueForMetaPropertyToManyResolved(right, key, processorSupport), processorSupport))
             {
@@ -133,8 +134,8 @@ public class EqualityUtilities
      * Return whether two lists of Pure instances are equal according
      * to the Pure function equal.
      *
-     * @param left    left instances
-     * @param right   right instances
+     * @param left  left instances
+     * @param right right instances
      * @return whether the lists are equal in Pure
      */
     public static boolean equal(ListIterable<? extends CoreInstance> left, ListIterable<? extends CoreInstance> right, ProcessorSupport processorSupport) //NOSONAR signature is clear enough
@@ -146,7 +147,7 @@ public class EqualityUtilities
         }
         for (int i = 0; i < size; i++)
         {
-            if (!equal(left.get(i), right.get(i), Lists.immutable.<CoreInstance>empty(), processorSupport))
+            if (!equal(left.get(i), right.get(i), Lists.immutable.empty(), processorSupport))
             {
                 return false;
             }
@@ -207,7 +208,7 @@ public class EqualityUtilities
      */
     public static HashingStrategy<CoreInstance> newCoreInstanceHashingStrategy(ProcessorSupport processorSupport)
     {
-        return new CoreInstanceHashingStrategy(Lists.immutable.<CoreInstance>empty(), processorSupport);
+        return new CoreInstanceHashingStrategy(Lists.immutable.empty(), processorSupport);
     }
 
     /**
@@ -234,21 +235,9 @@ public class EqualityUtilities
      */
     public static boolean containsCoreInstance(Iterable<? extends CoreInstance> iterable, CoreInstance instance, ProcessorSupport processorSupport)
     {
-        if (iterable instanceof CoreInstanceMutableSet)
-        {
-            return ((CoreInstanceMutableSet)iterable).contains(instance);
-        }
-        else
-        {
-            for (CoreInstance ins : iterable)
-            {
-                if (equal(instance, ins, Lists.immutable.<CoreInstance>empty(), processorSupport))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
+        return (iterable instanceof CoreInstanceMutableSet) ?
+                ((CoreInstanceMutableSet<?>) iterable).contains(instance) :
+                Iterate.anySatisfy(iterable, i -> equal(instance, i, Lists.immutable.empty(), processorSupport));
     }
 
     // Sets
@@ -257,25 +246,25 @@ public class EqualityUtilities
      * Return a set for Pure instances with a hashing strategy
      * based on Pure equality.
      *
-     * @param <T>     set element type
+     * @param <T> set element type
      * @return Pure instance set
      */
     public static <T extends CoreInstance> MutableSet<T> newCoreInstanceSet(ProcessorSupport processorSupport)
     {
-        return new CoreInstanceMutableSet<T>(processorSupport);
+        return new CoreInstanceMutableSet<>(processorSupport);
     }
 
     /**
      * Return a set for Pure instances with a hashing strategy
      * based on Pure equality.
      *
-     * @param <T>     set element type
-     * @param size    initial size
+     * @param <T>  set element type
+     * @param size initial size
      * @return Pure instance set
      */
     public static <T extends CoreInstance> MutableSet<T> newCoreInstanceSet(ProcessorSupport processorSupport, int size)
     {
-        return new CoreInstanceMutableSet<T>(processorSupport, size);
+        return new CoreInstanceMutableSet<>(processorSupport, size);
     }
 
     // Maps
@@ -284,27 +273,27 @@ public class EqualityUtilities
      * Return a map with Pure instances as keys and a hashing
      * strategy based on Pure equality.
      *
-     * @param <K>     key type
-     * @param <V>     value type
+     * @param <K> key type
+     * @param <V> value type
      * @return Pure instance map
      */
     public static <K extends CoreInstance, V> MutableMap<K, V> newCoreInstanceMap(ProcessorSupport processorSupport)
     {
-        return new CoreInstanceMutableMap<K, V>(processorSupport);
+        return new CoreInstanceMutableMap<>(processorSupport);
     }
 
     /**
      * Return a map with Pure instances as keys and a hashing
      * strategy based on Pure equality.
      *
-     * @param <K>     key type
-     * @param <V>     value type
-     * @param size    initial size
+     * @param <K>  key type
+     * @param <V>  value type
+     * @param size initial size
      * @return Pure instance map
      */
     public static <K extends CoreInstance, V> MutableMap<K, V> newCoreInstanceMap(ProcessorSupport processorSupport, int size)
     {
-        return new CoreInstanceMutableMap<K, V>(processorSupport, size);
+        return new CoreInstanceMutableMap<>(processorSupport, size);
     }
 
     // Hashing
@@ -329,12 +318,13 @@ public class EqualityUtilities
         @Override
         public boolean equals(CoreInstance instance, CoreInstance instance2)
         {
-            return equal(instance, instance2, this.properties , this.processorSupport);
+            return equal(instance, instance2, this.properties, this.processorSupport);
         }
     }
 
     private static class CoreInstanceMutableSet<T extends CoreInstance> extends UnifiedSetWithHashingStrategy<T>
     {
+        @Deprecated
         public CoreInstanceMutableSet()
         {
         }
@@ -352,6 +342,7 @@ public class EqualityUtilities
 
     private static class CoreInstanceMutableMap<K extends CoreInstance, V> extends UnifiedMapWithHashingStrategy<K, V>
     {
+        @Deprecated
         public CoreInstanceMutableMap()
         {
         }

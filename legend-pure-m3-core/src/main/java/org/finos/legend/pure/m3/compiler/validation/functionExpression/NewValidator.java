@@ -15,16 +15,11 @@
 package org.finos.legend.pure.m3.compiler.validation.functionExpression;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.factory.Sets;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
-import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m3.compiler.validation.Validator;
 import org.finos.legend.pure.m3.compiler.validation.ValidatorState;
 import org.finos.legend.pure.m3.compiler.validation.validator.GenericTypeValidator;
@@ -38,11 +33,16 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.G
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 import java.lang.reflect.Field;
 
@@ -50,12 +50,13 @@ public class NewValidator
 {
     private static ImmutableSet<String> EXCEPTION_FILES;
 
-    static {
+    static
+    {
         try
         {
             java.lang.Class externalClass = NewValidator.class.getClassLoader().loadClass("org.finos.legend.pure.m3.compiler.validation.functionExpression.NewValidatorExclusions");
             Field field = externalClass.getField("EXCEPTION_FILES");
-            EXCEPTION_FILES = (ImmutableSet<String>)field.get(null);
+            EXCEPTION_FILES = (ImmutableSet<String>) field.get(null);
         }
         catch (Exception e)
         {
@@ -72,7 +73,7 @@ public class NewValidator
 
     private static void validateClass(FunctionExpression expression, GenericType genericType, ProcessorSupport processorSupport) throws PureCompilationException
     {
-        Type classifier = (Type)ImportStub.withImportStubByPass(genericType._rawTypeCoreInstance(), processorSupport);
+        Type classifier = (Type) ImportStub.withImportStubByPass(genericType._rawTypeCoreInstance(), processorSupport);
         if (!(classifier instanceof Class))
         {
             StringBuilder message = new StringBuilder("Cannot instantiate a non-Class: ");
@@ -91,7 +92,7 @@ public class NewValidator
 
     private static void validateProperties(Matcher matcher, ValidatorState state, FunctionExpression expression, GenericType genericType, ProcessorSupport processorSupport)
     {
-        Type classifier = (Type)ImportStub.withImportStubByPass(genericType._rawTypeCoreInstance(), processorSupport);
+        Type classifier = (Type) ImportStub.withImportStubByPass(genericType._rawTypeCoreInstance(), processorSupport);
         MapIterable<String, CoreInstance> propertiesByName = processorSupport.class_getSimplePropertiesByName(classifier);
         MutableSet<String> remainingProperties = propertiesByName.keysView().toSet();
 
@@ -100,12 +101,12 @@ public class NewValidator
         {
             if (parametersValues.get(2) instanceof InstanceValue)
             {
-                for (CoreInstance keyValue : ((InstanceValue)parametersValues.get(2))._valuesCoreInstance())
+                for (CoreInstance keyValue : ((InstanceValue) parametersValues.get(2))._valuesCoreInstance())
                 {
                     if (keyValue instanceof KeyExpression)
                     {
                         // Validate key is an actual property
-                        InstanceValue keyInstance = ((KeyExpression)keyValue)._key();
+                        InstanceValue keyInstance = ((KeyExpression) keyValue)._key();
                         RichIterable<? extends CoreInstance> keys = keyInstance._valuesCoreInstance();
                         if (keys.size() != 1)
                         {
@@ -125,7 +126,7 @@ public class NewValidator
                         }
                         remainingProperties.remove(propertyName);
 
-                        validatePropertyValue(matcher, state, expression, (KeyExpression)keyValue, genericType, property, processorSupport);
+                        validatePropertyValue(matcher, state, expression, (KeyExpression) keyValue, genericType, property, processorSupport);
                     }
                 }
             }
@@ -164,7 +165,7 @@ public class NewValidator
         Validator.validate(value, state, matcher, processorSupport);
 
         // Validate the type of value is compatible with the property type (when possible)
-        GenericType propertyGenericType = (GenericType)org.finos.legend.pure.m3.navigation.generictype.GenericType.resolvePropertyReturnType(genericType, property, processorSupport);
+        GenericType propertyGenericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.resolvePropertyReturnType(genericType, property, processorSupport);
         if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeFullyConcrete(propertyGenericType, processorSupport))
         {
             // TODO remove this condition once we fix issues with property compatibility

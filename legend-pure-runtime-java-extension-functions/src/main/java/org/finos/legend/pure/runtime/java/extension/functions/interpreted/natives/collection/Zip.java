@@ -14,20 +14,20 @@
 
 package org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.list.mutable.FastList;
+import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
@@ -60,18 +60,18 @@ public class Zip extends NativeFunction
 
         int collection1Size = collection1.size();
         int collection2Size = collection2.size();
+        int minSize = Math.min(collection1Size, collection2Size);
 
-        MutableList<CoreInstance> results = FastList.newList(collection1Size < collection2Size ? collection1Size : collection2Size);
-
-        for (int i = 0; i < collection1Size && i < collection2Size; i++)
+        MutableList<CoreInstance> results = Lists.mutable.ofInitialCapacity(minSize);
+        for (int i = 0; i < minSize; i++)
         {
             CoreInstance value1 = collection1.get(i);
             CoreInstance value2 = collection2.get(i);
 
             CoreInstance result = this.repository.newAnonymousCoreInstance(null, pairClassifier);
             Instance.addValueToProperty(result, M3Properties.classifierGenericType, classifierGenericType, processorSupport);
-            Instance.addValueToProperty(result, M3Properties.first, exec1?value1:ValueSpecificationBootstrap.wrapValueSpecification(value1, false, processorSupport), processorSupport);
-            Instance.addValueToProperty(result, M3Properties.second, exec2?value2:ValueSpecificationBootstrap.wrapValueSpecification(value2, false, processorSupport), processorSupport);
+            Instance.addValueToProperty(result, M3Properties.first, exec1 ? value1 : ValueSpecificationBootstrap.wrapValueSpecification(value1, false, processorSupport), processorSupport);
+            Instance.addValueToProperty(result, M3Properties.second, exec2 ? value2 : ValueSpecificationBootstrap.wrapValueSpecification(value2, false, processorSupport), processorSupport);
 
             results.add(result);
         }

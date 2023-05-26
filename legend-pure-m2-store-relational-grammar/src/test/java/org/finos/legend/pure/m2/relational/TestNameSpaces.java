@@ -15,9 +15,9 @@
 package org.finos.legend.pure.m2.relational;
 
 import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -29,9 +29,9 @@ public class TestNameSpaces extends AbstractPureRelationalTestWithCoreCompiled
         compileTestSource("db1.pure",
                 "###Relational\n" +
                         "Database test::MyDB ()");
-        CoreInstance myDB = this.runtime.getCoreInstance("test::MyDB");
+        CoreInstance myDB = runtime.getCoreInstance("test::MyDB");
         Assert.assertNotNull(myDB);
-        Assert.assertTrue(Instance.instanceOf(myDB, M2RelationalPaths.Database, this.processorSupport));
+        Assert.assertTrue(Instance.instanceOf(myDB, M2RelationalPaths.Database, processorSupport));
 
         try
         {
@@ -65,6 +65,4 @@ public class TestNameSpaces extends AbstractPureRelationalTestWithCoreCompiled
             assertPureException(PureCompilationException.class, "Multiple columns named 'col1' found in table T1", "/test/testDB.pure", 5, 41, 5, 41, 5, 44, e);
         }
     }
-
-
 }

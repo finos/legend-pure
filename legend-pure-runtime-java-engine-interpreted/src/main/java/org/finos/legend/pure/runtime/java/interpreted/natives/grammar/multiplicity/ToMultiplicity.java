@@ -76,5 +76,5 @@ abstract class ToMultiplicity extends NativeFunction
      *
      * @return return multiplicity
      */
-    abstract protected CoreInstance getReturnMultiplicity(ProcessorSupport processorSupport);
+    protected abstract CoreInstance getReturnMultiplicity(ProcessorSupport processorSupport);
 }

@@ -36,7 +36,7 @@ public class TestPureRuntimeInlineEmbeddedMapping extends AbstractPureRelational
             "Class other::Firm\n" +
             "{\n" +
             "    legalName:String[1];\n" +
-            "}\n" ;
+            "}\n";
 
 
     private static final String STORE =
@@ -51,7 +51,7 @@ public class TestPureRuntimeInlineEmbeddedMapping extends AbstractPureRelational
                     "    address1 VARCHAR(200),\n" +
                     "    postcode VARCHAR(10)\n" +
                     "   )\n" +
-                    ")\n" ;
+                    ")\n";
 
 
     private static final String INITIAL_MAPPING =
@@ -185,7 +185,7 @@ public class TestPureRuntimeInlineEmbeddedMapping extends AbstractPureRelational
                     "    {\n" +
                     "        name : [db]employeeFirmDenormTable.name,\n" +
                     "        firm(\n" +
-                    "            legalName : [db]employeeFirmDenormTable.legalName"+
+                    "            legalName : [db]employeeFirmDenormTable.legalName" +
                     "        )  \n" +
                     "    }\n" +
                     ")\n";
@@ -217,56 +217,56 @@ public class TestPureRuntimeInlineEmbeddedMapping extends AbstractPureRelational
     public void testCreateAndDeleteInlineEmbeddedMappingFile()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE))
+                                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .createInMemorySource("source4.pure", INITIAL_MAPPING)
                         .compile()
                         .deleteSource("source4.pure")
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
     public void testCreateAndDeleteInlineEmbeddedMappingSameFile()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                        Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
+                                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source4.pure", MAPPING_DELETED1_INLINE)
                         .compile()
                         .updateSource("source4.pure", INITIAL_MAPPING)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
     public void testChangeRootIDForInlineMapping()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
+                                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source4.pure", MAPPING_CHANGE_INLINE_SETID)
                         .compileWithExpectedCompileFailure("Invalid Inline mapping found: 'firm' property, inline set id firm1 does not exists.", "source4.pure", 13, 9)
                         .updateSource("source4.pure", INITIAL_MAPPING)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
     public void testChangeInlineTargetMapping()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
+                                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source4.pure", MAPPING_INVALID_INLINE)
                         .compileWithExpectedCompileFailure("Invalid Inline mapping found: 'firm' property, inline set id firm2 does not exists.", "source4.pure", 13, 9)
                         .updateSource("source4.pure", INITIAL_MAPPING)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
 
@@ -274,69 +274,69 @@ public class TestPureRuntimeInlineEmbeddedMapping extends AbstractPureRelational
     public void testDeleteInlineMapping()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
+                                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source4.pure", MAPPING_DELETED_INLINE)
                         .compileWithExpectedCompileFailure("Invalid Inline mapping found: 'firm' property, inline set id firm1 does not exists.", "source4.pure", 9, 9)
                         .updateSource("source4.pure", INITIAL_MAPPING)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
     public void testEmptyInlineMapping()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
+                                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source4.pure", MAPPING_EMPTY_INLINE)
                         .compileWithExpectedParserFailure("expected: a valid identifier text; found: ']'", "source4.pure", 14, 19)
                         .updateSource("source4.pure", INITIAL_MAPPING)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
     public void testRemoveInlineKeyword()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
+                                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source4.pure", MAPPING_REMOVE_INLINE_KEYWORD)
                         .compileWithExpectedCompileFailure("Invalid Inline mapping found: 'firm' mapping has not inline set defined, please use: firm() Inline[setid].", "source4.pure", 13, 9)
                         .updateSource("source4.pure", INITIAL_MAPPING)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
     public void testChangeInlineEmbeddedMappingSameFileToNormalEmbedded()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
+                                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source4.pure", INITIAL_MAPPING_CHANGE_TO_EMBEDDED)
                         .compile()
                         .updateSource("source4.pure", INITIAL_MAPPING)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
     public void testChangeToInvalidTarget()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
+                                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source4.pure", MAPPING_INVALID_TARGET_TYPE)
                         .compileWithExpectedCompileFailure("Mapping Error! The inlineSetImplementationId 'address1' is implementing the class 'Address' which is not a subType of 'Firm' (return type of the mapped property 'firm')", "source4.pure", 17, 9)
                         .updateSource("source4.pure", INITIAL_MAPPING)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 }

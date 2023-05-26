@@ -22,9 +22,11 @@ import org.junit.BeforeClass;
 public class TestSecond extends AbstractTestSecond
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
+
     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();

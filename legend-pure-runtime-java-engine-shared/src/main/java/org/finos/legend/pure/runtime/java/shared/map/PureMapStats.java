@@ -18,11 +18,13 @@ public class PureMapStats
 {
     private long getIfAbsentCounter;
 
-    public PureMapStats(PureMapStats pureMapStats){
+    public PureMapStats(PureMapStats pureMapStats)
+    {
         this.getIfAbsentCounter = pureMapStats.getIfAbsentCounter();
     }
 
-    public PureMapStats(){
+    public PureMapStats()
+    {
     }
 
     public long getIfAbsentCounter()

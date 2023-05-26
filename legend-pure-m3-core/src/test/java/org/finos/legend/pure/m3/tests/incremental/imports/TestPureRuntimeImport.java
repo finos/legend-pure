@@ -24,12 +24,14 @@ import org.junit.Test;
 public class TestPureRuntimeImport extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("other.pure");
         runtime.delete("userId.pure");
         runtime.delete("sourceId.pure");
@@ -39,11 +41,11 @@ public class TestPureRuntimeImport extends AbstractPureTestWithCoreCompiledPlatf
     public void testPureRuntimeImport_Modify()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "import my::a::*;\n" +
-                        "import my::a::b::*;\n" +
-                        "function testPkg::test(inputs:meta::pure::metamodel::function::Function<Any>[*]):Any[*]{" +
-                        "$inputs->filter(f | $f->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).returnType.rawType == B)->map(f | $f->cast(@meta::pure::metamodel::function::Function<{->B[1]}>)->eval());" +
-                        "}" +
-                        "function my::a::b::test():Any[*]{let b = ^B()}")
+                                "import my::a::b::*;\n" +
+                                "function testPkg::test(inputs:meta::pure::metamodel::function::Function<Any>[*]):Any[*]{" +
+                                "$inputs->filter(f | $f->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).returnType.rawType == B)->map(f | $f->cast(@meta::pure::metamodel::function::Function<{->B[1]}>)->eval());" +
+                                "}" +
+                                "function my::a::b::test():Any[*]{let b = ^B()}")
                         .createInMemorySource("other.pure", "import my::a::*;\n" +
                                 "Class my::a::B{}")
                         .compile(),
@@ -54,7 +56,7 @@ public class TestPureRuntimeImport extends AbstractPureTestWithCoreCompiledPlatf
                         .updateSource("other.pure", "import my::a::*;\n" +
                                 "Class my::a::B{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
@@ -62,7 +64,7 @@ public class TestPureRuntimeImport extends AbstractPureTestWithCoreCompiledPlatf
     public void testPureRuntimeImport_Delete()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "import my::a::*;\n" +
-                        "function testPkg::test():Any[*]{let b = ^B()}")
+                                "function testPkg::test():Any[*]{let b = ^B()}")
                         .createInMemorySource("other.pure", "import my::a::*;\n" +
                                 "Class my::a::B{}")
                         .compile(),
@@ -75,6 +77,6 @@ public class TestPureRuntimeImport extends AbstractPureTestWithCoreCompiledPlatf
                         .updateSource("other.pure", "import my::a::*;\n" +
                                 "Class my::a::B{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 }

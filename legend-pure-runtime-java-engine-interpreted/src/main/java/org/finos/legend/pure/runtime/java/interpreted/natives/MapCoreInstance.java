@@ -17,15 +17,15 @@ package org.finos.legend.pure.runtime.java.interpreted.natives;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.map.strategy.mutable.UnifiedMapWithHashingStrategy;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.simple.SimpleCoreInstance;
-import org.finos.legend.pure.runtime.java.shared.map.PureMapStats;
 import org.finos.legend.pure.runtime.java.interpreted.EqualityUtilities;
+import org.finos.legend.pure.runtime.java.shared.map.PureMapStats;
 
 public class MapCoreInstance extends SimpleCoreInstance
 {
@@ -52,7 +52,8 @@ public class MapCoreInstance extends SimpleCoreInstance
         return this.map;
     }
 
-    public PureMapStats getStats(){
+    public PureMapStats getStats()
+    {
         return stats;
     }
 }

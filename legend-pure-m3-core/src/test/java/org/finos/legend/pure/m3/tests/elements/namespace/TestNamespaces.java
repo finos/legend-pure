@@ -14,11 +14,11 @@
 
 package org.finos.legend.pure.m3.tests.elements.namespace;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -26,7 +26,8 @@ import org.junit.Test;
 public class TestNamespaces extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
@@ -35,9 +36,9 @@ public class TestNamespaces extends AbstractPureTestWithCoreCompiledPlatform
     {
         compileTestSource("class1.pure",
                 "Class test::MyClass {}");
-        CoreInstance myClass = this.runtime.getCoreInstance("test::MyClass");
+        CoreInstance myClass = runtime.getCoreInstance("test::MyClass");
         Assert.assertNotNull(myClass);
-        Assert.assertTrue(Instance.instanceOf(myClass, M3Paths.Class, this.processorSupport));
+        Assert.assertTrue(Instance.instanceOf(myClass, M3Paths.Class, processorSupport));
 
         try
         {
@@ -56,9 +57,9 @@ public class TestNamespaces extends AbstractPureTestWithCoreCompiledPlatform
     {
         compileTestSource("enum1.pure",
                 "Enum test::MyEnum {VALUE}");
-        CoreInstance myEnum = this.runtime.getCoreInstance("test::MyEnum");
+        CoreInstance myEnum = runtime.getCoreInstance("test::MyEnum");
         Assert.assertNotNull(myEnum);
-        Assert.assertTrue(Instance.instanceOf(myEnum, M3Paths.Enumeration, this.processorSupport));
+        Assert.assertTrue(Instance.instanceOf(myEnum, M3Paths.Enumeration, processorSupport));
 
         try
         {
@@ -82,9 +83,9 @@ public class TestNamespaces extends AbstractPureTestWithCoreCompiledPlatform
                         "  prop1 : test::TestClass[*];\n" +
                         "  prop2 : test::TestClass[*];\n" +
                         "}");
-        CoreInstance myAssoc = this.runtime.getCoreInstance("test::MyAssociation");
+        CoreInstance myAssoc = runtime.getCoreInstance("test::MyAssociation");
         Assert.assertNotNull(myAssoc);
-        Assert.assertTrue(Instance.instanceOf(myAssoc, M3Paths.Association, this.processorSupport));
+        Assert.assertTrue(Instance.instanceOf(myAssoc, M3Paths.Association, processorSupport));
 
         try
         {
@@ -101,8 +102,4 @@ public class TestNamespaces extends AbstractPureTestWithCoreCompiledPlatform
             assertPureException(PureParserException.class, "The element 'MyAssociation' already exists in the package 'test'", "assoc2.pure", 1, 19, 1, 19, 1, 31, e);
         }
     }
-
-
-
-
 }

@@ -37,19 +37,19 @@ public class TableAliasNavigationHandler implements NavigationHandler<TableAlias
         SourceInformation tableAliasSourceInformation = instance.getSourceInformation();
 
         StringBuilder tableAliasStringBuilder = new StringBuilder();
-        String [] sourceCodeByLine = sourceCode.split("\n");
+        String[] sourceCodeByLine = sourceCode.split("\n");
         if (tableAliasSourceInformation.getStartLine() == tableAliasSourceInformation.getEndLine())
         {
-            tableAliasStringBuilder.append(sourceCodeByLine[tableAliasSourceInformation.getStartLine()-1].substring(tableAliasSourceInformation.getStartColumn()-1, tableAliasSourceInformation.getEndColumn()));
+            tableAliasStringBuilder.append(sourceCodeByLine[tableAliasSourceInformation.getStartLine() - 1], tableAliasSourceInformation.getStartColumn() - 1, tableAliasSourceInformation.getEndColumn());
         }
         else
         {
-            tableAliasStringBuilder.append(sourceCodeByLine[tableAliasSourceInformation.getStartLine()-1].substring(tableAliasSourceInformation.getStartColumn()-1).trim());
-            for (int i = tableAliasSourceInformation.getStartLine(); i < tableAliasSourceInformation.getEndLine()-1 ; i++)
+            tableAliasStringBuilder.append(sourceCodeByLine[tableAliasSourceInformation.getStartLine() - 1].substring(tableAliasSourceInformation.getStartColumn() - 1).trim());
+            for (int i = tableAliasSourceInformation.getStartLine(); i < tableAliasSourceInformation.getEndLine() - 1; i++)
             {
                 tableAliasStringBuilder.append(sourceCodeByLine[i].trim());
             }
-            tableAliasStringBuilder.append(sourceCodeByLine[tableAliasSourceInformation.getEndLine()-1].substring(0, tableAliasSourceInformation.getEndColumn()).trim());
+            tableAliasStringBuilder.append(sourceCodeByLine[tableAliasSourceInformation.getEndLine() - 1].substring(0, tableAliasSourceInformation.getEndColumn()).trim());
         }
         String tableAliasString = tableAliasStringBuilder.toString();
         if (tableAliasString.contains("."))
@@ -57,7 +57,7 @@ public class TableAliasNavigationHandler implements NavigationHandler<TableAlias
             String schemaString = tableAliasString.substring(0, tableAliasString.indexOf("."));
             if (tableAliasSourceInformation.getStartLine() == line && tableAliasSourceInformation.getStartColumn() <= column && column < tableAliasSourceInformation.getStartColumn() + schemaString.length())
             {
-                Schema schema = ((Table)instance._relationalElement())._schema();
+                Schema schema = ((Table) instance._relationalElement())._schema();
                 if (schema != null)
                 {
                     return schema;

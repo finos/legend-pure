@@ -15,11 +15,11 @@
 package org.finos.legend.pure.runtime.java.extension.external.json.shared;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.Conversion;
 import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.ConversionContext;
 import org.json.simple.JSONArray;
@@ -41,41 +41,31 @@ public class JsonDeserializationMultiplicityRange<T> extends JsonPropertyDeseria
     @Override
     public RichIterable<T> apply(Object jsonValue, ConversionContext context)
     {
-        FastList<T> values = new FastList<>();
-        JsonDeserializationContext jsonDeserializationContext = (JsonDeserializationContext)context;
-        if(jsonValue == null)
+        JsonDeserializationContext jsonDeserializationContext = (JsonDeserializationContext) context;
+        if (jsonValue == null)
         {
-            if(this.lowerBound == 0 || this.isFromAssociation())
-            {
-                return values;
-            }
-            else
+            if (!isFromAssociation() && (this.lowerBound > 0))
             {
                 throw new PureExecutionException(jsonDeserializationContext.getSourceInformation(), "Expected value(s) of multiplicity " + this.humanReadableMultiplicity + ", found 0 value(s).");
             }
+            return Lists.immutable.empty();
         }
-        else if(jsonValue instanceof JSONArray)
+        if (jsonValue instanceof JSONArray)
         {
             JSONArray jsonValues = (JSONArray) jsonValue;
-            if(jsonValues.size() >= this.lowerBound && jsonValues.size() <= this.upperBound)
-            {
-                return this.applyConversion((JSONArray) jsonValue, jsonDeserializationContext);
-            }
-            else
+            if ((jsonValues.size() < this.lowerBound) || (jsonValues.size() > this.upperBound))
             {
                 throw new PureExecutionException(jsonDeserializationContext.getSourceInformation(), "Expected value(s) of multiplicity " + this.humanReadableMultiplicity + ", found " + jsonValues.size() + " value(s).");
             }
+            return applyConversion((JSONArray) jsonValue, jsonDeserializationContext);
         }
         else
         {
-            if(this.lowerBound <= 1 && this.upperBound >= 1)
-            {
-                return this.applyConversion(jsonValue, jsonDeserializationContext);
-            }
-            else
+            if ((this.lowerBound > 1) || (this.upperBound < 1))
             {
                 throw new PureExecutionException(jsonDeserializationContext.getSourceInformation(), "Expected value(s) of multiplicity " + this.humanReadableMultiplicity + ", found 1 value(s).");
             }
+            return this.applyConversion(jsonValue, jsonDeserializationContext);
         }
     }
 }

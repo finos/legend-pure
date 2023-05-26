@@ -98,7 +98,7 @@ public class TestTestFunction extends AbstractPureTestWithCoreCompiledPlatform
                     "function <<test.ToFix>> testFn(arg:String[1]):Boolean[1]\n" +
                             "{\n" +
                             "  assert($arg == 'the quick brown fox', |'')\n" +
-                            "}" );
+                            "}");
             Assert.fail("Expected compilation exception");
         }
         catch (Exception e)

@@ -25,7 +25,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.Ty
 
 public class Profile extends AbstractNative
 {
-    public Profile() {
+    public Profile()
+    {
         super("profile_T_m__Boolean_1__ProfileResult_1_");
     }
 
@@ -36,6 +37,6 @@ public class Profile extends AbstractNative
         ListIterable<? extends CoreInstance> parametersValues = Instance.getValueForMetaPropertyToManyResolved(functionExpression, M3Properties.parametersValues, processorSupport);
         CoreInstance param = parametersValues.get(0);
         String type = TypeProcessor.typeToJavaPrimitiveSingle(Instance.getValueForMetaPropertyToOneResolved(param, M3Properties.genericType, processorSupport), processorSupport);
-        return "((Root_meta_pure_functions_tools_ProfileResult<"+type+">)new LambdaZero(){public Object execute(){((CompiledExecutionSupport)es).getConsole().print(\"Profile not supported yet!\");return new Root_meta_pure_functions_tools_ProfileResult_Impl<"+type+">(\"NOID\")._result(CompiledSupport.toPureCollection("+ transformedParams.get(0) + "))._report(\"Profile not supported yet in compiled\");}}.execute())";
+        return "((Root_meta_pure_functions_tools_ProfileResult<" + type + ">)new LambdaZero(){public Object execute(){((CompiledExecutionSupport)es).getConsole().print(\"Profile not supported yet!\");return new Root_meta_pure_functions_tools_ProfileResult_Impl<" + type + ">(\"NOID\")._result(CompiledSupport.toPureCollection(" + transformedParams.get(0) + "))._report(\"Profile not supported yet in compiled\");}}.execute())";
     }
 }

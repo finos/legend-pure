@@ -20,7 +20,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 
 public class Generalizations extends AbstractNativeFunctionGeneric
 {
-    public Generalizations() {
+    public Generalizations()
+    {
         super("FunctionsGen.getGeneralizations", new Class[]{Type.class, ExecutionSupport.class},
                 false, true, false, "generalizations_Type_1__Type_$1_MANY$_");
     }

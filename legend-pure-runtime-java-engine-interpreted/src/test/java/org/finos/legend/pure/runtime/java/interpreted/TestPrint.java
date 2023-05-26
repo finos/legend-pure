@@ -15,8 +15,8 @@
 package org.finos.legend.pure.runtime.java.interpreted;
 
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -24,29 +24,30 @@ import org.junit.Test;
 public class TestPrint extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
     @Test
     public void testFunctionPrint()
     {
-        this.runtime.createInMemoryAndCompile(Tuples.pair("testSource.pure",
-                "function testFunction():String[1]\n" +
-                        "{\n" +
-                        "   'Test'\n" +
-                        "}\n" +
-                "function testFunction2():String[1]\n" +
-                        "{\n" +
-                        "   testFunction()\n" +
-                        "}\n"),
+        runtime.createInMemoryAndCompile(Tuples.pair("testSource.pure",
+                        "function testFunction():String[1]\n" +
+                                "{\n" +
+                                "   'Test'\n" +
+                                "}\n" +
+                                "function testFunction2():String[1]\n" +
+                                "{\n" +
+                                "   testFunction()\n" +
+                                "}\n"),
                 Tuples.pair(
-                "testSource2.pure",
-                "function go():Nil[0]\n" +
-                        "{\n" +
-                        "   print(testFunction__String_1_,0);\n" +
-                        "}"
-        ));
+                        "testSource2.pure",
+                        "function go():Nil[0]\n" +
+                                "{\n" +
+                                "   print(testFunction__String_1_,0);\n" +
+                                "}"
+                ));
         this.execute("go():Nil[0]");
         Assert.assertEquals("testFunction__String_1_ instance ConcreteFunctionDefinition\n" +
                 "    applications(Property):\n" +
@@ -62,7 +63,7 @@ public class TestPrint extends AbstractPureTestWithCoreCompiled
                 "    package(Property):\n" +
                 "        [X] Root instance Package\n" +
                 "    referenceUsages(Property):\n" +
-                "        [>0] Anonymous_StripedId instance ReferenceUsage", this.functionExecution.getConsole().getLine(0));
+                "        [>0] Anonymous_StripedId instance ReferenceUsage", functionExecution.getConsole().getLine(0));
     }
 
     protected static FunctionExecution getFunctionExecution()

@@ -28,18 +28,23 @@ import org.junit.Test;
 public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("fromString.pure");
-         try{
+        try
+        {
             runtime.compile();
-         } catch (PureCompilationException e) {
+        }
+        catch (PureCompilationException e)
+        {
             setUp();
-         }
+        }
     }
 
     @Test
@@ -47,7 +52,7 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","Class Address\n" +
+            compileTestSource("fromString.pure", "Class Address\n" +
                     "{\n" +
                     "   value:String[1];\n" +
                     "}\n" +
@@ -70,16 +75,16 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","Class Address\n" +
-                           "{\n" +
-                           "   value:String[1];\n" +
-                           "}\n" +
-                           "Class Employee<E>\n" +
-                           "{\n" +
-                           "   name : String[1];\n" +
-                           "   address:E[*];\n" +
-                           "}\n" +
-                           "^Employee<Address,Address> emp(name='test', address = ^Address(value='coool'))");
+            compileTestSource("fromString.pure", "Class Address\n" +
+                    "{\n" +
+                    "   value:String[1];\n" +
+                    "}\n" +
+                    "Class Employee<E>\n" +
+                    "{\n" +
+                    "   name : String[1];\n" +
+                    "   address:E[*];\n" +
+                    "}\n" +
+                    "^Employee<Address,Address> emp(name='test', address = ^Address(value='coool'))");
             Assert.fail("Expected compilation exception");
         }
         catch (Exception e)
@@ -92,39 +97,39 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     public void testGenericInstance()
     {
         Loader.parseM3("Class Address" +
-                       "{" +
-                       "   value:String[1];" +
-                       "}" +
-                       "" +
-                       "Class Employee<E>" +
-                       "{" +
-                       "   name : String[1];" +
-                       "   address:E[*];" +
-                       "}" +
-                       "" +
-                       "^Employee<Address> emp (name='test', address = ^Address(value='coool'))", this.repository, ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-        CoreInstance elem = this.runtime.getCoreInstance("emp");
+                "{" +
+                "   value:String[1];" +
+                "}" +
+                "" +
+                "Class Employee<E>" +
+                "{" +
+                "   name : String[1];" +
+                "   address:E[*];" +
+                "}" +
+                "" +
+                "^Employee<Address> emp (name='test', address = ^Address(value='coool'))", repository, ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+        CoreInstance elem = runtime.getCoreInstance("emp");
         Assert.assertEquals("emp instance Employee\n" +
-                            "    address(Property):\n" +
-                            "        Anonymous_StripedId instance Address\n" +
-                            "            value(Property):\n" +
-                            "                coool instance String\n" +
-                            "    classifierGenericType(Property):\n" +
-                            "        Anonymous_StripedId instance GenericType\n" +
-                            "            rawType(Property):\n" +
-                            "                Employee instance Class\n" +
-                            "            typeArguments(Property):\n" +
-                            "                Anonymous_StripedId instance GenericType\n" +
-                            "                    rawType(Property):\n" +
-                            "                        Anonymous_StripedId instance ImportStub\n" +
-                            "                            idOrPath(Property):\n" +
-                            "                                Address instance String\n" +
-                            "                            importGroup(Property):\n" +
-                            "                                import_fromString_pure_1 instance ImportGroup\n" +
-                            "                            resolvedNode(Property):\n" +
-                            "                                Address instance Class\n" +
-                            "    name(Property):\n" +
-                            "        test instance String", elem.printWithoutDebug("", 10));
+                "    address(Property):\n" +
+                "        Anonymous_StripedId instance Address\n" +
+                "            value(Property):\n" +
+                "                coool instance String\n" +
+                "    classifierGenericType(Property):\n" +
+                "        Anonymous_StripedId instance GenericType\n" +
+                "            rawType(Property):\n" +
+                "                Employee instance Class\n" +
+                "            typeArguments(Property):\n" +
+                "                Anonymous_StripedId instance GenericType\n" +
+                "                    rawType(Property):\n" +
+                "                        Anonymous_StripedId instance ImportStub\n" +
+                "                            idOrPath(Property):\n" +
+                "                                Address instance String\n" +
+                "                            importGroup(Property):\n" +
+                "                                import_fromString_pure_1 instance ImportGroup\n" +
+                "                            resolvedNode(Property):\n" +
+                "                                Address instance Class\n" +
+                "    name(Property):\n" +
+                "        test instance String", elem.printWithoutDebug("", 10));
 
         setUp();
     }
@@ -135,12 +140,12 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
         try
         {
             Loader.parseM3("Class Employee<E>\n" +
-                           "{\n" +
-                           "   name : String[1];\n" +
-                           "   address:E[*];\n" +
-                           "}\n" +
-                           "\n" +
-                           "^Employee<AddressXX> emp (name='test')", this.repository, ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
+                    "{\n" +
+                    "   name : String[1];\n" +
+                    "   address:E[*];\n" +
+                    "}\n" +
+                    "\n" +
+                    "^Employee<AddressXX> emp (name='test')", repository, ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
             Assert.fail("Expected compilation exception");
         }
         catch (Exception e)
@@ -156,18 +161,18 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
         try
         {
             Loader.parseM3("Class Address\n" +
-                           "{\n" +
-                           "   value:String[1];\n" +
-                           "}\n" +
-                           "Class OtherType\n" +
-                           "{\n" +
-                           "}\n" +
-                           "Class Employee<Add>\n" +
-                           "{\n" +
-                           "   name : String[1];\n" +
-                           "   address:Add[*];\n" +
-                           "}\n" +
-                           "^Employee<OtherType> emp (name='test', address = ^Address(value='coool'))", this.repository, ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
+                    "{\n" +
+                    "   value:String[1];\n" +
+                    "}\n" +
+                    "Class OtherType\n" +
+                    "{\n" +
+                    "}\n" +
+                    "Class Employee<Add>\n" +
+                    "{\n" +
+                    "   name : String[1];\n" +
+                    "   address:Add[*];\n" +
+                    "}\n" +
+                    "^Employee<OtherType> emp (name='test', address = ^Address(value='coool'))", repository, ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
             Assert.fail("Expected compilation exception");
         }
         catch (Exception e)
@@ -182,7 +187,7 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","Class Address\n" +
+            compileTestSource("fromString.pure", "Class Address\n" +
                     "{\n" +
                     "   value:String[1];\n" +
                     "}\n" +
@@ -208,20 +213,20 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","Class Address\n" +
-                           "{\n" +
-                           "   value:String[1];\n" +
-                           "}\n" +
-                           "" +
-                           "Class Employee<E>\n" +
-                           "{\n" +
-                           "   name : String[1];\n" +
-                           "   address:E[*];\n" +
-                           "}\n" +
-                           "function test():Any[1]\n" +
-                           "{\n" +
-                           "   let a = ^Employee<Address,Address>(name='test', address = ^Address(value='coool'))\n" +
-                           "}");
+            compileTestSource("fromString.pure", "Class Address\n" +
+                    "{\n" +
+                    "   value:String[1];\n" +
+                    "}\n" +
+                    "" +
+                    "Class Employee<E>\n" +
+                    "{\n" +
+                    "   name : String[1];\n" +
+                    "   address:E[*];\n" +
+                    "}\n" +
+                    "function test():Any[1]\n" +
+                    "{\n" +
+                    "   let a = ^Employee<Address,Address>(name='test', address = ^Address(value='coool'))\n" +
+                    "}");
             Assert.fail("Expected compilation exception");
         }
         catch (Exception e)
@@ -266,7 +271,7 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","Class A<E>\n" +
+            compileTestSource("fromString.pure", "Class A<E>\n" +
                     "{\n" +
                     "   value:E[1];\n" +
                     "}\n" +
@@ -285,25 +290,25 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testGenericWithGeneralization()
     {
-        compileTestSource("fromString.pure","Class A<E>\n" +
-                       "{\n" +
-                       "   value:E[1];\n" +
-                       "}\n" +
-                       "Class C\n" +
-                       "{\n" +
-                       "}\n" +
-                       "Class B extends A<C>\n" +
-                       "{\n" +
-                       "   name : String[1];\n" +
-                       "}\n" +
-                       "\n" +
-                       "^B x (name='test', value=^C())");
+        compileTestSource("fromString.pure", "Class A<E>\n" +
+                "{\n" +
+                "   value:E[1];\n" +
+                "}\n" +
+                "Class C\n" +
+                "{\n" +
+                "}\n" +
+                "Class B extends A<C>\n" +
+                "{\n" +
+                "   name : String[1];\n" +
+                "}\n" +
+                "\n" +
+                "^B x (name='test', value=^C())");
 
         Assert.assertEquals("x instance B\n" +
-                            "    name(Property):\n" +
-                            "        test instance String\n" +
-                            "    value(Property):\n" +
-                            "        Anonymous_StripedId instance C", this.runtime.getCoreInstance("x").printWithoutDebug(""));
+                "    name(Property):\n" +
+                "        test instance String\n" +
+                "    value(Property):\n" +
+                "        Anonymous_StripedId instance C", runtime.getCoreInstance("x").printWithoutDebug(""));
     }
 
     @Test
@@ -312,20 +317,20 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
         try
         {
             Loader.parseM3("Class A<E>\n" +
-                           "{\n" +
-                           "   value:E[1];\n" +
-                           "}\n" +
-                           "Class C\n" +
-                           "{\n" +
-                           "}\n" +
-                           "Class D\n" +
-                           "{\n" +
-                           "}\n" +
-                           "Class B extends A<C>\n" +
-                           "{\n" +
-                           "   name : String[1];\n" +
-                           "}\n" +
-                           "^B x (name='test', value=^D())", this.repository, ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
+                    "{\n" +
+                    "   value:E[1];\n" +
+                    "}\n" +
+                    "Class C\n" +
+                    "{\n" +
+                    "}\n" +
+                    "Class D\n" +
+                    "{\n" +
+                    "}\n" +
+                    "Class B extends A<C>\n" +
+                    "{\n" +
+                    "   name : String[1];\n" +
+                    "}\n" +
+                    "^B x (name='test', value=^D())", repository, ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
             Assert.fail("Expected compilation exception");
         }
         catch (Exception e)
@@ -339,7 +344,7 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","Class A<E>\n" +
+            compileTestSource("fromString.pure", "Class A<E>\n" +
                     "{\n" +
                     "   value:E[1];\n" +
                     "}\n" +
@@ -370,7 +375,7 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","Class A<T>\n" +
+            compileTestSource("fromString.pure", "Class A<T>\n" +
                     "{\n" +
                     "   value:T[1];\n" +
                     "}\n" +
@@ -401,11 +406,11 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","Class Person<T>{firstName:T[1];}\n" +
-                           "function test(p:Person[1]):Nil[0]\n" +
-                           "{\n" +
-                           "   [];\n" +
-                           "}");
+            compileTestSource("fromString.pure", "Class Person<T>{firstName:T[1];}\n" +
+                    "function test(p:Person[1]):Nil[0]\n" +
+                    "{\n" +
+                    "   [];\n" +
+                    "}");
             Assert.fail("Expected compilation exception");
         }
         catch (Exception e)
@@ -419,7 +424,7 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("fromString.pure","Class Person<T>{firstName:T[1];}\n" +
+            compileTestSource("fromString.pure", "Class Person<T>{firstName:T[1];}\n" +
                     "function test():Person[*]\n" +
                     "{\n" +
                     "   [];\n" +

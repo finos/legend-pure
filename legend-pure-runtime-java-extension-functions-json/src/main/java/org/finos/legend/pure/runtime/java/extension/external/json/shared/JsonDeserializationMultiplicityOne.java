@@ -15,10 +15,10 @@
 package org.finos.legend.pure.runtime.java.extension.external.json.shared;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.Conversion;
 import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.ConversionContext;
 import org.json.simple.JSONArray;
@@ -33,36 +33,29 @@ public class JsonDeserializationMultiplicityOne<T> extends JsonPropertyDeseriali
     @Override
     public RichIterable<T> apply(Object jsonValue, ConversionContext context)
     {
-        FastList<T> values = new FastList<>();
-        JsonDeserializationContext jsonDeserializationContext = (JsonDeserializationContext)context;
-        if(jsonValue == null)
+        JsonDeserializationContext jsonDeserializationContext = (JsonDeserializationContext) context;
+        if (jsonValue == null)
         {
-            if(this.isFromAssociation())
-            {
-                return values;
-            }
-            throw new PureExecutionException(jsonDeserializationContext.getSourceInformation(), "Expected value(s) of multiplicity [1], found 0 value(s).");
-        }
-        else if(jsonValue instanceof JSONArray)
-        {
-            JSONArray jsonValues = (JSONArray) jsonValue;
-            if(jsonValues.size() > 1)
-            {
-                throw new PureExecutionException(jsonDeserializationContext.getSourceInformation(), "Expected value(s) of multiplicity [1], found " + jsonValues.size() + " value(s).");
-            }
-            else if(jsonValues.isEmpty() && !this.isFromAssociation())
+            if (!isFromAssociation())
             {
                 throw new PureExecutionException(jsonDeserializationContext.getSourceInformation(), "Expected value(s) of multiplicity [1], found 0 value(s).");
             }
-            else
-            {
-                Object value = ((JSONArray) jsonValue).get(0);
-                return this.applyConversion(value, jsonDeserializationContext);
-            }
+            return Lists.immutable.empty();
         }
-        else
+        if (jsonValue instanceof JSONArray)
         {
-            return this.applyConversion(jsonValue, jsonDeserializationContext);
+            JSONArray jsonValues = (JSONArray) jsonValue;
+            if (jsonValues.size() > 1)
+            {
+                throw new PureExecutionException(jsonDeserializationContext.getSourceInformation(), "Expected value(s) of multiplicity [1], found " + jsonValues.size() + " value(s).");
+            }
+            if (jsonValues.isEmpty() && !isFromAssociation())
+            {
+                throw new PureExecutionException(jsonDeserializationContext.getSourceInformation(), "Expected value(s) of multiplicity [1], found 0 value(s).");
+            }
+            Object value = ((JSONArray) jsonValue).get(0);
+            return applyConversion(value, jsonDeserializationContext);
         }
+        return applyConversion(jsonValue, jsonDeserializationContext);
     }
 }

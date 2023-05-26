@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.incremental.function;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.After;
@@ -26,7 +26,8 @@ import org.junit.Test;
 public class TestPureRuntimeFunction_AsPointer extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
@@ -41,10 +42,10 @@ public class TestPureRuntimeFunction_AsPointer extends AbstractPureTestWithCoreC
     @Test
     public void testPureRuntimeFunctionPointer() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId.pure", "function sourceFunction():String[1]{'theFunc'}");
-        this.runtime.createInMemorySource("userId.pure", "function go():Nil[0]{print(sourceFunction__String_1_, 10)}\n");
+        runtime.createInMemorySource("sourceId.pure", "function sourceFunction():String[1]{'theFunc'}");
+        runtime.createInMemorySource("userId.pure", "function go():Nil[0]{print(sourceFunction__String_1_, 10)}\n");
         this.compileAndExecute("go():Nil[0]");
-        int size = this.runtime.getModelRepository().serialize().length;
+        int size = runtime.getModelRepository().serialize().length;
         Assert.assertEquals("sourceFunction__String_1_ instance ConcreteFunctionDefinition\n" +
                 "    classifierGenericType(Property):\n" +
                 "        Anonymous_StripedId instance GenericType\n" +
@@ -158,14 +159,14 @@ public class TestPureRuntimeFunction_AsPointer extends AbstractPureTestWithCoreC
                 "                    values(Property):\n" +
                 "                        [~>] sourceFunction__String_1_ instance ConcreteFunctionDefinition\n" +
                 "            propertyName(Property):\n" +
-                "                values instance String", this.functionExecution.getConsole().getLine(0));
+                "                values instance String", functionExecution.getConsole().getLine(0));
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete("sourceId.pure");
+            runtime.delete("sourceId.pure");
             try
             {
-                this.runtime.compile();
+                runtime.compile();
                 Assert.fail();
             }
             catch (Exception e)
@@ -173,7 +174,7 @@ public class TestPureRuntimeFunction_AsPointer extends AbstractPureTestWithCoreC
                 assertPureException(PureCompilationException.class, "sourceFunction__String_1_ has not been defined!", "userId.pure", 1, 28, e);
             }
 
-            this.runtime.createInMemorySource("sourceId.pure", "function sourceFunction():String[1]{'beuh!'}");
+            runtime.createInMemorySource("sourceId.pure", "function sourceFunction():String[1]{'beuh!'}");
             this.compileAndExecute("go():Nil[0]");
             Assert.assertEquals("sourceFunction__String_1_ instance ConcreteFunctionDefinition\n" +
                     "    classifierGenericType(Property):\n" +
@@ -288,30 +289,30 @@ public class TestPureRuntimeFunction_AsPointer extends AbstractPureTestWithCoreC
                     "                    values(Property):\n" +
                     "                        [~>] sourceFunction__String_1_ instance ConcreteFunctionDefinition\n" +
                     "            propertyName(Property):\n" +
-                    "                values instance String", this.functionExecution.getConsole().getLine(0));
+                    "                values instance String", functionExecution.getConsole().getLine(0));
         }
 
-        this.runtime.delete("sourceId.pure");
-        this.runtime.createInMemorySource("sourceId.pure", "function sourceFunction():String[1]{'theFunc'}");
-        this.runtime.compile();
-        Assert.assertEquals("Graph size mismatch", size, this.repository.serialize().length);
+        runtime.delete("sourceId.pure");
+        runtime.createInMemorySource("sourceId.pure", "function sourceFunction():String[1]{'theFunc'}");
+        runtime.compile();
+        Assert.assertEquals("Graph size mismatch", size, repository.serialize().length);
     }
 
     @Test
     public void testPureRuntimeFunctionPointerError() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId.pure", "function sourceFunction():String[1]{'theFunc'}");
-        this.runtime.createInMemorySource("userId.pure", "function go():Nil[0]{print(sourceFunction__String_1_,1)}\n");
-        this.runtime.compile();
-        int size = this.runtime.getModelRepository().serialize().length;
+        runtime.createInMemorySource("sourceId.pure", "function sourceFunction():String[1]{'theFunc'}");
+        runtime.createInMemorySource("userId.pure", "function go():Nil[0]{print(sourceFunction__String_1_,1)}\n");
+        runtime.compile();
+        int size = runtime.getModelRepository().serialize().length;
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete("sourceId.pure");
+            runtime.delete("sourceId.pure");
             try
             {
-                this.runtime.createInMemorySource("sourceId.pure", "function sourceFunction():Integer[1]{1}");
-                this.runtime.compile();
+                runtime.createInMemorySource("sourceId.pure", "function sourceFunction():Integer[1]{1}");
+                runtime.compile();
                 Assert.fail();
             }
             catch (Exception e)
@@ -319,27 +320,27 @@ public class TestPureRuntimeFunction_AsPointer extends AbstractPureTestWithCoreC
                 assertPureException(PureCompilationException.class, "sourceFunction__String_1_ has not been defined!", "userId.pure", 1, 28, e);
             }
         }
-        this.runtime.modify("sourceId.pure", "function sourceFunction():String[1]{'theFunc'}");
-        this.runtime.compile();
-        Assert.assertEquals("Graph size mismatch", size, this.repository.serialize().length);
+        runtime.modify("sourceId.pure", "function sourceFunction():String[1]{'theFunc'}");
+        runtime.compile();
+        Assert.assertEquals("Graph size mismatch", size, repository.serialize().length);
     }
 
 
     @Test
     public void testPureRuntimeFunctionPointerAsParamOfAFunction() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId.pure", "Class A{}");
-        this.runtime.createInMemorySource("userId.pure", "function other(a:FunctionDefinition<{->A[1]}>[1]):Nil[0]{[]} function go():Nil[0]{other(sourceFunction__A_1_)}\n");
-        this.runtime.createInMemorySource("other.pure", " function sourceFunction():A[1]{^A()}");
-        this.runtime.compile();
-        int size = this.runtime.getModelRepository().serialize().length;
+        runtime.createInMemorySource("sourceId.pure", "Class A{}");
+        runtime.createInMemorySource("userId.pure", "function other(a:FunctionDefinition<{->A[1]}>[1]):Nil[0]{[]} function go():Nil[0]{other(sourceFunction__A_1_)}\n");
+        runtime.createInMemorySource("other.pure", " function sourceFunction():A[1]{^A()}");
+        runtime.compile();
+        int size = runtime.getModelRepository().serialize().length;
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete("sourceId.pure");
+            runtime.delete("sourceId.pure");
             try
             {
-                this.runtime.compile();
+                runtime.compile();
                 Assert.fail();
             }
             catch (Exception e)
@@ -347,9 +348,9 @@ public class TestPureRuntimeFunction_AsPointer extends AbstractPureTestWithCoreC
                 assertPureException(PureCompilationException.class, "A has not been defined!", e);
             }
 
-            this.runtime.createInMemorySource("sourceId.pure", "Class A{}");
-            this.runtime.compile();
-            Assert.assertEquals("Graph size mismatch", size, this.repository.serialize().length);
+            runtime.createInMemorySource("sourceId.pure", "Class A{}");
+            runtime.compile();
+            Assert.assertEquals("Graph size mismatch", size, repository.serialize().length);
         }
     }
 
@@ -357,18 +358,18 @@ public class TestPureRuntimeFunction_AsPointer extends AbstractPureTestWithCoreC
     @Test
     public void testPureRuntimeFunctionPointerAsParamOfAFunctionError() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId.pure", "Class A{}");
-        this.runtime.createInMemorySource("userId.pure", "function other(a:FunctionDefinition<{->A[1]}>[1]):Nil[0]{[]} function go():Nil[0]{other(sourceFunction__A_1_)}\n");
-        this.runtime.createInMemorySource("other.pure", " function sourceFunction():A[1]{^A()}");
-        this.runtime.compile();
-        int size = this.runtime.getModelRepository().serialize().length;
+        runtime.createInMemorySource("sourceId.pure", "Class A{}");
+        runtime.createInMemorySource("userId.pure", "function other(a:FunctionDefinition<{->A[1]}>[1]):Nil[0]{[]} function go():Nil[0]{other(sourceFunction__A_1_)}\n");
+        runtime.createInMemorySource("other.pure", " function sourceFunction():A[1]{^A()}");
+        runtime.compile();
+        int size = runtime.getModelRepository().serialize().length;
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete("sourceId.pure");
+            runtime.delete("sourceId.pure");
             try
             {
-                this.runtime.compile();
+                runtime.compile();
                 Assert.fail();
             }
             catch (Exception e)
@@ -378,8 +379,8 @@ public class TestPureRuntimeFunction_AsPointer extends AbstractPureTestWithCoreC
 
             try
             {
-                this.runtime.createInMemorySource("sourceId.pure", "Class B{}");
-                this.runtime.compile();
+                runtime.createInMemorySource("sourceId.pure", "Class B{}");
+                runtime.compile();
                 Assert.fail();
             }
             catch (Exception e)
@@ -387,9 +388,9 @@ public class TestPureRuntimeFunction_AsPointer extends AbstractPureTestWithCoreC
                 Assert.assertTrue("Compilation error at (resource:other.pure line:1 column:28), \"A has not been defined!\"".equals(e.getMessage()) || "Compilation error at (resource:userId.pure line:1 column:40), \"A has not been defined!\"".equals(e.getMessage()));
             }
 
-            this.runtime.modify("sourceId.pure", "Class A{}");
-            this.runtime.compile();
-            Assert.assertEquals("Graph size mismatch", size, this.repository.serialize().length);
+            runtime.modify("sourceId.pure", "Class A{}");
+            runtime.compile();
+            Assert.assertEquals("Graph size mismatch", size, repository.serialize().length);
         }
     }
 

@@ -14,15 +14,15 @@
 
 package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1;
 
-import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.MappingLexer;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.antlr.MappingGraphBuilder;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.processor.AssociationImplementationProcessor;
@@ -72,7 +72,9 @@ public class MappingParser implements Parser
 {
     private ParserLibrary parserLibrary;
 
-    public MappingParser(){}
+    public MappingParser()
+    {
+    }
 
     public MappingParser(ParserLibrary parserLibrary)
     {
@@ -133,26 +135,26 @@ public class MappingParser implements Parser
     @Override
     public RichIterable<MatchRunner> getProcessors()
     {
-        return Lists.immutable.<MatchRunner>with(new MappingProcessor(), new PropertyOwnerImplementationProcessor(),new SetImplementationProcessor(),new AssociationImplementationProcessor(), new PureInstanceSetImplementationProcessor());
+        return Lists.immutable.with(new MappingProcessor(), new PropertyOwnerImplementationProcessor(), new SetImplementationProcessor(), new AssociationImplementationProcessor(), new PureInstanceSetImplementationProcessor());
     }
 
     @Override
     public RichIterable<MatchRunner> getUnLoadWalkers()
     {
-        return Lists.immutable.<MatchRunner>with(new MappingUnloaderWalk(), new MappingIncludeUnloaderWalk(), new SubstituteStoreUnloaderWalk(),
-                new PropertyOwnerImplementationWalker(),new PropertyMappingUnloaderWalk(), new PropertyMappingValueSpecificationContextUnloaderWalk());
+        return Lists.immutable.with(new MappingUnloaderWalk(), new MappingIncludeUnloaderWalk(), new SubstituteStoreUnloaderWalk(),
+                new PropertyOwnerImplementationWalker(), new PropertyMappingUnloaderWalk(), new PropertyMappingValueSpecificationContextUnloaderWalk());
     }
 
     @Override
     public RichIterable<MatchRunner> getUnLoadUnbinders()
     {
-        return Lists.immutable.<MatchRunner>with(new PropertyMappingsImplementationUnbind(), new MappingUnbind(), new PropertyOwnerImplementationUnbind(), new InstanceSetImplementationUnbind(), new SetImplementationUnbind(), new AssociationImplementationUnbind(), new PureInstanceSetImplementationUnbind());
+        return Lists.immutable.with(new PropertyMappingsImplementationUnbind(), new MappingUnbind(), new PropertyOwnerImplementationUnbind(), new InstanceSetImplementationUnbind(), new SetImplementationUnbind(), new AssociationImplementationUnbind(), new PureInstanceSetImplementationUnbind());
     }
 
     @Override
     public RichIterable<MatchRunner> getValidators()
     {
-        return Lists.immutable.<MatchRunner>with(new MappingValidator(), new PureInstanceSetImplementationValidator(), new StoreValidator());
+        return Lists.immutable.with(new MappingValidator(), new PureInstanceSetImplementationValidator(), new StoreValidator());
     }
 
     @Override
@@ -189,7 +191,7 @@ public class MappingParser implements Parser
     {
         AntlrDescriptiveErrorListener pureErrorListener = new AntlrDescriptiveErrorListener(sourceInformation);
 
-        MappingLexer lexer = new MappingLexer(new ANTLRInputStream(code));
+        MappingLexer lexer = new MappingLexer(CharStreams.fromString(code));
         lexer.removeErrorListeners();
         lexer.addErrorListener(pureErrorListener);
 
@@ -200,5 +202,4 @@ public class MappingParser implements Parser
         parser.getInterpreter().setPredictionMode(fastParser ? PredictionMode.SLL : PredictionMode.LL);
         return parser;
     }
-
 }

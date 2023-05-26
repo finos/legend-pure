@@ -14,9 +14,9 @@
 
 package org.finos.legend.pure.m3.serialization.runtime;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.serialization.runtime.IncrementalCompiler.IncrementalCompilerTransaction;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.transaction.framework.ThreadLocalTransactionContext;
 import org.junit.After;
 import org.junit.Assert;
@@ -26,66 +26,68 @@ import org.junit.Test;
 public class TestSimpleTransaction extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("source2.pure");
     }
 
     @Test
     public void testSimpleGraph() throws Exception
     {
-        this.compileTestSource("Class myTest::Product\n" +
+        compileTestSource("Class myTest::Product\n" +
                 "{\n" +
                 "   name : String[1];\n" +
                 "}\n");
 
-        Assert.assertEquals(1, this.processorSupport.package_getByUserPath("myTest").getValueForMetaPropertyToMany(M3Properties.children).size());
+        Assert.assertEquals(1, processorSupport.package_getByUserPath("myTest").getValueForMetaPropertyToMany(M3Properties.children).size());
 
-        Source source = this.runtime.createInMemorySource("source2.pure", "Class myTest::Synonym\n" +
-                               "{\n" +
-                               "   name : String[1];\n" +
-                               "}\n");
-        IncrementalCompilerTransaction transaction = this.runtime.getIncrementalCompiler().newTransaction(true);
+        Source source = runtime.createInMemorySource("source2.pure", "Class myTest::Synonym\n" +
+                "{\n" +
+                "   name : String[1];\n" +
+                "}\n");
+        IncrementalCompilerTransaction transaction = runtime.getIncrementalCompiler().newTransaction(true);
         try (ThreadLocalTransactionContext ignore = transaction.openInCurrentThread())
         {
-            this.runtime.getIncrementalCompiler().compileInCurrentTransaction(source);
-            Assert.assertEquals(2, this.processorSupport.package_getByUserPath("myTest").getValueForMetaPropertyToMany(M3Properties.children).size());
+            runtime.getIncrementalCompiler().compileInCurrentTransaction(source);
+            Assert.assertEquals(2, processorSupport.package_getByUserPath("myTest").getValueForMetaPropertyToMany(M3Properties.children).size());
         }
-        Assert.assertEquals(1, this.processorSupport.package_getByUserPath("myTest").getValueForMetaPropertyToMany(M3Properties.children).size());
+        Assert.assertEquals(1, processorSupport.package_getByUserPath("myTest").getValueForMetaPropertyToMany(M3Properties.children).size());
         try (ThreadLocalTransactionContext ignore = transaction.openInCurrentThread())
         {
-            Assert.assertEquals(2, this.processorSupport.package_getByUserPath("myTest").getValueForMetaPropertyToMany(M3Properties.children).size());
+            Assert.assertEquals(2, processorSupport.package_getByUserPath("myTest").getValueForMetaPropertyToMany(M3Properties.children).size());
         }
         transaction.rollback();
-        Assert.assertEquals(1, this.processorSupport.package_getByUserPath("myTest").getValueForMetaPropertyToMany(M3Properties.children).size());
+        Assert.assertEquals(1, processorSupport.package_getByUserPath("myTest").getValueForMetaPropertyToMany(M3Properties.children).size());
     }
 
     @Test
     public void testFunction() throws Exception
     {
-        Source source = this.runtime.createInMemorySource("source2.pure", "function myFunc():Nil[0]" +
-                               "{" +
-                               "    print('ok',1);" +
-                               "}");
-        IncrementalCompilerTransaction transaction = this.runtime.getIncrementalCompiler().newTransaction(true);
+        Source source = runtime.createInMemorySource("source2.pure", "function myFunc():Nil[0]" +
+                "{" +
+                "    print('ok',1);" +
+                "}");
+        IncrementalCompilerTransaction transaction = runtime.getIncrementalCompiler().newTransaction(true);
         try (ThreadLocalTransactionContext ignore = transaction.openInCurrentThread())
         {
-            this.runtime.getIncrementalCompiler().compileInCurrentTransaction(source);
+            runtime.getIncrementalCompiler().compileInCurrentTransaction(source);
             // TODO fix this: if this is called, myFunc__Nil_0__ is cached in the context both inside and outside the scope of the transaction
-//            Assert.assertNotNull(this.processorSupport.package_getByUserPath("myFunc__Nil_0_"));
+//            Assert.assertNotNull(processorSupport.package_getByUserPath("myFunc__Nil_0_"));
         }
 
-        Assert.assertNull(this.processorSupport.package_getByUserPath("myFunc__Nil_0_"));
+        Assert.assertNull(processorSupport.package_getByUserPath("myFunc__Nil_0_"));
         try (ThreadLocalTransactionContext ignore = transaction.openInCurrentThread())
         {
-            Assert.assertNotNull(this.processorSupport.package_getByUserPath("myFunc__Nil_0_"));
+            Assert.assertNotNull(processorSupport.package_getByUserPath("myFunc__Nil_0_"));
         }
 
         transaction.commit();
-        Assert.assertNotNull(this.processorSupport.package_getByUserPath("myFunc__Nil_0_"));
+        Assert.assertNotNull(processorSupport.package_getByUserPath("myFunc__Nil_0_"));
     }
 }

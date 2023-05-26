@@ -19,23 +19,32 @@ import java.math.BigInteger;
 public interface ReferenceFactory
 {
     Reference booleanReference(boolean value);
+
     Reference booleanReference(String name);
 
     Reference integerReference(int value);
+
     Reference integerReference(long value);
+
     Reference integerReference(BigInteger value);
+
     Reference integerReference(String name);
 
     Reference floatReference(String name);
+
     Reference decimalReference(String name);
 
     Reference dateReference(String name);
+
     Reference dateTimeReference(String name);
+
     Reference strictDateReference(String name);
+
     Reference latestDateReference();
 
     Reference stringReference(String name);
 
     Reference packageReference(String path);
+
     Reference packagedElementReference(String path);
 }

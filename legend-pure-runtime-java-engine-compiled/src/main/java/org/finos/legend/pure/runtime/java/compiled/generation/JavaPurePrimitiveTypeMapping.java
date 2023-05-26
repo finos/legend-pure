@@ -166,14 +166,17 @@ public class JavaPurePrimitiveTypeMapping
 
     //we need to ensure the chunks do not split escape characters
     //note: this function was deliberately written without recursion.
-    public static ListIterable<String> chunk(String value, int size) {
+    public static ListIterable<String> chunk(String value, int size)
+    {
         MutableList<String> chunks = StringIterate.chunk(value, size);
 
-        for (int i = 0; i < chunks.size(); i++) {
+        for (int i = 0; i < chunks.size(); i++)
+        {
             String chunk = chunks.get(i);
             boolean isInvalid = chunk.endsWith("\\") && !chunk.endsWith("\\\\");
 
-            if (isInvalid) {
+            if (isInvalid)
+            {
                 String nextChunk = "\\" + chunks.get(i + 1);
                 chunk = chunk.substring(0, chunk.length() - 1);
 

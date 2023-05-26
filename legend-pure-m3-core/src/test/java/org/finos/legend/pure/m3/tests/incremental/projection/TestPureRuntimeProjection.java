@@ -14,13 +14,13 @@
 
 package org.finos.legend.pure.m3.tests.incremental.projection;
 
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.impl.tuple.Tuples;
+import org.finos.legend.pure.m3.execution.VoidFunctionExecution;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.tests.TrackingTransactionObserver;
-import org.finos.legend.pure.m3.execution.VoidFunctionExecution;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -34,12 +34,14 @@ import java.nio.file.Paths;
 public class TestPureRuntimeProjection extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("userId.pure");
         runtime.delete("sourceId.pure");
         runtime.delete("projectionId.pure");
@@ -54,10 +56,10 @@ public class TestPureRuntimeProjection extends AbstractPureTestWithCoreCompiledP
     {
         String source = "Class A{version : Integer[1];}";
         String sourceId = "sourceId.pure";
-        this.runtime.createInMemorySource(sourceId, source);
-        this.runtime.createInMemorySource("userId.pure", "Class AP projects #A{+[version]}#");
-        this.runtime.compile();
-        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(this.runtime, this.functionExecution,
+        runtime.createInMemorySource(sourceId, source);
+        runtime.createInMemorySource("userId.pure", "Class AP projects #A{+[version]}#");
+        runtime.compile();
+        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(runtime, functionExecution,
                 Lists.fixedSize.of(Tuples.pair(sourceId, source)), "A has not been defined!", "userId.pure", 1, 20);
     }
 
@@ -67,11 +69,11 @@ public class TestPureRuntimeProjection extends AbstractPureTestWithCoreCompiledP
         String source = "Class A{version : Integer[1];}";
         String badSource = "Class A{vers : Integer[1];}";
         String sourceId = "sourceId.pure";
-        this.runtime.createInMemorySource(sourceId, source);
-        this.runtime.createInMemorySource("userId.pure", "Class AP projects #A{+[version]}#");
-        this.runtime.compile();
+        runtime.createInMemorySource(sourceId, source);
+        runtime.createInMemorySource("userId.pure", "Class AP projects #A{+[version]}#");
+        runtime.compile();
 
-        RuntimeVerifier.replaceWithCompileErrorCompileAndReloadMultipleTimesIsStable(this.runtime,
+        RuntimeVerifier.replaceWithCompileErrorCompileAndReloadMultipleTimesIsStable(runtime,
                 Lists.fixedSize.of(Tuples.pair(sourceId, badSource)), "The property 'version' can't be found in the type 'A' (or any supertype).",
                 "userId.pure", 1, 24);
 
@@ -86,12 +88,12 @@ public class TestPureRuntimeProjection extends AbstractPureTestWithCoreCompiledP
                 "Association ABP projects AB<AP,BP>";
 
         String sourceId = "sourceId.pure";
-        this.runtime.createInMemorySource(sourceId, source);
-        this.runtime.createInMemorySource("projections.pure", projections);
-        this.runtime.createInMemorySource("association.pure", association);
-        this.runtime.compile();
+        runtime.createInMemorySource(sourceId, source);
+        runtime.createInMemorySource("projections.pure", projections);
+        runtime.createInMemorySource("association.pure", association);
+        runtime.compile();
 
-        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(this.runtime, this.functionExecution,
+        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(runtime, functionExecution,
                 Lists.fixedSize.of(Tuples.pair("association.pure", association)), "AB has not been defined!",
                 "projections.pure", 3, 26);
     }
@@ -105,13 +107,13 @@ public class TestPureRuntimeProjection extends AbstractPureTestWithCoreCompiledP
         String associationProjection = "Association ABP projects AB<AP,BP>";
 
         String sourceId = "sourceId.pure";
-        this.runtime.createInMemorySource(sourceId, source);
-        this.runtime.createInMemorySource("projections.pure", projections);
-        this.runtime.createInMemorySource("association.pure", association);
-        this.runtime.createInMemorySource("associationProjection.pure", associationProjection);
-        this.runtime.compile();
+        runtime.createInMemorySource(sourceId, source);
+        runtime.createInMemorySource("projections.pure", projections);
+        runtime.createInMemorySource("association.pure", association);
+        runtime.createInMemorySource("associationProjection.pure", associationProjection);
+        runtime.compile();
 
-        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(this.runtime, this.functionExecution,
+        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(runtime, functionExecution,
                 Lists.fixedSize.of(Tuples.pair("projections.pure", projections)), "AP has not been defined!",
                 "associationProjection.pure", 1, 29);
     }
@@ -126,14 +128,14 @@ public class TestPureRuntimeProjection extends AbstractPureTestWithCoreCompiledP
         String function = "function func():Any[*] { ^AP(b=^BP())}";
 
         String sourceId = "sourceId.pure";
-        this.runtime.createInMemorySource(sourceId, source);
-        this.runtime.createInMemorySource("projections.pure", projections);
-        this.runtime.createInMemorySource("association.pure", association);
-        this.runtime.createInMemorySource("associationProjection.pure", associationProjection);
-        this.runtime.createInMemorySource("function.pure", function);
-        this.runtime.compile();
+        runtime.createInMemorySource(sourceId, source);
+        runtime.createInMemorySource("projections.pure", projections);
+        runtime.createInMemorySource("association.pure", association);
+        runtime.createInMemorySource("associationProjection.pure", associationProjection);
+        runtime.createInMemorySource("function.pure", function);
+        runtime.compile();
 
-        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(this.runtime, this.functionExecution,
+        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(runtime, functionExecution,
                 Lists.fixedSize.of(Tuples.pair("associationProjection.pure", associationProjection)), "The property 'b' can't be found in the type 'AP' or in its hierarchy.",
                 "function.pure", 1, 30);
     }
@@ -159,11 +161,11 @@ public class TestPureRuntimeProjection extends AbstractPureTestWithCoreCompiledP
                 "    COUNTRY\n" +
                 "}";
         String sourceId = "sourceId.pure";
-        this.runtime.createInMemorySource(sourceId, source);
-        this.runtime.createInMemorySource("userId.pure", "Class AP projects #EntityWithLocations{+[locationsByType(GeographicEntityType[*])]}#");
-        this.runtime.compile();
+        runtime.createInMemorySource(sourceId, source);
+        runtime.createInMemorySource("userId.pure", "Class AP projects #EntityWithLocations{+[locationsByType(GeographicEntityType[*])]}#");
+        runtime.compile();
 
-        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(this.runtime, this.functionExecution,
+        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(runtime, functionExecution,
                 Lists.fixedSize.of(Tuples.pair(sourceId, source)), "EntityWithLocations has not been defined!", "userId.pure", 1, 20);
     }
 
@@ -174,15 +176,15 @@ public class TestPureRuntimeProjection extends AbstractPureTestWithCoreCompiledP
         String projection = "Class <<doc.deprecated>> {doc.doc='projection class'} AP projects A{ * }";
         String sourceId = "sourceId.pure";
         String projectionId = "projectionId.pure";
-        this.runtime.createInMemorySource(sourceId, source);
-        this.runtime.createInMemorySource(projectionId, projection);
-        this.runtime.compile();
+        runtime.createInMemorySource(sourceId, source);
+        runtime.createInMemorySource(projectionId, projection);
+        runtime.compile();
 
-        this.runtime.modify(sourceId, "//comment added\n" + source);
-        this.runtime.modify(projectionId, "//comment added\n" + projection);
-        this.runtime.compile();
+        runtime.modify(sourceId, "//comment added\n" + source);
+        runtime.modify(projectionId, "//comment added\n" + projection);
+        runtime.compile();
 
-        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(this.runtime, this.functionExecution,
+        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(runtime, functionExecution,
                 Lists.fixedSize.of(Tuples.pair(sourceId, source)), "A has not been defined!",
                 projectionId, 2, 67);
     }
@@ -192,9 +194,9 @@ public class TestPureRuntimeProjection extends AbstractPureTestWithCoreCompiledP
     {
         String sourceId = "sourceId.pure";
         String sampleTestModel = readFile("org/finos/legend/pure/m3/tests/incremental/projection/projectionTestModel.pure");
-        this.runtime.createInMemorySource(sourceId, sampleTestModel);
+        runtime.createInMemorySource(sourceId, sampleTestModel);
         System.out.println("Compile Iteration #1");
-        this.runtime.compile();
+        runtime.compile();
         byte[] before = runtime.getModelRepository().serialize();
         int repositorySize = before.length;
 

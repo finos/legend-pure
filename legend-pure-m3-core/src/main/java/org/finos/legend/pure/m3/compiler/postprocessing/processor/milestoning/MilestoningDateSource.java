@@ -17,11 +17,11 @@ package org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
-public interface MilestoningDateSource {
-
+public interface MilestoningDateSource
+{
     boolean isDataSourceType(CoreInstance fe, ModelRepository repository, ProcessorSupport processorSupport);
 
     MilestoningDates getMilestonedDates(CoreInstance fe, ProcessorState state, ModelRepository repository, Context context, ProcessorSupport processorSupport);

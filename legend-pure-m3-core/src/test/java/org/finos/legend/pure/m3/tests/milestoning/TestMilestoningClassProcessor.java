@@ -88,7 +88,7 @@ public class TestMilestoningClassProcessor extends AbstractTestMilestoning
                         "{}"
         );
         runtime.createInMemorySource("sourceId2.pure",
-                "###Pure\n" +//this increments the import group id; '_2' in this case
+                "###Pure\n" + //this increments the import group id; '_2' in this case
                         "import meta::test::domain::account::*;" +
                         "Class meta::test::domain::account::trade::Contract \n" +
                         "{\n" +

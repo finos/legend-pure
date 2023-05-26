@@ -19,7 +19,6 @@ import org.finos.legend.pure.m3.tests.function.AbstractTestFunctionDefinitionMod
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.BeforeClass;
 
-
 public class TestFunctionDefinitionModify extends AbstractTestFunctionDefinitionModify
 {
     @BeforeClass

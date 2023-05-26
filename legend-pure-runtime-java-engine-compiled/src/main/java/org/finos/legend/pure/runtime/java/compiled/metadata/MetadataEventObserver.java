@@ -20,8 +20,10 @@ package org.finos.legend.pure.runtime.java.compiled.metadata;
 public interface MetadataEventObserver
 {
     void startSerializingCoreCompiledGraph();
+
     void endSerializingCoreCompiledGraph();
 
     void startSerializingSystemCompiledGraph();
+
     void endSerializingSystemCompiledGraph(int objectCount, int packageLinkCount);
 }

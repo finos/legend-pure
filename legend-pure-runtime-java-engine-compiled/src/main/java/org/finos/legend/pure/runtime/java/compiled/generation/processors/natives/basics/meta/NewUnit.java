@@ -25,7 +25,6 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.me
 
 public class NewUnit extends AbstractNative
 {
-
     public NewUnit()
     {
         super("newUnit_Unit_1__Number_1__Any_1_");
@@ -36,6 +35,6 @@ public class NewUnit extends AbstractNative
     {
         CoreInstance _unitType = Instance.getValueForMetaPropertyToOneResolved(functionExpression.getValueForMetaPropertyToMany(M3Properties.parametersValues).getFirst(), M3Properties.values, processorContext.getSupport());
         String unitClassName = UnitProcessor.convertToJavaCompatibleClassName(JavaPackageAndImportBuilder.buildImplUnitInstanceClassNameFromType(_unitType));
-        return "new org.finos.legend.pure.generated." + unitClassName + "(\"Anonymous_NoCounter\", es)._val("+ transformedParams.get(1) +")";
+        return "new org.finos.legend.pure.generated." + unitClassName + "(\"Anonymous_NoCounter\", es)._val(" + transformedParams.get(1) + ")";
     }
 }

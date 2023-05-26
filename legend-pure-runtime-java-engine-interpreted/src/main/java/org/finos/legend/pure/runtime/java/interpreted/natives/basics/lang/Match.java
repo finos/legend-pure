@@ -14,18 +14,18 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.natives.basics.lang;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.factory.Lists;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionCoreInstanceWrapper;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.measure.Measure;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionCoreInstanceWrapper;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
@@ -53,7 +53,7 @@ public class Match extends NativeFunction
         ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(firstParam, M3Properties.values, processorSupport);
         int valueCount = values.size();
         CoreInstance valueType = valueCount == 1 ?
-                Measure.isUnitOrMeasureInstance(values.getFirst(), processorSupport)?
+                Measure.isUnitOrMeasureInstance(values.getFirst(), processorSupport) ?
                         Instance.getValueForMetaPropertyToOneResolved(values.getFirst(), M3Properties.genericType, processorSupport) : Instance.extractGenericTypeFromInstance(values.getFirst(), processorSupport)
                 : Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.genericType, processorSupport);
 

@@ -27,11 +27,12 @@ import static org.junit.Assert.assertNull;
 public class TestIDIndex extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
-    private static String TEST_PACKAGE = "TestPackage";
+    private static final String TEST_PACKAGE = "TestPackage";
 
     private static IDIndex<String, Package> getIDIndex()
     {
@@ -43,7 +44,7 @@ public class TestIDIndex extends AbstractPureTestWithCoreCompiledPlatform
     {
         IDIndex<String, Package> idIndex = getIDIndex();
 
-        PackageInstance instance = PackageInstance.createPersistent(this.repository, TEST_PACKAGE);
+        PackageInstance instance = PackageInstance.createPersistent(repository, TEST_PACKAGE);
         PackageCoreInstanceWrapper wrapper = new PackageCoreInstanceWrapper(instance);
 
         idIndex.add(instance);
@@ -57,7 +58,7 @@ public class TestIDIndex extends AbstractPureTestWithCoreCompiledPlatform
     {
         IDIndex<String, Package> idIndex = getIDIndex();
 
-        PackageInstance instance = PackageInstance.createPersistent(this.repository, TEST_PACKAGE);
+        PackageInstance instance = PackageInstance.createPersistent(repository, TEST_PACKAGE);
         PackageCoreInstanceWrapper wrapper = new PackageCoreInstanceWrapper(instance);
 
         idIndex.add(wrapper);
@@ -71,7 +72,7 @@ public class TestIDIndex extends AbstractPureTestWithCoreCompiledPlatform
     {
         IDIndex<String, Package> idIndex = getIDIndex();
 
-        PackageInstance instance = PackageInstance.createPersistent(this.repository, TEST_PACKAGE);
+        PackageInstance instance = PackageInstance.createPersistent(repository, TEST_PACKAGE);
         PackageCoreInstanceWrapper wrapper = new PackageCoreInstanceWrapper(instance);
 
         idIndex.add(instance);
@@ -87,7 +88,7 @@ public class TestIDIndex extends AbstractPureTestWithCoreCompiledPlatform
     {
         IDIndex<String, Package> idIndex = getIDIndex();
 
-        PackageInstance instance = PackageInstance.createPersistent(this.repository, TEST_PACKAGE);
+        PackageInstance instance = PackageInstance.createPersistent(repository, TEST_PACKAGE);
         PackageCoreInstanceWrapper wrapper = new PackageCoreInstanceWrapper(instance);
 
         idIndex.add(wrapper);

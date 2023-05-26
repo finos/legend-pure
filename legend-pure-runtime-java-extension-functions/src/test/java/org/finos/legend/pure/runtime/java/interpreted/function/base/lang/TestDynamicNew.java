@@ -19,7 +19,6 @@ import org.finos.legend.pure.m3.tests.function.base.lang.AbstractTestDynamicNew;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.BeforeClass;
 
-
 public class TestDynamicNew extends AbstractTestDynamicNew
 {
     @BeforeClass

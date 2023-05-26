@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m3.tests.incremental._class;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.tools.test.ToFix;
@@ -52,7 +52,7 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
                         .compileWithExpectedCompileFailure("B has not been defined!", "userId.pure", 1, 17)
                         .createInMemorySource("sourceId.pure", "Class B{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
     }
 
@@ -75,7 +75,7 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
                         .compile()
                         .createInMemorySource(specificSourceId, specificSource)
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
@@ -84,7 +84,7 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class B{}")
                         .createInMemorySource("userId.pure", "Class A extends B{}" +
-                                "function test():Boolean[1]{assert('A' == A->id(), |'');}" )
+                                "function test():Boolean[1]{assert('A' == A->id(), |'');}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
@@ -93,7 +93,7 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
                         .compileWithExpectedCompileFailure("B has not been defined!", "userId.pure", 1, 17)
                         .updateSource("sourceId.pure", "Class B{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
@@ -112,7 +112,7 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
                         .compileWithExpectedCompileFailure("Can't find the property 'property' in the class test::A", "userId.pure", 3, 65)
                         .updateSource("sourceId.pure", "Class test::B{property:String[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -128,7 +128,7 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
                         .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 99)
                         .createInMemorySource("sourceId.pure", "Class A extends B{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
@@ -150,7 +150,7 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
                                 PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE, "userId.pure", 1, 91)
                         .updateSource("sourceId.pure", "Class A extends B{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
@@ -170,8 +170,7 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
                         .compileWithExpectedCompileFailure("B has not been defined!", "userId.pure", 1, 45)
                         .createInMemorySource("sourceId.pure", "Class B extends C{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
-
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
@@ -183,7 +182,7 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
                                 "Class C extends D{}" +
                                 "Class A extends B{}" +
                                 "function myFunc():D[1]{^A()}" +
-                                "function test():Boolean[1]{assert(A == myFunc()->genericType().rawType, |'')}" )
+                                "function test():Boolean[1]{assert(A == myFunc()->genericType().rawType, |'')}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
@@ -192,6 +191,6 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
                         .compileWithExpectedCompileFailure("Return type error in function 'myFunc'; found: A; expected: D", "userId.pure", 1, 71)
                         .updateSource("sourceId.pure", "Class B extends C{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 }

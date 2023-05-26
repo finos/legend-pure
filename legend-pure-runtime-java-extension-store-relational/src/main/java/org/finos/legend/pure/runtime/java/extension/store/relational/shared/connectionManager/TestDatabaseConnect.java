@@ -16,11 +16,8 @@ package org.finos.legend.pure.runtime.java.extension.store.relational.shared.con
 
 import org.apache.tomcat.dbcp.dbcp2.BasicDataSource;
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function0;
-import org.eclipse.collections.api.block.procedure.Procedure2;
 import org.eclipse.collections.api.multimap.MutableMultimap;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.block.function.checked.CheckedFunction0;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.tools.locks.KeyLockManager;
@@ -38,42 +35,6 @@ public class TestDatabaseConnect extends PerThreadPoolableConnectionProvider
     private static final DataSource TEST_DATA_SOURCE = new DataSource(TEST_DB_HOST_NAME, -1, TEST_DB_NAME, null);
     private static final String DEFAULT_H2_PROPERTIES = System.getProperty("legend.test.h2.properties",
             ";NON_KEYWORDS=ANY,ASYMMETRIC,AUTHORIZATION,CAST,CURRENT_PATH,CURRENT_ROLE,DAY,DEFAULT,ELSE,END,HOUR,KEY,MINUTE,MONTH,SECOND,SESSION_USER,SET,SOME,SYMMETRIC,SYSTEM_USER,TO,UESCAPE,USER,VALUE,WHEN,YEAR");
-    private static final Function0<String> CONNECTION_URL = new Function0<String>()
-    {
-        @Override
-        public String value()
-        {
-            return System.getProperty("legend.test.h2.port") != null ?
-                    "jdbc:h2:tcp://127.0.0.1:" + System.getProperty("legend.test.h2.port") + "/mem:testDB" : "jdbc:h2:mem:"
-                    + DEFAULT_H2_PROPERTIES;
-        }
-    };
-
-    private static final Function0<Pair<ThreadLocal<PerThreadPoolableConnectionWrapper>, BasicDataSource>> NEW_TEST_DS_PAIR = new CheckedFunction0<Pair<ThreadLocal<PerThreadPoolableConnectionWrapper>, BasicDataSource>>()
-    {
-        @Override
-        public Pair<ThreadLocal<PerThreadPoolableConnectionWrapper>, BasicDataSource> safeValue() throws SQLException
-        {
-            BasicDataSource ds = new BasicDataSource();
-            ds.setUrl(CONNECTION_URL.value());
-            ds.setUsername("sa");
-            ds.setPassword("");
-            ds.setMaxTotal(1);
-            ds.setMaxIdle(1);
-            ThreadLocal<PerThreadPoolableConnectionWrapper> connTL = new ThreadLocal<PerThreadPoolableConnectionWrapper>();
-            return Tuples.pair(connTL, ds);
-        }
-    };
-
-
-    private static final Procedure2<String, MutableMultimap<String, DataSourceConnectionDisplayInfo>> ADD_USER_CONNECTION = new Procedure2<String, MutableMultimap<String, DataSourceConnectionDisplayInfo>>()
-    {
-        @Override
-        public void value(String user, MutableMultimap<String, DataSourceConnectionDisplayInfo> connectionsByUser)
-        {
-            connectionsByUser.put(user, new DataSourceConnectionDisplayInfo(TEST_DATA_SOURCE, CONNECTION_URL.value()));//TODO - pooling info
-        }
-    };
 
     private final KeyLockManager<String> userLocks = KeyLockManager.newManager();
 
@@ -83,22 +44,22 @@ public class TestDatabaseConnect extends PerThreadPoolableConnectionProvider
         {
             Class.forName("org.h2.Driver");
         }
-        catch (ClassNotFoundException e)
+        catch (ClassNotFoundException ignore)
         {
+            // ignore exception about not finding the H2 driver
         }
     }
 
 
     public ConnectionWithDataSourceInfo getConnectionWithDataSourceInfo(String user)
     {
-        PerThreadPoolableConnectionWrapper pcw;
         Pair<ThreadLocal<PerThreadPoolableConnectionWrapper>, BasicDataSource> cs;
         synchronized (this.userLocks.getLock(user))
         {
-            cs = this.connectionPoolByUser.getIfAbsentPut(user, NEW_TEST_DS_PAIR);
+            cs = this.connectionPoolByUser.getIfAbsentPut(user, TestDatabaseConnect::newTestDataSourcePair);
         }
         ThreadLocal<PerThreadPoolableConnectionWrapper> tl = cs.getOne();
-        pcw = tl.get();
+        PerThreadPoolableConnectionWrapper pcw = tl.get();
         try
         {
             if (pcw == null || pcw.isClosed())
@@ -120,7 +81,7 @@ public class TestDatabaseConnect extends PerThreadPoolableConnectionProvider
 
     public void collectConnectionsByUser(MutableMultimap<String, DataSourceConnectionDisplayInfo> connectionsByUser)
     {
-        this.connectionPoolByUser.keysView().forEachWith(ADD_USER_CONNECTION, connectionsByUser);
+        this.connectionPoolByUser.forEachKey(user -> addUserConnection(user, connectionsByUser));
     }
 
     public RichIterable<String> getUsersWithConnections()
@@ -132,5 +93,28 @@ public class TestDatabaseConnect extends PerThreadPoolableConnectionProvider
     {
     }
 
+    private static String getConnectionURL()
+    {
+        String port = System.getProperty("legend.test.h2.port");
+        return (port != null) ?
+                ("jdbc:h2:tcp://127.0.0.1:" + port + "/mem:testDB") :
+                ("jdbc:h2:mem:" + DEFAULT_H2_PROPERTIES);
+    }
 
+    private static Pair<ThreadLocal<PerThreadPoolableConnectionWrapper>, BasicDataSource> newTestDataSourcePair()
+    {
+        BasicDataSource ds = new BasicDataSource();
+        ds.setUrl(getConnectionURL());
+        ds.setUsername("sa");
+        ds.setPassword("");
+        ds.setMaxTotal(1);
+        ds.setMaxIdle(1);
+        ThreadLocal<PerThreadPoolableConnectionWrapper> connTL = new ThreadLocal<>();
+        return Tuples.pair(connTL, ds);
+    }
+
+    private static void addUserConnection(String user, MutableMultimap<String, DataSourceConnectionDisplayInfo> connectionsByUser)
+    {
+        connectionsByUser.put(user, new DataSourceConnectionDisplayInfo(TEST_DATA_SOURCE, getConnectionURL()));//TODO - pooling info
+    }
 }

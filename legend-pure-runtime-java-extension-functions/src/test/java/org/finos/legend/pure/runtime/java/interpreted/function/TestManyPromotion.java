@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.function;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.After;
@@ -26,7 +26,8 @@ import org.junit.Test;
 public class TestManyPromotion extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
@@ -34,21 +35,22 @@ public class TestManyPromotion extends AbstractPureTestWithCoreCompiled
     public void cleanRuntime()
     {
         runtime.delete("fromString.pure");
+        runtime.compile();
     }
 
     @Test
     public void testString()
     {
-        compileTestSource("fromString.pure","function func():String[*]\n" +
-                          "{\n" +
-                          "    'ok';\n" +
-                          "}\n" +
-                          "function test():Nil[0]\n" +
-                          "{\n" +
-                          "    print(func(),1);" +
-                          "}\n");
+        compileTestSource("fromString.pure", "function func():String[*]\n" +
+                "{\n" +
+                "    'ok';\n" +
+                "}\n" +
+                "function test():Nil[0]\n" +
+                "{\n" +
+                "    print(func(),1);" +
+                "}\n");
         this.execute("test():Nil[0]");
-        Assert.assertEquals("'ok'", this.functionExecution.getConsole().getLine(0));
+        Assert.assertEquals("'ok'", functionExecution.getConsole().getLine(0));
     }
 
     @Test
@@ -58,13 +60,13 @@ public class TestManyPromotion extends AbstractPureTestWithCoreCompiled
         {
             compileTestSource("fromString.pure",
                     "function func():String[1]\n" +
-                              "{\n" +
-                              "    ['ok','ok2'];\n" +
-                              "}\n" +
-                              "function test():Nil[0]\n" +
-                              "{\n" +
-                              "    print(func());" +
-                              "}\n");
+                            "{\n" +
+                            "    ['ok','ok2'];\n" +
+                            "}\n" +
+                            "function test():Nil[0]\n" +
+                            "{\n" +
+                            "    print(func());" +
+                            "}\n");
         }
         catch (Exception e)
         {
@@ -76,7 +78,7 @@ public class TestManyPromotion extends AbstractPureTestWithCoreCompiled
     @Test
     public void testFunctionMatchingMultiplicity()
     {
-        compileTestSource("fromString.pure","function func(a:Any[1]):Any[*]\n" +
+        compileTestSource("fromString.pure", "function func(a:Any[1]):Any[*]\n" +
                 "{\n" +
                 "    $a;\n" +
                 "}\n" +
@@ -86,8 +88,8 @@ public class TestManyPromotion extends AbstractPureTestWithCoreCompiled
                 "    print(test__Nil_0_->map(c|func($c))->size(), 1);" +
                 "}\n");
         this.execute("test():Nil[0]");
-        Assert.assertEquals("1", this.functionExecution.getConsole().getLine(0));
-        Assert.assertEquals("1", this.functionExecution.getConsole().getLine(1));
+        Assert.assertEquals("1", functionExecution.getConsole().getLine(0));
+        Assert.assertEquals("1", functionExecution.getConsole().getLine(1));
     }
 
     protected static FunctionExecution getFunctionExecution()

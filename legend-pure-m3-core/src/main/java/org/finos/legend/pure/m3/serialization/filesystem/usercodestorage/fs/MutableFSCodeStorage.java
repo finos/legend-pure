@@ -16,7 +16,6 @@ package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.fs;
 
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 
 import java.io.OutputStream;
@@ -124,13 +123,13 @@ public class MutableFSCodeStorage extends FSCodeStorage implements MutableReposi
     public void moveFile(String sourcePath, String destinationPath)
     {
         Path fullSourcePath = getFullPath(sourcePath);
-        if(fullSourcePath ==  null)
+        if (fullSourcePath == null)
         {
             throw new RuntimeException("Source Path is null");
         }
 
         Path fullDestinationPath = getFullPath(destinationPath);
-        if(fullDestinationPath ==  null)
+        if (fullDestinationPath == null)
         {
             throw new RuntimeException("Destination Path is null");
         }

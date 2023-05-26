@@ -25,13 +25,15 @@ import org.junit.Test;
 public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("userId.pure");
         runtime.delete("sourceId.pure");
         runtime.delete("classId.pure");
@@ -48,7 +50,7 @@ public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledP
                         .compileWithExpectedCompileFailure("testProfile has not been defined!", "userId.pure", 1, 21)
                         .createInMemorySource("sourceId.pure", "Profile testProfile{stereotypes:[s1,s2];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
     }
 
@@ -65,7 +67,7 @@ public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledP
                         .compileWithExpectedCompileFailure("testProfile has not been defined!", "userId.pure", 1, 21)
                         .updateSource("sourceId.pure", "Profile testProfile{stereotypes:[s1,s2];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -81,7 +83,7 @@ public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledP
                         .compileWithExpectedCompileFailure("The stereotype 's1' can't be found in profile 'testProfile'", "userId.pure", 1, 21)
                         .updateSource("sourceId.pure", "Profile testProfile{stereotypes:[s1,s2];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
     }
 
@@ -96,17 +98,16 @@ public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledP
                         .compile()
                         .createInMemorySource("sourceId.pure", "Class <<testProfile.s1>> A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
     }
-
 
     @Test
     public void testPureRuntimeProfileUsedInFunction() throws Exception
     {
 
-        this.runtime.createInMemorySource("userId.pure", "Profile my::profile::testProfile{stereotypes:[s1,s2];tags: [name];}");
-        this.runtime.createInMemorySource("sourceId.pure", "import meta::pure::functions::meta::*;\n" +
+        runtime.createInMemorySource("userId.pure", "Profile my::profile::testProfile{stereotypes:[s1,s2];tags: [name];}");
+        runtime.createInMemorySource("sourceId.pure", "import meta::pure::functions::meta::*;\n" +
                 "function meta::pure::functions::meta::stereotype(profile:Profile[1], str:String[1]):Stereotype[1]" +
                 "{" +
                 "   $profile.stereotypes->at(0);" +
@@ -116,18 +117,17 @@ public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledP
                 "    let st = $profile->stereotype($stereotype);\n" +
                 "    !$f.stereotypes->filter(s | $s == $st)->isEmpty();\n" +
                 "}\nfunction hasStereo(a:ElementWithStereotypes[1]):Boolean[1]{ if($a->hasStereotype('s1',my::profile::testProfile), | true, | false)}");
-        this.runtime.compile();
-        int size = this.runtime.getModelRepository().serialize().length;
+        runtime.compile();
+        int size = runtime.getModelRepository().serialize().length;
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.modify("userId.pure", "////My Comment\n" +
+            runtime.modify("userId.pure", "////My Comment\n" +
                     "Profile my::profile::testProfile{stereotypes:[s1,s2];tags: [name];}");
-            this.runtime.compile();
-            Assert.assertEquals("Graph size mismatch", size, this.repository.serialize().length);
+            runtime.compile();
+            Assert.assertEquals("Graph size mismatch", size, repository.serialize().length);
         }
     }
-
 
     @Test
     public void testPureRuntimeProfileUsedInNew() throws Exception
@@ -147,9 +147,8 @@ public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledP
                         .updateSource("userId.pure", "////My Comment\n" +
                                 "Profile my::pack::testProfile{stereotypes:[s1,s2];tags: [name];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
-
 
     @Test
     public void testPureRuntimeProfileWithEnumWithReferenceToEnum() throws Exception
@@ -162,10 +161,7 @@ public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledP
                         .updateSource("userId.pure", "////My Comment\n" +
                                 "Profile my::pack::testProfile{stereotypes:[s1,s2];tags: [name];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
     }
-
-
-
 }

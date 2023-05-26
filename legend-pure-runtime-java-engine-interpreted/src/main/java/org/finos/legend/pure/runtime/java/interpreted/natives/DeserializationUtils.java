@@ -15,11 +15,11 @@
 package org.finos.legend.pure.runtime.java.interpreted.natives;
 
 import org.eclipse.collections.api.list.ListIterable;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.lang.New;
@@ -27,7 +27,8 @@ import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.lang.New;
 public class DeserializationUtils
 {
     private DeserializationUtils()
-    {}
+    {
+    }
 
     /**
      * An association contains two properties. Given one of them, this method returns the other.

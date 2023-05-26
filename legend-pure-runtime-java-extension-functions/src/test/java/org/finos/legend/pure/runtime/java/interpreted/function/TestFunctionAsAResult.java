@@ -14,17 +14,21 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.function;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tools.test.ToFix;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 
 @Ignore
 public class TestFunctionAsAResult extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
@@ -48,7 +52,7 @@ public class TestFunctionAsAResult extends AbstractPureTestWithCoreCompiled
                 "    print(ascend(Person.property('name')->toOne()->cast(@Property<Person,String|1>)));\n" +
                 "}\n");
         this.execute("test():Nil[0]");
-        Assert.assertEquals("okeee", this.functionExecution.getConsole().getLine(0));
+        Assert.assertEquals("okeee", functionExecution.getConsole().getLine(0));
     }
 
     protected static FunctionExecution getFunctionExecution()

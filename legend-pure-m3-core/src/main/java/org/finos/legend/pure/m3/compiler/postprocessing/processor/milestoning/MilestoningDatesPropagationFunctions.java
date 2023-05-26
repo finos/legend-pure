@@ -115,7 +115,7 @@ public class MilestoningDatesPropagationFunctions
         {
             return getLambdaInputVarNames((LambdaFunction<?>) values.getFirst(), processorSupport);
         }
-        return inlineDSLLibrary.getInlineDSLs().collect(InlineDSL::getMilestoningDatesVarNamesExtractor).select(Objects::nonNull).flatCollect(x->x.getMilestoningDatesVarNames(values, processorSupport)).toList();
+        return inlineDSLLibrary.getInlineDSLs().collect(InlineDSL::getMilestoningDatesVarNamesExtractor).select(Objects::nonNull).flatCollect(x -> x.getMilestoningDatesVarNames(values, processorSupport)).toList();
     }
 
     private static ListIterable<String> getLambdaInputVarNames(LambdaFunction<?> lambdaFunction, ProcessorSupport processorSupport)

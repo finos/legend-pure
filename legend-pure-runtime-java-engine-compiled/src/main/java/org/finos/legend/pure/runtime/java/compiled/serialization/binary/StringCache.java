@@ -94,7 +94,7 @@ abstract class StringCache extends StringCacheOrIndex
         return map;
     }
 
-    public static abstract class Builder<T extends StringCache> implements Consumer<Obj>
+    public abstract static class Builder<T extends StringCache> implements Consumer<Obj>
     {
         private final PropertyValueConsumer propertyValueConsumer = new PropertyValueConsumer()
         {

@@ -905,11 +905,11 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
     {
         Function<Boolean, String> source = isBTemporal ->
                 "import meta::test::domain::*;\n" +
-                "Class meta::test::domain::A{\n" +
-                "b : B[*];}\n" +
-                "Association AB{ a2:A[0..1]; b2:B[0..1];}\n" +
-                "Class " + (isBTemporal ? "<<temporal.businesstemporal>>" : "") + "meta::test::domain::B{}\n" +
-                "function go():Any[*]{let a = ^A();" + (isBTemporal ? "$a.bAllVersions;$a.b(%2015);$a.b2AllVersions;$a.b2(%2015);" : "$a.b;$a.b2;") + "}\n";
+                        "Class meta::test::domain::A{\n" +
+                        "b : B[*];}\n" +
+                        "Association AB{ a2:A[0..1]; b2:B[0..1];}\n" +
+                        "Class " + (isBTemporal ? "<<temporal.businesstemporal>>" : "") + "meta::test::domain::B{}\n" +
+                        "function go():Any[*]{let a = ^A();" + (isBTemporal ? "$a.bAllVersions;$a.b(%2015);$a.b2AllVersions;$a.b2(%2015);" : "$a.b;$a.b2;") + "}\n";
         runtime.createInMemorySource("sourceId.pure", source.valueOf(false));
         runtime.compile();
         CoreInstance goFunction = runtime.getFunction("go__Any_MANY_");
@@ -1102,8 +1102,8 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
         {
             CoreInstance functionType = bQualifiedProperty.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToOne(M3Properties.typeArguments).getValueForMetaPropertyToOne(M3Properties.rawType);
             ListIterable<? extends CoreInstance> functionTypeParams = functionType.getValueForMetaPropertyToMany(M3Properties.parameters);
-            functionTypeParams.select(functionTypeParam -> Instance.instanceOf(functionTypeParam, M3Paths.VariableExpression, processorSupport) && "this".equals(functionTypeParam.getValueForMetaPropertyToOne(M3Properties.name).getName())).
-                    forEach(functionTypeParam ->
+            functionTypeParams.select(functionTypeParam -> Instance.instanceOf(functionTypeParam, M3Paths.VariableExpression, processorSupport) && "this".equals(functionTypeParam.getValueForMetaPropertyToOne(M3Properties.name).getName()))
+                    .forEach(functionTypeParam ->
                             {
                                 CoreInstance functionTypeParamGenericType = functionTypeParam.getValueForMetaPropertyToOne(M3Properties.genericType);
                                 CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(functionTypeParamGenericType, M3Properties.rawType, processorSupport);

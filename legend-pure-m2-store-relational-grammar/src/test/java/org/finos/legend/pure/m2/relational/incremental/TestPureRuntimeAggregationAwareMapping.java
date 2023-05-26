@@ -20,7 +20,6 @@ import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.Test;
 
-
 public class TestPureRuntimeAggregationAwareMapping extends AbstractPureRelationalTestWithCoreCompiled
 {
     private static final String model =
@@ -61,7 +60,7 @@ public class TestPureRuntimeAggregationAwareMapping extends AbstractPureRelation
                     "   fiscalYear: Integer[1];\n" +
                     "   fiscalMonth: Integer[1];\n" +
                     "   fiscalQtr: Integer[1];\n" +
-                    "}\n"+
+                    "}\n" +
                     "native function sum(f:Float[*]):Float[1];\n";
 
     private static final String mapping = "###Relational\n" +
@@ -257,8 +256,8 @@ public class TestPureRuntimeAggregationAwareMapping extends AbstractPureRelation
     public void testCreateAndDeleteAggregationAwareMapping() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("source1.pure", model).compile(),
-                new RuntimeTestScriptBuilder().createInMemorySource("source2.pure", mapping).compile().deleteSource("source2.pure").compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                new RuntimeTestScriptBuilder().createInMemorySource("source2.pure", mapping).compile().deleteSource("source2.pure").compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -269,8 +268,8 @@ public class TestPureRuntimeAggregationAwareMapping extends AbstractPureRelation
                         .updateSource("source1.pure", modelWithSalesPersonDimension)
                         .compile()
                         .updateSource("source1.pure", model)
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -281,8 +280,8 @@ public class TestPureRuntimeAggregationAwareMapping extends AbstractPureRelation
                         .updateSource("source1.pure", modelWithSalesPersonDimension).updateSource("source2.pure", mappingWithSalesPersonDimension)
                         .compile()
                         .updateSource("source1.pure", model).updateSource("source2.pure", mapping)
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -293,7 +292,7 @@ public class TestPureRuntimeAggregationAwareMapping extends AbstractPureRelation
                         .updateSource("source3.pure", "//" + function)
                         .compileWithExpectedCompileFailure("The system can't find a match for the function: myFunction(_:FiscalCalendar[1])", "source2.pure", 35, 36)
                         .updateSource("source3.pure", function)
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 }

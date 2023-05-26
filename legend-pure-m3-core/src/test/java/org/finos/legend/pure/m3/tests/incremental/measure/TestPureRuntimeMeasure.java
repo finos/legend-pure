@@ -146,8 +146,8 @@ public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlat
                         .updateSource("sourceId.pure", source2)
                         .compile()
                         .updateSource("sourceId.pure", source1)
-                        .compile()
-                , runtime, functionExecution, this.getAdditionalVerifiers(), false, 1);
+                        .compile(),
+                runtime, functionExecution, this.getAdditionalVerifiers(), false, 1);
     }
 
     @Test

@@ -14,12 +14,10 @@
 
 package org.finos.legend.pure.ide.light.api.execution.function.manager;
 
-import org.finos.legend.pure.runtime.java.shared.canstreamstate.CanStreamState;
-import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.ImmutableMap;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.finos.legend.pure.m3.exception.PureExecutionStreamingException;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
@@ -32,9 +30,9 @@ import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
 import org.finos.legend.pure.m3.navigation.function.InvalidFunctionDescriptorException;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.runtime.java.shared.canstreamstate.CanStreamState;
 
 import java.io.OutputStream;
-import java.util.HashMap;
 import java.util.Map;
 
 public class ExecutionManager
@@ -58,17 +56,13 @@ public class ExecutionManager
     public static final String OUTPUT_FORMAT_CSV = "csv";
     public static final String OUTPUT_FORMAT_XLSX = "xlsx";
 
-    private static final ImmutableMap<String, OutputFormat> OUTPUT_FORMATS;
-    static {
-        Map<String, OutputFormat> map = new HashMap<>();
-        map.put(OUTPUT_FORMAT_RAW, OutputFormat.RAW);
-        map.put(OUTPUT_FORMAT_PRE, OutputFormat.PRE);
-        map.put(OUTPUT_FORMAT_JSON, OutputFormat.JSON);
-        map.put(OUTPUT_FORMAT_CSV, OutputFormat.CSV);
-        map.put(OUTPUT_FORMAT_XLSX, OutputFormat.XLSX);
-
-        OUTPUT_FORMATS = Maps.immutable.withAll(map);
-    }
+    private static final ImmutableMap<String, OutputFormat> OUTPUT_FORMATS = Maps.mutable.<String, OutputFormat>empty()
+            .withKeyValue(OUTPUT_FORMAT_RAW, OutputFormat.RAW)
+            .withKeyValue(OUTPUT_FORMAT_PRE, OutputFormat.PRE)
+            .withKeyValue(OUTPUT_FORMAT_JSON, OutputFormat.JSON)
+            .withKeyValue(OUTPUT_FORMAT_CSV, OutputFormat.CSV)
+            .withKeyValue(OUTPUT_FORMAT_XLSX, OutputFormat.XLSX)
+            .toImmutable();
 
     private static final OutputFormat DEFAULT_OUTPUT_FORMAT = OutputFormat.JSON;
 
@@ -98,17 +92,11 @@ public class ExecutionManager
             StringBuilder message = new StringBuilder("Invalid request, please provide one of these request parameters :");
             message.append(FUNCTION_PARAMETER).append(", ").append(BLOCK_PARAMETER).append(", ").append(QUERY_PARAMETER);
             message.append("\nRequest parameters received were:\n");
-            for (Map.Entry<String, String[]> param : executionRequest.getRequestParams().entrySet())
-            {
-                message.append(param.getKey());
-                message.append('=');
-                ArrayIterate.appendString(param.getValue(), message, "[", ", ", "]");
-                message.append('\n');
-            }
+            executionRequest.getRequestParams().forEach((key, values) -> ArrayIterate.appendString(values, message.append(key), "=[", ", ", "]\n"));
             throw new IllegalArgumentException(message.toString());
         }
 
-        HttpInformation httpInformation = null;
+        HttpInformation httpInformation;
         if (format != null)
         {
             if (format == OutputFormat.RAW && funcParam != null)
@@ -144,7 +132,7 @@ public class ExecutionManager
             }
         }
         boolean explicitDisableStreaming = false;
-        if(funcParam != null)
+        if (funcParam != null)
         {
             CoreInstance functionToExecute = this.getFunction(funcParam);
             explicitDisableStreaming = executionRequest.isStreamingDisabled() || disableStreaming(functionToExecute, this.functionExecution.getProcessorSupport());
@@ -157,16 +145,8 @@ public class ExecutionManager
     private static boolean disableStreaming(CoreInstance functionToExecute, ProcessorSupport processorSupport)
     {
         ListIterable<? extends CoreInstance> functionStereotypes = ImportStub.withImportStubByPasses(functionToExecute.getValueForMetaPropertyToMany(M3Properties.stereotypes), processorSupport);
-        final CoreInstance serviceProfile = processorSupport.package_getByUserPath(M3Paths.service);
-        return functionStereotypes.anySatisfy(new Predicate<CoreInstance>()
-            {
-                @Override
-                public boolean accept(CoreInstance each)
-            {
-                return each.getValueForMetaPropertyToOne(M3Properties.profile) == serviceProfile &&
-                       "disableStreaming".equals(each.getValueForMetaPropertyToOne(M3Properties.value).getName());
-            }
-        });
+        CoreInstance serviceProfile = processorSupport.package_getByUserPath(M3Paths.service);
+        return functionStereotypes.anySatisfy(each -> each.getValueForMetaPropertyToOne(M3Properties.profile) == serviceProfile && "disableStreaming".equals(each.getValueForMetaPropertyToOne(M3Properties.value).getName()));
     }
 
     private CoreInstance getFunction(String functionIdOrDescriptor)
@@ -185,7 +165,7 @@ public class ExecutionManager
         CoreInstance nil = parser.parseParameter("[]", false);
         String funcParam = executionRequest.getRequestParamToOne(FUNCTION_PARAMETER);
         //todo - just look up the func directly, instead of string?
-        CoreInstance func = funcParam == null ? nil : parser.parseParameter("\'" + convertFunctionToFunctionId(funcParam) + "\'", false);
+        CoreInstance func = funcParam == null ? nil : parser.parseParameter("'" + convertFunctionToFunctionId(funcParam) + "'", false);
 
         String[] parametersStrings = executionRequest.getRequestParams().get(PARAMETER_PARAMETER);
         CoreInstance params = parametersStrings == null ? nil : ContentType.json.equals(inputContentType) ? parser.parseJsonParameter(parametersStrings[0]) : parser.parseParametersAsList(parametersStrings);
@@ -193,20 +173,20 @@ public class ExecutionManager
         String blockParam = executionRequest.getRequestParamToOne(BLOCK_PARAMETER);
 
         String queryParam = executionRequest.getRequestParamToOne(QUERY_PARAMETER);
-        CoreInstance query = queryParam == null ? nil : parser.parseParameter("\'" + queryParam + "\'", false);
+        CoreInstance query = queryParam == null ? nil : parser.parseParameter("'" + queryParam + "'", false);
         CoreInstance block = blockParam == null ? nil : parser.wrapString(blockParam);
 
         String processingFuncParam = executionRequest.getRequestParamToOne(PROCESSING_FUNC_PARAMETER);
-        CoreInstance processingFunc = processingFuncParam == null ? nil : parser.parseParameter("\'" + convertFunctionToFunctionId(processingFuncParam) + "\'", false);
+        CoreInstance processingFunc = processingFuncParam == null ? nil : parser.parseParameter("'" + convertFunctionToFunctionId(processingFuncParam) + "'", false);
 
         String[] processingParametersStrings = executionRequest.getRequestParams().get(PROCESSING_PARAM_PARAMETER);
         CoreInstance processingFuncParams = processingParametersStrings == null ? nil : parser.parseParametersAsList(processingParametersStrings);
 
         String formatParam = executionRequest.getRequestParamToOne(OUTPUT_FORMAT_PARAMETER);
-        CoreInstance format = formatParam == null ? nil : parser.parseParameter("\'" + formatParam + "\'", false);
+        CoreInstance format = formatParam == null ? nil : parser.parseParameter("'" + formatParam + "'", false);
 
         String outFuncParam = executionRequest.getRequestParamToOne(OUTPUT_PROCESSOR_PARAMETER);
-        CoreInstance outFunc = outFuncParam == null ? nil : parser.parseParameter("\'" + convertFunctionToFunctionId(outFuncParam) + "\'", false);
+        CoreInstance outFunc = outFuncParam == null ? nil : parser.parseParameter("'" + convertFunctionToFunctionId(outFuncParam) + "'", false);
 
         String[] outputParametersStrings = executionRequest.getRequestParams().get(OUTPUT_PROCESSOR_PARAMETER_PARAMETER);
         CoreInstance outputFuncParams = outputParametersStrings == null ? nil : parser.parseParametersAsList(outputParametersStrings);
@@ -225,32 +205,32 @@ public class ExecutionManager
         {
             functionId = functionName;
         }
-        return  functionId;
+        return functionId;
     }
 
     private void execute(CoreInstance function, ListIterable<CoreInstance> parameters, HttpResponseWriter response, HttpInformation httpInformation, boolean canStreamOutput, OutputFormat format)
     {
-        long start = System.currentTimeMillis();
         try
         {
-
             CanStreamState.setCanStream(canStreamOutput);
             response.setIsStreamingResponse(canStreamOutput);
             this.addContentTypeAndDispositionHeaders(response, httpInformation);
-            response.setHeader("Trailer" , "X-Streaming-Error");
+            response.setHeader("Trailer", "X-Streaming-Error");
             // Do not open outputStream in try-with-resources
             OutputStream outputStream = response.getOutputStream();
             try
             {
                 OutputWriter writer = this.functionExecution.newOutputWriter();
-                if (format == OutputFormat.XLSX) {
+                if (format == OutputFormat.XLSX)
+                {
                     writer = new XLSXOutputWriter(writer);
                 }
 
                 this.functionExecution.start(function, parameters, outputStream, writer);
             }
-            catch (PureExecutionStreamingException ex)
+            catch (PureExecutionStreamingException ignore)
             {
+                // ignore streaming exception
             }
             // outputStream must NOT be closed in case of an uncaught exception
             // so the call to close must not be in a finally block or implicit in a try-with-resources
@@ -260,11 +240,11 @@ public class ExecutionManager
         {
             if (t instanceof RuntimeException)
             {
-                throw (RuntimeException)t;
+                throw (RuntimeException) t;
             }
             if (t instanceof Error)
             {
-                throw (Error)t;
+                throw (Error) t;
             }
             throw new RuntimeException(t);
         }
@@ -302,19 +282,16 @@ public class ExecutionManager
         {
             return requestParams.containsKey(OUTPUT_PROCESSOR_PARAMETER) ? null : DEFAULT_OUTPUT_FORMAT;
         }
-        else if (outputFormatStrings.length == 1)
-        {
-            String formatString = outputFormatStrings[0].trim().toLowerCase();
-            OutputFormat format = OUTPUT_FORMATS.get(formatString);
-            if (format == null)
-            {
-                throw new IllegalArgumentException("Unknown output format \"" + outputFormatStrings[0] + "\" (valid formats: " + OUTPUT_FORMATS.keysView().toSortedList().makeString(", ") + ")");
-            }
-            return format;
-        }
-        else
+        if (outputFormatStrings.length != 1)
         {
             throw new IllegalArgumentException("Parameter '" + OUTPUT_FORMAT_PARAMETER + "' must have at most one value");
         }
+        String formatString = outputFormatStrings[0].trim().toLowerCase();
+        OutputFormat format = OUTPUT_FORMATS.get(formatString);
+        if (format == null)
+        {
+            throw new IllegalArgumentException("Unknown output format \"" + outputFormatStrings[0] + "\" (valid formats: " + OUTPUT_FORMATS.keysView().toSortedList().makeString(", ") + ")");
+        }
+        return format;
     }
 }

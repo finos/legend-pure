@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m2.relational.serialization.grammar.v1.validator;
 
-
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;

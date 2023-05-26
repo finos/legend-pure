@@ -20,18 +20,21 @@ import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpret
 import org.junit.After;
 import org.junit.BeforeClass;
 
-
 public class TestMapCollection extends AbstractTestMapCollection
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("fromString.pure");
+        runtime.compile();
     }
+
     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();

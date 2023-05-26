@@ -16,12 +16,12 @@ package org.finos.legend.pure.runtime.java.extension.functions.interpreted.nativ
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
@@ -46,15 +46,11 @@ public class Log extends NativeFunction
     {
         CoreInstance number = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
         Number javaNumber = NumericUtilities.toJavaNumber(number, processorSupport);
-        if (javaNumber instanceof Number)
+        double log = Math.log(javaNumber.doubleValue());
+        if (Double.isInfinite(log) || Double.isNaN(log))
         {
-            double log = Math.log(javaNumber.doubleValue());
-            if(log == Double.POSITIVE_INFINITY || log == Double.NaN)
-            {
-                throw new ArithmeticException("The log result overflows Java's Double.MAX_VALUE");
-            }
-            return NumericUtilities.toPureNumberValueExpression(log, false, this.repository, processorSupport);
+            throw new ArithmeticException("The log result overflows Java's Double.MAX_VALUE");
         }
-        throw new IllegalArgumentException("Unhandled number: " + javaNumber);
+        return NumericUtilities.toPureNumberValueExpression(log, false, this.repository, processorSupport);
     }
 }

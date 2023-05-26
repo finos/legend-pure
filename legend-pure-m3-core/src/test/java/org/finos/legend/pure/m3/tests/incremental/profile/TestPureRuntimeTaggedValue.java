@@ -24,12 +24,14 @@ import org.junit.Test;
 public class TestPureRuntimeTaggedValue extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("userId.pure");
         runtime.delete("sourceId.pure");
     }
@@ -45,7 +47,7 @@ public class TestPureRuntimeTaggedValue extends AbstractPureTestWithCoreCompiled
                         .compileWithExpectedCompileFailure("testProfile has not been defined!", "userId.pure", 1, 20)
                         .createInMemorySource("sourceId.pure", "Profile testProfile{tags:[t1,t2];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -61,7 +63,7 @@ public class TestPureRuntimeTaggedValue extends AbstractPureTestWithCoreCompiled
                         .compileWithExpectedCompileFailure("testProfile has not been defined!", "userId.pure", 1, 20)
                         .updateSource("sourceId.pure", "Profile testProfile{tags:[t1,t2];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
     }
 
@@ -79,7 +81,7 @@ public class TestPureRuntimeTaggedValue extends AbstractPureTestWithCoreCompiled
                         .compileWithExpectedCompileFailure("The tag 't1' can't be found in profile 'testProfile'", "userId.pure", 1, 20)
                         .updateSource("sourceId.pure", "Profile testProfile{tags:[t1,t2];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -93,7 +95,7 @@ public class TestPureRuntimeTaggedValue extends AbstractPureTestWithCoreCompiled
                         .compile()
                         .createInMemorySource("sourceId.pure", "Class {testProfile.t1='bb'} A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
@@ -108,7 +110,7 @@ public class TestPureRuntimeTaggedValue extends AbstractPureTestWithCoreCompiled
                         .compileWithExpectedCompileFailure("testProfile has not been defined!", "userId.pure", 1, 19)
                         .createInMemorySource("sourceId.pure", "Profile testProfile{tags:[t1,t2];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
     }
 
@@ -123,6 +125,6 @@ public class TestPureRuntimeTaggedValue extends AbstractPureTestWithCoreCompiled
                         .compileWithExpectedCompileFailure("testProfile has not been defined!", "userId.pure", 1, 22)
                         .createInMemorySource("sourceId.pure", "Profile testProfile{tags:[t1,t2];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 }

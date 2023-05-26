@@ -20,7 +20,6 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.list.mutable.ListAdapter;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.welcome.WelcomeCodeStorage;
 
 import java.util.List;
 import java.util.regex.Pattern;
@@ -65,7 +64,7 @@ public abstract class CodeRepository
      * @param other other code repository
      * @return whether other is visible to this
      */
-    abstract public boolean isVisible(CodeRepository other);
+    public abstract boolean isVisible(CodeRepository other);
 
     @Override
     public boolean equals(Object other)

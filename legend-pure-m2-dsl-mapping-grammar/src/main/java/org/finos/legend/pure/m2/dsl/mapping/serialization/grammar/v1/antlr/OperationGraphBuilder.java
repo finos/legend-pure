@@ -31,7 +31,6 @@ import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.TemporaryPu
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 
-
 public class OperationGraphBuilder extends OperationParserBaseVisitor<String>
 {
     private final String id;
@@ -60,22 +59,26 @@ public class OperationGraphBuilder extends OperationParserBaseVisitor<String>
     }
 
     @Override
-    public String visitMapping(OperationParser.MappingContext ctx) {
+    public String visitMapping(OperationParser.MappingContext ctx)
+    {
         visitChildren(ctx);
         Token startToken = ctx.functionPath().qualifiedName().packagePath() == null ? ctx.functionPath().qualifiedName().identifier().getStart() : ctx.functionPath().qualifiedName().packagePath().getStart();
         String idOrPath = ctx.functionPath().qualifiedName().packagePath() == null ? ctx.functionPath().qualifiedName().identifier().getText() : LazyIterate.collect(ctx.functionPath().qualifiedName().packagePath().identifier(), RuleContext::getText).makeString("::") + "::" + ctx.functionPath().qualifiedName().identifier().getText();
         MutableList<String> parameters = Lists.mutable.empty();
-        if (ctx.mergeParameters() != null) {
+        if (ctx.mergeParameters() != null)
+        {
             OperationParser.MergeParametersContext mergeContext = ctx.mergeParameters();
             String lambdaText = "";
-            if (mergeContext.setParameter() != null && mergeContext.setParameter().VALID_STRING() != null) ;
+            if (mergeContext.setParameter() != null && mergeContext.setParameter().VALID_STRING() != null)
             {
-                for (int i = 0; i < mergeContext.setParameter().VALID_STRING().size(); i++) {
+                for (int i = 0; i < mergeContext.setParameter().VALID_STRING().size(); i++)
+                {
                     parameters.add(mergeContext.setParameter().VALID_STRING().get(i).getText());
                 }
             }
 
-            if (mergeContext.validationLambdaInstance() != null) {
+            if (mergeContext.validationLambdaInstance() != null)
+            {
                 lambdaText = "{" + mergeContext.validationLambdaInstance().lambdaElement().get(0).getText() + "}";
 
             }
@@ -85,7 +88,6 @@ public class OperationGraphBuilder extends OperationParserBaseVisitor<String>
             final AntlrContextToM3CoreInstance.LambdaContext lambdaContext = new AntlrContextToM3CoreInstance.LambdaContext(setSourceInfo + '_' + (id == null ? "" : '_' + id) + "_MergeOP");
             TemporaryPureMergeOperationFunctionSpecification temporarySpecification = parser.parseMergeSpecification(lambdaText, lambdaContext, sourceInformation.getSourceName(), sourceInformation.getOffsetLine(), importId, repository, processorSupport, context);
             String processedMergeFunction = parser.process(temporarySpecification.validationExpression, context, processorSupport);
-            ;
             return "^meta::pure::mapping::MergeOperationSetImplementation" + setSourceInfo +
                     "(" +
                     ((id == null) ? "" : ("    id = '" + id + "',")) +
@@ -98,8 +100,11 @@ public class OperationGraphBuilder extends OperationParserBaseVisitor<String>
                     "                                                           classifierGenericType=^meta::pure::metamodel::type::generics::GenericType(rawType=meta::pure::metamodel::function::LambdaFunction, typeArguments=^meta::pure::metamodel::type::generics::GenericType(rawType = ^meta::pure::metamodel::type::FunctionType()))," +
                     "                                                           expressionSequence=" + processedMergeFunction + ")" +
                     ")";
-        } else {
-            if (ctx.parameters() != null && ctx.parameters().VALID_STRING() != null) {
+        }
+        else
+        {
+            if (ctx.parameters() != null && ctx.parameters().VALID_STRING() != null)
+            {
                 ListIterate.collect(ctx.parameters().VALID_STRING(), TerminalNode::getText, parameters);
             }
             return "^meta::pure::mapping::OperationSetImplementation" + setSourceInfo +
@@ -113,6 +118,7 @@ public class OperationGraphBuilder extends OperationParserBaseVisitor<String>
                     ")";
         }
     }
+
     private String toSetImplementationContainers(MutableList<String> parameters)
     {
         return parameters.isEmpty() ? "" : parameters.makeString("^meta::pure::mapping::SetImplementationContainer(id='", "'),^meta::pure::mapping::SetImplementationContainer(id='", "')");

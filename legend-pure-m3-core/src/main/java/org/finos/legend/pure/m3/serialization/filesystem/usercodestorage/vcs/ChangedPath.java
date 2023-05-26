@@ -14,12 +14,10 @@
 
 package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs;
 
-
-import org.eclipse.collections.impl.block.factory.Comparators;
+import java.util.Objects;
 
 public class ChangedPath
 {
-
     private final Revision revision;
     private final String path;
     private final ChangeType type;
@@ -34,7 +32,6 @@ public class ChangedPath
         this.copyPath = copyPath;
         this.copyRevision = copyRevision;
     }
-
 
     public Revision getRevision()
     {
@@ -76,10 +73,10 @@ public class ChangedPath
 
         ChangedPath otherChangedPath = (ChangedPath)other;
         return (this.revision == otherChangedPath.revision) &&
-                Comparators.nullSafeEquals(this.path, otherChangedPath.path) &&
-                Comparators.nullSafeEquals(this.type, otherChangedPath.type) &&
-                Comparators.nullSafeEquals(this.copyPath, otherChangedPath.copyPath) &&
-                (this.copyRevision == copyRevision);
+                Objects.equals(this.path, otherChangedPath.path) &&
+                Objects.equals(this.type, otherChangedPath.type) &&
+                Objects.equals(this.copyPath, otherChangedPath.copyPath) &&
+                (this.copyRevision == otherChangedPath.copyRevision);
     }
 
     @Override
@@ -87,5 +84,4 @@ public class ChangedPath
     {
         return (this.path.hashCode() * 37) + this.type.hashCode();
     }
-
 }

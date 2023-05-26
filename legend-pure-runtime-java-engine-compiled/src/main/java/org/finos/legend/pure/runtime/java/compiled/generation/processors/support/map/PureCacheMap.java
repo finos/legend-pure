@@ -46,7 +46,7 @@ public class PureCacheMap<K, V> extends AbstractMutableMap<K, V>
                 .recordStats()
                 .concurrencyLevel(concurrencyLevel)
                 .expireAfterWrite(entryDuration, entryDurationTimeUnit)
-                .<K, V>build());
+                .build());
     }
 
     public Cache<K, V> getCache()
@@ -54,28 +54,14 @@ public class PureCacheMap<K, V> extends AbstractMutableMap<K, V>
         return this.cache;
     }
 
-    public Callable<V> getCacheLoaderCallable(final V value)
+    public Callable<V> getCacheLoaderCallable(V value)
     {
-        return new Callable<V>()
-        {
-            @Override
-            public V call()
-            {
-                return value;
-            }
-        };
+        return () -> value;
     }
 
-    public Callable<V> getCacheLoaderCallable(final Function0<? extends V> function)
+    public Callable<V> getCacheLoaderCallable(Function0<? extends V> function)
     {
-        return new Callable<V>()
-        {
-            @Override
-            public V call()
-            {
-                return function.value();
-            }
-        };
+        return function::value;
     }
 
     public Callable<V> getCacheLoaderCallable(K key, Function<? super K, ? extends V> function)
@@ -83,16 +69,9 @@ public class PureCacheMap<K, V> extends AbstractMutableMap<K, V>
         return getCacheLoaderCallable(function, key);
     }
 
-    public <P> Callable<V> getCacheLoaderCallable(final Function<? super P, ? extends V> function, final P parameter)
+    public <P> Callable<V> getCacheLoaderCallable(Function<? super P, ? extends V> function, final P parameter)
     {
-        return new Callable<V>()
-        {
-            @Override
-            public V call()
-            {
-                return function.valueOf(parameter);
-            }
-        };
+        return () -> function.valueOf(parameter);
     }
 
     @Override
@@ -119,7 +98,7 @@ public class PureCacheMap<K, V> extends AbstractMutableMap<K, V>
         {
             return this.cache.get(key, loader);
         }
-        catch (ExecutionException|UncheckedExecutionException e)
+        catch (ExecutionException | UncheckedExecutionException e)
         {
             throw new PureCacheMapGetException(key, e.getCause());
         }
@@ -163,7 +142,7 @@ public class PureCacheMap<K, V> extends AbstractMutableMap<K, V>
     @Override
     public int size()
     {
-        return (int)this.cache.size();
+        return (int) this.cache.size();
     }
 
     @Override

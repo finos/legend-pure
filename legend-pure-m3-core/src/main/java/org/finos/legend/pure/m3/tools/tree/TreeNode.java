@@ -16,18 +16,12 @@ package org.finos.legend.pure.m3.tools.tree;
 
 import org.eclipse.collections.api.list.MutableList;
 
-import java.util.List;
-
 public interface TreeNode<NodeType extends TreeNode<NodeType>>
 {
-//    NodeType getParent();
-//
     MutableList<? extends NodeType> getChildren();
 
     NodeType getChildAt(int index);
-//
-//    int getChildCount();
-//
+
     boolean isLeaf();
 
     int indexOf(NodeType node);

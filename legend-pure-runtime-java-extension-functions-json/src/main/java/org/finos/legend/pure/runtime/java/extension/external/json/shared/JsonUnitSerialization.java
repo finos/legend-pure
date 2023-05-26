@@ -14,21 +14,18 @@
 
 package org.finos.legend.pure.runtime.java.extension.external.json.shared;
 
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
-import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
 import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.ConversionContext;
 import org.finos.legend.pure.runtime.java.extension.external.shared.conversion.UnitConversion;
-
-import java.util.List;
-import java.util.Map;
 
 public class JsonUnitSerialization<T extends CoreInstance> extends UnitConversion<T, Object>
 {
@@ -51,7 +48,7 @@ public class JsonUnitSerialization<T extends CoreInstance> extends UnitConversio
             value = Long.valueOf(processedPureObject.getValueForMetaPropertyToOne("values").getValueForMetaPropertyToOne("values").getName());
             try
             {
-                typeString = ((String)pureObject.getClass().getMethod("getFullSystemPath").invoke(pureObject)).substring(6);
+                typeString = ((String) pureObject.getClass().getMethod("getFullSystemPath").invoke(pureObject)).substring(6);
             }
             catch (Exception e)
             {
@@ -61,19 +58,12 @@ public class JsonUnitSerialization<T extends CoreInstance> extends UnitConversio
         else
         {
             CoreInstance numericInArray = processedPureObject.getValueForMetaPropertyToOne("values");
-            value = numericInArray instanceof PrimitiveCoreInstance? ((PrimitiveCoreInstance)numericInArray).getValue() : ((PrimitiveCoreInstance)numericInArray.getValueForMetaPropertyToOne("values")).getValue();
+            value = numericInArray instanceof PrimitiveCoreInstance ? ((PrimitiveCoreInstance) numericInArray).getValue() : ((PrimitiveCoreInstance) numericInArray.getValueForMetaPropertyToOne("values")).getValue();
             typeString = PackageableElement.getUserPathForPackageableElement(Instance.getValueForMetaPropertyToOneResolved(processedPureObject, M3Properties.genericType, M3Properties.rawType, processorSupport));
         }
 
-        Map<String, Object> unitMap = UnifiedMap.newMap();
-        unitMap.put("unitId", typeString);
-        unitMap.put("exponentValue", 1);
-        List<Object> unitList = FastList.newList();
-        unitList.add(unitMap);
-        Map<String, Object> resultMap = UnifiedMap.newMap();
-        resultMap.put(this.unitKeyName, unitList);
-        resultMap.put(this.valueKeyName, value);
-
-        return resultMap;
+        return Maps.mutable.with(
+                this.unitKeyName, Lists.mutable.<Object>with(Maps.mutable.with("unitId", typeString, "exponentValue", 1)),
+                this.valueKeyName, value);
     }
 }

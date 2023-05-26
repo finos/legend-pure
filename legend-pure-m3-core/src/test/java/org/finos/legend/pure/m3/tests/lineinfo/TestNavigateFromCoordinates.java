@@ -32,39 +32,41 @@ public class TestNavigateFromCoordinates extends AbstractPureTestWithCoreCompile
     //      value of an enum (routes to extractEnumValue)
 
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("sourceId.pure");
     }
 
     @Test
     public void testNavigation1() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId.pure", new Scanner(TestNavigateFromCoordinates.class.getResourceAsStream("/org/finos/legend/pure/m3/tests/lineinfo/file1.pure")).useDelimiter("\\Z").next());
-        this.runtime.compile();
-        Assert.assertEquals(this.fromPackage("A"), this.get(28,6));
-        Assert.assertEquals(this.fromPackage("B"), this.get(30,16));
-        Assert.assertEquals(this.fromPackage("String"), this.get(17,17));
-        Assert.assertEquals(this.fromPackage("meta::pure::metamodel::type::Any"), this.get(18,20));
-        Assert.assertEquals(this.fromPackage("String"), this.get(35,24));
-        Assert.assertEquals(this.fromPackage("Integer"), this.get(35,35));
-        Assert.assertEquals(this.fromPackage("testFunc_String_1__Integer_1_"), this.get(32,10));
+        runtime.createInMemorySource("sourceId.pure", new Scanner(TestNavigateFromCoordinates.class.getResourceAsStream("/org/finos/legend/pure/m3/tests/lineinfo/file1.pure")).useDelimiter("\\Z").next());
+        runtime.compile();
+        Assert.assertEquals(this.fromPackage("A"), this.get(28, 6));
+        Assert.assertEquals(this.fromPackage("B"), this.get(30, 16));
+        Assert.assertEquals(this.fromPackage("String"), this.get(17, 17));
+        Assert.assertEquals(this.fromPackage("meta::pure::metamodel::type::Any"), this.get(18, 20));
+        Assert.assertEquals(this.fromPackage("String"), this.get(35, 24));
+        Assert.assertEquals(this.fromPackage("Integer"), this.get(35, 35));
+        Assert.assertEquals(this.fromPackage("testFunc_String_1__Integer_1_"), this.get(32, 10));
     }
 
     @Test
     public void testNavigation2() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId.pure", new Scanner(TestNavigateFromCoordinates.class.getResourceAsStream("/org/finos/legend/pure/m3/tests/lineinfo/file2.pure")).useDelimiter("\\Z").next());
-        this.runtime.compile();
-        Assert.assertEquals("deprecated", this.get(17,10).getName());
-        Assert.assertEquals("deprecated", this.get(17,20).getName());
-        Assert.assertEquals("doc", this.get(17,28).getName());
-        Assert.assertEquals("doc", this.get(17,32).getName());
-        Assert.assertEquals(this.fromPackage("myEnum"), this.get(29,13));
+        runtime.createInMemorySource("sourceId.pure", new Scanner(TestNavigateFromCoordinates.class.getResourceAsStream("/org/finos/legend/pure/m3/tests/lineinfo/file2.pure")).useDelimiter("\\Z").next());
+        runtime.compile();
+        Assert.assertEquals("deprecated", this.get(17, 10).getName());
+        Assert.assertEquals("deprecated", this.get(17, 20).getName());
+        Assert.assertEquals("doc", this.get(17, 28).getName());
+        Assert.assertEquals("doc", this.get(17, 32).getName());
+        Assert.assertEquals(this.fromPackage("myEnum"), this.get(29, 13));
     }
 
     private CoreInstance fromPackage(String element)
@@ -74,7 +76,7 @@ public class TestNavigateFromCoordinates extends AbstractPureTestWithCoreCompile
 
     private CoreInstance get(int x, int y)
     {
-        return this.runtime.getSourceById("sourceId.pure").navigate(x, y, this.runtime.getProcessorSupport());
+        return runtime.getSourceById("sourceId.pure").navigate(x, y, runtime.getProcessorSupport());
     }
 
 }

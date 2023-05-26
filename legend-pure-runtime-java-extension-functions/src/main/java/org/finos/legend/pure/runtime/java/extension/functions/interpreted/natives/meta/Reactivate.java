@@ -19,11 +19,11 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.tuple.Pair;
+import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -31,8 +31,8 @@ import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
-import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.natives.MapCoreInstance;
+import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
 import java.util.Stack;
@@ -49,11 +49,11 @@ public class Reactivate extends NativeFunction
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
-        MapIterable<CoreInstance, CoreInstance> openVariablesMap = ((MapCoreInstance)Instance.getValueForMetaPropertyToManyResolved(params.get(1), M3Properties.values, processorSupport).getFirst()).getMap();
+        MapIterable<CoreInstance, CoreInstance> openVariablesMap = ((MapCoreInstance) Instance.getValueForMetaPropertyToManyResolved(params.get(1), M3Properties.values, processorSupport).getFirst()).getMap();
         RichIterable<Pair<CoreInstance, CoreInstance>> openVariables = openVariablesMap.keyValuesView();
         VariableContext newVarContext = VariableContext.newVariableContext();
 
-        for (Pair<CoreInstance, CoreInstance> pair: openVariables)
+        for (Pair<CoreInstance, CoreInstance> pair : openVariables)
         {
             try
             {
@@ -63,7 +63,7 @@ public class Reactivate extends NativeFunction
                 {
                     CoreInstance list = pair.getTwo();
                     CoreInstance inst = processorSupport.newEphemeralAnonymousCoreInstance(M3Paths.InstanceValue);
-                    Instance.addValueToProperty(inst, M3Properties.genericType, list.getValueForMetaPropertyToOne(M3Properties.genericType) , processorSupport);
+                    Instance.addValueToProperty(inst, M3Properties.genericType, list.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport);
                     Instance.addValueToProperty(inst, M3Properties.multiplicity, list.getValueForMetaPropertyToOne(M3Properties.multiplicity), processorSupport);
                     Instance.addValueToProperty(inst, M3Properties.values, list.getValueForMetaPropertyToMany(M3Properties.values), processorSupport);
                     newVarContext.registerValue(name, inst);

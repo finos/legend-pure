@@ -24,12 +24,14 @@ import org.junit.Test;
 public class TestFunctionExpressionProcessing extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("sample.pure");
     }
 
@@ -38,9 +40,9 @@ public class TestFunctionExpressionProcessing extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.runtime.createInMemorySource(
+            runtime.createInMemorySource(
                     "sample.pure",
-                            "function go():Any[*]\n" +
+                    "function go():Any[*]\n" +
                             "{\n" +
                             "   helloX('1', '2')->println();\n" +
                             "}\n" +
@@ -66,7 +68,7 @@ public class TestFunctionExpressionProcessing extends AbstractPureTestWithCoreCo
                             "   'goX'->print(1)\n" +
                             "}\n"
             );
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -85,7 +87,7 @@ public class TestFunctionExpressionProcessing extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.runtime.createInMemorySource(
+            runtime.createInMemorySource(
                     "sample.pure",
                     "function go():Any[*]\n" +
                             "{\n" +
@@ -118,7 +120,7 @@ public class TestFunctionExpressionProcessing extends AbstractPureTestWithCoreCo
                             "   'goX'->print(1)\n" +
                             "}\n"
             );
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -138,7 +140,7 @@ public class TestFunctionExpressionProcessing extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.runtime.createInMemorySource(
+            runtime.createInMemorySource(
                     "sample.pure",
                     "import b::c::*;\n" +
                             "function go():Any[*]\n" +
@@ -172,7 +174,7 @@ public class TestFunctionExpressionProcessing extends AbstractPureTestWithCoreCo
                             "   'goX'->print(1)\n" +
                             "}\n"
             );
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -192,7 +194,7 @@ public class TestFunctionExpressionProcessing extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.runtime.createInMemorySource(
+            runtime.createInMemorySource(
                     "sample.pure",
                     "import a::*;\n" +
                             "import b::c::*;\n" +
@@ -227,7 +229,7 @@ public class TestFunctionExpressionProcessing extends AbstractPureTestWithCoreCo
                             "   'goX'->print(1)\n" +
                             "}\n"
             );
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -247,7 +249,7 @@ public class TestFunctionExpressionProcessing extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.runtime.createInMemorySource(
+            runtime.createInMemorySource(
                     "sample.pure",
                     "import a::*;\n" +
                             "import b::c::*;\n" +
@@ -278,12 +280,12 @@ public class TestFunctionExpressionProcessing extends AbstractPureTestWithCoreCo
                             "   'goX'->print(1)\n" +
                             "}\n"
             );
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
         {
-            this.assertPureException(PureUnmatchedFunctionException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "helloX(_:String[1])\n" +
+            assertPureException(PureUnmatchedFunctionException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "helloX(_:String[1])\n" +
                     PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_IMPORTED_MESSAGE +
                     "\ta::helloX(Integer[1], String[1]):String[*]\n" +
                     "\tb::c::helloX(String[1], Integer[1]):String[*]\n" +
@@ -297,7 +299,7 @@ public class TestFunctionExpressionProcessing extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource(
+            compileTestSource(
                     "sample.pure",
                     "###Pure\n" +
                             "function goX():Any[*]\n" +
@@ -331,7 +333,7 @@ public class TestFunctionExpressionProcessing extends AbstractPureTestWithCoreCo
         }
         catch (Exception e)
         {
-            this.assertPureException(PureUnmatchedFunctionException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "helloX(_:String[1])\n" +
+            assertPureException(PureUnmatchedFunctionException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "helloX(_:String[1])\n" +
                     PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_IMPORTED_MESSAGE +
                     "\tb::c::helloX(String[1], Integer[1]):String[*]\n" +
                     "\tb::c::helloX(String[1], String[1]):String[*]\n" +

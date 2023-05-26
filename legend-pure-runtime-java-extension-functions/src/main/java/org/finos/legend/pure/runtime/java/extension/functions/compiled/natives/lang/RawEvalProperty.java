@@ -28,8 +28,9 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.Ty
 
 public class RawEvalProperty extends AbstractNativeFunctionGeneric
 {
-    public RawEvalProperty() {
-        super("FunctionsGen.rawEvalProperty", new Class[] {Property.class, Object.class, SourceInformation.class},
+    public RawEvalProperty()
+    {
+        super("FunctionsGen.rawEvalProperty", new Class[]{Property.class, Object.class, SourceInformation.class},
                 true, false, false, "rawEvalProperty_Property_1__Any_1__V_m_");
     }
 
@@ -43,6 +44,6 @@ public class RawEvalProperty extends AbstractNativeFunctionGeneric
 
         String eval = super.build(topLevelElement, functionExpression, transformedParams, processorContext);
 
-        return "(("+type+")(Object)"+ (Multiplicity.isToOne(multiplicity, false) ? eval : "CompiledSupport.toPureCollection(" + eval + ")")+")";
+        return "((" + type + ")(Object)" + (Multiplicity.isToOne(multiplicity, false) ? eval : "CompiledSupport.toPureCollection(" + eval + ")") + ")";
     }
 }

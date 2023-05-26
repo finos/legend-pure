@@ -18,15 +18,7 @@ import org.eclipse.collections.api.block.function.Function;
 
 public interface IdentifableExecutionEndListner extends ExecutionEndListener
 {
-    Function<IdentifableExecutionEndListner, String> TO_ID = new Function<IdentifableExecutionEndListner, String>()
-    {
-        @Override
-        public String valueOf(IdentifableExecutionEndListner executionEndListener)
-        {
-            return executionEndListener.getId();
-        }
-
-    };
+    Function<IdentifableExecutionEndListner, String> TO_ID = IdentifableExecutionEndListner::getId;
 
     String getId();
 }

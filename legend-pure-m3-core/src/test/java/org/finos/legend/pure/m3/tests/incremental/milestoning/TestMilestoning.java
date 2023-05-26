@@ -14,15 +14,14 @@
 
 package org.finos.legend.pure.m3.tests.incremental.milestoning;
 
-
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
@@ -139,8 +138,8 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .deleteSource("association.pure")
                         .compileWithExpectedCompileFailure("The system can't find a match for the function: b(_:A[1],_:StrictDate[1])", "userId.pure", 1, 41)
                         .createInMemorySource("association.pure", association)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
@@ -160,8 +159,8 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .deleteSource("sourceB.pure")
                         .compileWithExpectedCompileFailure("B has not been defined!", "sourceA.pure", 2, 6)
                         .createInMemorySource("sourceB.pure", businessTemporalClassB)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
@@ -183,8 +182,8 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .deleteSource("association.pure")
                         .compileWithExpectedCompileFailure("The system can't find a match for the function: b(_:A[1],_:StrictDate[1])", "userId.pure", 1, 41)
                         .createInMemorySource("association.pure", association)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
@@ -207,8 +206,8 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .deleteSource("classB.pure")
                         .compileWithExpectedCompileFailure("B has not been defined!", "association.pure", 3, 6)
                         .createInMemorySource("classB.pure", classB)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
 
@@ -228,8 +227,8 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .compileWithExpectedCompileFailure("The system can't find a match for the function: b(_:A[1],_:StrictDate[1])", "userId.pure", 1, 41)
                         .deleteSource("sourceId.pure")
                         .createInMemorySource("sourceId.pure", classAndBWithBusinessTemporalStereotype)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
@@ -249,8 +248,8 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .compile()
                         .deleteSource("sourceId2.pure")
                         .createInMemorySource("sourceId2.pure", classBNoStereotype)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
@@ -270,8 +269,8 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
                         .createInMemorySource("sourceId.pure", classes)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
@@ -290,8 +289,8 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
                         .createInMemorySource("sourceId.pure", classes)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
@@ -328,8 +327,8 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .compile()
                         .deleteSource("sourceIdClassB.pure")
                         .createInMemorySource("sourceIdClassB.pure", classBNonTemporal)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
@@ -395,8 +394,8 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .compile()
                         .createInMemorySource("/test/associationB_C.pure", associationB_C)
                         .createInMemorySource("/test/go.pure", go)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
         int size = runtime.getModelRepository().serialize().length;
 
         runtime.modify("/test/baseClass.pure", baseClass + " ");

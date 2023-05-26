@@ -14,14 +14,13 @@
 
 package org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr;
 
-import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.list.mutable.FastList;
 
 public class AsciiNodeBuilder
 {
     public String text;
-    private MutableList<AsciiNodeBuilder> children = FastList.newList();
+    private final MutableList<AsciiNodeBuilder> children = Lists.mutable.empty();
 
     public AsciiNodeBuilder(String text)
     {
@@ -35,13 +34,6 @@ public class AsciiNodeBuilder
 
     public String build()
     {
-        return this.text+", childrenData =["+children.collect(new Function<AsciiNodeBuilder, String>()
-        {
-            @Override
-            public String valueOf(AsciiNodeBuilder asciiNodeBuilder)
-            {
-                return asciiNodeBuilder.build();
-            }
-        }).makeString(",")+"])";
+        return this.text + ", childrenData =[" + this.children.collect(AsciiNodeBuilder::build).makeString(",") + "])";
     }
 }

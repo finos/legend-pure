@@ -14,9 +14,8 @@
 
 package org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr;
 
-
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 public class TemporaryPureAggregateSpecification
@@ -36,7 +35,7 @@ public class TemporaryPureAggregateSpecification
         this.aggregationFunctionSpecifications = Lists.mutable.withAll(aggregationFunctionSpecifications);
     }
 
-    public static TemporaryPureAggregateSpecification build(SourceInformation sourceInformation, int index, boolean canAggregate, MutableList<TemporaryPureGroupByFunctionSpecification> groupByFunctionSpecifications,MutableList<TemporaryPureAggregationFunctionSpecification> aggregationFunctionSpecifications)
+    public static TemporaryPureAggregateSpecification build(SourceInformation sourceInformation, int index, boolean canAggregate, MutableList<TemporaryPureGroupByFunctionSpecification> groupByFunctionSpecifications, MutableList<TemporaryPureAggregationFunctionSpecification> aggregationFunctionSpecifications)
     {
         return new TemporaryPureAggregateSpecification(sourceInformation, index, canAggregate, groupByFunctionSpecifications, aggregationFunctionSpecifications);
     }

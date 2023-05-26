@@ -20,5 +20,6 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 public interface NavigationHandler<T>
 {
     String getClassName();
+
     CoreInstance findNavigationElement(T instance, String sourceCode, int line, int column, ProcessorSupport processorSupport);
 }

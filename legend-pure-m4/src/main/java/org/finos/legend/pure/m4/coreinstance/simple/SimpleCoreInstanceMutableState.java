@@ -15,31 +15,21 @@
 package org.finos.legend.pure.m4.coreinstance.simple;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function0;
 import org.eclipse.collections.api.block.procedure.Procedure2;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.SynchronizedRichIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstanceMutableState;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.indexing.IDConflictException;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecification;
 
 class SimpleCoreInstanceMutableState extends AbstractCoreInstanceMutableState
 {
-    private static final Function0<ValueHolder> NEW_VALUE_HOLDER = new Function0<ValueHolder>()
-    {
-        @Override
-        public ValueHolder value()
-        {
-            return new ValueHolder(null, null, null);
-        }
-    };
-
-    private final MutableMap<String, ValueHolder> state = UnifiedMap.newMap();
+    private final MutableMap<String, ValueHolder> state = Maps.mutable.empty();
 
     RichIterable<String> getKeys()
     {
@@ -56,13 +46,13 @@ class SimpleCoreInstanceMutableState extends AbstractCoreInstanceMutableState
             ValueHolder valueHolder = this.state.get(name);
             if (valueHolder == null)
             {
-                throw new RuntimeException("No real key can be found for '" + name + "' in\n" + owner.getName()+" ("+owner+")");
+                throw new RuntimeException("No real key can be found for '" + name + "' in\n" + owner.getName() + " (" + owner + ")");
             }
             if (!valueHolder.hasKey())
             {
                 if (!valueHolder.hasRealKey())
                 {
-                    throw new RuntimeException("No real key can be found for '" + name + "' in\n" + owner.getName()+" ("+owner+")");
+                    throw new RuntimeException("No real key can be found for '" + name + "' in\n" + owner.getName() + " (" + owner + ")");
                 }
                 valueHolder.setKey(owner.getRepository().resolve(valueHolder.getRealKey()));
                 if (!valueHolder.hasKey())
@@ -133,7 +123,7 @@ class SimpleCoreInstanceMutableState extends AbstractCoreInstanceMutableState
         String name = key.getLast();
         synchronized (this.state)
         {
-            ValueHolder valueHolder = this.state.getIfAbsentPut(name, NEW_VALUE_HOLDER);
+            ValueHolder valueHolder = this.state.getIfAbsentPut(name, SimpleCoreInstanceMutableState::newValueHolder);
             valueHolder.possiblySetRealKey(key);
             valueHolder.setValues(value);
         }
@@ -144,7 +134,7 @@ class SimpleCoreInstanceMutableState extends AbstractCoreInstanceMutableState
         String name = key.getLast();
         synchronized (this.state)
         {
-            ValueHolder valueHolder = this.state.getIfAbsentPut(name, NEW_VALUE_HOLDER);
+            ValueHolder valueHolder = this.state.getIfAbsentPut(name, SimpleCoreInstanceMutableState::newValueHolder);
             valueHolder.possiblySetRealKey(key);
             valueHolder.setValues(values);
         }
@@ -164,7 +154,7 @@ class SimpleCoreInstanceMutableState extends AbstractCoreInstanceMutableState
     {
         synchronized (this.state)
         {
-            ValueHolder valueHolder = this.state.getIfAbsentPut(keyName, NEW_VALUE_HOLDER);
+            ValueHolder valueHolder = this.state.getIfAbsentPut(keyName, SimpleCoreInstanceMutableState::newValueHolder);
             valueHolder.possiblySetRealKey(key);
             valueHolder.addValue(value);
         }
@@ -172,7 +162,7 @@ class SimpleCoreInstanceMutableState extends AbstractCoreInstanceMutableState
 
     void addKeyWithNoValues(ListIterable<String> key)
     {
-        setValues(key, Lists.immutable.<CoreInstance>empty());
+        setValues(key, Lists.immutable.empty());
     }
 
     void modifyValues(String keyName, int offset, CoreInstance value)
@@ -224,5 +214,10 @@ class SimpleCoreInstanceMutableState extends AbstractCoreInstanceMutableState
             copy.setCompileStateBitSet(getCompileStateBitSet());
         }
         return copy;
+    }
+
+    private static ValueHolder newValueHolder()
+    {
+        return new ValueHolder(null, null, null);
     }
 }

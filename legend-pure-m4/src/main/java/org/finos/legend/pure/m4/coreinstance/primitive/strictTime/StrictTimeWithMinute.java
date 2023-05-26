@@ -18,8 +18,9 @@ public final class StrictTimeWithMinute extends AbstractStrictTimeWithMinute
 {
     private StrictTimeWithMinute(int hour, int minute)
     {
-        super( hour, minute);
+        super(hour, minute);
     }
+
     @Override
     public boolean hasSecond()
     {

@@ -25,12 +25,14 @@ import org.junit.rules.ExpectedException;
 public class TestGetAllVersionsInRangeValidator extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("source.pure");
         runtime.delete("test.pure");
     }
@@ -41,7 +43,7 @@ public class TestGetAllVersionsInRangeValidator extends AbstractPureTestWithCore
     @Test
     public void testAllVersionsInRangeForBusinessTemporal()
     {
-        this.runtime.createInMemorySource("source.pure",
+        runtime.createInMemorySource("source.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   id : Integer[1];\n" +
@@ -51,13 +53,13 @@ public class TestGetAllVersionsInRangeValidator extends AbstractPureTestWithCore
                         "   let f={|Product.allVersionsInRange(%2018-1-1, %2018-1-9)};\n" +
                         "}\n" +
                         "\n");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void testAllVersionsInRangeForProcessingTemporal()
     {
-        this.runtime.createInMemorySource("source.pure",
+        runtime.createInMemorySource("source.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.processingtemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   id : Integer[1];\n" +
@@ -67,7 +69,7 @@ public class TestGetAllVersionsInRangeValidator extends AbstractPureTestWithCore
                         "   let f={|Product.allVersionsInRange(%2018-1-1, %2018-1-9)};\n" +
                         "}\n" +
                         "\n");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
@@ -76,7 +78,7 @@ public class TestGetAllVersionsInRangeValidator extends AbstractPureTestWithCore
         this.expectedException.expect(PureCompilationException.class);
 
         this.expectedException.expectMessage("Compilation error at (resource:test.pure line:7 column:19), \".allVersionsInRange() is applicable only for businessTemporal and processingTemporal types");
-        this.runtime.createInMemorySource("test.pure",
+        runtime.createInMemorySource("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.bitemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   id : Integer[1];\n" +
@@ -86,7 +88,7 @@ public class TestGetAllVersionsInRangeValidator extends AbstractPureTestWithCore
                         "   let f={|Product.allVersionsInRange(%2018-1-1, %2018-1-9)};\n" +
                         "}\n" +
                         "\n");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
@@ -95,7 +97,7 @@ public class TestGetAllVersionsInRangeValidator extends AbstractPureTestWithCore
         this.expectedException.expect(PureCompilationException.class);
 
         this.expectedException.expectMessage("Compilation error at (resource:test.pure line:7 column:19), \".allVersionsInRange() is applicable only for businessTemporal and processingTemporal types");
-        this.runtime.createInMemorySource("test.pure",
+        runtime.createInMemorySource("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class meta::test::milestoning::domain::Product{\n" +
                         "   id : Integer[1];\n" +
@@ -105,92 +107,92 @@ public class TestGetAllVersionsInRangeValidator extends AbstractPureTestWithCore
                         "   let f={|Product.allVersionsInRange(%2018-1-1, %2018-1-9)};\n" +
                         "}\n" +
                         "\n");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void testLatestDateUsageForAllVersionsInRangeForBusinessTemporal()
     {
-        this.runtime.createInMemorySource("source.pure",
+        runtime.createInMemorySource("source.pure",
                 "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   id : Integer[1];\n" +
                         "}\n");
-        this.runtime.compile();
+        runtime.compile();
 
         this.expectedException.expect(PureCompilationException.class);
         this.expectedException.expectMessage("Compilation error at (resource:test.pure line:4 column:19), \"%latest not a valid parameter for .allVersionsInRange()");
-        this.runtime.createInMemorySource("test.pure",
+        runtime.createInMemorySource("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   let f={|Product.allVersionsInRange(%latest, %2018-1-1)};\n" +
                         "}\n" +
                         "\n");
-        this.runtime.compile();
+        runtime.compile();
 
         this.expectedException.expect(PureCompilationException.class);
         this.expectedException.expectMessage("Compilation error at (resource:test.pure line:4 column:19), \"%latest not a valid parameter for .allVersionsInRange()");
-        this.runtime.modify("test.pure",
+        runtime.modify("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   let f={|Product.allVersionsInRange(%2018-1-1, %latest)};\n" +
                         "}\n" +
                         "\n");
-        this.runtime.compile();
+        runtime.compile();
 
         this.expectedException.expect(PureCompilationException.class);
         this.expectedException.expectMessage("Compilation error at (resource:test.pure line:4 column:19), \"%latest not a valid parameter for .allVersionsInRange()");
-        this.runtime.modify("test.pure",
+        runtime.modify("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   let f={|Product.allVersionsInRange(%latest, %latest)};\n" +
                         "}\n" +
                         "\n");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void testLatestDateUsageForAllVersionsInRangeForProcessingTemporal()
     {
-        this.runtime.createInMemorySource("source.pure",
+        runtime.createInMemorySource("source.pure",
                 "Class <<temporal.processingtemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   id : Integer[1];\n" +
                         "}\n");
-        this.runtime.compile();
+        runtime.compile();
 
         this.expectedException.expect(PureCompilationException.class);
         this.expectedException.expectMessage("Compilation error at (resource:test.pure line:4 column:19), \"%latest not a valid parameter for .allVersionsInRange()");
-        this.runtime.createInMemorySource("test.pure",
+        runtime.createInMemorySource("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   let f={|Product.allVersionsInRange(%latest, %2018-1-1)};\n" +
                         "}\n" +
                         "\n");
-        this.runtime.compile();
+        runtime.compile();
 
         this.expectedException.expect(PureCompilationException.class);
         this.expectedException.expectMessage("Compilation error at (resource:test.pure line:4 column:19), \"%latest not a valid parameter for .allVersionsInRange()");
-        this.runtime.modify("test.pure",
+        runtime.modify("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   let f={|Product.allVersionsInRange(%2018-1-1, %latest)};\n" +
                         "}\n" +
                         "\n");
-        this.runtime.compile();
+        runtime.compile();
 
         this.expectedException.expect(PureCompilationException.class);
         this.expectedException.expectMessage("Compilation error at (resource:test.pure line:4 column:19), \"%latest not a valid parameter for .allVersionsInRange()");
-        this.runtime.modify("test.pure",
+        runtime.modify("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   let f={|Product.allVersionsInRange(%latest, %latest)};\n" +
                         "}\n" +
                         "\n");
-        this.runtime.compile();
+        runtime.compile();
     }
 }

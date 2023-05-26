@@ -31,8 +31,8 @@ public class UnitInstanceInterfaceProcessor
     private static final String IMPORTS = "import org.eclipse.collections.api.RichIterable;\n" +
             "import org.finos.legend.pure.m4.coreinstance.CoreInstance;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.*;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n"+
-            "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.*;\n"+
+            "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n" +
+            "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*;\n" +
@@ -65,7 +65,7 @@ public class UnitInstanceInterfaceProcessor
                         "    " + interfaceName + " _valRemove();\n" +
                         "    java.lang.Number _val();\n") +
 
-                ("    " +  UnitProcessor.convertToJavaCompatibleClassName(TypeProcessor.javaInterfaceForType(unit)) + " _unit();\n") +
+                ("    " + UnitProcessor.convertToJavaCompatibleClassName(TypeProcessor.javaInterfaceForType(unit)) + " _unit();\n") +
 
                 "}");
     }

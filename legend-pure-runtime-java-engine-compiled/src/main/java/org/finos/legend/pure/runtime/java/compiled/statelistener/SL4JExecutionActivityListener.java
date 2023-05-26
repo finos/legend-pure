@@ -27,14 +27,14 @@ public class SL4JExecutionActivityListener implements ExecutionActivityListener
     public void relationalActivityCompleted(String dbHost, Integer dbPort, String dbName, String dbType, String sql, String planInfo, Long executionTime, Long sqlGenerationTime, Long connectionAcquisitionTime)
     {
         this.logger.info("{\"threadId\":{},\"sql\":\"{}\",\"db\":{\"dbHost\":\"{}\",\"dbPort\":{},\"dbName\":\"{}\",\"dbType\":\"{}\"},\"sqlGenInMillis\":{},\"execInMillis\":{}}",
-                    Thread.currentThread().getId(),
-                    JSONValue.escape(sql),
-                    JSONValue.escape(dbHost),
-                    dbPort,
-                    JSONValue.escape(dbName),
-                    JSONValue.escape(dbType),
-                    sqlGenerationTime/1000000,
-                    executionTime/1000000);
+                Thread.currentThread().getId(),
+                JSONValue.escape(sql),
+                JSONValue.escape(dbHost),
+                dbPort,
+                JSONValue.escape(dbName),
+                JSONValue.escape(dbType),
+                sqlGenerationTime / 1000000,
+                executionTime / 1000000);
     }
 
     @Override

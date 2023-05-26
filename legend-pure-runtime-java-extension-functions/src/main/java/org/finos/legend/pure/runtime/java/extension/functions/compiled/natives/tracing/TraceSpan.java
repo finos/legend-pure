@@ -47,7 +47,7 @@ public class TraceSpan extends AbstractNative
         String functionToGetTags = transformedParams.size() > 2 ? transformedParams.get(2) : "null";
         String tagsCritical = transformedParams.size() > 3 ? transformedParams.get(3) : "true";
         String eval = "FunctionsGen.traceSpan(es," + functionToExec + "," + operationName + "," + functionToGetTags + "," + tagsCritical + ")";
-        return "((" + type + ")(Object)" + (Multiplicity.isToOne(multiplicity, false) ? eval : "CompiledSupport.toPureCollection(" + eval + ")")+")";
+        return "((" + type + ")(Object)" + (Multiplicity.isToOne(multiplicity, false) ? eval : "CompiledSupport.toPureCollection(" + eval + ")") + ")";
     }
 
     @Override
@@ -58,9 +58,9 @@ public class TraceSpan extends AbstractNative
                 "            @Override\n" +
                 "            public Object execute(ListIterable<?> vars, final ExecutionSupport es)\n" +
                 "            {\n" +
-                "               Object value = FunctionsGen.traceSpan(es, ("  +  FullJavaPaths.Function +  ") vars.get(0), \n" +
+                "               Object value = FunctionsGen.traceSpan(es, (" + FullJavaPaths.Function + ") vars.get(0), \n" +
                 "                               CompiledSupport.pureToString(vars.get(1), es), \n" +
-                "                               vars.size() > 2 ? (" +  FullJavaPaths.Function + ") vars.get(2) : null,\n" +
+                "                               vars.size() > 2 ? (" + FullJavaPaths.Function + ") vars.get(2) : null,\n" +
                 "                               vars.size() > 3 ? Boolean.valueOf(CompiledSupport.pureToString(vars.get(1), es)) : true);\n" +
                 "               return value instanceof Iterable ? CompiledSupport.toPureCollection(value) : value;\n" +
                 "            }\n" +

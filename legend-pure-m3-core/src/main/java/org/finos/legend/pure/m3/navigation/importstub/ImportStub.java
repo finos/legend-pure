@@ -275,7 +275,7 @@ public class ImportStub
         CoreInstance classifier = processorSupport.getClassifier(instance);
         if (classifier == null)
         {
-            throw new PureCompilationException(instance.getSourceInformation(), "Instance has no classifier: '" + instance + "'  Class:"+instance.getClass().getSimpleName());
+            throw new PureCompilationException(instance.getSourceInformation(), "Instance has no classifier: '" + instance + "'  Class:" + instance.getClass().getSimpleName());
         }
 
         switch (classifier.getName())
@@ -285,7 +285,7 @@ public class ImportStub
                 CoreInstance resolvedNode = instance.getValueForMetaPropertyToOne(M3Properties.resolvedNode);
                 if (resolvedNode == null && shouldResolve)
                 {
-                    processImportStub((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub)instance, instance.getRepository(), processorSupport);
+                    processImportStub((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub) instance, instance.getRepository(), processorSupport);
                     resolvedNode = instance.getValueForMetaPropertyToOne(M3Properties.resolvedNode);
                 }
                 return resolvedNode;

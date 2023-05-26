@@ -32,10 +32,10 @@ public class JsonSerializationMultiplicityParameterised<T> extends JsonPropertyS
     public Object apply(RichIterable<T> pureObject, ConversionContext context)
     {
         JSONArray jsonArray = new JSONArray();
-        for(T val : pureObject)
+        for (T val : pureObject)
         {
-            Object serializedValue = this.serialize(val, (JsonSerializationContext)context);
-            if(serializedValue != JsonPropertySerialization.CYCLE_DETECTED)
+            Object serializedValue = this.serialize(val, (JsonSerializationContext) context);
+            if (serializedValue != JsonPropertySerialization.CYCLE_DETECTED)
             {
                 jsonArray.add(serializedValue);
             }

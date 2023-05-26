@@ -14,16 +14,14 @@
 
 package org.finos.legend.pure.m3.tests;
 
-
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.primitive.ObjectIntMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.block.factory.Functions;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.execution.VoidFunctionExecution;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
@@ -33,7 +31,6 @@ import org.junit.Assert;
 
 public class RuntimeVerifier
 {
-
     private static final int DEFAULT_NUMBER_OF_ITERATIONS = 3;
 
     private RuntimeVerifier()
@@ -54,9 +51,9 @@ public class RuntimeVerifier
                                                                     String compileErrorMessage, String sourceId,
                                                                     int row, int column)
     {
-        MapIterable<String, String> sourcesToDeleteMap = sourceToDelete.toMap(Functions.<String>firstOfPair(), Functions.<String>secondOfPair());
+        MapIterable<String, String> sourcesToDeleteMap = sourceToDelete.toMap(Pair::getOne, Pair::getTwo);
         verifyOperationIsStable(new RuntimeTestScriptBuilder(), new RuntimeTestScriptBuilder()
-                        .deleteSources(sourceToDelete.collect(Functions.<String>firstOfPair()))
+                        .deleteSources(sourceToDelete.collect(Pair::getOne))
                         .compileWithExpectedCompileFailure(compileErrorMessage, sourceId, row, column)
                         .createInMemorySources(sourcesToDeleteMap)
                         .compile(),
@@ -69,7 +66,7 @@ public class RuntimeVerifier
                                                                    int row, int column)
     {
         deleteCompileAndReloadMultipleTimesIsStable(runtime, functionExecution, sourceToDelete,
-                Lists.fixedSize.<FunctionExecutionStateVerifier>of(), new PureRuntimeContextStateVerifier(), compileErrorMessage, sourceId, row, column);
+                Lists.fixedSize.of(), new PureRuntimeContextStateVerifier(), compileErrorMessage, sourceId, row, column);
     }
 
     public static void replaceWithCompileErrorCompileAndReloadMultipleTimesIsStable(PureRuntime runtime,
@@ -133,7 +130,7 @@ public class RuntimeVerifier
     {
         TrackingTransactionObserver observer = null;
         byte[] before = null;
-        MapIterable<String,Integer> instanceByClassifierCountsBefore = null;
+        MapIterable<String, Integer> instanceByClassifierCountsBefore = null;
         initialState.run(runtime, functionExecution);
 
         if (debug)
@@ -161,7 +158,7 @@ public class RuntimeVerifier
 
             if (debug)
             {
-                MapIterable<String,Integer> instanceByClassifierCountsAfter = runtime.getContext().countInstancesByClassifier();
+                MapIterable<String, Integer> instanceByClassifierCountsAfter = runtime.getContext().countInstancesByClassifier();
                 for (String key : instanceByClassifierCountsAfter.keysView())
                 {
                     Integer beforeC = instanceByClassifierCountsBefore.get(key);

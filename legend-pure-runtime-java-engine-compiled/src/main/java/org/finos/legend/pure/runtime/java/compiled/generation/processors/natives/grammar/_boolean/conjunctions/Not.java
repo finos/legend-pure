@@ -29,7 +29,7 @@ public class Not extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return "!(" +  transformedParams.get(0) + ")";
+        return "!(" + transformedParams.get(0) + ")";
     }
 
     @Override
@@ -40,7 +40,7 @@ public class Not extends AbstractNative
                 "            @Override\n" +
                 "            public Boolean value(Boolean p1, ExecutionSupport es)\n" +
                 "            {\n" +
-                "                return !p1;\n"+
+                "                return !p1;\n" +
                 "            }\n" +
                 "        }";
     }

@@ -96,7 +96,7 @@ public class PureTestBuilderCompiled extends TestSuite
     {
         Class<?> _class = Class.forName("org.finos.legend.pure.generated." + IdBuilder.sourceToId(coreInstance.getSourceInformation()));
         paramList = paramList.with(executionSupport);
-        Object params[] = paramList.toArray();
+        Object[] params = paramList.toArray();
         String methodName = FunctionProcessor.functionNameToJava(coreInstance);
         Method method = params.length == 1 ? _class.getMethod(methodName, ExecutionSupport.class)
                 : ArrayIterate.detect(_class.getMethods(), m -> methodName.equals(m.getName()));
@@ -148,6 +148,4 @@ public class PureTestBuilderCompiled extends TestSuite
                 CompiledExtensionLoader.extensions()
         );
     }
-
-
 }

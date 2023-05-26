@@ -14,13 +14,13 @@
 
 package org.finos.legend.pure.m3.tools;
 
-import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
 import io.prometheus.client.Collector;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.Summary;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MutableMap;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -30,25 +30,26 @@ public class MetricsRecorder
     static final String METRIC_PREFIX = "pure_service";
     static MutableMap<String, Summary> recorded = Maps.mutable.empty();
 
-    static final Gauge currentQueriesBeingExecuted = Gauge.build().name("pure_current_relational_executions").
-            labelNames("host").help("Current relational queries being executed ").register();
+    static final Gauge currentQueriesBeingExecuted = Gauge.build().name("pure_current_relational_executions")
+            .labelNames("host").help("Current relational queries being executed ").register();
 
-    static final Gauge allQueryExecutions = Gauge.build().name("pure_relational_executions").
-            labelNames("host").help("All relational query executions ").register();
+    static final Gauge allQueryExecutions = Gauge.build().name("pure_relational_executions")
+            .labelNames("host").help("All relational query executions ").register();
 
     static final Gauge currentExecutions = Gauge.build()
             .name("pure_current_executions")
-            .labelNames("host","type")
+            .labelNames("host", "type")
             .help("Current executions being handled").register();
 
     static final Gauge allExecution = Gauge.build()
             .name("pure_all_executions")
-            .labelNames("host","type")
+            .labelNames("host", "type")
             .help("All Executions.").register();
 
     public static MutableList<Collector> executionMetrics = Lists.mutable.empty();
 
-    public static  InetAddress localMachine;
+    public static InetAddress localMachine;
+
     static
     {
         try
@@ -61,7 +62,7 @@ public class MetricsRecorder
         }
     }
 
-    public static  void recordServiceExecution(String serviceId,double duration)
+    public static void recordServiceExecution(String serviceId, double duration)
     {
         if (recorded.get(serviceId) == null)
         {
@@ -77,7 +78,8 @@ public class MetricsRecorder
             g.observe(duration);
 
         }
-        else{
+        else
+        {
             //add observation
             recorded.get(serviceId).observe(duration);
         }
@@ -115,16 +117,16 @@ public class MetricsRecorder
 
         ExecutionMetricType(String name)
         {
-           this.name = name;
+            this.name = name;
         }
     }
 
     public static String generateMetricName(String servicePattern)
     {
-        return METRIC_PREFIX+ servicePattern.
-                replace("/", "_")
-                .replace("-","_")
-                .replace("{","")
-                .replace("}","");
+        return METRIC_PREFIX + servicePattern
+                .replace("/", "_")
+                .replace("-", "_")
+                .replace("{", "")
+                .replace("}", "");
     }
 }

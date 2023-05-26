@@ -24,12 +24,14 @@ import org.junit.Test;
 public class TestPureRuntimeClass_Property_UsedInAutoCollect extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("sourceId.pure");
         runtime.delete("userId.pure");
         runtime.delete("other.pure");
@@ -46,7 +48,7 @@ public class TestPureRuntimeClass_Property_UsedInAutoCollect extends AbstractPur
                         .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 27)
                         .createInMemorySource("sourceId.pure", "Class A{name:String[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
@@ -60,7 +62,7 @@ public class TestPureRuntimeClass_Property_UsedInAutoCollect extends AbstractPur
                         .deleteSource("userId.pure")
                         .createInMemorySource("userId.pure", "function test():String[*]{my::A.all().name('Mr')}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -73,7 +75,7 @@ public class TestPureRuntimeClass_Property_UsedInAutoCollect extends AbstractPur
                         .deleteSource("userId.pure")
                         .createInMemorySource("userId.pure", "function test():String[*]{ let b = 'Mr'; my::A.all().name($b);}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -86,7 +88,7 @@ public class TestPureRuntimeClass_Property_UsedInAutoCollect extends AbstractPur
                         .deleteSource("sourceId.pure")
                         .createInMemorySource("sourceId.pure", "Class my::A{name(prefix:String[1]){ $prefix + ' Bob';}:String[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
     }
 

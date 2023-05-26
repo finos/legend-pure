@@ -21,8 +21,9 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 
 public class RemoveDuplicates extends AbstractNativeFunctionGeneric
 {
-    public RemoveDuplicates() {
+    public RemoveDuplicates()
+    {
         super("CoreGen.removeDuplicates", new Class[]{RichIterable.class, Function.class, Function.class, ExecutionSupport.class},
-                false, true, false,"removeDuplicates_T_MANY__Function_$0_1$__Function_$0_1$__T_MANY_");
+                false, true, false, "removeDuplicates_T_MANY__Function_$0_1$__Function_$0_1$__T_MANY_");
     }
 }

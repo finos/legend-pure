@@ -19,7 +19,6 @@ import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
-import org.finos.legend.pure.m3.tests.RuntimeVerifier.FunctionExecutionStateVerifier;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -55,8 +54,8 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
                         .updateSource("source1.pure", "Class A2{version : Integer[1];}")
                         .compileWithExpectedCompileFailure("XA has not been defined!", "source2.pure", 1, 36)
                         .updateSource("source1.pure", "Class XA{version : Integer[1];}")
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -66,11 +65,11 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
 
         String source = "Class XA{version : Integer[1];}";
         String sourceId = "sourceId.pure";
-        this.runtime.createInMemorySource(sourceId, source);
-        this.runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{print(#{XA{version}}#,0);true;}");
-        this.runtime.compile();
+        runtime.createInMemorySource(sourceId, source);
+        runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{print(#{XA{version}}#,0);true;}");
+        runtime.compile();
 
-        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(this.runtime, this.functionExecution,
+        RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(runtime, functionExecution,
                 Lists.fixedSize.of(Tuples.pair(sourceId, source)), "XA has not been defined!", "userId.pure", 1, 36);
     }
 
@@ -87,8 +86,8 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
                         .updateSource("source1.pure", "Class A{vers : Integer[1];}")
                         .compileWithExpectedCompileFailure("The system can't find a match for the property / qualified property: version()", "source2.pure", 1, 38)
                         .updateSource("source1.pure", "Class A{version : Integer[1];}")
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -102,8 +101,8 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
                         .updateSource("source2.pure", "function test():Boolean[1]{let x = 0;print(#{A{version2($x)}}#,0);true;}")
                         .compile()
                         .updateSource("source2.pure", "function test():Boolean[1]{print(#{A{version2(0)}}#,0);true;}")
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -119,8 +118,8 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
                         .updateSource("source2.pure", "function test():Boolean[1]{print(#{A{version2(0)}}#,0);true;}")
                         .compile()
                         .updateSource("source2.pure", "function test():Boolean[1]{let x = 0;print(#{A{version2($x)}}#,0);true;}")
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -136,8 +135,8 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
                         .updateSource("source1.pure", "Class A{version : Integer[1];b:B[1];}Class B{}")
                         .compileWithExpectedCompileFailure("XC has not been defined!", "source2.pure", 1, 58)
                         .updateSource("source1.pure", "Class A{version : Integer[1];b:B[1];}Class B{} Class XC extends B{}")
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -151,8 +150,8 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
                         .updateSource("source1.pure", "Class A{version : Integer[1];b:B[1];}Class B{} Class C extends B{j:String[1];}")
                         .compileWithExpectedCompileFailure("The system can't find a match for the property / qualified property: c()", "source2.pure", 1, 61)
                         .updateSource("source1.pure", "Class A{version : Integer[1];b:B[1];}Class B{} Class C extends B{c:String[1];}")
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -178,10 +177,10 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
                 "}";
         String sourceId = "sourceId.pure";
         String enumSourceId = "enumSourceId.pure";
-        this.runtime.createInMemorySource(sourceId, source);
-        this.runtime.createInMemorySource(enumSourceId, enumSource);
-        this.runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{print(#{EntityWithLocations{locationsByType(GeographicEntityType.CITY)}}#,0);true;}");
-        this.runtime.compile();
+        runtime.createInMemorySource(sourceId, source);
+        runtime.createInMemorySource(enumSourceId, enumSource);
+        runtime.createInMemorySource("userId.pure", "function test():Boolean[1]{print(#{EntityWithLocations{locationsByType(GeographicEntityType.CITY)}}#,0);true;}");
+        runtime.compile();
 
         String enumSourceChange = "Enum GeographicEntityType\n" +
                 "{\n" +
@@ -189,7 +188,7 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
                 "    COUNTRY\n" +
                 "}";
 
-        RuntimeVerifier.replaceWithCompileErrorCompileAndReloadMultipleTimesIsStable(this.runtime,
+        RuntimeVerifier.replaceWithCompileErrorCompileAndReloadMultipleTimesIsStable(runtime,
                 Lists.fixedSize.of(Tuples.pair(enumSourceId, enumSourceChange)), "The enum value 'CITY' can't be found in the enumeration GeographicEntityType", "userId.pure", 1, 93);
     }
 
@@ -231,8 +230,8 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
                         .updateSource("source2.pure", enumSource2)
                         .compile()
                         .updateSource("source2.pure", enumSource)
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -266,8 +265,8 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
                         .updateSource("userId.pure", "function test():Boolean[1]{let x = GeographicEntityType.CITY; print(#{EntityWithLocations{locationsByType($x)}}#,0);true;}")
                         .compile()
                         .updateSource("userId.pure", "function test():Boolean[1]{print(#{EntityWithLocations{locationsByType(GeographicEntityType.CITY)}}#,0);true;}")
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -301,8 +300,8 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
                         .updateSource("userId.pure", "function test():Boolean[1]{print(#{EntityWithLocations{locationsByType(GeographicEntityType.COUNTRY)}}#,0);true;}")
                         .compile()
                         .updateSource("userId.pure", "function test():Boolean[1]{print(#{EntityWithLocations{locationsByType(GeographicEntityType.CITY)}}#,0);true;}")
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -318,8 +317,8 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
                         .updateSource("source2.pure", "function test():Boolean[1]{print('Hello',0);true;}")
                         .compile()
                         .updateSource("source2.pure", "function test():Boolean[1]{print(#{A{version}}#,0);true;}")
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -335,8 +334,8 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
                         .updateSource("source2.pure", "function test():Boolean[1]{print(#{A{version2}}#,0);true;}")
                         .compile()
                         .updateSource("source2.pure", "function test():Boolean[1]{print(#{A{version}}#,0);true;}")
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -352,8 +351,8 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
                         .updateSource("source2.pure", "function test():Boolean[1]{print(#{A2{version2}}#,0);true;}")
                         .compile()
                         .updateSource("source2.pure", "function test():Boolean[1]{print(#{A{version}}#,0);true;}")
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
@@ -369,7 +368,7 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
                         .updateSource("source2.pure", "function test():Boolean[1]{print(#{A{version,b->subType(@D)}}#,0);true;}")
                         .compile()
                         .updateSource("source2.pure", "function test():Boolean[1]{print(#{A{version,b->subType(@C)}}#,0);true;}")
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 }

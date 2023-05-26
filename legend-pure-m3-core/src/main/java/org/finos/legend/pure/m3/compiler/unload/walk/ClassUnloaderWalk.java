@@ -36,7 +36,7 @@ public class ClassUnloaderWalk implements MatchRunner<Class>
     @Override
     public void run(Class _class, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
-        ((WalkerState)state).addInstance(_class);
+        ((WalkerState) state).addInstance(_class);
         matchProperties(_class._properties(), state, matcher);
         matchProperties(_class._propertiesFromAssociations(), state, matcher);
         matchProperties(_class._qualifiedProperties(), state, matcher);
@@ -46,10 +46,9 @@ public class ClassUnloaderWalk implements MatchRunner<Class>
 
     private static void matchProperties(RichIterable<? extends CoreInstance> properties, MatcherState state, Matcher matcher)
     {
-        for(CoreInstance property : properties)
+        for (CoreInstance property : properties)
         {
             matcher.fullMatch(property, state);
         }
     }
-
 }

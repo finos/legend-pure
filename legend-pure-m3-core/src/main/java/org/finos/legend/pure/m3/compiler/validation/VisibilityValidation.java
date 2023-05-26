@@ -56,7 +56,7 @@ public class VisibilityValidation
     {
         if (function instanceof PackageableFunction)
         {
-            Package pkg = ((PackageableFunction)function)._package();
+            Package pkg = ((PackageableFunction) function)._package();
             SourceInformation sourceInfo = function.getSourceInformation();
             validateFunctionDefinition(function, pkg, (sourceInfo == null) ? null : sourceInfo.getSourceId(), context, validatorState, processorSupport);
         }
@@ -122,7 +122,7 @@ public class VisibilityValidation
         // Check annotations
         if (function instanceof AnnotatedElement)
         {
-            validateAnnotatedElement((AnnotatedElement)function, sourceId, validatorState, processorSupport);
+            validateAnnotatedElement((AnnotatedElement) function, sourceId, validatorState, processorSupport);
         }
     }
 
@@ -199,7 +199,7 @@ public class VisibilityValidation
             }
             else
             {
-                if (!Visibility.isVisibleInPackage((ElementWithStereotypes)rawType, pkg, context, processorSupport))
+                if (!Visibility.isVisibleInPackage((ElementWithStereotypes) rawType, pkg, context, processorSupport))
                 {
                     throwAccessException(genericType.getSourceInformation(), rawType, pkg, processorSupport);
                 }
@@ -250,7 +250,7 @@ public class VisibilityValidation
                         throwRepoVisibilityException(valueSpec.getSourceInformation(), value, sourceId, processorSupport);
                     }
                 }
-                validatorState.getInlineDSLLibrary().getInlineDSLs().collect(InlineDSL::getVisibilityValidator).select(Objects::nonNull).forEach(p->p.validate(value, pkg, sourceId, context, validatorState, processorSupport));
+                validatorState.getInlineDSLLibrary().getInlineDSLs().collect(InlineDSL::getVisibilityValidator).select(Objects::nonNull).forEach(p -> p.validate(value, pkg, sourceId, context, validatorState, processorSupport));
             });
         }
     }
@@ -284,7 +284,7 @@ public class VisibilityValidation
         Function<?> function = (Function<?>) ImportStub.withImportStubByPass(expression._funcCoreInstance(), processorSupport);
         if (function instanceof PackageableFunction)
         {
-            validatePackageAndSourceVisibility(expression, pkg, sourceId, context, validatorState, processorSupport, (PackageableFunction<?>)function);
+            validatePackageAndSourceVisibility(expression, pkg, sourceId, context, validatorState, processorSupport, (PackageableFunction<?>) function);
         }
         expression._parametersValues().forEach(pv -> validateValueSpecification(pv, pkg, sourceId, context, validatorState, processorSupport));
     }

@@ -361,7 +361,8 @@ public class ValueSpecificationProcessor
                 openVarsInitializer +
                 "     public " + typesParams.get(typesParams.size() - 1) + " execute(ListIterable<?> vars, ExecutionSupport es)\n" +
                 "     {\n" +
-                "         return value" + (params.isEmpty() ? "Of(" : "(") + params.zipWithIndex().collect(coreInstance -> {
+                "         return value" + (params.isEmpty() ? "Of(" : "(") + params.zipWithIndex().collect(coreInstance ->
+        {
             String ntype = TypeProcessor.typeToJavaObjectWithMul(coreInstance.getOne().getValueForMetaPropertyToOne(M3Properties.genericType), coreInstance.getOne().getValueForMetaPropertyToOne(M3Properties.multiplicity), processorContext.getSupport());
             boolean isToMany = !Multiplicity.isToZeroOrOne(coreInstance.getOne().getValueForMetaPropertyToOne(M3Properties.multiplicity));
             return "(" + ntype + ")" + (isToMany ? "(Object)CompiledSupport.toPureCollection(" : "CompiledSupport.makeOne(") + "vars.get(" + coreInstance.getTwo() + "))";
@@ -419,8 +420,8 @@ public class ValueSpecificationProcessor
             {
                 String type = TypeProcessor.typeToJavaObjectSingle(Instance.getValueForMetaPropertyToOneResolved(valueSpecification, M3Properties.genericType, support), true, support);
                 return "Lists.mutable.<" + type + ">with(" + instances.collect(i -> support.instance_instanceOf(i, M3Paths.ValueSpecification) ?
-                        processValueSpecification(topLevelElement, i, processorContext) :
-                        JavaPurePrimitiveTypeMapping.convertPureCoreInstanceToJavaType(i, processorContext))
+                                processValueSpecification(topLevelElement, i, processorContext) :
+                                JavaPurePrimitiveTypeMapping.convertPureCoreInstanceToJavaType(i, processorContext))
                         .makeString(",") + ")";
             }
         }

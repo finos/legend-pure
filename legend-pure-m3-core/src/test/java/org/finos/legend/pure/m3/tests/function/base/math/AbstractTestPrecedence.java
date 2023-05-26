@@ -17,10 +17,11 @@ package org.finos.legend.pure.m3.tests.function.base.math;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.junit.Test;
 
-public abstract class AbstractTestPrecedence extends AbstractPureTestWithCoreCompiled {
-
+public abstract class AbstractTestPrecedence extends AbstractPureTestWithCoreCompiled
+{
     @Test
-    public void testBasic() {
+    public void testBasic()
+    {
         compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
@@ -30,7 +31,8 @@ public abstract class AbstractTestPrecedence extends AbstractPureTestWithCoreCom
     }
 
     @Test
-    public void testWithTimes() {
+    public void testWithTimes()
+    {
         compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
@@ -40,7 +42,8 @@ public abstract class AbstractTestPrecedence extends AbstractPureTestWithCoreCom
     }
 
     @Test
-    public void testWithTimesAndDivide() {
+    public void testWithTimesAndDivide()
+    {
         compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
@@ -50,7 +53,8 @@ public abstract class AbstractTestPrecedence extends AbstractPureTestWithCoreCom
     }
 
     @Test
-    public void testWithTimesAndRelational() {
+    public void testWithTimesAndRelational()
+    {
         compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
@@ -60,7 +64,8 @@ public abstract class AbstractTestPrecedence extends AbstractPureTestWithCoreCom
     }
 
     @Test
-    public void testWithTimesAndRelationalComplex() {
+    public void testWithTimesAndRelationalComplex()
+    {
         compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +

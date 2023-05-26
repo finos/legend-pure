@@ -14,18 +14,18 @@
 
 package org.finos.legend.pure.m2.dsl.diagram.test.incremental;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
-import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningFunctions;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.test.Verify;
+import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningFunctions;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -34,7 +34,8 @@ import org.junit.Test;
 public class TestDiagramCompilation extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime();
     }
 
@@ -57,12 +58,12 @@ public class TestDiagramCompilation extends AbstractPureTestWithCoreCompiled
                         "                        color=#FFFFCC, lineWidth=1.0,\n" +
                         "                        position=(874.0, 199.46875), width=353.0, height=57.1875)\n" +
                         "}\n");
-        CoreInstance diagram = this.runtime.getCoreInstance("test::pure::TestDiagram");
+        CoreInstance diagram = runtime.getCoreInstance("test::pure::TestDiagram");
         Assert.assertNotNull(diagram);
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.typeViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.associationViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.propertyViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.generalizationViews, this.processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.typeViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.associationViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.propertyViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.generalizationViews, processorSupport));
     }
 
     @Test
@@ -94,12 +95,12 @@ public class TestDiagramCompilation extends AbstractPureTestWithCoreCompiled
                         "                                    targetPropertyPosition=(155.2, 76.2),\n" +
                         "                                    targetMultiplicityPosition=(155.2, 80.0))\n" +
                         "}\n");
-        CoreInstance diagram = this.runtime.getCoreInstance("test::pure::TestDiagram");
+        CoreInstance diagram = runtime.getCoreInstance("test::pure::TestDiagram");
         Assert.assertNotNull(diagram);
-        Verify.assertSize(2, Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.typeViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.associationViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.propertyViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.generalizationViews, this.processorSupport));
+        Verify.assertSize(2, Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.typeViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.associationViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.propertyViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.generalizationViews, processorSupport));
     }
 
     @Test
@@ -129,12 +130,12 @@ public class TestDiagramCompilation extends AbstractPureTestWithCoreCompiled
                         "                                         propertyPosition=(132.5, 76.2),\n" +
                         "                                         multiplicityPosition=(132.5, 80.0))\n" +
                         "}\n");
-        CoreInstance diagram = this.runtime.getCoreInstance("test::pure::TestDiagram");
+        CoreInstance diagram = runtime.getCoreInstance("test::pure::TestDiagram");
         Assert.assertNotNull(diagram);
-        Verify.assertSize(2, Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.typeViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.associationViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.propertyViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.generalizationViews, this.processorSupport));
+        Verify.assertSize(2, Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.typeViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.associationViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.propertyViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.generalizationViews, processorSupport));
     }
 
     @Test
@@ -160,12 +161,12 @@ public class TestDiagramCompilation extends AbstractPureTestWithCoreCompiled
                         "                                             source=TestClass1,\n" +
                         "                                             target=TestClass2)\n" +
                         "}\n");
-        CoreInstance diagram = this.runtime.getCoreInstance("test::pure::TestDiagram");
+        CoreInstance diagram = runtime.getCoreInstance("test::pure::TestDiagram");
         Assert.assertNotNull(diagram);
-        Verify.assertSize(1, Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.typeViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.associationViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.propertyViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.generalizationViews, this.processorSupport));
+        Verify.assertSize(1, Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.typeViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.associationViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.propertyViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.generalizationViews, processorSupport));
     }
 
     @Test
@@ -192,12 +193,12 @@ public class TestDiagramCompilation extends AbstractPureTestWithCoreCompiled
                         "                                             source=TestClass1,\n" +
                         "                                             target=TestClass2)\n" +
                         "}\n");
-        CoreInstance diagram = this.runtime.getCoreInstance("test::pure::TestDiagram");
+        CoreInstance diagram = runtime.getCoreInstance("test::pure::TestDiagram");
         Assert.assertNotNull(diagram);
-        Verify.assertSize(2, Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.typeViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.associationViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.propertyViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.generalizationViews, this.processorSupport));
+        Verify.assertSize(2, Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.typeViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.associationViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.propertyViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.generalizationViews, processorSupport));
     }
 
     @Test
@@ -235,12 +236,12 @@ public class TestDiagramCompilation extends AbstractPureTestWithCoreCompiled
                         "                                    targetMultiplicityPosition=(155.2, 80.0))\n" +
                         "}\n");
         // TODO consider whether this is the correct behavior
-        CoreInstance diagram = this.runtime.getCoreInstance("test::pure::TestDiagram");
+        CoreInstance diagram = runtime.getCoreInstance("test::pure::TestDiagram");
         Assert.assertNotNull(diagram);
-        Verify.assertSize(2, Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.typeViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.associationViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.propertyViews, this.processorSupport));
-        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.generalizationViews, this.processorSupport));
+        Verify.assertSize(2, Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.typeViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.associationViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.propertyViews, processorSupport));
+        Verify.assertEmpty(Instance.getValueForMetaPropertyToManyResolved(diagram, M3Properties.generalizationViews, processorSupport));
     }
 
     @Test
@@ -590,19 +591,19 @@ public class TestDiagramCompilation extends AbstractPureTestWithCoreCompiled
                         "}\n", TEST_DIAGRAM_SOURCE_ID, TEST_SOURCES.get(TEST_DIAGRAM_SOURCE_ID));
 
 
-        this.runtime.createInMemoryAndCompile(MILESTONED_TEST_SOURCES);
-        CoreInstance a = this.runtime.getCoreInstance("model::test::A");
+        runtime.createInMemoryAndCompile(MILESTONED_TEST_SOURCES);
+        CoreInstance a = runtime.getCoreInstance("model::test::A");
         CoreInstance edgePointPropertyFromAssociations = a.getValueForMetaPropertyToOne(M3Properties.properties);
         Assert.assertTrue(MilestoningFunctions.isEdgePointProperty(edgePointPropertyFromAssociations, processorSupport));
         Assert.assertEquals("propAllVersions", edgePointPropertyFromAssociations.getName());
-        CoreInstance testDiagram = this.runtime.getCoreInstance("model::test::TestDiagram");
+        CoreInstance testDiagram = runtime.getCoreInstance("model::test::TestDiagram");
         CoreInstance edgePointPropertyInDiagram = Instance.getValueForMetaPropertyToOneResolved(testDiagram, M3Properties.propertyViews, M3Properties.property, processorSupport);
         Assert.assertTrue(MilestoningFunctions.isGeneratedQualifiedPropertyWithWithAllMilestoningDatesSpecified(edgePointPropertyInDiagram, processorSupport));
         Assert.assertEquals("prop", edgePointPropertyInDiagram.getValueForMetaPropertyToOne(M3Properties.functionName).getName());
 
         CoreInstance association = Instance.getValueForMetaPropertyToOneResolved(testDiagram, M3Properties.associationViews, M3Properties.association, processorSupport);
         ListIterable<String> associationPropertyNames = association.getValueForMetaPropertyToMany(M3Properties.properties).collect(CoreInstance.GET_NAME);
-        Assert.assertEquals(FastList.newListWith("a", "prop2AllVersions"), associationPropertyNames);
+        Assert.assertEquals(Lists.mutable.with("a", "prop2AllVersions"), associationPropertyNames);
         ListIterable<? extends CoreInstance> qualifiedPropertyNames = Instance.getValueForMetaPropertyToManyResolved(association, M3Properties.qualifiedProperties, processorSupport);
         Assert.assertEquals("prop2", Instance.getValueForMetaPropertyToOneResolved(qualifiedPropertyNames.getFirst(), M3Properties.functionName, processorSupport).getName());
         Assert.assertEquals("prop2AllVersionsInRange", Instance.getValueForMetaPropertyToOneResolved(qualifiedPropertyNames.getLast(), M3Properties.functionName, processorSupport).getName());

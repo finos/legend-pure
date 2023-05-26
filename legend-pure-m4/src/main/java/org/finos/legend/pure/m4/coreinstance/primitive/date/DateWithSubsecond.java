@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
+import java.time.LocalDateTime;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
@@ -47,5 +48,24 @@ public class DateWithSubsecond extends AbstractDateWithSubsecond
         calendar.setTime(timestamp);
         String subsecond = String.format("%09d", timestamp.getNanos());
         return new DateWithSubsecond(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND), subsecond);
+    }
+
+    static DateTime fromLocalDateTime(LocalDateTime time, int subsecondPrecision)
+    {
+        return new DateWithSubsecond(time.getYear(), time.getMonthValue(), time.getDayOfMonth(), time.getHour(), time.getMinute(), time.getSecond(), getSubsecond(time, subsecondPrecision));
+    }
+
+    private static String getSubsecond(LocalDateTime time, int subsecondPrecision)
+    {
+        if ((subsecondPrecision < 0) || (subsecondPrecision > 9))
+        {
+            throw new IllegalArgumentException("Invalid subsecond precision: " + subsecondPrecision);
+        }
+        if (subsecondPrecision == 0)
+        {
+            return null;
+        }
+        String string = String.format("%09d", time.getNano());
+        return (subsecondPrecision == 9) ? string : string.substring(0, subsecondPrecision);
     }
 }

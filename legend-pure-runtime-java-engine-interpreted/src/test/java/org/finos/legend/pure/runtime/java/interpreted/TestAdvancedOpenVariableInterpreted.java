@@ -14,14 +14,15 @@
 
 package org.finos.legend.pure.runtime.java.interpreted;
 
-import org.finos.legend.pure.m3.tests.elements.function.TestAdvancedOpenVariable;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.elements.function.TestAdvancedOpenVariable;
 import org.junit.BeforeClass;
 
 public class TestAdvancedOpenVariableInterpreted extends TestAdvancedOpenVariable
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 

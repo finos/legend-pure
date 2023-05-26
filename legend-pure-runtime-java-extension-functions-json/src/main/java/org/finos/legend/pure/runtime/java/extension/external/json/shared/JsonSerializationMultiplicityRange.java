@@ -33,10 +33,10 @@ public class JsonSerializationMultiplicityRange<T> extends JsonPropertySerializa
     public Object apply(RichIterable<T> pureObject, ConversionContext context)
     {
         JSONArray jsonArray = new JSONArray();
-        for(T value : pureObject)
+        for (T value : pureObject)
         {
-            Object serializedValue = this.serialize(value, (JsonSerializationContext)context);
-            if(serializedValue != JsonPropertySerialization.CYCLE_DETECTED)
+            Object serializedValue = this.serialize(value, (JsonSerializationContext) context);
+            if (serializedValue != JsonPropertySerialization.CYCLE_DETECTED)
             {
                 jsonArray.add(serializedValue);
             }

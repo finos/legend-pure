@@ -14,11 +14,10 @@
 
 package org.finos.legend.pure.runtime.java.compiled.incremental._package;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.factory.Lists;
-import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.tests.incremental._package.TestPureRuntimePackage;
 import org.finos.legend.pure.runtime.java.compiled.CompiledClassloaderStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
@@ -29,16 +28,18 @@ import org.junit.BeforeClass;
 public class TestPureRuntimePackageCompiled extends TestPureRuntimePackage
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         setUp();
     }
 
-     protected static FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }
@@ -46,6 +47,6 @@ public class TestPureRuntimePackageCompiled extends TestPureRuntimePackage
     @Override
     protected ListIterable<RuntimeVerifier.FunctionExecutionStateVerifier> getAdditionalVerifiers()
     {
-        return Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of(new CompiledClassloaderStateVerifier());
+        return Lists.fixedSize.of(new CompiledClassloaderStateVerifier());
     }
 }

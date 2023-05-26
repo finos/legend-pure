@@ -43,8 +43,8 @@ public class Last extends AbstractNative
     }
 
     @Override
-    public String buildBody() {
-
+    public String buildBody()
+    {
         return "new DefendedPureFunction1<Object, Object>()\n" +
                 "        {\n" +
                 "            @Override\n" +
@@ -54,5 +54,4 @@ public class Last extends AbstractNative
                 "            }\n" +
                 "        }";
     }
-
 }

@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.incremental.function;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -24,20 +24,21 @@ import org.junit.Test;
 public class TestPureRuntimeFunction_NoDependencies extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
     @Test
     public void testPureRuntimeFunctionNoDependencies() throws Exception
     {
-        this.runtime.createInMemorySource("myId.pure", "function myFunction():Nil[0]{print('yeah!', 1);}");
+        runtime.createInMemorySource("myId.pure", "function myFunction():Nil[0]{print('yeah!', 1);}");
         this.compileAndExecute("myFunction():Nil[0]");
-        int size = this.runtime.getModelRepository().serialize().length;
-        Assert.assertEquals("'yeah!'", this.functionExecution.getConsole().getLine(0));
+        int size = runtime.getModelRepository().serialize().length;
+        Assert.assertEquals("'yeah!'", functionExecution.getConsole().getLine(0));
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete("myId.pure");
+            runtime.delete("myId.pure");
             try
             {
                 this.compileAndExecute("myFunction():Nil[0]");
@@ -47,14 +48,14 @@ public class TestPureRuntimeFunction_NoDependencies extends AbstractPureTestWith
             {
                 Assert.assertEquals("The function 'myFunction():Nil[0]' can't be found", e.getMessage());
             }
-            this.runtime.createInMemorySource("myId.pure", "function myFunction():Nil[0]{print('yeah22!', 1);}");
+            runtime.createInMemorySource("myId.pure", "function myFunction():Nil[0]{print('yeah22!', 1);}");
             this.compileAndExecute("myFunction():Nil[0]");
-            Assert.assertEquals("'yeah22!'", this.functionExecution.getConsole().getLine(0));
+            Assert.assertEquals("'yeah22!'", functionExecution.getConsole().getLine(0));
         }
-        this.runtime.delete("myId.pure");
-        this.runtime.createInMemorySource("myId.pure", "function myFunction():Nil[0]{print('yeah!', 1);}");
+        runtime.delete("myId.pure");
+        runtime.createInMemorySource("myId.pure", "function myFunction():Nil[0]{print('yeah!', 1);}");
         this.compileAndExecute("myFunction():Nil[0]");
-        Assert.assertEquals("Graph size mismatch", size, this.repository.serialize().length);
+        Assert.assertEquals("Graph size mismatch", size, repository.serialize().length);
     }
 
     protected static FunctionExecution getFunctionExecution()

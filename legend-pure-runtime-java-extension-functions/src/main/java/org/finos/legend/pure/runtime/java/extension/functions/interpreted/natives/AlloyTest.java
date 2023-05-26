@@ -14,19 +14,19 @@
 
 package org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionCoreInstanceWrapper;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
@@ -59,7 +59,7 @@ public class AlloyTest extends NativeFunction
         {
             if (port == -1)
             {
-                throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "The system variable 'alloy.test.server.host' is set to '"+host+"' however 'alloy.test.server.port' has not been set!");
+                throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "The system variable 'alloy.test.server.host' is set to '" + host + "' however 'alloy.test.server.port' has not been set!");
             }
             if (clientVersion == null)
             {
@@ -69,7 +69,7 @@ public class AlloyTest extends NativeFunction
             {
                 throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "The system variable 'alloy.test.serverVersion' should be set");
             }
-            MutableList<CoreInstance> fParams = FastList.<CoreInstance>newListWith(
+            MutableList<CoreInstance> fParams = Lists.mutable.with(
                     ValueSpecificationBootstrap.newStringLiteral(this.repository, clientVersion, this.functionExecution.getProcessorSupport()),
                     ValueSpecificationBootstrap.newStringLiteral(this.repository, serverVersion, this.functionExecution.getProcessorSupport()),
                     ValueSpecificationBootstrap.newStringLiteral(this.repository, host, this.functionExecution.getProcessorSupport()),
@@ -88,7 +88,7 @@ public class AlloyTest extends NativeFunction
         else
         {
             return this.functionExecution.executeFunctionExecuteParams(FunctionCoreInstanceWrapper.toFunction(Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport)),
-                    FastList.<CoreInstance>newList(),
+                    Lists.immutable.empty(),
                     resolvedTypeParameters,
                     resolvedMultiplicityParameters,
                     getParentOrEmptyVariableContext(variableContext),
@@ -96,8 +96,6 @@ public class AlloyTest extends NativeFunction
                     profiler,
                     instantiationContext,
                     executionSupport);
-
         }
     }
-
 }

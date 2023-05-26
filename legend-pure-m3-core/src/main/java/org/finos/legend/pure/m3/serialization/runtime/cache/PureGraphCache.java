@@ -25,9 +25,11 @@ import org.finos.legend.pure.m4.ModelRepository;
 public interface PureGraphCache
 {
     void deleteCache();
+
     void setPureRuntime(PureRuntime pureRuntime);
 
     void cacheRepoAndSources();
+
     boolean buildRepoAndSources(ModelRepository modelRepository, SourceRegistry sources, ParserLibrary library, Context context, ProcessorSupport processorSupport, Message message);
 
     CacheState getCacheState();

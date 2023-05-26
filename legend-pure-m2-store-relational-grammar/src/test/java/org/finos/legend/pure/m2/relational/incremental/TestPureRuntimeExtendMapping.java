@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m2.relational.incremental;
 
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.finos.legend.pure.m2.relational.AbstractPureRelationalTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
@@ -23,13 +23,12 @@ import org.junit.Test;
 
 public class TestPureRuntimeExtendMapping extends AbstractPureRelationalTestWithCoreCompiled
 {
-
     private static final String INITIAL_DATA = "import other::*;\n" +
             "Class other::Person\n" +
             "{\n" +
             "    name:String[1];\n" +
             "    otherInfo:String[1];\n" +
-            "}\n"  ;
+            "}\n";
 
 
     private static final String STORE =
@@ -44,7 +43,7 @@ public class TestPureRuntimeExtendMapping extends AbstractPureRelationalTestWith
                     "    address1 VARCHAR(200),\n" +
                     "    postcode VARCHAR(10)\n" +
                     "   )\n" +
-                    ")\n" ;
+                    ")\n";
 
 
     private static final String INITIAL_MAPPING =
@@ -110,45 +109,41 @@ public class TestPureRuntimeExtendMapping extends AbstractPureRelationalTestWith
     public void testChangeMapping() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
+                                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source4.pure", MAPPING1)
                         .compileWithExpectedCompileFailure("Invalid superMapping for mapping [alias1]", "source4.pure", 10, 5)
                         .updateSource("source4.pure", INITIAL_MAPPING)
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
 
     @Test
     public void testChangeExtendMapping() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
+                                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source4.pure", CHANGE_SUPER__MAPPING)
                         .compileWithExpectedCompileFailure("Invalid superMapping for mapping [alias1]", "source4.pure", 10, 5)
                         .updateSource("source4.pure", INITIAL_MAPPING)
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
+
     @Test
     public void testDeleteExtendMapping() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
+                                Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source4.pure", DELETE_SUPER__MAPPING)
                         .compileWithExpectedCompileFailure("Invalid superMapping for mapping [alias1]", "source4.pure", 6, 5)
                         .updateSource("source4.pure", INITIAL_MAPPING)
-                        .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.of());
     }
-
-
-
-
-
 }

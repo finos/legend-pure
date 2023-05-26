@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m3.tests.elements.function.functionMatching;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
@@ -25,12 +25,14 @@ import org.junit.Test;
 public class TestMultiplicity extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("testFunc.pure");
     }
 
@@ -41,13 +43,13 @@ public class TestMultiplicity extends AbstractPureTestWithCoreCompiledPlatform
         {
             compileTestSourceM3("testFunc.pure",
                     "function test(var:String[1]):Nil[0]\n" +
-                    "{\n" +
-                    "   print($var,1)\n" +
-                    "}\n" +
-                    "function testMany():Nil[0]\n" +
-                    "{\n" +
-                    "    test(['a','b']);\n" +
-                    "}");
+                            "{\n" +
+                            "   print($var,1)\n" +
+                            "}\n" +
+                            "function testMany():Nil[0]\n" +
+                            "{\n" +
+                            "    test(['a','b']);\n" +
+                            "}");
             Assert.fail();
         }
         catch (Exception e)
@@ -64,16 +66,16 @@ public class TestMultiplicity extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            this.runtime.createInMemorySource("testFunc.pure",
+            runtime.createInMemorySource("testFunc.pure",
                     "function test(func:Function<{String[1]->String[1]}>[1]):Nil[0]\n" +
-                    "{\n" +
-                    "   print('ok',1);\n" +
-                    "}\n" +
-                    "function testMany():Nil[0]\n" +
-                    "{\n" +
-                    "    test(s:String[1]|['other', $s]);\n" +
-                    "}\n");
-            this.runtime.compile();
+                            "{\n" +
+                            "   print('ok',1);\n" +
+                            "}\n" +
+                            "function testMany():Nil[0]\n" +
+                            "{\n" +
+                            "    test(s:String[1]|['other', $s]);\n" +
+                            "}\n");
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)

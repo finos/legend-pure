@@ -17,5 +17,6 @@ package org.finos.legend.pure.m4.coreinstance.primitive.date;
 public interface DateTime extends PureDate
 {
     StrictDate datePart();
+
     DateTime clone();
 }

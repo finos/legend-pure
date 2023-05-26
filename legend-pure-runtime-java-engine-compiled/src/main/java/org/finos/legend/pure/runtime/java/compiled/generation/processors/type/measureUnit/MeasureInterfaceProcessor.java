@@ -29,20 +29,20 @@ public class MeasureInterfaceProcessor
     private static final String IMPORTS = "import org.eclipse.collections.api.RichIterable;\n" +
             "import org.finos.legend.pure.m4.coreinstance.CoreInstance;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.*;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n"+
-            "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.*;\n"+
+            "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n" +
+            "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*;\n" +
             "import org.finos.legend.pure.m3.execution.ExecutionSupport;\n";
 
-    public static StringJavaSource buildInterface(final String _package, final String imports, final CoreInstance classGenericType, final ProcessorContext processorContext, final ProcessorSupport processorSupport, final boolean useJavaInheritance)
+    public static StringJavaSource buildInterface(String _package, String imports, CoreInstance classGenericType, ProcessorContext processorContext, ProcessorSupport processorSupport, boolean useJavaInheritance)
     {
-        final CoreInstance measure = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
-        final String interfaceName = TypeProcessor.javaInterfaceForType(measure);
-        final String typeParams = MeasureProcessor.typeParameters(measure);
+        CoreInstance measure = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
+        String interfaceName = TypeProcessor.javaInterfaceForType(measure);
+        String typeParams = MeasureProcessor.typeParameters(measure);
         String typeParamsString = typeParams.isEmpty() ? "" : "<" + typeParams + ">";
-        final String interfaceNamePlusTypeParams = interfaceName + typeParamsString;
+        String interfaceNamePlusTypeParams = interfaceName + typeParamsString;
 
         boolean isGetterOverride = M3Paths.GetterOverride.equals(PackageableElement.getUserPathForPackageableElement(measure));
 

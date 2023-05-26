@@ -22,6 +22,6 @@ public class TimePrinter
         long deltaMicro = (delta / 1000) % 1000;
         long deltaMillis = (delta / 1000000) % 1000;
         long deltaSecond = (delta / 1000000000);
-        return String.format("%d:%02d:%02d.%03d.%03d.%03d", deltaSecond/3600, (deltaSecond / 60) % 60, deltaSecond % 60, deltaMillis, deltaMicro, deltaNano);
+        return String.format("%d:%02d:%02d.%03d.%03d.%03d", deltaSecond / 3600, (deltaSecond / 60) % 60, deltaSecond % 60, deltaMillis, deltaMicro, deltaNano);
     }
 }

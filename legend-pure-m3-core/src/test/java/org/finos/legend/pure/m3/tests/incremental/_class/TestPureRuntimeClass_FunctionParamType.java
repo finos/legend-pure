@@ -32,12 +32,14 @@ import org.junit.Test;
 public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("sourceId.pure");
         runtime.delete("sourceId2.pure");
         runtime.delete("userId.pure");
@@ -49,14 +51,14 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{name:String[1];}")
                         .createInMemorySource("userId.pure", "function f(c:A[0]):A[0]{$c}" +
-                                "function test():Boolean[1]{assert(f([])->isEmpty(),|'')}" )
+                                "function test():Boolean[1]{assert(f([])->isEmpty(),|'')}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
                         .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 20)
                         .createInMemorySource("sourceId.pure", "Class A{name:String[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -64,7 +66,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
                         .createInMemorySource("userId.pure", "function f(c:A[0]):A[0]{$c}" +
-                                "function test():Boolean[1]{assert(f([])->isEmpty(),|'')}" )
+                                "function test():Boolean[1]{assert(f([])->isEmpty(),|'')}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
@@ -73,7 +75,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
                         .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 20)
                         .updateSource("sourceId.pure", "Class A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -88,14 +90,14 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
                         .compileWithExpectedCompileFailure("A has not been defined!", null, 1, 14)
                         .createInMemorySource("sourceId.pure", "Class A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
     public void testPureRuntimeClassAsLambdaParameterError() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
-                        .createInMemorySource("userId.pure", "function test():Nil[0]{f({a:A[1]|[]->cast(@A)}->eval(^A()));}" )
+                        .createInMemorySource("userId.pure", "function test():Nil[0]{f({a:A[1]|[]->cast(@A)}->eval(^A()));}")
                         .createInMemorySource("other.pure", "function f(a:A[*]):Nil[0]{[];}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
@@ -105,7 +107,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
                         .compileWithExpectedCompileFailure("A has not been defined!", null, 1, 14)
                         .updateSource("sourceId.pure", "Class A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
     }
 
@@ -114,7 +116,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
     public void testPureRuntimeClassAsLambdaParameterAndReturn() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
-                        .createInMemorySource("userId.pure", "function test():Nil[0]{f({a:A[1]|[]->cast(@A)}->eval(^A()));}" )
+                        .createInMemorySource("userId.pure", "function test():Nil[0]{f({a:A[1]|[]->cast(@A)}->eval(^A()));}")
                         .createInMemorySource("other.pure", "function f(a:A[*]):Nil[0]{[];}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
@@ -122,7 +124,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
                         .compileWithExpectedCompileFailure("A has not been defined!", null, 1, 14)
                         .createInMemorySource("sourceId.pure", "Class A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -139,7 +141,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
                         .compileWithExpectedCompileFailure("A has not been defined!", null, 1, 14)
                         .updateSource("sourceId.pure", "Class A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
@@ -147,7 +149,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
     public void testPureRuntimeClassAsLambdaParameterWithFuncInside() throws Exception
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
-                        .createInMemorySource("userId.pure", "function test():Nil[0]{^A()->match(a:A[1]|f($a));}" )
+                        .createInMemorySource("userId.pure", "function test():Nil[0]{^A()->match(a:A[1]|f($a));}")
                         .createInMemorySource("other.pure", "function f(a:A[1]):Nil[0]{[];}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
@@ -155,7 +157,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
                         .compileWithExpectedCompileFailure("A has not been defined!", null, 1, 14)
                         .createInMemorySource("sourceId.pure", "Class A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -172,7 +174,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
                         .compileWithExpectedCompileFailure("A has not been defined!", null, 1, 14)
                         .updateSource("sourceId.pure", "Class A{} Class B{a:A[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -187,7 +189,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
                         .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 28)
                         .createInMemorySource("sourceId.pure", "Class A{} function k(a:Any[1]):Nil[0]{[]}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -207,7 +209,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
                                 "    [];\n" +
                                 "}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -217,22 +219,22 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
                 "sourceId.pure", "Class A{name:String[1];}",
                 "sourceId2.pure", "Class B{prop(a:A[1]){$a.name}:String[1];}"
         );
-        this.runtime.createInMemorySource("sourceId.pure", sources.get("sourceId.pure"));
-        this.runtime.createInMemorySource("sourceId2.pure", sources.get("sourceId2.pure"));
-        this.runtime.compile();
+        runtime.createInMemorySource("sourceId.pure", sources.get("sourceId.pure"));
+        runtime.createInMemorySource("sourceId2.pure", sources.get("sourceId2.pure"));
+        runtime.compile();
 
-        int size = this.repository.serialize().length;
-        CoreInstance classA = this.processorSupport.package_getByUserPath("A");
-        CoreInstance classB = this.processorSupport.package_getByUserPath("B");
-        CoreInstance prop = _Class.getQualifiedPropertiesByName(classB, this.processorSupport).get("prop(A)");
-        Assert.assertSame(classA, Instance.getValueForMetaPropertyToOneResolved(Instance.getValueForMetaPropertyToManyResolved(this.processorSupport.function_getFunctionType(prop), M3Properties.parameters, this.processorSupport).get(1), M3Properties.genericType, M3Properties.rawType, this.processorSupport));
+        int size = repository.serialize().length;
+        CoreInstance classA = processorSupport.package_getByUserPath("A");
+        CoreInstance classB = processorSupport.package_getByUserPath("B");
+        CoreInstance prop = _Class.getQualifiedPropertiesByName(classB, processorSupport).get("prop(A)");
+        Assert.assertSame(classA, Instance.getValueForMetaPropertyToOneResolved(Instance.getValueForMetaPropertyToManyResolved(processorSupport.function_getFunctionType(prop), M3Properties.parameters, processorSupport).get(1), M3Properties.genericType, M3Properties.rawType, processorSupport));
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete("sourceId.pure");
+            runtime.delete("sourceId.pure");
             try
             {
-                this.runtime.compile();
+                runtime.compile();
                 Assert.fail("Expected a compile exception");
             }
             catch (Exception e)
@@ -240,15 +242,15 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
                 assertPureException(PureCompilationException.class, "A has not been defined!", "sourceId2.pure", e);
             }
 
-            this.runtime.createInMemorySource("sourceId.pure", sources.get("sourceId.pure"));
-            this.runtime.compile();
+            runtime.createInMemorySource("sourceId.pure", sources.get("sourceId.pure"));
+            runtime.compile();
 
-            classA = this.processorSupport.package_getByUserPath("A");
-            classB = this.processorSupport.package_getByUserPath("B");
-            prop = _Class.getQualifiedPropertiesByName(classB, this.processorSupport).get("prop(A)");
-            Assert.assertSame(classA, Instance.getValueForMetaPropertyToOneResolved(Instance.getValueForMetaPropertyToManyResolved(this.processorSupport.function_getFunctionType(prop), M3Properties.parameters, this.processorSupport).get(1), M3Properties.genericType, M3Properties.rawType, this.processorSupport));
+            classA = processorSupport.package_getByUserPath("A");
+            classB = processorSupport.package_getByUserPath("B");
+            prop = _Class.getQualifiedPropertiesByName(classB, processorSupport).get("prop(A)");
+            Assert.assertSame(classA, Instance.getValueForMetaPropertyToOneResolved(Instance.getValueForMetaPropertyToManyResolved(processorSupport.function_getFunctionType(prop), M3Properties.parameters, processorSupport).get(1), M3Properties.genericType, M3Properties.rawType, processorSupport));
 
-            Assert.assertEquals(size, this.repository.serialize().length);
+            Assert.assertEquals(size, repository.serialize().length);
         }
     }
 }

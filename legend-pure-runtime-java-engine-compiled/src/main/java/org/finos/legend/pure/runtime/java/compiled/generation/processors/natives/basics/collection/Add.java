@@ -26,7 +26,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.Ty
 
 public class Add extends AbstractNative
 {
-    public Add() {
+    public Add()
+    {
         super("add_T_MANY__T_1__T_$1_MANY$_", "add_T_MANY__Integer_1__T_1__T_$1_MANY$_");
     }
 
@@ -43,12 +44,13 @@ public class Add extends AbstractNative
         String index = isIndexedVersion ? transformedParams.get(1) + ", " : "";
         String typeCast = "";
 
-        if (!isIndexedVersion) {
+        if (!isIndexedVersion)
+        {
             typeCast = processorContext.getSupport().valueSpecification_instanceOf(parametersValues.get(0), M3Paths.Nil)
                     ? "(RichIterable<" + TypeProcessor.typeToJavaObjectSingle(parametersValues.get(1).getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport) + ">)"
                     : "";
         }
 
-        return "CompiledSupport.add(CompiledSupport.toPureCollection(" + typeCast + list + "), " + index  + element + ")";
+        return "CompiledSupport.add(CompiledSupport.toPureCollection(" + typeCast + list + "), " + index + element + ")";
     }
 }

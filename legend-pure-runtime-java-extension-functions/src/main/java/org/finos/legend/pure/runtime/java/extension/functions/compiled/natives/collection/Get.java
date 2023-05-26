@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection;
 
-import org.apache.commons.lang3.StringUtils;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -27,7 +26,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.Ty
 
 public class Get extends AbstractNativeFunctionGeneric
 {
-    public Get() {
+    public Get()
+    {
         super("FunctionsGen.get", new Class[]{RichIterable.class, String.class}, "get_T_MANY__String_1__T_$0_1$_");
     }
 
@@ -36,7 +36,6 @@ public class Get extends AbstractNativeFunctionGeneric
     {
         ProcessorSupport processorSupport = processorContext.getSupport();
         String type = TypeProcessor.typeToJavaPrimitiveSingle(Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.genericType, processorSupport), processorSupport);
-
-        return "(" + type + ")FunctionsGen.get(" + StringUtils.join(transformedParams, ", ") + ")";
+        return transformedParams.makeString("(" + type + ")FunctionsGen.get(", ", ", ")");
     }
 }

@@ -15,10 +15,9 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.type.measureUnit;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.predicate.Predicate2;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -51,7 +50,7 @@ public class MeasureImplProcessor
             "import org.finos.legend.pure.runtime.java.compiled.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.*;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n"+
+            "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.E_;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ReflectiveCoreInstance;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ValCoreInstance;\n" +
@@ -68,20 +67,12 @@ public class MeasureImplProcessor
 
     public static final String CLASS_IMPL_SUFFIX = "_Impl";
 
-    public static final Predicate2<CoreInstance, ProcessorSupport> IS_TO_ONE = new Predicate2<CoreInstance, ProcessorSupport>()
-    {
-        @Override
-        public boolean accept(CoreInstance coreInstance, ProcessorSupport processorSupport)
-        {
-            CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(coreInstance, M3Properties.multiplicity, processorSupport);
-            return Multiplicity.isToOne(multiplicity, false);
-        }
-    };
+    public static final Predicate2<CoreInstance, ProcessorSupport> IS_TO_ONE = MeasureImplProcessor::isToOne;
 
     public static String buildCanonicalUnit(String unitTypeInterfaceName, String simpleName, String unitTypeImplName)
     {
         String lowerCasedJavaCompatibleName = UnitProcessor.convertToJavaCompatibleClassName(simpleName.toLowerCase());
-        return          "    public " + unitTypeInterfaceName + " _canonicalUnit()\n" +
+        return "    public " + unitTypeInterfaceName + " _canonicalUnit()\n" +
                 "    {\n" +
                 "        if (_" + lowerCasedJavaCompatibleName + "Impl" + " == null)" +
                 "           {\n" +
@@ -91,7 +82,7 @@ public class MeasureImplProcessor
                 "    }\n\n";
     }
 
-    public static StringJavaSource buildImplementation(String _package, String imports, CoreInstance classGenericType, ProcessorContext processorContext, final ProcessorSupport processorSupport, final boolean useJavaInheritance)
+    public static StringJavaSource buildImplementation(String _package, String imports, CoreInstance classGenericType, ProcessorContext processorContext, ProcessorSupport processorSupport, boolean useJavaInheritance)
     {
         processorContext.setClassImplSuffix(CLASS_IMPL_SUFFIX);
         final CoreInstance measure = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
@@ -109,10 +100,10 @@ public class MeasureImplProcessor
                 M3Paths.ConstraintsGetterOverride.equals(PackageableElement.getUserPathForPackageableElement(measure));
 
         boolean hasFunctions = !_Class.getQualifiedProperties(measure, processorContext.getSupport()).isEmpty()
-                || !_Class.computeConstraintsInHierarchy(measure,processorContext.getSupport()).isEmpty();
+                || !_Class.computeConstraintsInHierarchy(measure, processorContext.getSupport()).isEmpty();
 
-        return StringJavaSource.newStringJavaSource(_package, className, IMPORTS + (hasFunctions? FUNCTION_IMPORTS :"") + imports +
-                "public class " + classNamePlusTypeParams + " extends " + "Root_meta_pure_metamodel_type_Measure_Impl" + " implements " + interfaceNamePlusTypeParams + (isGetterOverride? ", GetterOverrideExecutor" :"") + "\n" +
+        return StringJavaSource.newStringJavaSource(_package, className, IMPORTS + (hasFunctions ? FUNCTION_IMPORTS : "") + imports +
+                "public class " + classNamePlusTypeParams + " extends " + "Root_meta_pure_metamodel_type_Measure_Impl" + " implements " + interfaceNamePlusTypeParams + (isGetterOverride ? ", GetterOverrideExecutor" : "") + "\n" +
                 "{\n" +
                 buildMetaInfo(classGenericType, processorSupport, false, allUnits) +
                 buildSimpleConstructor(measure, className, processorSupport, useJavaInheritance, allUnits) +
@@ -138,18 +129,11 @@ public class MeasureImplProcessor
         CoreInstance measure = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
         String fullId = PackageableElement.getSystemPathForPackageableElement(measure, "::");
         return "    public static final String tempTypeName = \"" + Instance.getValueForMetaPropertyToOneResolved(measure, "name", processorSupport).getName() + "\";\n" +
-                "    private static final String tempFullTypeId = \"" + fullId + "\";\n"+
-                "    private"+ (lazy ? " volatile" : "") +" CoreInstance classifier;\n" +
+                "    private static final String tempFullTypeId = \"" + fullId + "\";\n" +
+                "    private" + (lazy ? " volatile" : "") + " CoreInstance classifier;\n" +
                 "    private ExecutionSupport es;\n" +
 
-               allUnits.collect(new Function<CoreInstance, String>()
-                {
-                    @Override
-                    public String valueOf(CoreInstance unit)
-                    {
-                        return "    public static " + UnitProcessor.convertToJavaCompatibleClassName(TypeProcessor.javaInterfaceForType(unit)) + " _" + UnitProcessor.convertToJavaCompatibleClassName(unit.getName().toLowerCase()) + "Impl" + ";\n";
-                    }
-                }).makeString("");
+                allUnits.collect(unit -> "    public static " + UnitProcessor.convertToJavaCompatibleClassName(TypeProcessor.javaInterfaceForType(unit)) + " _" + UnitProcessor.convertToJavaCompatibleClassName(unit.getName().toLowerCase()) + "Impl" + ";\n").makeString("");
     }
 
     public static String buildSimpleConstructor(CoreInstance _class, String className, ProcessorSupport processorSupport, boolean usesInheritance, ListIterable<? extends CoreInstance> allUnits)
@@ -167,33 +151,27 @@ public class MeasureImplProcessor
 
     private static String buildGetClassifier()
     {
-        return  "    @Override\n" +
+        return "    @Override\n" +
                 "    public CoreInstance getClassifier()\n" +
                 "     {\n" +
-                "        return this.classifier;\n"+
+                "        return this.classifier;\n" +
                 "     }\n";
     }
 
-    public static String buildGetValueForMetaPropertyToOne(final CoreInstance classGenericType, final ProcessorSupport processorSupport)
+    public static String buildGetValueForMetaPropertyToOne(CoreInstance classGenericType, ProcessorSupport processorSupport)
     {
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
-        RichIterable<CoreInstance> toOneProperties = processorSupport.class_getSimpleProperties(_class).selectWith(IS_TO_ONE, processorSupport);
+        RichIterable<CoreInstance> toOneProperties = processorSupport.class_getSimpleProperties(_class).select(p -> isToOne(p, processorSupport));
         return "    @Override\n" +
                 "    public CoreInstance getValueForMetaPropertyToOne(String keyName)\n" +
                 "    {\n" +
                 "        switch (keyName)\n" +
                 "        {\n" +
-                toOneProperties.collect(new Function<CoreInstance, String>()
-                {
-                    @Override
-                    public String valueOf(CoreInstance property)
-                    {
-                        return "            case \"" + property.getName() + "\":\n" +
-                                "            {\n" +
-                                "                return ValCoreInstance.toCoreInstance(this._" + Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.name, processorSupport).getName() + "());\n" +
-                                "            }\n";
-                    }
-                }).makeString("") +
+                toOneProperties.collect(property ->
+                        "            case \"" + property.getName() + "\":\n" +
+                        "            {\n" +
+                        "                return ValCoreInstance.toCoreInstance(this._" + Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.name, processorSupport).getName() + "());\n" +
+                        "            }\n").makeString("") +
 
                 "            case \"canonicalUnit\":\n" +
                 "            {\n" +
@@ -211,9 +189,15 @@ public class MeasureImplProcessor
 
     public static String buildGetFullSystemPath()
     {
-        return  "    public String getFullSystemPath()\n" +
+        return "    public String getFullSystemPath()\n" +
                 "    {\n" +
                 "         return tempFullTypeId;\n" +
                 "    }\n";
+    }
+
+    private static boolean isToOne(CoreInstance property, ProcessorSupport processorSupport)
+    {
+        CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.multiplicity, processorSupport);
+        return Multiplicity.isToOne(multiplicity, false);
     }
 }

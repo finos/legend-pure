@@ -17,6 +17,8 @@ package org.finos.legend.pure.runtime.java.compiled.serialization.model;
 public interface RValueVisitor<T>
 {
     T visit(Primitive primitive);
+
     T visit(ObjRef objRef);
+
     T visit(EnumRef enumRef);
 }

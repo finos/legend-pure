@@ -33,7 +33,8 @@ import org.junit.Test;
 public class TestEnumerationMapping extends AbstractPureMappingTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime();
     }
 
@@ -44,22 +45,15 @@ public class TestEnumerationMapping extends AbstractPureMappingTestWithCoreCompi
         runtime.delete("model.pure");
     }
 
-    private static Predicate detectByEnumerationMappingName(final String name)
+    private static Predicate<EnumerationMapping<?>> detectByEnumerationMappingName(String name)
     {
-        return new Predicate<EnumerationMapping>()
-        {
-            @Override
-            public boolean accept(EnumerationMapping enumMapping)
-            {
-                return enumMapping._name().equals(name);
-            }
-        };
+        return enumMapping -> name.equals(enumMapping._name());
     }
 
     @Test
     public void testInvalidEnumeration()
     {
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "###Mapping\n" +
                         "Mapping test::TestMapping\n" +
                         "(\n" +
@@ -71,7 +65,7 @@ public class TestEnumerationMapping extends AbstractPureMappingTestWithCoreCompi
                         ")");
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail("Expected compilation error");
         }
         catch (Exception e)
@@ -83,7 +77,7 @@ public class TestEnumerationMapping extends AbstractPureMappingTestWithCoreCompi
     @Test
     public void testValidEnumeration()
     {
-        this.runtime.createInMemorySource("model.pure",
+        runtime.createInMemorySource("model.pure",
                 "Enum test::TestEnumeration\n" +
                         "{\n" +
                         "  VAL1, VAL2" +
@@ -97,20 +91,20 @@ public class TestEnumerationMapping extends AbstractPureMappingTestWithCoreCompi
                 "    VAL2 : '2'\n" +
                 "  }\n" +
                 ")";
-        this.runtime.createInMemorySource("mapping.pure", source);
-        this.runtime.compile();
+        runtime.createInMemorySource("mapping.pure", source);
+        runtime.compile();
         assertSetSourceInformation(source, "test::TestEnumeration");
     }
 
     @Test
     public void testInvalidEnum()
     {
-        this.runtime.createInMemorySource("model.pure",
+        runtime.createInMemorySource("model.pure",
                 "Enum test::TestEnumeration\n" +
                         "{\n" +
                         "  VAL1, VAL2" +
                         "}");
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "###Mapping\n" +
                         "Mapping test::TestMapping\n" +
                         "(\n" +
@@ -123,7 +117,7 @@ public class TestEnumerationMapping extends AbstractPureMappingTestWithCoreCompi
                         ")");
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail("Expected compilation error");
         }
         catch (Exception e)
@@ -135,7 +129,7 @@ public class TestEnumerationMapping extends AbstractPureMappingTestWithCoreCompi
     @Test
     public void testValidSimpleEnumToEnumMapping()
     {
-        this.runtime.createInMemorySource("model.pure",
+        runtime.createInMemorySource("model.pure",
                 "###Pure\n" +
                         "\n" +
                         "Enum my::SourceEnum\n" +
@@ -159,42 +153,42 @@ public class TestEnumerationMapping extends AbstractPureMappingTestWithCoreCompi
                         "      Y : my::SourceEnum.B\n" +
                         "   }\n" +
                         ")");
-        this.runtime.compile();
+        runtime.compile();
 
-        org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping mapping = (org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping)this.runtime.getCoreInstance("my::TestMapping");
+        org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping mapping = (org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping) runtime.getCoreInstance("my::TestMapping");
         EnumerationMapping enumerationMapping = mapping._enumerationMappings().getFirst();
         Assert.assertEquals("my::TargetEnum", PackageableElement.getUserPathForPackageableElement(enumerationMapping._enumeration()));
 
-        ImmutableList<EnumValueMapping> enumValueMappings = (ImmutableList<EnumValueMapping>)enumerationMapping._enumValueMappings();
+        ImmutableList<EnumValueMapping> enumValueMappings = (ImmutableList<EnumValueMapping>) enumerationMapping._enumValueMappings();
         Assert.assertEquals(2, enumValueMappings.size());
 
         EnumValueMapping enumValueMapping1 = enumValueMappings.get(0);
         Assert.assertEquals("X", enumValueMapping1._enum()._name());
-        ImmutableList<CoreInstance> sourceValuesCoreInstances1 = (ImmutableList<CoreInstance>)enumValueMapping1._sourceValuesCoreInstance();
+        ImmutableList<CoreInstance> sourceValuesCoreInstances1 = (ImmutableList<CoreInstance>) enumValueMapping1._sourceValuesCoreInstance();
         Assert.assertEquals(1, sourceValuesCoreInstances1.size());
         Assert.assertTrue(sourceValuesCoreInstances1.get(0) instanceof EnumStub);
-        Assert.assertEquals("my::SourceEnum", PackageableElement.getUserPathForPackageableElement(((EnumStub)sourceValuesCoreInstances1.get(0))._enumeration()));
-        ImmutableList<CoreInstance> sourceValues1 = (ImmutableList<CoreInstance>)enumValueMapping1._sourceValues();
+        Assert.assertEquals("my::SourceEnum", PackageableElement.getUserPathForPackageableElement(((EnumStub) sourceValuesCoreInstances1.get(0))._enumeration()));
+        ImmutableList<CoreInstance> sourceValues1 = (ImmutableList<CoreInstance>) enumValueMapping1._sourceValues();
         Assert.assertEquals(1, sourceValues1.size());
         Assert.assertTrue(sourceValues1.get(0) instanceof Enum);
-        Assert.assertEquals("A", ((Enum)sourceValues1.get(0))._name());
+        Assert.assertEquals("A", ((Enum) sourceValues1.get(0))._name());
 
         EnumValueMapping enumValueMapping2 = enumValueMappings.get(1);
         Assert.assertEquals("Y", enumValueMapping2._enum()._name());
-        ImmutableList<CoreInstance> sourceValuesCoreInstances2 = (ImmutableList<CoreInstance>)enumValueMapping2._sourceValuesCoreInstance();
+        ImmutableList<CoreInstance> sourceValuesCoreInstances2 = (ImmutableList<CoreInstance>) enumValueMapping2._sourceValuesCoreInstance();
         Assert.assertEquals(1, sourceValuesCoreInstances2.size());
         Assert.assertTrue(sourceValuesCoreInstances2.get(0) instanceof EnumStub);
-        Assert.assertEquals("my::SourceEnum", PackageableElement.getUserPathForPackageableElement(((EnumStub)sourceValuesCoreInstances2.get(0))._enumeration()));
-        ImmutableList<CoreInstance> sourceValues2 = (ImmutableList<CoreInstance>)enumValueMapping2._sourceValues();
+        Assert.assertEquals("my::SourceEnum", PackageableElement.getUserPathForPackageableElement(((EnumStub) sourceValuesCoreInstances2.get(0))._enumeration()));
+        ImmutableList<CoreInstance> sourceValues2 = (ImmutableList<CoreInstance>) enumValueMapping2._sourceValues();
         Assert.assertEquals(1, sourceValues2.size());
         Assert.assertTrue(sourceValues2.get(0) instanceof Enum);
-        Assert.assertEquals("B", ((Enum)sourceValues2.get(0))._name());
+        Assert.assertEquals("B", ((Enum) sourceValues2.get(0))._name());
     }
 
     @Test
     public void testInvalidSourceTypes()
     {
-        this.runtime.createInMemorySource("model.pure",
+        runtime.createInMemorySource("model.pure",
                 "###Pure\n" +
                         "\n" +
                         "Enum my::SourceEnumA\n" +
@@ -226,7 +220,7 @@ public class TestEnumerationMapping extends AbstractPureMappingTestWithCoreCompi
                         ")");
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail("Expected compilation error");
         }
         catch (Exception e)
@@ -238,7 +232,7 @@ public class TestEnumerationMapping extends AbstractPureMappingTestWithCoreCompi
     @Test
     public void testValidComplexEnumToEnumMapping()
     {
-        this.runtime.createInMemorySource("model.pure",
+        runtime.createInMemorySource("model.pure",
                 "###Pure\n" +
                         "\n" +
                         "Enum my::SourceEnum\n" +
@@ -262,46 +256,46 @@ public class TestEnumerationMapping extends AbstractPureMappingTestWithCoreCompi
                         "      Y : [SourceEnum.B, my::SourceEnum.C]\n" +
                         "   }\n" +
                         ")");
-        this.runtime.compile();
+        runtime.compile();
 
-        org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping mapping = (org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping)this.runtime.getCoreInstance("my::TestMapping");
+        org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping mapping = (org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping) runtime.getCoreInstance("my::TestMapping");
         EnumerationMapping enumerationMapping = mapping._enumerationMappings().getFirst();
         Assert.assertEquals("my::TargetEnum", PackageableElement.getUserPathForPackageableElement(enumerationMapping._enumeration()));
 
-        ImmutableList<EnumValueMapping> enumValueMappings = (ImmutableList<EnumValueMapping>)enumerationMapping._enumValueMappings();
+        ImmutableList<EnumValueMapping> enumValueMappings = (ImmutableList<EnumValueMapping>) enumerationMapping._enumValueMappings();
         Assert.assertEquals(2, enumValueMappings.size());
 
         EnumValueMapping enumValueMapping1 = enumValueMappings.get(0);
         Assert.assertEquals("X", enumValueMapping1._enum()._name());
-        ImmutableList<CoreInstance> sourceValuesCoreInstances1 = (ImmutableList<CoreInstance>)enumValueMapping1._sourceValuesCoreInstance();
+        ImmutableList<CoreInstance> sourceValuesCoreInstances1 = (ImmutableList<CoreInstance>) enumValueMapping1._sourceValuesCoreInstance();
         Assert.assertEquals(1, sourceValuesCoreInstances1.size());
         Assert.assertTrue(sourceValuesCoreInstances1.get(0) instanceof EnumStub);
-        Assert.assertEquals("my::SourceEnum", PackageableElement.getUserPathForPackageableElement(((EnumStub)sourceValuesCoreInstances1.get(0))._enumeration()));
-        ImmutableList<CoreInstance> sourceValues1 = (ImmutableList<CoreInstance>)enumValueMapping1._sourceValues();
+        Assert.assertEquals("my::SourceEnum", PackageableElement.getUserPathForPackageableElement(((EnumStub) sourceValuesCoreInstances1.get(0))._enumeration()));
+        ImmutableList<CoreInstance> sourceValues1 = (ImmutableList<CoreInstance>) enumValueMapping1._sourceValues();
         Assert.assertEquals(1, sourceValues1.size());
         Assert.assertTrue(sourceValues1.get(0) instanceof Enum);
-        Assert.assertEquals("A", ((Enum)sourceValues1.get(0))._name());
+        Assert.assertEquals("A", ((Enum) sourceValues1.get(0))._name());
 
         EnumValueMapping enumValueMapping2 = enumValueMappings.get(1);
         Assert.assertEquals("Y", enumValueMapping2._enum()._name());
-        ImmutableList<CoreInstance> sourceValuesCoreInstances2 = (ImmutableList<CoreInstance>)enumValueMapping2._sourceValuesCoreInstance();
+        ImmutableList<CoreInstance> sourceValuesCoreInstances2 = (ImmutableList<CoreInstance>) enumValueMapping2._sourceValuesCoreInstance();
         Assert.assertEquals(2, sourceValuesCoreInstances2.size());
         Assert.assertTrue(sourceValuesCoreInstances2.get(0) instanceof EnumStub);
-        Assert.assertEquals("my::SourceEnum", PackageableElement.getUserPathForPackageableElement(((EnumStub)sourceValuesCoreInstances2.get(0))._enumeration()));
+        Assert.assertEquals("my::SourceEnum", PackageableElement.getUserPathForPackageableElement(((EnumStub) sourceValuesCoreInstances2.get(0))._enumeration()));
         Assert.assertTrue(sourceValuesCoreInstances2.get(1) instanceof EnumStub);
-        Assert.assertEquals("my::SourceEnum", PackageableElement.getUserPathForPackageableElement(((EnumStub)sourceValuesCoreInstances2.get(1))._enumeration()));
-        ImmutableList<CoreInstance> sourceValues2 = (ImmutableList<CoreInstance>)enumValueMapping2._sourceValues();
+        Assert.assertEquals("my::SourceEnum", PackageableElement.getUserPathForPackageableElement(((EnumStub) sourceValuesCoreInstances2.get(1))._enumeration()));
+        ImmutableList<CoreInstance> sourceValues2 = (ImmutableList<CoreInstance>) enumValueMapping2._sourceValues();
         Assert.assertEquals(2, sourceValues2.size());
         Assert.assertTrue(sourceValues2.get(0) instanceof Enum);
-        Assert.assertEquals("B", ((Enum)sourceValues2.get(0))._name());
+        Assert.assertEquals("B", ((Enum) sourceValues2.get(0))._name());
         Assert.assertTrue(sourceValues2.get(1) instanceof Enum);
-        Assert.assertEquals("C", ((Enum)sourceValues2.get(1))._name());
+        Assert.assertEquals("C", ((Enum) sourceValues2.get(1))._name());
     }
 
     @Test
     public void testValidHybridEnumToEnumMapping()
     {
-        this.runtime.createInMemorySource("model.pure",
+        runtime.createInMemorySource("model.pure",
                 "###Pure\n" +
                         "\n" +
                         "Enum my::SourceEnum1\n" +
@@ -350,59 +344,59 @@ public class TestEnumerationMapping extends AbstractPureMappingTestWithCoreCompi
                         "      Z : 'A'\n" +
                         "   }\n" +
                         ")");
-        this.runtime.compile();
+        runtime.compile();
 
-        org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping mapping = (org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping)this.runtime.getCoreInstance("my::TestMapping");
+        org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping mapping = (org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping) runtime.getCoreInstance("my::TestMapping");
         EnumerationMapping enumerationMapping = mapping._enumerationMappings().detect(detectByEnumerationMappingName("enumsATargetEnum"));
         Assert.assertEquals("my::TargetEnum", PackageableElement.getUserPathForPackageableElement(enumerationMapping._enumeration()));
 
-        ImmutableList<EnumValueMapping> enumValueMappings = (ImmutableList<EnumValueMapping>)enumerationMapping._enumValueMappings();
+        ImmutableList<EnumValueMapping> enumValueMappings = (ImmutableList<EnumValueMapping>) enumerationMapping._enumValueMappings();
         Assert.assertEquals(6, enumValueMappings.size());
 
         EnumValueMapping enumValueMapping1 = enumValueMappings.get(0);
         Assert.assertEquals("U", enumValueMapping1._enum()._name());
-        ImmutableList<CoreInstance> sourceValuesCoreInstances1 = (ImmutableList<CoreInstance>)enumValueMapping1._sourceValuesCoreInstance();
+        ImmutableList<CoreInstance> sourceValuesCoreInstances1 = (ImmutableList<CoreInstance>) enumValueMapping1._sourceValuesCoreInstance();
         Assert.assertEquals(1, sourceValuesCoreInstances1.size());
         Assert.assertTrue(sourceValuesCoreInstances1.get(0) instanceof EnumStub);
-        Assert.assertEquals("my::SourceEnum1", PackageableElement.getUserPathForPackageableElement(((EnumStub)sourceValuesCoreInstances1.get(0))._enumeration()));
-        ImmutableList<CoreInstance> sourceValues1 = (ImmutableList<CoreInstance>)enumValueMapping1._sourceValues();
+        Assert.assertEquals("my::SourceEnum1", PackageableElement.getUserPathForPackageableElement(((EnumStub) sourceValuesCoreInstances1.get(0))._enumeration()));
+        ImmutableList<CoreInstance> sourceValues1 = (ImmutableList<CoreInstance>) enumValueMapping1._sourceValues();
         Assert.assertEquals(1, sourceValues1.size());
         Assert.assertTrue(sourceValues1.get(0) instanceof Enum);
-        Assert.assertEquals("A", ((Enum)sourceValues1.get(0))._name());
+        Assert.assertEquals("A", ((Enum) sourceValues1.get(0))._name());
 
-        enumValueMappings = (ImmutableList<EnumValueMapping>)mapping._enumerationMappings().detect(detectByEnumerationMappingName("enumsBTargetEnum"))._enumValueMappings();
+        enumValueMappings = (ImmutableList<EnumValueMapping>) mapping._enumerationMappings().detect(detectByEnumerationMappingName("enumsBTargetEnum"))._enumValueMappings();
         EnumValueMapping enumValueMapping2 = enumValueMappings.get(1);
         Assert.assertEquals("V", enumValueMapping2._enum()._name());
-        ImmutableList<CoreInstance> sourceValuesCoreInstances2 = (ImmutableList<CoreInstance>)enumValueMapping2._sourceValuesCoreInstance();
+        ImmutableList<CoreInstance> sourceValuesCoreInstances2 = (ImmutableList<CoreInstance>) enumValueMapping2._sourceValuesCoreInstance();
         Assert.assertEquals(1, sourceValuesCoreInstances2.size());
         Assert.assertTrue(sourceValuesCoreInstances2.get(0) instanceof EnumStub);
-        Assert.assertEquals("my::SourceEnum2", PackageableElement.getUserPathForPackageableElement(((EnumStub)sourceValuesCoreInstances2.get(0))._enumeration()));
-        ImmutableList<CoreInstance> sourceValues2 = (ImmutableList<CoreInstance>)enumValueMapping2._sourceValues();
+        Assert.assertEquals("my::SourceEnum2", PackageableElement.getUserPathForPackageableElement(((EnumStub) sourceValuesCoreInstances2.get(0))._enumeration()));
+        ImmutableList<CoreInstance> sourceValues2 = (ImmutableList<CoreInstance>) enumValueMapping2._sourceValues();
         Assert.assertEquals(1, sourceValues2.size());
         Assert.assertTrue(sourceValues2.get(0) instanceof Enum);
-        Assert.assertEquals("P", ((Enum)sourceValues2.get(0))._name());
+        Assert.assertEquals("P", ((Enum) sourceValues2.get(0))._name());
 
         EnumValueMapping enumValueMapping3 = enumValueMappings.get(2);
         Assert.assertEquals("W", enumValueMapping3._enum()._name());
-        ImmutableList<CoreInstance> sourceValuesCoreInstances3 = (ImmutableList<CoreInstance>)enumValueMapping3._sourceValuesCoreInstance();
+        ImmutableList<CoreInstance> sourceValuesCoreInstances3 = (ImmutableList<CoreInstance>) enumValueMapping3._sourceValuesCoreInstance();
         Assert.assertEquals(3, sourceValuesCoreInstances3.size());
         Assert.assertTrue(sourceValuesCoreInstances3.get(0) instanceof EnumStub);
-        Assert.assertEquals("my::SourceEnum2", PackageableElement.getUserPathForPackageableElement(((EnumStub)sourceValuesCoreInstances3.get(0))._enumeration()));
+        Assert.assertEquals("my::SourceEnum2", PackageableElement.getUserPathForPackageableElement(((EnumStub) sourceValuesCoreInstances3.get(0))._enumeration()));
         Assert.assertTrue(sourceValuesCoreInstances3.get(1) instanceof EnumStub);
-        Assert.assertEquals("my::SourceEnum2", PackageableElement.getUserPathForPackageableElement(((EnumStub)sourceValuesCoreInstances3.get(1))._enumeration()));
-        ImmutableList<CoreInstance> sourceValues3 = (ImmutableList<CoreInstance>)enumValueMapping3._sourceValues();
+        Assert.assertEquals("my::SourceEnum2", PackageableElement.getUserPathForPackageableElement(((EnumStub) sourceValuesCoreInstances3.get(1))._enumeration()));
+        ImmutableList<CoreInstance> sourceValues3 = (ImmutableList<CoreInstance>) enumValueMapping3._sourceValues();
         Assert.assertEquals(3, sourceValues3.size());
         Assert.assertTrue(sourceValues3.get(0) instanceof Enum);
-        Assert.assertEquals("P", ((Enum)sourceValues3.get(0))._name());
+        Assert.assertEquals("P", ((Enum) sourceValues3.get(0))._name());
         Assert.assertTrue(sourceValues3.get(1) instanceof Enum);
-        Assert.assertEquals("Q", ((Enum)sourceValues3.get(1))._name());
+        Assert.assertEquals("Q", ((Enum) sourceValues3.get(1))._name());
         Assert.assertTrue(sourceValues3.get(2) instanceof Enum);
-        Assert.assertEquals("R", ((Enum)sourceValues3.get(2))._name());
+        Assert.assertEquals("R", ((Enum) sourceValues3.get(2))._name());
 
-        enumValueMappings = (ImmutableList<EnumValueMapping>)mapping._enumerationMappings().detect(detectByEnumerationMappingName("integersTargetEnum2"))._enumValueMappings();
+        enumValueMappings = (ImmutableList<EnumValueMapping>) mapping._enumerationMappings().detect(detectByEnumerationMappingName("integersTargetEnum2"))._enumValueMappings();
         enumValueMapping1 = enumValueMappings.get(0);
         Assert.assertEquals("X", enumValueMapping1._enum()._name());
-        ImmutableList<CoreInstance> sourceValuesCoreInstances4 = (ImmutableList<CoreInstance>)enumValueMapping1._sourceValuesCoreInstance();
+        ImmutableList<CoreInstance> sourceValuesCoreInstances4 = (ImmutableList<CoreInstance>) enumValueMapping1._sourceValuesCoreInstance();
         Assert.assertEquals(3, sourceValuesCoreInstances4.size());
         Assert.assertTrue(sourceValuesCoreInstances4.get(0) instanceof IntegerCoreInstance);
         MutableList<? extends Object> sourceValues4 = enumValueMapping1._sourceValues().toList();
@@ -412,17 +406,17 @@ public class TestEnumerationMapping extends AbstractPureMappingTestWithCoreCompi
         Assert.assertEquals(6L, sourceValues4.get(2));
         enumValueMapping2 = enumValueMappings.get(1);
         Assert.assertEquals("Y", enumValueMapping2._enum()._name());
-        ImmutableList<CoreInstance> sourceValuesCoreInstances5 = (ImmutableList<CoreInstance>)enumValueMapping2._sourceValuesCoreInstance();
+        ImmutableList<CoreInstance> sourceValuesCoreInstances5 = (ImmutableList<CoreInstance>) enumValueMapping2._sourceValuesCoreInstance();
         Assert.assertEquals(1, sourceValuesCoreInstances5.size());
         Assert.assertTrue(sourceValuesCoreInstances4.get(0) instanceof IntegerCoreInstance);
         MutableList<? extends Object> sourceValues5 = enumValueMapping2._sourceValues().toList();
         Assert.assertEquals(1, sourceValues5.size());
         Assert.assertEquals(3L, sourceValues5.get(0));
 
-        enumValueMappings = (ImmutableList<EnumValueMapping>)mapping._enumerationMappings().detect(detectByEnumerationMappingName("stringsTargetEnum2"))._enumValueMappings();
+        enumValueMappings = (ImmutableList<EnumValueMapping>) mapping._enumerationMappings().detect(detectByEnumerationMappingName("stringsTargetEnum2"))._enumValueMappings();
         enumValueMapping1 = enumValueMappings.get(0);
         Assert.assertEquals("Y", enumValueMapping1._enum()._name());
-        ImmutableList<CoreInstance> sourceValuesCoreInstances6 = (ImmutableList<CoreInstance>)enumValueMapping1._sourceValuesCoreInstance();
+        ImmutableList<CoreInstance> sourceValuesCoreInstances6 = (ImmutableList<CoreInstance>) enumValueMapping1._sourceValuesCoreInstance();
         Assert.assertEquals(3, sourceValuesCoreInstances6.size());
         Assert.assertTrue(sourceValuesCoreInstances4.get(0) instanceof IntegerCoreInstance);
         MutableList<? extends Object> sourceValues6 = enumValueMapping1._sourceValues().toList();
@@ -432,7 +426,7 @@ public class TestEnumerationMapping extends AbstractPureMappingTestWithCoreCompi
         Assert.assertEquals("Three", sourceValues6.get(2));
         enumValueMapping2 = enumValueMappings.get(1);
         Assert.assertEquals("Z", enumValueMapping2._enum()._name());
-        ImmutableList<CoreInstance> sourceValuesCoreInstances7 = (ImmutableList<CoreInstance>)enumValueMapping2._sourceValuesCoreInstance();
+        ImmutableList<CoreInstance> sourceValuesCoreInstances7 = (ImmutableList<CoreInstance>) enumValueMapping2._sourceValuesCoreInstance();
         Assert.assertEquals(1, sourceValuesCoreInstances7.size());
         Assert.assertTrue(sourceValuesCoreInstances4.get(0) instanceof IntegerCoreInstance);
         MutableList<? extends Object> sourceValues7 = enumValueMapping2._sourceValues().toList();

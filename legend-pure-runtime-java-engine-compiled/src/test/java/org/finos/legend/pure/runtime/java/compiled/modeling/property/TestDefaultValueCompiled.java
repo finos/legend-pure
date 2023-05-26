@@ -34,11 +34,11 @@ public class TestDefaultValueCompiled extends AbstractTestDefaultValue
     public void cleanRuntime()
     {
         runtime.delete("defaultValueSource.pure");
-
         try
         {
             runtime.compile();
-        } catch (PureCompilationException e)
+        }
+        catch (PureCompilationException e)
         {
             setUp();
         }

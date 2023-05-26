@@ -30,12 +30,14 @@ import org.junit.Test;
 public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("file.pure");
         runtime.delete("function.pure");
     }
@@ -46,7 +48,7 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
     {
         try
         {
-            this.runtime.createInMemorySource("file.pure", "Class Person{address:Address[1];} Class Firm<T> {employees : Person[1];address:Address[1];} Class Address{}\n" +
+            runtime.createInMemorySource("file.pure", "Class Person{address:Address[1];} Class Firm<T> {employees : Person[1];address:Address[1];} Class Address{}\n" +
                     "function test():Any[*]\n" +
                     "{\n" +
                     "    print(#UnknownFirm" +
@@ -54,7 +56,7 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
                     "             *" +
                     "          }#,2);\n" +
                     "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -64,7 +66,7 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
 
         try
         {
-            this.runtime.modify("file.pure", "Class Person{address:Address[1];} Class Firm<T> {employees : Person[1];address:Address[1];} Class Address{}\n" +
+            runtime.modify("file.pure", "Class Person{address:Address[1];} Class Firm<T> {employees : Person[1];address:Address[1];} Class Address{}\n" +
                     "function test():Any[*]\n" +
                     "{\n" +
                     "    print(#Firm" +
@@ -72,7 +74,7 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
                     "               *" +
                     "          }#,1)\n" +
                     "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -83,14 +85,14 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
 
         try
         {
-            this.runtime.modify("file.pure", "Class Person{address:Address[1];} Class Firm<T> {employees : Person[1];address:Address[1];} Class Address{}\n" +
+            runtime.modify("file.pure", "Class Person{address:Address[1];} Class Firm<T> {employees : Person[1];address:Address[1];} Class Address{}\n" +
                     "function test():Any[*]\n" +
                     "{\n" +
                     "    print(#Firm<BlaBla>{" +
                     "   *" +
                     "}#,2);\n" +
                     "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -107,8 +109,8 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
                     "                 +[employee]  \n" +
                     "               }#,2);\n" +
                     "}\n";
-            this.runtime.modify("file.pure", code);
-            this.runtime.compile();
+            runtime.modify("file.pure", code);
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -119,7 +121,7 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
 
         try
         {
-            this.runtime.modify("file.pure", "Class Person{address:Address[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{}\n" +
+            runtime.modify("file.pure", "Class Person{address:Address[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{}\n" +
                     "function test():Any[*]\n" +
                     "{\n" +
                     "    print(#\n" +
@@ -132,7 +134,7 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
                     "           }" +
                     "          #,2);\n" +
                     "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -144,7 +146,7 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
     @Test
     public void testSimpleTreePath() throws Exception
     {
-        this.runtime.createInMemorySource("file.pure", "Class Person{ name: String[1];address:Address[1]; firm: Firm[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{ street:String[1]; }\n" +
+        runtime.createInMemorySource("file.pure", "Class Person{ name: String[1];address:Address[1]; firm: Firm[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{ street:String[1]; }\n" +
                 "function test():Any[*]\n" +
                 "{\n" +
                 " let t = " +
@@ -155,8 +157,8 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
                 "             address as MyKingdom { * }" +
                 "}#;" +
                 "}\n");
-        this.runtime.compile();
-        CoreInstance func = this.runtime.getCoreInstance("test__Any_MANY_");
+        runtime.compile();
+        CoreInstance func = runtime.getCoreInstance("test__Any_MANY_");
         CoreInstance tree = func.getValueForMetaPropertyToMany("expressionSequence").getFirst().getValueForMetaPropertyToMany("parametersValues").getLast().getValueForMetaPropertyToMany("values").getFirst();
 
         Assert.assertNotNull(tree);
@@ -194,9 +196,9 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
                 "             address as MyKingdom {  }" +
                 "}#;" +
                 "}\n";
-        this.runtime.createInMemorySource("file.pure", code);
-        this.runtime.compile();
-        CoreInstance func = this.runtime.getCoreInstance("test__Any_MANY_");
+        runtime.createInMemorySource("file.pure", code);
+        runtime.compile();
+        CoreInstance func = runtime.getCoreInstance("test__Any_MANY_");
         CoreInstance tree = func.getValueForMetaPropertyToMany("expressionSequence").getFirst().getValueForMetaPropertyToMany("parametersValues").getLast().getValueForMetaPropertyToMany("values").getFirst();
 
         Assert.assertNotNull(tree);
@@ -222,7 +224,7 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
     @Test
     public void testSimpleTreePathWithDerivedProperties() throws Exception
     {
-        this.runtime.createInMemorySource("file.pure", "Class Person{ name: String[1];address:Address[1]; firm: Firm[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{ street:String[1]; }\n" +
+        runtime.createInMemorySource("file.pure", "Class Person{ name: String[1];address:Address[1]; firm: Firm[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{ street:String[1]; }\n" +
                 "function test():Any[*]\n" +
                 "{\n" +
                 " let t = " +
@@ -231,8 +233,8 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
                 "      >theName[ $this.name ]   " +
                 "}#;" +
                 "}\n");
-        this.runtime.compile();
-        CoreInstance func = this.runtime.getCoreInstance("test__Any_MANY_");
+        runtime.compile();
+        CoreInstance func = runtime.getCoreInstance("test__Any_MANY_");
         CoreInstance tree = func.getValueForMetaPropertyToMany("expressionSequence").getFirst().getValueForMetaPropertyToMany("parametersValues").getLast().getValueForMetaPropertyToMany("values").getFirst();
 
         Assert.assertNotNull(tree);
@@ -246,7 +248,7 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
     @Test
     public void testSimpleTreePathWithDerivedLiteralProperties() throws Exception
     {
-        this.runtime.createInMemorySource("file.pure", "Class Person{ name: String[1];address:Address[1]; firm: Firm[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{ street:String[1]; }\n" +
+        runtime.createInMemorySource("file.pure", "Class Person{ name: String[1];address:Address[1]; firm: Firm[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{ street:String[1]; }\n" +
                 "function test():Any[*]\n" +
                 "{\n" +
                 " let t = " +
@@ -257,8 +259,8 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
                 "      >street[ $this.address.street ]   " +
                 "}#;" +
                 "}\n");
-        this.runtime.compile();
-        CoreInstance func = this.runtime.getCoreInstance("test__Any_MANY_");
+        runtime.compile();
+        CoreInstance func = runtime.getCoreInstance("test__Any_MANY_");
         CoreInstance tree = func.getValueForMetaPropertyToMany("expressionSequence").getFirst().getValueForMetaPropertyToMany("parametersValues").getLast().getValueForMetaPropertyToMany("values").getFirst();
 
         Assert.assertNotNull(tree);
@@ -279,7 +281,7 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
     @Test
     public void testTreePathWithSameTypeMultipleDefinitions() throws Exception
     {
-        this.runtime.createInMemorySource("file.pure", "Class Person{ name: String[1];address:Address[1]; firm: Firm[1]; manager: Person[0..1]; } Class Firm {employees : Person[1];address:Address[1];} Class Address{ street:String[1]; }\n" +
+        runtime.createInMemorySource("file.pure", "Class Person{ name: String[1];address:Address[1]; firm: Firm[1]; manager: Person[0..1]; } Class Firm {employees : Person[1];address:Address[1];} Class Address{ street:String[1]; }\n" +
                 "function test():Any[*]\n" +
                 "{\n" +
                 " let t = " +
@@ -294,8 +296,8 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
                 "      address as Home \n" +
                 "}#;" +
                 "}\n");
-        this.runtime.compile();
-        CoreInstance func = this.runtime.getCoreInstance("test__Any_MANY_");
+        runtime.compile();
+        CoreInstance func = runtime.getCoreInstance("test__Any_MANY_");
         CoreInstance tree = func.getValueForMetaPropertyToMany("expressionSequence").getFirst().getValueForMetaPropertyToMany("parametersValues").getLast().getValueForMetaPropertyToMany("values").getFirst();
 
         Assert.assertNotNull(tree);
@@ -320,7 +322,7 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
     @Test
     public void testTreePathWithSameTypeReferenced() throws Exception
     {
-        this.runtime.createInMemorySource("file.pure", "Class Person{ name: String[1];address:Address[1]; firm: Firm[1]; manager: Person[0..1]; } Class Firm {employees : Person[1];address:Address[1];} Class Address{ street:String[1]; }\n" +
+        runtime.createInMemorySource("file.pure", "Class Person{ name: String[1];address:Address[1]; firm: Firm[1]; manager: Person[0..1]; } Class Firm {employees : Person[1];address:Address[1];} Class Address{ street:String[1]; }\n" +
                 "function test():Any[*]\n" +
                 "{\n" +
                 " let t = " +
@@ -331,8 +333,8 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
                 "      address as Home \n" +
                 "}#;" +
                 "}\n");
-        this.runtime.compile();
-        CoreInstance func = this.runtime.getCoreInstance("test__Any_MANY_");
+        runtime.compile();
+        CoreInstance func = runtime.getCoreInstance("test__Any_MANY_");
         CoreInstance tree = func.getValueForMetaPropertyToMany("expressionSequence").getFirst().getValueForMetaPropertyToMany("parametersValues").getLast().getValueForMetaPropertyToMany("values").getFirst();
 
         Assert.assertNotNull(tree);
@@ -363,7 +365,7 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
     @Test
     public void testParameters() throws Exception
     {
-        this.runtime.createInMemorySource("file.pure",
+        runtime.createInMemorySource("file.pure",
                 "Class Person\n" +
                         "{\n" +
                         "    firstName : String[1];\n" +
@@ -384,12 +386,12 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
 
         try
         {
-            this.runtime.createInMemorySource("function.pure",
+            runtime.createInMemorySource("function.pure",
                     "function test():Any[*]\n" +
                             "{\n" +
                             "    print(#Person {+[nameWithTitle()]}#,2);\n" +
                             "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -399,12 +401,12 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
 
         try
         {
-            this.runtime.modify("function.pure",
+            runtime.modify("function.pure",
                     "function test():Any[*]\n" +
                             "{\n" +
                             "    print(#Person{+[nameWithTitle(Integer[1])]}#,2);\n" +
                             "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -412,18 +414,18 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
             assertPureException("Parameter type mismatch for function 'nameWithTitle'. Expected:String, Found:Integer", 3, 21, e);
         }
 
-        this.runtime.modify("function.pure",
+        runtime.modify("function.pure",
                 "function test():Any[*]\n" +
                         "{\n" +
                         "    print(#Person{+[nameWithTitle(String[1])]}#,2);\n" +
                         "}\n");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void testMultipleParameters() throws Exception
     {
-        this.runtime.createInMemorySource("file.pure",
+        runtime.createInMemorySource("file.pure",
                 "Class Person\n" +
                         "{\n" +
                         "    firstName : String[1];\n" +
@@ -448,13 +450,13 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
                         "{\n" +
                         "}");
 
-        this.runtime.createInMemorySource("function.pure",
+        runtime.createInMemorySource("function.pure",
                 "function test():Any[*]\n" +
                         "{\n" +
                         "   let t = #Person{-[nameWithPrefixAndSuffix(String[0..1], String[*])]}#;\n" +
                         "}\n");
-        this.runtime.compile();
-        CoreInstance func = this.runtime.getCoreInstance("test__Any_MANY_");
+        runtime.compile();
+        CoreInstance func = runtime.getCoreInstance("test__Any_MANY_");
         CoreInstance tree = func.getValueForMetaPropertyToMany("expressionSequence").getFirst().getValueForMetaPropertyToMany("parametersValues").getLast().getValueForMetaPropertyToMany("values").getFirst();
 
         Assert.assertNotNull(tree);
@@ -462,21 +464,21 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
         Assert.assertEquals(4, properties.size());
 
 
-        this.runtime.modify("function.pure",
+        runtime.modify("function.pure",
                 "function test():Any[*]\n" +
                         "{\n" +
                         "    print(#Person{-[nameWithPrefixAndSuffix(String[0..1], String[*])]}#,2);\n" +
                         "}\n");
-        this.runtime.compile();
+        runtime.compile();
 
         try
         {
-            this.runtime.modify("function.pure",
+            runtime.modify("function.pure",
                     "function test():Any[*]\n" +
                             "{\n" +
                             "    print(#Person{+[nameWithPrefixAndSuffix(String[0..1], Integer[*])]}#,2);\n" +
                             "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -486,12 +488,12 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
 
         try
         {
-            this.runtime.modify("function.pure",
+            runtime.modify("function.pure",
                     "function test():Any[*]\n" +
                             "{\n" +
                             "    print(#Person{-[nameWithPrefixAndSuffix(String[0..1], Any[*])]}#,2);\n" +
                             "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -501,12 +503,12 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
 
         try
         {
-            this.runtime.modify("function.pure",
+            runtime.modify("function.pure",
                     "function test():Any[*]\n" +
                             "{\n" +
                             "    print(#Person{+[nameWithPrefixAndSuffix(String[0..1])]}#,2);\n" +
                             "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -514,18 +516,18 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
             assertPureException("Error finding match for function 'nameWithPrefixAndSuffix'. Incorrect number of parameters, function expects 2 parameters", 3, 21, e);
         }
 
-        this.runtime.modify("function.pure",
+        runtime.modify("function.pure",
                 "function test():Any[*]\n" +
                         "{\n" +
                         "    print(#Person{+[nameWithPrefixAndSuffix(String[0..1], String[*])]}#,2);\n" +
                         "}\n");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void testSimplePropertiesWithStereotypesAndTaggedValues() throws Exception
     {
-        this.runtime.createInMemorySource("file.pure",
+        runtime.createInMemorySource("file.pure",
                 "Profile m::p::TestProfile\n" +
                         "{\n" +
                         "   stereotypes : [ Root, NewProp, ExistingProp ];\n" +
@@ -555,13 +557,13 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
                         "{\n" +
                         "}");
 
-        this.runtime.createInMemorySource("function.pure",
+        runtime.createInMemorySource("function.pure",
                 "function test():Any[*]\n" +
                         "{\n" +
                         "    let t = #Person <<m::p::TestProfile.Root>> {m::p::TestProfile.Name = 'Stub_Person'} {+[nameWithPrefixAndSuffix(String[0..1], String[*]) <<m::p::TestProfile.ExistingProp>>]}#;\n" +
                         "}\n");
-        this.runtime.compile();
-        CoreInstance func = this.runtime.getCoreInstance("test__Any_MANY_");
+        runtime.compile();
+        CoreInstance func = runtime.getCoreInstance("test__Any_MANY_");
         CoreInstance tree = func.getValueForMetaPropertyToMany("expressionSequence").getFirst().getValueForMetaPropertyToMany("parametersValues").getLast().getValueForMetaPropertyToMany("values").getFirst();
 
         Assert.assertNotNull(tree);
@@ -570,21 +572,21 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
         this.assertContainsStereoType(tree.getValueForMetaPropertyToMany(M3Properties.included).getFirst(), "ExistingProp");
 
 
-        this.runtime.modify("function.pure",
+        runtime.modify("function.pure",
                 "function test():Any[*]\n" +
                         "{\n" +
                         "    print(#Person{-[nameWithPrefixAndSuffix(String[0..1], String[*])]}#,2);\n" +
                         "}\n");
-        this.runtime.compile();
+        runtime.compile();
 
         try
         {
-            this.runtime.modify("function.pure",
+            runtime.modify("function.pure",
                     "function test():Any[*]\n" +
                             "{\n" +
                             "    print(#Person{+[nameWithPrefixAndSuffix(String[0..1], Integer[*])]}#,2);\n" +
                             "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -594,12 +596,12 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
 
         try
         {
-            this.runtime.modify("function.pure",
+            runtime.modify("function.pure",
                     "function test():Any[*]\n" +
                             "{\n" +
                             "    print(#Person{-[nameWithPrefixAndSuffix(String[0..1], Any[*])]}#,2);\n" +
                             "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -609,12 +611,12 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
 
         try
         {
-            this.runtime.modify("function.pure",
+            runtime.modify("function.pure",
                     "function test():Any[*]\n" +
                             "{\n" +
                             "    print(#Person{+[nameWithPrefixAndSuffix(String[0..1])]}#,2);\n" +
                             "}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -622,18 +624,18 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
             assertPureException("Error finding match for function 'nameWithPrefixAndSuffix'. Incorrect number of parameters, function expects 2 parameters", 3, 21, e);
         }
 
-        this.runtime.modify("function.pure",
+        runtime.modify("function.pure",
                 "function test():Any[*]\n" +
                         "{\n" +
                         "    print(#Person{+[nameWithPrefixAndSuffix(String[0..1], String[*])]}#,2);\n" +
                         "}\n");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void testIncludedPropertiesHaveOwnerNode() throws Exception
     {
-        this.runtime.createInMemorySource("file.pure",
+        runtime.createInMemorySource("file.pure",
                 "Profile m::p::TestProfile\n" +
                         "{\n" +
                         "   stereotypes : [ Root, NewProp, ExistingProp ];\n" +
@@ -665,7 +667,7 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
                         "{\n" +
                         "}");
 
-        this.runtime.createInMemorySource("function.pure",
+        runtime.createInMemorySource("function.pure",
                 "function test():Any[*]\n" +
                         "{\n" +
                         "    let t = #Person <<m::p::TestProfile.Root>> {m::p::TestProfile.Name = 'Stub_Person'} " +
@@ -676,8 +678,8 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
                         "   }" +
                         "}#;" +
                         "}\n");
-        this.runtime.compile();
-        CoreInstance func = this.runtime.getCoreInstance("test__Any_MANY_");
+        runtime.compile();
+        CoreInstance func = runtime.getCoreInstance("test__Any_MANY_");
         CoreInstance tree = func.getValueForMetaPropertyToMany("expressionSequence").getFirst().getValueForMetaPropertyToMany("parametersValues").getLast().getValueForMetaPropertyToMany("values").getFirst();
 
         Assert.assertNotNull(tree);
@@ -688,13 +690,13 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
         this.assertContainsStereoType(firstName, "ExistingProp");
         this.assertContainsTaggedValue(firstName, "firstName");
         CoreInstance owner = firstName.getValueForMetaPropertyToOne(M3Properties.owner);
-        Assert.assertTrue(Instance.instanceOf(owner, M3Paths.RootRouteNode, this.processorSupport));
+        Assert.assertTrue(Instance.instanceOf(owner, M3Paths.RootRouteNode, processorSupport));
     }
 
     @Test
     public void testComplexPropertiesWithStereoTypesAndTaggedValues() throws Exception
     {
-        this.runtime.createInMemorySource("file.pure",
+        runtime.createInMemorySource("file.pure",
                 "Profile TestProfile\n" +
                         "{\n" +
                         "   stereotypes : [ Root, NewProp, ExistingProp ];\n" +
@@ -711,15 +713,15 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
                         "             >myAddress [$this.address] <<TestProfile.ExistingProp>>{TestProfile.Name='MyKingdom'}{ * }" +
                         "}#;" +
                         "}\n");
-        this.runtime.compile();
-        CoreInstance func = this.runtime.getCoreInstance("test__Any_MANY_");
+        runtime.compile();
+        CoreInstance func = runtime.getCoreInstance("test__Any_MANY_");
         CoreInstance tree = func.getValueForMetaPropertyToMany("expressionSequence").getFirst().getValueForMetaPropertyToMany("parametersValues").getLast().getValueForMetaPropertyToMany("values").getFirst();
 
         Assert.assertNotNull(tree);
         this.assertContainsStereoType(tree, "Root");
         this.assertContainsTaggedValue(tree, "Stub_Person");
 
-        RichIterable<? extends CoreInstance> children = Instance.getValueForMetaPropertyToManyResolved(tree, M3Properties.children, this.processorSupport);
+        RichIterable<? extends CoreInstance> children = Instance.getValueForMetaPropertyToManyResolved(tree, M3Properties.children, processorSupport);
         Assert.assertEquals("Missing children", 2, children.size());
         for (CoreInstance child : children)
         {

@@ -19,7 +19,6 @@ import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.function.base.collection.AbstractTestRange;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
-import org.junit.After;
 import org.junit.BeforeClass;
 
 public class TestRangeCompiled extends AbstractTestRange
@@ -34,5 +33,4 @@ public class TestRangeCompiled extends AbstractTestRange
     {
         return new FunctionExecutionCompiledBuilder().build();
     }
-
 }

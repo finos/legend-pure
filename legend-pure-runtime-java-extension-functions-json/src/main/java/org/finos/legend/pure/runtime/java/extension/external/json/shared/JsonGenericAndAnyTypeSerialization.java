@@ -28,20 +28,20 @@ public class JsonGenericAndAnyTypeSerialization<T> implements Conversion<T, Obje
     @Override
     public Object apply(T pureObject, ConversionContext context)
     {
-        JsonSerializationContext jsonSerializationContext = (JsonSerializationContext)context;
+        JsonSerializationContext jsonSerializationContext = (JsonSerializationContext) context;
         if (pureObject instanceof CoreInstance)
         {
-            Type type = (Type)jsonSerializationContext.getClassifier(pureObject);
-            Conversion<T, Object> concreteConversion = (Conversion<T, Object>)jsonSerializationContext.getConversionCache().getConversion(type, jsonSerializationContext);
+            Type type = (Type) jsonSerializationContext.getClassifier(pureObject);
+            Conversion<T, Object> concreteConversion = (Conversion<T, Object>) jsonSerializationContext.getConversionCache().getConversion(type, jsonSerializationContext);
             if (type instanceof PrimitiveType)
             {
-                return concreteConversion.apply((T)jsonSerializationContext.extractPrimitiveValue(pureObject), jsonSerializationContext);
+                return concreteConversion.apply((T) jsonSerializationContext.extractPrimitiveValue(pureObject), jsonSerializationContext);
             }
             return concreteConversion.apply(pureObject, jsonSerializationContext);
         }
         //JSON Simple library can handle stringifying and correct escaping of all other primitive (Java) types except PureDate as it's our custom one
         // so we need to explicitly convert it to String ourselves before handing over to JSON library
-        if(pureObject instanceof PureDate)
+        if (pureObject instanceof PureDate)
         {
             return pureObject.toString();
         }

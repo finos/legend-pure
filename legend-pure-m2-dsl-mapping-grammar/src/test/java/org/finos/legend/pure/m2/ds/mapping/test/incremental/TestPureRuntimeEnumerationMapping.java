@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m2.ds.mapping.test.incremental;
 
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.ImmutableMap;
-import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m2.ds.mapping.test.AbstractPureMappingTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
@@ -34,13 +34,13 @@ public class TestPureRuntimeEnumerationMapping extends AbstractPureMappingTestWi
     private static final String TEST_ENUMERATION_MAPPING_SOURCE_ID = "testMapping.pure";
 
     private static final ImmutableMap<String, String> TEST_SOURCES = Maps.immutable.with(TEST_ENUM_MODEL_SOURCE_ID,
-                    "Enum test::EmployeeType\n" +
+            "Enum test::EmployeeType\n" +
                     "{\n" +
                     "    CONTRACT,\n" +
                     "    FULL_TIME\n" +
                     "}",
             TEST_ENUMERATION_MAPPING_SOURCE_ID,
-                    "###Mapping\n" +
+            "###Mapping\n" +
                     "Mapping test::employeeTestMapping\n" +
                     "(\n" +
                     "\n" +
@@ -53,14 +53,15 @@ public class TestPureRuntimeEnumerationMapping extends AbstractPureMappingTestWi
     );
 
     private static final ImmutableMap<String, String> TEST_SOURCES_WITH_TYPO = Maps.immutable.with(TEST_ENUM_MODEL_SOURCE_ID,
-                    "Enum test::EmployeeType\n" +
+            "Enum test::EmployeeType\n" +
                     "{\n" +
                     "    CONTRCAT,\n" + //This is the TYPO
                     "    FULL_TIME\n" +
                     "}");
 
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime();
     }
 
@@ -76,16 +77,16 @@ public class TestPureRuntimeEnumerationMapping extends AbstractPureMappingTestWi
     @Test
     public void testPureEnumerationMapping_EnumValueWithTypoShouldNotCompile() throws Exception
     {
-        this.runtime.createInMemoryAndCompile(TEST_SOURCES);
-        int size = this.runtime.getModelRepository().serialize().length;
+        runtime.createInMemoryAndCompile(TEST_SOURCES);
+        int size = runtime.getModelRepository().serialize().length;
 
         for (int i = 1; i <= TEST_COUNT; i++)
         {
-            this.runtime.delete(TEST_ENUM_MODEL_SOURCE_ID);
+            runtime.delete(TEST_ENUM_MODEL_SOURCE_ID);
             try
             {
-                this.runtime.createInMemoryAndCompile(TEST_SOURCES_WITH_TYPO);
-                this.runtime.compile();
+                runtime.createInMemoryAndCompile(TEST_SOURCES_WITH_TYPO);
+                runtime.compile();
                 Assert.fail("Expected compilation exception on iteration #" + i);
             }
             catch (Exception e)
@@ -95,25 +96,25 @@ public class TestPureRuntimeEnumerationMapping extends AbstractPureMappingTestWi
                         TEST_ENUMERATION_MAPPING_SOURCE_ID, 7, 9, 7, 9, 7, 16, e);
             }
 
-            this.runtime.delete(TEST_ENUM_MODEL_SOURCE_ID);
-            this.runtime.createInMemoryAndCompile(Tuples.pair(TEST_ENUM_MODEL_SOURCE_ID, TEST_SOURCES.get(TEST_ENUM_MODEL_SOURCE_ID)));
-            this.runtime.compile();
-            Assert.assertEquals("Graph size mismatch at iteration #" + i, size, this.repository.serialize().length);
+            runtime.delete(TEST_ENUM_MODEL_SOURCE_ID);
+            runtime.createInMemoryAndCompile(Tuples.pair(TEST_ENUM_MODEL_SOURCE_ID, TEST_SOURCES.get(TEST_ENUM_MODEL_SOURCE_ID)));
+            runtime.compile();
+            Assert.assertEquals("Graph size mismatch at iteration #" + i, size, repository.serialize().length);
         }
     }
 
     @Test
     public void testDeleteEnumeration() throws Exception
     {
-        this.runtime.createInMemoryAndCompile(TEST_SOURCES);
-        int size = this.runtime.getModelRepository().serialize().length;
+        runtime.createInMemoryAndCompile(TEST_SOURCES);
+        int size = runtime.getModelRepository().serialize().length;
 
         for (int i = 1; i <= TEST_COUNT; i++)
         {
-            this.runtime.delete(TEST_ENUM_MODEL_SOURCE_ID);
+            runtime.delete(TEST_ENUM_MODEL_SOURCE_ID);
             try
             {
-                this.runtime.compile();
+                runtime.compile();
                 Assert.fail("Expected compilation exception on iteration #" + i);
             }
             catch (Exception e)
@@ -121,48 +122,48 @@ public class TestPureRuntimeEnumerationMapping extends AbstractPureMappingTestWi
                 assertPureException(PureCompilationException.class, "test::EmployeeType has not been defined!", TEST_ENUMERATION_MAPPING_SOURCE_ID, 5, 11, 5, 11, 5, 22, e);
             }
 
-            this.runtime.createInMemoryAndCompile(Tuples.pair(TEST_ENUM_MODEL_SOURCE_ID, TEST_SOURCES.get(TEST_ENUM_MODEL_SOURCE_ID)));
-            this.runtime.compile();
-            Assert.assertEquals("Graph size mismatch at iteration #" + i, size, this.repository.serialize().length);
+            runtime.createInMemoryAndCompile(Tuples.pair(TEST_ENUM_MODEL_SOURCE_ID, TEST_SOURCES.get(TEST_ENUM_MODEL_SOURCE_ID)));
+            runtime.compile();
+            Assert.assertEquals("Graph size mismatch at iteration #" + i, size, repository.serialize().length);
         }
     }
 
     @Test
     public void testPureEnumerationMapping_UnloadMapping() throws Exception
     {
-        this.runtime.createInMemoryAndCompile(Tuples.pair(TEST_ENUM_MODEL_SOURCE_ID, TEST_SOURCES.get(TEST_ENUM_MODEL_SOURCE_ID)));
-        int size = this.repository.serialize().length;
+        runtime.createInMemoryAndCompile(Tuples.pair(TEST_ENUM_MODEL_SOURCE_ID, TEST_SOURCES.get(TEST_ENUM_MODEL_SOURCE_ID)));
+        int size = repository.serialize().length;
 
         for (int i = 1; i <= TEST_COUNT; i++)
         {
 
-            this.runtime.createInMemoryAndCompile(Tuples.pair(TEST_ENUMERATION_MAPPING_SOURCE_ID, TEST_SOURCES.get(TEST_ENUMERATION_MAPPING_SOURCE_ID)));
-            this.runtime.delete(TEST_ENUMERATION_MAPPING_SOURCE_ID);
-            this.runtime.compile();
-            Assert.assertEquals("Graph size mismatch at iteration #" + i, size, this.repository.serialize().length);
+            runtime.createInMemoryAndCompile(Tuples.pair(TEST_ENUMERATION_MAPPING_SOURCE_ID, TEST_SOURCES.get(TEST_ENUMERATION_MAPPING_SOURCE_ID)));
+            runtime.delete(TEST_ENUMERATION_MAPPING_SOURCE_ID);
+            runtime.compile();
+            Assert.assertEquals("Graph size mismatch at iteration #" + i, size, repository.serialize().length);
         }
     }
 
     @Test
     public void testDuplicateError() throws Exception
     {
-        this.runtime.createInMemorySource(TEST_ENUMERATION_MAPPING_SOURCE_ID, "Enum OK {e_true,e_false}\n" +
-                                                    "###Mapping\n" +
-                                                    "Mapping myMap1(\n" +
-                                                    "    OK: EnumerationMapping Foo\n" +
-                                                    "    {\n" +
-                                                    "        e_true:  ['FTC', 'FTO'],\n" +
-                                                    "        e_false: 'FTE'\n" +
-                                                    "    }\n" +
-                                                    "    OK: EnumerationMapping Foo\n" +
-                                                    "    {\n" +
-                                                    "        e_true:  ['FTC', 'FTO'],\n" +
-                                                    "        e_false: 'FTE'\n" +
-                                                    "    }\n" +
-                                                    ")\n");
+        runtime.createInMemorySource(TEST_ENUMERATION_MAPPING_SOURCE_ID, "Enum OK {e_true,e_false}\n" +
+                "###Mapping\n" +
+                "Mapping myMap1(\n" +
+                "    OK: EnumerationMapping Foo\n" +
+                "    {\n" +
+                "        e_true:  ['FTC', 'FTO'],\n" +
+                "        e_false: 'FTE'\n" +
+                "    }\n" +
+                "    OK: EnumerationMapping Foo\n" +
+                "    {\n" +
+                "        e_true:  ['FTC', 'FTO'],\n" +
+                "        e_false: 'FTE'\n" +
+                "    }\n" +
+                ")\n");
         try
         {
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -215,8 +216,8 @@ public class TestPureRuntimeEnumerationMapping extends AbstractPureMappingTestWi
                         .compileWithExpectedCompileFailure("SourceEnum has not been defined!", "mappingCode.pure", 8, 11)
                         .updateSource("modelCode.pure", modelCode)
                         .compile(),
-                this.runtime,
-                this.functionExecution,
+                runtime,
+                functionExecution,
                 this.getAdditionalVerifiers()
         );
     }
@@ -270,8 +271,8 @@ public class TestPureRuntimeEnumerationMapping extends AbstractPureMappingTestWi
                         .compileWithExpectedCompileFailure("The enum value 'B' can't be found in the enumeration my::SourceEnum", "mappingCode.pure", 9, 26)
                         .updateSource("modelCode.pure", modelCode)
                         .compile(),
-                this.runtime,
-                this.functionExecution,
+                runtime,
+                functionExecution,
                 this.getAdditionalVerifiers()
         );
     }
@@ -320,8 +321,8 @@ public class TestPureRuntimeEnumerationMapping extends AbstractPureMappingTestWi
                         .compileWithExpectedCompileFailure("SourceEnum has not been defined!", "mappingCode.pure", 8, 11)
                         .updateSource("modelCode.pure", modelCode)
                         .compile(),
-                this.runtime,
-                this.functionExecution,
+                runtime,
+                functionExecution,
                 this.getAdditionalVerifiers()
         );
     }
@@ -375,8 +376,8 @@ public class TestPureRuntimeEnumerationMapping extends AbstractPureMappingTestWi
                         .compileWithExpectedCompileFailure("The enum value 'C' can't be found in the enumeration my::SourceEnum", "mappingCode.pure", 9, 41)
                         .updateSource("modelCode.pure", modelCode)
                         .compile(),
-                this.runtime,
-                this.functionExecution,
+                runtime,
+                functionExecution,
                 this.getAdditionalVerifiers()
         );
     }
@@ -441,8 +442,8 @@ public class TestPureRuntimeEnumerationMapping extends AbstractPureMappingTestWi
                         .compileWithExpectedCompileFailure("SourceEnum2 has not been defined!", "mappingCode.pure", 8, 11)
                         .updateSource("modelCode.pure", modelCode)
                         .compile(),
-                this.runtime,
-                this.functionExecution,
+                runtime,
+                functionExecution,
                 this.getAdditionalVerifiers()
         );
     }
@@ -512,8 +513,8 @@ public class TestPureRuntimeEnumerationMapping extends AbstractPureMappingTestWi
                         .compileWithExpectedCompileFailure("The enum value 'R' can't be found in the enumeration my::SourceEnum2", "mappingCode.pure", 12, 24)
                         .updateSource("modelCode.pure", modelCode)
                         .compile(),
-                this.runtime,
-                this.functionExecution,
+                runtime,
+                functionExecution,
                 this.getAdditionalVerifiers()
         );
     }

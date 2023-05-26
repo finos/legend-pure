@@ -24,14 +24,24 @@ import java.io.InputStream;
 public interface MutableVersionControlledCodeStorage extends VersionControlledCodeStorage, MutableRepositoryCodeStorage
 {
     void update(UpdateReport report, long version);
+
     void update(UpdateReport report, String path, long version);
+
     RichIterable<String> revert(String path);
+
     void commit(ListIterable<String> paths, String message);
+
     InputStream getBase(String path);
+
     InputStream getConflictOld(String path);
+
     InputStream getConflictNew(String path);
+
     void markAsResolved(String path);
+
     void cleanup();
+
     void applyPatch(String path, File patchFile);
+
     boolean hasConflicts(String path);
 }

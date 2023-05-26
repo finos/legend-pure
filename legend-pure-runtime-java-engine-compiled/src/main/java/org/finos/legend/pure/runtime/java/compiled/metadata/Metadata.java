@@ -20,10 +20,14 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 public interface Metadata
 {
     void startTransaction();
+
     void commitTransaction();
+
     void rollbackTransaction();
 
     CoreInstance getMetadata(String classifier, String id);
+
     MapIterable<String, CoreInstance> getMetadata(String classifier);
+
     CoreInstance getEnum(String enumerationName, String enumName);
 }

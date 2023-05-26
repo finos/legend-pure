@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package org.finos.legend.pure.m4.coreinstance.primitive.strictTime;
 
 import org.finos.legend.pure.m4.ModelRepository;
@@ -24,6 +23,7 @@ public class StrictTimeFunctions extends TimeFunctions
     {
         return StrictTimeWithMinute.newStrictTimeWithMinute(hour, minute);
     }
+
     public static StrictTimeWithSecond newPureStrictTime(int hour, int minute, int second)
     {
         return StrictTimeWithSecond.newStrictTimeWithSecond(hour, minute, second);
@@ -34,7 +34,8 @@ public class StrictTimeFunctions extends TimeFunctions
         return StrictTimeWithSubsecond.newStrictTimeWithSubsecond(hour, minute, second, subsecond);
     }
 
-    public static String strictTimePrimitiveType(PureStrictTime pureStrictTime) {
+    public static String strictTimePrimitiveType(PureStrictTime pureStrictTime)
+    {
         return ModelRepository.STRICT_TIME_TYPE_NAME;
     }
 

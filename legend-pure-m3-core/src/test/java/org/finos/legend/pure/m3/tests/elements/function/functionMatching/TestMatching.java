@@ -14,14 +14,14 @@
 
 package org.finos.legend.pure.m3.tests.elements.function.functionMatching;
 
-import org.finos.legend.pure.m4.statelistener.VoidM4StateListener;
 import org.eclipse.collections.api.list.ListIterable;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.statelistener.VoidM4StateListener;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -30,12 +30,14 @@ import org.junit.Test;
 public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("fromString.pure");
         runtime.delete("fromString2.pure");
     }
@@ -43,7 +45,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testSimpleMatching()
     {
-        this.runtime.createInMemorySource("fromString.pure","function func(v:String[1]):Integer[1]\n" +
+        runtime.createInMemorySource("fromString.pure", "function func(v:String[1]):Integer[1]\n" +
                 "{\n" +
                 "    $v->length();\n" +
                 "}\n" +
@@ -51,15 +53,15 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
                 "{\n" +
                 "    func('wasp');\n" +
                 "}\n");
-        this.runtime.compile();
+        runtime.compile();
 
-        CoreInstance func = this.runtime.getCoreInstance("func_String_1__Integer_1_");
+        CoreInstance func = runtime.getCoreInstance("func_String_1__Integer_1_");
         Assert.assertNotNull(func);
 
-        CoreInstance testFn = this.runtime.getCoreInstance("test__Any_MANY_");
+        CoreInstance testFn = runtime.getCoreInstance("test__Any_MANY_");
         Assert.assertNotNull(testFn);
 
-        ListIterable<? extends CoreInstance> expressions = Instance.getValueForMetaPropertyToManyResolved(testFn, M3Properties.expressionSequence, this.processorSupport);
+        ListIterable<? extends CoreInstance> expressions = Instance.getValueForMetaPropertyToManyResolved(testFn, M3Properties.expressionSequence, processorSupport);
         Assert.assertEquals(1, expressions.size());
 
         assertFunctionExpressionFunction(func, expressions.get(0));
@@ -68,7 +70,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testMatchingWithMultipleMatches()
     {
-        this.runtime.createInMemorySource("fromString.pure", "function func(v:String[1]):Integer[1]\n" +
+        runtime.createInMemorySource("fromString.pure", "function func(v:String[1]):Integer[1]\n" +
                 "{\n" +
                 "    $v->length();\n" +
                 "}\n" +
@@ -81,18 +83,18 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
                 "    func('wasp');\n" +
                 "    func(10);\n" +
                 "}\n");
-        this.runtime.compile();
+        runtime.compile();
 
-        CoreInstance func1 = this.runtime.getCoreInstance("func_String_1__Integer_1_");
+        CoreInstance func1 = runtime.getCoreInstance("func_String_1__Integer_1_");
         Assert.assertNotNull(func1);
 
-        CoreInstance func2 = this.runtime.getCoreInstance("func_Any_1__Integer_1_");
+        CoreInstance func2 = runtime.getCoreInstance("func_Any_1__Integer_1_");
         Assert.assertNotNull(func1);
 
-        CoreInstance testFn = this.runtime.getCoreInstance("test__Any_MANY_");
+        CoreInstance testFn = runtime.getCoreInstance("test__Any_MANY_");
         Assert.assertNotNull(testFn);
 
-        ListIterable<? extends CoreInstance> expressions = Instance.getValueForMetaPropertyToManyResolved(testFn, M3Properties.expressionSequence, this.processorSupport);
+        ListIterable<? extends CoreInstance> expressions = Instance.getValueForMetaPropertyToManyResolved(testFn, M3Properties.expressionSequence, processorSupport);
         Assert.assertEquals(2, expressions.size());
 
         assertFunctionExpressionFunction(func1, expressions.get(0));
@@ -102,7 +104,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testMatchingWithDisjointMultiplicities()
     {
-        this.runtime.createInMemorySource("fromString.pure","function func(v:String[1]):Integer[1]\n" +
+        runtime.createInMemorySource("fromString.pure", "function func(v:String[1]):Integer[1]\n" +
                 "{\n" +
                 "    $v->length();\n" +
                 "}\n" +
@@ -115,18 +117,18 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
                 "    func('wasp');\n" +
                 "    func(['wasp', 'bee', 'hornet']);\n" +
                 "}\n");
-        this.runtime.compile();
+        runtime.compile();
 
-        CoreInstance func1 = this.runtime.getCoreInstance("func_String_1__Integer_1_");
+        CoreInstance func1 = runtime.getCoreInstance("func_String_1__Integer_1_");
         Assert.assertNotNull(func1);
 
-        CoreInstance func2 = this.runtime.getCoreInstance("func_String_$2_MANY$__Integer_1_");
+        CoreInstance func2 = runtime.getCoreInstance("func_String_$2_MANY$__Integer_1_");
         Assert.assertNotNull(func1);
 
-        CoreInstance testFn = this.runtime.getCoreInstance("test__Any_MANY_");
+        CoreInstance testFn = runtime.getCoreInstance("test__Any_MANY_");
         Assert.assertNotNull(testFn);
 
-        ListIterable<? extends CoreInstance> expressions = Instance.getValueForMetaPropertyToManyResolved(testFn, M3Properties.expressionSequence, this.processorSupport);
+        ListIterable<? extends CoreInstance> expressions = Instance.getValueForMetaPropertyToManyResolved(testFn, M3Properties.expressionSequence, processorSupport);
         Assert.assertEquals(2, expressions.size());
 
         assertFunctionExpressionFunction(func1, expressions.get(0));
@@ -136,7 +138,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testMatchingWithOverlappingMultiplicities()
     {
-        this.runtime.createInMemorySource("fromString.pure", "function func(v:String[1]):Integer[1]\n" +
+        runtime.createInMemorySource("fromString.pure", "function func(v:String[1]):Integer[1]\n" +
                 "{\n" +
                 "    $v->length();\n" +
                 "}\n" +
@@ -150,18 +152,18 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
                 "    func('wasp');\n" +
                 "    func(['wasp', 'bee', 'hornet']);\n" +
                 "}\n");
-        this.runtime.compile();
+        runtime.compile();
 
-        CoreInstance func1 = this.runtime.getCoreInstance("func_String_1__Integer_1_");
+        CoreInstance func1 = runtime.getCoreInstance("func_String_1__Integer_1_");
         Assert.assertNotNull(func1);
 
-        CoreInstance func2 = this.runtime.getCoreInstance("func_String_MANY__Integer_1_");
+        CoreInstance func2 = runtime.getCoreInstance("func_String_MANY__Integer_1_");
         Assert.assertNotNull(func1);
 
-        CoreInstance testFn = this.runtime.getCoreInstance("test__Any_MANY_");
+        CoreInstance testFn = runtime.getCoreInstance("test__Any_MANY_");
         Assert.assertNotNull(testFn);
 
-        ListIterable<? extends CoreInstance> expressions = Instance.getValueForMetaPropertyToManyResolved(testFn, M3Properties.expressionSequence, this.processorSupport);
+        ListIterable<? extends CoreInstance> expressions = Instance.getValueForMetaPropertyToManyResolved(testFn, M3Properties.expressionSequence, processorSupport);
         Assert.assertEquals(2, expressions.size());
 
         assertFunctionExpressionFunction(func1, expressions.get(0));
@@ -171,7 +173,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testMatchingWithEmptySetsAndTypeParameters()
     {
-        compileTestSource("fromString.pure","function func(v:Pair<String,String>[*]):Integer[1]\n" +
+        compileTestSource("fromString.pure", "function func(v:Pair<String,String>[*]):Integer[1]\n" +
                 "{\n" +
                 "    1;\n" +
                 "}\n" +
@@ -179,13 +181,13 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
                 "{\n" +
                 "    func([]);" +
                 "}\n");
-        CoreInstance func = this.runtime.getCoreInstance("func_Pair_MANY__Integer_1_");
+        CoreInstance func = runtime.getCoreInstance("func_Pair_MANY__Integer_1_");
         Assert.assertNotNull(func);
 
-        CoreInstance testFn = this.runtime.getCoreInstance("test__Any_MANY_");
+        CoreInstance testFn = runtime.getCoreInstance("test__Any_MANY_");
         Assert.assertNotNull(testFn);
 
-        ListIterable<? extends CoreInstance> expressions = Instance.getValueForMetaPropertyToManyResolved(testFn, M3Properties.expressionSequence, this.processorSupport);
+        ListIterable<? extends CoreInstance> expressions = Instance.getValueForMetaPropertyToManyResolved(testFn, M3Properties.expressionSequence, processorSupport);
         Assert.assertEquals(1, expressions.size());
 
         assertFunctionExpressionFunction(func, expressions.get(0));
@@ -246,7 +248,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            this.runtime.createInMemorySource("fromString.pure",
+            runtime.createInMemorySource("fromString.pure",
                     "function func(c:Class<Any>[1]):Integer[1]\n" +
                             "{\n" +
                             "    $c.name->toOne()->length();\n" +
@@ -255,7 +257,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
                             "{\n" +
                             "    func(Pair->cast(@Class));\n" +
                             "}\n");
-            this.runtime.compile();
+            runtime.compile();
 
             Assert.fail("Expected compilation error");
         }
@@ -268,8 +270,8 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testMatchingMap()
     {
-        CoreInstance mapOne = this.runtime.getCoreInstance("meta::pure::functions::collection::map_T_m__Function_1__V_m_");
-        CoreInstance mapMany = this.runtime.getCoreInstance("meta::pure::functions::collection::map_T_MANY__Function_1__V_MANY_");
+        CoreInstance mapOne = runtime.getCoreInstance("meta::pure::functions::collection::map_T_m__Function_1__V_m_");
+        CoreInstance mapMany = runtime.getCoreInstance("meta::pure::functions::collection::map_T_MANY__Function_1__V_MANY_");
         Assert.assertNotNull(mapOne);
         Assert.assertNotNull(mapMany);
         Assert.assertNotEquals(mapOne, mapMany);
@@ -280,9 +282,9 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
                         "    [1, 2, 3, 4]->map(i | $i * 2);\n" +
                         "    [1, 2, 3, 4]->map(i | [$i, $i, $i]);\n" +
                         "}");
-        CoreInstance testFn = this.runtime.getCoreInstance("test__Any_MANY_");
+        CoreInstance testFn = runtime.getCoreInstance("test__Any_MANY_");
         Assert.assertNotNull(testFn);
-        ListIterable<? extends CoreInstance> expressions = Instance.getValueForMetaPropertyToManyResolved(testFn, M3Properties.expressionSequence, this.processorSupport);
+        ListIterable<? extends CoreInstance> expressions = Instance.getValueForMetaPropertyToManyResolved(testFn, M3Properties.expressionSequence, processorSupport);
         Assert.assertEquals(2, expressions.size());
 
         assertFunctionExpressionFunction(mapOne, expressions.get(0));
@@ -292,7 +294,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testMatchingWithFullyQualifiedReference()
     {
-        this.runtime.createInMemorySource("fromString.pure",
+        runtime.createInMemorySource("fromString.pure",
                 "import test::pkg2::*;\n" +
                         "\n" +
                         "function test::pkg1::splitPackageName(packageName:String[1]):String[*]\n" +
@@ -314,17 +316,17 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "  test::pkg1::splitPackageName('meta::pure::functions');" +
                         "}");
-        this.runtime.compile();
+        runtime.compile();
 
-        CoreInstance splitPackageNameFn_pkg1 = this.runtime.getFunction("test::pkg1::splitPackageName(String[1]):String[*]");
-        CoreInstance splitPackageNameFn_pkg2 = this.runtime.getFunction("test::pkg2::splitPackageName(String[1]):String[*]");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn():Any[*]");
+        CoreInstance splitPackageNameFn_pkg1 = runtime.getFunction("test::pkg1::splitPackageName(String[1]):String[*]");
+        CoreInstance splitPackageNameFn_pkg2 = runtime.getFunction("test::pkg2::splitPackageName(String[1]):String[*]");
+        CoreInstance testFn = runtime.getFunction("test::testFn():Any[*]");
         Assert.assertNotNull(splitPackageNameFn_pkg1);
         Assert.assertNotNull(splitPackageNameFn_pkg2);
         Assert.assertNotNull(testFn);
         Assert.assertNotEquals(splitPackageNameFn_pkg1, splitPackageNameFn_pkg2);
 
-        ListIterable<? extends CoreInstance> expressions = Instance.getValueForMetaPropertyToManyResolved(testFn, M3Properties.expressionSequence, this.processorSupport);
+        ListIterable<? extends CoreInstance> expressions = Instance.getValueForMetaPropertyToManyResolved(testFn, M3Properties.expressionSequence, processorSupport);
         assertFunctionExpressionFunction(splitPackageNameFn_pkg1, expressions.get(0));
     }
 
@@ -333,7 +335,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            this.runtime.createInMemorySource("fromString.pure",
+            runtime.createInMemorySource("fromString.pure",
                     "import test::pkg2::*;\n" +
                             "\n" +
                             "function test::pkg1::splitPackageName(packageName:String[1]):String[*]\n" +
@@ -355,7 +357,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
                             "{\n" +
                             "  test::pkg3::splitPackageName('meta::pure::functions');" +
                             "}");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail("Expected compilation exception");
         }
         catch (Exception e)
@@ -416,12 +418,12 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
                         "   print('z',1);\n" +
                         "}");
         runtime.compile();
-        this.repository.validate(new VoidM4StateListener());
+        repository.validate(new VoidM4StateListener());
     }
 
     protected void assertFunctionExpressionFunction(CoreInstance expectedFunction, CoreInstance functionExpression)
     {
-        CoreInstance func = Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.func, this.processorSupport);
+        CoreInstance func = Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.func, processorSupport);
         Assert.assertSame(expectedFunction, func);
     }
 }

@@ -15,20 +15,19 @@
 package org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.statelistener.ExecutionActivityListener;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractCacheNextReadOnceForwardOnly;
-import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionEndListener;
-import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionEndListenerState;
-import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionListeners;
 import org.finos.legend.pure.runtime.java.extension.store.relational.RelationalNativeImplementation;
 import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.ResultSetValueHandlers.ResultSetValueHandler;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.ConnectionWithDataSourceInfo;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.SQLExceptionHandler;
+import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionEndListener;
+import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionEndListenerState;
+import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionListeners;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -36,6 +35,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
+import java.util.function.Function;
 
 class CacheNextReadOnceForwardOnlyResultSet extends AbstractCacheNextReadOnceForwardOnly implements ExecutionEndListener
 {
@@ -50,9 +50,9 @@ class CacheNextReadOnceForwardOnlyResultSet extends AbstractCacheNextReadOnceFor
     private static final int CACHE_MAX_SIZE = 1000;
 
     private final ExecutionListeners executionListeners;
-    private ConnectionWithDataSourceInfo dataSourceInfo;
+    private final ConnectionWithDataSourceInfo dataSourceInfo;
     private final ExecutionActivityListener executionActivityListener;
-    private String executedSQL;
+    private final String executedSQL;
 
     private CacheNextReadOnceForwardOnlyResultSet(Connection connection, ResultSet resultSet, Statement statement,
                                                   Function<RichIterable<Object>, ? extends CoreInstance> processRowFunction,
@@ -92,7 +92,7 @@ class CacheNextReadOnceForwardOnlyResultSet extends AbstractCacheNextReadOnceFor
             if (this.resultSet.next())
             {
                 RichIterable<Object> values = RelationalNativeImplementation.processRow(this.resultSet, this.handlers, this.sqlNull, this.calendar);
-                this.next = this.processRowFunction.valueOf(values);
+                this.next = this.processRowFunction.apply(values);
 
                 if (this.currentIndex < CACHE_MAX_SIZE)
                 {
@@ -114,16 +114,17 @@ class CacheNextReadOnceForwardOnlyResultSet extends AbstractCacheNextReadOnceFor
             String databaseName = "";
             try
             {
-                if (dataSourceInfo.getDataSource() != null)
+                if (this.dataSourceInfo.getDataSource() != null)
                 {
-                    hostname = dataSourceInfo.getDataSource().getHost();
-                    port = dataSourceInfo.getDataSource().getPort();
-                    databaseName = dataSourceInfo.getDataSource().getDataSourceName();
+                    hostname = this.dataSourceInfo.getDataSource().getHost();
+                    port = this.dataSourceInfo.getDataSource().getPort();
+                    databaseName = this.dataSourceInfo.getDataSource().getDataSourceName();
                 }
-                executionActivityListener.relationalActivityCompleted(hostname, port, databaseName, "", executedSQL, "", 0L, 0L, 0L);
+                this.executionActivityListener.relationalActivityCompleted(hostname, port, databaseName, "", executedSQL, "", 0L, 0L, 0L);
             }
-            catch (Exception logException)
+            catch (Exception ignore)
             {
+                // ignore logging exceptions
             }
 
             String error = SQLExceptionHandler.buildExceptionString(e, this.connection);

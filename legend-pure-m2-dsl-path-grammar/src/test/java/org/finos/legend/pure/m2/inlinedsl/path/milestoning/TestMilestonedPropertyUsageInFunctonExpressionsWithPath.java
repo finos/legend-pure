@@ -21,46 +21,46 @@ import org.junit.Test;
 public class TestMilestonedPropertyUsageInFunctonExpressionsWithPath extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime();
     }
 
     @Test
     public void testLatestDateCompilationValidationAndPropagationDate() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.processingtemporal>> meta::test::milestoning::domain::Classification{\n" +
-                        "   name:String[1];\n"+
+                        "   name:String[1];\n" +
                         "}\n" +
                         "Class <<temporal.processingtemporal>> meta::test::milestoning::domain::Trader{\n" +
-                        "   name:String[1];\n"+
-                        "   coveredProducts:Product[*];\n"+
+                        "   name:String[1];\n" +
+                        "   coveredProducts:Product[*];\n" +
                         "}\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
-                        "   name:String[1];\n"+
-                        "   classification : Classification[0..1];\n"+
+                        "   name:String[1];\n" +
+                        "   classification : Classification[0..1];\n" +
                         "}\n" +
                         "Class <<temporal.bitemporal>> meta::test::milestoning::domain::BiTemporalProduct{\n" +
-                        "   name:String[1];\n"+
-                        "   classification : Classification[0..1];\n"+
+                        "   name:String[1];\n" +
+                        "   classification : Classification[0..1];\n" +
                         "}\n" +
                         "Class  <<temporal.processingtemporal>> meta::test::milestoning::domain::Order{\n" +
                         "   product : Product[0..1];\n" +
                         "   biTemporalProduct : BiTemporalProduct[0..1];\n" +
                         "   trader : Trader[0..1];\n" +
-                        "}\n"+
+                        "}\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   {|Order.all(%latest).product(%latest).classification(%latest).name};" +
                         "   {|Order.all(%latest).biTemporalProduct(%latest, %latest).name};" +
                         "   {|Order.all(%latest).trader.coveredProducts(%latest).name};" +
                         "   {|BiTemporalProduct.all(%latest, %latest).name};" +
-                        "   {|#/Order/biTemporalProduct(%latest, %latest)/name#};"+
+                        "   {|#/Order/biTemporalProduct(%latest, %latest)/name#};" +
                         "}\n"
         );
 
-        this.runtime.compile();
+        runtime.compile();
     }
-
 }

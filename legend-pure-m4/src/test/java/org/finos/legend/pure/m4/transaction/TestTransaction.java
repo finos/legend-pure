@@ -64,7 +64,7 @@ public class TestTransaction
         }
     }
 
-    @Test(expected= TransactionStateException.class)
+    @Test(expected = TransactionStateException.class)
     public void testCommitAfterCommit()
     {
         StubTransaction transaction = this.manager.newTransaction(true);
@@ -72,7 +72,7 @@ public class TestTransaction
         transaction.commit();
     }
 
-    @Test(expected=TransactionStateException.class)
+    @Test(expected = TransactionStateException.class)
     public void testRollbackAfterCommit()
     {
         StubTransaction transaction = this.manager.newTransaction(true);
@@ -80,7 +80,7 @@ public class TestTransaction
         transaction.rollback();
     }
 
-    @Test(expected=TransactionStateException.class)
+    @Test(expected = TransactionStateException.class)
     public void testOpenInThreadCurrentThreadAfterCommit()
     {
         StubTransaction transaction = this.manager.newTransaction(true);
@@ -110,7 +110,7 @@ public class TestTransaction
         Assert.assertFalse(this.manager.isRegistered(transaction));
     }
 
-    @Test(expected=TransactionStateException.class)
+    @Test(expected = TransactionStateException.class)
     public void testCommitAfterRollback()
     {
         StubTransaction transaction = this.manager.newTransaction(true);
@@ -118,7 +118,7 @@ public class TestTransaction
         transaction.commit();
     }
 
-    @Test(expected=TransactionStateException.class)
+    @Test(expected = TransactionStateException.class)
     public void testRollbackAfterRollback()
     {
         StubTransaction transaction = this.manager.newTransaction(true);
@@ -126,7 +126,7 @@ public class TestTransaction
         transaction.rollback();
     }
 
-    @Test(expected=TransactionStateException.class)
+    @Test(expected = TransactionStateException.class)
     public void testOpenInThreadCurrentThreadAfterRollback()
     {
         StubTransaction transaction = this.manager.newTransaction(true);
@@ -280,7 +280,7 @@ public class TestTransaction
         Assert.assertTrue(transaction.isInvalid());
     }
 
-    @Test(expected=TransactionStateException.class)
+    @Test(expected = TransactionStateException.class)
     public void testCommitAfterClearingManager()
     {
         StubTransaction transaction = this.manager.newTransaction(true);
@@ -288,7 +288,7 @@ public class TestTransaction
         transaction.commit();
     }
 
-    @Test(expected=TransactionStateException.class)
+    @Test(expected = TransactionStateException.class)
     public void testRollbackAfterClearingManager()
     {
         StubTransaction transaction = this.manager.newTransaction(true);

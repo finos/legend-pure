@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m3.tests.function.base.lang;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -80,6 +80,7 @@ public abstract class AbstractTestDynamicNewConstraints extends AbstractPureTest
         );
         execute("testNew():Any[*]");
     }
+
     @Test
     public void testExtendedConstraintExecutionDynamicNewFailsWithOwnerGlobal()
     {

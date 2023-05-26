@@ -18,7 +18,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 
 public class GenericTypeClass extends AbstractNativeFunctionGeneric
 {
-    public GenericTypeClass() {
+    public GenericTypeClass()
+    {
         super("Pure.genericTypeClass", new Class[]{org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType.class}, "genericTypeClass_GenericType_1__Class_1_");
     }
 }

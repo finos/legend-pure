@@ -49,7 +49,7 @@ public class M3Paths
     public static final String DateTime = ModelRepository.DATETIME_TYPE_NAME;
     public static final String Decimal = ModelRepository.DECIMAL_TYPE_NAME;
     public static final String DefaultValue = "meta::pure::metamodel::function::property::DefaultValue";
-    public static final String elementOverride = "meta::pure::metamodel::type::ElementOverride" ;
+    public static final String elementOverride = "meta::pure::metamodel::type::ElementOverride";
     public static final String ElementWithConstraints = "meta::pure::metamodel::extension::ElementWithConstraints";
     public static final String ElementWithStereotypes = "meta::pure::metamodel::extension::ElementWithStereotypes";
     public static final String ElementWithTaggedValues = "meta::pure::metamodel::extension::ElementWithTaggedValues";
@@ -67,7 +67,7 @@ public class M3Paths
     public static final String Generalization = "meta::pure::metamodel::relationship::Generalization";
     public static final String GeneralizationView = "meta::pure::diagram::GeneralizationView";
     public static final String GenericType = "meta::pure::metamodel::type::generics::GenericType";
-    public static final String GetterOverride = "meta::pure::metamodel::type::GetterOverride" ;
+    public static final String GetterOverride = "meta::pure::metamodel::type::GetterOverride";
     public static final String GrammarInfoStub = "meta::pure::tools::GrammarInfoStub";
     public static final String ImportGroup = "meta::pure::metamodel::import::ImportGroup";
     public static final String ImportStub = "meta::pure::metamodel::import::ImportStub";
@@ -123,7 +123,7 @@ public class M3Paths
     public static final String ZeroMany = "meta::pure::metamodel::multiplicity::ZeroMany";
     public static final String ZeroOne = "meta::pure::metamodel::multiplicity::ZeroOne";
 
-     // Milestoning
+    // Milestoning
     public static final String Milestoning = "meta::pure::profiles::milestoning";
 
     // Equality
@@ -131,7 +131,6 @@ public class M3Paths
 
     // Access
     public static final String access = "meta::pure::profiles::access";
-
 
 
     // -- To Move

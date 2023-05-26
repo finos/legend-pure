@@ -44,7 +44,7 @@ public class JsonParserHelper
     /**
      * Ensures a given JSON array meets the multiplicity requirements of the PURE class.
      *
-     * @param array The JSON array in question.
+     * @param array      The JSON array in question.
      * @param lowerBound The lower bound of the property's multiplicity
      * @param upperBound The upper bound of the property's multiplicity, -1 if multiplicity has no upper bound
      */
@@ -53,7 +53,7 @@ public class JsonParserHelper
         boolean outsideLowerBound = array.size() < lowerBound;
         boolean outsideUpperBound = upperBound != -1 && array.size() > upperBound;
 
-        if(outsideLowerBound || outsideUpperBound)
+        if (outsideLowerBound || outsideUpperBound)
         {
             throw new PureExecutionException(si, "Expected value(s) of multiplicity " + humanReadableMultiplicity + ", found " + array.size() + " value(s).");
         }
@@ -62,7 +62,7 @@ public class JsonParserHelper
     /**
      * Checks the multiplicity of a "to one" property field.
      *
-     * @param object The object in question, null if does not occur in source JSONObject
+     * @param object     The object in question, null if does not occur in source JSONObject
      * @param lowerBound The lower bound of the property's multiplicity
      * @param upperBound The upper bound of the property's multiplicity, -1 if the multiplicity has no upper bound
      */
@@ -73,7 +73,7 @@ public class JsonParserHelper
 
         String errorMsg = object == null ? "0" : "1";
 
-        if(outsideLowerBound || outsideUpperBound)
+        if (outsideLowerBound || outsideUpperBound)
         {
             throw new PureExecutionException(si, "Expected value(s) of multiplicity " + humanReadableMultiplicity + ", found " + errorMsg + " value(s).");
         }
@@ -87,7 +87,7 @@ public class JsonParserHelper
         JSONParser parser = new JSONParser();
         try
         {
-            JSONObject root = (JSONObject)parser.parse(jsonString);
+            JSONObject root = (JSONObject) parser.parse(jsonString);
             return fromJson(root, clazz, fullClassName, fullUserPath, metadata, classLoader, si, typeKey, failOnUnknownProperties, constraintsOverride, es, "");
         }
         catch (ParseException e)
@@ -131,7 +131,7 @@ public class JsonParserHelper
         }
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "unchecked"})
     public static <T> T fromJson(Object value, Class<T> resultType, String fullClassName, String fullUserPath, MetadataAccessor metadata, ClassLoader classLoader, SourceInformation si, String typeKey, boolean failOnUnknownProperties, ConstraintsOverride constraintsOverride, ExecutionSupport es, String parentClass)
     {
         if (value == null)
@@ -143,38 +143,38 @@ public class JsonParserHelper
         if (String.class.equals(resultType))
         {
             typeCheck(value, String.class, fullClassName, si);
-            return (T)jsonToString(value);
+            return (T) jsonToString(value);
         }
         if (Integer.class.equals(resultType))
         {
             typeCheck(value, Integer.class, fullClassName, si);
-            return (T)jsonToInteger(value);
+            return (T) jsonToInteger(value);
         }
         if (Long.class.equals(resultType))
         {
             typeCheck(value, Long.class, fullClassName, si);
-            return (T)jsonToLong(value);
+            return (T) jsonToLong(value);
         }
         if (Boolean.class.equals(resultType))
         {
             typeCheck(value, Boolean.class, fullClassName, si);
-            return (T)jsonToBoolean(value);
+            return (T) jsonToBoolean(value);
         }
         if (Double.class.equals(resultType))
         {
             typeCheck(value, Number.class, fullClassName, si);
-            return (T)jsonToDouble(value);
+            return (T) jsonToDouble(value);
         }
         // Is value a Date ?
         if (PureDate.class.isAssignableFrom(resultType))
         {
             typeCheck(value, String.class, fullClassName, si);
-            return (T)DateFunctions.parsePureDate((String)value);
+            return (T) DateFunctions.parsePureDate((String) value);
         }
         if (DateTime.class.isAssignableFrom(resultType))
         {
             typeCheck(value, String.class, fullClassName, si);
-            return (T)DateFunctions.parsePureDate((String)value);
+            return (T) DateFunctions.parsePureDate((String) value);
         }
         // Is value an Enum type?
         try
@@ -183,7 +183,7 @@ public class JsonParserHelper
             {
                 typeCheck(value, String.class, fullClassName, si);
 
-                String enumString = (String)value;
+                String enumString = (String) value;
                 int dotIndex = enumString.lastIndexOf('.');
                 String enumName;
                 String enumerationFullUserPath = fullUserPath;
@@ -200,7 +200,7 @@ public class JsonParserHelper
                         throw new PureExecutionException(si, "Expected enum of type " + fullClassName + "; got: " + enumString);
                     }
                 }
-                T result = (T)metadata.getEnum(enumerationFullUserPath, enumName);
+                T result = (T) metadata.getEnum(enumerationFullUserPath, enumName);
                 if (result == null)
                 {
                     throw new PureExecutionException(si, "Unknown enum: " + fullClassName + "." + enumName);
@@ -221,13 +221,12 @@ public class JsonParserHelper
             return null;
         }
 
-        JSONObject jsonObject = (JSONObject)value;
+        JSONObject jsonObject = (JSONObject) value;
         try
         {
             Class<?> implementationClass = resolveFactoryClass(resultType);
-            T instance = (T)MethodUtils.invokeExactStaticMethod(implementationClass, "fromJson",
+            return (T) MethodUtils.invokeExactStaticMethod(implementationClass, "fromJson",
                     new Object[]{value, metadata, classLoader, si, typeKey, failOnUnknownProperties, constraintsOverride, es, parentClass}, new Class[]{JSONObject.class, MetadataAccessor.class, ClassLoader.class, SourceInformation.class, String.class, boolean.class, ConstraintsOverride.class, ExecutionSupport.class, String.class});
-            return instance;
         }
         catch (ClassNotFoundException | IllegalAccessException | NoSuchMethodException e)
         {
@@ -238,7 +237,7 @@ public class JsonParserHelper
             Throwable targetException = e.getTargetException();
             if (targetException instanceof RuntimeException)
             {
-                throw (RuntimeException)targetException;
+                throw (RuntimeException) targetException;
             }
             throw new RuntimeException("Error calling fromJSON() method", e);
         }
@@ -272,7 +271,7 @@ public class JsonParserHelper
         }
         if (value instanceof String)
         {
-            return (String)value;
+            return (String) value;
         }
         return value.toString();
     }
@@ -285,7 +284,7 @@ public class JsonParserHelper
         }
         if (value instanceof Integer)
         {
-            return (Integer)value;
+            return (Integer) value;
         }
         return Integer.parseInt(value.toString());
     }
@@ -299,7 +298,7 @@ public class JsonParserHelper
 
         if (value instanceof Long)
         {
-            return (Long)value;
+            return (Long) value;
         }
         return Long.parseLong(value.toString());
     }
@@ -313,7 +312,7 @@ public class JsonParserHelper
         }
         if (value instanceof Number)
         {
-            return ((Number)value).doubleValue();
+            return ((Number) value).doubleValue();
         }
         return Double.parseDouble(value.toString());
     }
@@ -326,14 +325,14 @@ public class JsonParserHelper
         }
         if (value instanceof Boolean)
         {
-            return (Boolean)value;
+            return (Boolean) value;
         }
         return Boolean.valueOf(value.toString());
     }
 
     /*The generated factory has the same name as the class with a suffix _JsonFactory.
-    * Use the same classloader to load the factory class.*/
-    private static Class resolveFactoryClass(Class typeFromClassMetadata) throws ClassNotFoundException
+     * Use the same classloader to load the factory class.*/
+    private static Class<?> resolveFactoryClass(Class<?> typeFromClassMetadata) throws ClassNotFoundException
     {
         ClassLoader classLoader = typeFromClassMetadata.getClassLoader();
         String defaultFactory = typeFromClassMetadata.getName() + JSON_FACTORY;

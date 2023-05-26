@@ -23,15 +23,19 @@ import org.junit.BeforeClass;
 public class TestMap extends AbstractTestMap
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("fromString.pure");
         runtime.delete("classes.pure");
+        runtime.compile();
     }
+
     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();

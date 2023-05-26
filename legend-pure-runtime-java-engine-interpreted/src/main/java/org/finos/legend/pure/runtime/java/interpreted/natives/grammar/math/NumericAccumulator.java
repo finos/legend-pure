@@ -53,7 +53,7 @@ public class NumericAccumulator
         }
         else if (number instanceof BigDecimal)
         {
-            add((BigDecimal)number);
+            add((BigDecimal) number);
         }
         else if (number instanceof Double)
         {
@@ -65,7 +65,7 @@ public class NumericAccumulator
         }
         else if (number instanceof BigInteger)
         {
-            add((BigInteger)number);
+            add((BigInteger) number);
         }
         else if (number instanceof Long)
         {
@@ -154,7 +154,7 @@ public class NumericAccumulator
         }
         else if (number instanceof BigDecimal)
         {
-            subtract((BigDecimal)number);
+            subtract((BigDecimal) number);
         }
         else if (number instanceof Double)
         {
@@ -166,7 +166,7 @@ public class NumericAccumulator
         }
         else if (number instanceof BigInteger)
         {
-            subtract((BigInteger)number);
+            subtract((BigInteger) number);
         }
         else if (number instanceof Long)
         {
@@ -255,7 +255,7 @@ public class NumericAccumulator
         }
         else if (number instanceof BigDecimal)
         {
-            multiply((BigDecimal)number);
+            multiply((BigDecimal) number);
         }
         else if (number instanceof Double)
         {
@@ -267,7 +267,7 @@ public class NumericAccumulator
         }
         else if (number instanceof BigInteger)
         {
-            multiply((BigInteger)number);
+            multiply((BigInteger) number);
         }
         else if (number instanceof Long)
         {
@@ -356,7 +356,7 @@ public class NumericAccumulator
         }
         else if (number instanceof BigDecimal)
         {
-            divide((BigDecimal)number);
+            divide((BigDecimal) number);
         }
         else if (number instanceof Double)
         {
@@ -368,7 +368,7 @@ public class NumericAccumulator
         }
         else if (number instanceof BigInteger)
         {
-            divide((BigInteger)number);
+            divide((BigInteger) number);
         }
         else if (number instanceof Long)
         {
@@ -457,7 +457,7 @@ public class NumericAccumulator
         }
         else if (number instanceof BigDecimal)
         {
-            pow((BigDecimal)number);
+            pow((BigDecimal) number);
         }
         else if (number instanceof Double)
         {
@@ -469,7 +469,7 @@ public class NumericAccumulator
         }
         else if (number instanceof BigInteger)
         {
-            pow((BigInteger)number);
+            pow((BigInteger) number);
         }
         else if (number instanceof Long)
         {
@@ -562,7 +562,7 @@ public class NumericAccumulator
         }
         else if (initialValue instanceof BigDecimal)
         {
-            return newAccumulator((BigDecimal)initialValue);
+            return newAccumulator((BigDecimal) initialValue);
         }
         else if (initialValue instanceof Double)
         {
@@ -574,7 +574,7 @@ public class NumericAccumulator
         }
         else if (initialValue instanceof BigInteger)
         {
-            return newAccumulator((BigInteger)initialValue);
+            return newAccumulator((BigInteger) initialValue);
         }
         else if (initialValue instanceof Long)
         {
@@ -627,7 +627,7 @@ public class NumericAccumulator
      */
     public static NumericAccumulator newAccumulator(float initialValue)
     {
-        return newAccumulator((double)initialValue);
+        return newAccumulator((double) initialValue);
     }
 
     /**
@@ -667,7 +667,7 @@ public class NumericAccumulator
      */
     public static NumericAccumulator newAccumulator(int initialValue)
     {
-        return newAccumulator((long)initialValue);
+        return newAccumulator((long) initialValue);
     }
 
     // Number wrappers
@@ -676,7 +676,7 @@ public class NumericAccumulator
      * A wrapper around a number, which can allow for conversion to a type
      * with greater precision when necessary.
      */
-    private static abstract class NumberWrapper
+    private abstract static class NumberWrapper
     {
         abstract Number getValue();
 
@@ -688,7 +688,7 @@ public class NumericAccumulator
 
         NumberWrapper add(float number)
         {
-            return add((double)number);
+            return add((double) number);
         }
 
         abstract NumberWrapper add(BigInteger number);
@@ -703,7 +703,7 @@ public class NumericAccumulator
 
         NumberWrapper subtract(float number)
         {
-            return subtract((double)number);
+            return subtract((double) number);
         }
 
         abstract NumberWrapper subtract(BigInteger number);
@@ -718,7 +718,7 @@ public class NumericAccumulator
 
         NumberWrapper multiply(float number)
         {
-            return multiply((double)number);
+            return multiply((double) number);
         }
 
         abstract NumberWrapper multiply(BigInteger number);
@@ -733,7 +733,7 @@ public class NumericAccumulator
 
         NumberWrapper divide(float number)
         {
-            return divide((double)number);
+            return divide((double) number);
         }
 
         abstract NumberWrapper divide(BigInteger number);
@@ -748,7 +748,7 @@ public class NumericAccumulator
 
         NumberWrapper pow(float number)
         {
-            return pow((double)number);
+            return pow((double) number);
         }
 
         abstract NumberWrapper pow(double number);
@@ -1474,7 +1474,7 @@ public class NumericAccumulator
         @Override
         NumberWrapper add(int number)
         {
-            return add((long)number);
+            return add((long) number);
         }
 
         @Override
@@ -1513,7 +1513,7 @@ public class NumericAccumulator
         @Override
         NumberWrapper subtract(int number)
         {
-            return subtract((long)number);
+            return subtract((long) number);
         }
 
         @Override
@@ -1551,7 +1551,7 @@ public class NumericAccumulator
         @Override
         NumberWrapper multiply(int number)
         {
-            return multiply((long)number);
+            return multiply((long) number);
         }
 
         @Override
@@ -1589,7 +1589,7 @@ public class NumericAccumulator
         @Override
         NumberWrapper divide(int number)
         {
-            return divide((long)number);
+            return divide((long) number);
         }
 
         @Override
@@ -1601,7 +1601,7 @@ public class NumericAccumulator
         @Override
         NumberWrapper pow(int number)
         {
-            return this.pow((long)number);
+            return this.pow((long) number);
         }
 
         @Override

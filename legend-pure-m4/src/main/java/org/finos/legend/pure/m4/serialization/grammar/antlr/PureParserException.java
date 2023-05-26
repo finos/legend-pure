@@ -14,13 +14,13 @@
 
 package org.finos.legend.pure.m4.serialization.grammar.antlr;
 
-import java.io.IOException;
-
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.exception.PureException;
+
+import java.io.IOException;
 
 public class PureParserException extends PureException
 {
@@ -79,12 +79,12 @@ public class PureParserException extends PureException
             for (int j = 0; j < expectedTokenSequences[i].length; j++)
             {
                 info.append(tokenImage[expectedTokenSequences[i][j]]);
-                if (j < expectedTokenSequences[i].length-1)
+                if (j < expectedTokenSequences[i].length - 1)
                 {
                     info.append(' ');
                 }
             }
-            if (i < expectedTokenSequences.length-1)
+            if (i < expectedTokenSequences.length - 1)
             {
                 info.append(" or ");
             }
@@ -93,7 +93,7 @@ public class PureParserException extends PureException
         info.append(" found: ");
         for (int i = 0; i < maxSize; i++)
         {
-            Pair<Integer, String> tok = tokens.get(i+1);
+            Pair<Integer, String> tok = tokens.get(i + 1);
             if (i != 0)
             {
                 info.append(" ");
@@ -119,7 +119,7 @@ public class PureParserException extends PureException
         }
         else if (found != null)
         {
-            return "(" + found + ") in\n'" + text + "\'";
+            return "(" + found + ") in\n'" + text + "'";
         }
         else
         {
@@ -127,17 +127,17 @@ public class PureParserException extends PureException
         }
     }
 
-    private static Pair<Integer,Integer> extractLineColumn(String message)
+    private static Pair<Integer, Integer> extractLineColumn(String message)
     {
         if ((message != null) && message.startsWith("Lexical error"))
         {
             int line = Integer.parseInt(message.substring("Lexical error at line ".length(), message.indexOf(",")));
             int column = Integer.parseInt(message.substring(message.indexOf("column") + "column".length() + 1, message.indexOf(".")));
-            return Tuples.pair(line,column);
+            return Tuples.pair(line, column);
         }
         else
         {
-            return Tuples.pair(-1,-1);
+            return Tuples.pair(-1, -1);
         }
     }
 }

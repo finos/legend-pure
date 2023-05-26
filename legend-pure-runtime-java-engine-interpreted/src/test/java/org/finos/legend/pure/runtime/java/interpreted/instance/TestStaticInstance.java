@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.instance;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.After;
@@ -26,7 +26,8 @@ import org.junit.Test;
 public class TestStaticInstance extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
@@ -39,26 +40,26 @@ public class TestStaticInstance extends AbstractPureTestWithCoreCompiled
     @Test
     public void testStaticInstance()
     {
-        compileTestSource("fromString.pure","Class Person\n" +
-                          "{\n" +
-                          "   lastName:String[1];\n" +
-                          "}\n" +
-                          "^Person p (lastName='last')\n" +
-                          "function testGet():Nil[0]\n" +
-                          "{\n" +
-                          "    print(p, 1);\n" +
-                          "}\n");
+        compileTestSource("fromString.pure", "Class Person\n" +
+                "{\n" +
+                "   lastName:String[1];\n" +
+                "}\n" +
+                "^Person p (lastName='last')\n" +
+                "function testGet():Nil[0]\n" +
+                "{\n" +
+                "    print(p, 1);\n" +
+                "}\n");
         this.execute("testGet():Nil[0]");
         Assert.assertEquals("p instance Person\n" +
                 "    lastName(Property):\n" +
-                "        last instance String", this.functionExecution.getConsole().getLine(0));
+                "        last instance String", functionExecution.getConsole().getLine(0));
     }
 
 
     @Test
     public void testGetterFromStaticInstance()
     {
-        compileTestSource("fromString.pure","Class Person\n" +
+        compileTestSource("fromString.pure", "Class Person\n" +
                 "{\n" +
                 "   lastName:String[1];\n" +
                 "}\n" +
@@ -68,7 +69,7 @@ public class TestStaticInstance extends AbstractPureTestWithCoreCompiled
                 "    print(a.lastName, 1);\n" +
                 "}\n");
         this.execute("testGet():Nil[0]");
-        Assert.assertEquals("'last'", this.functionExecution.getConsole().getLine(0));
+        Assert.assertEquals("'last'", functionExecution.getConsole().getLine(0));
     }
 
     @Test
@@ -76,7 +77,7 @@ public class TestStaticInstance extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            compileTestSource("fromString.pure","Class test::Person\n" +
+            compileTestSource("fromString.pure", "Class test::Person\n" +
                     "{\n" +
                     "   lastName:String[1];\n" +
                     "}\n" +

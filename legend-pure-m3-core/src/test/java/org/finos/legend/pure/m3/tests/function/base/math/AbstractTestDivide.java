@@ -17,10 +17,11 @@ package org.finos.legend.pure.m3.tests.function.base.math;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.junit.Test;
 
-public abstract class AbstractTestDivide extends AbstractPureTestWithCoreCompiled {
-
+public abstract class AbstractTestDivide extends AbstractPureTestWithCoreCompiled
+{
     @Test
-    public void testBasic() {
+    public void testBasic()
+    {
         compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
@@ -30,7 +31,8 @@ public abstract class AbstractTestDivide extends AbstractPureTestWithCoreCompile
     }
 
     @Test
-    public void testComplex() {
+    public void testComplex()
+    {
         compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +

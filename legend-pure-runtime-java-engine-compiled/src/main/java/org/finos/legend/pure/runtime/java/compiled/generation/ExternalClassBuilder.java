@@ -15,7 +15,7 @@
 package org.finos.legend.pure.runtime.java.compiled.generation;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.factory.Lists;
 
 public class ExternalClassBuilder
 {
@@ -108,7 +108,7 @@ public class ExternalClassBuilder
                 "            {\n" +
                 "                 if (repoByName.get(name) == null)" +
                 "                   {" +
-                "                       System.out.println(\"WARNING! The repository '\" + name + \"' has not been found on the classpath\");"+
+                "                       System.out.println(\"WARNING! The repository '\" + name + \"' has not been found on the classpath\");" +
                 "                   }" +
                 "                return repoByName.get(name);\n" +
                 "            }\n" +

@@ -15,16 +15,15 @@
 package org.finos.legend.pure.m4.serialization.grammar;
 
 import org.eclipse.collections.api.list.MutableList;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.serialization.grammar.M4Parser;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.statelistener.M4StateListener;
 import org.finos.legend.pure.m4.statelistener.VoidM4StateListener;
 import org.junit.Assert;
 
 abstract class AbstractPrimitiveParsingTest
 {
-    abstract protected String getPrimitiveTypeName();
+    protected abstract String getPrimitiveTypeName();
 
     protected void assertParsesTo(String expectedName, String string)
     {

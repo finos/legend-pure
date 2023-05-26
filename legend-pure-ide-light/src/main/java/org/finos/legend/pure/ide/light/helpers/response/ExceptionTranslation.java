@@ -15,15 +15,14 @@
 package org.finos.legend.pure.ide.light.helpers.response;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.procedure.Procedure2;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.ide.light.session.PureSession;
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
@@ -39,6 +38,8 @@ import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 public class ExceptionTranslation
@@ -50,19 +51,20 @@ public class ExceptionTranslation
         try
         {
             PureException pureException = PureException.findPureException(t);
-            if (null != pureException)
+            if (pureException != null)
             {
                 return pureExceptionToJson(session, pureException, pureResponse);
             }
         }
-        catch (Exception e)
+        catch (Exception ignore)
         {
+            // ignore exceptions translating exception to JSON
         }
 
         IDEExceptionResponse response = new IDEExceptionResponse();
-        if (null != pureResponse)
+        if (pureResponse != null)
         {
-            String pureResponseStr = new String(pureResponse.toByteArray()) + '\n';
+            String pureResponseStr = pureResponse.toString() + '\n';
             response.appendText(pureResponseStr);
         }
 
@@ -80,12 +82,12 @@ public class ExceptionTranslation
     public static IDEResponse pureExceptionToJson(PureSession session, PureException e, ByteArrayOutputStream pureResponse)
     {
         PureException original = e.getOriginatingPureException();
-        PureRuntime runtime = (null == session) ? null : session.getPureRuntime();
+        PureRuntime runtime = (session == null) ? null : session.getPureRuntime();
 
         IDEExceptionResponse response;
         if (e instanceof PureUnresolvedIdentifierException)
         {
-            final PureUnresolvedIdentifierException exception = (PureUnresolvedIdentifierException)e;
+            final PureUnresolvedIdentifierException exception = (PureUnresolvedIdentifierException) e;
             if (exception.getImportCandidates(Objects.requireNonNull(session).codeStorage.getAllRepositories()).isEmpty())
             {
                 response = new IDEExceptionResponse();
@@ -93,40 +95,36 @@ public class ExceptionTranslation
             else
             {
                 RichIterable<CoreInstance> candidates = exception.getImportCandidates(session.codeStorage.getAllRepositories());
-                MutableMap<String, Pair<SourceInformation, String>> sourceInfoAndTypeByPath = UnifiedMap.newMap(candidates.size());
+                MutableMap<String, Pair<SourceInformation, String>> sourceInfoAndTypeByPath = Maps.mutable.ofInitialCapacity(candidates.size());
 
                 for (CoreInstance candidate : candidates)
                 {
                     SourceInformation sourceInfo = candidate.getSourceInformation();
                     // TODO think about what we should do with candidates with no source info
-                    if ((null != sourceInfo) && (null != runtime))
+                    if ((sourceInfo != null) && (runtime != null))
                     {
                         sourceInfoAndTypeByPath.put(PackageableElement.getUserPathForPackageableElement(candidate), Tuples.pair(sourceInfo, candidate.getClassifier().getName()));
                     }
                 }
 
                 SourceInformation sourceToBeModified = exception.getImportGroup().getSourceInformation();
-                if (null == sourceToBeModified)
+                if (sourceToBeModified == null)
                 {
                     //avoid null pointer exception
                     sourceToBeModified = DUMMY_SOURCE_INFORMATION;
                 }
 
-                final MutableSet<String> pathsInSameSource = Sets.mutable.empty();
-                final MutableSet<String> pathsNotInSameSource = Sets.mutable.empty();
-                sourceInfoAndTypeByPath.forEachKeyValue(new Procedure2<String, Pair<SourceInformation, String>>()
+                MutableSet<String> pathsInSameSource = Sets.mutable.empty();
+                MutableSet<String> pathsNotInSameSource = Sets.mutable.empty();
+                sourceInfoAndTypeByPath.forEachKeyValue((s, sourceInformationStringPair) ->
                 {
-                    @Override
-                    public void value(String s, Pair<SourceInformation, String> sourceInformationStringPair)
+                    if (sourceInformationStringPair.getOne().getSourceId().equals(exception.getImportGroup().getSourceInformation().getSourceId()))
                     {
-                        if (sourceInformationStringPair.getOne().getSourceId().equals(exception.getImportGroup().getSourceInformation().getSourceId()))
-                        {
-                            pathsInSameSource.add(s);
-                        }
-                        else
-                        {
-                            pathsNotInSameSource.add(s);
-                        }
+                        pathsInSameSource.add(s);
+                    }
+                    else
+                    {
+                        pathsNotInSameSource.add(s);
                     }
                 });
 
@@ -143,13 +141,13 @@ public class ExceptionTranslation
                     String type = pair.getTwo();
                     String id = exception.getIdOrPath();
                     int index = id.lastIndexOf("::");
-                    if (-1 != index)
+                    if (index != -1)
                     {
                         //id contains "::"
                         id = id.substring(index + 2);
                     }
                     index = path.lastIndexOf(id);
-                    if (-1 == index)
+                    if (index == -1)
                     {
                         throw new RuntimeException("Unable to find identifier: " + exception.getIdOrPath());
                     }
@@ -157,7 +155,7 @@ public class ExceptionTranslation
 
                     int lineToBeModified = sourceToBeModified.getStartLine();
                     int columnToBeModified = sourceToBeModified.getStartColumn();
-                    if (0 == columnToBeModified)
+                    if (columnToBeModified == 0)
                     {
                         //special handling for importGroup without any imports, need to add import to the next line
                         lineToBeModified++;
@@ -180,7 +178,7 @@ public class ExceptionTranslation
         }
         else if (e instanceof PureUnmatchedFunctionException)
         {
-            final PureUnmatchedFunctionException exception = (PureUnmatchedFunctionException)e;
+            final PureUnmatchedFunctionException exception = (PureUnmatchedFunctionException) e;
             if (0 == exception.getImportCandidatesWithPackageNotImported().size() + exception.getImportCandidatesWithPackageImported().size())
             {
                 response = new IDEExceptionResponse();
@@ -188,7 +186,7 @@ public class ExceptionTranslation
             else
             {
                 SourceInformation sourceToBeModified = exception.getImportGroup().getSourceInformation();
-                if (null == sourceToBeModified)
+                if (sourceToBeModified == null)
                 {
                     // avoid null pointer exception
                     sourceToBeModified = DUMMY_SOURCE_INFORMATION;
@@ -205,7 +203,6 @@ public class ExceptionTranslation
                 getCandidatesOutput(session, runtime, exception, sourceToBeModified, candidatesOutputWithPackageNotImported, exception.getImportCandidatesWithPackageNotImported());
                 getCandidatesOutput(session, runtime, exception, sourceToBeModified, candidatesOutputWithPackageImported, exception.getImportCandidatesWithPackageImported());
             }
-
         }
         else if ((e instanceof PureParserException || e instanceof PureCompilationException))
         {
@@ -218,9 +215,18 @@ public class ExceptionTranslation
             response = new IDEExceptionResponse();
         }
 
-        if (null != pureResponse)
+        if (pureResponse != null)
         {
-            String pureResponseStr = new String(pureResponse.toByteArray()) + '\n';
+            String pureResponseStr;
+            try
+            {
+                pureResponseStr = pureResponse.toString(StandardCharsets.UTF_8.name()) + "\n";
+            }
+            catch (UnsupportedEncodingException ex)
+            {
+                // this should never happen, but just in case ...
+                pureResponseStr = pureResponse + "\n";
+            }
             response.appendText(pureResponseStr);
         }
 
@@ -234,7 +240,7 @@ public class ExceptionTranslation
         }
 
         SourceInformation sourceInformation = original.getSourceInformation();
-        if ((null != sourceInformation) && (null != runtime) && (null != runtime.getSourceById(sourceInformation.getSourceId())))
+        if ((sourceInformation != null) && (runtime != null) && (runtime.getSourceById(sourceInformation.getSourceId()) != null))
         {
             response.RO = runtime.isSourceImmutable(sourceInformation.getSourceId());
             response.source = sourceInformation.getSourceId();
@@ -242,7 +248,7 @@ public class ExceptionTranslation
             response.column = sourceInformation.getColumn();
         }
 
-        if (null != session)
+        if (session != null)
         {
             // response.compiler = session.getCompilerLogs();
         }
@@ -252,11 +258,11 @@ public class ExceptionTranslation
 
     private static void getCandidatesOutput(PureSession session, PureRuntime runtime, final PureUnmatchedFunctionException exception, SourceInformation sourceToBeModified, MutableList<Candidate> candidatesOutput, ListIterable<CoreInstance> candidates)
     {
-        MutableMap<String, SourceInformation> sourceInfoAndTypeByPath = UnifiedMap.newMap(candidates.size());
+        MutableMap<String, SourceInformation> sourceInfoAndTypeByPath = Maps.mutable.ofInitialCapacity(candidates.size());
         for (CoreInstance candidate : candidates)
         {
             SourceInformation sourceInfo = candidate.getSourceInformation();
-            if ((null != sourceInfo) && (null != runtime))
+            if ((sourceInfo != null) && (runtime != null))
             {
                 StringBuilder functionNameStringBuilder = new StringBuilder();
                 try
@@ -266,7 +272,7 @@ public class ExceptionTranslation
                 catch (Exception functionPrintException)
                 {
                     // Log error if possible, then ignore the function and continue
-                    if (null != session)
+                    if (session != null)
                     {
                         //session.log("Error printing: " + candidate, functionPrintException);
                     }
@@ -276,39 +282,33 @@ public class ExceptionTranslation
             }
         }
 
-        final MutableSet<String> pathsInSameSource = Sets.mutable.empty();
-        final MutableSet<String> pathsNotInSameSource = Sets.mutable.empty();
-        sourceInfoAndTypeByPath.forEachKeyValue(new Procedure2<String, SourceInformation>()
+        MutableSet<String> pathsInSameSource = Sets.mutable.empty();
+        MutableSet<String> pathsNotInSameSource = Sets.mutable.empty();
+        sourceInfoAndTypeByPath.forEachKeyValue((s, sourceInfo) ->
         {
-            @Override
-            public void value(String s, SourceInformation sourceInfo)
+            if (sourceInfo.getSourceId().equals(exception.getImportGroup().getSourceInformation().getSourceId()))
             {
-                if (sourceInfo.getSourceId().equals(exception.getImportGroup().getSourceInformation().getSourceId()))
-                {
-                    pathsInSameSource.add(s);
-                }
-                else
-                {
-                    pathsNotInSameSource.add(s);
-                }
+                pathsInSameSource.add(s);
+            }
+            else
+            {
+                pathsNotInSameSource.add(s);
             }
         });
 
-        for (String path : pathsInSameSource.toSortedList().withAll(pathsNotInSameSource.toSortedList()))
+        pathsInSameSource.toSortedList().withAll(pathsNotInSameSource.toSortedList()).forEach(path ->
         {
             SourceInformation sourceInfo = sourceInfoAndTypeByPath.get(path);
             String functionName = exception.getFunctionName();
             int index = functionName.lastIndexOf("::");
-            if (-1 != index)
+            if (index != -1)
             {
                 //id contains "::"
                 functionName = functionName.substring(index + 2);
             }
             index = path.lastIndexOf(functionName);
-            if (!(-1 == index))
+            if (index != -1)
             {
-
-
                 String importToAdd = "import " + path.substring(0, index) + "*;";
 
                 int lineToBeModified = sourceToBeModified.getStartLine();
@@ -331,7 +331,6 @@ public class ExceptionTranslation
                 candidate.messageToBeModified = importToAdd;
                 candidatesOutput.add(candidate);
             }
-        }
+        });
     }
-
 }

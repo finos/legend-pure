@@ -23,12 +23,12 @@ public class First extends AbstractNativeFunctionGeneric
 {
     public First()
     {
-        super(getMethod(CompiledSupport.class, "first", RichIterable.class),  "first_T_MANY__T_$0_1$_");
+        super(getMethod(CompiledSupport.class, "first", RichIterable.class), "first_T_MANY__T_$0_1$_");
     }
 
     @Override
-    public String buildBody() {
-
+    public String buildBody()
+    {
         return "new DefendedPureFunction1<Object, Object>()\n" +
                 "        {\n" +
                 "            @Override\n" +

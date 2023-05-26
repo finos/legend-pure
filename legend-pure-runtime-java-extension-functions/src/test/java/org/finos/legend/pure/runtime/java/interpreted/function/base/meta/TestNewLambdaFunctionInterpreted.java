@@ -22,12 +22,13 @@ import org.junit.BeforeClass;
 public class TestNewLambdaFunctionInterpreted extends AbstractTestNewLambdaFunction
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
-     protected static FunctionExecution getFunctionExecution()
+
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }
-
 }

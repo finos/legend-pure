@@ -14,30 +14,29 @@
 
 package org.finos.legend.pure.runtime.java.compiled.factory;
 
-import org.eclipse.collections.impl.factory.Maps;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.impl.factory.primitive.IntObjectMaps;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
-import org.finos.legend.pure.m4.coreinstance.factory.CoreInstanceFactory;
 
 import java.util.ServiceLoader;
 
 public class JavaModelFactoryRegistryLoader
 {
-    public static void main(String args[])
+    public static void main(String... args)
     {
         System.out.println(loader().allManagedTypes().toSortedList().makeString("\n"));
     }
 
     public static CoreInstanceFactoryRegistry loader()
     {
-        CoreInstanceFactoryRegistry result = new CoreInstanceFactoryRegistry(IntObjectMaps.immutable.<CoreInstanceFactory>empty(), Maps.immutable.<String, CoreInstanceFactory>empty(), Maps.immutable.<String, Class>empty());
+        CoreInstanceFactoryRegistry result = new CoreInstanceFactoryRegistry(IntObjectMaps.immutable.empty(), Maps.immutable.empty(), Maps.immutable.empty());
         for (JavaModelFactoryRegistry l : ServiceLoader.load(JavaModelFactoryRegistry.class))
         {
             try
             {
-                result = result.combine((CoreInstanceFactoryRegistry)l.getClass().getDeclaredField("REGISTRY").get(null));
+                result = result.combine((CoreInstanceFactoryRegistry) l.getClass().getDeclaredField("REGISTRY").get(null));
             }
-            catch (Throwable e)
+            catch (Throwable ignore)
             {
                 // Catch and do nothing (during build time)
             }

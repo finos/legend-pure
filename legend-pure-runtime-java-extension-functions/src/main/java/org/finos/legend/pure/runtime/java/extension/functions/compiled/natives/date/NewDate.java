@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.date;
 
-import org.apache.commons.lang3.StringUtils;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -38,12 +37,12 @@ public class NewDate extends AbstractNative
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
         SourceInformation sourceInformation = functionExpression.getSourceInformation();
-        return "FunctionsGen.newDate(" + StringUtils.join(transformedParams, ", ") + ", " + NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + ")";
+        return transformedParams.makeString("FunctionsGen.newDate(", ", ", ", " + NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + ")");
     }
 
     @Override
-    public String buildBody() {
-
+    public String buildBody()
+    {
         return "new SharedPureFunction<org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate>()\n" +
                 "{\n" +
                 "   @Override\n" +

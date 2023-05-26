@@ -23,7 +23,8 @@ import org.junit.Test;
 public class TestEnumerationValues extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 

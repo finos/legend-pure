@@ -17,41 +17,45 @@ package org.finos.legend.pure.runtime.java.extension.functions.interpreted.nativ
 import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.util.GlobalTracer;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionCoreInstanceWrapper;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.BooleanCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.StringCoreInstance;
-import org.finos.legend.pure.runtime.java.interpreted.natives.MapCoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
+import org.finos.legend.pure.runtime.java.interpreted.natives.MapCoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
-import java.util.Map;
 import java.util.Stack;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TraceSpan extends NativeFunction
 {
     private final FunctionExecutionInterpreted functionExecution;
+
     private static final ExecutorService traceAsyncExecutor = Executors.newCachedThreadPool(new ThreadFactory()
     {
-        private final ThreadGroup group = System.getSecurityManager() == null
-                ? Thread.currentThread().getThreadGroup()
-                : System.getSecurityManager().getThreadGroup();
+        private final ThreadGroup group = System.getSecurityManager() == null ? Thread.currentThread().getThreadGroup() : System.getSecurityManager().getThreadGroup();
         private final AtomicInteger threadNumber = new AtomicInteger(1);
 
         @Override
@@ -101,7 +105,7 @@ public class TraceSpan extends NativeFunction
         {
             return this.functionExecution.executeLambda(
                     LambdaFunctionCoreInstanceWrapper.toLambdaFunction(functionToApplyTo),
-                    Lists.mutable.<CoreInstance>empty(),
+                    Lists.mutable.empty(),
                     resolvedTypeParameters,
                     resolvedMultiplicityParameters,
                     getParentOrEmptyVariableContext(variableContext),
@@ -124,14 +128,14 @@ public class TraceSpan extends NativeFunction
                 traceName);
     }
 
-    private CoreInstance executeWithTrace(final ListIterable<? extends CoreInstance> params,
-                                          final Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters,
-                                          final Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters,
-                                          final VariableContext variableContext, final CoreInstance functionExpressionToUseInStack, final Profiler profiler,
-                                          final InstantiationContext instantiationContext, final ExecutionSupport executionSupport,
-                                          final ProcessorSupport processorSupport, final CoreInstance functionToApplyTo, final String traceName)
+    private CoreInstance executeWithTrace(ListIterable<? extends CoreInstance> params,
+                                          Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters,
+                                          Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters,
+                                          VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler,
+                                          InstantiationContext instantiationContext, ExecutionSupport executionSupport,
+                                          ProcessorSupport processorSupport, CoreInstance functionToApplyTo, String traceName)
     {
-        final Span span = GlobalTracer.get().buildSpan(traceName).start();
+        Span span = GlobalTracer.get().buildSpan(traceName).start();
         try (Scope scope = GlobalTracer.get().scopeManager().activate(span))
         {
             if (params.size() > 2)
@@ -168,34 +172,30 @@ public class TraceSpan extends NativeFunction
         }
     }
 
-    private void resolveTagsAndAddToTrace(final ListIterable<? extends CoreInstance> params,
-                                          final Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters,
-                                          final Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters,
-                                          final VariableContext variableContext, final CoreInstance functionExpressionToUseInStack,
-                                          final Profiler profiler, final InstantiationContext instantiationContext,
-                                          final ExecutionSupport executionSupport, final ProcessorSupport processorSupport,
-                                          boolean tagsCritical, final Span span)
+    private void resolveTagsAndAddToTrace(ListIterable<? extends CoreInstance> params,
+                                          Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters,
+                                          Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters,
+                                          VariableContext variableContext, CoreInstance functionExpressionToUseInStack,
+                                          Profiler profiler, InstantiationContext instantiationContext,
+                                          ExecutionSupport executionSupport, ProcessorSupport processorSupport,
+                                          boolean tagsCritical, Span span)
     {
         try
         {
-            Future<?> future = traceAsyncExecutor.submit(new Runnable()
+            Future<?> future = traceAsyncExecutor.submit(() ->
             {
-                @Override
-                public void run()
+                try (Scope scope = GlobalTracer.get().scopeManager().activate(span))
                 {
-                    try (Scope scope = GlobalTracer.get().scopeManager().activate(span))
-                    {
-                        CoreInstance tagsFunction = Instance.getValueForMetaPropertyToOneResolved(params.get(2), M3Properties.values, processorSupport);
-                        CoreInstance coreInstance = functionExecution.executeLambda(
-                                LambdaFunctionCoreInstanceWrapper.toLambdaFunction(tagsFunction),
-                                Lists.mutable.<CoreInstance>empty(), resolvedTypeParameters,
-                                resolvedMultiplicityParameters,
-                                getParentOrEmptyVariableContext(variableContext),
-                                functionExpressionToUseInStack, profiler, instantiationContext,
-                                executionSupport);
-                        MutableMap<CoreInstance, CoreInstance> tagsMap = ((MapCoreInstance) Instance.getValueForMetaPropertyToManyResolved(coreInstance, M3Properties.values, processorSupport).getFirst()).getMap();
-                        addTags(span, tagsMap, params, processorSupport);
-                    }
+                    CoreInstance tagsFunction = Instance.getValueForMetaPropertyToOneResolved(params.get(2), M3Properties.values, processorSupport);
+                    CoreInstance coreInstance = functionExecution.executeLambda(
+                            LambdaFunctionCoreInstanceWrapper.toLambdaFunction(tagsFunction),
+                            Lists.mutable.empty(), resolvedTypeParameters,
+                            resolvedMultiplicityParameters,
+                            getParentOrEmptyVariableContext(variableContext),
+                            functionExpressionToUseInStack, profiler, instantiationContext,
+                            executionSupport);
+                    MutableMap<CoreInstance, CoreInstance> tagsMap = ((MapCoreInstance) Instance.getValueForMetaPropertyToManyResolved(coreInstance, M3Properties.values, processorSupport).getFirst()).getMap();
+                    addTags(span, tagsMap);
                 }
             });
             future.get(60, TimeUnit.SECONDS);
@@ -204,7 +204,7 @@ public class TraceSpan extends NativeFunction
         {
             if (span != null)
             {
-                span.setTag("Exception", String.format("Timeout received before tags could be resolved"));
+                span.setTag("Exception", "Timeout received before tags could be resolved");
             }
         }
         catch (InterruptedException e)
@@ -224,16 +224,11 @@ public class TraceSpan extends NativeFunction
         }
     }
 
-    private void addTags(Span span, MutableMap<CoreInstance, CoreInstance> tagsMap, ListIterable<? extends CoreInstance> params, ProcessorSupport processorSupport)
+    private void addTags(Span span, MutableMap<CoreInstance, CoreInstance> tagsMap)
     {
-        for (Map.Entry<CoreInstance, CoreInstance> entry : tagsMap.entrySet())
+        if (span != null)
         {
-            String tag = ((StringCoreInstance) entry.getKey()).getValue();
-            String value = ((StringCoreInstance) entry.getValue()).getValue();
-            if (span != null)
-            {
-                span.setTag(tag, value);
-            }
+            tagsMap.forEachKeyValue((k, v) -> span.setTag(PrimitiveUtilities.getStringValue(k), PrimitiveUtilities.getStringValue(v)));
         }
     }
 }

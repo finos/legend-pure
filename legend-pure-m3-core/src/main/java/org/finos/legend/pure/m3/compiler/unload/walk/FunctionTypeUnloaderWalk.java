@@ -39,7 +39,7 @@ public class FunctionTypeUnloaderWalk implements MatchRunner<FunctionType>
         {
             matcher.fullMatch(referenceUsage._ownerCoreInstance(), state);
         }
-        if (type._functionCoreInstance().getFirst()!= null)
+        if (type._functionCoreInstance().getFirst() != null)
         {
             matcher.fullMatch(type._functionCoreInstance().getFirst(), state);
         }

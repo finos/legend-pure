@@ -26,11 +26,15 @@ import org.finos.legend.pure.m3.SourceMutation;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.execution.test.TestCollection;
 import org.finos.legend.pure.m3.execution.test.TestRunner;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.welcome.WelcomeCodeStorage;
-import org.finos.legend.pure.m3.serialization.runtime.*;
+import org.finos.legend.pure.m3.serialization.runtime.ExecutedTestTracker;
+import org.finos.legend.pure.m3.serialization.runtime.Message;
+import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
+import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
+import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m3.statelistener.VoidExecutionActivityListener;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -39,8 +43,6 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -49,15 +51,17 @@ import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import static org.finos.legend.pure.ide.light.helpers.response.ExceptionTranslation.buildExceptionMessage;
 
 public class PureSession
 {
-    private PureRuntime pureRuntime;
+    private final PureRuntime pureRuntime;
     public MutableRepositoryCodeStorage codeStorage;
-    private FunctionExecution functionExecution;
-    private SourceLocationConfiguration sourceLocationConfiguration;
+    private final FunctionExecution functionExecution;
+    private final SourceLocationConfiguration sourceLocationConfiguration;
     private final ConcurrentMutableMap<Integer, TestRunnerWrapper> testRunnersById = ConcurrentHashMap.newMap();
     private final AtomicInteger executionCount = new AtomicInteger(0);
     private static final Pattern LINE_SPLITTER = Pattern.compile("^", Pattern.MULTILINE);
@@ -68,29 +72,21 @@ public class PureSession
 
     public PureSession(SourceLocationConfiguration sourceLocationConfiguration, MutableList<RepositoryCodeStorage> repos)
     {
-        try
-        {
-            this.sourceLocationConfiguration = sourceLocationConfiguration;
+        this.sourceLocationConfiguration = sourceLocationConfiguration;
 
-            String rootPath = Optional.ofNullable(sourceLocationConfiguration)
-                    .flatMap(s -> Optional.ofNullable(s.welcomeFileDirectory))
-                    .orElse(System.getProperty("java.io.tmpdir"));
+        String rootPath = Optional.ofNullable(sourceLocationConfiguration)
+                .flatMap(s -> Optional.ofNullable(s.welcomeFileDirectory))
+                .orElse(System.getProperty("java.io.tmpdir"));
 
-            this.repos = Lists.mutable.withAll(repos).with(new WelcomeCodeStorage(Paths.get(rootPath)));
+        this.repos = Lists.mutable.withAll(repos).with(new WelcomeCodeStorage(Paths.get(rootPath)));
 
-            this.functionExecution = new FunctionExecutionInterpreted(VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER);
+        this.functionExecution = new FunctionExecutionInterpreted(VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER);
 
-            this.codeStorage = new CompositeCodeStorage(this.repos.toArray(new RepositoryCodeStorage[0]));
-            this.pureRuntime = new PureRuntimeBuilder(this.codeStorage).withMessage(this.message).setUseFastCompiler(true).build();
-            this.functionExecution.init(this.pureRuntime, this.message);
-            this.codeStorage.initialize(this.message);
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        this.codeStorage = new CompositeCodeStorage(this.repos.toArray(new RepositoryCodeStorage[0]));
+        this.pureRuntime = new PureRuntimeBuilder(this.codeStorage).withMessage(this.message).setUseFastCompiler(true).build();
+        this.functionExecution.init(this.pureRuntime, this.message);
+        this.codeStorage.initialize(this.message);
     }
-
 
     public MutableRepositoryCodeStorage getCodeStorage()
     {
@@ -117,7 +113,7 @@ public class PureSession
     public CallBack getTestCallBack(int testRunId)
     {
         TestRunnerWrapper testRunnerWrapper = this.testRunnersById.get(testRunId);
-        return (null == testRunnerWrapper) ? null : testRunnerWrapper.callBack;
+        return (testRunnerWrapper == null) ? null : testRunnerWrapper.callBack;
     }
 
     public int getTestRunCount()
@@ -135,17 +131,13 @@ public class PureSession
     {
         try
         {
-            executionCount.incrementAndGet();
+            this.executionCount.incrementAndGet();
             JSONObject mainObject = this.saveFiles(request, response);
             SourceMutation sourceMutation = this.getPureRuntime().compile();
-            JSONArray array = null != mainObject.get("modifiedFiles") ? (JSONArray) mainObject.get("modifiedFiles") : new JSONArray();
+            JSONArray array = (mainObject.get("modifiedFiles") != null) ? (JSONArray) mainObject.get("modifiedFiles") : new JSONArray();
             Iterate.addAllIterable(sourceMutation.getModifiedFiles(), array);
             mainObject.put("modifiedFiles", array);
-
-            if (null != mainObject)
-            {
-                func.run(this, (JSONObject) mainObject.get("extraParams"), (JSONArray) mainObject.get("modifiedFiles"), response, outputStream);
-            }
+            func.run(this, (JSONObject) mainObject.get("extraParams"), (JSONArray) mainObject.get("modifiedFiles"), response, outputStream);
         }
         catch (Throwable t)
         {
@@ -159,7 +151,7 @@ public class PureSession
         }
         finally
         {
-            executionCount.decrementAndGet();
+            this.executionCount.decrementAndGet();
         }
     }
 
@@ -169,7 +161,7 @@ public class PureSession
         ByteArrayOutputStream pureResponse = new ByteArrayOutputStream();
         try
         {
-            executionCount.incrementAndGet();
+            this.executionCount.incrementAndGet();
             try
             {
                 mainObj = this.saveFiles(request, response);
@@ -203,7 +195,7 @@ public class PureSession
         }
         finally
         {
-            executionCount.decrementAndGet();
+            this.executionCount.decrementAndGet();
         }
     }
 
@@ -252,13 +244,13 @@ public class PureSession
                             SourceInformation sourceInformation = diagram.getSourceInformation();
                             Source source = pureRuntime.getSourceById(sourceInformation.getSourceId());
                             String content = source.getContent();
-                            String lines[] = LINE_SPLITTER.split(content);
+                            String[] lines = LINE_SPLITTER.split(content);
                             StringBuilder buffer = new StringBuilder(content.length());
                             for (int i = 0; i < sourceInformation.getStartLine() - 1; i++)
                             {
                                 buffer.append(lines[i]);
                             }
-                            buffer.append(lines[sourceInformation.getStartLine() - 1].substring(0, diagram.getSourceInformation().getStartColumn() - 1));
+                            buffer.append(lines[sourceInformation.getStartLine() - 1], 0, diagram.getSourceInformation().getStartColumn() - 1);
                             buffer.append(d.get("code"));
                             buffer.append(lines[sourceInformation.getEndLine() - 1].substring(sourceInformation.getEndColumn()));
                             for (int i = sourceInformation.getEndLine(); i < lines.length; i++)
@@ -285,7 +277,7 @@ public class PureSession
 
     public int getCurrentExecutionCount()
     {
-        return executionCount.get();
+        return this.executionCount.get();
     }
 
     public static String exceptionToJson(PureSession session, Throwable t, ByteArrayOutputStream pureResponse)

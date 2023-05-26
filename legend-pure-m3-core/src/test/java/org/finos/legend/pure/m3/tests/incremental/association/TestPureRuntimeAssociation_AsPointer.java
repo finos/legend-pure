@@ -24,12 +24,14 @@ import org.junit.Test;
 public class TestPureRuntimeAssociation_AsPointer extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("userId.pure");
         runtime.delete("sourceId.pure");
     }
@@ -47,7 +49,7 @@ public class TestPureRuntimeAssociation_AsPointer extends AbstractPureTestWithCo
                         .compileWithExpectedCompileFailure("a has not been defined!", "userId.pure", 1, 42)
                         .createInMemorySource("sourceId.pure", "Association a {a:A[1];b:B[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
@@ -66,7 +68,6 @@ public class TestPureRuntimeAssociation_AsPointer extends AbstractPureTestWithCo
                         .compileWithExpectedCompileFailure("a has not been defined!", "userId.pure", 1, 42)
                         .updateSource("sourceId.pure", "Association a {a:A[1];b:B[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
-
 }

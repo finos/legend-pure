@@ -16,8 +16,8 @@ package org.finos.legend.pure.m3.tools;
 
 public class TimeTracker
 {
-    private String id;
-    private long time;
+    private final String id;
+    private final long time;
 
     public TimeTracker(String id)
     {
@@ -29,7 +29,7 @@ public class TimeTracker
     {
         if (!this.id.equals(timeTracker.id))
         {
-            throw new RuntimeException("Incompatible time trackers!"+this+" "+timeTracker);
+            throw new RuntimeException("Incompatible time trackers!" + this + " " + timeTracker);
         }
         return TimePrinter.makeItHuman(this.time - timeTracker.time);
     }
@@ -41,6 +41,6 @@ public class TimeTracker
 
     public String toString()
     {
-        return "["+this.id+" "+this.time+"]";
+        return "[" + this.id + " " + this.time + "]";
     }
 }

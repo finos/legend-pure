@@ -14,16 +14,16 @@
 
 package org.finos.legend.pure.m3.serialization.runtime;
 
-import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.function.Function2;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.block.factory.Functions;
-import org.eclipse.collections.impl.block.factory.Functions0;
+import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.eclipse.collections.impl.set.mutable.UnifiedSet;
 import org.eclipse.collections.impl.tuple.Tuples;
+import org.eclipse.collections.impl.utility.MapIterate;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
@@ -43,7 +43,10 @@ import java.util.Map;
  */
 public class ExecutedTestTracker
 {
-    public enum TestState {Passed, Failed, NotYetExecuted}
+    public enum TestState
+    {
+        Passed, Failed, NotYetExecuted
+    }
 
     private MutableMap<String, TestState> tests;
     private final Path path;
@@ -54,7 +57,7 @@ public class ExecutedTestTracker
     {
         this.path = path;
         this.activeUserDBDirectory = activeUserDBDirectory;
-        this.tests = this.readFromFile().getIfAbsent(activeUserDBDirectory, Functions0.<String, TestState>newUnifiedMap());
+        this.tests = this.readFromFile().getIfAbsent(activeUserDBDirectory, Maps.mutable::empty);
     }
 
     public MutableMap<String, TestState> getTests()
@@ -62,9 +65,9 @@ public class ExecutedTestTracker
         return this.tests;
     }
 
-    private void noteTestsState(UnifiedSet<String> newTests, TestState state)
+    private void noteTestsState(SetIterable<String> newTests, TestState state)
     {
-        this.tests.putAll(newTests.toMap(Functions.<String>identity(), Functions.getFixedValue(state)));
+        this.tests.putAll(newTests.toMap(t -> t, t -> state));
     }
 
     /**
@@ -89,45 +92,13 @@ public class ExecutedTestTracker
      */
     void invalidate()
     {
-        this.tests = new UnifiedMap<>();
+        this.tests = Maps.mutable.empty();
     }
 
-    private static final Function2<String, String, TestState> testDeserializer = new Function2<String, String, TestState>()
-    {
-        @Override
-        public TestState value(String testName, String state)
-        {
-            return TestState.valueOf(state);
-        }
-    };
+    private static final Function2<String, Map<? extends String, ? extends String>, MutableMap<String, TestState>> userDbsTestsDeserializer = (usedDbName, data) ->
+            MapIterate.collect(data, name -> name, TestState::valueOf, Maps.mutable.ofInitialCapacity(data.size()));
 
-    private static final Function2<String, Map<? extends String, ? extends String>, MutableMap<String, TestState>> userDbsTestsDeserializer = new Function2<String, Map<? extends String, ? extends String>, MutableMap<String, TestState>>()
-    {
-        @Override
-        public MutableMap<String, TestState> value(String usedDbName, Map<? extends String, ? extends String> data)
-        {
-            UnifiedMap<? extends String, ? extends String> map = new UnifiedMap<>(data);
-            return (MutableMap<String, TestState>)map.collectValues(testDeserializer);
-        }
-    };
-
-    private static final Function2<String, TestState, String> testSerializer = new Function2<String, TestState, String>()
-    {
-        @Override
-        public String value(String testName, TestState state)
-        {
-            return state.name();
-        }
-    };
-
-    private static final Function2<String, MutableMap<String, TestState>, MutableMap<String, String>> userDbsTestsSerializer = new Function2<String, MutableMap<String, TestState>, MutableMap<String, String>>()
-    {
-        @Override
-        public MutableMap<String, String> value(String usedDbName, MutableMap<String, TestState> data)
-        {
-            return new UnifiedMap<>(data).collectValues(testSerializer);
-        }
-    };
+    private static final Function2<String, MutableMap<String, TestState>, MutableMap<String, String>> userDbsTestsSerializer = (usedDbName, data) -> data.collectValues((testName, state) -> state.name());
 
     private MutableMap<String, MutableMap<String, TestState>> readFromFile()
     {
@@ -137,7 +108,7 @@ public class ExecutedTestTracker
             {
                 try (BufferedReader reader = Files.newBufferedReader(this.path, Charset.defaultCharset()))
                 {
-                    return (MutableMap<String, MutableMap<String, TestState>>)new UnifiedMap<>((Map<? extends String, ? extends Map<? extends String, ? extends String>>)new JSONParser().parse(reader)).collectValues(userDbsTestsDeserializer);
+                    return (MutableMap<String, MutableMap<String, TestState>>) new UnifiedMap<>((Map<? extends String, ? extends Map<? extends String, ? extends String>>) new JSONParser().parse(reader)).collectValues(userDbsTestsDeserializer);
                 }
             }
             else
@@ -188,7 +159,7 @@ public class ExecutedTestTracker
 
     public JSONObject summaryOfImpactedTests(MutableSet<String> impactedTests)
     {
-        if(impactedTests.isEmpty())
+        if (impactedTests.isEmpty())
         {
             JSONObject noImpacts = new JSONObject();
             noImpacts.put(TestState.Passed.name(), "n/a");
@@ -197,59 +168,29 @@ public class ExecutedTestTracker
             return noImpacts;
         }
 
-        final MutableMap<String, TestState> tests = this.tests;
+        MutableMap<TestState, Integer> count = impactedTests.toMap(t -> t, s -> this.tests.getIfAbsentValue(s, TestState.NotYetExecuted))
+                .aggregateBy(t -> t, () -> 0, (count12, testState) -> count12 + 1);
 
-        MutableMap<TestState, Integer> count = impactedTests.toMap(Functions.<String>identity(), new Function<String, TestState>()
-        {
-            @Override
-            public TestState valueOf(String s)
-            {
-                return tests.getIfAbsent(s, Functions0.value(TestState.NotYetExecuted));
-            }
-        }).aggregateBy(Functions.<TestState>identity(), Functions0.value(0), new Function2<Integer, TestState, Integer>()
-        {
-            @Override
-            public Integer value(Integer count, TestState testState)
-            {
-                return count + 1;
-            }
-        });
-
-        final Double totalCount = (double) count.getIfAbsentPut(TestState.Passed, 0)
+        double totalCount = (double) count.getIfAbsentPut(TestState.Passed, 0)
                 + count.getIfAbsentPut(TestState.Failed, 0)
                 + count.getIfAbsentPut(TestState.NotYetExecuted, 0);
 
-        return new JSONObject(count.collect(new Function2<TestState, Integer, Pair<String, String>>()
+        return new JSONObject(count.collect((testState, count1) ->
         {
-            @Override
-            public Pair<String, String> value(TestState testState, Integer count)
-            {
-                NumberFormat df = DecimalFormat.getPercentInstance();
-                return Tuples.pair(testState.name(), df.format(count / (double) totalCount));
-            }
+            NumberFormat df = DecimalFormat.getPercentInstance();
+            return Tuples.pair(testState.name(), df.format(count1 / totalCount));
         }));
     }
 
     public boolean allImpactedTestsPass(MutableSet<String> impactedTests)
     {
-        if(impactedTests.isEmpty())
+        if (impactedTests.isEmpty())
         {
             return true;
         }
 
-        final MutableMap<String, TestState> tests = this.tests;
-
-        MutableSet<TestState> impactedTestStates = impactedTests.collect(new Function<String, TestState>()
-        {
-            @Override
-            public TestState valueOf(String s)
-            {
-                return tests.getIfAbsent(s, Functions0.value(TestState.NotYetExecuted));
-            }
-        });
-
-        MutableSet<TestState> passes = new UnifiedSet<TestState>().with(TestState.Passed);
-        return impactedTestStates.equals(passes);
+        MutableSet<TestState> impactedTestStates = impactedTests.collect(s -> this.tests.getIfAbsentValue(s, TestState.NotYetExecuted));
+        return impactedTestStates.equals(Sets.fixedSize.with(TestState.Passed));
     }
 
     public void forgetTestsForUserDb(String userDbDirectory)

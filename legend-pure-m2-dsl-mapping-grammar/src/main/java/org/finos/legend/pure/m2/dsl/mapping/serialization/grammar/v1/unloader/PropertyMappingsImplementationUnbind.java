@@ -17,7 +17,6 @@ package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.unloader;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningFunctions;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.compiler.unload.unbind.Shared;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.OtherwiseEmbeddedSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.PropertyMapping;
@@ -25,11 +24,12 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.PropertyMappingsI
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.PropertyOwnerImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class PropertyMappingsImplementationUnbind implements MatchRunner<PropertyMappingsImplementation>
@@ -54,24 +54,24 @@ public class PropertyMappingsImplementationUnbind implements MatchRunner<Propert
             if (propertyMapping._localMappingProperty() != null && propertyMapping._localMappingProperty())
             {
                 CoreInstance propertyCI = ImportStub.withImportStubByPass(propertyMapping._propertyCoreInstance(), processorSupport);
-                if(propertyCI instanceof Property)
+                if (propertyCI instanceof Property)
                 {
-                    String propertyName = ((Property)propertyCI)._name();
+                    String propertyName = ((Property) propertyCI)._name();
                     propertyMapping._propertyCoreInstance(modelRepository.newStringCoreInstance_cached(propertyName));
                 }
             }
             if (propertyMapping instanceof PropertyMappingsImplementation)
             {
                 //Embedded mappings
-                unbindPropertyMappings((PropertyMappingsImplementation)propertyMapping, modelRepository, processorSupport);
+                unbindPropertyMappings((PropertyMappingsImplementation) propertyMapping, modelRepository, processorSupport);
 
-                PropertyOwnerImplementationUnbind.unbindPropertyOwnerParent((PropertyOwnerImplementation)propertyMapping, processorSupport);
+                PropertyOwnerImplementationUnbind.unbindPropertyOwnerParent((PropertyOwnerImplementation) propertyMapping, processorSupport);
                 if (propertyMapping instanceof OtherwiseEmbeddedSetImplementation)
                 {
-                    PropertyMapping otherwiseMapping = ((OtherwiseEmbeddedSetImplementation)propertyMapping)._otherwisePropertyMapping();
-                    if(otherwiseMapping instanceof PropertyMappingsImplementation)
+                    PropertyMapping otherwiseMapping = ((OtherwiseEmbeddedSetImplementation) propertyMapping)._otherwisePropertyMapping();
+                    if (otherwiseMapping instanceof PropertyMappingsImplementation)
                     {
-                        unbindPropertyMappings((PropertyMappingsImplementation)otherwiseMapping, modelRepository, processorSupport);
+                        unbindPropertyMappings((PropertyMappingsImplementation) otherwiseMapping, modelRepository, processorSupport);
                     }
                 }
             }

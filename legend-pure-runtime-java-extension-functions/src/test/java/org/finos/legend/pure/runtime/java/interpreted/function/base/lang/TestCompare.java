@@ -19,11 +19,14 @@ import org.finos.legend.pure.m3.tests.function.base.lang.AbstractTestCompare;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.BeforeClass;
 
-public class TestCompare extends AbstractTestCompare {
+public class TestCompare extends AbstractTestCompare
+{
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
+
     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();

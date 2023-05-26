@@ -15,12 +15,12 @@
 package org.finos.legend.pure.runtime.java.shared.listeners;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.block.factory.Predicates;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
+
+import java.util.Objects;
 
 public class ExecutionListeners
 {
@@ -43,56 +43,52 @@ public class ExecutionListeners
         this.identifableExecutionEndListeners.add(executionEndListener);
     }
 
-    private void validateNewExecutionEndListener(IdentifableExecutionEndListner executionEndListener){
-        MutableList<IdentifableExecutionEndListner> matchingListeners = identifableExecutionEndListeners.select(Predicates.attributeEqual(IdentifableExecutionEndListner.TO_ID, executionEndListener.getId()));
-        if(!matchingListeners.isEmpty()){
-            throw new PureExecutionException("IdentifableExecutionEndListner with Id: "+executionEndListener.getId()+" is already registered");
+    private void validateNewExecutionEndListener(IdentifableExecutionEndListner executionEndListener)
+    {
+        if (this.identifableExecutionEndListeners.anySatisfy(l -> Objects.equals(l.getId(), executionEndListener.getId())))
+        {
+            throw new PureExecutionException("IdentifableExecutionEndListner with Id: " + executionEndListener.getId() + " is already registered");
         }
     }
 
     public void unRegisterIdentifableExecutionEndListener(String eventId)
     {
-        this.identifableExecutionEndListeners.removeIf(Predicates.attributeEqual(IdentifableExecutionEndListner.TO_ID, eventId));
+        this.identifableExecutionEndListeners.removeIf(l -> Objects.equals(eventId, l.getId()));
     }
 
-    private <T extends ExecutionEndListener> ListIterable<ExecutionEndListener> allEndListners(){
-        MutableList<ExecutionEndListener> endListners = Lists.mutable.withAll(executionEndListeners);
-        endListners.addAllIterable(identifableExecutionEndListeners);
-        return endListners;
+    private ListIterable<ExecutionEndListener> allEndListeners()
+    {
+        return Lists.mutable.withAll(this.executionEndListeners).withAll(this.identifableExecutionEndListeners);
     }
 
-    private void clearAllEndListners(){
+    private void clearAllEndListners()
+    {
         this.executionEndListeners = Lists.mutable.empty();
         this.identifableExecutionEndListeners = Lists.mutable.empty();
     }
 
-    public void executionEnd(final Exception exception)
+    public void executionEnd(Exception exception)
     {
-        RichIterable<ExecutionEndListenerState> executionEndStates = this.allEndListners().collect(new Function<ExecutionEndListener, ExecutionEndListenerState>()
+        RichIterable<ExecutionEndListenerState> executionEndStates = this.allEndListeners().collect(executionEndListener ->
         {
-            @Override
-            public ExecutionEndListenerState valueOf(ExecutionEndListener executionEndListener)
+            try
             {
-                try
-                {
-                    return executionEndListener.executionEnd(exception);
-                }
-                catch (Exception ex)
-                {
-                    //Ignore, need to make sure we get through all possible listeners
+                return executionEndListener.executionEnd(exception);
+            }
+            catch (Exception ex)
+            {
+                //Ignore, need to make sure we get through all possible listeners
 //                    ex.printStackTrace();
-                    return new ExecutionEndListenerState(true, ex.getMessage());
-                }
+                return new ExecutionEndListenerState(true, ex.getMessage());
             }
         });
 
         RichIterable<String> exceptionalState = executionEndStates.select(ExecutionEndListenerState.UNEXPECTED_END_STATE).collect(ExecutionEndListenerState.TO_END_LISTENER_STATE_MESSAGE).toList();
         if (!exceptionalState.isEmpty())
         {
-            throw new ExecutionEndListenerStateException("Error: "+exceptionalState.makeString());
+            throw new ExecutionEndListenerStateException("Error: " + exceptionalState.makeString());
         }
 
         clearAllEndListners();
     }
-
 }

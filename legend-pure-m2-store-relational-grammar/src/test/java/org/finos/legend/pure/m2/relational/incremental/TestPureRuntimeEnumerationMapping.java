@@ -14,10 +14,10 @@
 
 package org.finos.legend.pure.m2.relational.incremental;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
 import org.finos.legend.pure.m2.relational.AbstractPureRelationalTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
@@ -106,12 +106,11 @@ public class TestPureRuntimeEnumerationMapping extends AbstractPureRelationalTes
                             .compileWithExpectedCompileFailure(null, null, 0, 0)
                             .createInMemorySource(source.getOne(), source.getTwo())
                             .compile(),
-                    this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                    runtime, functionExecution, Lists.fixedSize.of());
 
             //reset
-            this.setUpRuntime();
+            setUpRuntime();
         }
-
     }
 
     @Test
@@ -140,14 +139,12 @@ public class TestPureRuntimeEnumerationMapping extends AbstractPureRelationalTes
                                 .createInMemorySource(source.getOne(), source.getTwo())
                                 .createInMemorySource(secondSource.getOne(), secondSource.getTwo())
                                 .compile(),
-                        this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                        runtime, functionExecution, Lists.fixedSize.of());
 
                 //reset so that the next iteration has a clean environment
-                this.setUpRuntime();
+                setUpRuntime();
             }
         }
-
     }
-
 }
 

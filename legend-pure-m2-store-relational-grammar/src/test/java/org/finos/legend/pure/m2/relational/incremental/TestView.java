@@ -15,14 +15,14 @@
 package org.finos.legend.pure.m2.relational.incremental;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
 import org.finos.legend.pure.m2.relational.AbstractPureRelationalTestWithCoreCompiled;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
@@ -33,35 +33,35 @@ public class TestView extends AbstractPureRelationalTestWithCoreCompiled
 {
     private static final String GroupByModel =
             "###Pure\n" +
-            "Class AccountPnl\n" +
-            "{\n" +
-            "   pnl:Float[1];\n" +
-            "}";
+                    "Class AccountPnl\n" +
+                    "{\n" +
+                    "   pnl:Float[1];\n" +
+                    "}";
 
     private static final String GroupByStoreTemplate =
             "###Relational\n" +
-            "Database db(\n" +
-            "   Table orderTable(ID INT PRIMARY KEY, accountID INT)\n" +
-            "   Table orderPnlTable( ORDER_ID INT PRIMARY KEY, pnl FLOAT)\n" +
-            "   Join OrderPnlTable_Order(orderPnlTable.ORDER_ID = orderTable.ID)\n" +
-            "\n" +
-            "   View accountOrderPnlView\n" +
-            "   (\n" +
-            "      ~groupBy (orderTable.accountID)\n" +
-            "      accountId : orderTable.accountID PRIMARY KEY,\n" +
-            "      %s : sum(@OrderPnlTable_Order | orderPnlTable.pnl)\n" +
-            "   )\n" +
-            ")";
+                    "Database db(\n" +
+                    "   Table orderTable(ID INT PRIMARY KEY, accountID INT)\n" +
+                    "   Table orderPnlTable( ORDER_ID INT PRIMARY KEY, pnl FLOAT)\n" +
+                    "   Join OrderPnlTable_Order(orderPnlTable.ORDER_ID = orderTable.ID)\n" +
+                    "\n" +
+                    "   View accountOrderPnlView\n" +
+                    "   (\n" +
+                    "      ~groupBy (orderTable.accountID)\n" +
+                    "      accountId : orderTable.accountID PRIMARY KEY,\n" +
+                    "      %s : sum(@OrderPnlTable_Order | orderPnlTable.pnl)\n" +
+                    "   )\n" +
+                    ")";
 
     private static final String GroupByMappingTemplate =
             "###Mapping\n" +
-            "Mapping testMapping\n" +
-            "(\n" +
-            "   AccountPnl : Relational  \n" +
-            "   {\n" +
-            "      pnl : [db]accountOrderPnlView.%s \n" +
-            "   }\n" +
-            ")";
+                    "Mapping testMapping\n" +
+                    "(\n" +
+                    "   AccountPnl : Relational  \n" +
+                    "   {\n" +
+                    "      pnl : [db]accountOrderPnlView.%s \n" +
+                    "   }\n" +
+                    ")";
 
     @Before
     @Override
@@ -84,12 +84,12 @@ public class TestView extends AbstractPureRelationalTestWithCoreCompiled
         String groupByStore = String.format(GroupByStoreTemplate, viewDynaColName);
         String groupByMapping = String.format(GroupByMappingTemplate, viewDynaColName);
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                Maps.mutable.with("store.pure", groupByStore, "model.pure", GroupByModel, "mapping.pure", groupByMapping))
+                                Maps.mutable.with("store.pure", groupByStore, "model.pure", GroupByModel, "mapping.pure", groupByMapping))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("store.pure", groupByStore + " ")
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
@@ -99,14 +99,14 @@ public class TestView extends AbstractPureRelationalTestWithCoreCompiled
         String groupByStore = String.format(GroupByStoreTemplate, viewDynaColName);
         String groupByMapping = String.format(GroupByMappingTemplate, viewDynaColName);
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                Maps.mutable.with("store.pure", groupByStore, "model.pure", GroupByModel, "mapping.pure", groupByMapping))
+                                Maps.mutable.with("store.pure", groupByStore, "model.pure", GroupByModel, "mapping.pure", groupByMapping))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("model.pure", GroupByModel + "\n\n\n")
                         .compile()
                         .updateSource("model.pure", GroupByModel)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
@@ -119,14 +119,14 @@ public class TestView extends AbstractPureRelationalTestWithCoreCompiled
         String groupByStoreUpdated = String.format(GroupByStoreTemplate, viewDynaColNameUpdated);
         String groupByMappingUpdated = String.format(GroupByMappingTemplate, viewDynaColNameUpdated);
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
-                Maps.mutable.with("store.pure", groupByStore, "model.pure", GroupByModel, "mapping.pure", groupByMapping))
+                                Maps.mutable.with("store.pure", groupByStore, "model.pure", GroupByModel, "mapping.pure", groupByMapping))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("store.pure", groupByStoreUpdated).updateSource("mapping.pure", groupByMappingUpdated)
                         .compile()
                         .updateSource("store.pure", groupByStore).updateSource("mapping.pure", groupByMapping)
-                        .compile()
-                , runtime, functionExecution, Lists.fixedSize.empty());
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test

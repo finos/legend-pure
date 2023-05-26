@@ -15,13 +15,13 @@
 package org.finos.legend.pure.m2.relational;
 
 import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.MappingParser;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.RelationalParser;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.compiler.validation.ValidationType;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.serialization.Loader;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
@@ -35,7 +35,6 @@ import org.junit.rules.ExpectedException;
 
 public class TestViewProcessing extends AbstractPureRelationalTestWithCoreCompiled
 {
-
     @Rule
     public final ExpectedException expectedEx = ExpectedException.none();
 
@@ -44,7 +43,7 @@ public class TestViewProcessing extends AbstractPureRelationalTestWithCoreCompil
     @Before
     public void setUpRelational()
     {
-        this.graphWalker = new RelationalGraphWalker(this.runtime, this.processorSupport);
+        this.graphWalker = new RelationalGraphWalker(runtime, processorSupport);
     }
 
     private static String dbWithLongJoinChain = "###Relational\n" +
@@ -169,7 +168,7 @@ public class TestViewProcessing extends AbstractPureRelationalTestWithCoreCompil
     @Test
     public void testMainTableValidatesWithLongJoinChain()
     {
-        Loader.parseM3(dbWithLongJoinChain, this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
+        Loader.parseM3(dbWithLongJoinChain, repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
         CoreInstance db = this.graphWalker.getDbInstance("with::view::Db");
         CoreInstance pureTestSchema = this.graphWalker.getSchema(db, "pureTestSchema");
         CoreInstance view = this.graphWalker.getView(pureTestSchema, "aView");
@@ -179,7 +178,7 @@ public class TestViewProcessing extends AbstractPureRelationalTestWithCoreCompil
     @Test
     public void testViewFilter()
     {
-        Loader.parseM3(dBWithFilteredView, this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
+        Loader.parseM3(dBWithFilteredView, repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
         CoreInstance db = this.graphWalker.getDbInstance("with::view::filter");
         CoreInstance defaultSchema = this.graphWalker.getDefaultSchema(db);
 
@@ -196,7 +195,7 @@ public class TestViewProcessing extends AbstractPureRelationalTestWithCoreCompil
         this.expectedEx.expect(RuntimeException.class);
         this.expectedEx.expectMessage("Compilation error at (resource:fromString.pure lines:13c12-18c8), \"View: multipleMainTablesView contains multiple main tables: [orderPnlTable,orderTable,productDataSet] there should be only one root Table for Views");
 
-        Loader.parseM3(dBWithViewMainTableValidationError, this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
+        Loader.parseM3(dBWithViewMainTableValidationError, repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
     }
 
     @Test
@@ -205,13 +204,13 @@ public class TestViewProcessing extends AbstractPureRelationalTestWithCoreCompil
         this.expectedEx.expect(RuntimeException.class);
         this.expectedEx.expectMessage("All tables referenced in View: multipleMainTablesView should come from the View's owning or included DB: 'with::view::db', table: 'orderTable' does not");
 
-        Loader.parseM3(dbWithViewDependentOnTableInOtherDb, this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
+        Loader.parseM3(dbWithViewDependentOnTableInOtherDb, repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
     }
 
     @Test
     public void testRelationalViewAllowOtherDbDependencyFromIncludesValidation()
     {
-        Loader.parseM3(dbWithViewDependentOnTableInOtherDbViaIncludes, this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
+        Loader.parseM3(dbWithViewDependentOnTableInOtherDbViaIncludes, repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
     }
 
     private void assertMainTableAlias(CoreInstance orderPnlView, String expectedSchemaName, String expectedTableName)
@@ -246,8 +245,8 @@ public class TestViewProcessing extends AbstractPureRelationalTestWithCoreCompil
                 "    {\n" +
                 "       name : [db]employeeTable.name PRIMARY KEY\n" +
                 "    }\n" +
-                ")", this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-        this.runtime.compile();
+                ")", repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+        runtime.compile();
     }
 
     @Test
@@ -266,9 +265,9 @@ public class TestViewProcessing extends AbstractPureRelationalTestWithCoreCompil
                         "              TEAM: ep_Datastore.Team.TEAM PRIMARY KEY \n" +
                         "        ) \n" +
                         "    )\n" +
-                        ")"
-                , this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-        this.runtime.compile();
+                        ")",
+                repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+        runtime.compile();
 
         CoreInstance db = this.graphWalker.getDbInstance("db");
         CoreInstance viewSchema = this.graphWalker.getSchema(db, "viewSchema");
@@ -302,9 +301,9 @@ public class TestViewProcessing extends AbstractPureRelationalTestWithCoreCompil
                         "              summedPnl: sum(ep_Datastore.Order.PNL) \n" +
                         "        ) \n" +
                         "    )\n" +
-                        ")"
-                , this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-        this.runtime.compile();
+                        ")",
+                repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+        runtime.compile();
 
         CoreInstance db = this.graphWalker.getDbInstance("db");
         CoreInstance viewSchema = this.graphWalker.getSchema(db, "viewSchema");
@@ -339,9 +338,9 @@ public class TestViewProcessing extends AbstractPureRelationalTestWithCoreCompil
                         "        ) \n" +
                         "    )\n" +
                         "    Join OrderPnlTable_Order(ep_Datastore.orderPnlTable.ORDER_ID = ep_Datastore.Order.ID)" +
-                        ")"
-                , this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-        this.runtime.compile();
+                        ")",
+                repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+        runtime.compile();
 
         CoreInstance db = this.graphWalker.getDbInstance("db");
         CoreInstance viewSchema = this.graphWalker.getSchema(db, "viewSchema");
@@ -384,10 +383,8 @@ public class TestViewProcessing extends AbstractPureRelationalTestWithCoreCompil
                         "              summedPnl: sum(ep_Datastore.Order.PNL) \n" +
                         "        ) \n" +
                         "    )\n" +
-                        ")"
-                , this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-        this.runtime.compile();
+                        ")",
+                repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+        runtime.compile();
     }
-
-
 }
