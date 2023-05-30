@@ -33,6 +33,7 @@ public class TestNewQualifiedPropertyCompiled extends AbstractTestNewQualifiedPr
     public void cleanRuntime()
     {
         runtime.delete("StandardCall.pure");
+        runtime.compile();
     }
 
     protected static FunctionExecution getFunctionExecution()
