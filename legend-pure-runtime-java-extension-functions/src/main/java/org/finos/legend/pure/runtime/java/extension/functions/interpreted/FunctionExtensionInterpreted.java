@@ -106,6 +106,7 @@ import org.finos.legend.pure.runtime.java.extension.functions.interpreted.native
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.NewEnumeration;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.NewLambdaFunction;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.NewProperty;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.NewQualifiedProperty;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.OpenVariableValues;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.Reactivate;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.SourceInformation;
@@ -241,6 +242,7 @@ public class FunctionExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("newEnumeration_String_1__String_MANY__Enumeration_1_", NewEnumeration::new),
                 Tuples.pair("newLambdaFunction_FunctionType_1__LambdaFunction_1_", NewLambdaFunction::new),
                 Tuples.pair("newProperty_String_1__GenericType_1__GenericType_1__Multiplicity_1__Property_1_", NewProperty::new),
+                Tuples.pair("newQualifiedProperty_String_1__GenericType_1__GenericType_1__Multiplicity_1__VariableExpression_MANY__QualifiedProperty_1_", NewQualifiedProperty::new),
                 Tuples.pair("openVariableValues_Function_1__Map_1_", OpenVariableValues::new),
                 Tuples.pair("reactivate_ValueSpecification_1__Map_1__Any_MANY_", Reactivate::new),
                 Tuples.pair("sourceInformation_Any_1__SourceInformation_$0_1$_", SourceInformation::new),
