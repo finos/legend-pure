@@ -19,7 +19,6 @@ import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.procedure.Procedure2;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.list.primitive.LongList;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
@@ -48,6 +47,8 @@ import org.finos.legend.pure.m3.serialization.runtime.Source;
 import java.io.*;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.List;
+import java.util.Optional;
 
 public class CompositeCodeStorage implements MutableVersionControlledCodeStorage
 {
@@ -286,17 +287,17 @@ public class CompositeCodeStorage implements MutableVersionControlledCodeStorage
     }
 
     @Override
-    public long getCurrentRevision(String path)
+    public Optional<String> getCurrentRevision(String path)
     {
         RepositoryCodeStorage codeStorage = getCodeStorage(path);
-        return (codeStorage instanceof VersionControlledCodeStorage) ? ((VersionControlledCodeStorage) codeStorage).getCurrentRevision(path) : -1;
+        return (codeStorage instanceof VersionControlledCodeStorage) ? ((VersionControlledCodeStorage) codeStorage).getCurrentRevision(path) : Optional.empty();
     }
 
     @Override
-    public LongList getAllRevisions(String path)
+    public List<String> getAllRevisions(String path)
     {
         RepositoryCodeStorage codeStorage = getCodeStorage(path);
-        return (codeStorage instanceof VersionControlledCodeStorage) ? ((VersionControlledCodeStorage) codeStorage).getAllRevisions(path) : LongLists.immutable.empty();
+        return (codeStorage instanceof VersionControlledCodeStorage) ? ((VersionControlledCodeStorage) codeStorage).getAllRevisions(path) : Lists.mutable.empty();
     }
 
     @Override
