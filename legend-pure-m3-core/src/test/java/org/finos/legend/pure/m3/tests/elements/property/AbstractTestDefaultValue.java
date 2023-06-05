@@ -14,10 +14,7 @@
 
 package org.finos.legend.pure.m3.tests.elements.property;
 
-import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.junit.Assert;
 import org.junit.Test;
 
 public abstract class AbstractTestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
@@ -111,9 +108,7 @@ public abstract class AbstractTestDefaultValue extends AbstractPureTestWithCoreC
                 + "   assertEquals('override', ^test::A(stringProperty = 'override').stringProperty);\n"
                 + "}\n"
         );
-
-        CoreInstance func = runtime.getFunction("testDefaultValueOverridden():Any[*]");
-        functionExecution.start(func, Lists.immutable.empty());
+        execute("testDefaultValueOverridden():Any[*]");
     }
 
     @Test
@@ -130,6 +125,6 @@ public abstract class AbstractTestDefaultValue extends AbstractPureTestWithCoreC
                 + "   assertEquals('defaultValue', ^test::A().prop());\n"
                 + "}\n"
         );
-        this.execute("test():Boolean[1]");
+        execute("test():Boolean[1]");
      }
 }

@@ -2775,22 +2775,11 @@ public class AntlrContextToM3CoreInstance
     private void simpleProperty(PropertyContext ctx, MutableList<Property<? extends CoreInstance, ?>> properties, MutableList<String> typeParameterNames,
                                 MutableList<String> multiplicityParameterNames, ImportStub isOwner, ImportGroup importId, boolean addLines)
     {
-        ListIterable<CoreInstance> stereotypes = null;
-        ListIterable<TaggedValue> tags = null;
-        DefaultValue defaultValue = null;
         GenericType genericType;
         Multiplicity multiplicity;
         String aggregation;
         String propertyName = ctx.identifier().getText();
 
-        if (ctx.stereotypes() != null)
-        {
-            stereotypes = this.stereotypes(ctx.stereotypes(), importId);
-        }
-        if (ctx.taggedValues() != null)
-        {
-            tags = this.taggedValues(ctx.taggedValues(), importId);
-        }
         if (ctx.aggregation() != null)
         {
             if ("(composite)".equals(ctx.aggregation().getText()))
@@ -2810,10 +2799,6 @@ public class AntlrContextToM3CoreInstance
         {
             aggregation = "None";
         }
-        if (ctx.defaultValue() != null)
-        {
-            defaultValue = defaultValue(ctx.defaultValue(), importId, propertyName);
-        }
         genericType = this.type(ctx.propertyReturnType().type(), typeParameterNames, "", importId, addLines);
         multiplicity = this.buildMultiplicity(ctx.propertyReturnType().multiplicity().multiplicityArgument());
 
@@ -2821,10 +2806,23 @@ public class AntlrContextToM3CoreInstance
         Enum aggKind = (Enum) agg._values().detect(v -> aggregation.equals(((Enum) v).getName()));
         SourceInformation propertySourceInfo = this.sourceInformation.getPureSourceInformation(ctx.identifier().getStart(), ctx.identifier().getStart(), ctx.getStop());
         PropertyInstance propertyInstance = PropertyInstance.createPersistent(this.repository, propertyName, propertySourceInfo, aggKind, genericType, multiplicity, null);
-        propertyInstance._stereotypesCoreInstance(stereotypes);
-        propertyInstance._taggedValues(tags);
         propertyInstance._name(propertyName);
-        propertyInstance._defaultValue(defaultValue);
+
+        if (ctx.stereotypes() != null)
+        {
+            ListIterable<CoreInstance> stereotypes = this.stereotypes(ctx.stereotypes(), importId);
+            propertyInstance._stereotypesCoreInstance(stereotypes);
+        }
+        if (ctx.taggedValues() != null)
+        {
+            ListIterable<TaggedValue> tags = taggedValues(ctx.taggedValues(), importId);
+            propertyInstance._taggedValues(tags);
+        }
+        if (ctx.defaultValue() != null)
+        {
+            DefaultValue defaultValue = defaultValue(ctx.defaultValue(), isOwner, importId, propertyName);
+            propertyInstance._defaultValue(defaultValue);
+        }
 
         GenericTypeInstance classifierGT = GenericTypeInstance.createPersistent(this.repository, propertySourceInfo);
         ClassInstance propertyType = (ClassInstance) this.processorSupport.package_getByUserPath(M3Paths.Property);
@@ -3283,21 +3281,16 @@ public class AntlrContextToM3CoreInstance
         return TaggedValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.STRING().getSymbol(), ctx.STRING().getSymbol()), importStubInstance, this.removeQuotes(ctx.STRING()));
     }
 
-    private DefaultValue defaultValue(DefaultValueContext ctx, ImportGroup importId, String propertyName)
+    private DefaultValue defaultValue(DefaultValueContext ctx, ImportStub isOwner, ImportGroup importId, String propertyName)
     {
-        LambdaFunction<?> defaultValueFunctionLambda = null;
+        DefaultValueInstance defaultValueInstance = DefaultValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.EQUAL().getSymbol(), ctx.getStop()));
 
-        this.functionCounter++;
-        LambdaContext lambdaContext = new LambdaContext(propertyName + "_defaultValue_" + this.functionCounter);
-
-        DefaultValueInstance defaultValueInstance = DefaultValueInstance.createPersistent(this.repository,
-                this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.EQUAL().getSymbol(), ctx.getStop()));
-
-        CoreInstance defaultValueExpression = this.defaultValueExpression(ctx.defaultValueExpression(), importId, lambdaContext);
+        LambdaContext lambdaContext = new LambdaContext("defaultValue$" + isOwner._idOrPath().replace("::", "_") + "$" + propertyName);
+        CoreInstance defaultValueExpression = defaultValueExpression(ctx.defaultValueExpression(), importId, lambdaContext);
         if (defaultValueExpression != null)
         {
             SourceInformation source = defaultValueExpression.getSourceInformation();
-            defaultValueFunctionLambda = LambdaFunctionInstance.createPersistent(this.repository, lambdaContext.getLambdaFunctionUniqueName(), source);
+            LambdaFunction<?> defaultValueFunctionLambda = LambdaFunctionInstance.createPersistent(this.repository, lambdaContext.getLambdaFunctionUniqueName(), source);
             CoreInstance functionType = this.repository.newAnonymousCoreInstance(source, this.processorSupport.package_getByUserPath(M3Paths.FunctionType), true);
 
             CoreInstance functionTypeGt = this.repository.newAnonymousCoreInstance(source, this.processorSupport.package_getByUserPath(M3Paths.GenericType), true);
@@ -3310,9 +3303,9 @@ public class AntlrContextToM3CoreInstance
             Instance.setValueForProperty(defaultValueFunctionLambda, M3Properties.expressionSequence, defaultValueExpression, this.processorSupport);
             Instance.setValueForProperty(defaultValueFunctionLambda, M3Properties.classifierGenericType, lambdaGenericType, this.processorSupport);
             Instance.setValueForProperty(functionType, M3Properties.function, defaultValueFunctionLambda, this.processorSupport);
-        }
 
-        defaultValueInstance._functionDefinition(defaultValueFunctionLambda);
+            defaultValueInstance._functionDefinition(defaultValueFunctionLambda);
+        }
 
         return defaultValueInstance;
     }
