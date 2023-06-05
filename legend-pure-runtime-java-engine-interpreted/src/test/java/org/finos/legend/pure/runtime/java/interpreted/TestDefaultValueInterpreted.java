@@ -31,6 +31,7 @@ public class TestDefaultValueInterpreted extends AbstractTestDefaultValue
     public void cleanRuntime()
     {
         runtime.delete("defaultValueSource.pure");
+        runtime.compile();
     }
 
     protected static FunctionExecution getFunctionExecution()

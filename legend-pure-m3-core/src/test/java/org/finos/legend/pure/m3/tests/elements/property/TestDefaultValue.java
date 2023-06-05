@@ -37,6 +37,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
     public void cleanRuntime()
     {
         runtime.delete("defaultValueSource.pure");
+        runtime.compile();
     }
 
     @Test
@@ -92,7 +93,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
 
         Assert.assertEquals("Anonymous_StripedId instance DefaultValue\n" +
                 "    functionDefinition(Property):\n" +
-                "        stringProperty_defaultValue_1$0 instance LambdaFunction\n" +
+                "        defaultValue$test_A$stringProperty$0 instance LambdaFunction\n" +
                 "            classifierGenericType(Property):\n" +
                 "                Anonymous_StripedId instance GenericType\n" +
                 "                    rawType(Property):\n" +
@@ -102,7 +103,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                            rawType(Property):\n" +
                 "                                Anonymous_StripedId instance FunctionType\n" +
                 "                                    function(Property):\n" +
-                "                                        stringProperty_defaultValue_1$0 instance LambdaFunction\n" +
+                "                                        defaultValue$test_A$stringProperty$0 instance LambdaFunction\n" +
                 "                                    returnMultiplicity(Property):\n" +
                 "                                        PureOne instance PackageableMultiplicity\n" +
                 "                                    returnType(Property):\n" +
@@ -123,7 +124,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                    usageContext(Property):\n" +
                 "                        Anonymous_StripedId instance ExpressionSequenceValueSpecificationContext\n" +
                 "                            functionDefinition(Property):\n" +
-                "                                stringProperty_defaultValue_1$0 instance LambdaFunction\n" +
+                "                                defaultValue$test_A$stringProperty$0 instance LambdaFunction\n" +
                 "                            offset(Property):\n" +
                 "                                0 instance Integer\n" +
                 "                    values(Property):\n" +
@@ -131,7 +132,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
 
         Assert.assertEquals("Anonymous_StripedId instance DefaultValue\n" +
                 "    functionDefinition(Property):\n" +
-                "        enumProperty_defaultValue_3$1 instance LambdaFunction\n" +
+                "        defaultValue$test_A$enumProperty$1 instance LambdaFunction\n" +
                 "            classifierGenericType(Property):\n" +
                 "                Anonymous_StripedId instance GenericType\n" +
                 "                    rawType(Property):\n" +
@@ -141,7 +142,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                            rawType(Property):\n" +
                 "                                Anonymous_StripedId instance FunctionType\n" +
                 "                                    function(Property):\n" +
-                "                                        enumProperty_defaultValue_3$1 instance LambdaFunction\n" +
+                "                                        defaultValue$test_A$enumProperty$1 instance LambdaFunction\n" +
                 "                                    returnMultiplicity(Property):\n" +
                 "                                        PureOne instance PackageableMultiplicity\n" +
                 "                                    returnType(Property):\n" +
@@ -221,13 +222,13 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                    usageContext(Property):\n" +
                 "                        Anonymous_StripedId instance ExpressionSequenceValueSpecificationContext\n" +
                 "                            functionDefinition(Property):\n" +
-                "                                enumProperty_defaultValue_3$1 instance LambdaFunction\n" +
+                "                                defaultValue$test_A$enumProperty$1 instance LambdaFunction\n" +
                 "                            offset(Property):\n" +
                 "                                0 instance Integer", enumProperty.getValueForMetaPropertyToOne(M3Properties.defaultValue).printWithoutDebug("", 5));
 
         Assert.assertEquals("Anonymous_StripedId instance DefaultValue\n" +
                 "    functionDefinition(Property):\n" +
-                "        booleanProperty_defaultValue_6$0 instance LambdaFunction\n" +
+                "        defaultValue$test_A$booleanProperty$0 instance LambdaFunction\n" +
                 "            classifierGenericType(Property):\n" +
                 "                Anonymous_StripedId instance GenericType\n" +
                 "                    rawType(Property):\n" +
@@ -237,7 +238,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                            rawType(Property):\n" +
                 "                                Anonymous_StripedId instance FunctionType\n" +
                 "                                    function(Property):\n" +
-                "                                        booleanProperty_defaultValue_6$0 instance LambdaFunction\n" +
+                "                                        defaultValue$test_A$booleanProperty$0 instance LambdaFunction\n" +
                 "                                    returnMultiplicity(Property):\n" +
                 "                                        PureOne instance PackageableMultiplicity\n" +
                 "                                    returnType(Property):\n" +
@@ -258,7 +259,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                    usageContext(Property):\n" +
                 "                        Anonymous_StripedId instance ExpressionSequenceValueSpecificationContext\n" +
                 "                            functionDefinition(Property):\n" +
-                "                                booleanProperty_defaultValue_6$0 instance LambdaFunction\n" +
+                "                                defaultValue$test_A$booleanProperty$0 instance LambdaFunction\n" +
                 "                            offset(Property):\n" +
                 "                                0 instance Integer\n" +
                 "                    values(Property):\n" +
@@ -266,7 +267,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
 
         Assert.assertEquals("Anonymous_StripedId instance DefaultValue\n" +
                 "    functionDefinition(Property):\n" +
-                "        classProperty_defaultValue_2$0 instance LambdaFunction\n" +
+                "        defaultValue$test_A$classProperty$0 instance LambdaFunction\n" +
                 "            classifierGenericType(Property):\n" +
                 "                Anonymous_StripedId instance GenericType\n" +
                 "                    rawType(Property):\n" +
@@ -276,7 +277,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                            rawType(Property):\n" +
                 "                                Anonymous_StripedId instance FunctionType\n" +
                 "                                    function(Property):\n" +
-                "                                        classProperty_defaultValue_2$0 instance LambdaFunction\n" +
+                "                                        defaultValue$test_A$classProperty$0 instance LambdaFunction\n" +
                 "                                    returnMultiplicity(Property):\n" +
                 "                                        PureOne instance PackageableMultiplicity\n" +
                 "                                    returnType(Property):\n" +
@@ -385,13 +386,13 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                    usageContext(Property):\n" +
                 "                        Anonymous_StripedId instance ExpressionSequenceValueSpecificationContext\n" +
                 "                            functionDefinition(Property):\n" +
-                "                                classProperty_defaultValue_2$0 instance LambdaFunction\n" +
+                "                                defaultValue$test_A$classProperty$0 instance LambdaFunction\n" +
                 "                            offset(Property):\n" +
                 "                                0 instance Integer", classProperty.getValueForMetaPropertyToOne(M3Properties.defaultValue).printWithoutDebug("", 5));
 
         Assert.assertEquals("Anonymous_StripedId instance DefaultValue\n" +
                 "    functionDefinition(Property):\n" +
-                "        integerProperty_defaultValue_7$0 instance LambdaFunction\n" +
+                "        defaultValue$test_A$integerProperty$0 instance LambdaFunction\n" +
                 "            classifierGenericType(Property):\n" +
                 "                Anonymous_StripedId instance GenericType\n" +
                 "                    rawType(Property):\n" +
@@ -401,7 +402,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                            rawType(Property):\n" +
                 "                                Anonymous_StripedId instance FunctionType\n" +
                 "                                    function(Property):\n" +
-                "                                        integerProperty_defaultValue_7$0 instance LambdaFunction\n" +
+                "                                        defaultValue$test_A$integerProperty$0 instance LambdaFunction\n" +
                 "                                    returnMultiplicity(Property):\n" +
                 "                                        PureOne instance PackageableMultiplicity\n" +
                 "                                    returnType(Property):\n" +
@@ -422,7 +423,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                    usageContext(Property):\n" +
                 "                        Anonymous_StripedId instance ExpressionSequenceValueSpecificationContext\n" +
                 "                            functionDefinition(Property):\n" +
-                "                                integerProperty_defaultValue_7$0 instance LambdaFunction\n" +
+                "                                defaultValue$test_A$integerProperty$0 instance LambdaFunction\n" +
                 "                            offset(Property):\n" +
                 "                                0 instance Integer\n" +
                 "                    values(Property):\n" +
@@ -430,7 +431,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
 
         Assert.assertEquals("Anonymous_StripedId instance DefaultValue\n" +
                 "    functionDefinition(Property):\n" +
-                "        floatProperty_defaultValue_4$0 instance LambdaFunction\n" +
+                "        defaultValue$test_A$floatProperty$0 instance LambdaFunction\n" +
                 "            classifierGenericType(Property):\n" +
                 "                Anonymous_StripedId instance GenericType\n" +
                 "                    rawType(Property):\n" +
@@ -440,7 +441,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                            rawType(Property):\n" +
                 "                                Anonymous_StripedId instance FunctionType\n" +
                 "                                    function(Property):\n" +
-                "                                        floatProperty_defaultValue_4$0 instance LambdaFunction\n" +
+                "                                        defaultValue$test_A$floatProperty$0 instance LambdaFunction\n" +
                 "                                    returnMultiplicity(Property):\n" +
                 "                                        PureOne instance PackageableMultiplicity\n" +
                 "                                    returnType(Property):\n" +
@@ -461,7 +462,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                    usageContext(Property):\n" +
                 "                        Anonymous_StripedId instance ExpressionSequenceValueSpecificationContext\n" +
                 "                            functionDefinition(Property):\n" +
-                "                                floatProperty_defaultValue_4$0 instance LambdaFunction\n" +
+                "                                defaultValue$test_A$floatProperty$0 instance LambdaFunction\n" +
                 "                            offset(Property):\n" +
                 "                                0 instance Integer\n" +
                 "                    values(Property):\n" +
@@ -469,7 +470,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
 
         Assert.assertEquals("Anonymous_StripedId instance DefaultValue\n" +
                 "    functionDefinition(Property):\n" +
-                "        inheritProperty_defaultValue_5$0 instance LambdaFunction\n" +
+                "        defaultValue$test_A$inheritProperty$0 instance LambdaFunction\n" +
                 "            classifierGenericType(Property):\n" +
                 "                Anonymous_StripedId instance GenericType\n" +
                 "                    rawType(Property):\n" +
@@ -479,7 +480,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                            rawType(Property):\n" +
                 "                                Anonymous_StripedId instance FunctionType\n" +
                 "                                    function(Property):\n" +
-                "                                        inheritProperty_defaultValue_5$0 instance LambdaFunction\n" +
+                "                                        defaultValue$test_A$inheritProperty$0 instance LambdaFunction\n" +
                 "                                    returnMultiplicity(Property):\n" +
                 "                                        PureOne instance PackageableMultiplicity\n" +
                 "                                    returnType(Property):\n" +
@@ -500,7 +501,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                    usageContext(Property):\n" +
                 "                        Anonymous_StripedId instance ExpressionSequenceValueSpecificationContext\n" +
                 "                            functionDefinition(Property):\n" +
-                "                                inheritProperty_defaultValue_5$0 instance LambdaFunction\n" +
+                "                                defaultValue$test_A$inheritProperty$0 instance LambdaFunction\n" +
                 "                            offset(Property):\n" +
                 "                                0 instance Integer\n" +
                 "                    values(Property):\n" +
@@ -508,7 +509,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
 
         Assert.assertEquals("Anonymous_StripedId instance DefaultValue\n" +
                 "    functionDefinition(Property):\n" +
-                "        collectionProperty_defaultValue_8$0 instance LambdaFunction\n" +
+                "        defaultValue$test_A$collectionProperty$0 instance LambdaFunction\n" +
                 "            classifierGenericType(Property):\n" +
                 "                Anonymous_StripedId instance GenericType\n" +
                 "                    rawType(Property):\n" +
@@ -518,7 +519,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                            rawType(Property):\n" +
                 "                                Anonymous_StripedId instance FunctionType\n" +
                 "                                    function(Property):\n" +
-                "                                        collectionProperty_defaultValue_8$0 instance LambdaFunction\n" +
+                "                                        defaultValue$test_A$collectionProperty$0 instance LambdaFunction\n" +
                 "                                    returnMultiplicity(Property):\n" +
                 "                                        Anonymous_StripedId instance Multiplicity\n" +
                 "                                            lowerBound(Property):\n" +
@@ -553,7 +554,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                    usageContext(Property):\n" +
                 "                        Anonymous_StripedId instance ExpressionSequenceValueSpecificationContext\n" +
                 "                            functionDefinition(Property):\n" +
-                "                                collectionProperty_defaultValue_8$0 instance LambdaFunction\n" +
+                "                                defaultValue$test_A$collectionProperty$0 instance LambdaFunction\n" +
                 "                            offset(Property):\n" +
                 "                                0 instance Integer\n" +
                 "                    values(Property):\n" +
@@ -590,7 +591,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
 
         Assert.assertEquals("Anonymous_StripedId instance DefaultValue\n" +
                 "    functionDefinition(Property):\n" +
-                "        enumCollection_defaultValue_9$2 instance LambdaFunction\n" +
+                "        defaultValue$test_A$enumCollection$2 instance LambdaFunction\n" +
                 "            classifierGenericType(Property):\n" +
                 "                Anonymous_StripedId instance GenericType\n" +
                 "                    rawType(Property):\n" +
@@ -600,7 +601,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                            rawType(Property):\n" +
                 "                                Anonymous_StripedId instance FunctionType\n" +
                 "                                    function(Property):\n" +
-                "                                        enumCollection_defaultValue_9$2 instance LambdaFunction\n" +
+                "                                        defaultValue$test_A$enumCollection$2 instance LambdaFunction\n" +
                 "                                    returnMultiplicity(Property):\n" +
                 "                                        Anonymous_StripedId instance Multiplicity\n" +
                 "                                            lowerBound(Property):\n" +
@@ -635,7 +636,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                    usageContext(Property):\n" +
                 "                        Anonymous_StripedId instance ExpressionSequenceValueSpecificationContext\n" +
                 "                            functionDefinition(Property):\n" +
-                "                                enumCollection_defaultValue_9$2 instance LambdaFunction\n" +
+                "                                defaultValue$test_A$enumCollection$2 instance LambdaFunction\n" +
                 "                            offset(Property):\n" +
                 "                                0 instance Integer\n" +
                 "                    values(Property):\n" +
@@ -770,7 +771,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
 
         Assert.assertEquals("Anonymous_StripedId instance DefaultValue\n" +
                 "    functionDefinition(Property):\n" +
-                "        classCollection_defaultValue_10$0 instance LambdaFunction\n" +
+                "        defaultValue$test_A$classCollection$0 instance LambdaFunction\n" +
                 "            classifierGenericType(Property):\n" +
                 "                Anonymous_StripedId instance GenericType\n" +
                 "                    rawType(Property):\n" +
@@ -780,7 +781,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                            rawType(Property):\n" +
                 "                                Anonymous_StripedId instance FunctionType\n" +
                 "                                    function(Property):\n" +
-                "                                        classCollection_defaultValue_10$0 instance LambdaFunction\n" +
+                "                                        defaultValue$test_A$classCollection$0 instance LambdaFunction\n" +
                 "                                    returnMultiplicity(Property):\n" +
                 "                                        Anonymous_StripedId instance Multiplicity\n" +
                 "                                            lowerBound(Property):\n" +
@@ -900,7 +901,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                    usageContext(Property):\n" +
                 "                        Anonymous_StripedId instance ExpressionSequenceValueSpecificationContext\n" +
                 "                            functionDefinition(Property):\n" +
-                "                                classCollection_defaultValue_10$0 instance LambdaFunction\n" +
+                "                                defaultValue$test_A$classCollection$0 instance LambdaFunction\n" +
                 "                            offset(Property):\n" +
                 "                                0 instance Integer\n" +
                 "                    values(Property):\n" +
@@ -1035,7 +1036,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
 
         Assert.assertEquals("Anonymous_StripedId instance DefaultValue\n" +
                 "    functionDefinition(Property):\n" +
-                "        singleProperty_defaultValue_11$0 instance LambdaFunction\n" +
+                "        defaultValue$test_A$singleProperty$0 instance LambdaFunction\n" +
                 "            classifierGenericType(Property):\n" +
                 "                Anonymous_StripedId instance GenericType\n" +
                 "                    rawType(Property):\n" +
@@ -1045,7 +1046,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                            rawType(Property):\n" +
                 "                                Anonymous_StripedId instance FunctionType\n" +
                 "                                    function(Property):\n" +
-                "                                        singleProperty_defaultValue_11$0 instance LambdaFunction\n" +
+                "                                        defaultValue$test_A$singleProperty$0 instance LambdaFunction\n" +
                 "                                    returnMultiplicity(Property):\n" +
                 "                                        PureOne instance PackageableMultiplicity\n" +
                 "                                    returnType(Property):\n" +
@@ -1066,7 +1067,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                    usageContext(Property):\n" +
                 "                        Anonymous_StripedId instance ExpressionSequenceValueSpecificationContext\n" +
                 "                            functionDefinition(Property):\n" +
-                "                                singleProperty_defaultValue_11$0 instance LambdaFunction\n" +
+                "                                defaultValue$test_A$singleProperty$0 instance LambdaFunction\n" +
                 "                            offset(Property):\n" +
                 "                                0 instance Integer\n" +
                 "                    values(Property):\n" +
@@ -1088,7 +1089,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
 
         Assert.assertEquals("Anonymous_StripedId instance DefaultValue\n" +
                 "    functionDefinition(Property):\n" +
-                "        anyProperty_defaultValue_12$0 instance LambdaFunction\n" +
+                "        defaultValue$test_A$anyProperty$0 instance LambdaFunction\n" +
                 "            classifierGenericType(Property):\n" +
                 "                Anonymous_StripedId instance GenericType\n" +
                 "                    rawType(Property):\n" +
@@ -1098,7 +1099,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                            rawType(Property):\n" +
                 "                                Anonymous_StripedId instance FunctionType\n" +
                 "                                    function(Property):\n" +
-                "                                        anyProperty_defaultValue_12$0 instance LambdaFunction\n" +
+                "                                        defaultValue$test_A$anyProperty$0 instance LambdaFunction\n" +
                 "                                    returnMultiplicity(Property):\n" +
                 "                                        PureOne instance PackageableMultiplicity\n" +
                 "                                    returnType(Property):\n" +
@@ -1119,7 +1120,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                    usageContext(Property):\n" +
                 "                        Anonymous_StripedId instance ExpressionSequenceValueSpecificationContext\n" +
                 "                            functionDefinition(Property):\n" +
-                "                                anyProperty_defaultValue_12$0 instance LambdaFunction\n" +
+                "                                defaultValue$test_A$anyProperty$0 instance LambdaFunction\n" +
                 "                            offset(Property):\n" +
                 "                                0 instance Integer\n" +
                 "                    values(Property):\n" +
@@ -1129,175 +1130,123 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testDefaultValueWithUnsupportedType()
     {
-        try
-        {
-            compileTestSource("defaultValueSource.pure", "import test::*;\n"
-                    + "import meta::pure::metamodel::constraint::*;\n"
-                    + "Class test::A\n"
-                    + "{\n"
-                    + "   stringProperty:Boolean[1] = {x: Number[1] | $x < 10};\n"
-                    + "}\n"
-                    + "\n"
-            );
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureParserException.class, "expected: a valid identifier text; found: '{'", 5, 32, e);
-        }
+        PureParserException e = Assert.assertThrows(PureParserException.class, () ->
+                compileTestSource("defaultValueSource.pure", "import test::*;\n"
+                        + "import meta::pure::metamodel::constraint::*;\n"
+                        + "Class test::A\n"
+                        + "{\n"
+                        + "   stringProperty:Boolean[1] = {x: Number[1] | $x < 10};\n"
+                        + "}\n"));
+        assertPureException(PureParserException.class, "expected: a valid identifier text; found: '{'", 5, 32, e);
     }
 
     @Test
     public void testDefaultValueWithNotMatchingType()
     {
-        try
-        {
-            compileTestSource("defaultValueSource.pure", "import test::*;\n"
-                    + "Class test::A\n"
-                    + "{\n"
-                    + "   stringProperty:String[1] = false;\n"
-                    + "}\n"
-                    + "\n"
-            );
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Default value for property: 'stringProperty' / Type Error: 'Boolean' not a subtype of 'String'", 4, 31, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () ->
+                compileTestSource("defaultValueSource.pure", "import test::*;\n"
+                        + "Class test::A\n"
+                        + "{\n"
+                        + "   stringProperty:String[1] = false;\n"
+                        + "}\n"));
+        assertPureException(PureCompilationException.class, "Default value for property: 'stringProperty' / Type Error: 'Boolean' not a subtype of 'String'", 4, 31, e);
     }
 
     @Test
     public void testDefaultValueWithNotMatchingClassType()
     {
-        try
-        {
-            compileTestSource("defaultValueSource.pure", "import test::*;\n"
-                    + "Class my::A\n"
-                    + "{\n"
-                    + "}\n"
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () ->
+                compileTestSource("defaultValueSource.pure", "import test::*;\n"
+                        + "Class my::A\n"
+                        + "{\n"
+                        + "}\n"
 
-                    + "Class my::B \n"
-                    + "{\n"
-                    + "}\n"
+                        + "Class my::B \n"
+                        + "{\n"
+                        + "}\n"
 
-                    + "Class test::C\n"
-                    + "{\n"
-                    + "   classProperty: my::A[1] = ^my::B();\n"
-                    + "}\n"
-                    + "\n"
-            );
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Default value for property: 'classProperty' / Type Error: 'B' not a subtype of 'A'", 10, 30, e);
-        }
+                        + "Class test::C\n"
+                        + "{\n"
+                        + "   classProperty: my::A[1] = ^my::B();\n"
+                        + "}\n"));
+        assertPureException(PureCompilationException.class, "Default value for property: 'classProperty' / Type Error: 'B' not a subtype of 'A'", 10, 30, e);
     }
 
     @Test
     public void testDefaultValueForOptionalProperty()
     {
-        try
-        {
-            compileTestSource("defaultValueSource.pure", "import test::*;\n"
-                    + "Class test::A\n"
-                    + "{\n"
-                    + "   stringProperty: String[0..4] = 'optional';\n"
-                    + "}\n"
-                    + "\n"
-            );
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Default values are supported only for mandatory fields, and property 'stringProperty' is optional.", 4, 4, e);
-        }
+        PureCompilationException e1 = Assert.assertThrows(PureCompilationException.class, () ->
+                compileTestSource("defaultValueSource.pure", "import test::*;\n"
+                        + "Class test::A\n"
+                        + "{\n"
+                        + "   stringProperty: String[0..4] = 'optional';\n"
+                        + "}\n"));
+        assertPureException(PureCompilationException.class, "Default values are supported only for mandatory fields, and property 'stringProperty' is optional.", 4, 4, e1);
 
-        try
-        {
-            runtime.modify("defaultValueSource.pure", "import test::*;\n"
-                    + "Class test::A\n"
-                    + "{\n"
-                    + "   stringProperty: String[*] = 'optional';\n"
-                    + "}\n"
-                    + "\n"
-            );
-            runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Default values are supported only for mandatory fields, and property 'stringProperty' is optional.", 4, 4, e);
-        }
+        runtime.modify("defaultValueSource.pure", "import test::*;\n"
+                + "Class test::A\n"
+                + "{\n"
+                + "   stringProperty: String[*] = 'optional';\n"
+                + "}\n"
+                + "\n"
+        );
+        PureCompilationException e2 = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "Default values are supported only for mandatory fields, and property 'stringProperty' is optional.", 4, 4, e2);
     }
 
     @Test
     public void testDefaultValueWithNotMatchingEnumType()
     {
-        try
-        {
-            compileTestSource("defaultValueSource.pure", "import test::*;\n"
-                    + "Enum example::EnumWithDefault\n"
-                    + "{\n"
-                    + "   DefaultValue,\n"
-                    + "   AnotherValue\n"
-                    + "}\n"
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () ->
+                compileTestSource("defaultValueSource.pure", "import test::*;\n"
+                        + "Enum example::EnumWithDefault\n"
+                        + "{\n"
+                        + "   DefaultValue,\n"
+                        + "   AnotherValue\n"
+                        + "}\n"
 
-                    + "Enum example::DifferentEnum\n"
-                    + "{\n"
-                    + "   DefaultValue,\n"
-                    + "   AnotherValue\n"
-                    + "}\n"
+                        + "Enum example::DifferentEnum\n"
+                        + "{\n"
+                        + "   DefaultValue,\n"
+                        + "   AnotherValue\n"
+                        + "}\n"
 
-                    + "Class test::C\n"
-                    + "{\n"
-                    + "   enumProperty: example::EnumWithDefault[1] = example::DifferentEnum.DefaultValue;\n"
-                    + "}\n"
-                    + "\n"
-            );
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Default value for property: 'enumProperty' / Type Error: 'DifferentEnum' not a subtype of 'EnumWithDefault'", 14, 71, e);
-        }
+                        + "Class test::C\n"
+                        + "{\n"
+                        + "   enumProperty: example::EnumWithDefault[1] = example::DifferentEnum.DefaultValue;\n"
+                        + "}\n"));
+        assertPureException(PureCompilationException.class, "Default value for property: 'enumProperty' / Type Error: 'DifferentEnum' not a subtype of 'EnumWithDefault'", 14, 71, e);
     }
 
     @Test
     public void testDefaultValueMultiplicityMatches()
     {
-        try
-        {
-            compileTestSource("defaultValueSource.pure", "import test::*;\n"
+        PureCompilationException e1 = Assert.assertThrows(PureCompilationException.class, () ->
+                compileTestSource("defaultValueSource.pure", "import test::*;\n"
                     + "Class test::A\n"
                     + "{\n"
                     + "   stringProperty: String[1] = ['one', 'two'];\n"
-                    + "}\n"
-                    + "\n"
-            );
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "The default value's multiplicity does not match the multiplicity of property 'stringProperty'.", 4, 4, e);
-        }
+                    + "}\n"));
+        assertPureException(PureCompilationException.class, "The default value's multiplicity does not match the multiplicity of property 'stringProperty'.", 4, 4, e1);
 
-        try
-        {
-            runtime.modify("defaultValueSource.pure", "import test::*;\n"
-                    + "Class test::A\n"
-                    + "{\n"
-                    + "   stringProperty: String[1..3] = ['one', 'two', 'three', 'four'];\n"
-                    + "}\n"
-                    + "\n"
-            );
-            runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "The default value's multiplicity does not match the multiplicity of property 'stringProperty'.", 4, 4, e);
-        }
+        runtime.modify("defaultValueSource.pure", "import test::*;\n"
+                + "Class test::A\n"
+                + "{\n"
+                + "   stringProperty: String[1..3] = ['one', 'two', 'three', 'four'];\n"
+                + "}\n"
+                + "\n"
+        );
+        PureCompilationException e2 = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "The default value's multiplicity does not match the multiplicity of property 'stringProperty'.", 4, 4, e2);
+
+        runtime.modify("defaultValueSource.pure", "import test::*;\n"
+                + "Class test::A\n"
+                + "{\n"
+                + "   stringProperty: String[2..3] = ['one'];\n"
+                + "}\n"
+                + "\n"
+        );
+        PureCompilationException e3 = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "The default value's multiplicity does not match the multiplicity of property 'stringProperty'.", 4, 4, e3);
     }
 }
