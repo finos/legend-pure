@@ -34,7 +34,7 @@ public class TestDatabaseConnect extends PerThreadPoolableConnectionProvider
     private static final String TEST_DB_NAME = "pure-h2-test-Db";
     private static final DataSource TEST_DATA_SOURCE = new DataSource(TEST_DB_HOST_NAME, -1, TEST_DB_NAME, null);
     private static final String DEFAULT_H2_PROPERTIES = System.getProperty("legend.test.h2.properties",
-            ";NON_KEYWORDS=ANY,ASYMMETRIC,AUTHORIZATION,CAST,CURRENT_PATH,CURRENT_ROLE,DAY,DEFAULT,ELSE,END,HOUR,KEY,MINUTE,MONTH,SECOND,SESSION_USER,SET,SOME,SYMMETRIC,SYSTEM_USER,TO,UESCAPE,USER,VALUE,WHEN,YEAR");
+            ";NON_KEYWORDS=ANY,ASYMMETRIC,AUTHORIZATION,CAST,CURRENT_PATH,CURRENT_ROLE,DAY,DEFAULT,ELSE,END,HOUR,KEY,MINUTE,MONTH,SECOND,SESSION_USER,SET,SOME,SYMMETRIC,SYSTEM_USER,TO,UESCAPE,USER,VALUE,WHEN,YEAR;MODE=LEGACY");
 
     private final KeyLockManager<String> userLocks = KeyLockManager.newManager();
 
