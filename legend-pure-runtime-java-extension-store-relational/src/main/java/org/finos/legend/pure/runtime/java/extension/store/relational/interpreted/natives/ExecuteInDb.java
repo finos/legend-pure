@@ -85,6 +85,7 @@ public class ExecuteInDb extends NativeFunction
             .withKeyValue(Types.DATE, M3Paths.StrictDate)
             .withKeyValue(Types.TIME, M3Paths.DateTime)
             .withKeyValue(Types.TIMESTAMP, M3Paths.DateTime)
+            .withKeyValue(Types.TIMESTAMP_WITH_TIMEZONE, M3Paths.DateTime)
 
             .withKeyValue(Types.BOOLEAN, M3Paths.Boolean)
             .withKeyValue(Types.BIT, M3Paths.Boolean)
@@ -280,6 +281,7 @@ public class ExecuteInDb extends NativeFunction
                             break;
                         }
                         case Types.TIMESTAMP:
+                        case Types.TIMESTAMP_WITH_TIMEZONE:
                         {
                             java.sql.Timestamp timestamp = rs.getTimestamp(i, calendar);
                             if (timestamp != null)
