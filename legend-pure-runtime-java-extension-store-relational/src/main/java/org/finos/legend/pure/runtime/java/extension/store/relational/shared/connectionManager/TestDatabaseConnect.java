@@ -96,9 +96,10 @@ public class TestDatabaseConnect extends PerThreadPoolableConnectionProvider
     private static String getConnectionURL()
     {
         String port = System.getProperty("legend.test.h2.port");
-        return (port != null) ?
+        return ((port != null) ?
                 ("jdbc:h2:tcp://127.0.0.1:" + port + "/mem:testDB") :
-                ("jdbc:h2:mem:" + DEFAULT_H2_PROPERTIES);
+                "jdbc:h2:mem:")
+                + DEFAULT_H2_PROPERTIES;
     }
 
     private static Pair<ThreadLocal<PerThreadPoolableConnectionWrapper>, BasicDataSource> newTestDataSourcePair()
