@@ -33,7 +33,6 @@ public class M3Paths
     public static final String Any = "meta::pure::metamodel::type::Any";
     public static final String Association = "meta::pure::metamodel::relationship::Association";
     public static final String AssociationProjection = "meta::pure::metamodel::relationship::AssociationProjection";
-    public static final String Binary = ModelRepository.BINARY_TYPE_NAME;
     public static final String Boolean = ModelRepository.BOOLEAN_TYPE_NAME;
     public static final String Byte = ModelRepository.BYTE_TYPE_NAME;
     public static final String Class = "meta::pure::metamodel::type::Class";
