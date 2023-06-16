@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.extension.store.relational.shared.connectionManager;
 
+import java.sql.DriverManager;
 import org.apache.tomcat.dbcp.dbcp2.BasicDataSource;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.multimap.MutableMultimap;
@@ -33,9 +34,6 @@ public class TestDatabaseConnect extends PerThreadPoolableConnectionProvider
     public static final String TEST_DB_HOST_NAME = "local";
     private static final String TEST_DB_NAME = "pure-h2-test-Db";
     private static final DataSource TEST_DATA_SOURCE = new DataSource(TEST_DB_HOST_NAME, -1, TEST_DB_NAME, null);
-    private static final String DEFAULT_H2_PROPERTIES = System.getProperty("legend.test.h2.properties",
-            ";NON_KEYWORDS=ANY,ASYMMETRIC,AUTHORIZATION,CAST,CURRENT_PATH,CURRENT_ROLE,DAY,DEFAULT,ELSE,END,HOUR,KEY,MINUTE,MONTH,SECOND,SESSION_USER,SET,SOME,SYMMETRIC,SYSTEM_USER,TO,UESCAPE,USER,VALUE,WHEN,YEAR;MODE=LEGACY");
-
     private final KeyLockManager<String> userLocks = KeyLockManager.newManager();
 
     public TestDatabaseConnect()
@@ -93,13 +91,37 @@ public class TestDatabaseConnect extends PerThreadPoolableConnectionProvider
     {
     }
 
+    private static int getMajorVersion()
+    {
+        try
+        {
+            return DriverManager.getDriver("jdbc:h2:").getMajorVersion();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException("cannot identify H2 driver major version", e);
+        }
+    }
+
     private static String getConnectionURL()
     {
+        String defaultH2Properties;
+
+        if (getMajorVersion() == 2)
+        {
+            defaultH2Properties = System.getProperty("legend.test.h2.properties",
+                    ";NON_KEYWORDS=ANY,ASYMMETRIC,AUTHORIZATION,CAST,CURRENT_PATH,CURRENT_ROLE,DAY,DEFAULT,ELSE,END,HOUR,KEY,MINUTE,MONTH,SECOND,SESSION_USER,SET,SOME,SYMMETRIC,SYSTEM_USER,TO,UESCAPE,USER,VALUE,WHEN,YEAR;MODE=LEGACY");
+        }
+        else
+        {
+            defaultH2Properties = ";ALIAS_COLUMN_NAME=TRUE";
+        }
+
         String port = System.getProperty("legend.test.h2.port");
         return ((port != null) ?
                 ("jdbc:h2:tcp://127.0.0.1:" + port + "/mem:testDB") :
                 "jdbc:h2:mem:")
-                + DEFAULT_H2_PROPERTIES;
+                + defaultH2Properties;
     }
 
     private static Pair<ThreadLocal<PerThreadPoolableConnectionWrapper>, BasicDataSource> newTestDataSourcePair()
