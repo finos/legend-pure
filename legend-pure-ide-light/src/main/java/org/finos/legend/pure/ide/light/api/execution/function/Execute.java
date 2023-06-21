@@ -24,6 +24,7 @@ import org.finos.legend.pure.ide.light.helpers.JSONResponseTools;
 import org.finos.legend.pure.ide.light.session.PureSession;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -93,5 +94,16 @@ public class Execute
                 JSONResponseTools.sendJSONErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e, false);
             }
         }).build();
+    }
+
+    @GET
+    @Path("cancelExecution")
+    public void cancelExecution()
+    {
+        FunctionExecution functionExecution = pureSession.getFunctionExecution();
+        if (functionExecution instanceof FunctionExecutionInterpreted)
+        {
+            ((FunctionExecutionInterpreted) functionExecution).cancelExecution();
+        }
     }
 }
