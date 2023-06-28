@@ -27,15 +27,15 @@ public abstract class AbstractTestPureDBFunction extends AbstractPureTestWithCor
     public void testCreateTempTableError()
     {
         compileTestSource(
-                "import meta::relational::runtime::*;\n" +
+                "import meta::external::store::relational::runtime::*;\n" +
                         "import meta::relational::metamodel::*;\n" +
                         "import meta::relational::metamodel::execute::*;\n" +
                         "import meta::relational::functions::toDDL::*;\n" +
                         "function test():Any[0..1]\n" +
                         "{\n" +
-                        "   let dbConnection = ^TestDatabaseConnection(element = mydb, type = DatabaseType.H2);\n" +
+                        "   let dbConnection = ^TestDatabaseConnection(type = meta::relational::runtime::DatabaseType.H2);\n" +
                         "   createTempTable('tt', ^Column(name='col', type=^meta::relational::metamodel::datatype::Integer()), \n" +
-                        "                   {ttName:String[1], cols: Column[*], dbType: DatabaseType[1]| 'Create LOCAL TEMPORARY TABLE (col INT)'}, \n" +
+                        "                   {ttName:String[1], cols: Column[*], dbType: meta::relational::runtime::DatabaseType[1]| 'Create LOCAL TEMPORARY TABLE (col INT)'}, \n" +
                         "                   $dbConnection);\n" +
                         "}\n" +
                         "###Relational\n" +
@@ -50,13 +50,13 @@ public abstract class AbstractTestPureDBFunction extends AbstractPureTestWithCor
     public void testDropTempTableError()
     {
         compileTestSource(
-                "import meta::relational::runtime::*;\n" +
+                "import meta::external::store::relational::runtime::*;\n" +
                         "import meta::relational::metamodel::*;\n" +
                         "import meta::relational::metamodel::execute::*;\n" +
                         "import meta::relational::functions::toDDL::*;\n" +
                         "function test():Any[0..1]\n" +
                         "{\n" +
-                        "   let dbConnection = ^TestDatabaseConnection(element = mydb, type = DatabaseType.H2);\n" +
+                        "   let dbConnection = ^TestDatabaseConnection(type = meta::relational::runtime::DatabaseType.H2);\n" +
                         "   dropTempTable('tt', $dbConnection);\n" +
                         "}\n" +
                         "###Relational\n" +
@@ -71,13 +71,13 @@ public abstract class AbstractTestPureDBFunction extends AbstractPureTestWithCor
     public void testExecuteInDbError()
     {
         compileTestSource(
-                "import meta::relational::runtime::*;\n" +
+                "import meta::external::store::relational::runtime::*;\n" +
                         "import meta::relational::metamodel::*;\n" +
                         "import meta::relational::metamodel::execute::*;\n" +
                         "import meta::relational::functions::toDDL::*;\n" +
                         "function test():Any[0..1]\n" +
                         "{\n" +
-                        "   let dbConnection = ^TestDatabaseConnection(element = mydb, type = DatabaseType.H2);\n" +
+                        "   let dbConnection = ^TestDatabaseConnection(type = meta::relational::runtime::DatabaseType.H2);\n" +
                         "   executeInDb('select * from tt', $dbConnection, 0, 1000);\n" +
                         "}\n" +
                         "###Relational\n" +

@@ -15,7 +15,7 @@
 import meta::pure::mapping::*;
 import meta::pure::store::*;
 
-function meta::pure::mapping::valueTransform(_this:meta::pure::mapping::modelToModel::PurePropertyMapping[1], sourceValue:Any[1]):Any[1]
+function meta::pure::mapping::valueTransform(_this:meta::external::store::model::PurePropertyMapping[1], sourceValue:Any[1]):Any[1]
 {
     if ($_this.transformer->isEmpty(),
         | $sourceValue,

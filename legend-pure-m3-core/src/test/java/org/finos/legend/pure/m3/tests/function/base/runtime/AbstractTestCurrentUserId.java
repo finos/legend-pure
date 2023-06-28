@@ -36,7 +36,7 @@ public abstract class AbstractTestCurrentUserId extends AbstractPureTestWithCore
         compileTestSource(
                 "function test():String[1]\n" +
                         "{\n" +
-                        "    meta::pure::runtime::currentUserId();" +
+                        "    meta::core::runtime::currentUserId();" +
                         "}\n");
         CoreInstance result = this.execute("test():String[1]");
         Assert.assertEquals(this.getTestUserId(), ValueSpecification.getValue(result, this.processorSupport).getName());
@@ -48,7 +48,7 @@ public abstract class AbstractTestCurrentUserId extends AbstractPureTestWithCore
         compileTestSource(
                 "function test():String[1]\n" +
                         "{\n" +
-                        "    meta::pure::runtime::currentUserId__String_1_->eval();" +
+                        "    meta::core::runtime::currentUserId__String_1_->eval();" +
                         "}\n");
         CoreInstance result = this.execute("test():String[1]");
         Assert.assertEquals(this.getTestUserId(), ValueSpecification.getValue(result, this.processorSupport).getName());

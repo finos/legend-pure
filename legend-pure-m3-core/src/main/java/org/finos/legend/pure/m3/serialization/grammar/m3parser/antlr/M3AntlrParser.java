@@ -258,7 +258,7 @@ public class M3AntlrParser implements Parser
         AntlrContextToM3CoreInstance.LambdaContext lambdaContext = new AntlrContextToM3CoreInstance.LambdaContext(mappingName + '_' + classMappingName + (id == null ? "" : '_' + id));
         TemporaryPureSetImplementation arg = parseMappingInfo(content, classPath, lambdaContext, sourceName, offset, importId, repository, processorSupport, context);
 
-        return "^meta::pure::mapping::modelToModel::PureInstanceSetImplementation" + setSourceInfo + "(\n" +
+        return "^meta::external::store::model::PureInstanceSetImplementation" + setSourceInfo + "(\n" +
                 (id == null ? "" : "id = '" + id + "',\n") +
                 "   root = " + root + ",\n" +
                 (arg._class == null ? "" : "   srcClass = " + process(arg._class, processorSupport) + ",\n") +
@@ -267,7 +267,7 @@ public class M3AntlrParser implements Parser
                 "   class = ^meta::pure::metamodel::import::ImportStub " + classSourceInfo + " (idOrPath='" + classPath + "', importGroup=system::imports::" + importId + "),\n" +
                 "   parent= ^meta::pure::metamodel::import::ImportStub(idOrPath='" + mappingPath + "', importGroup=system::imports::" + importId + "),\n" +
                 "   propertyMappings=[" + arg.propertyMappings.collect(temporaryPurePropertyMapping ->
-                "^meta::pure::mapping::modelToModel::PurePropertyMapping " + temporaryPurePropertyMapping.sourceInformation.toM4String() + " (property='" + temporaryPurePropertyMapping.property + "'," +
+                "^meta::external::store::model::PurePropertyMapping " + temporaryPurePropertyMapping.sourceInformation.toM4String() + " (property='" + temporaryPurePropertyMapping.property + "'," +
                         "        explodeProperty = " + temporaryPurePropertyMapping.explodeProperty + "," +
                         "        localMappingProperty = " + temporaryPurePropertyMapping.localMappingProperty + "," +
 

@@ -39,7 +39,7 @@ public abstract class AbstractTestIsOptionSet extends AbstractPureTestWithCoreCo
         compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
-                        "    meta::pure::runtime::isOptionSet('TestSetOn');" +
+                        "    meta::core::runtime::isOptionSet('TestSetOn');" +
                         "}\n");
         CoreInstance result = this.execute("test():Boolean[1]");
         Assert.assertEquals("true", ValueSpecification.getValue(result, processorSupport).getName());
@@ -51,7 +51,7 @@ public abstract class AbstractTestIsOptionSet extends AbstractPureTestWithCoreCo
         compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
-                        "    meta::pure::runtime::isOptionSet('TestSetOff');" +
+                        "    meta::core::runtime::isOptionSet('TestSetOff');" +
                         "}\n");
         CoreInstance result = this.execute("test():Boolean[1]");
         Assert.assertEquals("false", ValueSpecification.getValue(result, processorSupport).getName());
@@ -63,7 +63,7 @@ public abstract class AbstractTestIsOptionSet extends AbstractPureTestWithCoreCo
         compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
-                        "    meta::pure::runtime::isOptionSet('TestUnset');" +
+                        "    meta::core::runtime::isOptionSet('TestUnset');" +
                         "}\n");
         CoreInstance result = this.execute("test():Boolean[1]");
         Assert.assertEquals("false", ValueSpecification.getValue(result, processorSupport).getName());

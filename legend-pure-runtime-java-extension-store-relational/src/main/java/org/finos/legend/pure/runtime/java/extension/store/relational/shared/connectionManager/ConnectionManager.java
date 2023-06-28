@@ -67,7 +67,7 @@ public class ConnectionManager
 
     private static final ConcurrentMutableMap<String, SynchronizedMutableList<ConnectionManager.StatementProperties>> statements = ConcurrentHashMap.newMap();
 
-    private static final String TestDatabaseConnection = "meta::relational::runtime::TestDatabaseConnection";
+    private static final String TestDatabaseConnection = "meta::external::store::relational::runtime::TestDatabaseConnection";
     private static final TestDatabaseConnect testDatabaseConnect = new TestDatabaseConnect();
 
     private ConnectionManager()

@@ -12,25 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::pure::runtime::*;
+import meta::core::runtime::*;
 import meta::pure::mapping::*;
 
-Class meta::pure::runtime::Runtime
+Class meta::core::runtime::Runtime
 {
-   connections : Connection[*];
-   connectionElementAssociations : ConnectionElementAssociation[*];
-   connectionByElement(a:Any[1]){$this.connections->filter(c|$c.element == $a)->toOne()}:Connection[1];
+   connectionStores : ConnectionStore[*];
+   connectionByElement(a:Any[1]){$this.connectionStores->filter(c|$c.element == $a).connection->toOne()}:Connection[1];
 }
 
-Class meta::pure::runtime::ConnectionElementAssociation
+Class meta::core::runtime::ConnectionStore
 {
    connection : Connection[1];
    element : Any[1];
 }
 
-Class meta::pure::runtime::Connection
+Class meta::core::runtime::Connection
 {
-   element : Any[1];
 }
 
 Class meta::pure::runtime::ExecutionContext

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import meta::pure::mapping::*;
-import meta::pure::runtime::*;
+import meta::core::runtime::*;
 import meta::pure::store::*;
 import meta::pure::tools::*;
 import meta::pure::functions::collection::*;
@@ -154,13 +154,13 @@ Class meta::pure::mapping::SubstituteStore
 
 // M2M
 
-Class meta::pure::mapping::modelToModel::PureInstanceSetImplementation extends InstanceSetImplementation
+Class meta::external::store::model::PureInstanceSetImplementation extends InstanceSetImplementation
 {
     srcClass : Type[0..1];
     filter : LambdaFunction<Any>[0..1]; // Boolean Expression
 }
 
-Class meta::pure::mapping::modelToModel::PurePropertyMapping extends PropertyMapping
+Class meta::external::store::model::PurePropertyMapping extends PropertyMapping
 {
     transform : LambdaFunction<Any>[1];
     transformer : ValueTransformer<Any>[0..1];

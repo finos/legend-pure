@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::pure::runtime::*;
+import meta::core::runtime::*;
 import meta::pure::mapping::*;
+import meta::external::store::relational::runtime::*;
 import meta::relational::runtime::*;
 import meta::relational::metamodel::relation::*;
 
@@ -22,9 +23,9 @@ Enum meta::relational::runtime::DatabaseType
    DB2, H2, MemSQL, Sybase, SybaseIQ, Composite, Postgres, SqlServer, Hive, Snowflake, Presto, Trino, BigQuery, Redshift, Databricks, Spanner, Athena, SparkSQL
 }
 
-Class meta::relational::runtime::DatabaseConnection extends Connection
+Class meta::external::store::relational::runtime::DatabaseConnection extends Connection
 {
-   type : DatabaseType[1];
+   type : meta::relational::runtime::DatabaseType[1];
    debug : Boolean[0..1];
 
    {doc.doc = 'Defaults to UTC'}
@@ -92,7 +93,7 @@ Class meta::relational::runtime::PostProcessors
 
 }
 
-Class meta::relational::runtime::TestDatabaseConnection extends DatabaseConnection
+Class meta::external::store::relational::runtime::TestDatabaseConnection extends meta::external::store::relational::runtime::DatabaseConnection
 {
     {doc.doc = 'This is used to generate SQL from the test data.'}
     testDataSetupCsv : String[0..1];
@@ -120,6 +121,6 @@ Class meta::relational::runtime::DataSource
     host : String[1];
     port : Integer[1];
     name : String[1];
-    type : DatabaseType[1];
+    type : meta::relational::runtime::DatabaseType[1];
     serverPrincipal: String[0..1];
 }

@@ -14,6 +14,7 @@
 
 import meta::relational::metamodel::execute::*;
 import meta::relational::runtime::*;
+import meta::external::store::relational::runtime::*;
 import meta::relational::metamodel::relation::*;
 import meta::relational::metamodel::*;
 import meta::relational::metamodel::datatype::*;
