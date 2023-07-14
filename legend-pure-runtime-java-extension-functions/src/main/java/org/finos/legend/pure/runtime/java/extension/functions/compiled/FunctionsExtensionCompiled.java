@@ -53,6 +53,7 @@ import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.d
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.date.DatePart;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.date.DayOfMonth;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.date.DayOfWeekNumber;
+import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.date.DayOfYear;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.date.HasDay;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.date.HasHour;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.date.HasMinute;
@@ -80,6 +81,7 @@ import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.m
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.ArcSine;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.ArcTangent;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.ArcTangent2;
+import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Cbrt;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Ceiling;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Cosine;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Exp;
@@ -125,12 +127,14 @@ import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.s
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.DecodeBase64;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.EncodeBase64;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.EndsWith;
+import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.LTrim;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.Matches;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.ParseBoolean;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.ParseDate;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.ParseDecimal;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.ParseFloat;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.ParseInteger;
+import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.RTrim;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.ToLower;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.ToUpper;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.Trim;
@@ -447,6 +451,7 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                 new DatePart(),
                 new DayOfMonth(),
                 new DayOfWeekNumber(),
+                new DayOfYear(),
                 new HasDay(),
                 new HasHour(),
                 new HasMinute(),
@@ -482,6 +487,7 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                 new ArcSine(),
                 new ArcTangent(),
                 new ArcTangent2(),
+                new Cbrt(),
                 new Ceiling(),
                 new Cosine(),
                 new Exp(),
@@ -530,19 +536,21 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                 //String
                 new Chunk(),
                 new Contains(),
+                new DecodeBase64(),
+                new EncodeBase64(),
                 new EndsWith(),
                 new org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.IndexOf(),
+                new LTrim(),
+                new Matches(),
                 new ParseBoolean(),
                 new ParseDate(),
                 new ParseFloat(),
                 new ParseDecimal(),
                 new ParseInteger(),
-                new Matches(),
+                new RTrim(),
                 new ToLower(),
                 new ToUpper(),
                 new Trim(),
-                new EncodeBase64(),
-                new DecodeBase64(),
 
                 //Tracing
                 new TraceSpan(),

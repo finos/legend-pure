@@ -50,6 +50,7 @@ import org.finos.legend.pure.runtime.java.extension.functions.interpreted.native
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.date.DatePart;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.date.DayOfMonth;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.date.DayOfWeekNumber;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.date.DayOfYear;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.date.HasDay;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.date.HasHour;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.date.HasMinute;
@@ -76,6 +77,7 @@ import org.finos.legend.pure.runtime.java.extension.functions.interpreted.native
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.ArcSine;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.ArcTangent;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.ArcTangent2;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Cbrt;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Ceiling;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Cosine;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Exp;
@@ -122,12 +124,14 @@ import org.finos.legend.pure.runtime.java.extension.functions.interpreted.native
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.EncodeBase64;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.EndsWith;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.IndexOfString;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.LTrim;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.Matches;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.ParsePrimitiveBoolean;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.ParsePrimitiveDate;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.ParsePrimitiveDecimal;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.ParsePrimitiveFloat;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.ParsePrimitiveInteger;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.RTrim;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.ToInteger;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.ToLower;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.ToUpper;
@@ -168,6 +172,7 @@ public class FunctionExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("datePart_Date_1__Date_1_", DatePart::new),
                 Tuples.pair("dayOfMonth_Date_1__Integer_1_", DayOfMonth::new),
                 Tuples.pair("dayOfWeekNumber_Date_1__Integer_1_", DayOfWeekNumber::new),
+                Tuples.pair("dayOfYear_Date_1__Integer_1_", DayOfYear::new),
                 Tuples.pair("hasDay_Date_1__Boolean_1_", HasDay::new),
                 Tuples.pair("hasHour_Date_1__Boolean_1_", HasHour::new),
                 Tuples.pair("hasMinute_Date_1__Boolean_1_", HasMinute::new),
@@ -208,6 +213,7 @@ public class FunctionExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("asin_Number_1__Float_1_", ArcSine::new),
                 Tuples.pair("atan_Number_1__Float_1_", ArcTangent::new),
                 Tuples.pair("atan2_Number_1__Number_1__Float_1_", ArcTangent2::new),
+                Tuples.pair("cbrt_Number_1__Float_1_", Cbrt::new),
                 Tuples.pair("ceiling_Number_1__Integer_1_", Ceiling::new),
                 Tuples.pair("cos_Number_1__Float_1_", Cosine::new),
                 Tuples.pair("exp_Number_1__Float_1_", Exp::new),
@@ -265,12 +271,14 @@ public class FunctionExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("endsWith_String_1__String_1__Boolean_1_", EndsWith::new),
                 Tuples.pair("indexOf_String_1__String_1__Integer_1_", IndexOfString::new),
                 Tuples.pair("indexOf_String_1__String_1__Integer_1__Integer_1_", IndexOfString::new),
+                Tuples.pair("lTrim_String_1__String_1_", LTrim::new),
                 Tuples.pair("matches_String_1__String_1__Boolean_1_", Matches::new),
                 Tuples.pair("parseBoolean_String_1__Boolean_1_", ParsePrimitiveBoolean::new),
                 Tuples.pair("parseDate_String_1__Date_1_", ParsePrimitiveDate::new),
                 Tuples.pair("parseFloat_String_1__Float_1_", ParsePrimitiveFloat::new),
                 Tuples.pair("parseDecimal_String_1__Decimal_1_", ParsePrimitiveDecimal::new),
                 Tuples.pair("parseInteger_String_1__Integer_1_", ParsePrimitiveInteger::new),
+                Tuples.pair("rTrim_String_1__String_1_", RTrim::new),
                 Tuples.pair("toInteger_String_1__Integer_1_", ToInteger::new),
                 Tuples.pair("toLower_String_1__String_1_", ToLower::new),
                 Tuples.pair("toUpper_String_1__String_1_", ToUpper::new),
