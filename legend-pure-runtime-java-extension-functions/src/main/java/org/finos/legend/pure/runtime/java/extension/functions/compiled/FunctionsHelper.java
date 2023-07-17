@@ -18,6 +18,7 @@ import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.util.GlobalTracer;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.HashingStrategy;
@@ -334,6 +335,15 @@ public class FunctionsHelper
         return date.hasDay();
     }
 
+    public static long dayOfYear(PureDate date, SourceInformation sourceInformation)
+    {
+        if (!date.hasDay())
+        {
+            throw new PureExecutionException(sourceInformation, "Cannot get day of year for " + date);
+        }
+        return date.getCalendar().get(Calendar.DAY_OF_YEAR);
+    }
+
     public static long dayOfWeekNumber(PureDate date, SourceInformation sourceInformation)
     {
         if (!date.hasDay())
@@ -641,6 +651,21 @@ public class FunctionsHelper
         if (Double.isNaN(result))
         {
             throw new PureExecutionException(sourceInformation, "Unable to compute sqrt of " + input);
+        }
+        return result;
+    }
+
+    public static double cbrt(Number input, SourceInformation sourceInformation)
+    {
+        return cbrt(input.doubleValue(), sourceInformation);
+    }
+
+    public static double cbrt(double input, SourceInformation sourceInformation)
+    {
+        double result = Math.cbrt(input);
+        if (Double.isNaN(result))
+        {
+            throw new PureExecutionException(sourceInformation, "Unable to compute cbrt of " + input);
         }
         return result;
     }
@@ -1348,6 +1373,17 @@ public class FunctionsHelper
     {
         return str.trim();
     }
+
+    public static String lTrim(String str)
+    {
+        return StringUtils.stripStart(str, null);
+    }
+
+    public static String rTrim(String str)
+    {
+        return StringUtils.stripEnd(str, null);
+    }
+
 
     public static boolean matches(String str, String regexp)
     {
