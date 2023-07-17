@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::string::lTrim(str:String[1]):String[1];
+native function meta::pure::functions::string::ltrim(str:String[1]):String[1];
 
 function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::string::tests::trim::testLTrim():Boolean[1]
 {
-    assertEquals('A Simple Text To Trim    ', ' A Simple Text To Trim    '->lTrim());
-    assertEquals('A Simple Text To Trim', ' A Simple Text To Trim'->lTrim());
-    assertEquals('A Simple Text To Trim ', 'A Simple Text To Trim '->lTrim());
+    assertEquals('A Simple Text To Trim    ', ' A Simple Text To Trim    '->ltrim());
+    assertEquals('A Simple Text To Trim', ' A Simple Text To Trim'->ltrim());
+    assertEquals('A Simple Text To Trim ', 'A Simple Text To Trim '->ltrim());
 }

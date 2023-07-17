@@ -1374,12 +1374,12 @@ public class FunctionsHelper
         return str.trim();
     }
 
-    public static String lTrim(String str)
+    public static String ltrim(String str)
     {
         return StringUtils.stripStart(str, null);
     }
 
-    public static String rTrim(String str)
+    public static String rtrim(String str)
     {
         return StringUtils.stripEnd(str, null);
     }

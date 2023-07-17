@@ -20,6 +20,6 @@ public class RTrim extends AbstractNativeFunctionGeneric
 {
     public RTrim()
     {
-        super("FunctionsGen.rTrim", new Class[]{String.class}, "rTrim_String_1__String_1_");
+        super("FunctionsGen.rtrim", new Class[]{String.class}, "rtrim_String_1__String_1_");
     }
 }
