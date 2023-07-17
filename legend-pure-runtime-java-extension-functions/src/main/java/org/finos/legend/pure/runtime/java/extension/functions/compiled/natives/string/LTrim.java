@@ -20,6 +20,6 @@ public class LTrim extends AbstractNativeFunctionGeneric
 {
     public LTrim()
     {
-        super("FunctionsGen.lTrim", new Class[]{String.class}, "lTrim_String_1__String_1_");
+        super("FunctionsGen.ltrim", new Class[]{String.class}, "ltrim_String_1__String_1_");
     }
 }
