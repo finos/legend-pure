@@ -24,32 +24,22 @@ import java.util.Date;
 
 public class Revision
 {
-    public static final Function<Revision, Long> GET_REVISION = new Function<Revision, Long>()
+    public static final Function<Revision, String> GET_REVISION = new Function<Revision, String>()
     {
         @Override
-        public Long valueOf(Revision revision)
+        public String valueOf(Revision revision)
         {
             return revision.getRevision();
         }
     };
 
-    public static final LongFunction<Revision> GET_REVISION_LONG = new LongFunction<Revision>()
-    {
-        @Override
-        public long longValueOf(Revision revision)
-        {
-            return revision.getRevision();
-        }
-    };
-
-
-    private final long revision;
+    private final String revision;
     private ImmutableList<ChangedPath> changedPaths;
     private final String author;
     private final String message;
     private final Date date;
 
-    public Revision(long revision, String author, Date date, String message)
+    public Revision(String revision, String author, Date date, String message)
     {
         this.revision = revision;
         this.author = author.trim();
@@ -77,7 +67,7 @@ public class Revision
         return this.message;
     }
 
-    public long getRevision()
+    public String getRevision()
     {
         return this.revision;
     }
@@ -111,7 +101,7 @@ public class Revision
     @Override
     public int hashCode()
     {
-        return (int)(this.revision ^ (this.revision >>> 32));
+        return this.revision.hashCode();
     }
 
 }

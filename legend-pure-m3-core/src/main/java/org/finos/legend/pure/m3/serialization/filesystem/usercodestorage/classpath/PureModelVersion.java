@@ -16,14 +16,15 @@ package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classp
 
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Optional;
 import java.util.Properties;
 
 public class PureModelVersion
 {
-    public static final long PURE_MODEL_VERSION = version("pure_model_version");
+    public static final Optional<String> PURE_MODEL_VERSION = version("pure_model_version");
     public static final String PURE_MODEL_VERSION_SPEC = String.format("{\"pure-model\" : %d}", PURE_MODEL_VERSION);
 
-    private static long version(String name)
+    private static Optional<String> version(String name)
     {
         try
         {
@@ -33,12 +34,12 @@ public class PureModelVersion
             {
                 properties.load(stream);
                 String versionAsString = properties.getProperty("version");
-                return (versionAsString == null) ? 0L : Long.parseLong(versionAsString);
+                return Optional.ofNullable(versionAsString);
             }
         }
         catch (Exception ignore)
         {
-            return 0L;
+            return Optional.empty();
         }
     }
 }
