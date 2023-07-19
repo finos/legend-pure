@@ -22,7 +22,7 @@ import java.util.Properties;
 public class PureModelVersion
 {
     public static final Optional<String> PURE_MODEL_VERSION = version("pure_model_version");
-    public static final String PURE_MODEL_VERSION_SPEC = String.format("{\"pure-model\" : %d}", PURE_MODEL_VERSION);
+    public static final String PURE_MODEL_VERSION_SPEC = String.format("{\"pure-model\" : %s}", PURE_MODEL_VERSION.orElse("0"));
 
     private static Optional<String> version(String name)
     {
