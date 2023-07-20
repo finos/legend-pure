@@ -15,18 +15,17 @@
 package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.list.primitive.LongList;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.factory.primitive.LongLists;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryRevisionCache;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.Revision;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.VersionControlledCodeStorage;
-
-import java.util.List;
-import java.util.Optional;
 
 
 public class VersionControlledClassLoaderCodeStorage extends ClassLoaderCodeStorage implements VersionControlledCodeStorage
@@ -62,17 +61,17 @@ public class VersionControlledClassLoaderCodeStorage extends ClassLoaderCodeStor
     }
 
     @Override
-    public Optional<String> getCurrentRevision(String path)
+    public long getCurrentRevision(String path)
     {
-        return isVersioned(path) ? PureModelVersion.PURE_MODEL_VERSION : Optional.empty();
+        return isVersioned(path) ? PureModelVersion.PURE_MODEL_VERSION : -1L;
     }
 
     @Override
-    public List<String> getAllRevisions(String path)
+    public LongList getAllRevisions(String path)
     {
         if (!isVersioned(path))
         {
-            return Lists.mutable.empty();
+            return LongLists.immutable.empty();
         }
         if (this.repositoryRevisionCache == null)
         {

@@ -18,11 +18,9 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.list.primitive.LongList;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.Revision;
 
-import java.util.List;
-
 public interface RepositoryRevisionCache
 {
-    List<String> getAllRevisions(String path);
+    LongList getAllRevisions(String path);
 
     RichIterable<Revision> getRevisionsByPath(RichIterable<String> paths);
 }

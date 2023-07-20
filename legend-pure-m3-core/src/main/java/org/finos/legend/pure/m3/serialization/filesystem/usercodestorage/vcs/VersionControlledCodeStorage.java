@@ -19,9 +19,6 @@ import org.eclipse.collections.api.list.primitive.LongList;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 
-import java.util.List;
-import java.util.Optional;
-
 public interface VersionControlledCodeStorage extends RepositoryCodeStorage
 {
     /**
@@ -40,7 +37,7 @@ public interface VersionControlledCodeStorage extends RepositoryCodeStorage
      * @param path Pure path
      * @return current revision number or -1
      */
-    Optional<String> getCurrentRevision(String path);
+    long getCurrentRevision(String path);
 
     /**
      * Get all revision numbers at which changes were made to the
@@ -50,7 +47,7 @@ public interface VersionControlledCodeStorage extends RepositoryCodeStorage
      * @param path Pure path
      * @return all revision numbers for path
      */
-    List<String> getAllRevisions(String path);
+    LongList getAllRevisions(String path);
 
     RichIterable<Revision> getAllRevisionLogs(RichIterable<String> path);
 
