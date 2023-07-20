@@ -38,7 +38,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.Optional;
 import java.util.regex.Pattern;
 
 @Api(tags = "File Management")
@@ -309,9 +308,7 @@ public class FileManagement
     private void writeRepoNode(StringBuilder builder, MutableRepositoryCodeStorage cs, String path, CodeStorageNode repo)
     {
         VersionControlledCodeStorage codeStorage = (VersionControlledCodeStorage) cs;
-        // Assume SVN until Git code storage is added
-        Optional<String> currentRev = codeStorage.getCurrentRevision(path);
-        long currentRevision = currentRev.isPresent() ? Long.parseLong(currentRev.get()) : 0L;
+        long currentRevision = codeStorage.getCurrentRevision(path);
         String repoName = codeStorage.getRepositoryForPath(path).getName();
         builder.append("{\"li_attr\":{\"id\":\"file_");
         builder.append(path);

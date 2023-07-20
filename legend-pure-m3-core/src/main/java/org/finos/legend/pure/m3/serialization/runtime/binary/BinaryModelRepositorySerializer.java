@@ -32,7 +32,6 @@ import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Optional;
 
 public class BinaryModelRepositorySerializer
 {
@@ -106,8 +105,8 @@ public class BinaryModelRepositorySerializer
             return null;
         }
         RepositoryCodeStorage codeStorage = this.runtime.getCodeStorage();
-        Optional<String> repoRevision = codeStorage instanceof VersionControlledCodeStorage ? ((VersionControlledCodeStorage) codeStorage).getCurrentRevision(this.repositoryName) : Optional.empty();
-        return repoRevision.isPresent() ? ("SNAPSHOT-FROM-SVN-" + repoRevision.get()) : null;
+        long repoRevision = codeStorage instanceof VersionControlledCodeStorage ? ((VersionControlledCodeStorage) codeStorage).getCurrentRevision(this.repositoryName) : -1L;
+        return (repoRevision == -1L) ? null : ("SNAPSHOT-FROM-SVN-" + repoRevision);
     }
 
     private static Pair<String, String> getFilePathSortKey(String path)
