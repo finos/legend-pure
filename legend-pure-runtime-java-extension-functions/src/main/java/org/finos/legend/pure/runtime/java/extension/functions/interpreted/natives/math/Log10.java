@@ -53,11 +53,4 @@ public class Log10 extends NativeFunction
         }
         return NumericUtilities.toPureNumberValueExpression(log, false, this.repository, processorSupport);
     }
-
-    public static void main(String[] args) {
-        System.out.println(Math.log10(1));
-        System.out.println(Math.log10(4));
-        System.out.println(Math.log10(15));
-        System.out.println(Math.log(10));
-    }
 }
