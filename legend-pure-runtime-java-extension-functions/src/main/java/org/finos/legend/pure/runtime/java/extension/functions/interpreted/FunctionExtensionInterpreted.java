@@ -41,7 +41,6 @@ import org.finos.legend.pure.runtime.java.extension.functions.interpreted.native
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Last;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.RemoveAllOptimized;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Repeat;
-import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Reverse;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Slice;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Take;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Zip;
@@ -80,14 +79,17 @@ import org.finos.legend.pure.runtime.java.extension.functions.interpreted.native
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Cbrt;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Ceiling;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Cosine;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.CoTangent;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Exp;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Floor;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Log;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Log10;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Mod;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Power;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Rem;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Round;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.RoundWithScale;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Sign;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Sine;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Sqrt;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.StdDev;
@@ -118,6 +120,8 @@ import org.finos.legend.pure.runtime.java.extension.functions.interpreted.native
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.runtime.CurrentUserId;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.runtime.Guid;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.runtime.IsOptionSet;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.ASCII;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.Char;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.Chunk;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.Contains;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.DecodeBase64;
@@ -161,7 +165,7 @@ public class FunctionExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("last_T_MANY__T_$0_1$_", Last::new),
                 Tuples.pair("removeAllOptimized_T_MANY__T_MANY__T_MANY_", RemoveAllOptimized::new),
                 Tuples.pair("repeat_T_1__Integer_1__T_MANY_", Repeat::new),
-                Tuples.pair("reverse_T_m__T_m_", Reverse::new),
+                Tuples.pair("reverse_T_m__T_m_", org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Reverse::new),
                 Tuples.pair("slice_T_MANY__Integer_1__Integer_1__T_MANY_", Slice::new),
                 Tuples.pair("take_T_MANY__Integer_1__T_MANY_", Take::new),
                 Tuples.pair("zip_T_MANY__U_MANY__Pair_MANY_", Zip::new),
@@ -216,15 +220,18 @@ public class FunctionExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("cbrt_Number_1__Float_1_", Cbrt::new),
                 Tuples.pair("ceiling_Number_1__Integer_1_", Ceiling::new),
                 Tuples.pair("cos_Number_1__Float_1_", Cosine::new),
+                Tuples.pair("cot_Number_1__Float_1_", CoTangent::new),
                 Tuples.pair("exp_Number_1__Float_1_", Exp::new),
                 Tuples.pair("floor_Number_1__Integer_1_", Floor::new),
                 Tuples.pair("log_Number_1__Float_1_", Log::new),
+                Tuples.pair("log10_Number_1__Float_1_", Log10::new),
                 Tuples.pair("mod_Integer_1__Integer_1__Integer_1_", Mod::new),
                 Tuples.pair("pow_Number_1__Number_1__Number_1_", Power::new),
                 Tuples.pair("rem_Number_1__Number_1__Number_1_", Rem::new),
                 Tuples.pair("round_Number_1__Integer_1_", Round::new),
                 Tuples.pair("round_Decimal_1__Integer_1__Decimal_1_", RoundWithScale::new),
                 Tuples.pair("round_Float_1__Integer_1__Float_1_", RoundWithScale::new),
+                Tuples.pair("sign_Number_1__Integer_1_", Sign::new),
                 Tuples.pair("sin_Number_1__Float_1_", Sine::new),
                 Tuples.pair("sqrt_Number_1__Float_1_", Sqrt::new),
                 Tuples.pair("stdDev_Number_$1_MANY$__Boolean_1__Number_1_", StdDev::new),
@@ -264,6 +271,8 @@ public class FunctionExtensionInterpreted extends BaseInterpretedExtension
 
 
                 //String
+                Tuples.pair("ascii_String_1__Integer_1_", ASCII::new),
+                Tuples.pair("char_Integer_1__String_1_", Char::new),
                 Tuples.pair("chunk_String_1__Integer_1__String_MANY_", Chunk::new),
                 Tuples.pair("contains_String_1__String_1__Boolean_1_", Contains::new),
                 Tuples.pair("encodeBase64_String_1__String_1_", EncodeBase64::new),
@@ -278,6 +287,7 @@ public class FunctionExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("parseFloat_String_1__Float_1_", ParsePrimitiveFloat::new),
                 Tuples.pair("parseDecimal_String_1__Decimal_1_", ParsePrimitiveDecimal::new),
                 Tuples.pair("parseInteger_String_1__Integer_1_", ParsePrimitiveInteger::new),
+                Tuples.pair("reverse_String_1__String_1_", org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.Reverse::new),
                 Tuples.pair("rtrim_String_1__String_1_", RTrim::new),
                 Tuples.pair("toInteger_String_1__Integer_1_", ToInteger::new),
                 Tuples.pair("toLower_String_1__String_1_", ToLower::new),

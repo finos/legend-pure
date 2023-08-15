@@ -175,6 +175,16 @@ public class FunctionsHelper
         return result;
     }
 
+    public static double coTangent(Number input)
+    {
+        return coTangent(input.doubleValue());
+    }
+
+    public static double coTangent(double input)
+    {
+        return 1.0 / tan(input);
+    }
+
     public static double asin(Number input, SourceInformation sourceInformation)
     {
         return asin(input.doubleValue(), sourceInformation);
@@ -561,6 +571,11 @@ public class FunctionsHelper
         return Math.log(n.doubleValue());
     }
 
+    public static double log10(Number n)
+    {
+        return Math.log10(n.doubleValue());
+    }
+
     public static Number stdDev(RichIterable<? extends Number> list, boolean isBiasCorrected, SourceInformation sourceInformation)
     {
         if (list == null || list.isEmpty())
@@ -574,6 +589,11 @@ public class FunctionsHelper
             values[i] = javaNumbers.get(i).doubleValue();
         }
         return StatisticsUtil.standardDeviation(values, isBiasCorrected);
+    }
+
+    public static long sign(Number number)
+    {
+        return (long) Math.signum(number.doubleValue());
     }
 
     public static Long floor(Number number)
@@ -1275,6 +1295,21 @@ public class FunctionsHelper
     public static boolean endsWith(String str1, String str2)
     {
         return str1.endsWith(str2);
+    }
+
+    public static long ascii(String str)
+    {
+        return str.length() > 0 ? (int) str.charAt(0) : 0;
+    }
+
+    public static String reverse(String str)
+    {
+        return new StringBuilder(str).reverse().toString();
+    }
+
+    public static String character(Number number)
+    {
+        return String.valueOf((char) number.intValue());
     }
 
     public static RichIterable<String> chunk(String text, long size, SourceInformation sourceInformation)
