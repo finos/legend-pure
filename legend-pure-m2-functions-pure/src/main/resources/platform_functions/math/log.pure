@@ -1,4 +1,4 @@
-// Copyright 2022 Goldman Sachs
+// Copyright 2023 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,6 +13,8 @@
 // limitations under the License.
 
 native function meta::pure::functions::math::log(value:Number[1]):Float[1];
+native function meta::pure::functions::math::log10(value:Number[1]):Float[1];
+
 
 function <<test.Test>> meta::pure::functions::math::tests::log::testNumberLog():Boolean[1]
 {
@@ -24,4 +26,15 @@ function <<test.Test>> meta::pure::functions::math::tests::log::testSimple():Boo
 {
     assertEqWithinTolerance(4.0, log(4->exp()), 0.000000000000001);
     assertEqWithinTolerance(log(2.718281828459045), 1.0, 0.000000000000001);
+}
+
+function <<test.ToFix>> meta::pure::functions::math::tests::log::testNumberLog10():Boolean[1]
+{
+    let f = {a:Number[1] | log10($a)};
+    assertEqWithinTolerance(1.0, $f->eval(10), 0.000000000000001);
+}
+
+function <<test.ToFix>> meta::pure::functions::math::tests::log::testSimpleLog10():Boolean[1]
+{
+    assertEqWithinTolerance(log10(10), 1.0, 0.000000000000001);
 }

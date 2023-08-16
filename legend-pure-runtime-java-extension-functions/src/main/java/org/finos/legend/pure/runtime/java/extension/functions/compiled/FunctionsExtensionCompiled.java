@@ -44,7 +44,6 @@ import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.c
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Last;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.RemoveAllOptimized;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Repeat;
-import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Reverse;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Slice;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Take;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Zip;
@@ -84,14 +83,17 @@ import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.m
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Cbrt;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Ceiling;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Cosine;
+import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.CoTangent;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Exp;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Floor;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Log;
+import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Log10;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Mod;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Pow;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Rem;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Round;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.RoundWithScale;
+import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Sign;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Sine;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Sqrt;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.StdDev;
@@ -122,6 +124,8 @@ import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.m
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.runtime.CurrentUserId;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.runtime.Guid;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.runtime.IsOptionSet;
+import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.ASCII;
+import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.Char;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.Chunk;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.Contains;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.DecodeBase64;
@@ -440,7 +444,7 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                 new Last(),
                 new RemoveAllOptimized(),
                 new Repeat(),
-                new Reverse(),
+                new org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Reverse(),
                 new Slice(),
                 new Take(),
                 new Zip(),
@@ -490,14 +494,17 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                 new Cbrt(),
                 new Ceiling(),
                 new Cosine(),
+                new CoTangent(),
                 new Exp(),
                 new Floor(),
                 new Log(),
+                new Log10(),
                 new Mod(),
                 new Pow(),
                 new Rem(),
                 new Round(),
                 new RoundWithScale(),
+                new Sign(),
                 new Sine(),
                 new Sqrt(),
                 new StdDev(),
@@ -534,6 +541,8 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                 new Guid(),
 
                 //String
+                new ASCII(),
+                new Char(),
                 new Chunk(),
                 new Contains(),
                 new DecodeBase64(),
@@ -547,6 +556,7 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                 new ParseFloat(),
                 new ParseDecimal(),
                 new ParseInteger(),
+                new org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.Reverse(),
                 new RTrim(),
                 new ToLower(),
                 new ToUpper(),
