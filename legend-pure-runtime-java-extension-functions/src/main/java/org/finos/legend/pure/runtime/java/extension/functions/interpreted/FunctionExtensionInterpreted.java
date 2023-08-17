@@ -41,6 +41,7 @@ import org.finos.legend.pure.runtime.java.extension.functions.interpreted.native
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Last;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.RemoveAllOptimized;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Repeat;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Reverse;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Slice;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Take;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Zip;
@@ -136,6 +137,7 @@ import org.finos.legend.pure.runtime.java.extension.functions.interpreted.native
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.ParsePrimitiveFloat;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.ParsePrimitiveInteger;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.RTrim;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.ReverseString;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.ToInteger;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.ToLower;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.ToUpper;
@@ -165,7 +167,7 @@ public class FunctionExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("last_T_MANY__T_$0_1$_", Last::new),
                 Tuples.pair("removeAllOptimized_T_MANY__T_MANY__T_MANY_", RemoveAllOptimized::new),
                 Tuples.pair("repeat_T_1__Integer_1__T_MANY_", Repeat::new),
-                Tuples.pair("reverse_T_m__T_m_", org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Reverse::new),
+                Tuples.pair("reverse_T_m__T_m_", Reverse::new),
                 Tuples.pair("slice_T_MANY__Integer_1__Integer_1__T_MANY_", Slice::new),
                 Tuples.pair("take_T_MANY__Integer_1__T_MANY_", Take::new),
                 Tuples.pair("zip_T_MANY__U_MANY__Pair_MANY_", Zip::new),
@@ -287,7 +289,7 @@ public class FunctionExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("parseFloat_String_1__Float_1_", ParsePrimitiveFloat::new),
                 Tuples.pair("parseDecimal_String_1__Decimal_1_", ParsePrimitiveDecimal::new),
                 Tuples.pair("parseInteger_String_1__Integer_1_", ParsePrimitiveInteger::new),
-                Tuples.pair("reverse_String_1__String_1_", org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.Reverse::new),
+                Tuples.pair("reverseString_String_1__String_1_", ReverseString::new),
                 Tuples.pair("rtrim_String_1__String_1_", RTrim::new),
                 Tuples.pair("toInteger_String_1__Integer_1_", ToInteger::new),
                 Tuples.pair("toLower_String_1__String_1_", ToLower::new),

@@ -34,11 +34,11 @@ import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
 import java.util.Stack;
 
-public class Reverse extends NativeFunction
+public class ReverseString extends NativeFunction
 {
     private final ModelRepository repository;
 
-    public Reverse(FunctionExecutionInterpreted functionExecution, ModelRepository repository)
+    public ReverseString(FunctionExecutionInterpreted functionExecution, ModelRepository repository)
     {
         this.repository = repository;
     }

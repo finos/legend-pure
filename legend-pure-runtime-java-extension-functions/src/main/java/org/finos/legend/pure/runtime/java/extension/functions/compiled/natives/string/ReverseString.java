@@ -16,10 +16,10 @@ package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
 
-public class Reverse extends AbstractNativeFunctionGeneric
+public class ReverseString extends AbstractNativeFunctionGeneric
 {
-    public Reverse()
+    public ReverseString()
     {
-        super("FunctionsGen.reverse", new Class[]{String.class}, "reverse_String_1__String_1_");
+        super("FunctionsGen.reverse", new Class[]{String.class}, "reverseString_String_1__String_1_");
     }
 }

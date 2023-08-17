@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::string::reverse(str:String[1]):String[1];
+native function meta::pure::functions::string::reverseString(str:String[1]):String[1];
 
-function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::string::tests::reverse::testReverse():Boolean[1]
+function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::string::tests::reverse::testReverseString():Boolean[1]
 {
-    assertEquals('', ''->reverse());
-    assertEquals('abc', 'cba'->reverse());
+    assertEquals('', ''->reverseString());
+    assertEquals('abc', 'cba'->reverseString());
 }
