@@ -47,7 +47,7 @@ Class meta::pure::graphFetch::PropertyGraphFetchTree extends GraphFetchTree
    subType : Class<Any>[0..1];
    
    isPrimitive(){
-      $this.returnType()->instanceOf(PrimitiveType) || $this.returnType->instanceOf(Enumeration)
+      $this.returnType()->instanceOf(PrimitiveType) || $this.returnType()->instanceOf(Enumeration)
    }:Boolean[1];
 
    isQualifiedProperty(){
@@ -56,7 +56,7 @@ Class meta::pure::graphFetch::PropertyGraphFetchTree extends GraphFetchTree
    
    returnType(){
       if($this.subType->isEmpty(),
-        | $this.property->genericType.rawType->toOne(),
+        | $this.property.genericType.rawType->toOne(),
         | $this.subType->toOne());
    }:Type[1];
 }
