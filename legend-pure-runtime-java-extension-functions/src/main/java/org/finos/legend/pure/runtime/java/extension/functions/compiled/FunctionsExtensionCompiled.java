@@ -44,6 +44,7 @@ import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.c
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Last;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.RemoveAllOptimized;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Repeat;
+import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Reverse;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Slice;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Take;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Zip;
@@ -139,6 +140,7 @@ import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.s
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.ParseFloat;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.ParseInteger;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.RTrim;
+import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.ReverseString;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.ToLower;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.ToUpper;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.Trim;
@@ -444,7 +446,7 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                 new Last(),
                 new RemoveAllOptimized(),
                 new Repeat(),
-                new org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Reverse(),
+                new Reverse(),
                 new Slice(),
                 new Take(),
                 new Zip(),
@@ -556,7 +558,7 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                 new ParseFloat(),
                 new ParseDecimal(),
                 new ParseInteger(),
-                new org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.Reverse(),
+                new ReverseString(),
                 new RTrim(),
                 new ToLower(),
                 new ToUpper(),
