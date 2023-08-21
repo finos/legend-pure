@@ -130,7 +130,9 @@ import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.s
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.Chunk;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.Contains;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.DecodeBase64;
+import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.DecodeUrl;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.EncodeBase64;
+import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.EncodeUrl;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.EndsWith;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.LTrim;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.Matches;
@@ -549,6 +551,8 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                 new Contains(),
                 new DecodeBase64(),
                 new EncodeBase64(),
+                new DecodeUrl(),
+                new EncodeUrl(),
                 new EndsWith(),
                 new org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.IndexOf(),
                 new LTrim(),

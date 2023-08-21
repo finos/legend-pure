@@ -72,10 +72,13 @@ import org.finos.legend.pure.runtime.java.shared.hash.HashType;
 import org.finos.legend.pure.runtime.java.shared.hash.HashingUtil;
 import org.finos.legend.pure.runtime.java.shared.identity.IdentityManager;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Calendar;
@@ -1285,6 +1288,30 @@ public class FunctionsHelper
     public static String decodeBase64(String str)
     {
         return new String(Base64.decodeBase64(str));
+    }
+
+    public static String encodeUrl(String str, String charset)
+    {
+        try
+        {
+            return URLEncoder.encode(str, charset);
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String decodeUrl(String str, String charset)
+    {
+        try
+        {
+            return URLDecoder.decode(str, charset);
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     public static boolean contains(String str1, String str2)

@@ -126,7 +126,9 @@ import org.finos.legend.pure.runtime.java.extension.functions.interpreted.native
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.Chunk;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.Contains;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.DecodeBase64;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.DecodeUrl;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.EncodeBase64;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.EncodeUrl;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.EndsWith;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.IndexOfString;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.LTrim;
@@ -279,6 +281,8 @@ public class FunctionExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("contains_String_1__String_1__Boolean_1_", Contains::new),
                 Tuples.pair("encodeBase64_String_1__String_1_", EncodeBase64::new),
                 Tuples.pair("decodeBase64_String_1__String_1_", DecodeBase64::new),
+                Tuples.pair("encodeUrl_String_1__String_1__String_1_", EncodeUrl::new),
+                Tuples.pair("decodeUrl_String_1__String_1__String_1_", DecodeUrl::new),
                 Tuples.pair("endsWith_String_1__String_1__Boolean_1_", EndsWith::new),
                 Tuples.pair("indexOf_String_1__String_1__Integer_1_", IndexOfString::new),
                 Tuples.pair("indexOf_String_1__String_1__Integer_1__Integer_1_", IndexOfString::new),
