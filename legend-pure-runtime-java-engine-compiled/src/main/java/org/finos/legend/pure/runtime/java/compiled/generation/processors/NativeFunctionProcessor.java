@@ -259,7 +259,8 @@ public class NativeFunctionProcessor
         registerNative(map, new Replace());
         registerNative(map, new Split());
         registerNative(map, new StartsWith());
-        registerNative(map, new Substring());
+        registerNative(map, new Substring2());
+        registerNative(map, new Substring3());
         registerNative(map, new ToString());
 
         //Tests

@@ -17,11 +17,11 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.native
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
-public class Substring extends AbstractNativeFunctionGeneric
+public class Substring3 extends AbstractNativeFunctionGeneric
 {
-    public Substring()
+    public Substring3()
     {
         super(getMethod(CompiledSupport.class, "substring", String.class, Number.class, Number.class),
-                "substring_String_1__Integer_1__Integer_1__String_1_", "substring_String_1__Integer_1__String_1_");
+                "substring_String_1__Integer_1__Integer_1__String_1_");
     }
 }
