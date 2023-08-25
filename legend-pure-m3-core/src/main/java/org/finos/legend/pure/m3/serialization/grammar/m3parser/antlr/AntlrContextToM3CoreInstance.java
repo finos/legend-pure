@@ -1175,7 +1175,7 @@ public class AntlrContextToM3CoreInstance
     {
         String res = ctx.getText();
         res = res.substring(res.indexOf('#') + 1, res.lastIndexOf('#'));
-        if (res.trim().startsWith("/") || res.trim().startsWith("{"))
+        if (res.trim().startsWith("/") || res.trim().startsWith("{") || res.trim().startsWith("TDS"))
         {
             //TODO temporary hack till we move treepath completely away from dsl
             InlineDSLTextContent dslTextContext = new InlineDSLTextContent(res, ctx.getStart().getLine() + this.sourceInformation.getOffsetLine(), ctx.getStart().getCharPositionInLine() + 2);

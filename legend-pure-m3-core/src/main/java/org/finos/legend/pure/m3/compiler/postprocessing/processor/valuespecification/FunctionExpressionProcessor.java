@@ -132,6 +132,23 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                 {
                     reprocessEnumValueInExtractEnumValue(functionExpression, propertyName, state, repository, processorSupport);
                 }
+                else if (processorSupport.instance_instanceOf(sourceGenericType._rawType(), M3Paths.RelationType))
+                {
+                    String name = functionExpression._propertyName()._valuesCoreInstance().getAny().getName();
+
+//                    RelationType<?> rel = (RelationType<?>)sourceGenericType._rawType();
+//                    Column<?,?> col = rel._columns().select(c -> c._name().equals(name)).getFirst();
+//                    foundFunctions.add(col);
+
+                    CoreInstance rel = sourceGenericType._rawType();
+                    CoreInstance col = Instance.getValueForMetaPropertyToManyResolved(rel, "columns", processorSupport).select(c -> Instance.getValueForMetaPropertyToOneResolved(c, "name", processorSupport).getName().equals(name)).getFirst();
+                    if (col == null)
+                    {
+                        throw new PureCompilationException(functionExpression.getSourceInformation(), "The system can't find the column " + name + " in the Relation " + rel.getName());
+                    }
+                    foundFunctions.add((Function<?>) col);
+
+                }
                 else
                 {
                     Multiplicity sourceMultiplicity = source._multiplicity();

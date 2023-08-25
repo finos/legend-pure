@@ -1,0 +1,7 @@
+{
+  "name": "platform_functions_relation",
+  "pattern": "(meta::pure::functions::relation)(::.*)?",
+  "dependencies": [
+    "platform"
+  ]
+}

@@ -740,6 +740,12 @@ public class GenericType
         {
             org.finos.legend.pure.m3.navigation.function.FunctionType.print(appendable, rawType, fullPaths, markImportStubs, processorSupport);
         }
+        else if (processorSupport.instance_instanceOf(rawType, M3Paths.RelationType))
+        {
+            appendable.append("(" + rawType.getValueForMetaPropertyToMany("columns").collect(c ->
+                    c.getValueForMetaPropertyToOne("name").getName() + ":" + c.getValueForMetaPropertyToOne("classifierGenericType").getValueForMetaPropertyToMany("typeArguments").get(1).getValueForMetaPropertyToOne("rawType").getName()
+            ).makeString(", ") + ")");
+        }
         else if (fullPaths)
         {
             PackageableElement.writeUserPathForPackageableElement(appendable, rawType);

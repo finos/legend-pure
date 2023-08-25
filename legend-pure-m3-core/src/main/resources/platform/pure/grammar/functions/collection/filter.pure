@@ -14,9 +14,7 @@
 
 import meta::pure::functions::collection::tests::model::*;
 
-// For Milestoning generated properties
 native function meta::pure::functions::collection::filter<T>(value:T[*], func:Function<{T[1]->Boolean[1]}>[1]):T[*];
-
 
 function <<test.Test>> meta::pure::functions::collection::tests::filter::testFilterLiteral():Boolean[1]
 {

@@ -38,6 +38,7 @@ public class M3Paths
     public static final String Class = "meta::pure::metamodel::type::Class";
     public static final String ClassConstraintValueSpecificationContext = "meta::pure::metamodel::valuespecification::ClassConstraintValueSpecificationContext";
     public static final String ClassProjection = "meta::pure::metamodel::type::ClassProjection";
+    public static final String Column = "meta::pure::metamodel::relation::Column";
     public static final String ConcreteFunctionDefinition = "meta::pure::metamodel::function::ConcreteFunctionDefinition";
     public static final String Constraint = "meta::pure::metamodel::constraint::Constraint";
     public static final String ConstraintsOverride = "meta::pure::metamodel::type::ConstraintsOverride";
@@ -103,6 +104,7 @@ public class M3Paths
     public static final String PureZero = "meta::pure::metamodel::multiplicity::PureZero";
     public static final String QualifiedProperty = "meta::pure::metamodel::function::property::QualifiedProperty";
     public static final String ReferenceUsage = "meta::pure::metamodel::ReferenceUsage";
+    public static final String RelationType = "meta::pure::metamodel::relation::RelationType";
     public static final String Root = "Root";
     public static final String RootRouteNode = "meta::pure::metamodel::treepath::RootRouteNode";
     public static final String RouteNodePropertyStub = "meta::pure::metamodel::treepath::RouteNodePropertyStub";

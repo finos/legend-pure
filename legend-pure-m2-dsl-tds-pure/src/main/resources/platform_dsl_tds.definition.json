@@ -1,0 +1,5 @@
+{
+  "name" : "platform_dsl_tds",
+  "pattern" : "(meta::pure::metamodel::relation)(::.*)?",
+  "dependencies" : ["platform"]
+}
