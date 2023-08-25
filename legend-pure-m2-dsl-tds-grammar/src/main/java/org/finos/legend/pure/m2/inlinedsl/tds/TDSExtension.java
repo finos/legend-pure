@@ -20,9 +20,7 @@ import io.deephaven.csv.reading.CsvReader;
 import io.deephaven.csv.sinks.SinkFactory;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.utility.ArrayIterate;
-import org.eclipse.collections.impl.utility.ListIterate;
 import org.finos.legend.pure.m2.inlinedsl.tds.processor.TDSProcessor;
 import org.finos.legend.pure.m2.inlinedsl.tds.unloader.TDSUnbind;
 import org.finos.legend.pure.m2.inlinedsl.tds.validation.TDSVisibilityValidator;
@@ -30,7 +28,6 @@ import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.TDSCoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.ColumnInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.TDS;
@@ -38,7 +35,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Ge
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericTypeInstance;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -53,8 +50,6 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 import java.io.ByteArrayInputStream;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class TDSExtension implements InlineDSL
 {
@@ -80,9 +75,7 @@ public class TDSExtension implements InlineDSL
         final CsvReader.Result result;
         try
         {
-            final CsvSpecs specs = CsvSpecs.csv();
-            result = CsvReader.read(specs, new ByteArrayInputStream(val.getBytes()), SinkFactory.arrays());
-            System.out.println(ArrayIterate.collect(result.columns(), c -> c.name() + " " + convertType(c.dataType())));
+            result = CsvReader.read(CsvSpecs.csv(), new ByteArrayInputStream(val.getBytes()), SinkFactory.arrays());
         }
         catch (Exception e)
         {
@@ -91,7 +84,7 @@ public class TDSExtension implements InlineDSL
         }
 
         ProcessorSupport processorSupport = new M3ProcessorSupport(context, modelRepository);
-        SourceInformation src = new SourceInformation("", 0, 0, 0, 0);
+        SourceInformation src = new SourceInformation(fileName, 0, 0, 0, 0);
         Class<?> tdsType = (Class<?>) processorSupport.package_getByUserPath(M2TDSPaths.TDS);
         Class<CoreInstance> relationTypeClass = (Class<CoreInstance>) processorSupport.package_getByUserPath(M3Paths.RelationType);
         Class<?> any = (Class<?>) processorSupport.package_getByUserPath(M3Paths.Any);
@@ -125,7 +118,9 @@ public class TDSExtension implements InlineDSL
 
         tds._classifierGenericType(tdsGenericType);
 
-        System.out.println(org.finos.legend.pure.m3.navigation.generictype.GenericType.print(tdsGenericType, processorSupport));
+      //  System.out.println(org.finos.legend.pure.m3.navigation.generictype.GenericType.print(tdsGenericType, processorSupport));
+
+        Instance.setValueForProperty(tds, "csv", modelRepository.newStringCoreInstance(val), processorSupport);
 
         return tds;
 

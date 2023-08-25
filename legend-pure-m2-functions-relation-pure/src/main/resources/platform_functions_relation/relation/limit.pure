@@ -14,12 +14,9 @@
 
 import meta::pure::metamodel::relation::*;
 
-Class meta::pure::metamodel::relation::TDS<T> extends meta::pure::metamodel::relation::Relation<T> // T is of RelationType kind
+native function meta::pure::functions::relation::limit<T>(rel:Relation<T>[1], size:Integer[1]):Relation<T>[1];
+
+function meta::pure::functions::relation::limit<T>(rel:TDS<T>[1], size:Integer[1]):Relation<T>[1]
 {
-    csv : String[1];
+    $rel->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::limit($size);
 }
-
-
-//Class meta::pure::metamodel::relation::Table<T> extends meta::pure::metamodel::relation::Relation<T> // T is of RelationType kind
-//{
-//}

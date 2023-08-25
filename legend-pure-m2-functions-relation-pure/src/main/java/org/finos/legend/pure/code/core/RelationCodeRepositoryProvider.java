@@ -12,14 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::pure::metamodel::relation::*;
+package org.finos.legend.pure.code.core;
 
-Class meta::pure::metamodel::relation::TDS<T> extends meta::pure::metamodel::relation::Relation<T> // T is of RelationType kind
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProvider;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+
+public class RelationCodeRepositoryProvider implements CodeRepositoryProvider
 {
-    csv : String[1];
+    @Override
+    public CodeRepository repository()
+    {
+        return GenericCodeRepository.build("platform_functions_relation.definition.json");
+    }
 }
 
-
-//Class meta::pure::metamodel::relation::Table<T> extends meta::pure::metamodel::relation::Relation<T> // T is of RelationType kind
-//{
-//}

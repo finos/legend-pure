@@ -14,12 +14,9 @@
 
 import meta::pure::metamodel::relation::*;
 
-Class meta::pure::metamodel::relation::TDS<T> extends meta::pure::metamodel::relation::Relation<T> // T is of RelationType kind
+native function meta::pure::functions::relation::paginated<T>(rel:Relation<T>[1], pageNumber:Integer[1], pageSize: Integer[1]):Relation<T>[1];
+
+function meta::pure::functions::relation::paginated<T>(rel:TDS<T>[1], pageNumber:Integer[1], pageSize: Integer[1]):Relation<T>[1]
 {
-    csv : String[1];
+    $rel->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::paginated($pageNumber, $pageSize);
 }
-
-
-//Class meta::pure::metamodel::relation::Table<T> extends meta::pure::metamodel::relation::Relation<T> // T is of RelationType kind
-//{
-//}

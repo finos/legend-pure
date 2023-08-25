@@ -1,0 +1,43 @@
+// Copyright 2023 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::metamodel::relation::*;
+
+Enum meta::pure::functions::relation::SortType
+{
+    ASC, DESC
+}
+
+Class meta::pure::functions::relation::SortInfo
+{
+   column : String[1];
+   direction : SortType[1];
+}
+
+function meta::pure::functions::relation::descending(column:String[1]):SortInfo[1]
+{
+   ^SortInfo(column=$column, direction=SortType.DESC)
+}
+
+function meta::pure::functions::relation::ascending(column:String[1]):SortInfo[1]
+{
+   ^SortInfo(column=$column, direction=SortType.ASC)
+}
+
+native function meta::pure::functions::relation::sort<T>(rel:Relation<T>[1], sortInfo:SortInfo[1]):Relation<T>[1];
+
+function meta::pure::functions::relation::sort<T>(rel:TDS<T>[1], sortInfo:SortInfo[1]):Relation<T>[1]
+{
+    $rel->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::sort($sortInfo);
+}

@@ -14,4 +14,22 @@
 
 import meta::pure::metamodel::relation::*;
 
-native function meta::pure::functions::relation::filter<T>(rel:Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):T[1];
+native function meta::pure::functions::relation::filter<T>(rel:Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1];
+
+function meta::pure::functions::relation::filter<T>(rel:TDS<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1]
+{
+    $rel->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::filter($f);
+}
+
+
+function <<test.Test>> meta::pure::functions::relation::tests::filter::testSimpleFilter():Boolean[1]
+{
+    let res = #TDS
+                value
+                1
+                3
+                4
+              #->filter(x|$x.value > 1)
+               ->map(x|$x.value);
+    assertEquals([3,4], $res);
+}

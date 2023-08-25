@@ -71,13 +71,25 @@
                         </goals>
                     </execution>
                 </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.finos.legend.pure</groupId>
+                        <artifactId>legend-pure-m2-dsl-tds-grammar</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>
     <dependencies>
-<!--        <dependency>-->
-<!--            <groupId>org.finos.legend.pure</groupId>-->
-<!--            <artifactId>legend-pure-m3-core</artifactId>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-m3-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-m2-dsl-tds-pure</artifactId>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
 </project>

@@ -65,7 +65,26 @@ public class TestTDSDSLCompilation extends AbstractPureTestWithCoreCompiled
                         "         2, 4, B\n" +
                         "       #->rows()" +
                         ", 2);\n" +
-                        //"    print(A.all()->map(x|$x.a), 2);\n" +
+                        "}\n");
+        this.runtime.compile();
+
+        this.runtime.modify("file.pure",
+                "import meta::pure::metamodel::relation::*;" +
+                        "native function meta::pure::functions::relation::filter<T>(rel:Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1];\n" +
+                        "\n" +
+                        "function meta::pure::functions::relation::filter<T>(rel:TDS<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1]\n" +
+                        "{\n" +
+                        "    $rel->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::filter($f);\n" +
+                        "}" +
+                        "function test():Any[*]\n" +
+                        "{\n" +
+                        "   print(" +
+                        "       #TDS\n" +
+                        "         value, other, name\n" +
+                        "         1, 3, A\n" +
+                        "         2, 4, B\n" +
+                        "       #->filter(x|$x.value > 1)" +
+                        ", 2);\n" +
                         "}\n");
         this.runtime.compile();
 

@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::pure::metamodel::relation::*;
+package org.finos.legend.pure.runtime.java.interpreted.function.relation;
 
-Class meta::pure::metamodel::relation::TDS<T> extends meta::pure::metamodel::relation::Relation<T> // T is of RelationType kind
+import junit.framework.Test;
+import org.finos.legend.pure.runtime.java.interpreted.testHelper.PureTestBuilderInterpreted;
+
+public class TestRelationFunctions
 {
-    csv : String[1];
+    public static Test suite()
+    {
+        return PureTestBuilderInterpreted.buildSuite("meta::pure::functions::relation");
+    }
 }
-
-
-//Class meta::pure::metamodel::relation::Table<T> extends meta::pure::metamodel::relation::Relation<T> // T is of RelationType kind
-//{
-//}
