@@ -290,11 +290,18 @@ atomicExpression:
                  | expressionInstance
                  | unitInstance
                  | variable
+                 | columnBuilders
                  | (AT type)
                  | lambdaPipe
                  | lambdaFunction
                  | instanceReference
                  | (lambdaParam lambdaPipe)
+;
+
+columnBuilders: TILDE (colFunc | (BRACKET_OPEN colFunc(COMMA colFunc)* BRACKET_CLOSE))
+;
+
+colFunc: (identifier COLON (lambdaFunction | lambdaPipe | (lambdaParam lambdaPipe)))
 ;
 
 instanceReference: (PATH_SEPARATOR | qualifiedName | unitName) allOrFunction?

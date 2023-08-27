@@ -154,7 +154,6 @@ public class TypeInference
     public static void potentiallyUpdateParentTypeParamForInstanceValueWithManyElements(InstanceValue instance, TypeInferenceContext typeInferenceContext, ProcessorState state, ProcessorSupport processorSupport)
     {
         MutableList<TypeInferenceContextState> set = typeInferenceContext.drop(instance._values().size());
-
         if (typeInferenceContext.getParent() != null)
         {
             TypeInferenceContextState nonInstanceSpecificState = set.get(0);
@@ -174,7 +173,10 @@ public class TypeInference
                         allGenericTypes.add(v.getTypeParameterValue(typeParam));
                     }
                     CoreInstance res = org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(allGenericTypes, org.finos.legend.pure.m3.navigation.typeparameter.TypeParameter.isCovariant(possibleParentTypeParam), false, processorSupport);
-                    toRegisterTypes.put((GenericType) possibleParentTypeParam, (GenericType) res);
+                    if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(res))
+                    {
+                        toRegisterTypes.put((GenericType) possibleParentTypeParam, (GenericType) res);
+                    }
                 }
             }
 
@@ -194,7 +196,6 @@ public class TypeInference
                     toRegisterMultiplicities.put((Multiplicity) possibleParentMultiplicityTypeParam, (Multiplicity) res);
                 }
             }
-
             toRegisterTypes.forEachKeyValue((from, to) -> typeInferenceContext.getParent().register(from, to, typeInferenceContext.getParent(), state.getObserver()));
             toRegisterMultiplicities.forEachKeyValue((from, to) -> typeInferenceContext.getParent().registerMul(from, to, typeInferenceContext.getParent(), state.getObserver()));
         }

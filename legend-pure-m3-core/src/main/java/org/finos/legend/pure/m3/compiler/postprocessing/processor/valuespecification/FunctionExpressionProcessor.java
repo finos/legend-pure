@@ -135,11 +135,6 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                 else if (processorSupport.instance_instanceOf(sourceGenericType._rawType(), M3Paths.RelationType))
                 {
                     String name = functionExpression._propertyName()._valuesCoreInstance().getAny().getName();
-
-//                    RelationType<?> rel = (RelationType<?>)sourceGenericType._rawType();
-//                    Column<?,?> col = rel._columns().select(c -> c._name().equals(name)).getFirst();
-//                    foundFunctions.add(col);
-
                     CoreInstance rel = sourceGenericType._rawType();
                     CoreInstance col = Instance.getValueForMetaPropertyToManyResolved(rel, "columns", processorSupport).select(c -> Instance.getValueForMetaPropertyToOneResolved(c, "name", processorSupport).getName().equals(name)).getFirst();
                     if (col == null)
@@ -225,7 +220,6 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
 
                 }
             }
-
             if (foundFunctions.isEmpty())
             {
                 // Match the functionExpression with the Function library (may still need to do it even if the function is a property because it may have been reprocessed as a Collect!)
@@ -478,6 +472,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             }
         }
 
+
         if (finalFunction != null)
         {
             finalFunction._applications(Lists.immutable.<FunctionExpression>withAll(finalFunction._applications()).newWith(functionExpression));
@@ -502,6 +497,23 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                 catch (VariableNameConflictException e)
                 {
                     throw new PureCompilationException(functionExpression.getSourceInformation(), e.getMessage());
+                }
+            }
+            if ("funcColSpecArray_Function_MANY__String_MANY__T_1__FuncColSpecArray_1_".equals(finalFunction.getName()))
+            {
+
+                MutableList<ValueSpecification> parameters = Lists.mutable.withAll(functionExpression._parametersValues());
+                MutableList<CoreInstance> lambdas = Lists.mutable.withAll(parameters.get(0).getValueForMetaPropertyToMany("values"));
+                MutableList<CoreInstance> columns = Lists.mutable.withAll(parameters.get(2).getValueForMetaPropertyToOne("genericType").getValueForMetaPropertyToOne("rawType").getValueForMetaPropertyToMany("columns"));
+                if (lambdas.size() != columns.size())
+                {
+                    throw new PureCompilationException("Error while processing funcColSpecArray. The lambda count is different from the column number (" + lambdas.size() + " != " + columns.size() + ")");
+                }
+                for (int i = 0; i < lambdas.size(); i++)
+                {
+                    CoreInstance lambdaReturnType = lambdas.get(i).getValueForMetaPropertyToMany("expressionSequence").getLast().getValueForMetaPropertyToOne("genericType");
+                    CoreInstance columnGenericType = columns.get(i).getValueForMetaPropertyToOne("classifierGenericType").getValueForMetaPropertyToMany("typeArguments").get(1);
+                    columnGenericType.setKeyValues(Lists.mutable.with("rawType"), Lists.mutable.with(lambdaReturnType.getValueForMetaPropertyToOne("rawType")));
                 }
             }
         }

@@ -28,17 +28,27 @@ Class meta::pure::metamodel::relation::Column<U,V|m> extends Function<{U[1]->V[m
 {
 }
 
-Class meta::pure::metamodel::relation::ConcreteColumn<U,V|m> extends meta::pure::metamodel::relation::Column<U,V|m>
+
+
+Class meta::pure::metamodel::relation::ColSpec<T>
 {
+    name : String[1];
 }
 
-Class meta::pure::metamodel::relation::AggColumn<U,T,V> extends meta::pure::metamodel::relation::Column<U,V|0..1>
+Class meta::pure::metamodel::relation::FuncColSpec<Z,T>
 {
-  mapFn : FunctionDefinition<{U[1]->T[*]}>[1];
-  aggregateFn : FunctionDefinition<{T[*]->V[0..1]}>[1];
+    name : String[1];
+    function : Function<Z>[1];
 }
 
-Class meta::pure::metamodel::relation::FuncColumn<U,V|m> extends meta::pure::metamodel::relation::Column<U,V|m>
+Class meta::pure::metamodel::relation::ColSpecArray<T>
 {
-    func : FunctionDefinition<{U[1]->V[m]}>[1];
+    names : String[*];
 }
+
+Class meta::pure::metamodel::relation::FuncColSpecArray<Z,T>
+{
+    names : String[*];
+    functions : Function<Z>[*];
+}
+

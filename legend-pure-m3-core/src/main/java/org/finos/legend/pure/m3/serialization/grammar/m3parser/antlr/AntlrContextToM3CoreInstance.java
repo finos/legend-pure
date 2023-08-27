@@ -43,34 +43,15 @@ import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.PackageInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpressionInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.EnumStubInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.Import;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroupInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStubInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.PropertyStub;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.PropertyStubInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.*;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.constraint.Constraint;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.constraint.ConstraintInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.ProfileInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.StereotypeInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Tag;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TagInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TaggedValue;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TaggedValueInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.*;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinitionInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunctionInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.DefaultValue;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.DefaultValueInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.PropertyInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedPropertyInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.*;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.MultiplicityInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.MultiplicityValueInstance;
@@ -78,128 +59,17 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.As
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.AssociationProjectionInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.GeneralizationInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.ExistingPropertyRouteNode;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.ExistingPropertyRouteNodeInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.NewPropertyRouteNode;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.NewPropertyRouteNodeFunctionDefinition;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.NewPropertyRouteNodeFunctionDefinitionInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.NewPropertyRouteNodeInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.PropertyRouteNode;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.RootRouteNode;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.RootRouteNodeInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.RouteNode;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.RouteNodePropertyStub;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.RouteNodePropertyStubInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassProjectionInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.*;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.EnumerationInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionTypeInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.MeasureInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.UnitInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.*;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericTypeInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.TypeParameter;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.TypeParameterInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValueInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.SimpleFunctionExpression;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.SimpleFunctionExpressionInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpressionInstance;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.*;
+import org.finos.legend.pure.m3.navigation.*;
 import org.finos.legend.pure.m3.navigation._package._Package;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.AllOrFunctionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ArithmeticPartContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.AssociationContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.AssociationProjectionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.AtomicExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.BooleanPartContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.BuildMilestoningVariableExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ClassDefinitionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.CodeBlockContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.CombinedArithmeticOnlyContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.CombinedExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ComplexPropertyContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ConstraintContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ConstraintsContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ContravarianceTypeParameterContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DefaultValueContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DefaultValueExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DefinitionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DerivedPropertyContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DslContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.EnumDefinitionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.EnumValueContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.EqualNotEqualContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ExpressionInstanceAtomicRightSideContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ExpressionInstanceContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ExpressionInstanceParserPropertyAssignmentContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ExpressionInstanceRightSideContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ExpressionOrExpressionGroupContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ExpressionPartContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.FunctionDefinitionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.FunctionExpressionParametersContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.FunctionTypePureTypeContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.FunctionTypeSignatureContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.FunctionVariableExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.IdentifierContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.Import_statementContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ImportsContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.InstanceAtomicRightSideContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.InstanceContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.InstanceLiteralContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.InstanceLiteralTokenContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.InstancePropertyAssignmentContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.InstanceReferenceContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.InstanceRightSideContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.LambdaParamTypeContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.LambdaPipeContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.LetExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MappingContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MappingLineContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MultiplicityArgumentContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MultiplicityArgumentsContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.NativeFunctionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.NotExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.PackagePathContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ProfileContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ProgramLineContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.PropertiesContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.PropertyContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.PropertyExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.PropertyOrFunctionExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.PropertyRefContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.QualifiedNameContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.QualifiedPropertyContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.SignedExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.SimplePropertyContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.SourceAndTargetMappingIdContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.StereotypeContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.StereotypeDefinitionsContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.StereotypesContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TagDefinitionsContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TaggedValueContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TaggedValuesContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TreePathClassBodyContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TreePathContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TreePathPropertyParameterTypeContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TypeAndMultiplicityParametersContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TypeArgumentsContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TypeContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TypeParameterContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TypeParametersWithContravarianceAndMultiplicityParametersContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.VariableContext;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.*;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLTextContent;
@@ -1083,6 +953,41 @@ public class AntlrContextToM3CoreInstance
         {
             result = this.instanceLiteralToken(ctx.instanceLiteralToken(), wrapFlag);
         }
+        else if (ctx.columnBuilders() != null)
+        {
+            CoreInstance replacementFunction = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart()), null, null, importId, null);
+            replacementFunction.setKeyValues(Lists.mutable.with("functionName"), Lists.mutable.with(this.repository.newStringCoreInstance(ctx.columnBuilders().BRACKET_OPEN() != null ? "funcColSpecArray" : "funcColSpec")));
+
+            SourceInformation src = new SourceInformation("", 0, 0, 0, 0);
+            GenericTypeInstance relationTypeGenericType = GenericTypeInstance.createPersistent(this.repository);
+
+            MutableList<CoreInstance> lambdas = Lists.mutable.empty();
+            MutableList<CoreInstance> columnNames = Lists.mutable.empty();
+            MutableList<CoreInstance> columnInstances = Lists.mutable.empty();
+            ListIterate.forEach(ctx.columnBuilders().colFunc(), colFunc ->
+            {
+                columnNames.add(this.repository.newStringCoreInstance(colFunc.identifier().getText()));
+                if (colFunc.lambdaParam() != null && colFunc.lambdaPipe() != null)
+                {
+                    lambdas.add(processSingleParamLambda(colFunc.lambdaParam(), colFunc.lambdaPipe(), Lists.mutable.empty(), lambdaContext, space, false, importId, addLines, Lists.mutable.empty()));
+                }
+                else if (colFunc.lambdaFunction() != null)
+                {
+                    lambdas.add(processMultiParamLambda(colFunc.lambdaFunction(), Lists.mutable.empty(), lambdaContext, space, false, importId, addLines, Lists.mutable.empty()));
+                }
+                columnInstances.add(getColumnInstance(colFunc.identifier().getText(), null, processorSupport, src, relationTypeGenericType));
+            });
+
+            CoreInstance relationType = this.repository.newEphemeralCoreInstance("RelationType", processorSupport.package_getByUserPath(M3Paths.RelationType), src);
+            relationType.setKeyValues(Lists.mutable.with("columns"), columnInstances);
+            relationTypeGenericType._rawTypeCoreInstance(relationType);
+
+            replacementFunction.setKeyValues(Lists.mutable.with("parametersValues"),Lists.mutable.withAll(Lists.mutable.with(
+                    ValueSpecificationBootstrap.wrapValueSpecification(lambdas, true, processorSupport),
+                    ValueSpecificationBootstrap.wrapValueSpecification(columnNames, true, processorSupport),
+                    InstanceValueInstance.createPersistent(this.repository, "", relationTypeGenericType, this.getPureOne()))));
+            result = replacementFunction;
+        }
         else if (ctx.dsl() != null)
         {
             dsl = this.dsl(ctx.dsl(), importId);
@@ -1111,24 +1016,11 @@ public class AntlrContextToM3CoreInstance
         }
         else if (ctx.lambdaFunction() != null)
         {
-            boolean hasLambdaParams = false;
-            if (ctx.lambdaFunction().lambdaParam() != null)
-            {
-                for (int i = 0; i < ctx.lambdaFunction().lambdaParam().size(); i++)
-                {
-                    hasLambdaParams = true;
-                    IdentifierContext idCtx = ctx.lambdaFunction().lambdaParam(i).identifier();
-                    expr = this.lambdaParam(ctx.lambdaFunction().lambdaParam(i).lambdaParamType(), idCtx, typeParametersNames, space, importId);
-                    expressions.add(expr);
-                }
-            }
-            result = this.lambdaPipe(ctx.lambdaFunction().lambdaPipe(), hasLambdaParams ? ctx.lambdaFunction().lambdaParam(0).getStart() : null, expressions, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+            result = processMultiParamLambda(ctx.lambdaFunction(), typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines, expressions);
         }
         else if (ctx.lambdaParam() != null && ctx.lambdaPipe() != null)
         {
-            expr = this.lambdaParam(ctx.lambdaParam().lambdaParamType(), ctx.lambdaParam().identifier(), typeParametersNames, space, importId);
-            expressions.add(expr);
-            result = this.lambdaPipe(ctx.lambdaPipe(), ctx.lambdaParam().getStart(), expressions, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+            result = processSingleParamLambda(ctx.lambdaParam(), ctx.lambdaPipe(), typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines, expressions);
         }
         else if (ctx.instanceReference() != null)
         {
@@ -1141,6 +1033,49 @@ public class AntlrContextToM3CoreInstance
         }
         return result;
     }
+
+    private CoreInstance processMultiParamLambda(LambdaFunctionContext ctx, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines, MutableList<VariableExpression> expressions)
+    {
+        CoreInstance result;
+        VariableExpression expr;
+        boolean hasLambdaParams = false;
+        if (ctx.lambdaParam() != null)
+        {
+            for (int i = 0; i < ctx.lambdaParam().size(); i++)
+            {
+                hasLambdaParams = true;
+                IdentifierContext idCtx = ctx.lambdaParam(i).identifier();
+                expr = this.lambdaParam(ctx.lambdaParam(i).lambdaParamType(), idCtx, typeParametersNames, space, importId);
+                expressions.add(expr);
+            }
+        }
+        return this.lambdaPipe(ctx.lambdaPipe(), hasLambdaParams ? ctx.lambdaParam(0).getStart() : null, expressions, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+    }
+
+    public CoreInstance getColumnInstance(String name, String type, ProcessorSupport processorSupport, SourceInformation src, GenericType sourceType)
+    {
+        CoreInstance columnInstance = processorSupport.newAnonymousCoreInstance(src, M3Paths.Column);
+        columnInstance.setKeyValues(Lists.mutable.with("name"), Lists.mutable.with(this.repository.newStringCoreInstance(name)));
+        GenericType columnGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
+        columnGenericType._rawType((Type) _Package.getByUserPath(M3Paths.Column, processorSupport));
+        GenericType target = (GenericType) processorSupport.newEphemeralAnonymousCoreInstance(M3Paths.GenericType);
+        target._rawType(type == null ? null : (Type) _Package.getByUserPath(type, processorSupport));
+        columnGenericType._typeArguments(Lists.mutable.with(sourceType, target));
+        columnGenericType._multiplicityArgumentsAdd((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(1, 1, processorSupport));
+        columnInstance.setKeyValues(Lists.mutable.with("classifierGenericType"), Lists.mutable.with(columnGenericType));
+        return columnInstance;
+    }
+
+    private CoreInstance processSingleParamLambda(M3Parser.LambdaParamContext lambdaCtxt, M3Parser.LambdaPipeContext pipeContext, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines, MutableList<VariableExpression> expressions)
+    {
+        VariableExpression expr;
+        CoreInstance result;
+        expr = this.lambdaParam(lambdaCtxt.lambdaParamType(), lambdaCtxt.identifier(), typeParametersNames, space, importId);
+        expressions.add(expr);
+        result = this.lambdaPipe(pipeContext, lambdaCtxt.getStart(), expressions, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+        return result;
+    }
+
 
     private CoreInstance instanceReference(InstanceReferenceContext ctx, MutableList<String> typeParametersNames, LambdaContext lambdaContext, ImportGroup importId, String space, boolean addLines)
     {
@@ -1226,7 +1161,8 @@ public class AntlrContextToM3CoreInstance
             this.checkExists(ctx.qualifiedName().size() == 1 ? null : ctx.qualifiedName(1), ctx.identifier(), sourceInfo);
         }
 
-        CoreInstance classifier = this.processorSupport.package_getByUserPath(this.getQualifiedNameString(ctx.qualifiedName(0)));;
+        CoreInstance classifier = this.processorSupport.package_getByUserPath(this.getQualifiedNameString(ctx.qualifiedName(0)));
+        ;
         CoreInstance instance = ctx.identifier() == null ? this.repository.newAnonymousCoreInstance(sourceInfo, classifier) : this.repository.newCoreInstance(ctx.identifier().getText(), classifier, sourceInfo);
 
         if (topLevel)

@@ -19,7 +19,7 @@ import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.Test;
 
-public class AbstractTestNewQualifiedProperty extends AbstractPureTestWithCoreCompiled
+public abstract class AbstractTestNewQualifiedProperty extends AbstractPureTestWithCoreCompiled
 {
     @Test
     public void standardCall()

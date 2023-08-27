@@ -300,7 +300,11 @@ public class GenericType
         boolean isRawTypeAFunction = processorSupport.type_subTypeOf(rawType, functionClass);
         boolean isOtherRawTypeAFunction = processorSupport.type_subTypeOf(otherRawType, functionClass);
 
-        if (isRawTypeAFunction || isOtherRawTypeAFunction)
+        if (rawType instanceof FunctionType && otherRawType instanceof FunctionType)
+        {
+            return isFunctionTypeCompatible(rawType, otherRawType, processorSupport);
+        }
+        else if (isRawTypeAFunction || isOtherRawTypeAFunction)
         {
             if (!(isRawTypeAFunction && isOtherRawTypeAFunction))
             {
@@ -317,34 +321,39 @@ public class GenericType
             CoreInstance functionType = resolveFunctionGenericType(genericType, processorSupport);
             CoreInstance otherFunctionType = resolveFunctionGenericType(otherGenericType, processorSupport);
 
-            // Manages the Function<Any> use case
-            if (otherFunctionType == null)
-            {
-                return true;
-            }
-            if (functionType == null)
-            {
-                return false;
-            }
-            // -----------------------------------
-
-            ListIterable<? extends CoreInstance> parameters = Instance.getValueForMetaPropertyToManyResolved(functionType, M3Properties.parameters, processorSupport);
-            ListIterable<? extends CoreInstance> otherParameters = Instance.getValueForMetaPropertyToManyResolved(otherFunctionType, M3Properties.parameters, processorSupport);
-            if (parameters.size() != otherParameters.size())
-            {
-                return false;
-            }
-            boolean contravariant = true;
-            for (int i = 0; i < parameters.size(); i++)
-            {
-                contravariant &= isGenericCompatibleWith(Instance.getValueForMetaPropertyToOneResolved(parameters.get(i), M3Properties.genericType, processorSupport), Instance.getValueForMetaPropertyToOneResolved(otherParameters.get(i), M3Properties.genericType, processorSupport), false, processorSupport);
-            }
-            return contravariant && isGenericCompatibleWith(Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnType, processorSupport), Instance.getValueForMetaPropertyToOneResolved(otherFunctionType, M3Properties.returnType, processorSupport), true, processorSupport);
+            return isFunctionTypeCompatible(functionType, otherFunctionType, processorSupport);
         }
         else
         {
             return covariant ? Support.isCovariant(genericType, otherGenericType, processorSupport) : Support.isContravariant(genericType, otherGenericType, processorSupport);
         }
+    }
+
+    private static boolean isFunctionTypeCompatible(CoreInstance functionType, CoreInstance otherFunctionType, ProcessorSupport processorSupport)
+    {
+        // Manages the Function<Any> use case
+        if (otherFunctionType == null)
+        {
+            return true;
+        }
+        if (functionType == null)
+        {
+            return false;
+        }
+        // -----------------------------------
+
+        ListIterable<? extends CoreInstance> parameters = Instance.getValueForMetaPropertyToManyResolved(functionType, M3Properties.parameters, processorSupport);
+        ListIterable<? extends CoreInstance> otherParameters = Instance.getValueForMetaPropertyToManyResolved(otherFunctionType, M3Properties.parameters, processorSupport);
+        if (parameters.size() != otherParameters.size())
+        {
+            return false;
+        }
+        boolean contravariant = true;
+        for (int i = 0; i < parameters.size(); i++)
+        {
+            contravariant &= isGenericCompatibleWith(Instance.getValueForMetaPropertyToOneResolved(parameters.get(i), M3Properties.genericType, processorSupport), Instance.getValueForMetaPropertyToOneResolved(otherParameters.get(i), M3Properties.genericType, processorSupport), false, processorSupport);
+        }
+        return contravariant && isGenericCompatibleWith(Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnType, processorSupport), Instance.getValueForMetaPropertyToOneResolved(otherFunctionType, M3Properties.returnType, processorSupport), true, processorSupport);
     }
 
     public static ListIterable<CoreInstance> getAllSuperTypesIncludingSelf(CoreInstance genericType, ProcessorSupport processorSupport)
@@ -743,7 +752,10 @@ public class GenericType
         else if (processorSupport.instance_instanceOf(rawType, M3Paths.RelationType))
         {
             appendable.append("(" + rawType.getValueForMetaPropertyToMany("columns").collect(c ->
-                    c.getValueForMetaPropertyToOne("name").getName() + ":" + c.getValueForMetaPropertyToOne("classifierGenericType").getValueForMetaPropertyToMany("typeArguments").get(1).getValueForMetaPropertyToOne("rawType").getName()
+                    {
+                        CoreInstance type = c.getValueForMetaPropertyToOne("classifierGenericType").getValueForMetaPropertyToMany("typeArguments").get(1).getValueForMetaPropertyToOne("rawType");
+                        return c.getValueForMetaPropertyToOne("name").getName() + ":" + (type == null ? null : type.getName());
+                    }
             ).makeString(", ") + ")");
         }
         else if (fullPaths)
