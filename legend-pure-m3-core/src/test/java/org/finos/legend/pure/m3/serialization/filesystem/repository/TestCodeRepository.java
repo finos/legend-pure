@@ -26,13 +26,13 @@ public class TestCodeRepository
     @Test
     public void testIsValidRepositoryName()
     {
-        String[] validNames = {null, "platform", "core", "system", "core_relational", "a_b_c_d_e_f_g"};
+        String[] validNames = {null, "platform", "core", "system", "core_relational", "a_b_c_d_e_f_g", "core_1", "core_abc123", "core_a_1_b_2_c_3"};
         for (String name : validNames)
         {
             Assert.assertTrue(name, CodeRepository.isValidRepositoryName(name));
         }
 
-        String[] invalidNames = {"", "platform1", "Platform", "__", "aBc", "core-relational"};
+        String[] invalidNames = {"", "platform1", "Platform", "__", "aBc", "core-relational", "c1", "1"};
         for (String name : invalidNames)
         {
             Assert.assertFalse(name, CodeRepository.isValidRepositoryName(name));
