@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 
 public abstract class CodeRepository
 {
-    private static final Pattern VALID_REPO_NAME_PATTERN = Pattern.compile("[a-z]++(_[a-z]++)*+");
+    private static final Pattern VALID_REPO_NAME_PATTERN = Pattern.compile("[a-z]++(_[a-z0-9]++)*+");
 
     private final String name;
     private final Pattern allowedPackagesPattern;
