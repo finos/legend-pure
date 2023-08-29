@@ -231,6 +231,36 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
         );
     }
 
+    @Test
+    public void testCast()
+    {
+        compileInferenceTest(
+                        "function extend<T>(r:meta::pure::metamodel::relation::Relation<T>[1]):Any[*]\n" +
+                        "{\n" +
+                        "   $r->cast(@meta::pure::metamodel::relation::Relation<(a:Integer, f:String)>)->map(c|$c.a->toString() + $c.f);\n" +
+                        "}" +
+                        "native function map<T,V>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];");
+    }
+
+    @Test
+    public void testCastError()
+    {
+        try
+        {
+            compileInferenceTest(
+                    "function extend<T>(r:meta::pure::metamodel::relation::Relation<T>[1]):Any[*]\n" +
+                            "{\n" +
+                            "   $r->cast(@meta::pure::metamodel::relation::Relation<(a:Integer, f:String)>)->map(c|$c.z);\n" +
+                            "}" +
+                            "native function map<T,V>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];");
+            fail();
+        }
+        catch (Exception e)
+        {
+            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:90), \"The system can't find the column z in the Relation (a:Integer, f:String)\"", e.getMessage());
+        }
+    }
+
     private void compileInferenceTest(String source)
     {
         compileTestSource(inferenceTestFileName, source);

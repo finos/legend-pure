@@ -976,7 +976,7 @@ public class AntlrContextToM3CoreInstance
                 {
                     lambdas.add(processMultiParamLambda(colFunc.lambdaFunction(), Lists.mutable.empty(), lambdaContext, space, false, importId, addLines, Lists.mutable.empty()));
                 }
-                columnInstances.add(getColumnInstance(colFunc.identifier().getText(), null, processorSupport, src, relationTypeGenericType));
+                columnInstances.add(getColumnInstance(colFunc.identifier().getText(), (String) null, processorSupport, src, relationTypeGenericType));
             });
 
             CoreInstance relationType = this.repository.newEphemeralCoreInstance("RelationType", processorSupport.package_getByUserPath(M3Paths.RelationType), src);
@@ -1053,15 +1053,20 @@ public class AntlrContextToM3CoreInstance
         return this.lambdaPipe(ctx.lambdaPipe(), hasLambdaParams ? ctx.lambdaParam(0).getStart() : null, expressions, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
     }
 
-    public CoreInstance getColumnInstance(String name, String type, ProcessorSupport processorSupport, SourceInformation src, GenericType sourceType)
+    public static CoreInstance getColumnInstance(String name, String type, ProcessorSupport processorSupport, SourceInformation src, GenericType sourceType)
     {
-        CoreInstance columnInstance = processorSupport.newAnonymousCoreInstance(src, M3Paths.Column);
-        columnInstance.setKeyValues(Lists.mutable.with("name"), Lists.mutable.with(this.repository.newStringCoreInstance(name)));
-        GenericType columnGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
-        columnGenericType._rawType((Type) _Package.getByUserPath(M3Paths.Column, processorSupport));
         GenericType target = (GenericType) processorSupport.newEphemeralAnonymousCoreInstance(M3Paths.GenericType);
         target._rawType(type == null ? null : (Type) _Package.getByUserPath(type, processorSupport));
-        columnGenericType._typeArguments(Lists.mutable.with(sourceType, target));
+        return getColumnInstance(name, target, processorSupport, src, sourceType);
+    }
+
+    public static CoreInstance getColumnInstance(String name, GenericType targetType, ProcessorSupport processorSupport, SourceInformation src, GenericType sourceType)
+    {
+        CoreInstance columnInstance = processorSupport.newAnonymousCoreInstance(src, M3Paths.Column);
+        columnInstance.setKeyValues(Lists.mutable.with("name"), Lists.mutable.with(sourceType.getRepository().newStringCoreInstance(name)));
+        GenericType columnGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
+        columnGenericType._rawType((Type) _Package.getByUserPath(M3Paths.Column, processorSupport));
+        columnGenericType._typeArguments(Lists.mutable.with(sourceType, targetType));
         columnGenericType._multiplicityArgumentsAdd((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(1, 1, processorSupport));
         columnInstance.setKeyValues(Lists.mutable.with("classifierGenericType"), Lists.mutable.with(columnGenericType));
         return columnInstance;
@@ -1888,20 +1893,31 @@ public class AntlrContextToM3CoreInstance
         {
             return this.processUnitType(ctx.unitName(), importId);
         }
-
-        GenericType returnType = this.type(ctx.type(), typeParametersNames, spacePlusTabs(space, 5), importId, addLines);
-        Multiplicity returnMultiplicity = this.buildMultiplicity(ctx.multiplicity().multiplicityArgument());
-        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop());
-        FunctionTypeInstance functionTypeInstance = FunctionTypeInstance.createPersistent(this.repository, sourceInfo, returnMultiplicity, returnType);
-
-        MutableList<VariableExpression> params = ListIterate.collect(ctx.functionTypePureType(), fCtx -> typeFunctionTypePureType(fCtx, typeParametersNames, space, importId, addLines));
-        if (params.notEmpty())
+        if (ctx.CURLY_BRACKET_OPEN() != null)
         {
-            functionTypeInstance._parameters(params);
+            GenericType returnType = this.type(ctx.type(), typeParametersNames, spacePlusTabs(space, 5), importId, addLines);
+            Multiplicity returnMultiplicity = this.buildMultiplicity(ctx.multiplicity().multiplicityArgument());
+            SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop());
+            FunctionTypeInstance functionTypeInstance = FunctionTypeInstance.createPersistent(this.repository, sourceInfo, returnMultiplicity, returnType);
+
+            MutableList<VariableExpression> params = ListIterate.collect(ctx.functionTypePureType(), fCtx -> typeFunctionTypePureType(fCtx, typeParametersNames, space, importId, addLines));
+            if (params.notEmpty())
+            {
+                functionTypeInstance._parameters(params);
+            }
+            GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
+            genericTypeInstance._rawTypeCoreInstance(functionTypeInstance);
+            return genericTypeInstance;
         }
-        GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
-        genericTypeInstance._rawTypeCoreInstance(functionTypeInstance);
-        return genericTypeInstance;
+        if (ctx.GROUP_OPEN() != null)
+        {
+            GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
+            CoreInstance relationType = processorSupport.newCoreInstance("", M3Paths.RelationType, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()));
+            relationType.setKeyValues(Lists.mutable.with("columns"), ListIterate.collect(ctx.columnType(), c -> getColumnInstance(c.identifier().getText(), this.type(c.type(), typeParametersNames, spacePlusTabs(space, 5), importId, addLines), processorSupport, this.sourceInformation.getPureSourceInformation(c.getStart(), c.getStart(), c.getStop()), genericTypeInstance)));
+            genericTypeInstance._rawTypeCoreInstance(relationType);
+            return genericTypeInstance;
+        }
+        throw new PureParserException(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), "Type not understood");
     }
 
     private SimpleFunctionExpression functionExpression(QualifiedNameContext funcName, MutableList<ValueSpecification> parameters, ImportGroup importId)
@@ -3145,7 +3161,7 @@ public class AntlrContextToM3CoreInstance
                     {
                         GenericType right = type(typeOperationContext.addType() != null ? typeOperationContext.addType().type() : typeOperationContext.subType().type(), typeParametersNames, space, importId, addLines);
                         String type = typeOperationContext.addType() != null ? "Union" : "Difference";
-                        return GenericTypeOperationInstance.createPersistent(repository, genericType, right, (Enum)findEnum(M3Paths.GenericTypeOperationType, type, repository));
+                        return GenericTypeOperationInstance.createPersistent(repository, genericType, right, (Enum) findEnum(M3Paths.GenericTypeOperationType, type, repository));
                     });
         }
 

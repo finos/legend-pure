@@ -442,7 +442,16 @@ type: ( qualifiedName (LESSTHAN (typeArguments? (PIPE multiplicityArguments)?) G
         CURLY_BRACKET_CLOSE
       )
       |
+      (
+        GROUP_OPEN
+            columnType (COMMA columnType)*
+        GROUP_CLOSE
+      )
+      |
       unitName
+;
+
+columnType : identifier COLON type
 ;
 
 multiplicity: BRACKET_OPEN multiplicityArgument BRACKET_CLOSE
