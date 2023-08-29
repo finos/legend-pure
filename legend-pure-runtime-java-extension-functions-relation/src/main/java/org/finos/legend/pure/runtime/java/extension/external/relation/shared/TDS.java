@@ -92,7 +92,7 @@ public class TDS
                     break;
                 }
                 default:
-                    throw new RuntimeException("ERROR " + columnType.get(columnName));
+                    throw new RuntimeException("ERROR " + columnType.get(columnName) + " not supported in copy!");
             }
             result.dataByColumnName.put(columnName, copy);
         });
@@ -122,8 +122,53 @@ public class TDS
                     dataByColumnName.put(columnName, target);
                     break;
                 }
+                case CHAR:
+                {
+                    char[] src = (char[]) dataAsObject;
+                    char[] target = new char[(int) rowCount - size];
+                    int j = 0;
+                    for (int i = 0; i < rowCount; i++)
+                    {
+                        if (!rows.contains(i))
+                        {
+                            target[j++] = src[i];
+                        }
+                    }
+                    dataByColumnName.put(columnName, target);
+                    break;
+                }
+                case STRING:
+                {
+                    String[] src = (String[]) dataAsObject;
+                    String[] target = new String[(int) rowCount - size];
+                    int j = 0;
+                    for (int i = 0; i < rowCount; i++)
+                    {
+                        if (!rows.contains(i))
+                        {
+                            target[j++] = src[i];
+                        }
+                    }
+                    dataByColumnName.put(columnName, target);
+                    break;
+                }
+                case DOUBLE:
+                {
+                    double[] src = (double[]) dataAsObject;
+                    double[] target = new double[(int) rowCount - size];
+                    int j = 0;
+                    for (int i = 0; i < rowCount; i++)
+                    {
+                        if (!rows.contains(i))
+                        {
+                            target[j++] = src[i];
+                        }
+                    }
+                    dataByColumnName.put(columnName, target);
+                    break;
+                }
                 default:
-                    throw new RuntimeException("ERROR " + columnType.get(columnName));
+                    throw new RuntimeException("ERROR " + columnType.get(columnName) + " not supported in drop!");
             }
         });
         this.rowCount = rowCount - size;
@@ -161,7 +206,7 @@ public class TDS
                 break;
             }
             default:
-                throw new RuntimeException("ERROR " + columnType.get(columnName));
+                throw new RuntimeException("ERROR " + columnType.get(columnName) + " not supported in getValue");
         }
         return result;
     }

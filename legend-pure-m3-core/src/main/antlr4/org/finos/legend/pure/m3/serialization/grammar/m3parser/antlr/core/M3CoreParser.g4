@@ -433,7 +433,7 @@ booleanPart:  AND expression
 functionVariableExpression: identifier COLON type multiplicity
 ;
 
-type: ( qualifiedName (LESSTHAN typeArguments? (PIPE multiplicityArguments)? GREATERTHAN)? )
+type: ( qualifiedName (LESSTHAN (typeArguments? (PIPE multiplicityArguments)?) GREATERTHAN)? )
       |
       (
         CURLY_BRACKET_OPEN
@@ -482,7 +482,19 @@ multiplicityArguments: multiplicityArgument (COMMA multiplicityArgument)*
 multiplicityArgument: identifier | ((fromMultiplicity DOTDOT)? toMultiplicity)
 ;
 
-typeArguments: type (COMMA type)*
+typeArguments: typeWithOperation (COMMA typeWithOperation)*
+;
+
+typeWithOperation : type(typeOperation)*
+;
+
+typeOperation: addType|subType
+;
+
+addType: PLUS type
+;
+
+subType: MINUS type
 ;
 
 multiplictyParameters: PIPE identifier (COMMA identifier)*

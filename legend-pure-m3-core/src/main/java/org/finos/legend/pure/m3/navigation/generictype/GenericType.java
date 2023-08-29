@@ -14,22 +14,24 @@
 
 package org.finos.legend.pure.m3.navigation.generictype;
 
+import org.eclipse.collections.api.factory.Bags;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.GenericTypeOperation;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.GenericTypeOperationInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.*;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.linearization.C3Linearization;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
@@ -106,21 +108,87 @@ public class GenericType
 
         genericTypeByTypeParameterNames = genericTypeByTypeParameterNames.reject((s, coreInstance) -> typeArgument.equals(coreInstance));
 
-        if (!isGenericTypeConcrete(typeArgument))
+        if (processorSupport.instance_instanceOf(typeArgument, M3Paths.GenericTypeOperation))
         {
-            if (!hasFullyConcreteTypeArguments(typeArgument, processorSupport) || !hasConcreteMultiplicityArguments(typeArgument, processorSupport))
+            return resolveOperation(typeArgument, genericTypeByTypeParameterNames, processorSupport);
+        }
+        else
+        {
+            if (!isGenericTypeConcrete(typeArgument))
             {
-                throw new RuntimeException("TO HANDLE! Don't want to process the replaced one ... but may want to process the original!");
+                if (!hasFullyConcreteTypeArguments(typeArgument, processorSupport) || !hasConcreteMultiplicityArguments(typeArgument, processorSupport))
+                {
+                    throw new RuntimeException("TO HANDLE! Don't want to process the replaced one ... but may want to process the original!");
+                }
+                return genericTypeByTypeParameterNames.getIfAbsentValue(getTypeParameterName(typeArgument, processorSupport), typeArgument);
             }
-            return genericTypeByTypeParameterNames.getIfAbsentValue(getTypeParameterName(typeArgument), typeArgument);
+
+            if (org.finos.legend.pure.m3.navigation.function.FunctionType.isFunctionType(Instance.getValueForMetaPropertyToOneResolved(typeArgument, M3Properties.rawType, processorSupport), processorSupport))
+            {
+                return Support.reprocessFunctionTypeReplaceTypeParamsByConcreteTypes(typeArgument, genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
+            }
+
+            return Support.reprocessGenericTypeHavingNonConcreteTypeArguments(typeArgument, genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
         }
 
-        if (org.finos.legend.pure.m3.navigation.function.FunctionType.isFunctionType(Instance.getValueForMetaPropertyToOneResolved(typeArgument, M3Properties.rawType, processorSupport), processorSupport))
+    }
+
+    public static CoreInstance resolveOperation(CoreInstance operation, MapIterable<String, CoreInstance> genericTypeByTypeParameterNames, ProcessorSupport processorSupport)
+    {
+        CoreInstance left = operation.getValueForMetaPropertyToOne("left");
+        if (processorSupport.instance_instanceOf(left, M3Paths.GenericTypeOperation))
         {
-            return Support.reprocessFunctionTypeReplaceTypeParamsByConcreteTypes(typeArgument, genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
+            left = resolveOperation(left, genericTypeByTypeParameterNames, processorSupport);
+            CoreInstance right = operation.getValueForMetaPropertyToOne("right");
+            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) genericTypeByTypeParameterNames.getIfAbsentValue(getTypeParameterName(right, processorSupport), right);
+            if (GenericType.isGenericTypeConcrete(left) && GenericType.isGenericTypeConcrete(gRight))
+            {
+                return merge(operation, processorSupport, left, gRight);
+            }
+            else
+            {
+                return GenericTypeOperationInstance.createPersistent(operation.getRepository(), (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) left, gRight, ((GenericTypeOperation) operation)._type());
+            }
         }
+        else
+        {
+            CoreInstance right = operation.getValueForMetaPropertyToOne("right");
+            CoreInstance gLeft = genericTypeByTypeParameterNames.getIfAbsentValue(getTypeParameterName(left, processorSupport), left);
+            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) genericTypeByTypeParameterNames.getIfAbsentValue(getTypeParameterName(right, processorSupport), right);
+            if (GenericType.isGenericTypeConcrete(gLeft) && GenericType.isGenericTypeConcrete(gRight))
+            {
+                return merge(operation, processorSupport, gLeft, gRight);
+            }
+            else
+            {
+                return GenericTypeOperationInstance.createPersistent(operation.getRepository(), (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) gLeft, gRight, ((GenericTypeOperation) operation)._type());
+            }
+        }
+    }
 
-        return Support.reprocessGenericTypeHavingNonConcreteTypeArguments(typeArgument, genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
+    private static CoreInstance merge(CoreInstance operation, ProcessorSupport processorSupport, CoreInstance gLeft, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight)
+    {
+        CoreInstance newGenericType = processorSupport.newGenericType(null, operation, true);
+        CoreInstance newRelationType = processorSupport.newAnonymousCoreInstance(null, M3Paths.RelationType);
+        MutableList<CoreInstance> cols = Lists.mutable.empty();
+        cols.addAll(gLeft.getValueForMetaPropertyToOne("rawType").getValueForMetaPropertyToMany("columns").toList());
+        if (operation.getValueForMetaPropertyToOne("type").getName().equals("Union"))
+        {
+            cols.addAll(gRight.getValueForMetaPropertyToOne("rawType").getValueForMetaPropertyToMany("columns").toList());
+        }
+        else
+        {
+            MutableSet<String> names = Sets.mutable.withAll(gRight.getValueForMetaPropertyToOne("rawType").getValueForMetaPropertyToMany("columns").collect(c -> c.getValueForMetaPropertyToOne("name").getName()));
+            cols = cols.select(c -> !names.contains(c.getValueForMetaPropertyToOne("name").getName()));
+        }
+        newRelationType.setKeyValues(Lists.mutable.with("columns"), cols);
+        newGenericType.setKeyValues(Lists.mutable.with("rawType"), Lists.mutable.with(newRelationType));
+        MutableSet<String> potentialDups = Sets.mutable.withAll(Bags.mutable.withAll(cols.collect(c -> c.getValueForMetaPropertyToOne("name").getName())).selectDuplicates());
+        if (!potentialDups.isEmpty())
+        {
+            throw new PureCompilationException("The relation contains duplicates: " + potentialDups);
+        }
+        return newGenericType;
     }
 
     @Deprecated
@@ -723,22 +791,32 @@ public class GenericType
         }
         else
         {
-            CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
-            ListIterable<? extends CoreInstance> typeArguments = genericType.getValueForMetaPropertyToMany(M3Properties.typeArguments);
-            ListIterable<? extends CoreInstance> multiplicityArguments = Instance.getValueForMetaPropertyToManyResolved(genericType, M3Properties.multiplicityArguments, processorSupport);
-            if (rawType == null)
+            if (processorSupport.instance_instanceOf(genericType, M3Paths.GenericTypeOperation))
             {
-                String typeParameterName = getTypeParameterName(genericType);
-                appendable.append((typeParameterName == null) ? "NULL" : typeParameterName);
-                printTypeAndMultiplicityArguments(appendable, typeArguments, multiplicityArguments, fullPaths, markImportStubs, processorSupport);
+                String type = genericType.getValueForMetaPropertyToOne("type").getName();
+                print(appendable, genericType.getValueForMetaPropertyToOne("left"), fullPaths, markImportStubs, processorSupport);
+                appendable.append(type.equals("Union") ? "+" : "-");
+                print(appendable, genericType.getValueForMetaPropertyToOne("right"), fullPaths, markImportStubs, processorSupport);
             }
             else
             {
-                if (markImportStubs && processorSupport.instance_instanceOf(genericType.getValueForMetaPropertyToOne(M3Properties.rawType), M3Paths.ImportStub))
+                CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
+                ListIterable<? extends CoreInstance> typeArguments = genericType.getValueForMetaPropertyToMany(M3Properties.typeArguments);
+                ListIterable<? extends CoreInstance> multiplicityArguments = Instance.getValueForMetaPropertyToManyResolved(genericType, M3Properties.multiplicityArguments, processorSupport);
+                if (rawType == null)
                 {
-                    appendable.append('~');
+                    String typeParameterName = getTypeParameterName(genericType, processorSupport);
+                    appendable.append((typeParameterName == null) ? "NULL" : typeParameterName);
+                    printTypeAndMultiplicityArguments(appendable, typeArguments, multiplicityArguments, fullPaths, markImportStubs, processorSupport);
                 }
-                print(appendable, rawType, typeArguments, multiplicityArguments, fullPaths, markImportStubs, processorSupport);
+                else
+                {
+                    if (markImportStubs && processorSupport.instance_instanceOf(genericType.getValueForMetaPropertyToOne(M3Properties.rawType), M3Paths.ImportStub))
+                    {
+                        appendable.append('~');
+                    }
+                    print(appendable, rawType, typeArguments, multiplicityArguments, fullPaths, markImportStubs, processorSupport);
+                }
             }
         }
     }
@@ -862,9 +940,30 @@ public class GenericType
 
     private static CoreInstance copyGenericType(CoreInstance genericType, boolean replaceSourceInfo, SourceInformation newSourceInfo, ProcessorSupport processorSupport, boolean inferred)
     {
-        return isGenericTypeConcrete(genericType) ?
-                copyConcreteGenericType(genericType, replaceSourceInfo, newSourceInfo, processorSupport, inferred) :
-                copyNonConcreteGenericType(genericType, replaceSourceInfo, newSourceInfo, processorSupport, inferred);
+        if (processorSupport.instance_instanceOf(genericType, M3Paths.GenericTypeOperation))
+        {
+            return copyGenericTypeOperation(genericType, replaceSourceInfo, newSourceInfo, processorSupport, inferred);
+        }
+        else if (isGenericTypeConcrete(genericType))
+        {
+            return copyConcreteGenericType(genericType, replaceSourceInfo, newSourceInfo, processorSupport, inferred);
+        }
+        else
+        {
+            return copyNonConcreteGenericType(genericType, replaceSourceInfo, newSourceInfo, processorSupport, inferred);
+        }
+    }
+
+    private static CoreInstance copyGenericTypeOperation(CoreInstance genericType, boolean replaceSourceInfo, SourceInformation newSourceInfo, ProcessorSupport processorSupport, boolean inferred)
+    {
+        CoreInstance right = copyGenericType(genericType.getValueForMetaPropertyToOne("right"), replaceSourceInfo, newSourceInfo, processorSupport, inferred);
+        CoreInstance left = copyGenericType(genericType.getValueForMetaPropertyToOne("left"), replaceSourceInfo, newSourceInfo, processorSupport, inferred);
+        Enum type = (Enum) genericType.getValueForMetaPropertyToOne("type");
+        CoreInstance coreInstance = processorSupport.newAnonymousCoreInstance(newSourceInfo, M3Paths.GenericTypeOperation);
+        coreInstance.setKeyValues(Lists.mutable.with("right"), Lists.mutable.with(right));
+        coreInstance.setKeyValues(Lists.mutable.with("left"), Lists.mutable.with(left));
+        coreInstance.setKeyValues(Lists.mutable.with("type"), Lists.mutable.with(type));
+        return coreInstance;
     }
 
     private static CoreInstance copyConcreteGenericType(CoreInstance genericType, boolean replaceSourceInfo, SourceInformation newSourceInfo, ProcessorSupport processorSupport, boolean inferred)

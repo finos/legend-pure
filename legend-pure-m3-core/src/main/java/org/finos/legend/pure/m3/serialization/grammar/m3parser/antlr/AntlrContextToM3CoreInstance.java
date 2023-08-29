@@ -55,6 +55,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.proper
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.MultiplicityInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.MultiplicityValueInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.GenericTypeOperationInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.AssociationInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.AssociationProjectionInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
@@ -982,7 +983,7 @@ public class AntlrContextToM3CoreInstance
             relationType.setKeyValues(Lists.mutable.with("columns"), columnInstances);
             relationTypeGenericType._rawTypeCoreInstance(relationType);
 
-            replacementFunction.setKeyValues(Lists.mutable.with("parametersValues"),Lists.mutable.withAll(Lists.mutable.with(
+            replacementFunction.setKeyValues(Lists.mutable.with("parametersValues"), Lists.mutable.withAll(Lists.mutable.with(
                     ValueSpecificationBootstrap.wrapValueSpecification(lambdas, true, processorSupport),
                     ValueSpecificationBootstrap.wrapValueSpecification(columnNames, true, processorSupport),
                     InstanceValueInstance.createPersistent(this.repository, "", relationTypeGenericType, this.getPureOne()))));
@@ -3126,11 +3127,29 @@ public class AntlrContextToM3CoreInstance
     private ListIterable<GenericType> typeArguments(TypeArgumentsContext ctx, MutableList<String> typeParametersNames, ImportGroup importId, boolean addLines)
     {
         MutableList<GenericType> result = Lists.mutable.empty();
-        if (ctx != null && ctx.type() != null)
+        if (ctx != null && ctx.typeWithOperation() != null)
         {
-            ListIterate.collect(ctx.type(), typeCtx -> type(typeCtx, typeParametersNames, "", importId, addLines), result);
+            ListIterate.collect(ctx.typeWithOperation(), typeCtx -> typeWithOperation(typeCtx, typeParametersNames, "", importId, addLines), result);
         }
         return result;
+    }
+
+    private GenericType typeWithOperation(TypeWithOperationContext typeCtx, MutableList<String> typeParametersNames, String space, ImportGroup importId, boolean addLines)
+    {
+        if (!typeCtx.typeOperation().isEmpty())
+        {
+            return ListIterate.injectInto(
+                    type(typeCtx.type(), typeParametersNames, space, importId, addLines),
+                    typeCtx.typeOperation(),
+                    (genericType, typeOperationContext) ->
+                    {
+                        GenericType right = type(typeOperationContext.addType() != null ? typeOperationContext.addType().type() : typeOperationContext.subType().type(), typeParametersNames, space, importId, addLines);
+                        String type = typeOperationContext.addType() != null ? "Union" : "Difference";
+                        return GenericTypeOperationInstance.createPersistent(repository, genericType, right, (Enum)findEnum(M3Paths.GenericTypeOperationType, type, repository));
+                    });
+        }
+
+        return type(typeCtx.type(), typeParametersNames, space, importId, addLines);
     }
 
     private GenericType processType(QualifiedNameContext classParserPath, MutableList<String> typeParametersNames, ListIterable<GenericType> possibleTypeArguments, ListIterable<Multiplicity> possibleMultiplicityArguments, ImportGroup importId)

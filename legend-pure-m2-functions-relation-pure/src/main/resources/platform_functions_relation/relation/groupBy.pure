@@ -14,5 +14,4 @@
 
 import meta::pure::metamodel::relation::*;
 
-// W = Z + R
-native function meta::pure::functions::relation::groupBy<T,Z,K,V,R,W>(r:Relation<T>[1], cols:ColSpecArray<Z>[1], agg:FuncColSpec<Pair<{T[1]->K[*]},{K[*]->V[0..1]}>,R>[1]):Relation<W>[1];
+native function meta::pure::functions::relation::groupBy<T,Z,K,V,R>(r:Relation<T>[1], cols:ColSpecArray<Z>[1], agg:FuncColSpec<Pair<{T[1]->K[*]},{K[*]->V[0..1]}>,R>[1]):Relation<Z+R>[1];

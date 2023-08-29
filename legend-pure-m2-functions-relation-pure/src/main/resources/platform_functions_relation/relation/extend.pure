@@ -14,8 +14,16 @@
 
 import meta::pure::metamodel::relation::*;
 
-// W = T + Z
-native function meta::pure::functions::relation::extend<T,Z,W>(r:Relation<T>[1], f:FuncColSpec<{T[1]->Any[0..1]},Z>[1]):Relation<W>[1];
+native function meta::pure::functions::relation::extend<T,Z>(r:Relation<T>[1], f:FuncColSpec<{T[1]->Any[0..1]},Z>[1]):Relation<T+Z>[1];
 
-// W = T + Z
-native function meta::pure::functions::relation::extend<T,Z,W>(r:Relation<T>[1], fs:FuncColSpecArray<{T[1]->Any[0..1]},Z>[1]):Relation<W>[1];
+function meta::pure::functions::relation::extend<T,Z>(r:TDS<T>[1], f:FuncColSpec<{T[1]->Any[0..1]},Z>[1]):Relation<T+Z>[1]
+{
+    $r->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::extend($f);
+}
+
+native function meta::pure::functions::relation::extend<T,Z>(r:Relation<T>[1], fs:FuncColSpecArray<{T[1]->Any[0..1]},Z>[1]):Relation<T+Z>[1];
+
+function meta::pure::functions::relation::extend<T,Z>(r:TDS<T>[1], fs:FuncColSpecArray<{T[1]->Any[0..1]},Z>[1]):Relation<T+Z>[1]
+{
+    $r->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::extend($fs);
+}

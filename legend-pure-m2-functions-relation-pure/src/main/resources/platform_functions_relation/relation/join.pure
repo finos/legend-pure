@@ -14,5 +14,9 @@
 
 import meta::pure::metamodel::relation::*;
 
-//W = T + V
-native function meta::pure::functions::relation::join<T,V,W>(rel1:Relation<T>[1], rel2:Relation<V>[1]):Relation<W>[1];
+native function meta::pure::functions::relation::join<T,V>(rel1:Relation<T>[1], rel2:Relation<V>[1], f:Function<{Relation<T>[1],Relation<V>[1]->Boolean[1]}>[1]):Relation<T+V>[1];
+
+function meta::pure::functions::relation::join<T,V>(rel1:TDS<T>[1], rel2:TDS<V>[1], f:Function<{Relation<T>[1],Relation<V>[1]-> Boolean[1]}>[1]):Relation<T+V>[1]
+{
+    $rel1->cast(@Relation<T>)->join($rel2->cast(@Relation<V>), $f);
+}

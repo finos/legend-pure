@@ -139,7 +139,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                     CoreInstance col = Instance.getValueForMetaPropertyToManyResolved(rel, "columns", processorSupport).select(c -> Instance.getValueForMetaPropertyToOneResolved(c, "name", processorSupport).getName().equals(name)).getFirst();
                     if (col == null)
                     {
-                        throw new PureCompilationException(functionExpression.getSourceInformation(), "The system can't find the column " + name + " in the Relation " + rel.getName());
+                        throw new PureCompilationException(functionExpression.getSourceInformation(), "The system can't find the column " + name + " in the Relation " + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(processorSupport.type_wrapGenericType(rel), processorSupport));
                     }
                     foundFunctions.add((Function<?>) col);
 

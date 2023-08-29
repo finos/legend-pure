@@ -40,7 +40,7 @@ class Support
     {
         CoreInstance currentRawType = Instance.getValueForMetaPropertyToOneResolved(current.getGenericType(), M3Properties.rawType, processorSupport);
         CoreInstance rawTypeToFind = Instance.getValueForMetaPropertyToOneResolved(genericTypeToFind, M3Properties.rawType, processorSupport);
-        if (currentRawType == rawTypeToFind)
+        if (currentRawType == rawTypeToFind || (processorSupport.instance_instanceOf(currentRawType, M3Paths.RelationType) && processorSupport.instance_instanceOf(rawTypeToFind, M3Paths.RelationType)))
         {
             results.add(current);
         }
@@ -57,7 +57,7 @@ class Support
     static void resolveMultiplicityArgumentsForGenericTypeToFindUsingInheritanceTree(GenericTypeWithXArguments current, CoreInstance rawTypeToFind, MutableList<GenericTypeWithXArguments> results, ProcessorSupport processorSupport)
     {
         CoreInstance currentRawType = Instance.getValueForMetaPropertyToOneResolved(current.getGenericType(), M3Properties.rawType, processorSupport);
-        if (currentRawType == rawTypeToFind)
+        if (currentRawType == rawTypeToFind || (processorSupport.instance_instanceOf(currentRawType, M3Paths.RelationType) && processorSupport.instance_instanceOf(rawTypeToFind, M3Paths.RelationType)))
         {
             results.add(current);
         }

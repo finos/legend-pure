@@ -14,5 +14,9 @@
 
 import meta::pure::metamodel::relation::*;
 
-//W = T - Z + V
-native function meta::pure::functions::relation::rename<T,Z,V,W>(r:Relation<T>[1], old:ColSpec<Z>[1], new:ColSpec<V>[1]):Relation<W>[1];
+native function meta::pure::functions::relation::rename<T,Z,V>(r:Relation<T>[1], old:ColSpec<Z>[1], new:ColSpec<V>[1]):Relation<T-Z+V>[1];
+
+function meta::pure::functions::relation::rename<T,Z,V>(r:TDS<T>[1], old:ColSpec<Z>[1], new:ColSpec<V>[1]):Relation<T-Z+V>[1]
+{
+    $r->cast(@Relation<T>)->rename($old, $new);
+}
