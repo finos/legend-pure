@@ -1,4 +1,4 @@
-// Copyright 2020 Goldman Sachs
+// Copyright 2023 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 package org.finos.legend.pure.m3.tests.function.base.string;
 
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.junit.After;
 import org.junit.Test;
 
 public abstract class AbstractTestSubstring extends AbstractPureTestWithCoreCompiled
@@ -32,7 +33,7 @@ public abstract class AbstractTestSubstring extends AbstractPureTestWithCoreComp
                             "    assertEquals(' quick brown fox jumps over the lazy dog', substring($string, 3));\n" +
                             "    assertEquals('quick brown fox jumps over the lazy dog', substring($string, 4));\n" +
                             "}");
-            this.execute(" testStart():Boolean[1]");
+            this.execute("testStart():Boolean[1]");
     }
 
     @Test
@@ -64,7 +65,7 @@ public abstract class AbstractTestSubstring extends AbstractPureTestWithCoreComp
                         "    assertEquals(' quick brown fox jumps over the lazy dog', substring_String_1__Integer_1__String_1_->eval($string, 3));\n" +
                         "    assertEquals('quick brown fox jumps over the lazy dog', substring_String_1__Integer_1__String_1_->eval($string, 4));\n" +
                         "}");
-        this.execute(" testStart():Boolean[1]");
+        this.execute("testStart():Boolean[1]");
     }
 
     @Test
@@ -81,5 +82,12 @@ public abstract class AbstractTestSubstring extends AbstractPureTestWithCoreComp
                         "    assertEquals('quick brown fox jumps over the lazy', substring_String_1__Integer_1__Integer_1__String_1_->eval($string, 4, 39));\n" +
                         "}\n");
         this.execute("testStartEnd():Boolean[1]");
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("substring.pure");
+        runtime.compile();
     }
 }
