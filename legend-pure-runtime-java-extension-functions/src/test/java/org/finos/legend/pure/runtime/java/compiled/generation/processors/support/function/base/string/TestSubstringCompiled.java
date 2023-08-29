@@ -1,4 +1,4 @@
-// Copyright 2020 Goldman Sachs
+// Copyright 2023 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,13 +28,7 @@ public class TestSubstringCompiled extends AbstractTestSubstring
     @BeforeClass
     public static void setUp()
     {
-        AbstractPureTestWithCoreCompiled.setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
-    }
-
-    @After
-    public void cleanRuntime()
-    {
-        AbstractPureTestWithCoreCompiled.runtime.delete("substring.pure");
+        setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
     }
 
     protected static FunctionExecution getFunctionExecution()
