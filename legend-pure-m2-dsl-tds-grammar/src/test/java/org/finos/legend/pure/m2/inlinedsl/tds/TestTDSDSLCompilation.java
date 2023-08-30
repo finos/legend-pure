@@ -36,15 +36,15 @@ public class TestTDSDSLCompilation extends AbstractPureTestWithCoreCompiled
     }
 
     @Test
-    public void testSimple()
+    public void testGrammarBaselineTest()
     {
         try
         {
             runtime.createInMemorySource("file.pure",
                     "function test():Any[*]\n" +
-                    "{\n" +
-                    "    print(#EEW#,2);\n" +
-                    "}\n");
+                            "{\n" +
+                            "    print(#EEW#,2);\n" +
+                            "}\n");
             runtime.compile();
             Assert.fail();
         }
@@ -52,8 +52,30 @@ public class TestTDSDSLCompilation extends AbstractPureTestWithCoreCompiled
         {
             Assert.assertEquals("Parser error at (resource:file.pure line:3 column:15), expected: one of {'as', '{', '<'} found: '<EOF>'", e.getMessage());
         }
+    }
 
-        this.runtime.modify("file.pure",
+    @Test
+    public void testSimpleDeclarationAndSubtypeAny()
+    {
+        this.runtime.createInMemorySource("file.pure",
+                "import meta::pure::metamodel::relation::*;" +
+                        "function test():Any[*]\n" +
+                        "{\n" +
+                        "   print(" +
+                        "       #TDS\n" +
+                        "         value, other, name\n" +
+                        "         1, 3, A\n" +
+                        "         2, 4, B\n" +
+                        "       #" +
+                        ", 2);\n" +
+                        "}\n");
+        this.runtime.compile();
+    }
+
+    @Test
+    public void testSimpleDeclarationApplyFunction()
+    {
+        this.runtime.createInMemorySource("file.pure",
                 "import meta::pure::metamodel::relation::*;" +
                         "native function <<functionType.SideEffectFunction>> rows<T>(type:TDS<T>[1]):T[*];" +
                         "function test():Any[*]\n" +
@@ -67,8 +89,33 @@ public class TestTDSDSLCompilation extends AbstractPureTestWithCoreCompiled
                         ", 2);\n" +
                         "}\n");
         this.runtime.compile();
+    }
 
-        this.runtime.modify("file.pure",
+    @Test
+    public void testSimpleDeclarationUseColumnsInLambda()
+    {
+        this.runtime.createInMemorySource("file.pure",
+                "import meta::pure::metamodel::relation::*;" +
+                        "native function <<functionType.SideEffectFunction>> rows<T>(type:TDS<T>[1]):T[*];" +
+                        "function test():Any[*]\n" +
+                        "{\n" +
+                        "    print(" +
+                        "   #TDS\n" +
+                        "       value, other, name\n" +
+                        "       1, 3, A\n" +
+                        "       2, 4, B\n" +
+                        "   #" +
+                        "   ->rows()->map(x|$x.value + $x.other)" +
+                        ", 2);\n" +
+                        //"    print(A.all()->map(x|$x.a), 2);\n" +
+                        "}\n");
+        this.runtime.compile();
+    }
+
+    @Test
+    public void testSimpleDeclarationUseColumnsInLambdaAndMatchTDS()
+    {
+        this.runtime.createInMemorySource("file.pure",
                 "import meta::pure::metamodel::relation::*;" +
                         "native function meta::pure::functions::relation::filter<T>(rel:Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1];\n" +
                         "\n" +
@@ -90,23 +137,6 @@ public class TestTDSDSLCompilation extends AbstractPureTestWithCoreCompiled
 
         this.runtime.modify("file.pure",
                 "import meta::pure::metamodel::relation::*;" +
-                        "native function <<functionType.SideEffectFunction>> rows<T>(type:TDS<T>[1]):T[*];" +
-                        "function test():Any[*]\n" +
-                "{\n" +
-                "    print(" +
-                        "   #TDS\n" +
-                        "       value, other, name\n" +
-                        "       1, 3, A\n" +
-                        "       2, 4, B\n" +
-                        "   #" +
-                        "   ->rows()->map(x|$x.value + $x.other)" +
-                        ", 2);\n" +
-                //"    print(A.all()->map(x|$x.a), 2);\n" +
-                "}\n");
-        this.runtime.compile();
-
-        this.runtime.modify("file.pure",
-                "import meta::pure::metamodel::relation::*;" +
                         "native function <<functionType.SideEffectFunction>> rows<T>(type:Relation<T>[1]):T[*];" +
                         "function test():Any[*]\n" +
                         "{\n" +
@@ -118,7 +148,6 @@ public class TestTDSDSLCompilation extends AbstractPureTestWithCoreCompiled
                         "   #" +
                         "   ->rows()->map(x|$x.value + $x.other)" +
                         ", 2);\n" +
-                        //"    print(A.all()->map(x|$x.a), 2);\n" +
                         "}\n");
         this.runtime.compile();
     }

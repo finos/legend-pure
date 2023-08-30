@@ -314,7 +314,7 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     {
         compileInferenceTest(
                 "import meta::pure::metamodel::relation::*;" +
-                        "function f<T>(r:Relation<(a:Integer)>[1]):Any[*]\n" +
+                        "function f(r:Relation<(a:Integer)>[1]):Any[*]\n" +
                         "{\n" +
                         "   $r->tt()->map(x|$x.a);\n" +
                         "}" +
@@ -327,7 +327,7 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     {
         compileInferenceTest(
                 "import meta::pure::metamodel::relation::*;" +
-                        "function f<T>(r:Relation<(a:Integer)>[1]):Any[*]\n" +
+                        "function f(r:Relation<(a:Integer)>[1]):Any[*]\n" +
                         "{\n" +
                         "   $r->cast(@Relation<(a:Integer,b:Float)>)->tt()->map(x|$x.a);\n" +
                         "}" +
@@ -340,7 +340,7 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     {
         compileInferenceTest(
                 "import meta::pure::metamodel::relation::*;" +
-                        "function f<T>(r:Relation<(a:Integer)>[1]):Any[*]\n" +
+                        "function f(r:Relation<(a:Integer)>[1]):Any[*]\n" +
                         "{\n" +
                         "   $r->tt()->map(x|$x.a);\n" +
                         "}" +
@@ -386,6 +386,50 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                     "\n" +
                     "No functions, in packages not imported, match the function name.\n" +
                     "\"", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testRelationTypeInParamsAndReturn()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "function process(r:Relation<(col1:String, col2:Integer)>[1]):Relation<(col1:String, col2:Integer)>[1]\n" +
+                        "{\n" +
+                        "  $r->filter(x|$x.col2 > 1);\n" +
+                        "}" +
+                        "native function filter<T>(rel:Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1];");
+    }
+
+    @Test
+    public void testRelationTypeInParamsAndCompatibleReturn()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "function process(r:Relation<(col1:String, col2:Integer)>[1]):Relation<(col1:String)>[1]\n" +
+                        "{\n" +
+                        "  $r->filter(x|$x.col2 > 1);\n" +
+                        "}" +
+                        "native function filter<T>(rel:Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1];");
+    }
+
+    @Test
+    public void testRelationTypeInParamsAndInCompatibleReturn()
+    {
+        try
+        {
+            compileInferenceTest(
+                    "import meta::pure::metamodel::relation::*;" +
+                            "function process(r:Relation<(col1:String, col2:Integer)>[1]):Relation<(col3:String)>[1]\n" +
+                            "{\n" +
+                            "  $r->filter(x|$x.col2 > 1);\n" +
+                            "}" +
+                            "native function filter<T>(rel:Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1];");
+        }
+        catch (Exception e)
+        {
+            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:7), \"Return type error in function 'process'; found: meta::pure::metamodel::relation::Relation<(col1:String, col2:Integer)>; expected: meta::pure::metamodel::relation::Relation<(col3:String)>\"", e.getMessage()
+            );
         }
     }
 

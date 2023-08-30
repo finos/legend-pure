@@ -25,9 +25,12 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Functi
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
@@ -53,12 +56,18 @@ public class _RelationType
         {
             throw new PureCompilationException("The system can't find the column " + name + " in the Relation " + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(processorSupport.type_wrapGenericType(type), processorSupport));
         }
-        return (Function<?>)col;
+        return (Function<?>) col;
     }
 
-    public static RelationType<?> build(ProcessorSupport processorSupport, SourceInformation pureSourceInformation, MutableList<CoreInstance> cols)
+    public static RelationType<?> build(GenericType parent, MutableList<CoreInstance> cols, SourceInformation pureSourceInformation, ProcessorSupport processorSupport)
     {
-        RelationType<?> newRelationType = (RelationType<?>)processorSupport.newAnonymousCoreInstance(pureSourceInformation, M3Paths.RelationType);
+        RelationType<?> newRelationType = (RelationType<?>) processorSupport.newAnonymousCoreInstance(pureSourceInformation, M3Paths.RelationType);
+
+        // Ensure T is set to parent
+        GenericType classifierGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(pureSourceInformation, M3Paths.GenericType);
+        classifierGenericType._rawType((Type) _Package.getByUserPath(M3Paths.RelationType, processorSupport));
+        classifierGenericType._typeArgumentsAdd(parent);
+        newRelationType._classifierGenericType(classifierGenericType);
 
         // SubType of Any
         Generalization generalization = (Generalization) processorSupport.newAnonymousCoreInstance(null, M3Paths.Generalization);

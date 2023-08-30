@@ -28,17 +28,14 @@ import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.TDSCoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.ColumnInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.TDS;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation._package._Package;
-import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.navigation.relation._Column;
 import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.MilestoningDatesVarNamesExtractor;
@@ -88,7 +85,7 @@ public class TDSExtension implements InlineDSL
         GenericType tdsGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
         tdsGenericType._rawTypeCoreInstance(tdsType);
         GenericType typeParam = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
-        typeParam._rawType(_RelationType.build(processorSupport, src, ArrayIterate.collect(result.columns(), c -> getColumnInstance(c.name(), convertType(c.dataType()), processorSupport, src, typeParam))));
+        typeParam._rawType(_RelationType.build(typeParam, ArrayIterate.collect(result.columns(), c -> _Column.getColumnInstance(c.name(), typeParam, convertType(c.dataType()), src, processorSupport)), src, processorSupport));
         tdsGenericType._typeArgumentsAdd(typeParam);
         tds._classifierGenericType(tdsGenericType);
         Instance.setValueForProperty(tds, "csv", modelRepository.newStringCoreInstance(val), processorSupport);
@@ -125,20 +122,6 @@ public class TDSExtension implements InlineDSL
                 throw new RuntimeException("Not possible");
         }
         return value;
-    }
-
-    private static ColumnInstance getColumnInstance(String name, String type, ProcessorSupport processorSupport, SourceInformation src, GenericType sourceType)
-    {
-        ColumnInstance columnInstance = (ColumnInstance) processorSupport.newAnonymousCoreInstance(src, M3Paths.Column);
-        columnInstance._name(name);
-        GenericType columnGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
-        columnGenericType._rawType((Type) _Package.getByUserPath(M3Paths.Column, processorSupport));
-        GenericType target = (GenericType) processorSupport.newEphemeralAnonymousCoreInstance(M3Paths.GenericType);
-        target._rawType((Type) _Package.getByUserPath(type, processorSupport));
-        columnGenericType._typeArguments(Lists.mutable.with(sourceType, target));
-        columnGenericType._multiplicityArgumentsAdd((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) Multiplicity.newMultiplicity(1, 1, processorSupport));
-        columnInstance._classifierGenericType(columnGenericType);
-        return columnInstance;
     }
 
     @Override

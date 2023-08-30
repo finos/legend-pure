@@ -168,7 +168,7 @@ public class GenericType
 
     private static CoreInstance merge(CoreInstance operation, ProcessorSupport processorSupport, CoreInstance gLeft, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight)
     {
-        CoreInstance newGenericType = processorSupport.newGenericType(null, operation, true);
+        org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType newGenericType = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) processorSupport.newGenericType(null, operation, true);
 
         // Union or Difference columns
         MutableList<CoreInstance> newColumnSet = Lists.mutable.empty();
@@ -184,7 +184,7 @@ public class GenericType
         }
 
         // Set RelationType on Generic
-        newGenericType.setKeyValues(Lists.mutable.with("rawType"), Lists.mutable.with(_RelationType.build(processorSupport, null, newColumnSet)));
+        newGenericType._rawType(_RelationType.build(newGenericType, newColumnSet, null, processorSupport));
 
         return newGenericType;
     }

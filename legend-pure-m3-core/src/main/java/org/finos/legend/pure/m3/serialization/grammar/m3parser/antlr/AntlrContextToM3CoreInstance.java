@@ -56,13 +56,11 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Mu
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.MultiplicityInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.MultiplicityValueInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.GenericTypeOperationInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.AssociationInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.AssociationProjectionInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.GeneralizationInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.*;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.*;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
@@ -72,6 +70,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.T
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.*;
 import org.finos.legend.pure.m3.navigation.*;
 import org.finos.legend.pure.m3.navigation._package._Package;
+import org.finos.legend.pure.m3.navigation.relation._Column;
 import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.*;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
@@ -979,10 +978,10 @@ public class AntlrContextToM3CoreInstance
                 {
                     lambdas.add(processMultiParamLambda(colFunc.lambdaFunction(), Lists.mutable.empty(), lambdaContext, space, false, importId, addLines, Lists.mutable.empty()));
                 }
-                columnInstances.add(getColumnInstance(colFunc.identifier().getText(), (String) null, processorSupport, src, relationTypeGenericType));
+                columnInstances.add(_Column.getColumnInstance(colFunc.identifier().getText(), relationTypeGenericType, (String) null, src, processorSupport));
             });
 
-            relationTypeGenericType._rawTypeCoreInstance(_RelationType.build(processorSupport, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), columnInstances));
+            relationTypeGenericType._rawTypeCoreInstance(_RelationType.build(relationTypeGenericType, columnInstances, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport));
 
             replacementFunction.setKeyValues(Lists.mutable.with("parametersValues"), Lists.mutable.withAll(Lists.mutable.with(
                     ValueSpecificationBootstrap.wrapValueSpecification(lambdas, true, processorSupport),
@@ -1054,24 +1053,6 @@ public class AntlrContextToM3CoreInstance
         return this.lambdaPipe(ctx.lambdaPipe(), hasLambdaParams ? ctx.lambdaParam(0).getStart() : null, expressions, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
     }
 
-    public static CoreInstance getColumnInstance(String name, String type, ProcessorSupport processorSupport, SourceInformation src, GenericType sourceType)
-    {
-        GenericType target = (GenericType) processorSupport.newEphemeralAnonymousCoreInstance(M3Paths.GenericType);
-        target._rawType(type == null ? null : (Type) _Package.getByUserPath(type, processorSupport));
-        return getColumnInstance(name, target, processorSupport, src, sourceType);
-    }
-
-    public static CoreInstance getColumnInstance(String name, GenericType targetType, ProcessorSupport processorSupport, SourceInformation src, GenericType sourceType)
-    {
-        CoreInstance columnInstance = processorSupport.newAnonymousCoreInstance(src, M3Paths.Column);
-        columnInstance.setKeyValues(Lists.mutable.with("name"), Lists.mutable.with(sourceType.getRepository().newStringCoreInstance(name)));
-        GenericType columnGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
-        columnGenericType._rawType((Type) _Package.getByUserPath(M3Paths.Column, processorSupport));
-        columnGenericType._typeArguments(Lists.mutable.with(sourceType, targetType));
-        columnGenericType._multiplicityArgumentsAdd((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(1, 1, processorSupport));
-        columnInstance.setKeyValues(Lists.mutable.with("classifierGenericType"), Lists.mutable.with(columnGenericType));
-        return columnInstance;
-    }
 
     private CoreInstance processSingleParamLambda(M3Parser.LambdaParamContext lambdaCtxt, M3Parser.LambdaPipeContext pipeContext, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines, MutableList<VariableExpression> expressions)
     {
@@ -1913,15 +1894,16 @@ public class AntlrContextToM3CoreInstance
         if (ctx.GROUP_OPEN() != null)
         {
             GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
-            RelationType<?> relationType = _RelationType.build(processorSupport, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), ListIterate.collect(ctx.columnType(), c -> getColumnInstance(c.identifier().getText(), this.type(c.type(), typeParametersNames, spacePlusTabs(space, 5), importId, addLines), processorSupport, this.sourceInformation.getPureSourceInformation(c.getStart(), c.getStart(), c.getStop()), genericTypeInstance)));
-            genericTypeInstance._rawTypeCoreInstance(relationType);
-            Generalization generalization = (Generalization) processorSupport.newAnonymousCoreInstance(null, M3Paths.Generalization);
-            generalization._specific(relationType);
-            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType anyG = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) processorSupport.newAnonymousCoreInstance(null, M3Paths.GenericType);
-            anyG._rawType((Class<?>) processorSupport.package_getByUserPath(M3Paths.Any));
-            generalization._general(anyG);
-            relationType._generalizationsAdd(generalization);
-
+            SourceInformation srcInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop());
+            genericTypeInstance._rawTypeCoreInstance(
+                    _RelationType.build(
+                            genericTypeInstance,
+                            ListIterate.collect(
+                                    ctx.columnType(),
+                                    c -> _Column.getColumnInstance(c.identifier().getText(), genericTypeInstance, this.type(c.type(), typeParametersNames, spacePlusTabs(space, 5), importId, addLines), srcInfo, processorSupport)
+                            ), srcInfo, processorSupport
+                    )
+            );
             return genericTypeInstance;
         }
         throw new PureParserException(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), "Type not understood");
