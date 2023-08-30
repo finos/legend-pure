@@ -27,12 +27,11 @@ import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
-import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.shared.Shared;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.shared.TDSWithCursorCoreInstance;
-import org.finos.legend.pure.runtime.java.extension.external.relation.shared.TDS;
+import org.finos.legend.pure.runtime.java.extension.external.relation.shared.TestTDS;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
@@ -54,18 +53,19 @@ public class Map extends Shared
         CoreInstance collectFunction = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
         LambdaFunction<CoreInstance> lambdaFunction = (LambdaFunction<CoreInstance>) LambdaFunctionCoreInstanceWrapper.toLambdaFunction(collectFunction);
         VariableContext evalVarContext = this.getParentOrEmptyVariableContextForLambda(variableContext, collectFunction);
+        TestTDS tds = getTDS(params, processorSupport);
 
         MutableList<CoreInstance> results = Lists.mutable.with();
-        TDS tds = getTDS(params, processorSupport);
-
         FixedSizeList<CoreInstance> parameters = Lists.fixedSize.with((CoreInstance) null);
         for (int i = 0; i < tds.getRowCount(); i++)
         {
-            CoreInstance instance = new TDSWithCursorCoreInstance(tds, i, "", null, null, -1, repository, false);
-            parameters.set(0, instance);
-            CoreInstance subResult = this.functionExecution.executeFunction(false, lambdaFunction, parameters,
-                    resolvedTypeParameters, resolvedMultiplicityParameters, evalVarContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
-            results.addAllIterable(Instance.getValueForMetaPropertyToManyResolved(subResult, M3Properties.values, processorSupport));
+            parameters.set(0, new TDSWithCursorCoreInstance(tds, i, "", null, null, -1, repository, false));
+            results.addAllIterable(
+                    Instance.getValueForMetaPropertyToManyResolved(
+                            this.functionExecution.executeFunction(false, lambdaFunction, parameters, resolvedTypeParameters, resolvedMultiplicityParameters, evalVarContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport),
+                            M3Properties.values,
+                            processorSupport)
+            );
         }
         return ValueSpecificationBootstrap.wrapValueSpecification_ForFunctionReturnValue(Instance.getValueForMetaPropertyToOneResolved(functionExpressionToUseInStack, M3Properties.genericType, processorSupport),
                 results, false, processorSupport);

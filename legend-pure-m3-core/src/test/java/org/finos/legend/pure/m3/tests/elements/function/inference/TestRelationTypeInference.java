@@ -64,136 +64,145 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
 
 
     @Test
-    public void columnInference()
+    public void testColumnFunctionSingleInference()
     {
         compileInferenceTest(
-                "Class Firm{legalName:String[1];}" +
-                        "\n" +
-                        "function f():Any[*]" +
-                        "{" +
-                        "   Firm.all()->project(~[legal:x|$x.legalName]);\n" +
-                        "}" +
-                        "\n" +
-                        "native function project<Z,T>(cl:Z[*], x:meta::pure::metamodel::relation::FuncColSpecArray<{Z[1]->Any[*]},T>[1]):meta::pure::metamodel::relation::Relation<T>[1];" +
-                        "\n"
-        );
-    }
-
-    @Test
-    public void columnSingle()
-    {
-        compileInferenceTest(
-                "Class Firm{legalName:String[1];}" +
+                "import meta::pure::metamodel::relation::*;" +
+                        "Class Firm{legalName:String[1];}" +
                         "\n" +
                         "function f():Any[*]" +
                         "{" +
                         "   Firm.all()->project(~legal:x|$x.legalName);\n" +
                         "}" +
                         "\n" +
-                        "native function project<Z,T>(cl:Z[*], x:meta::pure::metamodel::relation::FuncColSpec<{Z[1]->Any[*]},T>[1]):meta::pure::metamodel::relation::Relation<T>[1];" +
+                        "native function project<Z,T>(cl:Z[*], x:FuncColSpec<{Z[1]->Any[*]},T>[1]):Relation<T>[1];" +
                         "\n"
         );
     }
 
     @Test
-    public void columnInferenceUsingBracketLambda()
+    public void testColumnFunctionCollectionInference()
     {
         compileInferenceTest(
-                "Class Firm{legalName:String[1];}" +
+                "import meta::pure::metamodel::relation::*;" +
+                        "Class Firm{legalName:String[1];}" +
                         "\n" +
                         "function f():Any[*]" +
                         "{" +
-                        "   Firm.all()->project(~[legal:{x|$x.legalName}])->map(c|$c.legal);\n" +
+                        "   Firm.all()->project(~[legal:x|$x.legalName]);\n" +
                         "}" +
-                        "native function map<T,V>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];" +
                         "\n" +
-                        "native function project<Z,T>(cl:Z[*], x:meta::pure::metamodel::relation::FuncColSpecArray<{Z[1]->Any[*]},T>[1]):meta::pure::metamodel::relation::Relation<T>[1];" +
+                        "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];" +
                         "\n"
         );
     }
 
     @Test
-    public void columnInferenceUsingBracketMultiLambda()
+    public void testColumnFunctionCollectionChainedWithNewFunctionInference()
     {
         compileInferenceTest(
-                "Class Firm{legalName:String[1];}" +
-                        "\n" +
-                        "function f():Any[*]" +
-                        "{" +
-                        "   Firm.all()->project(~[legal:{x|$x.legalName}, legalMod:{x|$x.legalName+'ok'}])->map(x|$x.legal + $x.legalMod);\n" +
-                        "}" +
-                        "native function map<T,V>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];" +
-                        "\n" +
-                        "native function project<Z,T>(cl:Z[*], x:meta::pure::metamodel::relation::FuncColSpecArray<{Z[1]->Any[*]},T>[1]):meta::pure::metamodel::relation::Relation<T>[1];" +
-                        "\n"
-        );
-    }
-
-    @Test
-    public void columnInferenceChained()
-    {
-        compileInferenceTest(
-                "Class Firm{legalName:String[1];}" +
+                "import meta::pure::metamodel::relation::*;" +
+                        "Class Firm{legalName:String[1];}" +
                         "\n" +
                         "function f():Any[*]" +
                         "{" +
                         "   Firm.all()->project(~[legal:x|$x.legalName])->map(c|$c.legal);\n" +
                         "}" +
                         "\n" +
-                        "native function map<T,V>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];" +
+                        "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];" +
                         "\n" +
-                        "native function project<Z,T>(cl:Z[*], x:meta::pure::metamodel::relation::FuncColSpecArray<{Z[1]->Any[*]},T>[1]):meta::pure::metamodel::relation::Relation<T>[1];" +
+                        "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];" +
                         "\n"
         );
     }
 
     @Test
-    public void testTypeParameterOperation()
+    public void testColumnFunctionUsingBracketLambdaCollectionInference()
     {
         compileInferenceTest(
-                "Class Firm{legalName:String[1];}" +
+                "import meta::pure::metamodel::relation::*;" +
+                        "Class Firm{legalName:String[1];}" +
+                        "\n" +
+                        "function f():Any[*]" +
+                        "{" +
+                        "   Firm.all()->project(~[legal:{x|$x.legalName}])->map(c|$c.legal);\n" +
+                        "}" +
+                        "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];" +
+                        "\n" +
+                        "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];" +
+                        "\n"
+        );
+    }
+
+    @Test
+    public void testColumnFunctionUsingBracketLambdaRealCollectionInference()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "Class Firm{legalName:String[1];}" +
+                        "\n" +
+                        "function f():Any[*]" +
+                        "{" +
+                        "   Firm.all()->project(~[legal:{x|$x.legalName}, legalMod:{x|$x.legalName+'ok'}])->map(x|$x.legal + $x.legalMod);\n" +
+                        "}" +
+                        "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];" +
+                        "\n" +
+                        "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];" +
+                        "\n"
+        );
+    }
+
+
+    @Test
+    public void testTypeParameterUnionForRelationType()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "Class Firm{legalName:String[1];}" +
                         "function f():Any[*]" +
                         "{" +
                         "   Firm.all()->project(~[legal:x|$x.legalName])->join(Firm.all()->project(~[legal3:x|$x.legalName]))->map(x|$x.legal3)\n" +
                         "}" +
                         "\n" +
-                        "native function map<T,V>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];" +
-                        "native function join<Z,T>(x:meta::pure::metamodel::relation::Relation<Z>[1], k:meta::pure::metamodel::relation::Relation<T>[1]):meta::pure::metamodel::relation::Relation<T+Z>[1];" +
-                        "native function project<Z,T>(cl:Z[*], x:meta::pure::metamodel::relation::FuncColSpecArray<{Z[1]->Any[*]},T>[1]):meta::pure::metamodel::relation::Relation<T>[1];" +
+                        "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];" +
+                        "native function join<Z,T>(x:Relation<Z>[1], k:Relation<T>[1]):Relation<T+Z>[1];" +
+                        "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];" +
                         "\n"
         );
     }
 
     @Test
-    public void testTypeParameterOperationWithDups()
+    public void testTypeParameterUnionForRelationTypeWithManyOperations()
     {
         try
         {
             compileInferenceTest(
-                    "Class Firm{legalName:String[1];}" +
+                    "import meta::pure::metamodel::relation::*;" +
+                            "Class Firm{legalName:String[1];}" +
                             "function f():Any[*]" +
                             "{" +
                             "   Firm.all()->project(~[legal:x|$x.legalName])->join(Firm.all()->project(~[legal:x|$x.legalName]))\n" +
                             "}" +
                             "\n" +
-                            "native function join<Z,T>(x:meta::pure::metamodel::relation::Relation<Z>[1], k:meta::pure::metamodel::relation::Relation<T>[1]):meta::pure::metamodel::relation::Relation<T+Z+Z>[1];" +
-                            "native function project<Z,T>(cl:Z[*], x:meta::pure::metamodel::relation::FuncColSpecArray<{Z[1]->Any[*]},T>[1]):meta::pure::metamodel::relation::Relation<T>[1];" +
+                            "native function join<Z,T>(x:Relation<Z>[1], k:Relation<T>[1]):Relation<T+Z+Z>[1];" +
+                            "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];" +
                             "\n");
             fail();
         }
         catch (Exception e)
         {
-            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:1 column:102), \"The relation contains duplicates: [legal]\"", e.getMessage());
+            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:1 column:144), \"The relation contains duplicates: [legal]\"", e.getMessage());
         }
     }
 
     @Test
-    public void testTypeParameterDifferenceOperation()
+    public void testTypeParameterDifferenceForRelationType()
     {
         try
         {
             compileInferenceTest(
-                    "Class Firm{legalName:String[1];}" +
+                    "import meta::pure::metamodel::relation::*;" +
+                            "Class Firm{legalName:String[1];}" +
                             "function f():Any[*]" +
                             "{" +
                             "   Firm.all()->project(~[legal:x|$x.legalName, legal3:x|$x.legalName])->map(x|$x.legal3);\n" +
@@ -201,9 +210,9 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                             "   Firm.all()->project(~[legal:x|$x.legalName, legal3:x|$x.legalName])->diff(Firm.all()->project(~[legal3:x|$x.legalName]))->map(x|$x.legal3);\n" +
                             "}" +
                             "\n" +
-                            "native function map<T,V>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];" +
-                            "native function diff<Z,T>(x:meta::pure::metamodel::relation::Relation<T>[1], k:meta::pure::metamodel::relation::Relation<Z>[1]):meta::pure::metamodel::relation::Relation<T-Z>[1];" +
-                            "native function project<Z,T>(cl:Z[*], x:meta::pure::metamodel::relation::FuncColSpecArray<{Z[1]->Any[*]},T>[1]):meta::pure::metamodel::relation::Relation<T>[1];" +
+                            "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];" +
+                            "native function diff<Z,T>(x:Relation<T>[1], k:Relation<Z>[1]):Relation<T-Z>[1];" +
+                            "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];" +
                             "\n"
             );
             fail();
@@ -215,12 +224,13 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
-    public void testGenericTypeOperationCopy()
+    public void testTypeParameterTriggeringRelationTypeCopy()
     {
         compileInferenceTest(
-                "native function extend<T,Z>(r:meta::pure::metamodel::relation::Relation<T>[1], f:meta::pure::metamodel::relation::FuncColSpec<{T[1]->Any[0..1]},Z>[1]):meta::pure::metamodel::relation::Relation<T+Z>[1];\n" +
+                "import meta::pure::metamodel::relation::*;" +
+                        "native function extend<T,Z>(r:meta::pure::metamodel::relation::Relation<T>[1], f:meta::pure::metamodel::relation::FuncColSpec<{T[1]->Any[0..1]},Z>[1]):meta::pure::metamodel::relation::Relation<T+Z>[1];\n" +
                         "\n" +
-                        "function extend<T,Z>(r:TDS<T>[1], f:meta::pure::metamodel::relation::FuncColSpec<{T[1]->Any[0..1]},Z>[1]):meta::pure::metamodel::relation::Relation<T+Z>[1]\n" +
+                        "function f<T,Z>(r:TDS<T>[1], f:meta::pure::metamodel::relation::FuncColSpec<{T[1]->Any[0..1]},Z>[1]):meta::pure::metamodel::relation::Relation<T+Z>[1]\n" +
                         "{\n" +
                         "   $r->cast(@meta::pure::metamodel::relation::Relation<T>)->extend($f);\n" +
                         "}" +
@@ -235,7 +245,8 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     public void testCast()
     {
         compileInferenceTest(
-                        "function extend<T>(r:meta::pure::metamodel::relation::Relation<T>[1]):Any[*]\n" +
+                "import meta::pure::metamodel::relation::*;" +
+                        "function f<T>(r:meta::pure::metamodel::relation::Relation<T>[1]):Any[*]\n" +
                         "{\n" +
                         "   $r->cast(@meta::pure::metamodel::relation::Relation<(a:Integer, f:String)>)->map(c|$c.a->toString() + $c.f);\n" +
                         "}" +
@@ -248,16 +259,133 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
         try
         {
             compileInferenceTest(
-                    "function extend<T>(r:meta::pure::metamodel::relation::Relation<T>[1]):Any[*]\n" +
+                    "import meta::pure::metamodel::relation::*;" +
+                            "function f<T>(r:Relation<T>[1]):Any[*]\n" +
                             "{\n" +
-                            "   $r->cast(@meta::pure::metamodel::relation::Relation<(a:Integer, f:String)>)->map(c|$c.z);\n" +
+                            "   $r->cast(@Relation<(a:Integer, f:String)>)->map(c|$c.z);\n" +
                             "}" +
-                            "native function map<T,V>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];");
+                            "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];");
             fail();
         }
         catch (Exception e)
         {
-            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:90), \"The system can't find the column z in the Relation (a:Integer, f:String)\"", e.getMessage());
+            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:57), \"The system can't find the column z in the Relation (a:Integer, f:String)\"", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testTypeEqualityForMatching()
+    {
+
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "function f<T>(r:Relation<T>[1]):Any[*]\n" +
+                        "{\n" +
+                        "   concat($r->cast(@Relation<(a:Integer, f:String)>), $r->cast(@Relation<(a:Integer, f:String)>))->map(x|$x.a);\n" +
+                        "}" +
+                        "native function concat<T>(rel:Relation<T>[1], rel2:Relation<T>[1]):Relation<T>[1];" +
+                        "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];");
+
+    }
+
+    @Test
+    public void testTypeEqualityForMatchingFail()
+    {
+        try
+        {
+            compileInferenceTest(
+                    "import meta::pure::metamodel::relation::*;" +
+                            "function f<T>(r:Relation<T>[1]):Any[*]\n" +
+                            "{\n" +
+                            "   concat($r->cast(@Relation<(ae:String, f:String)>), $r->cast(@Relation<(a:Integer, f:String)>))->map(x|$x.a);\n" +
+                            "}" +
+                            "native function concat<T>(rel:Relation<T>[1], rel2:Relation<T>[1]):Relation<T>[1];" +
+                            "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];");
+            fail();
+        }
+        catch (Exception e)
+        {
+            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:109), \"Can't find the property 'a' in the class meta::pure::metamodel::type::Any\"", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testRelationTypeInParamsEqualsMatching()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "function f<T>(r:Relation<(a:Integer)>[1]):Any[*]\n" +
+                        "{\n" +
+                        "   $r->tt()->map(x|$x.a);\n" +
+                        "}" +
+                        "native function tt(rel:Relation<(a:Integer)>[1]):Relation<(a:Integer)>[1];" +
+                        "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];");
+    }
+
+    @Test
+    public void testRelationTypeInParamsCompatibleEqualSubsetMatching()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "function f<T>(r:Relation<(a:Integer)>[1]):Any[*]\n" +
+                        "{\n" +
+                        "   $r->cast(@Relation<(a:Integer,b:Float)>)->tt()->map(x|$x.a);\n" +
+                        "}" +
+                        "native function tt(rel:Relation<(a:Integer)>[1]):Relation<(a:Integer)>[1];" +
+                        "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];");
+    }
+
+    @Test
+    public void testRelationTypeInParamsCompatibleSubsumesTypeMatching()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "function f<T>(r:Relation<(a:Integer)>[1]):Any[*]\n" +
+                        "{\n" +
+                        "   $r->tt()->map(x|$x.a);\n" +
+                        "}" +
+                        "native function tt(rel:Relation<(a:Number)>[1]):Relation<(a:Integer)>[1];" +
+                        "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];");
+    }
+
+    @Test
+    public void testRelationTypeInParamsAnyTypeMatching()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "function f<T>(r:Relation<(a:Integer)>[1]):Any[*]\n" +
+                        "{\n" +
+                        "   $r->tt()->map(x|$x.a);\n" +
+                        "}" +
+                        "native function tt(rel:Relation<Any>[1]):Relation<(a:Integer)>[1];" +
+                        "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];");
+    }
+
+    @Test
+    public void testRelationTypeInParamsCompatibleSubsumesTypeMatchingFail()
+    {
+        try
+        {
+            compileInferenceTest(
+                    "import meta::pure::metamodel::relation::*;" +
+                            "function f<T>(r:Relation<(a:Number)>[1]):Any[*]\n" +
+                            "{\n" +
+                            "   $r->tt()->map(x|$x.a);\n" +
+                            "}" +
+                            "native function tt(rel:Relation<(a:Integer)>[1]):Relation<(a:Integer)>[1];" +
+                            "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];");
+            fail();
+
+        }
+        catch (Exception e)
+        {
+            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:8), \"The system can't find a match for the function: tt(_:Relation<(a:Number)>[1])\n" +
+                    "\n" +
+                    "These functions, in packages already imported, would match the function call if you changed the parameters.\n" +
+                    "\ttt(Relation[1]):Relation[1]\n" +
+                    "\n" +
+                    "No functions, in packages not imported, match the function name.\n" +
+                    "\"", e.getMessage());
         }
     }
 

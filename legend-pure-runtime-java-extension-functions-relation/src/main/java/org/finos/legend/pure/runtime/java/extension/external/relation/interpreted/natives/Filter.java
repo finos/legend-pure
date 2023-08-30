@@ -23,7 +23,6 @@ import org.eclipse.collections.impl.factory.primitive.IntSets;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionCoreInstanceWrapper;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValueCoreInstanceWrapper;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.*;
 import org.finos.legend.pure.m4.ModelRepository;
@@ -31,7 +30,7 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.shared.Shared;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.shared.TDSCoreInstance;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.shared.TDSWithCursorCoreInstance;
-import org.finos.legend.pure.runtime.java.extension.external.relation.shared.TDS;
+import org.finos.legend.pure.runtime.java.extension.external.relation.shared.TestTDS;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
@@ -53,15 +52,13 @@ public class Filter extends Shared
         CoreInstance filterFunction = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
         LambdaFunction<CoreInstance> lambdaFunction = (LambdaFunction<CoreInstance>) LambdaFunctionCoreInstanceWrapper.toLambdaFunction(filterFunction);
         VariableContext evalVarContext = this.getParentOrEmptyVariableContextForLambda(variableContext, filterFunction);
-
-        TDS tds = getTDS(params, processorSupport);
+        TestTDS tds = getTDS(params, processorSupport);
 
         MutableIntSet discardedRows = IntSets.mutable.empty();
         FixedSizeList<CoreInstance> parameters = Lists.fixedSize.with((CoreInstance) null);
         for (int i = 0; i < tds.getRowCount(); i++)
         {
-            CoreInstance instance = new TDSWithCursorCoreInstance(tds, i, "", null, null, -1, repository, false);
-            parameters.set(0, instance);
+            parameters.set(0, new TDSWithCursorCoreInstance(tds, i, "", null, null, -1, repository, false));
             CoreInstance subResult = this.functionExecution.executeFunction(false, lambdaFunction, parameters, resolvedTypeParameters, resolvedMultiplicityParameters, evalVarContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
             if (!PrimitiveUtilities.getBooleanValue(Instance.getValueForMetaPropertyToOneResolved(subResult, M3Properties.values, processorSupport)))
             {

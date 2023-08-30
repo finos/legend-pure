@@ -19,12 +19,16 @@ import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionType;
 import org.finos.legend.pure.m3.navigation.multiplicity.MultiplicityMatch;
+import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+
+import java.util.Comparator;
 
 abstract class TypeMatch implements Comparable<TypeMatch>
 {
@@ -275,6 +279,7 @@ abstract class TypeMatch implements Comparable<TypeMatch>
         {
             throw new IllegalArgumentException("Target type cannot be null");
         }
+
         if (valueType == null)
         {
             switch (GenericTypeMatch.getNullMatchBehavior(valueNullMatchBehavior))
@@ -305,6 +310,11 @@ abstract class TypeMatch implements Comparable<TypeMatch>
 
         CoreInstance superType = covariant ? targetType : valueType;
         CoreInstance subType = covariant ? valueType : targetType;
+
+        if (processorSupport.instance_instanceOf(subType, M3Paths.RelationType))
+        {
+            return newRelationTypeMatch(subType, superType, processorSupport);
+        }
 
         if (Type.isBottomType(subType, processorSupport))
         {
@@ -345,6 +355,53 @@ abstract class TypeMatch implements Comparable<TypeMatch>
             {
                 return new SimpleTypeMatch(distance);
             }
+        }
+    }
+
+    private static TypeMatch newRelationTypeMatch(CoreInstance candidate, CoreInstance signature, ProcessorSupport processorSupport)
+    {
+        if (_RelationType.equalRelationType(candidate, signature, processorSupport))
+        {
+            return newExactTypeMatch();
+        }
+        else
+        {
+            if (signature == processorSupport.type_TopType())
+            {
+                return new SimpleTypeMatch(1);
+            }
+
+            if (!processorSupport.instance_instanceOf(signature, M3Paths.RelationType))
+            {
+                return null;
+            }
+
+            ListIterable<? extends CoreInstance> candidateColumns = candidate.getValueForMetaPropertyToMany("columns");
+            ListIterable<? extends CoreInstance> signatureColumns = signature.getValueForMetaPropertyToMany("columns");
+
+            if (candidateColumns.size() < signatureColumns.size())
+            {
+                return null;
+            }
+
+            ListIterable<? extends CoreInstance> sortedCandidate = candidateColumns.toSortedList(Comparator.comparing((CoreInstance a) -> a.getValueForMetaPropertyToOne("name").getName()));
+            ListIterable<? extends CoreInstance> sortedSignature = signatureColumns.toSortedList(Comparator.comparing((CoreInstance a) -> a.getValueForMetaPropertyToOne("name").getName()));
+
+            ListIterable<? extends CoreInstance> sortedCandidateSub = sortedCandidate.subList(0, sortedSignature.size());
+
+            if (sortedSignature.zip(sortedCandidateSub).injectInto(true, (a, b) ->
+            {
+                String colName1 = b.getOne().getValueForMetaPropertyToOne("name").getName();
+                String colName2 = b.getTwo().getValueForMetaPropertyToOne("name").getName();
+                CoreInstance type1 = b.getOne().getValueForMetaPropertyToOne("classifierGenericType").getValueForMetaPropertyToMany("typeArguments").get(1).getValueForMetaPropertyToOne("rawType");
+                CoreInstance type2 = b.getTwo().getValueForMetaPropertyToOne("classifierGenericType").getValueForMetaPropertyToMany("typeArguments").get(1).getValueForMetaPropertyToOne("rawType");
+                return a && colName1.equals(colName2) && Type.subTypeOf(type2, type1, processorSupport);
+            }))
+            {
+                return new SimpleTypeMatch(sortedCandidate.size() - sortedSignature.size());
+            }
+
+            return null;
         }
     }
 

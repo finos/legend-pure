@@ -18,14 +18,14 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.simple.SimpleCoreInstance;
-import org.finos.legend.pure.runtime.java.extension.external.relation.shared.TDS;
+import org.finos.legend.pure.runtime.java.extension.external.relation.shared.TestTDS;
 
 public class TDSWithCursorCoreInstance extends SimpleCoreInstance
 {
-    private final TDS tds;
+    private final TestTDS tds;
     private final int currentRow;
 
-    public TDSWithCursorCoreInstance(TDS tds, int currentRow, String name, SourceInformation sourceInformation, CoreInstance classifier, int internalSyntheticId, ModelRepository repository, boolean persistent)
+    public TDSWithCursorCoreInstance(TestTDS tds, int currentRow, String name, SourceInformation sourceInformation, CoreInstance classifier, int internalSyntheticId, ModelRepository repository, boolean persistent)
     {
         super(name, sourceInformation, classifier, internalSyntheticId, repository, persistent);
         this.tds = tds;

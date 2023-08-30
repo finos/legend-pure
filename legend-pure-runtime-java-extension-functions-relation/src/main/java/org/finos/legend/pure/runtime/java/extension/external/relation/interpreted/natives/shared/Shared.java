@@ -21,7 +21,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.runtime.java.extension.external.relation.shared.TDS;
+import org.finos.legend.pure.runtime.java.extension.external.relation.shared.TestTDS;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 
@@ -38,13 +38,13 @@ public abstract class Shared extends NativeFunction
         this.functionExecution = functionExecution;
     }
 
-    public TDS getTDS(ListIterable<? extends CoreInstance> params, ProcessorSupport processorSupport)
+    public TestTDS getTDS(ListIterable<? extends CoreInstance> params, ProcessorSupport processorSupport)
     {
-        TDS tds;
+        TestTDS tds;
         CoreInstance obj = params.get(0).getValueForMetaPropertyToOne("values");
         return obj instanceof TDSCoreInstance ?
                 ((TDSCoreInstance) obj).getTDS() :
-                new TDS(readCsv((obj.getValueForMetaPropertyToOne("csv")).getName()), repository, processorSupport);
+                new TestTDS(readCsv((obj.getValueForMetaPropertyToOne("csv")).getName()), repository, processorSupport);
 
     }
 

@@ -29,9 +29,7 @@ import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.TDSCoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.ColumnInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.TDS;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
@@ -41,6 +39,7 @@ import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.MilestoningDatesVarNamesExtractor;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.VisibilityValidator;
@@ -79,47 +78,19 @@ public class TDSExtension implements InlineDSL
         }
         catch (Exception e)
         {
-            e.printStackTrace();
             throw new RuntimeException(e);
         }
 
         ProcessorSupport processorSupport = new M3ProcessorSupport(context, modelRepository);
         SourceInformation src = new SourceInformation(fileName, 0, 0, 0, 0);
         Class<?> tdsType = (Class<?>) processorSupport.package_getByUserPath(M2TDSPaths.TDS);
-        Class<CoreInstance> relationTypeClass = (Class<CoreInstance>) processorSupport.package_getByUserPath(M3Paths.RelationType);
-        Class<?> any = (Class<?>) processorSupport.package_getByUserPath(M3Paths.Any);
-
-
         TDS<CoreInstance> tds = ((TDS<CoreInstance>) modelRepository.newEphemeralCoreInstance("", tdsType, src));
-
         GenericType tdsGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
         tdsGenericType._rawTypeCoreInstance(tdsType);
-
         GenericType typeParam = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
-        RelationType<CoreInstance> relationType = ((RelationType<CoreInstance>) modelRepository.newEphemeralCoreInstance("TDSSchema", relationTypeClass, src));
-
-        //
-        GenericType zz = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
-        zz._rawType(relationTypeClass);
-        zz._typeArgumentsAdd(typeParam);
-        relationType._classifierGenericType(zz);
-
-        // New Type is a subType of Any
-        Generalization generalization = (Generalization) processorSupport.newAnonymousCoreInstance(src, M3Paths.Generalization);
-        generalization._specific(relationType);
-        GenericType anyG = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
-        anyG._rawType(any);
-        generalization._general(anyG);
-        relationType._generalizationsAdd(generalization);
-
-        relationType._columns(ArrayIterate.collect(result.columns(), c -> getColumnInstance(c.name(), convertType(c.dataType()), processorSupport, src, typeParam)));
-        typeParam._rawType(relationType);
+        typeParam._rawType(_RelationType.build(processorSupport, src, ArrayIterate.collect(result.columns(), c -> getColumnInstance(c.name(), convertType(c.dataType()), processorSupport, src, typeParam))));
         tdsGenericType._typeArgumentsAdd(typeParam);
-
         tds._classifierGenericType(tdsGenericType);
-
-      //  System.out.println(org.finos.legend.pure.m3.navigation.generictype.GenericType.print(tdsGenericType, processorSupport));
-
         Instance.setValueForProperty(tds, "csv", modelRepository.newStringCoreInstance(val), processorSupport);
 
         return tds;

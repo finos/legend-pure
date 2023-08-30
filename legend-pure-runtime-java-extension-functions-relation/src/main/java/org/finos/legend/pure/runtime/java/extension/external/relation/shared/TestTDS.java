@@ -29,7 +29,7 @@ import java.util.Arrays;
 
 import static org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap.*;
 
-public class TDS
+public class TestTDS
 {
     private MutableMap<String, Object> dataByColumnName = Maps.mutable.empty();
     private MutableMap<String, DataType> columnType = Maps.mutable.empty();
@@ -37,7 +37,7 @@ public class TDS
     private ModelRepository modelRepository;
     private ProcessorSupport processorSupport;
 
-    public TDS(CsvReader.Result result, ModelRepository modelRepository, ProcessorSupport processorSupport)
+    public TestTDS(CsvReader.Result result, ModelRepository modelRepository, ProcessorSupport processorSupport)
     {
         this.rowCount = result.numRows();
         this.modelRepository = modelRepository;
@@ -49,13 +49,13 @@ public class TDS
         });
     }
 
-    private TDS()
+    private TestTDS()
     {
     }
 
-    public TDS copy()
+    public TestTDS copy()
     {
-        TDS result = new TDS();
+        TestTDS result = new TestTDS();
         result.rowCount = rowCount;
         result.modelRepository = modelRepository;
         result.processorSupport = processorSupport;
@@ -99,7 +99,7 @@ public class TDS
         return result;
     }
 
-    public TDS drop(IntSet rows)
+    public TestTDS drop(IntSet rows)
     {
         int size = rows.size();
         dataByColumnName.forEachKey(columnName ->

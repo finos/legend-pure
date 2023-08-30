@@ -57,6 +57,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.proper
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassProjection;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
@@ -79,6 +80,7 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
@@ -135,14 +137,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                 else if (processorSupport.instance_instanceOf(sourceGenericType._rawType(), M3Paths.RelationType))
                 {
                     String name = functionExpression._propertyName()._valuesCoreInstance().getAny().getName();
-                    CoreInstance rel = sourceGenericType._rawType();
-                    CoreInstance col = Instance.getValueForMetaPropertyToManyResolved(rel, "columns", processorSupport).select(c -> Instance.getValueForMetaPropertyToOneResolved(c, "name", processorSupport).getName().equals(name)).getFirst();
-                    if (col == null)
-                    {
-                        throw new PureCompilationException(functionExpression.getSourceInformation(), "The system can't find the column " + name + " in the Relation " + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(processorSupport.type_wrapGenericType(rel), processorSupport));
-                    }
-                    foundFunctions.add((Function<?>) col);
-
+                    foundFunctions.add(_RelationType.findColumn((RelationType<?>)sourceGenericType._rawType(), name, functionExpression.getSourceInformation(), processorSupport));
                 }
                 else
                 {

@@ -20,13 +20,10 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.impl.set.strategy.mutable.UnifiedSetWithHashingStrategy;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.*;
 import org.finos.legend.pure.m3.navigation.function.FunctionType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.navigation.typeparameter.TypeParameter;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -34,7 +31,7 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 import java.util.Objects;
 
-class Support
+public class Support
 {
     static void resolveTypeArgumentsForGenericTypeToFindUsingInheritanceTree(GenericTypeWithXArguments current, GenericTypeWithXArguments multis, CoreInstance genericTypeToFind, MutableList<GenericTypeWithXArguments> results, ProcessorSupport processorSupport)
     {
@@ -333,6 +330,7 @@ class Support
         CoreInstance commonRawType = null;
         MutableList<CoreInstance> genericTypesAtSameLevel = Lists.mutable.ofInitialCapacity(nonBottomConcreteGenericTypesCount);
         ListIterable<CoreInstance> shortestGeneralizations = generalizations.remove(shortestIndex);
+
         // Special handling for FunctionTypes
         if (FunctionType.isFunctionType(Instance.getValueForMetaPropertyToOneResolved(shortestGeneralizations.get(0), M3Properties.rawType, processorSupport), processorSupport))
         {
@@ -357,7 +355,8 @@ class Support
                 boolean present = false;
                 for (CoreInstance general : genls)
                 {
-                    if (rawType == Instance.getValueForMetaPropertyToOneResolved(general, M3Properties.rawType, processorSupport))
+                    if (rawType == Instance.getValueForMetaPropertyToOneResolved(general, M3Properties.rawType, processorSupport) ||
+                            (processorSupport.instance_instanceOf(rawType, M3Paths.RelationType) && _RelationType.equalRelationType(rawType, Instance.getValueForMetaPropertyToOneResolved(general, M3Properties.rawType, processorSupport), processorSupport)))
                     {
                         genericTypesAtSameLevel.add(general);
                         present = true;

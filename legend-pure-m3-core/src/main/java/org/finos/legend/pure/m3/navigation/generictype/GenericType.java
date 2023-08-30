@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m3.navigation.generictype;
 
-import org.eclipse.collections.api.factory.Bags;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
@@ -35,6 +34,7 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.linearization.C3Linearization;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -169,25 +169,23 @@ public class GenericType
     private static CoreInstance merge(CoreInstance operation, ProcessorSupport processorSupport, CoreInstance gLeft, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight)
     {
         CoreInstance newGenericType = processorSupport.newGenericType(null, operation, true);
-        CoreInstance newRelationType = processorSupport.newAnonymousCoreInstance(null, M3Paths.RelationType);
-        MutableList<CoreInstance> cols = Lists.mutable.empty();
-        cols.addAll(gLeft.getValueForMetaPropertyToOne("rawType").getValueForMetaPropertyToMany("columns").toList());
+
+        // Union or Difference columns
+        MutableList<CoreInstance> newColumnSet = Lists.mutable.empty();
+        newColumnSet.addAll(gLeft.getValueForMetaPropertyToOne("rawType").getValueForMetaPropertyToMany("columns").toList());
         if (operation.getValueForMetaPropertyToOne("type").getName().equals("Union"))
         {
-            cols.addAll(gRight.getValueForMetaPropertyToOne("rawType").getValueForMetaPropertyToMany("columns").toList());
+            newColumnSet.addAll(gRight.getValueForMetaPropertyToOne("rawType").getValueForMetaPropertyToMany("columns").toList());
         }
         else
         {
             MutableSet<String> names = Sets.mutable.withAll(gRight.getValueForMetaPropertyToOne("rawType").getValueForMetaPropertyToMany("columns").collect(c -> c.getValueForMetaPropertyToOne("name").getName()));
-            cols = cols.select(c -> !names.contains(c.getValueForMetaPropertyToOne("name").getName()));
+            newColumnSet = newColumnSet.select(c -> !names.contains(c.getValueForMetaPropertyToOne("name").getName()));
         }
-        newRelationType.setKeyValues(Lists.mutable.with("columns"), cols);
-        newGenericType.setKeyValues(Lists.mutable.with("rawType"), Lists.mutable.with(newRelationType));
-        MutableSet<String> potentialDups = Sets.mutable.withAll(Bags.mutable.withAll(cols.collect(c -> c.getValueForMetaPropertyToOne("name").getName())).selectDuplicates());
-        if (!potentialDups.isEmpty())
-        {
-            throw new PureCompilationException("The relation contains duplicates: " + potentialDups);
-        }
+
+        // Set RelationType on Generic
+        newGenericType.setKeyValues(Lists.mutable.with("rawType"), Lists.mutable.with(_RelationType.build(processorSupport, null, newColumnSet)));
+
         return newGenericType;
     }
 
@@ -347,21 +345,18 @@ public class GenericType
 
         if ((rawType == null) || (otherRawType == null))
         {
-//            if (rawType == otherRawType)
-//            {
-//                return Objects.equals(getTypeParameterName(genericType), getTypeParameterName(otherGenericType));
-//            }
-//            StringBuilder message = new StringBuilder("Make sure that the typeParameters are resolved before testing compatibility between generic types: ");
-//            print(message, genericType, processorSupport);
-//            message.append(" vs ");
-//            print(message, otherGenericType, processorSupport);
-//            throw new RuntimeException(message.toString());
             return true;
         }
 
         if (Type.isBottomType(rawType, processorSupport) || Type.isTopType(otherRawType, processorSupport))
         {
             return true;
+        }
+
+        boolean oneIsRelation = processorSupport.instance_instanceOf(rawType, M3Paths.RelationType);
+        if (oneIsRelation)
+        {
+            return _RelationType.equalRelationType(rawType, otherRawType, processorSupport);
         }
 
         CoreInstance functionClass = processorSupport.package_getByUserPath(M3Paths.Function);
@@ -620,6 +615,12 @@ public class GenericType
             return false;
         }
 
+        boolean oneIsRelation = processorSupport.instance_instanceOf(rawType1, M3Paths.RelationType);
+        if (oneIsRelation)
+        {
+            return _RelationType.equalRelationType(rawType1, rawType2, processorSupport);
+        }
+
         if (!rawType1.equals(rawType2))
         {
             CoreInstance functionTypeClass = processorSupport.package_getByUserPath(M3Paths.FunctionType);
@@ -829,12 +830,7 @@ public class GenericType
         }
         else if (processorSupport.instance_instanceOf(rawType, M3Paths.RelationType))
         {
-            appendable.append("(" + rawType.getValueForMetaPropertyToMany("columns").collect(c ->
-                    {
-                        CoreInstance type = c.getValueForMetaPropertyToOne("classifierGenericType").getValueForMetaPropertyToMany("typeArguments").get(1).getValueForMetaPropertyToOne("rawType");
-                        return c.getValueForMetaPropertyToOne("name").getName() + ":" + (type == null ? null : type.getName());
-                    }
-            ).makeString(", ") + ")");
+            appendable.append(_RelationType.print(rawType));
         }
         else if (fullPaths)
         {
