@@ -301,7 +301,7 @@ atomicExpression:
 columnBuilders: TILDE (colFunc | (BRACKET_OPEN colFunc(COMMA colFunc)* BRACKET_CLOSE))
 ;
 
-colFunc: (identifier COLON (lambdaFunction | lambdaPipe | (lambdaParam lambdaPipe)))
+colFunc: (identifier COLON (type | lambdaFunction | lambdaPipe | (lambdaParam lambdaPipe)))
 ;
 
 instanceReference: (PATH_SEPARATOR | qualifiedName | unitName) allOrFunction?

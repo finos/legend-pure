@@ -20,3 +20,17 @@ function meta::pure::functions::relation::slice<T>(rel:TDS<T>[1], start:Integer[
 {
     $rel->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::slice($start, $stop);
 }
+
+function <<test.Test>> meta::pure::functions::relation::tests::slice::testSimpleSlice():Boolean[1]
+{
+    let res = #TDS
+                value, str
+                1, a
+                3, ewe
+                4, qw
+                5, wwe
+                6, weq
+              #->slice(1,3);
+    assertEquals(2, $res->size());
+    assertEquals('34', $res->map(c|$c.value->toString())->joinStrings(''));
+}

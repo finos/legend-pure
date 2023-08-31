@@ -14,7 +14,10 @@
 
 import meta::pure::metamodel::relation::*;
 
-native function meta::pure::functions::relation::take<T>(rel:Relation<T>[1], size:Integer[1]):Relation<T>[1];
+function meta::pure::functions::relation::take<T>(rel:Relation<T>[1], size:Integer[1]):Relation<T>[1]
+{
+    $rel->limit($size);
+}
 
 function meta::pure::functions::relation::take<T>(rel:TDS<T>[1], size:Integer[1]):Relation<T>[1]
 {

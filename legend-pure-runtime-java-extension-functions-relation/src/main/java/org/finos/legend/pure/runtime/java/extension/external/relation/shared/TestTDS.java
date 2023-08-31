@@ -100,49 +100,6 @@ public class TestTDS
         return result;
     }
 
-    public TestTDS drop(int count)
-    {
-        dataByColumnName.forEachKey(columnName ->
-        {
-            Object dataAsObject = dataByColumnName.get(columnName);
-            switch (columnType.get(columnName))
-            {
-                case INT:
-                {
-                    int[] src = (int[]) dataAsObject;
-                    int[] target = Arrays.copyOfRange(src, count, (int)rowCount);
-                    dataByColumnName.put(columnName, target);
-                    break;
-                }
-                case CHAR:
-                {
-                    char[] src = (char[]) dataAsObject;
-                    char[] target = Arrays.copyOfRange(src, count, (int)rowCount);
-                    dataByColumnName.put(columnName, target);
-                    break;
-                }
-                case STRING:
-                {
-                    String[] src = (String[]) dataAsObject;
-                    String[] target = Arrays.copyOfRange(src, count, (int)rowCount);
-                    dataByColumnName.put(columnName, target);
-                    break;
-                }
-                case DOUBLE:
-                {
-                    double[] src = (double[]) dataAsObject;
-                    double[] target = Arrays.copyOfRange(src, count, (int)rowCount);
-                    dataByColumnName.put(columnName, target);
-                    break;
-                }
-                default:
-                    throw new RuntimeException("ERROR " + columnType.get(columnName) + " not supported in drop!");
-            }
-        });
-        this.rowCount = rowCount - count;
-        return this;
-    }
-
     public TestTDS drop(IntSet rows)
     {
         int size = rows.size();
@@ -279,8 +236,8 @@ public class TestTDS
                 {
                     int[] data1 = (int[]) dataAsObject1;
                     int[] data2 = (int[]) dataAsObject2;
-                    int[] _copy = Arrays.copyOf(data1, (int)result.rowCount);
-                    System.arraycopy(data2, 0, _copy, (int)rowCount, (int)tds2.rowCount);
+                    int[] _copy = Arrays.copyOf(data1, (int) result.rowCount);
+                    System.arraycopy(data2, 0, _copy, (int) rowCount, (int) tds2.rowCount);
                     copy = _copy;
                     break;
                 }
@@ -288,8 +245,8 @@ public class TestTDS
                 {
                     char[] data1 = (char[]) dataAsObject1;
                     char[] data2 = (char[]) dataAsObject2;
-                    char[] _copy = Arrays.copyOf(data1, (int)result.rowCount);
-                    System.arraycopy(data2, 0, _copy, (int)rowCount, (int)tds2.rowCount);
+                    char[] _copy = Arrays.copyOf(data1, (int) result.rowCount);
+                    System.arraycopy(data2, 0, _copy, (int) rowCount, (int) tds2.rowCount);
                     copy = _copy;
                     break;
                 }
@@ -297,8 +254,8 @@ public class TestTDS
                 {
                     String[] data1 = (String[]) dataAsObject1;
                     String[] data2 = (String[]) dataAsObject2;
-                    String[] _copy = Arrays.copyOf(data1, (int)result.rowCount);
-                    System.arraycopy(data2, 0, _copy, (int)rowCount, (int)tds2.rowCount);
+                    String[] _copy = Arrays.copyOf(data1, (int) result.rowCount);
+                    System.arraycopy(data2, 0, _copy, (int) rowCount, (int) tds2.rowCount);
                     copy = _copy;
                     break;
                 }
@@ -306,8 +263,8 @@ public class TestTDS
                 {
                     double[] data1 = (double[]) dataAsObject1;
                     double[] data2 = (double[]) dataAsObject2;
-                    double[] _copy = Arrays.copyOf(data1, (int)result.rowCount);
-                    System.arraycopy(data2, 0, _copy, (int)rowCount, (int)tds2.rowCount);
+                    double[] _copy = Arrays.copyOf(data1, (int) result.rowCount);
+                    System.arraycopy(data2, 0, _copy, (int) rowCount, (int) tds2.rowCount);
                     copy = _copy;
                     break;
                 }
@@ -323,6 +280,60 @@ public class TestTDS
     {
         this.dataByColumnName.put(name, res);
         this.columnType.put(name, dataType);
+        return this;
+    }
+
+    public TestTDS rename(String oldName, String newName)
+    {
+        DataType type = this.columnType.get(oldName);
+        Object data = this.dataByColumnName.get(oldName);
+        this.columnType.put(newName, type);
+        this.dataByColumnName.put(newName, data);
+        this.columnType.remove(oldName);
+        this.dataByColumnName.remove(oldName);
+        return this;
+    }
+
+    public TestTDS slice(int from, int to)
+    {
+        dataByColumnName.forEachKey(columnName ->
+        {
+            Object dataAsObject = dataByColumnName.get(columnName);
+            switch (columnType.get(columnName))
+            {
+                case INT:
+                {
+                    int[] src = (int[]) dataAsObject;
+                    int[] target = Arrays.copyOfRange(src, from, to);
+                    dataByColumnName.put(columnName, target);
+                    break;
+                }
+                case CHAR:
+                {
+                    char[] src = (char[]) dataAsObject;
+                    char[] target = Arrays.copyOfRange(src, from, to);
+                    dataByColumnName.put(columnName, target);
+                    break;
+                }
+                case STRING:
+                {
+                    String[] src = (String[]) dataAsObject;
+                    String[] target = Arrays.copyOfRange(src, from, to);
+                    dataByColumnName.put(columnName, target);
+                    break;
+                }
+                case DOUBLE:
+                {
+                    double[] src = (double[]) dataAsObject;
+                    double[] target = Arrays.copyOfRange(src, from, to);
+                    dataByColumnName.put(columnName, target);
+                    break;
+                }
+                default:
+                    throw new RuntimeException("ERROR " + columnType.get(columnName) + " not supported in drop!");
+            }
+        });
+        this.rowCount = to - from;
         return this;
     }
 }

@@ -32,9 +32,9 @@ import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
 import java.util.Stack;
 
-public class Drop extends Shared
+public class Slice extends Shared
 {
-    public Drop(FunctionExecutionInterpreted functionExecution, ModelRepository repository)
+    public Slice(FunctionExecutionInterpreted functionExecution, ModelRepository repository)
     {
         super(functionExecution, repository);
     }
@@ -43,7 +43,9 @@ public class Drop extends Shared
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         TestTDS tds = getTDS(params, 0, processorSupport);
-        Number value = PrimitiveUtilities.getIntegerValue(Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport));
-        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.copy().slice(value.intValue(), (int)tds.getRowCount()), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
+        Number from = PrimitiveUtilities.getIntegerValue(Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport));
+        Number to = PrimitiveUtilities.getIntegerValue(Instance.getValueForMetaPropertyToOneResolved(params.get(2), M3Properties.values, processorSupport));
+        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.copy().slice(from.intValue(), to.intValue()), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
     }
 }
+

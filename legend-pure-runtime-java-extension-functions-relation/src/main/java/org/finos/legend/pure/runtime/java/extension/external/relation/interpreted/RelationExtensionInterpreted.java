@@ -21,12 +21,7 @@ import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.navigation.*;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Concatenate;
-import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Drop;
-import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Filter;
-import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Map;
-import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Size;
-import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Extend;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.*;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.shared.TDSWithCursorCoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
@@ -48,7 +43,10 @@ public class RelationExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("extend_Relation_1__FuncColSpec_1__Relation_1_", Extend::new),
                 Tuples.pair("filter_Relation_1__Function_1__Relation_1_", Filter::new),
                 Tuples.pair("map_Relation_1__Function_1__V_MANY_", Map::new),
-                Tuples.pair("size_Relation_1__Integer_1_", Size::new)
+                Tuples.pair("size_Relation_1__Integer_1_", Size::new),
+                Tuples.pair("limit_Relation_1__Integer_1__Relation_1_", Limit::new),
+                Tuples.pair("rename_Relation_1__ColSpec_1__ColSpec_1__Relation_1_", Rename::new),
+                Tuples.pair("slice_Relation_1__Integer_1__Integer_1__Relation_1_", Slice::new)
         ));
     }
 
@@ -62,7 +60,7 @@ public class RelationExtensionInterpreted extends BaseInterpretedExtension
     {
         if (Instance.instanceOf(function, M3Paths.Column, processorSupport))
         {
-            return ((TDSWithCursorCoreInstance)params.get(0)).getValue(function._name());
+            return ((TDSWithCursorCoreInstance) params.get(0)).getValue(function._name());
         }
         return null;
     }

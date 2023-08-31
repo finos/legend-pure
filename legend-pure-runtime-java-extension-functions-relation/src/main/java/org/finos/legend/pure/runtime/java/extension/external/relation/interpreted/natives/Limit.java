@@ -32,9 +32,9 @@ import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
 import java.util.Stack;
 
-public class Drop extends Shared
+public class Limit extends Shared
 {
-    public Drop(FunctionExecutionInterpreted functionExecution, ModelRepository repository)
+    public Limit(FunctionExecutionInterpreted functionExecution, ModelRepository repository)
     {
         super(functionExecution, repository);
     }
@@ -44,6 +44,6 @@ public class Drop extends Shared
     {
         TestTDS tds = getTDS(params, 0, processorSupport);
         Number value = PrimitiveUtilities.getIntegerValue(Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport));
-        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.copy().slice(value.intValue(), (int)tds.getRowCount()), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
+        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.copy().slice(0, value.intValue()), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
     }
 }

@@ -414,6 +414,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                     CoreInstance func = functionExpression.getValueForMetaPropertyToOne(M3Properties.func);
                     String funcType = (func instanceof Property) ? "property" : ((func instanceof QualifiedProperty) ? "qualified property" : "function");
                     CoreInstance funcName = func.getValueForMetaPropertyToOne("property".equals(funcType) ? M3Properties.name : M3Properties.functionName);
+                    System.out.println(func);
                     throw new PureCompilationException(functionExpression.getSourceInformation(), "The system is not capable of inferring the return type of the " + funcType + " '" + PrimitiveUtilities.getStringValue(funcName) + "'. Check your signatures!");
                 }
 
