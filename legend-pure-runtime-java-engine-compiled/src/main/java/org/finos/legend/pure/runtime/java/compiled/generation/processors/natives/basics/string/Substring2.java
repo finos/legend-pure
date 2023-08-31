@@ -1,4 +1,4 @@
-// Copyright 2020 Goldman Sachs
+// Copyright 2023 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.native
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
-public class Substring extends AbstractNativeFunctionGeneric
+public class Substring2 extends AbstractNativeFunctionGeneric
 {
-    public Substring()
+    public Substring2()
     {
-        super(getMethod(CompiledSupport.class, "substring", String.class, Number.class, Number.class),
-                "substring_String_1__Integer_1__Integer_1__String_1_", "substring_String_1__Integer_1__String_1_");
+        super(getMethod(CompiledSupport.class, "substring", String.class, Number.class),
+                "substring_String_1__Integer_1__String_1_");
     }
 }
