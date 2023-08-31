@@ -43,15 +43,17 @@ public class SimpleTest extends PureExpressionTest
     public void testToOneError()
     {
         compileTestSource("fromString.pure",
-                        "function test():Any[*]\n" +
+                "function test():Any[*]\n" +
                         "{\n" +
                         "   let tds = #TDS\n" +
-                        "       val\n" +
-                        "       1\n" +
-                        "       2\n" +
-                        "       3\n" +
-                        "   #->filter(x|$x.val > 1)->map(x|$x.val);" +
-                        "   print($tds, 2);" +
+                        "                value, str\n" +
+                        "                1, a\n" +
+                        "                3, ewe\n" +
+                        "                4, qw\n" +
+                        "                5, wwe\n" +
+                        "                6, weq\n" +
+                        "              #->extend(~name:c|$c.value + 3)->map(x|$x.name);" +
+                        "   print($tds, 1);" +
                         "}\n");
         this.execute("test():Any[*]");
     }

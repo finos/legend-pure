@@ -14,23 +14,15 @@
 
 package org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives;
 
-import org.eclipse.collections.api.list.FixedSizeList;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionCoreInstanceWrapper;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.shared.Shared;
-import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.shared.TDSWithCursorCoreInstance;
 import org.finos.legend.pure.runtime.java.extension.external.relation.shared.TestTDS;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
@@ -40,9 +32,9 @@ import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
 import java.util.Stack;
 
-public class Map extends Shared
+public class Size extends Shared
 {
-    public Map(FunctionExecutionInterpreted functionExecution, ModelRepository repository)
+    public Size(FunctionExecutionInterpreted functionExecution, ModelRepository repository)
     {
         super(functionExecution, repository);
     }
@@ -50,25 +42,7 @@ public class Map extends Shared
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
-        CoreInstance collectFunction = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
-        LambdaFunction<CoreInstance> lambdaFunction = (LambdaFunction<CoreInstance>) LambdaFunctionCoreInstanceWrapper.toLambdaFunction(collectFunction);
-        VariableContext evalVarContext = this.getParentOrEmptyVariableContextForLambda(variableContext, collectFunction);
         TestTDS tds = getTDS(params, 0, processorSupport);
-
-        MutableList<CoreInstance> results = Lists.mutable.with();
-        FixedSizeList<CoreInstance> parameters = Lists.fixedSize.with((CoreInstance) null);
-        for (int i = 0; i < tds.getRowCount(); i++)
-        {
-            parameters.set(0, new TDSWithCursorCoreInstance(tds, i, "", null, null, -1, repository, false));
-            results.addAllIterable(
-                    Instance.getValueForMetaPropertyToManyResolved(
-                            this.functionExecution.executeFunction(false, lambdaFunction, parameters, resolvedTypeParameters, resolvedMultiplicityParameters, evalVarContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport),
-                            M3Properties.values,
-                            processorSupport)
-            );
-        }
-        return ValueSpecificationBootstrap.wrapValueSpecification_ForFunctionReturnValue(Instance.getValueForMetaPropertyToOneResolved(functionExpressionToUseInStack, M3Properties.genericType, processorSupport),
-                results, false, processorSupport);
-
+        return ValueSpecificationBootstrap.wrapValueSpecification(this.repository.newIntegerCoreInstance(tds.getRowCount()), true, processorSupport);
     }
 }

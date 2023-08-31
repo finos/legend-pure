@@ -20,3 +20,17 @@ function meta::pure::functions::relation::drop<T>(rel:TDS<T>[1], size:Integer[1]
 {
     $rel->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::drop($size);
 }
+
+function <<test.Test>> meta::pure::functions::relation::tests::drop::testSimpleDrop():Boolean[1]
+{
+    let res = #TDS
+                value, str
+                1, a
+                3, ewe
+                4, qw
+                5, wwe
+                6, weq
+              #->drop(3);
+    assertEquals(2, $res->size());
+    assertEquals('56', $res->map(c|$c.value->toString())->joinStrings(''));
+}

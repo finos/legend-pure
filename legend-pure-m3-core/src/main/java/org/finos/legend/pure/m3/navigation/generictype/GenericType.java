@@ -184,8 +184,7 @@ public class GenericType
         }
 
         // Set RelationType on Generic
-        newGenericType._rawType(_RelationType.build(newGenericType, newColumnSet, null, processorSupport));
-
+        newGenericType._rawType(_RelationType.build(newGenericType, newColumnSet, gLeft.getValueForMetaPropertyToOne("rawType").getSourceInformation(), processorSupport));
         return newGenericType;
     }
 

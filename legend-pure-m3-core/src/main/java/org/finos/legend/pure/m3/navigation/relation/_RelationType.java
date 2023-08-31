@@ -70,9 +70,9 @@ public class _RelationType
         newRelationType._classifierGenericType(classifierGenericType);
 
         // SubType of Any
-        Generalization generalization = (Generalization) processorSupport.newAnonymousCoreInstance(null, M3Paths.Generalization);
+        Generalization generalization = (Generalization) processorSupport.newAnonymousCoreInstance(pureSourceInformation, M3Paths.Generalization);
         generalization._specific(newRelationType);
-        org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType anyG = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) processorSupport.newAnonymousCoreInstance(null, M3Paths.GenericType);
+        org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType anyG = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) processorSupport.newAnonymousCoreInstance(pureSourceInformation, M3Paths.GenericType);
         anyG._rawType((Class<?>) processorSupport.package_getByUserPath(M3Paths.Any));
         generalization._general(anyG);
         newRelationType._generalizationsAdd(generalization);

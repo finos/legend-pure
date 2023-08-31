@@ -494,7 +494,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                     throw new PureCompilationException(functionExpression.getSourceInformation(), e.getMessage());
                 }
             }
-            if ("funcColSpecArray_Function_MANY__String_MANY__T_1__FuncColSpecArray_1_".equals(finalFunction.getName()))
+            if ("funcColSpecArray_Function_MANY__String_MANY__T_1__FuncColSpecArray_1_".equals(finalFunction.getName()) || "funcColSpec_Function_1__String_1__T_1__FuncColSpec_1_".equals(finalFunction.getName()))
             {
 
                 MutableList<ValueSpecification> parameters = Lists.mutable.withAll(functionExpression._parametersValues());

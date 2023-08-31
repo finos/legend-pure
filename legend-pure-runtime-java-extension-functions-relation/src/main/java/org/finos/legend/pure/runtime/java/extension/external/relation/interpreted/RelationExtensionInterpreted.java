@@ -21,8 +21,12 @@ import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.navigation.*;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Concatenate;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Drop;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Filter;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Map;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Size;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Extend;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.shared.TDSWithCursorCoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
@@ -39,8 +43,12 @@ public class RelationExtensionInterpreted extends BaseInterpretedExtension
     public RelationExtensionInterpreted()
     {
         super(Lists.mutable.with(
+                Tuples.pair("concatenate_Relation_1__Relation_1__Relation_1_", Concatenate::new),
+                Tuples.pair("drop_Relation_1__Integer_1__Relation_1_", Drop::new),
+                Tuples.pair("extend_Relation_1__FuncColSpec_1__Relation_1_", Extend::new),
+                Tuples.pair("filter_Relation_1__Function_1__Relation_1_", Filter::new),
                 Tuples.pair("map_Relation_1__Function_1__V_MANY_", Map::new),
-                Tuples.pair("filter_Relation_1__Function_1__Relation_1_", Filter::new)
+                Tuples.pair("size_Relation_1__Integer_1_", Size::new)
         ));
     }
 

@@ -27,3 +27,45 @@ function meta::pure::functions::relation::extend<T,Z>(r:TDS<T>[1], fs:FuncColSpe
 {
     $r->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::extend($fs);
 }
+
+function <<test.Test>> meta::pure::functions::relation::tests::extend::testSimpleExtendStr():Boolean[1]
+{
+    let res = #TDS
+                value, str
+                1, a
+                3, ewe
+                4, qw
+                5, wwe
+                6, weq
+              #->extend(~name:c|$c.str + $c.value->toString());
+    assertEquals(5, $res->size());
+    assertEquals('a1ewe3qw4wwe5weq6', $res->map(c|$c.name)->joinStrings(''));
+}
+
+function <<test.Test>> meta::pure::functions::relation::tests::extend::testSimpleExtendInt():Boolean[1]
+{
+    let res = #TDS
+                value, str
+                1, a
+                3, ewe
+                4, qw
+                5, wwe
+                6, weq
+              #->extend(~name:c|$c.value + 1);
+    assertEquals(5, $res->size());
+    assertEquals('24567', $res->map(c|$c.name->toString())->joinStrings(''));
+}
+
+function <<test.Test>> meta::pure::functions::relation::tests::extend::testSimpleExtendFloat():Boolean[1]
+{
+    let res = #TDS
+                value, doub
+                1, 1.2
+                3, 2.3
+                4, 4.2
+                5, 4.2
+                6, 4.5
+              #->extend(~name:c|$c.doub + 1.0);
+    assertEquals(5, $res->size());
+    assertEquals('2.23.35.25.25.5', $res->map(c|$c.name->toString())->joinStrings(''));
+}

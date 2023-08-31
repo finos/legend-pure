@@ -961,7 +961,7 @@ public class AntlrContextToM3CoreInstance
             CoreInstance replacementFunction = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart()), null, null, importId, null);
             replacementFunction.setKeyValues(Lists.mutable.with("functionName"), Lists.mutable.with(this.repository.newStringCoreInstance(ctx.columnBuilders().BRACKET_OPEN() != null ? "funcColSpecArray" : "funcColSpec")));
 
-            SourceInformation src = new SourceInformation("", 0, 0, 0, 0);
+            SourceInformation src = this.sourceInformation.getPureSourceInformation(ctx.getStart());
             GenericTypeInstance relationTypeGenericType = GenericTypeInstance.createPersistent(this.repository);
 
             MutableList<CoreInstance> lambdas = Lists.mutable.empty();

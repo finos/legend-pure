@@ -38,10 +38,10 @@ public abstract class Shared extends NativeFunction
         this.functionExecution = functionExecution;
     }
 
-    public TestTDS getTDS(ListIterable<? extends CoreInstance> params, ProcessorSupport processorSupport)
+    public TestTDS getTDS(ListIterable<? extends CoreInstance> params, int position, ProcessorSupport processorSupport)
     {
         TestTDS tds;
-        CoreInstance obj = params.get(0).getValueForMetaPropertyToOne("values");
+        CoreInstance obj = params.get(position).getValueForMetaPropertyToOne("values");
         return obj instanceof TDSCoreInstance ?
                 ((TDSCoreInstance) obj).getTDS() :
                 new TestTDS(readCsv((obj.getValueForMetaPropertyToOne("csv")).getName()), repository, processorSupport);

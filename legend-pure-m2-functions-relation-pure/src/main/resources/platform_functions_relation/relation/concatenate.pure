@@ -20,3 +20,25 @@ function meta::pure::functions::relation::concatenate<T>(rel1:TDS<T>[1], rel2:TD
 {
     $rel1->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::concatenate($rel2->cast(@meta::pure::metamodel::relation::Relation<T>));
 }
+
+
+function <<test.Test>> meta::pure::functions::relation::tests::concatenate::testSimpleConcatenate():Boolean[1]
+{
+    let res = #TDS
+                value, str
+                1, a
+                3, ewe
+                4, qw
+              #
+              ->concatenate
+              (
+                  #TDS
+                    value, str
+                    5, qwea
+                    6, eeewe
+                    7, qqwew
+                  #
+              );
+    assertEquals(6, $res->size());
+    assertEquals('134567', $res->map(c|$c.value->toString())->joinStrings(''));
+}
