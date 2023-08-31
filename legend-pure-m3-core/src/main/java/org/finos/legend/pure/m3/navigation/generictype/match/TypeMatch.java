@@ -18,6 +18,8 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.impl.utility.ListIterate;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -384,12 +386,18 @@ abstract class TypeMatch implements Comparable<TypeMatch>
                 return null;
             }
 
-            ListIterable<? extends CoreInstance> sortedCandidate = candidateColumns.toSortedList(Comparator.comparing((CoreInstance a) -> a.getValueForMetaPropertyToOne("name").getName()));
-            ListIterable<? extends CoreInstance> sortedSignature = signatureColumns.toSortedList(Comparator.comparing((CoreInstance a) -> a.getValueForMetaPropertyToOne("name").getName()));
 
-            ListIterable<? extends CoreInstance> sortedCandidateSub = sortedCandidate.subList(0, sortedSignature.size());
+            MutableSet<String> signatureNames = signatureColumns.collect(c -> c.getValueForMetaPropertyToOne("name").getName()).toSet();
 
-            if (sortedSignature.zip(sortedCandidateSub).injectInto(true, (a, b) ->
+            ListIterable<? extends CoreInstance> sortedCandidateSub = candidateColumns.select(c -> signatureNames.contains(c.getValueForMetaPropertyToOne("name").getName())).toSortedList(Comparator.comparing((CoreInstance a) -> a.getValueForMetaPropertyToOne("name").getName()));
+            ListIterable<? extends CoreInstance> sortedSignatures = signatureColumns.toSortedList(Comparator.comparing((CoreInstance a) -> a.getValueForMetaPropertyToOne("name").getName()));
+
+            if (sortedSignatures.size() != sortedCandidateSub.size())
+            {
+                return null;
+            }
+
+            if (sortedSignatures.zip(sortedCandidateSub).injectInto(true, (a, b) ->
             {
                 String colName1 = b.getOne().getValueForMetaPropertyToOne("name").getName();
                 String colName2 = b.getTwo().getValueForMetaPropertyToOne("name").getName();
@@ -398,7 +406,7 @@ abstract class TypeMatch implements Comparable<TypeMatch>
                 return a && colName1.equals(colName2) && Type.subTypeOf(type2, type1, processorSupport);
             }))
             {
-                return new SimpleTypeMatch(sortedCandidate.size() - sortedSignature.size());
+                return new SimpleTypeMatch(candidateColumns.size() - signatureColumns.size());
             }
 
             return null;

@@ -151,4 +151,28 @@ public class TestTDSDSLCompilation extends AbstractPureTestWithCoreCompiled
                         "}\n");
         this.runtime.compile();
     }
+
+    @Test
+    public void testFunctionMatchingDeepColumn()
+    {
+        this.runtime.createInMemorySource("file.pure",
+                "import meta::pure::metamodel::relation::*;" +
+                        "function x(t:Relation<(vce:String)>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "  true;\n" +
+                        "}" +
+                        "" +
+                        "function test():Boolean[1]" +
+                        "{" +
+                        "    #TDS\n" +
+                        "      id, name, vce\n" +
+                        "      1, Pierre, a\n" +
+                        "      2, Ram, e\n" +
+                        "      3, Neema, e#\n" +
+                        //"    ->filter(t|$t.vce == 'ok')\n" +
+                        "    ->x();" +
+                        "    true;" +
+                        "}");
+        this.runtime.compile();
+    }
 }
