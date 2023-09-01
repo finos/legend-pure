@@ -19,8 +19,7 @@ import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureException;
-
-import java.io.IOException;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class PureParserException extends PureException
 {
@@ -61,7 +60,7 @@ public class PureParserException extends PureException
     }
 
     @Override
-    protected void writeAdditionalMessageInfo(Appendable appendable) throws IOException
+    protected void writeAdditionalMessageInfo(SafeAppendable appendable)
     {
         appendable.append(getInfo());
     }

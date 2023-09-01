@@ -14,13 +14,11 @@
 
 package org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.finos.legend.pure.m4.exception.PureException;
-
-import java.io.IOException;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class PureCompiledExecutionException extends PureExecutionException
 {
@@ -29,14 +27,14 @@ public class PureCompiledExecutionException extends PureExecutionException
     public PureCompiledExecutionException(SourceInformation sourceInformation, String info, Throwable cause)
     {
         super(sourceInformation, info, cause);
-        this.addStackTraceElement(sourceInformation);
+        addStackTraceElement(sourceInformation);
     }
 
     @SuppressWarnings("unused")
     public PureCompiledExecutionException(SourceInformation sourceInformation, String info)
     {
         super(sourceInformation, info, null);
-        this.addStackTraceElement(sourceInformation);
+        addStackTraceElement(sourceInformation);
     }
 
     public void addStackTraceElement(SourceInformation sourceInformation)
@@ -45,20 +43,13 @@ public class PureCompiledExecutionException extends PureExecutionException
     }
 
     @Override
-    public void printPureStackTrace(Appendable appendable, String indent)
-
+    public <T extends Appendable> T printPureStackTrace(T appendable, String indent)
     {
-        try
-        {
-            writePureStackTrace(appendable, indent);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        writePureStackTrace(appendable, indent);
+        return appendable;
     }
 
-    private void writeSourceInformationMessage(SourceInformation sourceInformation, Appendable appendable, boolean includeParens) throws IOException
+    private void writeSourceInformationMessage(SourceInformation sourceInformation, SafeAppendable appendable)
     {
         if (sourceInformation == null)
         {
@@ -66,42 +57,24 @@ public class PureCompiledExecutionException extends PureExecutionException
         }
         else
         {
-            if (includeParens)
-            {
-                appendable.append('(');
-            }
-
-
-            appendable.append("resource:");
-            appendable.append(sourceInformation.getSourceId());
-
-            printSourceInformationWithoutSourceId(appendable, sourceInformation);
-
-            if (includeParens)
-            {
-                appendable.append(')');
-            }
+            printSourceInformationWithoutSourceId(appendable.append("resource:").append(sourceInformation.getSourceId()), sourceInformation);
         }
     }
 
-    private void writePureStackTrace(Appendable appendable, String indent) throws IOException
+    private void writePureStackTrace(Appendable appendable, String indent)
     {
-        int stackLevel = 1;
-        PureException pureCause = getPureCause();
-        if (pureCause == null)
+        if (this.stackTraceElements.notEmpty())
         {
-            stackLevel = 1;
-        }
-        for (SourceInformation si : this.stackTraceElements)
-        {
-            if (indent != null)
+            SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+            this.stackTraceElements.forEachWithIndex((si, i) ->
             {
-                appendable.append(indent);
-                appendable.append(Integer.toString(stackLevel++));
-                appendable.append(": ");
-            }
-            writeSourceInformationMessage(si, appendable, false);
-            appendable.append('\n');
+                if (indent != null)
+                {
+                    safeAppendable.append(indent).append(i + 1).append(": ");
+                }
+                writeSourceInformationMessage(si, safeAppendable);
+                safeAppendable.append('\n');
+            });
         }
     }
 }
