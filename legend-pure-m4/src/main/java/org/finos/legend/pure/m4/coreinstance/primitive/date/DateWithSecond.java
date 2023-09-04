@@ -34,7 +34,7 @@ public class DateWithSecond extends AbstractDateWithSecond
     }
 
     @Override
-    public PureDate addMilliseconds(int milliseconds)
+    public PureDate addMilliseconds(long milliseconds)
     {
         throw new UnsupportedOperationException();
     }

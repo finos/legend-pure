@@ -151,6 +151,9 @@ public class TestPureDate
     {
         Assert.assertEquals(DateFunctions.newPureDate(2017, 2, 28), DateFunctions.newPureDate(2016, 2, 29).addYears(1));
         Assert.assertEquals(DateFunctions.newPureDate(2020, 2, 29), DateFunctions.newPureDate(2016, 2, 29).addYears(4));
+
+        RuntimeException e = Assert.assertThrows(RuntimeException.class, () -> DateFunctions.newPureDate(2016, 2, 29).addYears(12345678912L));
+        Assert.assertEquals("Year incremented beyond supported bounds", e.getMessage());
     }
 
     @Test

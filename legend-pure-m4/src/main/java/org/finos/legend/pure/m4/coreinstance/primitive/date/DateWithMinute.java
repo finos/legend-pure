@@ -49,13 +49,13 @@ public final class DateWithMinute extends AbstractDateWithMinute
     }
 
     @Override
-    public PureDate addSeconds(int seconds)
+    public PureDate addSeconds(long seconds)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public PureDate addMilliseconds(int milliseconds)
+    public PureDate addMilliseconds(long milliseconds)
     {
         throw new UnsupportedOperationException();
     }

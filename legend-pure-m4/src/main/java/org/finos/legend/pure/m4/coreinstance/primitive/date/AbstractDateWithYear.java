@@ -30,7 +30,7 @@ abstract class AbstractDateWithYear extends AbstractPureDate
     }
 
     @Override
-    public PureDate addYears(int years)
+    public PureDate addYears(long years)
     {
         if (years == 0)
         {
@@ -45,8 +45,13 @@ abstract class AbstractDateWithYear extends AbstractPureDate
     @Override
     public abstract AbstractDateWithYear clone();
 
-    void incrementYear(int delta)
+    void incrementYear(long delta)
     {
+        if (this.year + delta > Integer.MAX_VALUE)
+        {
+            throw new RuntimeException("Year incremented beyond supported bounds");
+        }
+
         this.year += delta;
     }
 }

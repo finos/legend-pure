@@ -116,49 +116,49 @@ public class LatestDate implements PureDate
     }
 
     @Override
-    public PureDate addYears(int years)
+    public PureDate addYears(long years)
     {
         throw new UnsupportedOperationException("Invalid operation for LatestDate");
     }
 
     @Override
-    public PureDate addMonths(int months)
+    public PureDate addMonths(long months)
     {
         throw new UnsupportedOperationException("Invalid operation for LatestDate");
     }
 
     @Override
-    public PureDate addWeeks(int weeks)
+    public PureDate addWeeks(long weeks)
     {
         throw new UnsupportedOperationException("Invalid operation for LatestDate");
     }
 
     @Override
-    public PureDate addDays(int days)
+    public PureDate addDays(long days)
     {
         throw new UnsupportedOperationException("Invalid operation for LatestDate");
     }
 
     @Override
-    public PureDate addHours(int hours)
+    public PureDate addHours(long hours)
     {
         throw new UnsupportedOperationException("Invalid operation for LatestDate");
     }
 
     @Override
-    public PureDate addMinutes(int minutes)
+    public PureDate addMinutes(long minutes)
     {
         throw new UnsupportedOperationException("Invalid operation for LatestDate");
     }
 
     @Override
-    public PureDate addSeconds(int seconds)
+    public PureDate addSeconds(long seconds)
     {
         throw new UnsupportedOperationException("Invalid operation for LatestDate");
     }
 
     @Override
-    public PureDate addMilliseconds(int milliseconds)
+    public PureDate addMilliseconds(long milliseconds)
     {
         throw new UnsupportedOperationException("Invalid operation for LatestDate");
     }

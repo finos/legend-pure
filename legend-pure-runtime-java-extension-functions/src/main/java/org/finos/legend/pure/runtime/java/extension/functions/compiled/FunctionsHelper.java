@@ -254,35 +254,35 @@ public class FunctionsHelper
         {
             case "YEARS":
             {
-                return date.addYears((int) number);
+                return date.addYears(number);
             }
             case "MONTHS":
             {
-                return date.addMonths((int) number);
+                return date.addMonths(number);
             }
             case "WEEKS":
             {
-                return date.addWeeks((int) number);
+                return date.addWeeks(number);
             }
             case "DAYS":
             {
-                return date.addDays((int) number);
+                return date.addDays(number);
             }
             case "HOURS":
             {
-                return date.addHours((int) number);
+                return date.addHours(number);
             }
             case "MINUTES":
             {
-                return date.addMinutes((int) number);
+                return date.addMinutes(number);
             }
             case "SECONDS":
             {
-                return date.addSeconds((int) number);
+                return date.addSeconds(number);
             }
             case "MILLISECONDS":
             {
-                return date.addMilliseconds((int) number);
+                return date.addMilliseconds(number);
             }
             case "MICROSECONDS":
             {

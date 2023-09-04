@@ -177,7 +177,7 @@ abstract class AbstractPureDate implements PureDate, Serializable
     }
 
     @Override
-    public PureDate addWeeks(int weeks)
+    public PureDate addWeeks(long weeks)
     {
         return addDays(7 * weeks);
     }

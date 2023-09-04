@@ -37,7 +37,7 @@ abstract class AbstractDateWithMonth extends AbstractDateWithYear
     }
 
     @Override
-    public PureDate addMonths(int months)
+    public PureDate addMonths(long months)
     {
         if (months == 0)
         {
@@ -52,7 +52,7 @@ abstract class AbstractDateWithMonth extends AbstractDateWithYear
     @Override
     public abstract AbstractDateWithMonth clone();
 
-    void incrementMonth(int delta)
+    void incrementMonth(long delta)
     {
         incrementYear(delta / 12);
         this.month += (delta % 12);

@@ -37,7 +37,7 @@ abstract class AbstractDateWithHour extends AbstractDateWithDay implements DateT
     }
 
     @Override
-    public PureDate addHours(int hours)
+    public PureDate addHours(long hours)
     {
         if (hours == 0)
         {

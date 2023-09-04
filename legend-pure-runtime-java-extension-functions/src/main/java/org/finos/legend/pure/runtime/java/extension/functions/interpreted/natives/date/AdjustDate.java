@@ -59,42 +59,42 @@ public class AdjustDate extends NativeFunction
         {
             case "YEARS":
             {
-                result = date.addYears(number.intValue());
+                result = date.addYears(number.longValue());
                 break;
             }
             case "MONTHS":
             {
-                result = date.addMonths(number.intValue());
+                result = date.addMonths(number.longValue());
                 break;
             }
             case "WEEKS":
             {
-                result = date.addWeeks(number.intValue());
+                result = date.addWeeks(number.longValue());
                 break;
             }
             case "DAYS":
             {
-                result = date.addDays(number.intValue());
+                result = date.addDays(number.longValue());
                 break;
             }
             case "HOURS":
             {
-                result = date.addHours(number.intValue());
+                result = date.addHours(number.longValue());
                 break;
             }
             case "MINUTES":
             {
-                result = date.addMinutes(number.intValue());
+                result = date.addMinutes(number.longValue());
                 break;
             }
             case "SECONDS":
             {
-                result = date.addSeconds(number.intValue());
+                result = date.addSeconds(number.longValue());
                 break;
             }
             case "MILLISECONDS":
             {
-                result = date.addMilliseconds(number.intValue());
+                result = date.addMilliseconds(number.longValue());
                 break;
             }
             case "MICROSECONDS":

@@ -39,7 +39,7 @@ abstract class AbstractDateWithMinute extends AbstractDateWithHour
     }
 
     @Override
-    public PureDate addMinutes(int minutes)
+    public PureDate addMinutes(long minutes)
     {
         if (minutes == 0)
         {
