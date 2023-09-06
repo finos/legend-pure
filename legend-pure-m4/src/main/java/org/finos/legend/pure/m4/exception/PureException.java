@@ -15,6 +15,7 @@
 package org.finos.legend.pure.m4.exception;
 
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 import java.io.IOException;
 
@@ -95,28 +96,21 @@ public abstract class PureException extends RuntimeException
     @Override
     public String getMessage()
     {
-        StringBuilder builder = new StringBuilder((this.info == null) ? 128 : (this.info.length() + 128));
-
-        try
-        {
-            String exceptionName = getExceptionName();
-            builder.append((exceptionName == null) ? "Error" : exceptionName);
-            builder.append(" at ");
-            writeSourceInformationMessage(builder, true);
-            if (hasAdditionalMessageInfo())
-            {
-                builder.append(", ");
-                writeAdditionalMessageInfo(builder);
-            }
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-
-        return builder.toString();
+        return printMessage(new StringBuilder((this.info == null) ? 128 : (this.info.length() + 128))).toString();
     }
 
+    public <T extends Appendable> T printMessage(T appendable)
+    {
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+        String exceptionName = getExceptionName();
+        safeAppendable.append((exceptionName == null) ? "Error" : exceptionName);
+        writeSourceInformationMessage(safeAppendable.append(" at "), true);
+        if (hasAdditionalMessageInfo())
+        {
+            writeAdditionalMessageInfo(safeAppendable.append(", "));
+        }
+        return appendable;
+    }
 
     /**
      * Get the message from the originating Pure exception.
@@ -184,9 +178,7 @@ public abstract class PureException extends RuntimeException
      */
     public String getPureStackTrace(String indent)
     {
-        StringBuilder builder = new StringBuilder(256);
-        printPureStackTrace(builder, indent);
-        return builder.toString();
+        return printPureStackTrace(new StringBuilder(256), indent).toString();
     }
 
     /**
@@ -195,7 +187,7 @@ public abstract class PureException extends RuntimeException
      */
     public void printPureStackTrace()
     {
-        printPureStackTrace((String)null);
+        printPureStackTrace((String) null);
     }
 
     /**
@@ -203,7 +195,7 @@ public abstract class PureException extends RuntimeException
      * System.out.  Each line is indented with the given
      * indent string (where null indicates no indentation).
      *
-     * @param indent
+     * @param indent indentation string for each line of the stack trace
      */
     public void printPureStackTrace(String indent)
     {
@@ -215,10 +207,11 @@ public abstract class PureException extends RuntimeException
      * given appendable.
      *
      * @param appendable appendable to print stack trace to
+     * @return the appendable
      */
-    public void printPureStackTrace(Appendable appendable)
+    public <T extends Appendable> T printPureStackTrace(T appendable)
     {
-        printPureStackTrace(appendable, null);
+        return printPureStackTrace(appendable, null);
     }
 
     /**
@@ -228,17 +221,12 @@ public abstract class PureException extends RuntimeException
      *
      * @param appendable appendable to print stack trace to
      * @param indent     indentation string for each line of the stack trace
+     * @return the appendable
      */
-    public void printPureStackTrace(Appendable appendable, String indent)
+    public <T extends Appendable> T printPureStackTrace(T appendable, String indent)
     {
-        try
-        {
-            writePureStackTrace(appendable, indent);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        writePureStackTrace(SafeAppendable.wrap(appendable), indent);
+        return appendable;
     }
 
     /**
@@ -265,13 +253,10 @@ public abstract class PureException extends RuntimeException
      * message.
      *
      * @param appendable exception message appendable
-     * @throws IOException
      */
-    protected void writeAdditionalMessageInfo(Appendable appendable) throws IOException
+    protected void writeAdditionalMessageInfo(SafeAppendable appendable)
     {
-        appendable.append('"');
-        appendable.append(this.info);
-        appendable.append('"');
+        appendable.append('"').append(this.info).append('"');
     }
 
     /**
@@ -285,7 +270,7 @@ public abstract class PureException extends RuntimeException
         return findPureException(getCause());
     }
 
-    private void writeSourceInformationMessage(Appendable appendable, boolean includeParens) throws IOException
+    private void writeSourceInformationMessage(SafeAppendable appendable, boolean includeParens)
     {
         if (this.sourceInformation == null)
         {
@@ -297,12 +282,8 @@ public abstract class PureException extends RuntimeException
             {
                 appendable.append('(');
             }
-
-            appendable.append("resource:");
-            appendable.append(this.sourceInformation.getSourceId());
-
+            appendable.append("resource:").append(this.sourceInformation.getSourceId());
             printSourceInformationWithoutSourceId(appendable, this.sourceInformation);
-
             if (includeParens)
             {
                 appendable.append(')');
@@ -310,7 +291,13 @@ public abstract class PureException extends RuntimeException
         }
     }
 
+    @Deprecated
     public static void printSourceInformationWithoutSourceId(Appendable appendable, SourceInformation sourceInformation) throws IOException
+    {
+        printSourceInformationWithoutSourceId(SafeAppendable.wrap(appendable), sourceInformation);
+    }
+
+    protected static void printSourceInformationWithoutSourceId(SafeAppendable appendable, SourceInformation sourceInformation)
     {
         int line = sourceInformation.getLine();
         int endLine = sourceInformation.getEndLine();
@@ -320,35 +307,29 @@ public abstract class PureException extends RuntimeException
         {
             if (line == endLine || endLine == -1)
             {
-                appendable.append(" line:");
-                appendable.append(Integer.toString(line));
+                appendable.append(" line:").append(line);
                 if (column != -1)
                 {
-                    appendable.append(" column:");
-                    appendable.append(Integer.toString(column));
+                    appendable.append(" column:").append(column);
                 }
             }
             else
             {
-                appendable.append(" lines:");
-                appendable.append(Integer.toString(line));
+                appendable.append(" lines:").append(line);
                 if (column != -1)
                 {
-                    appendable.append('c');
-                    appendable.append(Integer.toString(column));
+                    appendable.append('c').append(column);
                 }
-                appendable.append('-');
-                appendable.append(Integer.toString(endLine));
+                appendable.append('-').append(endLine);
                 if (endColumn != -1)
                 {
-                    appendable.append('c');
-                    appendable.append(Integer.toString(endColumn));
+                    appendable.append('c').append(endColumn);
                 }
             }
         }
     }
 
-    private int writePureStackTrace(Appendable appendable, String indent) throws IOException
+    private int writePureStackTrace(SafeAppendable appendable, String indent)
     {
         int stackLevel;
 
@@ -364,9 +345,7 @@ public abstract class PureException extends RuntimeException
 
         if (indent != null)
         {
-            appendable.append(indent);
-            appendable.append(Integer.toString(stackLevel));
-            appendable.append(": ");
+            appendable.append(indent).append(stackLevel).append(": ");
         }
         writeSourceInformationMessage(appendable, false);
         appendable.append('\n');
@@ -391,7 +370,7 @@ public abstract class PureException extends RuntimeException
         {
             if (t instanceof PureException)
             {
-                return (PureException)t;
+                return (PureException) t;
             }
         }
         return null;
