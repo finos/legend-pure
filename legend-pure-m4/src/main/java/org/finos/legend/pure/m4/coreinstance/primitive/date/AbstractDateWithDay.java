@@ -81,7 +81,7 @@ abstract class AbstractDateWithDay extends AbstractDateWithMonth
 
     void incrementDay(long delta)
     {
-        long remDelta = this.day + delta;
+        long remDelta = Math.addExact(this.day, delta);
         if (delta < 0)
         {
             while (remDelta < 1)

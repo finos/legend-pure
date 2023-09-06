@@ -47,11 +47,11 @@ abstract class AbstractDateWithYear extends AbstractPureDate
 
     void incrementYear(long delta)
     {
-        if (this.year + delta > Integer.MAX_VALUE)
+        long newYear = Math.addExact(this.year, delta);
+        if ((newYear > Integer.MAX_VALUE) || (newYear < Integer.MIN_VALUE))
         {
-            throw new RuntimeException("Year incremented beyond supported bounds");
+            throw new IllegalStateException("Year incremented beyond supported bounds");
         }
-
-        this.year += delta;
+        this.year = (int) newYear;
     }
 }
