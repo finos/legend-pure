@@ -37,7 +37,7 @@ abstract class AbstractDateWithDay extends AbstractDateWithMonth
     }
 
     @Override
-    public PureDate addYears(int years)
+    public PureDate addYears(long years)
     {
         PureDate result = super.addYears(years);
         if ((result.getMonth() == 2) && (result.getDay() == 29) && !DateFunctions.isLeapYear(result.getYear()))
@@ -48,7 +48,7 @@ abstract class AbstractDateWithDay extends AbstractDateWithMonth
     }
 
     @Override
-    public PureDate addMonths(int months)
+    public PureDate addMonths(long months)
     {
         PureDate result = super.addMonths(months);
         if (result != this)
@@ -64,7 +64,7 @@ abstract class AbstractDateWithDay extends AbstractDateWithMonth
     }
 
     @Override
-    public PureDate addDays(int days)
+    public PureDate addDays(long days)
     {
         if (days == 0)
         {
@@ -81,23 +81,23 @@ abstract class AbstractDateWithDay extends AbstractDateWithMonth
 
     void incrementDay(long delta)
     {
+        long remDelta = Math.addExact(this.day, delta);
         if (delta < 0)
         {
-            this.day += delta;
-            while (this.day < 1)
+            while (remDelta < 1)
             {
                 incrementMonth(-1);
-                this.day += DateFunctions.getDaysInMonth(this.getYear(), this.getMonth());
+                remDelta += DateFunctions.getDaysInMonth(this.getYear(), this.getMonth());
             }
         }
         else if (delta > 0)
         {
-            this.day += delta;
-            for (int maxDay = DateFunctions.getDaysInMonth(getYear(), getMonth()); this.day > maxDay; maxDay = DateFunctions.getDaysInMonth(getYear(), getMonth()))
+            for (int maxDay = DateFunctions.getDaysInMonth(getYear(), getMonth()); remDelta > maxDay; maxDay = DateFunctions.getDaysInMonth(getYear(), getMonth()))
             {
-                this.day -= maxDay;
+                remDelta -= maxDay;
                 incrementMonth(1);
             }
         }
+        this.day = (int) remDelta;
     }
 }

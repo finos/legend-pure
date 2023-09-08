@@ -48,21 +48,21 @@ public interface PureDate extends Comparable<PureDate>
 
     void format(Appendable appendable, String formatString);
 
-    PureDate addYears(int years);
+    PureDate addYears(long years);
 
-    PureDate addMonths(int months);
+    PureDate addMonths(long months);
 
-    PureDate addWeeks(int weeks);
+    PureDate addWeeks(long weeks);
 
-    PureDate addDays(int days);
+    PureDate addDays(long days);
 
-    PureDate addHours(int hours);
+    PureDate addHours(long hours);
 
-    PureDate addMinutes(int minutes);
+    PureDate addMinutes(long minutes);
 
-    PureDate addSeconds(int seconds);
+    PureDate addSeconds(long seconds);
 
-    PureDate addMilliseconds(int milliseconds);
+    PureDate addMilliseconds(long milliseconds);
 
     PureDate addMicroseconds(long microseconds);
 

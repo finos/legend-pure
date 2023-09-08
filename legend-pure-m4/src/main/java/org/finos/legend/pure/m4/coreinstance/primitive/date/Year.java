@@ -94,37 +94,37 @@ public final class Year extends AbstractDateWithYear
     }
 
     @Override
-    public PureDate addMonths(int months)
+    public PureDate addMonths(long months)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public PureDate addDays(int days)
+    public PureDate addDays(long days)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public PureDate addHours(int hours)
+    public PureDate addHours(long hours)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public PureDate addMinutes(int minutes)
+    public PureDate addMinutes(long minutes)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public PureDate addSeconds(int seconds)
+    public PureDate addSeconds(long seconds)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public PureDate addMilliseconds(int milliseconds)
+    public PureDate addMilliseconds(long milliseconds)
     {
         throw new UnsupportedOperationException();
     }

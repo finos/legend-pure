@@ -37,7 +37,7 @@ abstract class AbstractDateWithSecond extends AbstractDateWithMinute
     }
 
     @Override
-    public PureDate addSeconds(int seconds)
+    public PureDate addSeconds(long seconds)
     {
         if (seconds == 0)
         {
