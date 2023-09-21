@@ -133,7 +133,8 @@ Enum meta::relational::metamodel::join::JoinType
 {
    INNER,
    LEFT_OUTER,
-   RIGHT_OUTER
+   RIGHT_OUTER, 
+   FULL_OUTER
 }
 
 Class meta::relational::metamodel::Filter
