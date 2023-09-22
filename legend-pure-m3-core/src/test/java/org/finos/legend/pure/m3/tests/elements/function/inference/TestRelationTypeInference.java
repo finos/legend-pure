@@ -143,7 +143,7 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                         "\n" +
                         "function f():Any[*]" +
                         "{" +
-                        "   Firm.all()->project(~[legal:{x|$x.legalName}, legalMod:{x|$x.legalName+'ok'}])->map(x|$x.legal + $x.legalMod);\n" +
+                        "   Firm.all()->project(~[legal:{x|$x.legalName}, legalMod:{x|$x.legalName+'ok'}])->map(x|$x.legal->toOne() + $x.legalMod->toOne());\n" +
                         "}" +
                         "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];" +
                         "\n" +
@@ -248,7 +248,7 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                 "import meta::pure::metamodel::relation::*;" +
                         "function f<T>(r:meta::pure::metamodel::relation::Relation<T>[1]):Any[*]\n" +
                         "{\n" +
-                        "   $r->cast(@meta::pure::metamodel::relation::Relation<(a:Integer, f:String)>)->map(c|$c.a->toString() + $c.f);\n" +
+                        "   $r->cast(@meta::pure::metamodel::relation::Relation<(a:Integer, f:String)>)->map(c|$c.a->toOne()->toString() + $c.f->toOne());\n" +
                         "}" +
                         "native function map<T,V>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];");
     }

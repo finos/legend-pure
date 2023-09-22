@@ -37,7 +37,7 @@ function <<test.Test>> meta::pure::functions::relation::tests::extend::testSimpl
                 4, qw
                 5, wwe
                 6, weq
-              #->extend(~name:c|$c.str + $c.value->toString());
+              #->extend(~name:c|$c.str->toOne() + $c.value->toOne()->toString());
     assertEquals(5, $res->size());
     assertEquals('a1ewe3qw4wwe5weq6', $res->map(c|$c.name)->joinStrings(''));
 }
@@ -51,9 +51,9 @@ function <<test.Test>> meta::pure::functions::relation::tests::extend::testSimpl
                 4, qw
                 5, wwe
                 6, weq
-              #->extend(~name:c|$c.value + 1);
+              #->extend(~name:c|$c.value->toOne() + 1);
     assertEquals(5, $res->size());
-    assertEquals('24567', $res->map(c|$c.name->toString())->joinStrings(''));
+    assertEquals('24567', $res->map(c|$c.name->toOne()->toString())->joinStrings(''));
 }
 
 function <<test.Test>> meta::pure::functions::relation::tests::extend::testSimpleExtendFloat():Boolean[1]
@@ -65,7 +65,7 @@ function <<test.Test>> meta::pure::functions::relation::tests::extend::testSimpl
                 4, 4.2
                 5, 4.2
                 6, 4.5
-              #->extend(~name:c|$c.doub + 1.0);
+              #->extend(~name:c|$c.doub->toOne() + 1.0);
     assertEquals(5, $res->size());
-    assertEquals('2.23.35.25.25.5', $res->map(c|$c.name->toString())->joinStrings(''));
+    assertEquals('2.23.35.25.25.5', $res->map(c|$c.name->toOne()->toString())->joinStrings(''));
 }

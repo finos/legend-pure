@@ -105,7 +105,7 @@ public class TestTDSDSLCompilation extends AbstractPureTestWithCoreCompiled
                         "       1, 3, A\n" +
                         "       2, 4, B\n" +
                         "   #" +
-                        "   ->rows()->map(x|$x.value + $x.other)" +
+                        "   ->rows()->map(x|$x.value->toOne() + $x.other->toOne())" +
                         ", 2);\n" +
                         //"    print(A.all()->map(x|$x.a), 2);\n" +
                         "}\n");
@@ -146,7 +146,7 @@ public class TestTDSDSLCompilation extends AbstractPureTestWithCoreCompiled
                         "       1, 3, A\n" +
                         "       2, 4, B\n" +
                         "   #" +
-                        "   ->rows()->map(x|$x.value + $x.other)" +
+                        "   ->rows()->map(x|$x.value->toOne() + $x.other->toOne())" +
                         ", 2);\n" +
                         "}\n");
         this.runtime.compile();

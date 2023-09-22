@@ -39,7 +39,7 @@ public class _Column
         GenericType columnGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
         columnGenericType._rawType((Type) _Package.getByUserPath(M3Paths.Column, processorSupport));
         columnGenericType._typeArguments(Lists.mutable.with(sourceType, targetType));
-        columnGenericType._multiplicityArgumentsAdd((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(1, 1, processorSupport));
+        columnGenericType._multiplicityArgumentsAdd((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport));
         columnInstance.setKeyValues(Lists.mutable.with("classifierGenericType"), Lists.mutable.with(columnGenericType));
         return columnInstance;
     }

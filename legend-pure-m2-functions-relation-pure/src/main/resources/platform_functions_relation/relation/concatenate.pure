@@ -40,5 +40,5 @@ function <<test.Test>> meta::pure::functions::relation::tests::concatenate::test
                   #
               );
     assertEquals(6, $res->size());
-    assertEquals('134567', $res->map(c|$c.value->toString())->joinStrings(''));
+    assertEquals('134567', $res->map(c|$c.value->toOne()->toString())->joinStrings(''));
 }

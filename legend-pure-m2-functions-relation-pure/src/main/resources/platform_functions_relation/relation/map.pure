@@ -29,6 +29,6 @@ function <<test.Test>> meta::pure::functions::relation::tests::map::testSimpleMa
                 1
                 3
                 4
-              #->map(x|$x.value + 1);
+              #->map(x|$x.value->toOne() + 1);
     assertEquals([2,4,5], $res);
 }

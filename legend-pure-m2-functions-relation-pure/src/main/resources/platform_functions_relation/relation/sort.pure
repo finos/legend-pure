@@ -35,9 +35,9 @@ function meta::pure::functions::relation::ascending(column:String[1]):SortInfo[1
    ^SortInfo(column=$column, direction=SortType.ASC)
 }
 
-native function meta::pure::functions::relation::sort<T>(rel:Relation<T>[1], sortInfo:SortInfo[1]):Relation<T>[1];
+native function meta::pure::functions::relation::sort<T>(rel:Relation<T>[1], sortInfo:SortInfo[*]):Relation<T>[1];
 
-function meta::pure::functions::relation::sort<T>(rel:TDS<T>[1], sortInfo:SortInfo[1]):Relation<T>[1]
+function meta::pure::functions::relation::sort<T>(rel:TDS<T>[1], sortInfo:SortInfo[*]):Relation<T>[1]
 {
     $rel->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::sort($sortInfo);
 }

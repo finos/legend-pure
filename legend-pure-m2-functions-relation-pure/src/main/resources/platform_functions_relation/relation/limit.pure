@@ -32,5 +32,5 @@ function <<test.Test>> meta::pure::functions::relation::tests::limit::testSimple
                 6, weq
               #->limit(3);
     assertEquals(3, $res->size());
-    assertEquals('134', $res->map(c|$c.value->toString())->joinStrings(''));
+    assertEquals('134', $res->map(c|$c.value->toOne()->toString())->joinStrings(''));
 }

@@ -32,5 +32,5 @@ function <<test.Test>> meta::pure::functions::relation::tests::drop::testSimpleD
                 6, weq
               #->drop(3);
     assertEquals(2, $res->size());
-    assertEquals('56', $res->map(c|$c.value->toString())->joinStrings(''));
+    assertEquals('56', $res->map(c|$c.value->toOne()->toString())->joinStrings(''));
 }

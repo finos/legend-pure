@@ -52,7 +52,7 @@ public class SimpleTest extends PureExpressionTest
                         "                4, qw\n" +
                         "                5, wwe\n" +
                         "                6, weq\n" +
-                        "              #->extend(~name:c|$c.value + 3)->map(x|$x.name);" +
+                        "              #->extend(~name:c|$c.value->toOne() + 3)->map(x|$x.name);" +
                         "   print($tds, 1);" +
                         "}\n");
         this.execute("test():Any[*]");

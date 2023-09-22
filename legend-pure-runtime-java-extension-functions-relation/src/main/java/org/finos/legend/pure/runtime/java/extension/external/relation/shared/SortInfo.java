@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::pure::metamodel::relation::*;
+package org.finos.legend.pure.runtime.java.extension.external.relation.shared;
 
-Enum meta::pure::functions::relation::JoinKind
+public class SortInfo
 {
-    LEFT,
-    INNER
-}
+    String columnName;
+    SortDirection direction;
 
-native function meta::pure::functions::relation::join<T,V>(rel1:Relation<T>[1], rel2:Relation<V>[1], joinKind:JoinKind[1], f:Function<{T[1],V[1]->Boolean[1]}>[1]):Relation<T+V>[1];
-
-function meta::pure::functions::relation::join<T,V>(rel1:TDS<T>[1], rel2:TDS<V>[1], joinKind:JoinKind[1], f:Function<{T[1],V[1]-> Boolean[1]}>[1]):Relation<T+V>[1]
-{
-    $rel1->cast(@Relation<T>)->join($rel2->cast(@Relation<V>), $joinKind, $f);
+    public SortInfo(String name, SortDirection direction)
+    {
+        this.columnName = name;
+        this.direction = direction;
+    }
 }
