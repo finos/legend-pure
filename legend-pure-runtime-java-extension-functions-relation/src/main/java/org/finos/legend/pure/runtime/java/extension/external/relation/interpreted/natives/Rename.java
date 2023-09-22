@@ -45,6 +45,6 @@ public class Rename extends Shared
         TestTDS tds = getTDS(params, 0, processorSupport);
         String oldName = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport).getValueForMetaPropertyToOne("name").getName();
         String newName = Instance.getValueForMetaPropertyToOneResolved(params.get(2), M3Properties.values, processorSupport).getValueForMetaPropertyToOne("name").getName();
-        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.copy().rename(oldName, newName), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
+        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.rename(oldName, newName), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
     }
 }

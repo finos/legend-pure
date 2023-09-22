@@ -12,14 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::pure::metamodel::relation::*;
-
-function meta::pure::functions::relation::take<T>(rel:Relation<T>[1], size:Integer[1]):Relation<T>[1]
+function meta::pure::functions::relation::s(a:Any[0..1]):String[1]
 {
-    $rel->limit($size);
-}
-
-function meta::pure::functions::relation::take<T>(rel:TDS<T>[1], size:Integer[1]):Relation<T>[1]
-{
-    $rel->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::take($size);
+  if ($a->isEmpty(),|'null',|$a->toOne()->toString());
 }

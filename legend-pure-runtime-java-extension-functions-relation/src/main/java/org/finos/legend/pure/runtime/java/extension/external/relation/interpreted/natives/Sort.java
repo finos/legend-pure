@@ -55,7 +55,7 @@ public class Sort extends Shared
             SortDirection direction = SortDirection.valueOf(c.getValueForMetaPropertyToOne("direction").getName());
             return new SortInfo(name, direction);
         });
-        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.copy().sort(sortInfos), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
+        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.sort(sortInfos).getOne(), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
     }
 }
 

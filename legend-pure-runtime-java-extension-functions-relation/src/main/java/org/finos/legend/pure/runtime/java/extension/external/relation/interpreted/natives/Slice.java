@@ -45,7 +45,7 @@ public class Slice extends Shared
         TestTDS tds = getTDS(params, 0, processorSupport);
         Number from = PrimitiveUtilities.getIntegerValue(Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport));
         Number to = PrimitiveUtilities.getIntegerValue(Instance.getValueForMetaPropertyToOneResolved(params.get(2), M3Properties.values, processorSupport));
-        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.copy().slice(from.intValue(), to.intValue()), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
+        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.slice(from.intValue(), to.intValue()), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
     }
 }
 

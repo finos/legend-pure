@@ -26,3 +26,36 @@ function meta::pure::functions::relation::join<T,V>(rel1:TDS<T>[1], rel2:TDS<V>[
 {
     $rel1->cast(@Relation<T>)->join($rel2->cast(@Relation<V>), $joinKind, $f);
 }
+
+
+function <<test.Test>> meta::pure::functions::relation::tests::join::testSimpleJoin():Boolean[1]
+{
+  let tds = #TDS
+              id, name
+              1, George
+              2, Pierre
+              3, Sachin
+              4, David
+            #;
+
+  let tds2 = #TDS
+              id2, col, other
+              1, More George 1, 1
+              1, More George 2, 2
+              4, More David, 1
+            #;
+
+
+  assertEquals(
+    '1 1 George More George 1\n'+
+    '1 1 George More George 2\n'+
+    '4 4 David More David', $tds->join($tds2, JoinKind.INNER, {x,y| $x.id == $y.id2})->map(x|$x.id->s() + ' ' + $x.id2->s()+ ' ' + $x.name->s()+ ' ' + $x.col->s())->joinStrings('\n'));
+
+  assertEquals(
+    '1 1 George More George 1\n'+
+    '1 1 George More George 2\n'+
+    '4 4 David More David\n'+
+    '2 null Pierre null\n'+
+    '3 null Sachin null', $tds->join($tds2, JoinKind.LEFT, {x,y| $x.id == $y.id2})->map(x|$x.id->s() + ' ' + $x.id2->s()+ ' ' + $x.name->s()+ ' ' + $x.col->s())->joinStrings('\n'));
+
+}

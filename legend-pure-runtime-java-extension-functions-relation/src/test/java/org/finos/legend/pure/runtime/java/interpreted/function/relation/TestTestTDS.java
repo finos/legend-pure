@@ -59,7 +59,7 @@ public class TestTestTDS extends AbstractPureTestWithCoreCompiled
                 "1, Pierre, F";
         TestTDS tds = new TestTDS(initialTDS, repository, processorSupport);
 
-        TestTDS t = tds.sort(Lists.mutable.with(new SortInfo("id", SortDirection.ASC), new SortInfo("name", SortDirection.ASC)));
+        TestTDS t = tds.sort(Lists.mutable.with(new SortInfo("id", SortDirection.ASC), new SortInfo("name", SortDirection.ASC))).getOne();
         Assert.assertEquals("id, name, otherOne\n" +
                 "1, Pierre, F\n" +
                 "2, Bla, B\n" +
@@ -70,7 +70,7 @@ public class TestTestTDS extends AbstractPureTestWithCoreCompiled
                 "4, Simple, D\n" +
                 "4, Simple, A", t.toString());
 
-        TestTDS t2 = tds.sort(Lists.mutable.with(new SortInfo("id", SortDirection.ASC), new SortInfo("name", SortDirection.ASC), new SortInfo("otherOne", SortDirection.ASC)));
+        TestTDS t2 = tds.sort(Lists.mutable.with(new SortInfo("id", SortDirection.ASC), new SortInfo("name", SortDirection.ASC), new SortInfo("otherOne", SortDirection.ASC))).getOne();
         Assert.assertEquals("id, name, otherOne\n" +
                 "1, Pierre, F\n" +
                 "2, Bla, B\n" +
@@ -81,7 +81,7 @@ public class TestTestTDS extends AbstractPureTestWithCoreCompiled
                 "4, Simple, A\n" +
                 "4, Simple, D", t2.toString());
 
-        TestTDS t3 = tds.sort(Lists.mutable.with(new SortInfo("id", SortDirection.DESC), new SortInfo("name", SortDirection.ASC), new SortInfo("otherOne", SortDirection.DESC)));
+        TestTDS t3 = tds.sort(Lists.mutable.with(new SortInfo("id", SortDirection.DESC), new SortInfo("name", SortDirection.ASC), new SortInfo("otherOne", SortDirection.DESC))).getOne();
         Assert.assertEquals("id, name, otherOne\n" +
                 "4, Simple, D\n" +
                 "4, Simple, A\n" +
@@ -93,6 +93,64 @@ public class TestTestTDS extends AbstractPureTestWithCoreCompiled
                 "1, Pierre, F", t3.toString());
 
         Assert.assertEquals(initialTDS, tds.toString());
+    }
+
+
+    @org.junit.Test
+    public void testGetRanges()
+    {
+        String initialTDS = "id, name, otherOne\n" +
+                "4, Simple, D\n" +
+                "4, Simple, A\n" +
+                "3, Ephrim, C\n" +
+                "2, Bla, B\n" +
+                "3, Ok, D\n" +
+                "3, Nop, E\n" +
+                "2, Neema, F\n" +
+                "1, Pierre, F";
+        TestTDS tds = new TestTDS(initialTDS, repository, processorSupport);
+
+        Assert.assertEquals("[6:8]", tds.sort(Lists.mutable.with(new SortInfo("id", SortDirection.ASC), new SortInfo("name", SortDirection.ASC))).getTwo().toString());
+    }
+
+    @org.junit.Test
+    public void testDistinct()
+    {
+        String initialTDS = "id, name, otherOne\n" +
+                "4, Simple, D\n" +
+                "4, Simple, A\n" +
+                "3, Ephrim, C\n" +
+                "2, Bla, B\n" +
+                "3, Ok, D\n" +
+                "3, Nop, E\n" +
+                "2, Neema, F\n" +
+                "1, Pierre, F";
+        TestTDS tds = new TestTDS(initialTDS, repository, processorSupport);
+
+        Assert.assertEquals("id, name, otherOne\n" +
+                "1, Pierre, F\n" +
+                "2, Bla, B\n" +
+                "3, Ephrim, C\n" +
+                "4, Simple, D", tds.distinct(Lists.mutable.with("id")).toString());
+
+        Assert.assertEquals("id, name, otherOne\n" +
+                "1, Pierre, F\n" +
+                "2, Bla, B\n" +
+                "2, Neema, F\n" +
+                "3, Ephrim, C\n" +
+                "3, Nop, E\n" +
+                "3, Ok, D\n" +
+                "4, Simple, D", tds.distinct(Lists.mutable.with("id", "name")).toString());
+
+        Assert.assertEquals("id, name, otherOne\n" +
+                "4, Simple, D\n" +
+                "4, Simple, A\n" +
+                "3, Ephrim, C\n" +
+                "2, Bla, B\n" +
+                "3, Ok, D\n" +
+                "3, Nop, E\n" +
+                "2, Neema, F\n" +
+                "1, Pierre, F", tds.toString());
     }
 
     @org.junit.Test
@@ -112,7 +170,7 @@ public class TestTestTDS extends AbstractPureTestWithCoreCompiled
         TestTDS res = new TestTDS(resTDS, repository, processorSupport);
         TestTDS left = new TestTDS(leftTDS, repository, processorSupport);
 
-        TestTDS t = left.compensateLeft(res).sort(new SortInfo("id", SortDirection.ASC));
+        TestTDS t = left.compensateLeft(res).sort(new SortInfo("id", SortDirection.ASC)).getOne();
         Assert.assertEquals("id, id2, extra, name, extraInt\n" +
                 "1, 1, More George 1, George, 1\n" +
                 "1, 1, More George 2, George, 2\n" +

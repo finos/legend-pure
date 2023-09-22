@@ -15,10 +15,14 @@
 package org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives;
 
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.navigation.*;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.shared.Shared;
@@ -32,9 +36,9 @@ import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
 import java.util.Stack;
 
-public class Limit extends Shared
+public class Distinct extends Shared
 {
-    public Limit(FunctionExecutionInterpreted functionExecution, ModelRepository repository)
+    public Distinct(FunctionExecutionInterpreted functionExecution, ModelRepository repository)
     {
         super(functionExecution, repository);
     }
@@ -43,7 +47,7 @@ public class Limit extends Shared
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         TestTDS tds = getTDS(params, 0, processorSupport);
-        Number value = PrimitiveUtilities.getIntegerValue(Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport));
-        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.slice(0, value.intValue()), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
+        MutableList<String> columns = Instance.getValueForMetaPropertyToManyResolved(params.get(1), M3Properties.values, processorSupport).collect(CoreInstance::getName).toList();
+        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.distinct(columns), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
     }
 }

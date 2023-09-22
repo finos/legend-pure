@@ -65,6 +65,6 @@ public class Filter extends Shared
                 discardedRows.add(i);
             }
         }
-        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.copy().drop(discardedRows), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
+        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.drop(discardedRows), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
     }
 }

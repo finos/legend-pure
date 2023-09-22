@@ -28,6 +28,7 @@ function meta::pure::functions::relation::extend<T,Z>(r:TDS<T>[1], fs:FuncColSpe
     $r->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::extend($fs);
 }
 
+
 function <<test.Test>> meta::pure::functions::relation::tests::extend::testSimpleExtendStr():Boolean[1]
 {
     let res = #TDS

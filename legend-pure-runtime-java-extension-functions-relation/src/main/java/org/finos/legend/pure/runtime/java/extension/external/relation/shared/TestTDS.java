@@ -24,8 +24,10 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.primitive.IntSet;
+import org.eclipse.collections.api.set.primitive.MutableIntSet;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.impl.set.mutable.primitive.IntHashSet;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -255,20 +257,21 @@ public class TestTDS
 
     public TestTDS drop(IntSet rows)
     {
+        TestTDS copy = this.copy();
         int size = rows.size();
-        dataByColumnName.forEachKey(columnName ->
+        copy.dataByColumnName.forEachKey(columnName ->
         {
-            Object dataAsObject = dataByColumnName.get(columnName);
-            boolean[] isNull = (boolean[]) isNullByColumn.get(columnName);
-            boolean[] isNullTarget = new boolean[(int) rowCount - size];
-            switch (columnType.get(columnName))
+            Object dataAsObject = copy.dataByColumnName.get(columnName);
+            boolean[] isNull = (boolean[]) copy.isNullByColumn.get(columnName);
+            boolean[] isNullTarget = new boolean[(int) copy.rowCount - size];
+            switch (copy.columnType.get(columnName))
             {
                 case INT:
                 {
                     int[] src = (int[]) dataAsObject;
-                    int[] target = new int[(int) rowCount - size];
+                    int[] target = new int[(int) copy.rowCount - size];
                     int j = 0;
-                    for (int i = 0; i < rowCount; i++)
+                    for (int i = 0; i < copy.rowCount; i++)
                     {
                         if (!rows.contains(i))
                         {
@@ -276,65 +279,65 @@ public class TestTDS
                             isNullTarget[j++] = isNull[i];
                         }
                     }
-                    dataByColumnName.put(columnName, target);
-                    isNullByColumn.put(columnName, isNullTarget);
+                    copy.dataByColumnName.put(columnName, target);
+                    copy.isNullByColumn.put(columnName, isNullTarget);
                     break;
                 }
                 case CHAR:
                 {
                     char[] src = (char[]) dataAsObject;
-                    char[] target = new char[(int) rowCount - size];
+                    char[] target = new char[(int) copy.rowCount - size];
                     int j = 0;
-                    for (int i = 0; i < rowCount; i++)
+                    for (int i = 0; i < copy.rowCount; i++)
                     {
                         if (!rows.contains(i))
                         {
-                            target[j++] = src[i];
+                            target[j] = src[i];
                             isNullTarget[j++] = isNull[i];
                         }
                     }
-                    dataByColumnName.put(columnName, target);
-                    isNullByColumn.put(columnName, isNullTarget);
+                    copy.dataByColumnName.put(columnName, target);
+                    copy.isNullByColumn.put(columnName, isNullTarget);
                     break;
                 }
                 case STRING:
                 {
                     String[] src = (String[]) dataAsObject;
-                    String[] target = new String[(int) rowCount - size];
+                    String[] target = new String[(int) copy.rowCount - size];
                     int j = 0;
-                    for (int i = 0; i < rowCount; i++)
+                    for (int i = 0; i < copy.rowCount; i++)
                     {
                         if (!rows.contains(i))
                         {
                             target[j++] = src[i];
                         }
                     }
-                    dataByColumnName.put(columnName, target);
+                    copy.dataByColumnName.put(columnName, target);
                     break;
                 }
                 case DOUBLE:
                 {
                     double[] src = (double[]) dataAsObject;
-                    double[] target = new double[(int) rowCount - size];
+                    double[] target = new double[(int) copy.rowCount - size];
                     int j = 0;
-                    for (int i = 0; i < rowCount; i++)
+                    for (int i = 0; i < copy.rowCount; i++)
                     {
                         if (!rows.contains(i))
                         {
-                            target[j++] = src[i];
+                            target[j] = src[i];
                             isNullTarget[j++] = isNull[i];
                         }
                     }
-                    dataByColumnName.put(columnName, target);
-                    isNullByColumn.put(columnName, isNullTarget);
+                    copy.dataByColumnName.put(columnName, target);
+                    copy.isNullByColumn.put(columnName, isNullTarget);
                     break;
                 }
                 default:
-                    throw new RuntimeException("ERROR " + columnType.get(columnName) + " not supported in drop!");
+                    throw new RuntimeException("ERROR " + copy.columnType.get(columnName) + " not supported in drop!");
             }
         });
-        this.rowCount = rowCount - size;
-        return this;
+        copy.rowCount = copy.rowCount - size;
+        return copy;
     }
 
     public CoreInstance getValueAsCoreInstance(String columnName, int rowNum)
@@ -516,24 +519,42 @@ public class TestTDS
         return copy;
     }
 
-    public TestTDS sort(SortInfo sortInfos)
+    public Pair<TestTDS, MutableList<Pair<Integer, Integer>>> sort(SortInfo sortInfos)
     {
         return this.sort(Lists.mutable.with(sortInfos));
     }
 
-    public TestTDS sort(ListIterable<SortInfo> sortInfos)
+    public Pair<TestTDS, MutableList<Pair<Integer, Integer>>> sort(ListIterable<SortInfo> sortInfos)
     {
         TestTDS copy = this.copy();
-        this.sort(copy, sortInfos, 0, (int) rowCount);
-        return copy;
+        MutableList<Pair<Integer, Integer>> ranges = Lists.mutable.empty();
+        this.sort(copy, sortInfos, 0, (int) rowCount, ranges);
+        return Tuples.pair(copy, ranges);
     }
 
-    private void sort(TestTDS copy, ListIterable<SortInfo> sortInfos, int start, int end)
+    public TestTDS distinct(MutableList<String> columns)
+    {
+        Pair<TestTDS, MutableList<Pair<Integer, Integer>>> res = this.sort(columns.collect(c -> new SortInfo(c, SortDirection.ASC)));
+
+        MutableIntSet drop = new IntHashSet();
+
+        res.getTwo().forEach(r ->
+        {
+            for (int i = r.getOne() + 1; i < r.getTwo(); i++)
+            {
+                drop.add(i);
+            }
+        });
+
+        return res.getOne().drop(drop);
+    }
+
+
+    private void sort(TestTDS copy, ListIterable<SortInfo> sortInfos, int start, int end, MutableList<Pair<Integer, Integer>> ranges)
     {
         SortInfo currentSort = sortInfos.getFirst();
         this.sortOneLevel(copy, currentSort, start, end);
-
-        if (sortInfos.size() > 1)
+        if (!sortInfos.isEmpty())
         {
             String columnName = currentSort.columnName;
             Object dataAsObject = copy.dataByColumnName.get(columnName);
@@ -552,7 +573,14 @@ public class TestTDS
                             int realEnd = (src[i] == val && i == end - 1) ? end : i;
                             if (realEnd - subStart > 1)
                             {
-                                sort(copy, sortInfos.subList(1, sortInfos.size()), subStart, realEnd);
+                                if (sortInfos.size() > 1)
+                                {
+                                    sort(copy, sortInfos.subList(1, sortInfos.size()), subStart, realEnd, ranges);
+                                }
+                                else
+                                {
+                                    ranges.add(Tuples.pair(subStart, realEnd));
+                                }
                             }
                             val = src[i];
                             subStart = i;
@@ -573,7 +601,14 @@ public class TestTDS
                             int realEnd = (src[i] == val && i == end - 1) ? end : i;
                             if (realEnd - subStart > 1)
                             {
-                                sort(copy, sortInfos.subList(1, sortInfos.size()), subStart, realEnd);
+                                if (sortInfos.size() > 1)
+                                {
+                                    sort(copy, sortInfos.subList(1, sortInfos.size()), subStart, realEnd, ranges);
+                                }
+                                else
+                                {
+                                    ranges.add(Tuples.pair(subStart, realEnd));
+                                }
                             }
                             val = src[i];
                             subStart = i;
@@ -593,7 +628,14 @@ public class TestTDS
                             int realEnd = (Objects.equals(src[i], val) && i == end - 1) ? end : i;
                             if (realEnd - subStart > 1)
                             {
-                                sort(copy, sortInfos.subList(1, sortInfos.size()), subStart, realEnd);
+                                if (sortInfos.size() > 1)
+                                {
+                                    sort(copy, sortInfos.subList(1, sortInfos.size()), subStart, realEnd, ranges);
+                                }
+                                else
+                                {
+                                    ranges.add(Tuples.pair(subStart, realEnd));
+                                }
                             }
                             val = src[i];
                             subStart = i;
@@ -613,7 +655,14 @@ public class TestTDS
                             int realEnd = (src[i] == val && i == end - 1) ? end : i;
                             if (realEnd - subStart > 1)
                             {
-                                sort(copy, sortInfos.subList(1, sortInfos.size()), subStart, realEnd);
+                                if (sortInfos.size() > 1)
+                                {
+                                    sort(copy, sortInfos.subList(1, sortInfos.size()), subStart, realEnd, ranges);
+                                }
+                                else
+                                {
+                                    ranges.add(Tuples.pair(subStart, realEnd));
+                                }
                             }
                             val = src[i];
                             subStart = i;
@@ -814,8 +863,8 @@ public class TestTDS
 
         int rowLeftCurs = 0;
         int rowResCurs = 0;
-        TestTDS leftS = this.sort(sortInfos);
-        TestTDS resS = res.sort(sortInfos);
+        TestTDS leftS = this.sort(sortInfos).getOne();
+        TestTDS resS = res.sort(sortInfos).getOne();
 
         MutableList<Integer> missings = Lists.mutable.empty();
         while (rowLeftCurs < leftS.rowCount)
@@ -885,6 +934,4 @@ public class TestTDS
         }
         return valid;
     }
-
-
 }

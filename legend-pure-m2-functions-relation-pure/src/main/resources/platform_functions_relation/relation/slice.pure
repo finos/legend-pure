@@ -21,6 +21,7 @@ function meta::pure::functions::relation::slice<T>(rel:TDS<T>[1], start:Integer[
     $rel->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::slice($start, $stop);
 }
 
+
 function <<test.Test>> meta::pure::functions::relation::tests::slice::testSimpleSlice():Boolean[1]
 {
     let res = #TDS

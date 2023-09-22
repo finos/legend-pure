@@ -97,6 +97,6 @@ public class Extend extends Shared
             res = resDouble;
             resType = DataType.DOUBLE;
         }
-        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.copy().addColumn(filterFunction.getValueForMetaPropertyToOne(M3Properties.name).getName(), resType, res), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
+        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.addColumn(filterFunction.getValueForMetaPropertyToOne(M3Properties.name).getName(), resType, res), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
     }
 }
