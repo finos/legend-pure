@@ -374,6 +374,7 @@ public class TypeInferenceContext
                 {
                     if (!existing.getTargetGenericsContext().equals(this))
                     {
+                        this.states.getLast().putTypeParameterValue(name, genericTypeCopy, targetGenericsContext, false);
                         // forward the registration of this concrete type to the already referenced type
                         forwards.add(new RegistrationRequest(existing.getTargetGenericsContext(), existing.getParameterValue(), genericTypeCopy));
                     }

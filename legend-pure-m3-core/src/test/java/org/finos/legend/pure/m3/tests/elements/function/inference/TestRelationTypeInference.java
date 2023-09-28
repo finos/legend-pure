@@ -125,7 +125,7 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                         "\n" +
                         "function f():Any[*]" +
                         "{" +
-                        "   Firm.all()->project(~[legal:{x|$x.legalName}])->map(c|$c.legal);\n" +
+                        "   Firm.all()->project(~[legal:x|$x.legalName])->map(c|$c.legal);\n" +
                         "}" +
                         "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];" +
                         "\n" +
@@ -143,7 +143,7 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                         "\n" +
                         "function f():Any[*]" +
                         "{" +
-                        "   Firm.all()->project(~[legal:{x|$x.legalName}, legalMod:{x|$x.legalName+'ok'}])->map(x|$x.legal->toOne() + $x.legalMod->toOne());\n" +
+                        "   Firm.all()->project(~[legal:x|$x.legalName, legalMod:x|$x.legalName+'ok'])->map(x|$x.legal->toOne() + $x.legalMod->toOne());\n" +
                         "}" +
                         "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];" +
                         "\n" +

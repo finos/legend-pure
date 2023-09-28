@@ -23,20 +23,29 @@ Class meta::pure::metamodel::relation::ColSpec<T> // Where T is of type Relation
     name : String[1];
 }
 
+Class meta::pure::metamodel::relation::ColSpecArray<T> // Where T is of type RelationType
+{
+    names : String[*];
+}
+
+
 Class meta::pure::metamodel::relation::FuncColSpec<Z,T> // Where T is of type RelationType
 {
     name : String[1];
     function : Function<Z>[1];
 }
 
-Class meta::pure::metamodel::relation::ColSpecArray<T> // Where T is of type RelationType
-{
-    names : String[*];
-}
-
 Class meta::pure::metamodel::relation::FuncColSpecArray<Z,T> // Where T is of type RelationType
 {
     names : String[*];
     functions : Function<Z>[*];
+}
+
+
+Class meta::pure::metamodel::relation::AggColSpec<Z,V,T> // Where T is of type RelationType
+{
+    name : String[1];
+    map : Function<Z>[1];
+    reduce : Function<V>[1];
 }
 

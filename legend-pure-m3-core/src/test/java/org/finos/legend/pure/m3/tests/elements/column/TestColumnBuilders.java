@@ -106,7 +106,7 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     public void testSimpleColumnWithFunctionArray()
     {
         compileTestSource("fromString.pure",
-                "function test<U>():meta::pure::metamodel::relation::FuncColSpecArray<{U[1]->Any[1]}, (name:String, val:Integer)>[1]" +
+                "function test<U>():meta::pure::metamodel::relation::FuncColSpecArray<{U[1]->Any[0..1]}, (name:String, val:Integer)>[1]" +
                         "{" +
                         "   ~[name:x|'ok', val:x|1];" +
                         "}");
@@ -148,6 +148,47 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
                     "'\n" +
                     "function test<U>():meta::pure::metamodel::relation::FuncColSpec<{U[1]->Any[1]}, (name:String)>[1]{   ~[name:x|1, id:Integer];}'", e.getMessage());
         }
+    }
+
+    @Test
+    public void testColumnWithExtraReduceFunction()
+    {
+        compileTestSource("fromString.pure",
+                "native function sum(i:Integer[*]):Integer[1];" +
+                        "function test<U>():meta::pure::metamodel::relation::AggColSpec<{U[1]->Integer[0..1]}, {Integer[*]->Integer[1]}, (name:Integer)>[1]" +
+                        "{" +
+                        "   ~name: x|1 : y|$y->sum();" +
+                        "}");
+    }
+
+    @Test
+    public void testColumnFunctionInferenceWithExtraReduceFunction()
+    {
+        compileTestSource("fromString.pure",
+                "native function sum(i:Integer[*]):Integer[1];" +
+                        "native function meta::pure::functions::relation::groupBy<U,V,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpec<{U[1]->V[0..1]},{V[*]->K[1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                        "\n" +
+                        "" +
+                        "function test():Boolean[1]" +
+                        "{" +
+                        "   []->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, ok:Integer)>)->toOne()->groupBy(~name: x|$x.ok : y|$y->sum());" +
+                        "   true;" +
+                        "}");
+    }
+
+
+    @Test
+    public void testColumnSimpleFunctionInference()
+    {
+        compileTestSource("fromString.pure",
+                "native function meta::pure::functions::relation::extend<T,Z>(r:meta::pure::metamodel::relation::Relation<T>[1], f:meta::pure::metamodel::relation::FuncColSpec<{T[1]->Any[0..1]},Z>[1]):meta::pure::metamodel::relation::Relation<T+Z>[1];\n" +
+                        "\n" +
+                        "" +
+                        "function test():Boolean[1]" +
+                        "{" +
+                        "   []->toOne()->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, ok:Integer)>)->extend(~name:c|$c.id->toOne());" +
+                        "   true;" +
+                        "}");
     }
 
 }

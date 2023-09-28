@@ -137,7 +137,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                 else if (processorSupport.instance_instanceOf(sourceGenericType._rawType(), M3Paths.RelationType))
                 {
                     String name = functionExpression._propertyName()._valuesCoreInstance().getAny().getName();
-                    foundFunctions.add(_RelationType.findColumn((RelationType<?>)sourceGenericType._rawType(), name, functionExpression.getSourceInformation(), processorSupport));
+                    foundFunctions.add(_RelationType.findColumn((RelationType<?>) sourceGenericType._rawType(), name, functionExpression.getSourceInformation(), processorSupport));
                 }
                 else
                 {
@@ -175,21 +175,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                     GenericType sourceGenericType = extractAndValidateGenericType(qualifiedPropertyName, source);
 
                     Multiplicity sourceMultiplicity = source._multiplicity();
-//                    if (!org.finos.legend.pure.m3.bootstrap.type.multiplicity.Multiplicity.isToOne(sourceMultiplicity, true) && org.finos.legend.pure.m3.bootstrap.type.multiplicity.Multiplicity.isToOne(sourceMultiplicity, false))
-//                    {
-//                        SourceInformation si = functionExpression.getSourceInformation();
-//                        String textToAppend = "{\"file\":\""+si.getSourceId()+"\",\"line\":"+si.getLine()+", \"column\":"+si.getColumn()+"}\n"; //new line in content
-//                        Path path = Paths.get("h:/temp/script.json");
-//                        try
-//                        {
-//                            System.out.print(textToAppend);
-//                            Files.write(path, textToAppend.getBytes(), StandardOpenOption.APPEND);  //Append mode
-//                        }
-//                        catch (IOException e)
-//                        {
-//                            e.printStackTrace();
-//                        }
-//                    }
+
                     if (org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isToOne(sourceMultiplicity, true))
                     {
                         ListIterable<QualifiedProperty<?>> qualifiedPropertyFuncs = findFunctionsForQualifiedPropertyBasedOnMultiplicity(functionExpression, sourceGenericType, parametersValues, processorSupport, matcher, state);
@@ -243,8 +229,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             boolean success = true;
             if (parametersRequiringTypeInference.notEmpty())
             {
-                observer.firstPassInferenceFailed().shiftTab(2)
-                        .matchTypeParamsFromFoundFunction(foundFunction).shiftTab();
+                observer.firstPassInferenceFailed().shiftTab(2).matchTypeParamsFromFoundFunction(foundFunction).shiftTab();
                 parametersValues.forEachWithIndex((instance, z) ->
                 {
                     if (isInferenceSuccess(instance, processorSupport))
@@ -414,7 +399,6 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                     CoreInstance func = functionExpression.getValueForMetaPropertyToOne(M3Properties.func);
                     String funcType = (func instanceof Property) ? "property" : ((func instanceof QualifiedProperty) ? "qualified property" : "function");
                     CoreInstance funcName = func.getValueForMetaPropertyToOne("property".equals(funcType) ? M3Properties.name : M3Properties.functionName);
-                    System.out.println(func);
                     throw new PureCompilationException(functionExpression.getSourceInformation(), "The system is not capable of inferring the return type of the " + funcType + " '" + PrimitiveUtilities.getStringValue(funcName) + "'. Check your signatures!");
                 }
 
@@ -511,6 +495,15 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                     CoreInstance columnGenericType = columns.get(i).getValueForMetaPropertyToOne("classifierGenericType").getValueForMetaPropertyToMany("typeArguments").get(1);
                     columnGenericType.setKeyValues(Lists.mutable.with("rawType"), Lists.mutable.with(lambdaReturnType.getValueForMetaPropertyToOne("rawType")));
                 }
+            }
+            if ("aggColSpec_Function_1__Function_1__String_1__T_1__AggColSpec_1_".equals(finalFunction.getName()))
+            {
+                MutableList<ValueSpecification> parameters = Lists.mutable.withAll(functionExpression._parametersValues());
+                CoreInstance reduceLambda = parameters.get(1).getValueForMetaPropertyToOne("values");
+                CoreInstance column = parameters.get(3).getValueForMetaPropertyToOne("genericType").getValueForMetaPropertyToOne("rawType").getValueForMetaPropertyToOne("columns");
+                CoreInstance lambdaReturnType = reduceLambda.getValueForMetaPropertyToMany("expressionSequence").getLast().getValueForMetaPropertyToOne("genericType");
+                CoreInstance columnGenericType = column.getValueForMetaPropertyToOne("classifierGenericType").getValueForMetaPropertyToMany("typeArguments").get(1);
+                columnGenericType.setKeyValues(Lists.mutable.with("rawType"), Lists.mutable.with(lambdaReturnType.getValueForMetaPropertyToOne("rawType")));
             }
         }
         else if (!someInferenceFailed)

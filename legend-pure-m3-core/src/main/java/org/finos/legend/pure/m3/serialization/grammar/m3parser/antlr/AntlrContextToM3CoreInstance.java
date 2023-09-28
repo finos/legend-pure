@@ -967,6 +967,7 @@ public class AntlrContextToM3CoreInstance
             MutableList<CoreInstance> lambdas = Lists.mutable.empty();
             MutableList<CoreInstance> columnNames = Lists.mutable.empty();
             MutableList<CoreInstance> columnInstances = Lists.mutable.empty();
+            MutableList<CoreInstance> extraFunction = Lists.mutable.empty();
             ListIterate.forEach(ctx.columnBuilders().colFunc(), colFunc ->
             {
                 columnNames.add(this.repository.newStringCoreInstance(colFunc.identifier().getText()));
@@ -974,10 +975,11 @@ public class AntlrContextToM3CoreInstance
                 if (colFunc.lambdaParam() != null && colFunc.lambdaPipe() != null)
                 {
                     lambdas.add(processSingleParamLambda(colFunc.lambdaParam(), colFunc.lambdaPipe(), Lists.mutable.empty(), lambdaContext, space, false, importId, addLines, Lists.mutable.empty()));
-                }
-                else if (colFunc.lambdaFunction() != null)
-                {
-                    lambdas.add(processMultiParamLambda(colFunc.lambdaFunction(), Lists.mutable.empty(), lambdaContext, space, false, importId, addLines, Lists.mutable.empty()));
+                    if (colFunc.extraFunction() != null)
+                    {
+                        ExtraFunctionContext extraFunctionContext = colFunc.extraFunction();
+                        extraFunction.add(processSingleParamLambda(extraFunctionContext.lambdaParam(), extraFunctionContext.lambdaPipe(), Lists.mutable.empty(), lambdaContext, space, false, importId, addLines, Lists.mutable.empty()));
+                    }
                 }
                 else if (colFunc.type() != null)
                 {
@@ -992,15 +994,18 @@ public class AntlrContextToM3CoreInstance
             CoreInstance replacementFunction = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart()), null, null, importId, null);
 
             // FunctionName
-            String functionName = null;
             boolean isArray = ctx.columnBuilders().BRACKET_OPEN() != null;
             List<Boolean> nonFunctions = ListIterate.collect(ctx.columnBuilders().colFunc(), x -> x.type() != null | x.COLON() == null).distinct();
             if (isArray && nonFunctions.size() > 1)
             {
                 throw new PureCompilationException("Can't mix column types");
             }
+            if (isArray && extraFunction.size() > 1)
+            {
+                throw new PureCompilationException("Can't use multi-functions in an Array");
+            }
             boolean nonFunction = nonFunctions.get(0);
-            functionName = nonFunction ? isArray ? "colSpecArray" : "colSpec" : isArray ? "funcColSpecArray" : "funcColSpec";
+            String functionName = !extraFunction.isEmpty() ? "aggColSpec" : nonFunction ? isArray ? "colSpecArray" : "colSpec" : isArray ? "funcColSpecArray" : "funcColSpec";
             replacementFunction.setKeyValues(Lists.mutable.with("functionName"), Lists.mutable.with(this.repository.newStringCoreInstance(functionName)));
 
             // Function Parameters
@@ -1008,6 +1013,10 @@ public class AntlrContextToM3CoreInstance
             if (!nonFunction)
             {
                 parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(lambdas, true, processorSupport));
+            }
+            if (!extraFunction.isEmpty())
+            {
+                parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(extraFunction.getFirst(), true, processorSupport));
             }
             parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(columnNames, true, processorSupport));
             parameters.add(InstanceValueInstance.createPersistent(this.repository, "", relationTypeGenericType, this.getPureOne()));

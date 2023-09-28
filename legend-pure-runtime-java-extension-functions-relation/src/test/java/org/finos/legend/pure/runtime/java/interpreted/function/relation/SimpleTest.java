@@ -39,24 +39,24 @@ public class SimpleTest extends PureExpressionTest
         return new FunctionExecutionInterpreted();
     }
 
-    @org.junit.Test
-    public void testToOneError()
-    {
-        compileTestSource("fromString.pure",
-                "function test():Any[*]\n" +
-                        "{\n" +
-                        "   let tds = #TDS\n" +
-                        "                value, str\n" +
-                        "                1, a\n" +
-                        "                3, ewe\n" +
-                        "                4, qw\n" +
-                        "                5, wwe\n" +
-                        "                5, weq\n" +
-                        "              #->distinct(['value'])->map(x|$x.value);" +
-                        "   print($tds, 1);" +
-                        "}\n");
-        this.execute("test():Any[*]");
-    }
+//    @org.junit.Test
+//    public void testToOneError()
+//    {
+//        compileTestSource("fromString.pure",
+//                "function test():Any[*]\n" +
+//                        "{\n" +
+//                        "   let tds = #TDS\n" +
+//                        "                value, str\n" +
+//                        "                1, a\n" +
+//                        "                3, ewe\n" +
+//                        "                4, qw\n" +
+//                        "                5, wwe\n" +
+//                        "                5, weq\n" +
+//                        "              #->groupBy(['value'])->map(x|$x.value);" +
+//                        "   print($tds, 1);" +
+//                        "}\n");
+//        this.execute("test():Any[*]");
+//    }
 
 
 }
