@@ -54,6 +54,18 @@ public class InstanceOf extends AbstractNative
         {
             return "Pure.instanceOf(" + transformedParams.get(0) + "," + transformedParams.get(1) + ", es)";
         }
+    }
 
+    @Override
+    public String buildBody()
+    {
+        return "new SharedPureFunction<Object>()\n" +
+                "        {\n" +
+                "            @Override\n" +
+                "            public Object execute(ListIterable<?> vars, final ExecutionSupport es)\n" +
+                "            {\n" +
+                "                return Pure.instanceOf(vars.get(0), (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type) vars.get(1), es);\n" +
+                "            }\n" +
+                "        }";
     }
 }
