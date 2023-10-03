@@ -141,7 +141,7 @@ public abstract class PureIDEServer extends Application<ServerConfiguration>
             codeRepositorySet = codeRepositorySet.subset(Lists.mutable.withAll(requiredRepositories).with("pure_ide").distinct());
         }
 
-        return codeRepositorySet.getRepositories().collect(repoToCodeStorageMap::get).toList();
+        return codeRepositorySet.getRepositories().collect(repoToCodeStorageMap::get, Lists.mutable.ofInitialCapacity(codeRepositorySet.size()));
     }
 
     public PureSession getPureSession()
