@@ -18,6 +18,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.dropwizard.Configuration;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 
+import java.util.List;
+
 @JsonIgnoreProperties(
         ignoreUnknown = true
 )
@@ -25,4 +27,5 @@ public class ServerConfiguration extends Configuration
 {
     public SwaggerBundleConfiguration swagger;
     public SourceLocationConfiguration sourceLocationConfiguration;
+    public List<String> requiredRepositories;
 }

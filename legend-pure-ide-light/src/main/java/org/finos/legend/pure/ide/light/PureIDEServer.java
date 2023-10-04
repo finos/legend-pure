@@ -21,13 +21,17 @@ import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.federecio.dropwizard.swagger.SwaggerResource;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.finos.legend.pure.ide.light.api.Activities;
-import org.finos.legend.pure.ide.light.api.Suggestion;
 import org.finos.legend.pure.ide.light.api.FileManagement;
 import org.finos.legend.pure.ide.light.api.LifeCycle;
 import org.finos.legend.pure.ide.light.api.Service;
+import org.finos.legend.pure.ide.light.api.Suggestion;
 import org.finos.legend.pure.ide.light.api.concept.Concept;
 import org.finos.legend.pure.ide.light.api.concept.MovePackageableElements;
 import org.finos.legend.pure.ide.light.api.concept.RenameConcept;
@@ -41,6 +45,7 @@ import org.finos.legend.pure.ide.light.api.source.UpdateSource;
 import org.finos.legend.pure.ide.light.session.PureSession;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 
@@ -48,7 +53,7 @@ import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 public abstract class PureIDEServer extends Application<ServerConfiguration>
 {
@@ -81,7 +86,7 @@ public abstract class PureIDEServer extends Application<ServerConfiguration>
                         (configuration.swagger.getContextRoot().endsWith("/") ? "" : "/") + "api")
         );
 
-        this.pureSession = new PureSession(configuration.sourceLocationConfiguration, this.getRepositories(configuration.sourceLocationConfiguration));
+        this.pureSession = new PureSession(configuration.sourceLocationConfiguration, this.getRepositories(configuration.sourceLocationConfiguration, configuration.requiredRepositories));
 
         environment.jersey().register(new Concept(pureSession));
         environment.jersey().register(new RenameConcept(pureSession));
@@ -125,14 +130,25 @@ public abstract class PureIDEServer extends Application<ServerConfiguration>
         corsFilter.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, "*");
     }
 
-    private MutableList<RepositoryCodeStorage> getRepositories(SourceLocationConfiguration sourceLocationConfiguration)
+    private MutableList<RepositoryCodeStorage> getRepositories(SourceLocationConfiguration sourceLocationConfiguration, List<String> requiredRepositories)
     {
-        MutableList<RepositoryCodeStorage> fromIde = this.buildRepositories(sourceLocationConfiguration);
-        Set<String> fromIdeName = fromIde.flatCollect(RepositoryCodeStorage::getAllRepositories).collect(CodeRepository::getName).toSet();
-        List<CodeRepository> fromClasspath = CodeRepositoryProviderHelper.findCodeRepositories()
-                .toList()
-                .reject(x -> fromIdeName.contains(x.getName()));
-        return fromIde.with(new ClassLoaderCodeStorage(fromClasspath));
+        Map<CodeRepository, RepositoryCodeStorage> repoToCodeStorageMap = Maps.mutable.empty();
+        repoToCodeStorageMap.putAll(CodeRepositoryProviderHelper.findCodeRepositories().toMap(r -> r, ClassLoaderCodeStorage::new));
+        repoToCodeStorageMap.putAll(this.buildRepositories(sourceLocationConfiguration).toMap(cs -> cs.getAllRepositories().getOnly(), cs -> cs));
+
+        CodeRepositorySet codeRepositorySet = CodeRepositorySet.newBuilder().withCodeRepositories(repoToCodeStorageMap.keySet()).build();
+
+        if (requiredRepositories != null)
+        {
+            MutableSet<String> requiredSet = Sets.mutable.withAll(requiredRepositories);
+            if (codeRepositorySet.hasRepository("pure_ide"))
+            {
+                requiredSet.add("pure_ide");
+            }
+            codeRepositorySet = codeRepositorySet.subset(requiredSet);
+        }
+
+        return codeRepositorySet.getRepositories().collect(repoToCodeStorageMap::get, Lists.mutable.ofInitialCapacity(codeRepositorySet.size()));
     }
 
     public PureSession getPureSession()
