@@ -298,10 +298,10 @@ atomicExpression:
                  | (lambdaParam lambdaPipe)
 ;
 
-columnBuilders: TILDE (colFunc | (BRACKET_OPEN colFunc(COMMA colFunc)* BRACKET_CLOSE))
+columnBuilders: TILDE (oneColSpec | (BRACKET_OPEN oneColSpec(COMMA oneColSpec)* BRACKET_CLOSE))
 ;
 
-colFunc: (identifier COLON (type | lambdaParam lambdaPipe) extraFunction? )
+oneColSpec: identifier ((COLON (type | lambdaParam lambdaPipe) extraFunction? ))?
 ;
 
 extraFunction: (COLON lambdaParam lambdaPipe)
@@ -500,13 +500,16 @@ typeArguments: typeWithOperation (COMMA typeWithOperation)*
 typeWithOperation : type(typeOperation)*
 ;
 
-typeOperation: addType|subType
+typeOperation: addType | subType | subsetType
 ;
 
 addType: PLUS type
 ;
 
 subType: MINUS type
+;
+
+subsetType: SUBSET type
 ;
 
 multiplictyParameters: PIPE identifier (COMMA identifier)*

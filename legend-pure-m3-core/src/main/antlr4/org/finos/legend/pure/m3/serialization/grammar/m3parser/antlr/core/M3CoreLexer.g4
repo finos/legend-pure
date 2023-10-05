@@ -84,6 +84,7 @@ COMMENT:      Comment           -> skip  ;
 LINE_COMMENT: LineComment       -> skip  ;
 
 AT: '@';
+SUBSET: '⊆';
 PLUS: '+';
 STAR: '*';
 MINUS: '-';

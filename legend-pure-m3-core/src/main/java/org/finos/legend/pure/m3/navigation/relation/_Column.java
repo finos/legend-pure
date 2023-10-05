@@ -21,6 +21,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.G
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 public class _Column
@@ -42,5 +43,10 @@ public class _Column
         columnGenericType._multiplicityArgumentsAdd((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport));
         columnInstance.setKeyValues(Lists.mutable.with("classifierGenericType"), Lists.mutable.with(columnGenericType));
         return columnInstance;
+    }
+
+    public static GenericType getColumnType(Column<?,?> column)
+    {
+        return column._classifierGenericType()._typeArguments().toList().get(1);
     }
 }

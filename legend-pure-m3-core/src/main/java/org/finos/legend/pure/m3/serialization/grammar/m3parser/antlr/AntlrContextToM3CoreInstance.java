@@ -968,25 +968,25 @@ public class AntlrContextToM3CoreInstance
             MutableList<CoreInstance> columnNames = Lists.mutable.empty();
             MutableList<CoreInstance> columnInstances = Lists.mutable.empty();
             MutableList<CoreInstance> extraFunction = Lists.mutable.empty();
-            ListIterate.forEach(ctx.columnBuilders().colFunc(), colFunc ->
+            ListIterate.forEach(ctx.columnBuilders().oneColSpec(), oneColSpec ->
             {
-                columnNames.add(this.repository.newStringCoreInstance(colFunc.identifier().getText()));
+                columnNames.add(this.repository.newStringCoreInstance(oneColSpec.identifier().getText()));
                 String returnType = null;
-                if (colFunc.lambdaParam() != null && colFunc.lambdaPipe() != null)
+                if (oneColSpec.lambdaParam() != null && oneColSpec.lambdaPipe() != null)
                 {
-                    lambdas.add(processSingleParamLambda(colFunc.lambdaParam(), colFunc.lambdaPipe(), Lists.mutable.empty(), lambdaContext, space, false, importId, addLines, Lists.mutable.empty()));
-                    if (colFunc.extraFunction() != null)
+                    lambdas.add(processSingleParamLambda(oneColSpec.lambdaParam(), oneColSpec.lambdaPipe(), Lists.mutable.empty(), lambdaContext, space, false, importId, addLines, Lists.mutable.empty()));
+                    if (oneColSpec.extraFunction() != null)
                     {
-                        ExtraFunctionContext extraFunctionContext = colFunc.extraFunction();
+                        ExtraFunctionContext extraFunctionContext = oneColSpec.extraFunction();
                         extraFunction.add(processSingleParamLambda(extraFunctionContext.lambdaParam(), extraFunctionContext.lambdaPipe(), Lists.mutable.empty(), lambdaContext, space, false, importId, addLines, Lists.mutable.empty()));
                     }
                 }
-                else if (colFunc.type() != null)
+                else if (oneColSpec.type() != null)
                 {
-                    GenericType returnGType = type(colFunc.type(), typeParametersNames, "", importId, addLines);
+                    GenericType returnGType = type(oneColSpec.type(), typeParametersNames, "", importId, addLines);
                     returnType = returnGType._rawType().getName();
                 }
-                columnInstances.add(_Column.getColumnInstance(colFunc.identifier().getText(), relationTypeGenericType, returnType, src, processorSupport));
+                columnInstances.add(_Column.getColumnInstance(oneColSpec.identifier().getText(), relationTypeGenericType, returnType, src, processorSupport));
             });
             relationTypeGenericType._rawTypeCoreInstance(_RelationType.build(relationTypeGenericType, columnInstances, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport));
 
@@ -995,7 +995,7 @@ public class AntlrContextToM3CoreInstance
 
             // FunctionName
             boolean isArray = ctx.columnBuilders().BRACKET_OPEN() != null;
-            List<Boolean> nonFunctions = ListIterate.collect(ctx.columnBuilders().colFunc(), x -> x.type() != null | x.COLON() == null).distinct();
+            List<Boolean> nonFunctions = ListIterate.collect(ctx.columnBuilders().oneColSpec(), x -> x.type() != null | x.COLON() == null).distinct();
             if (isArray && nonFunctions.size() > 1)
             {
                 throw new PureCompilationException("Can't mix column types");
@@ -3183,12 +3183,12 @@ public class AntlrContextToM3CoreInstance
                     typeCtx.typeOperation(),
                     (genericType, typeOperationContext) ->
                     {
-                        GenericType right = type(typeOperationContext.addType() != null ? typeOperationContext.addType().type() : typeOperationContext.subType().type(), typeParametersNames, space, importId, addLines);
-                        String type = typeOperationContext.addType() != null ? "Union" : "Difference";
+
+                        GenericType right = type(typeOperationContext.addType() != null ? typeOperationContext.addType().type() : typeOperationContext.subType() != null ? typeOperationContext.subType().type() : typeOperationContext.subsetType().type(), typeParametersNames, space, importId, addLines);
+                        String type = typeOperationContext.addType() != null ? "Union" : typeOperationContext.subType() != null ? "Difference" : "Subset";
                         return GenericTypeOperationInstance.createPersistent(repository, genericType, right, (Enum) findEnum(M3Paths.GenericTypeOperationType, type, repository));
                     });
         }
-
         return type(typeCtx.type(), typeParametersNames, space, importId, addLines);
     }
 

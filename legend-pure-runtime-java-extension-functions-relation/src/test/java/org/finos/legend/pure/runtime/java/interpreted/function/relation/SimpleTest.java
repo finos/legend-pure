@@ -43,7 +43,12 @@ public class SimpleTest extends PureExpressionTest
 //    public void testToOneError()
 //    {
 //        compileTestSource("fromString.pure",
-//                "function test():Any[*]\n" +
+//                "" +
+//                        "function sum(x:Integer[*]):Integer[1]" +
+//                        "{" +
+//                        "   2;" +
+//                        "}" +
+//                        "function test():Any[*]\n" +
 //                        "{\n" +
 //                        "   let tds = #TDS\n" +
 //                        "                value, str\n" +
@@ -52,7 +57,7 @@ public class SimpleTest extends PureExpressionTest
 //                        "                4, qw\n" +
 //                        "                5, wwe\n" +
 //                        "                5, weq\n" +
-//                        "              #->groupBy(['value'])->map(x|$x.value);" +
+//                        "              #->meta::pure::functions::relation::groupBy(~[str:String], ~name:x|$x.value:x|$x->sum());" +
 //                        "   print($tds, 1);" +
 //                        "}\n");
 //        this.execute("test():Any[*]");

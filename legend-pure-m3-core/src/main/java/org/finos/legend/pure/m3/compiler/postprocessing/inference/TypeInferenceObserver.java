@@ -14,6 +14,8 @@
 
 package org.finos.legend.pure.m3.compiler.postprocessing.inference;
 
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
@@ -160,6 +162,11 @@ public interface TypeInferenceObserver
     }
 
     default TypeInferenceObserver finishedProcessingFunctionExpression(CoreInstance functionExpression)
+    {
+        return this;
+    }
+
+    default TypeInferenceObserver updateFunctioNExpressionReturn(boolean parametersInferenceSuccess, GenericType genericTypeCopy, Multiplicity returnMultiplicityCopy)
     {
         return this;
     }

@@ -37,21 +37,21 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     }
 
     @Test
-    public void testSimpleColumn()
+    public void testSimpleColumnWithInferredType()
     {
-        try
-        {
-            compileTestSource("fromString.pure",
-                    "function test():Boolean[1]" +
-                            "{" +
-                            "   let x = ~name;" +
-                            "}");
-            fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Parser error at (resource:fromString.pure line:1 column:44), expected: ':' found: ';'", e.getMessage());
-        }
+        compileTestSource("fromString.pure",
+                "" +
+                        "function infFunc<T,X>(x:meta::pure::metamodel::relation::Relation<T>[1], c:meta::pure::metamodel::relation::ColSpec<X⊆T>[1]):meta::pure::metamodel::relation::Relation<X>[0..1]" +
+                        "{" +
+                        "   [];" +
+                        "}" +
+                        "function test():meta::pure::metamodel::relation::Relation<(colName:String)>[0..1]" +
+                        "{" +
+                        "   infFunc(" +
+                        "               []->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, colName:String)>)->toOne()," +
+                        "               ~colName" +
+                        "           );" +
+                        "}");
     }
 
     @Test
@@ -179,6 +179,21 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
 
     @Test
     public void testColumnSimpleFunctionInference()
+    {
+        compileTestSource("fromString.pure",
+                "native function meta::pure::functions::relation::extend<T,Z>(r:meta::pure::metamodel::relation::Relation<T>[1], f:meta::pure::metamodel::relation::FuncColSpec<{T[1]->Any[0..1]},Z>[1]):meta::pure::metamodel::relation::Relation<T+Z>[1];\n" +
+                        "\n" +
+                        "" +
+                        "function test():Boolean[1]" +
+                        "{" +
+                        "   []->toOne()->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, ok:Integer)>)->extend(~name:c|$c.id->toOne());" +
+                        "   true;" +
+                        "}");
+    }
+
+
+    @Test
+    public void testColumnUsingInOperator()
     {
         compileTestSource("fromString.pure",
                 "native function meta::pure::functions::relation::extend<T,Z>(r:meta::pure::metamodel::relation::Relation<T>[1], f:meta::pure::metamodel::relation::FuncColSpec<{T[1]->Any[0..1]},Z>[1]):meta::pure::metamodel::relation::Relation<T+Z>[1];\n" +

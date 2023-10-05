@@ -49,7 +49,8 @@ public class RelationExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("slice_Relation_1__Integer_1__Integer_1__Relation_1_", Slice::new),
                 Tuples.pair("sort_Relation_1__SortInfo_MANY__Relation_1_", Sort::new),
                 Tuples.pair("join_Relation_1__Relation_1__JoinKind_1__Function_1__Relation_1_", Join::new),
-                Tuples.pair("distinct_Relation_1__String_MANY__Relation_1_", Distinct::new)
+                Tuples.pair("distinct_Relation_1__String_MANY__Relation_1_", Distinct::new),
+                Tuples.pair("groupBy_Relation_1__ColSpecArray_1__AggColSpec_1__Relation_1_", GroupBy::new)
         ));
     }
 

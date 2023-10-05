@@ -3197,7 +3197,8 @@
     Root.children[meta].children[pure].children[metamodel].children[type].children[Enumeration].properties[values]:
              [
                  ^Root.children[meta].children[pure].children[metamodel].children[relation].children[GenericTypeOperationType] Union {Root.children[meta].children[pure].children[metamodel].children[type].children[Enum].properties[name] : 'Union'},
-                 ^Root.children[meta].children[pure].children[metamodel].children[relation].children[GenericTypeOperationType] Difference {Root.children[meta].children[pure].children[metamodel].children[type].children[Enum].properties[name] : 'Difference'}
+                 ^Root.children[meta].children[pure].children[metamodel].children[relation].children[GenericTypeOperationType] Difference {Root.children[meta].children[pure].children[metamodel].children[type].children[Enum].properties[name] : 'Difference'},
+                 ^Root.children[meta].children[pure].children[metamodel].children[relation].children[GenericTypeOperationType] Subset {Root.children[meta].children[pure].children[metamodel].children[type].children[Enum].properties[name] : 'Subset'}
              ],
     Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name]:'GenericTypeOperationType',
     Root.children[meta].children[pure].children[metamodel].children[type].children[Type].properties[generalizations] : ^Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization]

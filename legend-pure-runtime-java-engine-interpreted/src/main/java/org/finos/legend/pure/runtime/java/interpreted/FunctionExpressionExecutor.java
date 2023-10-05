@@ -19,20 +19,19 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.generictype.GenericType;
-import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionCoreInstanceWrapper;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpressionCoreInstanceWrapper;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.generictype.GenericType;
+import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
@@ -52,7 +51,7 @@ class FunctionExpressionExecutor implements Executor
     {
         profiler.startExecutingFunctionExpression(instance, functionExpressionToUseInStack);
         FunctionExpression functionExpression = FunctionExpressionCoreInstanceWrapper.toFunctionExpression(instance);
-        ListIterable<? extends CoreInstance> params = (ListIterable<? extends CoreInstance>)functionExpression._parametersValues();
+        ListIterable<? extends CoreInstance> params = (ListIterable<? extends CoreInstance>) functionExpression._parametersValues();
         Function function = FunctionCoreInstanceWrapper.toFunction(functionExpression._funcCoreInstance());
 
         MutableMap<String, CoreInstance> localResolvedTypeParameters = UnifiedMap.newMap();
@@ -111,19 +110,21 @@ class FunctionExpressionExecutor implements Executor
         }
         else
         {
-            ListIterable<? extends CoreInstance> typeArguments = (ListIterable<? extends CoreInstance>)functionExpression._resolvedTypeParameters();
+            ListIterable<? extends CoreInstance> typeArguments = (ListIterable<? extends CoreInstance>) functionExpression._resolvedTypeParameters();
             ListIterable<? extends CoreInstance> typeParameters = functionType.getValueForMetaPropertyToMany(M3Properties.typeParameters);
             int typeParamsSize = typeParameters.size();
             if (typeArguments.size() != typeParamsSize)
             {
-                throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Mismatch between type parameter count (" + typeParamsSize + ") and type argument count (" + typeArguments.size() + ")");
+                throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Mismatch between type parameter count (" + typeParamsSize + ") and type argument count (" + typeArguments.size() + ")\n" +
+                        "    Type parameters: " + typeParameters.collect(c -> c.getValueForMetaPropertyToOne("name").getName()) + "\n" +
+                        "    Type arguments: " + typeArguments.collect(c -> GenericType.print(c, processorSupport)));
             }
             for (int i = 0; i < typeParamsSize; i++)
             {
                 localResolvedTypeParameters.put(typeParameters.get(i).getValueForMetaPropertyToOne(M3Properties.name).getName(), typeArguments.get(i));
             }
 
-            ListIterable<? extends CoreInstance> multiplicityArguments = (ListIterable<? extends CoreInstance>)functionExpression._resolvedMultiplicityParameters();
+            ListIterable<? extends CoreInstance> multiplicityArguments = (ListIterable<? extends CoreInstance>) functionExpression._resolvedMultiplicityParameters();
             ListIterable<? extends CoreInstance> multiplicityParameters = functionType.getValueForMetaPropertyToMany(M3Properties.multiplicityParameters);
             int multiplicityParamsSize = multiplicityParameters.size();
             if (multiplicityArguments.size() == multiplicityParamsSize)
