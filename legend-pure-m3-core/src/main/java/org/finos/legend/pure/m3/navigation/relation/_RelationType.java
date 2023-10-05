@@ -38,12 +38,12 @@ import org.finos.legend.pure.m4.exception.PureCompilationException;
 public class _RelationType
 {
 
-    public static String print(CoreInstance rawType)
+    public static String print(CoreInstance rawType, ProcessorSupport processorSupport)
     {
         return "(" + rawType.getValueForMetaPropertyToMany("columns").collect(c ->
                 {
-                    CoreInstance type = c.getValueForMetaPropertyToOne("classifierGenericType").getValueForMetaPropertyToMany("typeArguments").get(1).getValueForMetaPropertyToOne("rawType");
-                    return c.getValueForMetaPropertyToOne("name").getName() + ":" + (type == null ? null : type.getName());
+                    CoreInstance type = c.getValueForMetaPropertyToOne("classifierGenericType").getValueForMetaPropertyToMany("typeArguments").get(1);
+                    return c.getValueForMetaPropertyToOne("name").getName() + ":" + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(type, processorSupport);
                 }
         ).makeString(", ") + ")";
     }

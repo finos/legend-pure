@@ -117,6 +117,20 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
+    public void testCColumnTypeInference()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "function f():Relation<(col:String)>[1]" +
+                        "{" +
+                        "   test('eee')" +
+                        "}" +
+                        "\n" +
+                        "native function test<T>(val:T[1]):Relation<(col:T)>[1];"
+        );
+    }
+
+    @Test
     public void testColumnFunctionUsingBracketLambdaCollectionInference()
     {
         compileInferenceTest(
