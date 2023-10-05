@@ -22,7 +22,6 @@ import java.util.Properties;
 public class PureModelVersion
 {
     public static final Optional<String> PURE_MODEL_VERSION = version("pure_model_version");
-    public static final String PURE_MODEL_VERSION_SPEC = String.format("{\"pure-model\" : %s}", PURE_MODEL_VERSION);
 
     // Note: the version contains three states:
     // 1. A value which is the VCS version of the model
