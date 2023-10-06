@@ -15,13 +15,18 @@
 
 package org.finos.legend.pure.m3.navigation.relation;
 
+import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Bags;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionAccessor;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
@@ -34,6 +39,8 @@ import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+
+import java.util.Comparator;
 
 public class _RelationType
 {
@@ -90,6 +97,13 @@ public class _RelationType
         return newRelationType;
     }
 
+    public static Pair<ListIterable<? extends Column<?, ?>>, ListIterable<? extends Column<?, ?>>> alignColumnSets(RichIterable<? extends Column<?, ?>> candidateColumns, RichIterable<? extends Column<?, ?>> signatureColumns)
+    {
+        MutableSet<String> signatureNames = signatureColumns.collect(FunctionAccessor::_name).toSet();
+        ListIterable<? extends Column<?, ?>> sortedCandidateSub = candidateColumns.select(c -> signatureNames.contains(c._name())).toSortedList(Comparator.comparing((Column<?, ?> a) -> a._name()));
+        ListIterable<? extends Column<?, ?>> sortedSignatures = signatureColumns.toSortedList(Comparator.comparing((Column<?, ?> a) -> a._name()));
+        return Tuples.pair(sortedCandidateSub, sortedSignatures);
+    }
 
     public static boolean equalRelationType(CoreInstance one, CoreInstance two, ProcessorSupport processorSupport)
     {

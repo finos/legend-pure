@@ -131,6 +131,20 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
+    public void testCColumnTypeInferenceReverse()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "function f():String[1]" +
+                        "{" +
+                        "   test(~col:String)" +
+                        "}" +
+                        "\n" +
+                        "native function test<T>(val:ColSpec<(col:T)>[1]):T[1];"
+        );
+    }
+
+    @Test
     public void testColumnFunctionUsingBracketLambdaCollectionInference()
     {
         compileInferenceTest(
@@ -450,23 +464,16 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testRelationTypeAdvancedUnionSubstraction()
     {
-        try
-        {
-            compileInferenceTest(
-                    "import meta::pure::metamodel::relation::*;" +
-                            "native function meta::pure::functions::relation::rename<T,Z,V>(r:Relation<T>[1], old:ColSpec<Z>[1], new:ColSpec<V>[1]):Relation<T-Z+V>[1];\n" +
-                            "function meta::pure::functions::relation::tests::rename::testSimpleRename(t:Relation<(value:Integer,str:String)>[1]):Boolean[1]\n" +
-                            "{\n" +
-                            "    let res = $t->rename(~str:String, ~newStr:String);\n" +
-                            "    assertEquals('stuff', $res->map(c|$c.newStr)->joinStrings(''));\n" +
-                            "}" +
-                            "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];");
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("", e.getMessage()
-            );
-        }
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "native function meta::pure::functions::relation::rename<T,Z,V>(r:Relation<T>[1], old:ColSpec<Z>[1], new:ColSpec<V>[1]):Relation<T-Z+V>[1];\n" +
+                        "function meta::pure::functions::relation::tests::rename::testSimpleRename(t:Relation<(value:Integer,str:String)>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    let res = $t->rename(~str:String, ~newStr:String);\n" +
+                        "    assertEquals('stuff', $res->map(c|$c.newStr)->joinStrings(''));\n" +
+                        "}" +
+                        "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];");
+
     }
 
     private void compileInferenceTest(String source)
