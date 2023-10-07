@@ -168,7 +168,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
 
                     if (isColumnWithEmptyType(instance, processorSupport))
                     {
-                        columnTypeInferenceSuccess = processColumnType(state, processorSupport, templateGenericType, instance, observer, paramsType, z);
+                        columnTypeInferenceSuccess = processColumnType(templateGenericType, instance, paramsType, z, observer, state, processorSupport);
                     }
                     else if (isLambdaWithEmptyParamType(instance, processorSupport))
                     {
@@ -267,50 +267,6 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
 
         observer.unShiftTab().finishedProcessingFunctionExpression(functionExpression);
         state.popTypeInferenceContext();
-    }
-
-    private static boolean manageMagicColumnFunctions(FunctionExpression functionExpression, Function<?> foundFunction, boolean columnTypeInferenceSuccess, TypeInferenceContext ctx, TypeInferenceObserver observer, ProcessorSupport processorSupport)
-    {
-        if ("funcColSpecArray_Function_MANY__String_MANY__T_1__FuncColSpecArray_1_".equals(foundFunction.getName()) || "funcColSpec_Function_1__String_1__T_1__FuncColSpec_1_".equals(foundFunction.getName()))
-        {
-            MutableList<ValueSpecification> parameters = Lists.mutable.withAll(functionExpression._parametersValues());
-            MutableList<CoreInstance> lambdas = Lists.mutable.withAll(parameters.get(0).getValueForMetaPropertyToMany("values"));
-            MutableList<CoreInstance> columns = Lists.mutable.withAll(parameters.get(2).getValueForMetaPropertyToOne("genericType").getValueForMetaPropertyToOne("rawType").getValueForMetaPropertyToMany("columns"));
-            if (lambdas.size() != columns.size())
-            {
-                throw new PureCompilationException("Error while processing funcColSpecArray. The lambda count is different from the column number (" + lambdas.size() + " != " + columns.size() + ")");
-            }
-            columnTypeInferenceSuccess = true;
-            for (int i = 0; i < lambdas.size(); i++)
-            {
-                CoreInstance lambdaReturnType = lambdas.get(i).getValueForMetaPropertyToMany("expressionSequence").getLast().getValueForMetaPropertyToOne("genericType");
-                if (lambdaReturnType != null)
-                {
-                    CoreInstance columnGenericType = _Column.getColumnType((Column<?, ?>) columns.get(i));
-                    columnGenericType.setKeyValues(Lists.mutable.with("rawType"), Lists.mutable.with(lambdaReturnType.getValueForMetaPropertyToOne("rawType")));
-                    ctx.register((GenericType)processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(2).getValueForMetaPropertyToOne("genericType"), (GenericType)parameters.get(2).getValueForMetaPropertyToOne("genericType"), ctx, observer);
-                }
-                else
-                {
-                    columnTypeInferenceSuccess = false;
-                }
-            }
-        }
-        if ("aggColSpec_Function_1__Function_1__String_1__T_1__AggColSpec_1_".equals(foundFunction.getName()))
-        {
-            MutableList<ValueSpecification> parameters = Lists.mutable.withAll(functionExpression._parametersValues());
-            CoreInstance reduceLambda = parameters.get(1).getValueForMetaPropertyToOne("values");
-            CoreInstance column = parameters.get(3).getValueForMetaPropertyToOne("genericType").getValueForMetaPropertyToOne("rawType").getValueForMetaPropertyToOne("columns");
-            CoreInstance lambdaReturnType = reduceLambda.getValueForMetaPropertyToMany("expressionSequence").getLast().getValueForMetaPropertyToOne("genericType");
-            if (lambdaReturnType != null)
-            {
-                CoreInstance columnGenericType = _Column.getColumnType((Column<?, ?>) column);
-                columnGenericType.setKeyValues(Lists.mutable.with("rawType"), Lists.mutable.with(lambdaReturnType.getValueForMetaPropertyToOne("rawType")));
-                ctx.register((GenericType)processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(3).getValueForMetaPropertyToOne("genericType"), (GenericType)parameters.get(3).getValueForMetaPropertyToOne("genericType"), ctx, observer);
-                columnTypeInferenceSuccess = true;
-            }
-        }
-        return columnTypeInferenceSuccess;
     }
 
     private FunctionMatchResult matchFunction(FunctionExpression functionExpression, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
@@ -420,6 +376,49 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
         return new FunctionMatchResult(foundFunctions, parametersRequiringTypeInference, functionName, parametersValues);
     }
 
+    private static boolean manageMagicColumnFunctions(FunctionExpression functionExpression, Function<?> foundFunction, boolean columnTypeInferenceSuccess, TypeInferenceContext ctx, TypeInferenceObserver observer, ProcessorSupport processorSupport)
+    {
+        if ("funcColSpecArray_Function_MANY__String_MANY__T_1__FuncColSpecArray_1_".equals(foundFunction.getName()) || "funcColSpec_Function_1__String_1__T_1__FuncColSpec_1_".equals(foundFunction.getName()))
+        {
+            MutableList<ValueSpecification> parameters = Lists.mutable.withAll(functionExpression._parametersValues());
+            MutableList<CoreInstance> lambdas = Lists.mutable.withAll(parameters.get(0).getValueForMetaPropertyToMany("values"));
+            MutableList<CoreInstance> columns = Lists.mutable.withAll(parameters.get(2).getValueForMetaPropertyToOne("genericType").getValueForMetaPropertyToOne("rawType").getValueForMetaPropertyToMany("columns"));
+            if (lambdas.size() != columns.size())
+            {
+                throw new PureCompilationException("Error while processing funcColSpecArray. The lambda count is different from the column number (" + lambdas.size() + " != " + columns.size() + ")");
+            }
+            columnTypeInferenceSuccess = true;
+            for (int i = 0; i < lambdas.size(); i++)
+            {
+                CoreInstance lambdaReturnType = lambdas.get(i).getValueForMetaPropertyToMany("expressionSequence").getLast().getValueForMetaPropertyToOne("genericType");
+                if (lambdaReturnType != null)
+                {
+                    CoreInstance columnGenericType = _Column.getColumnType((Column<?, ?>) columns.get(i));
+                    columnGenericType.setKeyValues(Lists.mutable.with("rawType"), Lists.mutable.with(lambdaReturnType.getValueForMetaPropertyToOne("rawType")));
+                    ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(2).getValueForMetaPropertyToOne("genericType"), (GenericType) parameters.get(2).getValueForMetaPropertyToOne("genericType"), ctx, observer);
+                }
+                else
+                {
+                    columnTypeInferenceSuccess = false;
+                }
+            }
+        }
+        if ("aggColSpec_Function_1__Function_1__String_1__T_1__AggColSpec_1_".equals(foundFunction.getName()))
+        {
+            MutableList<ValueSpecification> parameters = Lists.mutable.withAll(functionExpression._parametersValues());
+            CoreInstance reduceLambda = parameters.get(1).getValueForMetaPropertyToOne("values");
+            CoreInstance column = parameters.get(3).getValueForMetaPropertyToOne("genericType").getValueForMetaPropertyToOne("rawType").getValueForMetaPropertyToOne("columns");
+            CoreInstance lambdaReturnType = reduceLambda.getValueForMetaPropertyToMany("expressionSequence").getLast().getValueForMetaPropertyToOne("genericType");
+            if (lambdaReturnType != null)
+            {
+                CoreInstance columnGenericType = _Column.getColumnType((Column<?, ?>) column);
+                columnGenericType.setKeyValues(Lists.mutable.with("rawType"), Lists.mutable.with(lambdaReturnType.getValueForMetaPropertyToOne("rawType")));
+                ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(3).getValueForMetaPropertyToOne("genericType"), (GenericType) parameters.get(3).getValueForMetaPropertyToOne("genericType"), ctx, observer);
+                columnTypeInferenceSuccess = true;
+            }
+        }
+        return columnTypeInferenceSuccess;
+    }
 
     private void updateTypeInferenceContextSoThatReturnTypeIsConcrete(FunctionExpression functionExpression, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport, TypeInferenceObserver observer, ListIterable<? extends ValueSpecification> parametersValues, ListIterable<? extends VariableExpression> paramsType, FunctionType foundFunctionType)
     {
@@ -608,25 +607,52 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
         return lambdaParametersInferenceSuccess;
     }
 
-    private static boolean processColumnType(ProcessorState state, ProcessorSupport processorSupport, GenericType templateGenericType, ValueSpecification instance, TypeInferenceObserver observer, ListIterable<? extends VariableExpression> paramsType, int z)
+    private static boolean processColumnType(GenericType templateGenericType, ValueSpecification instance, ListIterable<? extends VariableExpression> paramsType, int z, TypeInferenceObserver observer, ProcessorState state, ProcessorSupport processorSupport)
     {
         CoreInstance actualTemplateToInferColumnType = state.getTypeInferenceContext().getTypeParameterToGenericType().get(org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(templateGenericType));
         if (actualTemplateToInferColumnType != null)
         {
-            ((RelationType<?>) instance._genericType()._rawType())._columns().forEach(c ->
+            GenericType instanceGenericType = instance._genericType();
+            ((RelationType<?>) instanceGenericType._rawType())._columns().forEach(currentColumn ->
             {
-                String colName = c._name();
-                GenericType potentialEmptyType = _Column.getColumnType(c);
+                String colName = currentColumn._name();
+                GenericType potentialEmptyType = _Column.getColumnType(currentColumn);
                 if (potentialEmptyType._rawType() == null)
                 {
                     if (processorSupport.instance_instanceOf(actualTemplateToInferColumnType, M3Paths.GenericTypeOperation))
                     {
-                        CoreInstance type = getSetFromSubset(actualTemplateToInferColumnType, processorSupport);
-                        ListIterable<? extends CoreInstance> columns = type.getValueForMetaPropertyToOne("rawType").getValueForMetaPropertyToMany("columns");
-                        CoreInstance foundColumn = columns.select(e -> e.getValueForMetaPropertyToOne("name").getName().equals(colName)).getFirst();
-                        CoreInstance foundColumnType = foundColumn.getValueForMetaPropertyToOne("classifierGenericType").getValueForMetaPropertyToMany("typeArguments").get(1).getValueForMetaPropertyToOne("rawType");
-                        potentialEmptyType.setKeyValues(Lists.mutable.with("rawType"), Lists.mutable.with(foundColumnType));
-                        state.getTypeInferenceContext().getParent().register((GenericType) getLeftFromSubset(actualTemplateToInferColumnType, processorSupport), (GenericType) instance.getValueForMetaPropertyToOne("genericType"), state.getTypeInferenceContext().getParent(), observer);
+                        if (!"Subset".equals(actualTemplateToInferColumnType.getValueForMetaPropertyToOne("type").getName()))
+                        {
+                            throw new RuntimeException("Expected Subset");
+                        }
+
+                        // Search the reference type (right of contains) for the missing type column
+                        RelationType<?> referenceRelation = (RelationType<?>) ((GenericType) getSetFromSubset(actualTemplateToInferColumnType, processorSupport))._rawType();
+                        Column<?, ?> foundColumn = referenceRelation._columns().select(e -> e._name().equals(colName)).getFirst();
+                        Type foundColumnType = _Column.getColumnType(foundColumn)._rawType();
+
+                        // Fill the type
+                        potentialEmptyType._rawType(foundColumnType);
+
+                        CoreInstance left = getLeftFromSubset(actualTemplateToInferColumnType, processorSupport);
+                        // Check if left is an EQUAL operation
+                        if (processorSupport.instance_instanceOf(left, M3Paths.GenericTypeOperation))
+                        {
+                            // Set the Type Param to the INSTANCE genericType
+                            CoreInstance param = left.getValueForMetaPropertyToOne("left");
+                            state.getTypeInferenceContext().getParent().register((GenericType) param, instanceGenericType, state.getTypeInferenceContext().getParent(), observer);
+                            // Continue with the right side of EQUAL
+                            left = left.getValueForMetaPropertyToOne("right");
+                        }
+
+                        // Check compatibility
+                        if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericCompatibleWith(instanceGenericType, left, processorSupport))
+                        {
+                            throw new RuntimeException(org.finos.legend.pure.m3.navigation.generictype.GenericType.print(left, processorSupport) + " is not compatible with " + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(instanceGenericType, processorSupport));
+                        }
+
+                        // Set the type parameter of the missing Column Type to the found type
+                        state.getTypeInferenceContext().getParent().register((GenericType) left, instanceGenericType, state.getTypeInferenceContext().getParent(), observer);
                     }
                 }
             });

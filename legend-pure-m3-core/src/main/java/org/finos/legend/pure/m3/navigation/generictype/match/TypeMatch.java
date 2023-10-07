@@ -457,17 +457,17 @@ abstract class TypeMatch implements Comparable<TypeMatch>
                 return null;
             }
 
-            RichIterable<? extends Column<?,?>> candidateColumns = candidate._columns();
-            RichIterable<? extends  Column<?,?>> signatureColumns = signature._columns();
+            RichIterable<? extends Column<?, ?>> candidateColumns = candidate._columns();
+            RichIterable<? extends Column<?, ?>> signatureColumns = signature._columns();
 
             if (candidateColumns.size() < signatureColumns.size())
             {
                 return null;
             }
 
-            Pair<ListIterable<? extends Column<?,?>>, ListIterable<? extends Column<?,?>>> res = _RelationType.alignColumnSets(candidateColumns, signatureColumns);
-            ListIterable<? extends Column<?,?>> sortedCandidateSub = res.getOne();
-            ListIterable<? extends Column<?,?>> sortedSignatures = res.getTwo();
+            Pair<ListIterable<? extends Column<?, ?>>, ListIterable<? extends Column<?, ?>>> res = _RelationType.alignColumnSets(candidateColumns, signatureColumns, processorSupport);
+            ListIterable<? extends Column<?, ?>> sortedCandidateSub = res.getOne();
+            ListIterable<? extends Column<?, ?>> sortedSignatures = res.getTwo();
 
             if (sortedSignatures.size() != sortedCandidateSub.size())
             {

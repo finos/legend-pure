@@ -454,7 +454,7 @@ type: ( qualifiedName (LESSTHAN (typeArguments? (PIPE multiplicityArguments)?) G
       unitName
 ;
 
-columnType : identifier COLON type
+columnType : (QUESTION | identifier) COLON type
 ;
 
 multiplicity: BRACKET_OPEN multiplicityArgument BRACKET_CLOSE
@@ -500,7 +500,7 @@ typeArguments: typeWithOperation (COMMA typeWithOperation)*
 typeWithOperation : type(typeOperation)*
 ;
 
-typeOperation: addType | subType | subsetType
+typeOperation: addType | subType | subsetType | equalType
 ;
 
 addType: PLUS type
@@ -510,6 +510,9 @@ subType: MINUS type
 ;
 
 subsetType: SUBSET type
+;
+
+equalType: EQUAL type
 ;
 
 multiplictyParameters: PIPE identifier (COMMA identifier)*

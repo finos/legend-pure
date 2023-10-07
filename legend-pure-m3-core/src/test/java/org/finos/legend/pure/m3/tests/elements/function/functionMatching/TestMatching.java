@@ -238,7 +238,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
         {
             assertPureException(PureCompilationException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "func(_:Pair<String, Integer>[1])\n" +
                     PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_IMPORTED_MESSAGE +
-                    "\tfunc(Pair[1]):Integer[1]\n" +
+                    "\tfunc(Pair<String, String>[1]):Integer[1]\n" +
                     PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE, "fromString.pure", 7, 5, 7, 5, 7, 8, e);
         }
     }

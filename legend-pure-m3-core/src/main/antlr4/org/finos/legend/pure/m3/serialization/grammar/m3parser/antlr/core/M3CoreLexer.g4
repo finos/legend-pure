@@ -29,6 +29,7 @@ END_LINE: ';';
 NEW_SYMBOL: '^';
 PIPE: '|';
 TILDE: '~';
+QUESTION: '?';
 PATH_SEPARATOR: PathSeparator;
 
 STRING:   String;

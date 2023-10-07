@@ -19,7 +19,6 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.StringEscapeUtils;
-import org.eclipse.collections.api.BooleanIterable;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.function.Function0;
@@ -986,7 +985,7 @@ public class AntlrContextToM3CoreInstance
                     GenericType returnGType = type(oneColSpec.type(), typeParametersNames, "", importId, addLines);
                     returnType = returnGType._rawType().getName();
                 }
-                columnInstances.add(_Column.getColumnInstance(oneColSpec.identifier().getText(), relationTypeGenericType, returnType, src, processorSupport));
+                columnInstances.add(_Column.getColumnInstance(oneColSpec.identifier().getText(), false, relationTypeGenericType, returnType, src, processorSupport));
             });
             relationTypeGenericType._rawTypeCoreInstance(_RelationType.build(relationTypeGenericType, columnInstances, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport));
 
@@ -1935,7 +1934,7 @@ public class AntlrContextToM3CoreInstance
                             genericTypeInstance,
                             ListIterate.collect(
                                     ctx.columnType(),
-                                    c -> _Column.getColumnInstance(c.identifier().getText(), genericTypeInstance, this.type(c.type(), typeParametersNames, spacePlusTabs(space, 5), importId, addLines), srcInfo, processorSupport)
+                                    c -> _Column.getColumnInstance(c.QUESTION() != null ? "" : c.identifier().getText(), c.QUESTION() != null, genericTypeInstance, this.type(c.type(), typeParametersNames, spacePlusTabs(space, 5), importId, addLines), srcInfo, processorSupport)
                             ), srcInfo, processorSupport
                     )
             );
@@ -3183,9 +3182,13 @@ public class AntlrContextToM3CoreInstance
                     typeCtx.typeOperation(),
                     (genericType, typeOperationContext) ->
                     {
-
-                        GenericType right = type(typeOperationContext.addType() != null ? typeOperationContext.addType().type() : typeOperationContext.subType() != null ? typeOperationContext.subType().type() : typeOperationContext.subsetType().type(), typeParametersNames, space, importId, addLines);
-                        String type = typeOperationContext.addType() != null ? "Union" : typeOperationContext.subType() != null ? "Difference" : "Subset";
+                        GenericType right = type(
+                                typeOperationContext.addType() != null ?
+                                        typeOperationContext.addType().type() : typeOperationContext.subType() != null ?
+                                        typeOperationContext.subType().type() : typeOperationContext.subsetType() != null ?
+                                        typeOperationContext.subsetType().type() : typeOperationContext.equalType().type(),
+                                typeParametersNames, space, importId, addLines);
+                        String type = typeOperationContext.addType() != null ? "Union" : typeOperationContext.subType() != null ? "Difference" : typeOperationContext.subsetType() != null ? "Subset" : "Equal";
                         return GenericTypeOperationInstance.createPersistent(repository, genericType, right, (Enum) findEnum(M3Paths.GenericTypeOperationType, type, repository));
                     });
         }

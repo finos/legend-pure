@@ -82,7 +82,7 @@ public class TestMultiplicity extends AbstractPureTestWithCoreCompiledPlatform
         {
             assertPureException(PureCompilationException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "test(_:LambdaFunction<{String[1]->String[2]}>[1])\n" +
                     PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_IMPORTED_MESSAGE +
-                    "\ttest(Function[1]):Nil[0]\n" +
+                    "\ttest(Function<{String[1]->String[1]}>[1]):Nil[0]\n" +
                     PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE, "testFunc.pure", 7, 5, 7, 5, 7, 8, e);
         }
     }

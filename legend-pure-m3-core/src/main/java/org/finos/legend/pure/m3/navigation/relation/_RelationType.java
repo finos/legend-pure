@@ -44,17 +44,10 @@ import java.util.Comparator;
 
 public class _RelationType
 {
-
     public static String print(CoreInstance rawType, ProcessorSupport processorSupport)
     {
-        return "(" + rawType.getValueForMetaPropertyToMany("columns").collect(c ->
-                {
-                    CoreInstance type = c.getValueForMetaPropertyToOne("classifierGenericType").getValueForMetaPropertyToMany("typeArguments").get(1);
-                    return c.getValueForMetaPropertyToOne("name").getName() + ":" + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(type, processorSupport);
-                }
-        ).makeString(", ") + ")";
+        return "(" + rawType.getValueForMetaPropertyToMany("columns").collect(c -> _Column.print(c, processorSupport)).makeString(", ") + ")";
     }
-
 
     public static Function<?> findColumn(RelationType<?> type, String name, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
@@ -97,12 +90,44 @@ public class _RelationType
         return newRelationType;
     }
 
-    public static Pair<ListIterable<? extends Column<?, ?>>, ListIterable<? extends Column<?, ?>>> alignColumnSets(RichIterable<? extends Column<?, ?>> candidateColumns, RichIterable<? extends Column<?, ?>> signatureColumns)
+    public static Pair<ListIterable<? extends Column<?, ?>>, ListIterable<? extends Column<?, ?>>> alignColumnSets(RichIterable<? extends Column<?, ?>> candidateColumns, RichIterable<? extends Column<?, ?>> signatureColumns, ProcessorSupport processorSupport)
     {
-        MutableSet<String> signatureNames = signatureColumns.collect(FunctionAccessor::_name).toSet();
-        ListIterable<? extends Column<?, ?>> sortedCandidateSub = candidateColumns.select(c -> signatureNames.contains(c._name())).toSortedList(Comparator.comparing((Column<?, ?> a) -> a._name()));
-        ListIterable<? extends Column<?, ?>> sortedSignatures = signatureColumns.toSortedList(Comparator.comparing((Column<?, ?> a) -> a._name()));
+        // Manage wildcards
+        RichIterable<? extends Pair<? extends Column<?, ?>, ? extends Column<?, ?>>> wildCard = signatureColumns.zip(candidateColumns).select(c -> c.getOne()._nameWildCard());
+        MutableList<Column<?, ?>> _candidateColumns = (MutableList<Column<?, ?>>) candidateColumns.toList();
+        _candidateColumns.removeAll(wildCard.collect(c -> c.getTwo()).toList());
+
+        // Sort both sets and keep the candidate that aligns to the signature.
+        RichIterable<Column<?, ?>> _signatureColumns = (MutableList<Column<?, ?>>) signatureColumns.toList();
+        MutableSet<String> signatureNames = _signatureColumns.collect(FunctionAccessor::_name).toSet();
+        MutableList<Column<?, ?>> sortedCandidateSub = _candidateColumns.select(c -> signatureNames.contains(c._name())).toSortedList(Comparator.comparing(FunctionAccessor::_name));
+        MutableList<Column<?, ?>> sortedSignatures = _signatureColumns.toSortedList(Comparator.comparing(FunctionAccessor::_name));
+
+        // Add the wildcards back
+        sortedSignatures.addAllIterable(wildCard.collect(Pair::getOne));
+        sortedCandidateSub.addAllIterable(wildCard.collect(Pair::getTwo));
         return Tuples.pair(sortedCandidateSub, sortedSignatures);
+    }
+
+    public static boolean isCompatibleWith(CoreInstance one, CoreInstance two, ProcessorSupport processorSupport)
+    {
+        if (!(processorSupport.instance_instanceOf(one, M3Paths.RelationType) && processorSupport.instance_instanceOf(two, M3Paths.RelationType)))
+        {
+            return false;
+        }
+        RelationType<?> rOne = (RelationType<?>) one;
+        RelationType<?> rTwo = (RelationType<?>) two;
+        boolean twoContainsWildCard = rTwo._columns().injectInto(true, (a, b) -> a && b._nameWildCard());
+        if (!twoContainsWildCard)
+        {
+            MutableSet<String> twoNames = rTwo._columns().collect(FunctionAccessor::_name).toSet();
+            if (!rOne._columns().injectInto(true, (a, b) -> a && twoNames.contains(b._name())))
+            {
+                return false;
+            }
+        }
+        Pair<ListIterable<? extends Column<?, ?>>, ListIterable<? extends Column<?, ?>>> cols = alignColumnSets(rOne._columns(), rTwo._columns(), processorSupport);
+        return cols.getOne().zip(cols.getTwo()).injectInto(true, (a, b) -> a && org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericCompatibleWith(_Column.getColumnType(b.getOne()), _Column.getColumnType(b.getTwo()), processorSupport));
     }
 
     public static boolean equalRelationType(CoreInstance one, CoreInstance two, ProcessorSupport processorSupport)
@@ -124,5 +149,4 @@ public class _RelationType
             return a && typeOne == typeTwo && b.getOne().getValueForMetaPropertyToOne("name").getName().equals(b.getTwo().getValueForMetaPropertyToOne("name").getName());
         });
     }
-
 }

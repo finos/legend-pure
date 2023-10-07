@@ -106,14 +106,14 @@ public class TestParameters extends AbstractPureTestWithCoreCompiled
             assertPureException(PureCompilationException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "eval(_:String[1],_:String[1])\n" +
                     PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_IMPORTED_MESSAGE +
                     PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE +
-                    "\tmeta::pure::functions::lang::eval(Function[1]):V[m]\n" +
-                    "\tmeta::pure::functions::lang::eval(Function[1], S[n], T[o], U[p], W[q], X[r], Y[s], Z[t]):V[m]\n" +
-                    "\tmeta::pure::functions::lang::eval(Function[1], T[n]):V[m]\n" +
-                    "\tmeta::pure::functions::lang::eval(Function[1], T[n], U[p]):V[m]\n" +
-                    "\tmeta::pure::functions::lang::eval(Function[1], T[n], U[p], W[q]):V[m]\n" +
-                    "\tmeta::pure::functions::lang::eval(Function[1], T[n], U[p], W[q], X[r]):V[m]\n" +
-                    "\tmeta::pure::functions::lang::eval(Function[1], T[n], U[p], W[q], X[r], Y[s]):V[m]\n" +
-                    "\tmeta::pure::functions::lang::eval(Function[1], T[n], U[p], W[q], X[r], Y[s], Z[t]):V[m]\n", 3, 31, e);
+                    "\tmeta::pure::functions::lang::eval(Function<{->V[m]}>[1]):V[m]\n" +
+                    "\tmeta::pure::functions::lang::eval(Function<{S[n], T[o], U[p], W[q], X[r], Y[s], Z[t]->V[m]}>[1], S[n], T[o], U[p], W[q], X[r], Y[s], Z[t]):V[m]\n" +
+                    "\tmeta::pure::functions::lang::eval(Function<{T[n], U[p], W[q], X[r], Y[s], Z[t]->V[m]}>[1], T[n], U[p], W[q], X[r], Y[s], Z[t]):V[m]\n" +
+                    "\tmeta::pure::functions::lang::eval(Function<{T[n], U[p], W[q], X[r], Y[s]->V[m]}>[1], T[n], U[p], W[q], X[r], Y[s]):V[m]\n" +
+                    "\tmeta::pure::functions::lang::eval(Function<{T[n], U[p], W[q], X[r]->V[m]}>[1], T[n], U[p], W[q], X[r]):V[m]\n" +
+                    "\tmeta::pure::functions::lang::eval(Function<{T[n], U[p], W[q]->V[m]}>[1], T[n], U[p], W[q]):V[m]\n" +
+                    "\tmeta::pure::functions::lang::eval(Function<{T[n], U[p]->V[m]}>[1], T[n], U[p]):V[m]\n" +
+                    "\tmeta::pure::functions::lang::eval(Function<{T[n]->V[m]}>[1], T[n]):V[m]\n", 3, 31, e);
         }
     }
 

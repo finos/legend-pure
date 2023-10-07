@@ -26,17 +26,18 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 public class _Column
 {
-    public static Column<?,?> getColumnInstance(String name, GenericType sourceType, String type, SourceInformation src, ProcessorSupport processorSupport)
+    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType sourceType, String type, SourceInformation src, ProcessorSupport processorSupport)
     {
         GenericType target = (GenericType) processorSupport.newEphemeralAnonymousCoreInstance(M3Paths.GenericType);
         target._rawType(type == null ? null : (Type) _Package.getByUserPath(type, processorSupport));
-        return _Column.getColumnInstance(name, sourceType, target, src, processorSupport);
+        return _Column.getColumnInstance(name, nameWildCard, sourceType, target, src, processorSupport);
     }
 
-    public static Column<?,?> getColumnInstance(String name, GenericType sourceType, GenericType targetType, SourceInformation src, ProcessorSupport processorSupport)
+    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType sourceType, GenericType targetType, SourceInformation src, ProcessorSupport processorSupport)
     {
-        Column<?,?> columnInstance = (Column<?,?>)processorSupport.newAnonymousCoreInstance(src, M3Paths.Column);
+        Column<?, ?> columnInstance = (Column<?, ?>) processorSupport.newAnonymousCoreInstance(src, M3Paths.Column);
         columnInstance._name(name);
+        columnInstance._nameWildCard(nameWildCard);
         GenericType columnGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
         columnGenericType._rawType((Type) _Package.getByUserPath(M3Paths.Column, processorSupport));
         columnGenericType._typeArguments(Lists.mutable.with(sourceType, targetType));
@@ -45,8 +46,14 @@ public class _Column
         return columnInstance;
     }
 
-    public static GenericType getColumnType(Column<?,?> column)
+    public static GenericType getColumnType(Column<?, ?> column)
     {
         return column._classifierGenericType()._typeArguments().toList().get(1);
+    }
+
+    public static String print(CoreInstance c, ProcessorSupport processorSupport)
+    {
+        Column<?, ?> col = (Column<?, ?>) c;
+        return (col._nameWildCard() ? "?" : col._name()) + ":" + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(getColumnType(col), processorSupport);
     }
 }

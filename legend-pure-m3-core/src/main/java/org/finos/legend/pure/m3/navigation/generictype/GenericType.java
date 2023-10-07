@@ -407,7 +407,7 @@ public class GenericType
         boolean oneIsRelation = processorSupport.instance_instanceOf(rawType, M3Paths.RelationType);
         if (oneIsRelation)
         {
-            return _RelationType.equalRelationType(rawType, otherRawType, processorSupport);
+            return _RelationType.isCompatibleWith(rawType, otherRawType, processorSupport);
         }
 
         CoreInstance functionClass = processorSupport.package_getByUserPath(M3Paths.Function);
@@ -850,7 +850,7 @@ public class GenericType
             {
                 String type = genericType.getValueForMetaPropertyToOne("type").getName();
                 print(appendable, genericType.getValueForMetaPropertyToOne("left"), fullPaths, markImportStubs, processorSupport);
-                appendable.append(type.equals("Union") ? "+" : type.equals("Subset") ? "⊆" : "-");
+                appendable.append(type.equals("Union") ? "+" : type.equals("Subset") ? "⊆" : type.equals("Equal") ? "=" : "-");
                 print(appendable, genericType.getValueForMetaPropertyToOne("right"), fullPaths, markImportStubs, processorSupport);
             }
             else

@@ -413,7 +413,9 @@ public class TypeInferenceContext
 
                     if (processorSupport.instance_instanceOf(templateGenType._rawType(), M3Paths.RelationType) && processorSupport.instance_instanceOf(genericTypeCopy._rawType(), M3Paths.RelationType))
                     {
-                        Pair<ListIterable<? extends Column<?, ?>>, ListIterable<? extends Column<?, ?>>> res = _RelationType.alignColumnSets(((RelationType<?>) genericTypeCopy._rawType())._columns(), ((RelationType<?>) templateGenType._rawType())._columns());
+                        RichIterable<? extends Column<?, ?>> valColumns = ((RelationType<?>) genericTypeCopy._rawType())._columns();
+                        RichIterable<? extends Column<?, ?>> templateColumns = ((RelationType<?>) templateGenType._rawType())._columns();
+                        Pair<ListIterable<? extends Column<?, ?>>, ListIterable<? extends Column<?, ?>>> res = _RelationType.alignColumnSets(valColumns, templateColumns, processorSupport);
                         res.getTwo().zip(res.getOne()).forEach(c ->
                                 register(c.getOne()._classifierGenericType()._typeArguments().toList().get(1), c.getTwo()._classifierGenericType()._typeArguments().toList().get(1), targetGenericsContext, observer)
                         );
