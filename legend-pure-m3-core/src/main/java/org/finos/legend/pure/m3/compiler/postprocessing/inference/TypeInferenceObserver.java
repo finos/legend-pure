@@ -106,6 +106,12 @@ public interface TypeInferenceObserver
         return this;
     }
 
+    default TypeInferenceObserver tryingRegistration(GenericType templateGenType, GenericType genericType, TypeInferenceContext typeInferenceContext, TypeInferenceContext targetGenericsContext)
+    {
+        return this;
+    }
+
+
     default TypeInferenceObserver registerMul(CoreInstance templateMul, CoreInstance valueMul, TypeInferenceContext context, TypeInferenceContext targetGenericsContext)
     {
         return this;

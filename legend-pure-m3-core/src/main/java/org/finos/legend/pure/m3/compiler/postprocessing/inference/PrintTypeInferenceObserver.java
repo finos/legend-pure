@@ -175,7 +175,7 @@ public class PrintTypeInferenceObserver implements TypeInferenceObserver
     @Override
     public TypeInferenceObserver register(CoreInstance templateGenType, CoreInstance valueForMetaPropertyToOne, TypeInferenceContext context, TypeInferenceContext targetGenericsContext)
     {
-        printTab().print(". Register ");
+        printTab().print("  . Register ");
         GenericType.print(this.appendable, templateGenType, this.processorState.getProcessorSupport());
         print(" / ");
         GenericType.print(this.appendable, valueForMetaPropertyToOne, this.processorState.getProcessorSupport());
@@ -186,7 +186,7 @@ public class PrintTypeInferenceObserver implements TypeInferenceObserver
     @Override
     public TypeInferenceObserver registerMul(CoreInstance templateMul, CoreInstance valueMul, TypeInferenceContext context, TypeInferenceContext targetGenericsContext)
     {
-        printTab().print(". Register Mul ");
+        printTab().print("  . Register Mul ");
         Multiplicity.print(this.appendable, templateMul, true);
         print(" / ");
         Multiplicity.print(this.appendable, valueMul, true);
@@ -337,4 +337,13 @@ public class PrintTypeInferenceObserver implements TypeInferenceObserver
         return this;
     }
 
+    @Override
+    public TypeInferenceObserver tryingRegistration(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType templateGenType, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType, TypeInferenceContext typeInferenceContext, TypeInferenceContext targetGenericsContext)
+    {
+        printTab().print("  # Trying Registration ");
+        GenericType.print(this.appendable, templateGenType, this.processorState.getProcessorSupport());
+        print(" <-> ");
+        GenericType.print(this.appendable, genericType, this.processorState.getProcessorSupport());
+        return printNewline();
+    }
 }

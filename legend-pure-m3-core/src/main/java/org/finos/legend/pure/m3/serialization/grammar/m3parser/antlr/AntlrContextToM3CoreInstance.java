@@ -3175,24 +3175,53 @@ public class AntlrContextToM3CoreInstance
 
     private GenericType typeWithOperation(TypeWithOperationContext typeCtx, MutableList<String> typeParametersNames, String space, ImportGroup importId, boolean addLines)
     {
-        if (!typeCtx.typeOperation().isEmpty())
+        GenericType left = type(typeCtx.type(), typeParametersNames, space, importId, addLines);
+
+        if (typeCtx.equalType() != null)
+        {
+            GenericType newLeft = type(typeCtx.equalType().type(), typeParametersNames, space, importId, addLines);
+            GenericType right = buildSubset(buildAddSub(newLeft, typeCtx.typeAddSubOperation(), typeParametersNames, space, importId, addLines), typeCtx.subsetType(), typeParametersNames, space, importId, addLines);
+            return GenericTypeOperationInstance.createPersistent(repository, left, right, (Enum) findEnum(M3Paths.GenericTypeOperationType, "Equal", repository));
+        }
+
+        if (typeCtx.subsetType() != null)
+        {
+            return buildSubset(
+                    buildAddSub(left, typeCtx.typeAddSubOperation(), typeParametersNames, space, importId, addLines),
+                    typeCtx.subsetType(),
+                    typeParametersNames, space, importId, addLines);
+        }
+
+        return buildAddSub(left, typeCtx.typeAddSubOperation(), typeParametersNames, space, importId, addLines);
+    }
+
+    private GenericType buildSubset(GenericType left, SubsetTypeContext subsetTypeContext, MutableList<String> typeParametersNames, String space, ImportGroup importId, boolean addLines)
+    {
+        if (subsetTypeContext != null)
+        {
+            return GenericTypeOperationInstance.createPersistent(repository, left, type(subsetTypeContext.type(), typeParametersNames, space, importId, addLines), (Enum) findEnum(M3Paths.GenericTypeOperationType, "Subset", repository));
+        }
+        return left;
+    }
+
+    public GenericType buildAddSub(GenericType start, List<TypeAddSubOperationContext> addSub, MutableList<String> typeParametersNames, String space, ImportGroup importId, boolean addLines)
+    {
+        if (!addSub.isEmpty())
         {
             return ListIterate.injectInto(
-                    type(typeCtx.type(), typeParametersNames, space, importId, addLines),
-                    typeCtx.typeOperation(),
+                    start,
+                    addSub,
                     (genericType, typeOperationContext) ->
                     {
                         GenericType right = type(
                                 typeOperationContext.addType() != null ?
-                                        typeOperationContext.addType().type() : typeOperationContext.subType() != null ?
-                                        typeOperationContext.subType().type() : typeOperationContext.subsetType() != null ?
-                                        typeOperationContext.subsetType().type() : typeOperationContext.equalType().type(),
+                                        typeOperationContext.addType().type() : typeOperationContext.subType().type(),
                                 typeParametersNames, space, importId, addLines);
-                        String type = typeOperationContext.addType() != null ? "Union" : typeOperationContext.subType() != null ? "Difference" : typeOperationContext.subsetType() != null ? "Subset" : "Equal";
+                        String type = typeOperationContext.addType() != null ? "Union" : "Difference";
                         return GenericTypeOperationInstance.createPersistent(repository, genericType, right, (Enum) findEnum(M3Paths.GenericTypeOperationType, type, repository));
                     });
         }
-        return type(typeCtx.type(), typeParametersNames, space, importId, addLines);
+        return start;
     }
 
     private GenericType processType(QualifiedNameContext classParserPath, MutableList<String> typeParametersNames, ListIterable<GenericType> possibleTypeArguments, ListIterable<Multiplicity> possibleMultiplicityArguments, ImportGroup importId)

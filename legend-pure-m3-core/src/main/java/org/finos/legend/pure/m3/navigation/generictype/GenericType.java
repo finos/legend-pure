@@ -112,7 +112,7 @@ public class GenericType
 
         if (processorSupport.instance_instanceOf(typeArgument, M3Paths.GenericTypeOperation))
         {
-            return resolveOperation(typeArgument, filteredGenericTypeByTypeParameterNames, processorSupport);
+            return resolveOperation(typeArgument, filteredGenericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
         }
         else
         {
@@ -174,14 +174,15 @@ public class GenericType
         throw new RuntimeException("Can only perform on an operation");
     }
 
-    public static CoreInstance resolveOperation(CoreInstance operation, MapIterable<String, CoreInstance> genericTypeByTypeParameterNames, ProcessorSupport processorSupport)
+    public static CoreInstance resolveOperation(CoreInstance operation, MapIterable<String, CoreInstance> genericTypeByTypeParameterNames, MapIterable<String, CoreInstance> sourceMulBinding, ProcessorSupport processorSupport)
     {
-        if ("Subset".equals(((GenericTypeOperation) operation)._type().getName()))
+        String type = ((GenericTypeOperation) operation)._type().getName();
+        if ("Subset".equals(type) || "Equal".equals(type))
         {
             CoreInstance left = operation.getValueForMetaPropertyToOne("left");
             CoreInstance right = operation.getValueForMetaPropertyToOne("right");
-            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gLeft = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) genericTypeByTypeParameterNames.getIfAbsentValue(getTypeParameterName(left, processorSupport), left);
-            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) genericTypeByTypeParameterNames.getIfAbsentValue(getTypeParameterName(right, processorSupport), right);
+            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gLeft = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) GenericType.makeTypeArgumentAsConcreteAsPossible(left, genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
+            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) GenericType.makeTypeArgumentAsConcreteAsPossible(right, genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
             return GenericTypeOperationInstance.createPersistent(operation.getRepository(), gLeft, gRight, ((GenericTypeOperation) operation)._type());
         }
         else
@@ -189,9 +190,9 @@ public class GenericType
             CoreInstance left = operation.getValueForMetaPropertyToOne("left");
             if (processorSupport.instance_instanceOf(left, M3Paths.GenericTypeOperation))
             {
-                left = resolveOperation(left, genericTypeByTypeParameterNames, processorSupport);
+                left = resolveOperation(left, genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
                 CoreInstance right = operation.getValueForMetaPropertyToOne("right");
-                org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) genericTypeByTypeParameterNames.getIfAbsentValue(getTypeParameterName(right, processorSupport), right);
+                org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) GenericType.makeTypeArgumentAsConcreteAsPossible(right, genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
                 if (GenericType.isGenericTypeConcrete(left) && GenericType.isGenericTypeConcrete(gRight))
                 {
                     return merge(operation, processorSupport, left, gRight);
@@ -205,7 +206,7 @@ public class GenericType
             {
                 CoreInstance right = operation.getValueForMetaPropertyToOne("right");
                 CoreInstance gLeft = genericTypeByTypeParameterNames.getIfAbsentValue(getTypeParameterName(left, processorSupport), left);
-                org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) genericTypeByTypeParameterNames.getIfAbsentValue(getTypeParameterName(right, processorSupport), right);
+                org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) GenericType.makeTypeArgumentAsConcreteAsPossible(right, genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
                 if (GenericType.isGenericTypeConcrete(gLeft) && GenericType.isGenericTypeConcrete(gRight))
                 {
                     return merge(operation, processorSupport, gLeft, gRight);
@@ -1222,4 +1223,20 @@ public class GenericType
             }
         }
     }
+
+    public static boolean isGenericTypeOperationEqual(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType, ProcessorSupport processorSupport)
+    {
+        return isGenericTypeOperation(genericType, processorSupport) && ((GenericTypeOperation) genericType)._type().getName().equals("Equal");
+    }
+
+    public static boolean isGenericTypeOperationSubset(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType, ProcessorSupport processorSupport)
+    {
+        return isGenericTypeOperation(genericType, processorSupport) && ((GenericTypeOperation) genericType)._type().getName().equals("Subset");
+    }
+
+    public static boolean isGenericTypeOperation(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType, ProcessorSupport processorSupport)
+    {
+        return processorSupport.instance_instanceOf(genericType, M3Paths.GenericTypeOperation);
+    }
+
 }

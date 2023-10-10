@@ -51,6 +51,12 @@ public class _Column
         return column._classifierGenericType()._typeArguments().toList().get(1);
     }
 
+    public static GenericType getColumnSourceType(Column<?, ?> column)
+    {
+        return column._classifierGenericType()._typeArguments().toList().get(0);
+    }
+
+
     public static String print(CoreInstance c, ProcessorSupport processorSupport)
     {
         Column<?, ?> col = (Column<?, ?>) c;

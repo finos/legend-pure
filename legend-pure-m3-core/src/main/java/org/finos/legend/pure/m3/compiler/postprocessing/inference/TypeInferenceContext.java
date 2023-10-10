@@ -35,11 +35,13 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionType;
 import org.finos.legend.pure.m3.navigation.generictype.GenericTypeWithXArguments;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.navigation.relation._Column;
 import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.navigation.typeparameter.TypeParameter;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 import java.util.Iterator;
@@ -322,11 +324,24 @@ public class TypeInferenceContext
 
     public void register(GenericType templateGenType, GenericType genericType, TypeInferenceContext targetGenericsContext, TypeInferenceObserver observer)
     {
+        observer.tryingRegistration(templateGenType, genericType, this, targetGenericsContext);
+
         Objects.requireNonNull(targetGenericsContext);
 
         if (genericType != null)
         {
             GenericType genericTypeCopy = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(genericType, true, this.processorSupport);
+
+            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationEqual(genericTypeCopy, processorSupport))
+            {
+                getParent().register((GenericType) genericTypeCopy.getValueForMetaPropertyToOne("left"), (GenericType) genericTypeCopy.getValueForMetaPropertyToOne("right"), targetGenericsContext.getParent(), observer);
+            }
+
+//            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationSubset(genericTypeCopy, processorSupport))
+//            {
+//                genericTypeCopy = (GenericType) genericTypeCopy.getValueForMetaPropertyToOne("left");
+//            }
+
             String name = org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(templateGenType);
             if (name != null)
             {
@@ -341,24 +356,55 @@ public class TypeInferenceContext
                 }
                 else if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(existing.getParameterValue()) && org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(genericTypeCopy))
                 {
-                    // Merge two concrete types
-                    GenericType merged = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(Lists.mutable.with(existing.getParameterValue(), genericTypeCopy), TypeParameter.isCovariant(templateGenType), false, genericType.getSourceInformation(), this.processorSupport);
-                    this.states.getLast().putTypeParameterValue(name, merged, targetGenericsContext, false);
-
-                    // See if the replacement is the more concrete version of a previously semi-concrete type (List<T> replaced by List<String>)
-                    CoreInstance existingRawType = ((GenericType) existing.getParameterValue())._rawType();
-                    CoreInstance replacementRawType = merged._rawType();
-                    if (existingRawType.equals(replacementRawType))
+                    if (processorSupport.instance_instanceOf(existing.getParameterValue().getValueForMetaPropertyToOne("rawType"), M3Paths.RelationType) &&
+                            processorSupport.instance_instanceOf(genericTypeCopy.getValueForMetaPropertyToOne("rawType"), M3Paths.RelationType))
                     {
-                        Iterator<? extends GenericType> existingTypeArguments = ((GenericType) existing.getParameterValue())._typeArguments().iterator();
-                        Iterator<? extends GenericType> replacementTypeArguments = merged._typeArguments().iterator();
-                        while (existingTypeArguments.hasNext())
+                        MutableList<Column<?, ?>> columns1 = (MutableList<Column<?, ?>>) ((RelationType<?>) existing.getParameterValue().getValueForMetaPropertyToOne("rawType"))._columns().toList();
+                        MutableList<Column<?, ?>> columns2 = (MutableList<Column<?, ?>>) ((RelationType<?>) genericTypeCopy.getValueForMetaPropertyToOne("rawType"))._columns().toList();
+                        RelationType relationType = (RelationType<?>) processorSupport.newCoreInstance("", M3Paths.RelationType, existing.getParameterValue().getValueForMetaPropertyToOne("rawType").getSourceInformation());
+                        relationType._columns(columns1.zip(columns2).collect(c ->
                         {
-                            GenericType existingArgument = existingTypeArguments.next();
-                            GenericType replacementArgument = replacementTypeArguments.next();
-                            if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(existingArgument) && org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(replacementArgument))
+                            boolean wildcard = c.getOne()._nameWildCard() && c.getTwo()._nameWildCard();
+                            if (!c.getOne()._nameWildCard() && !c.getTwo()._nameWildCard())
                             {
-                                forwards.add(new RegistrationRequest(existing.getTargetGenericsContext(), existingArgument, replacementArgument));
+                                if (!c.getOne()._name().equals(c.getTwo()._name()))
+                                {
+                                    throw new PureCompilationException("Incompatible types " + _RelationType.print((RelationType<?>) existing.getParameterValue().getValueForMetaPropertyToOne("rawType"), processorSupport) + " && " +
+                                            _RelationType.print((RelationType<?>) genericTypeCopy.getValueForMetaPropertyToOne("rawType"), processorSupport));
+                                }
+                            }
+                            String cName = c.getOne()._nameWildCard() ? c.getTwo()._name() : c.getOne()._name();
+                            GenericType a = _Column.getColumnType(c.getOne());
+                            GenericType b = _Column.getColumnType(c.getTwo());
+                            GenericType merged = a._rawType() == null && b._rawType() == null ? a : (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(Lists.mutable.with(a, b), TypeParameter.isCovariant(templateGenType), false, genericType.getSourceInformation(), this.processorSupport);
+                            return _Column.getColumnInstance(cName, wildcard, _Column.getColumnSourceType(c.getOne()), merged, null, processorSupport);
+
+                        }));
+                        GenericType res = (GenericType) processorSupport.newGenericType(null, relationType, true);
+                        res._rawType(relationType);
+                        this.states.getLast().putTypeParameterValue(name, res, targetGenericsContext, false);
+                    }
+                    else
+                    {
+                        // Merge two concrete types
+                        GenericType merged = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(Lists.mutable.with(existing.getParameterValue(), genericTypeCopy), TypeParameter.isCovariant(templateGenType), false, genericType.getSourceInformation(), this.processorSupport);
+                        this.states.getLast().putTypeParameterValue(name, merged, targetGenericsContext, false);
+
+                        // See if the replacement is the more concrete version of a previously semi-concrete type (List<T> replaced by List<String>)
+                        CoreInstance existingRawType = ((GenericType) existing.getParameterValue())._rawType();
+                        CoreInstance replacementRawType = merged._rawType();
+                        if (existingRawType.equals(replacementRawType))
+                        {
+                            Iterator<? extends GenericType> existingTypeArguments = ((GenericType) existing.getParameterValue())._typeArguments().iterator();
+                            Iterator<? extends GenericType> replacementTypeArguments = merged._typeArguments().iterator();
+                            while (existingTypeArguments.hasNext())
+                            {
+                                GenericType existingArgument = existingTypeArguments.next();
+                                GenericType replacementArgument = replacementTypeArguments.next();
+                                if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(existingArgument) && org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(replacementArgument))
+                                {
+                                    forwards.add(new RegistrationRequest(existing.getTargetGenericsContext(), existingArgument, replacementArgument));
+                                }
                             }
                         }
                     }

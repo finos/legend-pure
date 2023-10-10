@@ -332,7 +332,7 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
         }
         catch (Exception e)
         {
-            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:109), \"Can't find the property 'a' in the class meta::pure::metamodel::type::Any\"", e.getMessage());
+            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:4), \"Incompatible types (ae:String, f:String) && (a:Integer, f:String)\"", e.getMessage());
         }
     }
 
@@ -578,6 +578,20 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                     "No functions, in packages not imported, match the function name.\n" +
                     "\"", e.getMessage());
         }
+
+    }
+
+    @Test
+    public void testRenameUseCase()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "Class A<X,Y>{}\n" +
+                        "function f(t:Relation<(value:Integer, name:String)>[1]):Relation<(value:Integer, na:String)>[1]\n" +
+                        "{\n" +
+                        "    $t->ren(~name, ~na);\n" +
+                        "}" +
+                        "native function meta::pure::functions::relation::ren<T,Z,K,V>(r:Relation<T>[1], old:ColSpec<Z=(?:K)⊆T>[1], new:ColSpec<V=(?:K)>[1]):Relation<T-Z+V>[1];");
 
     }
 

@@ -497,10 +497,10 @@ multiplicityArgument: identifier | ((fromMultiplicity DOTDOT)? toMultiplicity)
 typeArguments: typeWithOperation (COMMA typeWithOperation)*
 ;
 
-typeWithOperation : type(typeOperation)*
+typeWithOperation : type equalType? (typeAddSubOperation)* subsetType?
 ;
 
-typeOperation: addType | subType | subsetType | equalType
+typeAddSubOperation: addType | subType
 ;
 
 addType: PLUS type
