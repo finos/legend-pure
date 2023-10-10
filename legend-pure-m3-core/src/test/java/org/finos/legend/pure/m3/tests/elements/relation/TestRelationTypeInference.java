@@ -595,6 +595,57 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
 
     }
 
+    @Test
+    public void testRenameUseCaseWithMap()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "Class A<X,Y>{}\n" +
+                        "function f(t:Relation<(value:Integer, name:String)>[1]):String[*]\n" +
+                        "{\n" +
+                        "    $t->ren(~name, ~na)->map(x|$x.na);\n" +
+                        "}" +
+                        "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];" +
+                        "native function meta::pure::functions::relation::ren<T,Z,K,V>(r:Relation<T>[1], old:ColSpec<Z=(?:K)⊆T>[1], new:ColSpec<V=(?:K)>[1]):Relation<T-Z+V>[1];");
+
+    }
+
+    @Test
+    public void testRenameUseCaseWithHardCodedType()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "Class A<X,Y>{}\n" +
+                        "function f(t:Relation<(value:Integer, name:String)>[1]):Relation<(value:Integer, na:String)>[1]\n" +
+                        "{\n" +
+                        "    $t->ren(~name, ~na:String);\n" +
+                        "}" +
+                        "native function meta::pure::functions::relation::ren<T,Z,K,V>(r:Relation<T>[1], old:ColSpec<Z=(?:K)⊆T>[1], new:ColSpec<V=(?:K)>[1]):Relation<T-Z+V>[1];");
+
+    }
+
+    @Test
+    public void testRenameWithIndirectCall()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "Class A<X,Y>{}" +
+                        "Class TDS<T> extends Relation<T>{}\n" +
+                        "function f(t:Relation<(value:Integer, name:String)>[1]):Relation<(value:Integer, na:String)>[1]\n" +
+                        "{\n" +
+                        "    $t->ren(~name, ~na:String);\n" +
+                        "}" +
+                        "function f2(t:Relation<(value:Integer, name:String)>[1]):Relation<(value:Integer, na:String)>[1]\n" +
+                        "{\n" +
+                        "    $t->cast(@TDS<(value:Integer, name:String)>)->ren(~name, ~na:String);\n" +
+                        "}" +
+                        "native function meta::pure::functions::relation::ren<T,Z,K,V>(r:Relation<T>[1], old:ColSpec<Z=(?:K)⊆T>[1], new:ColSpec<V=(?:K)>[1]):Relation<T-Z+V>[1];" +
+                        "function meta::pure::functions::relation::ren<T,Z,K,V>(r:TDS<T>[1], old:ColSpec<Z=(?:K)⊆T>[1], new:ColSpec<V=(?:K)>[1]):Relation<T-Z+V>[1]" +
+                        "{" +
+                        "   ren($r->cast(@Relation<T>), $old, $new)" +
+                        "}");
+    }
+
     private void compileInferenceTest(String source)
     {
         compileTestSource(inferenceTestFileName, source);

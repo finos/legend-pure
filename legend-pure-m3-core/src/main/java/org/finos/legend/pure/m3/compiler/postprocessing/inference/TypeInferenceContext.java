@@ -334,13 +334,16 @@ public class TypeInferenceContext
 
             if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationEqual(genericTypeCopy, processorSupport))
             {
-                getParent().register((GenericType) genericTypeCopy.getValueForMetaPropertyToOne("left"), (GenericType) genericTypeCopy.getValueForMetaPropertyToOne("right"), targetGenericsContext.getParent(), observer);
+                if (targetGenericsContext.getParent() != null)
+                {
+                    getParent().register((GenericType) genericTypeCopy.getValueForMetaPropertyToOne("left"), (GenericType) genericTypeCopy.getValueForMetaPropertyToOne("right"), targetGenericsContext.getParent(), observer);
+                }
             }
 
-//            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationSubset(genericTypeCopy, processorSupport))
-//            {
-//                genericTypeCopy = (GenericType) genericTypeCopy.getValueForMetaPropertyToOne("left");
-//            }
+            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationEqual(templateGenType, processorSupport))
+            {
+                register((GenericType) templateGenType.getValueForMetaPropertyToOne("left"), genericTypeCopy, targetGenericsContext, observer);
+            }
 
             String name = org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(templateGenType);
             if (name != null)
@@ -362,6 +365,8 @@ public class TypeInferenceContext
                         MutableList<Column<?, ?>> columns1 = (MutableList<Column<?, ?>>) ((RelationType<?>) existing.getParameterValue().getValueForMetaPropertyToOne("rawType"))._columns().toList();
                         MutableList<Column<?, ?>> columns2 = (MutableList<Column<?, ?>>) ((RelationType<?>) genericTypeCopy.getValueForMetaPropertyToOne("rawType"))._columns().toList();
                         RelationType relationType = (RelationType<?>) processorSupport.newCoreInstance("", M3Paths.RelationType, existing.getParameterValue().getValueForMetaPropertyToOne("rawType").getSourceInformation());
+                        GenericType res = (GenericType) processorSupport.newGenericType(null, relationType, true);
+                        res._rawType(relationType);
                         relationType._columns(columns1.zip(columns2).collect(c ->
                         {
                             boolean wildcard = c.getOne()._nameWildCard() && c.getTwo()._nameWildCard();
@@ -377,11 +382,10 @@ public class TypeInferenceContext
                             GenericType a = _Column.getColumnType(c.getOne());
                             GenericType b = _Column.getColumnType(c.getTwo());
                             GenericType merged = a._rawType() == null && b._rawType() == null ? a : (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(Lists.mutable.with(a, b), TypeParameter.isCovariant(templateGenType), false, genericType.getSourceInformation(), this.processorSupport);
-                            return _Column.getColumnInstance(cName, wildcard, _Column.getColumnSourceType(c.getOne()), merged, null, processorSupport);
+                            return _Column.getColumnInstance(cName, wildcard, res, merged, null, processorSupport);
 
                         }));
-                        GenericType res = (GenericType) processorSupport.newGenericType(null, relationType, true);
-                        res._rawType(relationType);
+
                         this.states.getLast().putTypeParameterValue(name, res, targetGenericsContext, false);
                     }
                     else

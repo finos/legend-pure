@@ -155,7 +155,7 @@ class FunctionExpressionExecutor implements Executor
                 ci = GenericType.makeTypeArgumentAsConcreteAsPossible(GenericType.copyGenericType(typeParameters.get(key), false, processorSupport), stackType.get(size).asUnmodifiable(), stackMul.get(size).asUnmodifiable(), processorSupport);
                 size--;
             }
-            if (!GenericType.isGenericTypeFullyConcrete(ci, processorSupport))
+            if (!GenericType.isGenericTypeOperationEqual((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) ci, processorSupport) && !GenericType.isGenericTypeFullyConcrete(ci, processorSupport))
             {
                 throw new PureExecutionException((functionExpressionToUseInStack == null) ? null : functionExpressionToUseInStack.getSourceInformation(), "Can't resolve some type parameters in: " + GenericType.print(ci, processorSupport));
             }

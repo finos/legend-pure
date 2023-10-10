@@ -331,7 +331,7 @@ public class PrintTypeInferenceObserver implements TypeInferenceObserver
     }
 
     @Override
-    public TypeInferenceObserver updateFunctioNExpressionReturn(boolean parametersInferenceSuccess, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericTypeCopy, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity returnMultiplicityCopy)
+    public TypeInferenceObserver updateFunctionExpressionReturn(boolean parametersInferenceSuccess, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericTypeCopy, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity returnMultiplicityCopy)
     {
         printTab().print("Updating return type to '" + GenericType.print(genericTypeCopy, processorState.getProcessorSupport()) + "' and multiplicity to: '" + Multiplicity.print(returnMultiplicityCopy) + "' (all parameters inference successful: '" + parametersInferenceSuccess + "')\n");
         return this;

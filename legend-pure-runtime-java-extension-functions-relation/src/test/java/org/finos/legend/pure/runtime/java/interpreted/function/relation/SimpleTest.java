@@ -57,7 +57,7 @@ public class SimpleTest extends PureExpressionTest
 //                        "                4, qw\n" +
 //                        "                5, wwe\n" +
 //                        "                5, weq\n" +
-//                        "              #->meta::pure::functions::relation::groupBy(~[str:String], ~name:x|$x.value:x|$x->sum());" +
+//                        "              #->meta::pure::functions::relation::rename(~str, ~str2)->map(x|$x.str2);" +
 //                        "   print($tds, 1);" +
 //                        "}\n");
 //        this.execute("test():Any[*]");

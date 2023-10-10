@@ -480,7 +480,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             // Update the multiplicity
             Multiplicity returnMultiplicityCopy = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.copyMultiplicity(returnMultiplicity, functionExpression.getSourceInformation(), processorSupport);
             functionExpression._multiplicity(returnMultiplicityCopy);
-            observer.updateFunctioNExpressionReturn(parametersInferenceSuccess, genericTypeCopy, returnMultiplicityCopy);
+            observer.updateFunctionExpressionReturn(parametersInferenceSuccess, genericTypeCopy, returnMultiplicityCopy);
         }
         else
         {
@@ -492,7 +492,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             Multiplicity returnMultiplicity = functionType._returnMultiplicity();
             Multiplicity returnMultiplicityCopy = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.copyMultiplicity(returnMultiplicity, functionExpression.getSourceInformation(), processorSupport);
             functionExpression._multiplicity(returnMultiplicityCopy);
-            observer.updateFunctioNExpressionReturn(parametersInferenceSuccess, genericTypeCopy, returnMultiplicityCopy);
+            observer.updateFunctionExpressionReturn(parametersInferenceSuccess, genericTypeCopy, returnMultiplicityCopy);
         }
     }
 

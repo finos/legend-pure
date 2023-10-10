@@ -172,7 +172,7 @@ public interface TypeInferenceObserver
         return this;
     }
 
-    default TypeInferenceObserver updateFunctioNExpressionReturn(boolean parametersInferenceSuccess, GenericType genericTypeCopy, Multiplicity returnMultiplicityCopy)
+    default TypeInferenceObserver updateFunctionExpressionReturn(boolean parametersInferenceSuccess, GenericType genericTypeCopy, Multiplicity returnMultiplicityCopy)
     {
         return this;
     }

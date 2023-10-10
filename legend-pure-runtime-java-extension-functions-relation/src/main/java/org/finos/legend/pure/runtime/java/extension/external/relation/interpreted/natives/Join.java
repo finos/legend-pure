@@ -77,7 +77,6 @@ public class Join extends Shared
         {
             res = tds1.compensateLeft(res);
         }
-        System.out.println(res);
         return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(res, "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
     }
 }
