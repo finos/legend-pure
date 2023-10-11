@@ -23,8 +23,20 @@ import java.io.InputStream;
 
 public interface MutableVersionControlledCodeStorage extends VersionControlledCodeStorage, MutableRepositoryCodeStorage
 {
+    default void update(UpdateReport report, String version)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    default void update(UpdateReport report, String path, String version)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Deprecated
     void update(UpdateReport report, long version);
 
+    @Deprecated
     void update(UpdateReport report, String path, long version);
 
     RichIterable<String> revert(String path);
