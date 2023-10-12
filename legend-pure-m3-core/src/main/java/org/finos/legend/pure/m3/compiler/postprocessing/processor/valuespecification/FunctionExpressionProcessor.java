@@ -459,10 +459,10 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
     {
         if (parametersInferenceSuccess)
         {
-            TypeInference.storeInferredTypeParametersInFunctionExpression(functionExpression, state, processorSupport, foundFunction);
+            TypeInference.storeInferredTypeParametersInFunctionExpression(functionExpression, state, processorSupport, foundFunction, observer);
 
             // Get the return type information
-            GenericType returnGenericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(foundFunctionType._returnType(), state.getTypeInferenceContext().getTypeParameterToGenericType(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity(), processorSupport);
+            GenericType returnGenericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(foundFunctionType._returnType(), state.getTypeInferenceContext().getTypeParameterToGenericType().reject((s, coreInstance) -> org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationEqual((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) coreInstance, processorSupport)), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity(), processorSupport);
             Multiplicity returnMultiplicity = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.makeMultiplicityAsConcreteAsPossible(foundFunctionType._returnMultiplicity(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity());
 
             if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(returnGenericType, processorSupport) && !state.getTypeInferenceContext().isTop(org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(returnGenericType)))
@@ -610,7 +610,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
     private static boolean processEmptyColumnType(GenericType templateGenericType, ValueSpecification instance, ListIterable<? extends VariableExpression> paramsType, int z, TypeInferenceObserver observer, ProcessorState state, ProcessorSupport processorSupport)
     {
         CoreInstance actualTemplateToInferColumnType = state.getTypeInferenceContext().getTypeParameterToGenericType().get(org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(templateGenericType));
-       // CoreInstance actualTemplateToInferColumnType2 = org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(actualTemplateToInferColumnType, state.getTypeInferenceContext().getParent().getTypeParameterToGenericType(), state.getTypeInferenceContext().getParent().getMultiplicityParameterToMultiplicity(), processorSupport);
+        // CoreInstance actualTemplateToInferColumnType2 = org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(actualTemplateToInferColumnType, state.getTypeInferenceContext().getParent().getTypeParameterToGenericType(), state.getTypeInferenceContext().getParent().getMultiplicityParameterToMultiplicity(), processorSupport);
         if (actualTemplateToInferColumnType != null)
         {
             GenericType instanceGenericType = instance._genericType();
@@ -628,6 +628,8 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                         typeToAnalyze = (GenericType) typeToAnalyze.getValueForMetaPropertyToOne("right");
                     }
 
+                    TypeInferenceContext foundParentToUpdate = state.getTypeInferenceContext().findParentForOperation(actualTemplateToInferColumnType);
+
                     if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationSubset(typeToAnalyze, processorSupport))
                     {
                         // Search the reference type (right of contains) for the missing type column
@@ -635,6 +637,10 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                         if (referenceRelation != null)
                         {
                             Column<?, ?> foundColumn = referenceRelation._columns().select(e -> e._name().equals(colName)).getFirst();
+                            if (foundColumn == null)
+                            {
+                                throw new PureCompilationException("The column '" + colName + "' can't be found in the relation " + _RelationType.print(referenceRelation, processorSupport));
+                            }
                             Type foundColumnType = _Column.getColumnType(foundColumn)._rawType();
 
                             // Fill the type
@@ -646,7 +652,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                             {
                                 // Set the Type Param to the INSTANCE genericType
                                 CoreInstance param = left.getValueForMetaPropertyToOne("left");
-                                state.getTypeInferenceContext().getParent().register((GenericType) param, instanceGenericType, state.getTypeInferenceContext().getParent(), observer);
+                                foundParentToUpdate.register((GenericType) param, instanceGenericType, foundParentToUpdate, observer);
                                 // Continue with the right side of EQUAL
                                 left = left.getValueForMetaPropertyToOne("right");
                             }
@@ -656,13 +662,14 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                             {
                                 throw new RuntimeException(org.finos.legend.pure.m3.navigation.generictype.GenericType.print(left, processorSupport) + " is not compatible with " + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(instanceGenericType, processorSupport));
                             }
-                            state.getTypeInferenceContext().getParent().register((GenericType)left, instanceGenericType, state.getTypeInferenceContext().getParent(), observer);
+                            state.getTypeInferenceContext().replace(actualTemplateToInferColumnType, instanceGenericType);
+                            foundParentToUpdate.register((GenericType) left, instanceGenericType, foundParentToUpdate, observer);
                         }
                     }
                     // Set the type parameter of the missing Column Type to the found type
                     if (equalLeft != null)
                     {
-                        state.getTypeInferenceContext().getParent().register((GenericType) equalLeft, instanceGenericType, state.getTypeInferenceContext().getParent(), observer);
+                        foundParentToUpdate.register((GenericType) equalLeft, instanceGenericType, foundParentToUpdate, observer);
                     }
                 }
             });

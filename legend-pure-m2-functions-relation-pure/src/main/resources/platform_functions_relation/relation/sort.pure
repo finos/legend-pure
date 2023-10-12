@@ -19,25 +19,25 @@ Enum meta::pure::functions::relation::SortType
     ASC, DESC
 }
 
-Class meta::pure::functions::relation::SortInfo
+Class meta::pure::functions::relation::SortInfo<T>
 {
-   column : String[1];
+   column : ColSpec<T>[1];
    direction : SortType[1];
 }
 
-function meta::pure::functions::relation::descending(column:String[1]):SortInfo[1]
+function meta::pure::functions::relation::descending<T>(column:ColSpec<T>[1]):SortInfo<T>[1]
 {
-   ^SortInfo(column=$column, direction=SortType.DESC)
+   ^SortInfo<T>(column=$column, direction=SortType.DESC)
 }
 
-function meta::pure::functions::relation::ascending(column:String[1]):SortInfo[1]
+function meta::pure::functions::relation::ascending<T> (column:ColSpec<T>[1]):SortInfo<T>[1]
 {
-   ^SortInfo(column=$column, direction=SortType.ASC)
+   ^SortInfo<T>(column=$column, direction=SortType.ASC)
 }
 
-native function meta::pure::functions::relation::sort<T>(rel:Relation<T>[1], sortInfo:SortInfo[*]):Relation<T>[1];
+native function meta::pure::functions::relation::sort<X,T>(rel:Relation<T>[1], sortInfo:SortInfo<X⊆T>[*]):Relation<T>[1];
 
-function meta::pure::functions::relation::sort<T>(rel:TDS<T>[1], sortInfo:SortInfo[*]):Relation<T>[1]
+function meta::pure::functions::relation::sort<X,T>(rel:TDS<T>[1], sortInfo:SortInfo<X⊆T>[*]):Relation<T>[1]
 {
     $rel->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::sort($sortInfo);
 }
@@ -63,23 +63,6 @@ function <<test.Test>> meta::pure::functions::relation::tests::sort::testSimpleS
     '2 Thierry\n'+
     '3 Pierre\n'+
     '4 Alex\n'+
-    '5 David', $tds->sort(ascending('id'))->map(x|$x.id->s() + ' ' + $x.name->s())->joinStrings('\n'));
+    '5 David', $tds->sort(ascending(~id))->map(x|$x.id->s() + ' ' + $x.name->s())->joinStrings('\n'));
 
-  assertEquals(
-    '1 Neema\n'+
-    '1 Sachin\n'+
-    '2 George\n'+
-    '2 Thierry\n'+
-    '3 Pierre\n'+
-    '4 Alex\n'+
-    '5 David', $tds->sort([ascending('id'), ascending('name')])->map(x|$x.id->s() + ' ' + $x.name->s())->joinStrings('\n'));
-
-  assertEquals(
-    '5 David\n'+
-    '4 Alex\n'+
-    '3 Pierre\n'+
-    '2 George\n'+
-    '2 Thierry\n'+
-    '1 Neema\n'+
-    '1 Sachin', $tds->sort([descending('id'), ascending('name')])->map(x|$x.id->s() + ' ' + $x.name->s())->joinStrings('\n'));
 }

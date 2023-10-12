@@ -476,6 +476,38 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
+    public void testRelationTypeUsingSubsetForInferenceCollection()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "function f(t:Relation<(value:Integer,str:String,other:Boolean)>[1]):Relation<(value:Integer, str:String)>[1]\n" +
+                        "{\n" +
+                        "    $t->test(~[value, str]);\n" +
+                        "}" +
+                        "native function test<T,X>(x:Relation<X>[1], rel:ColSpecArray<T⊆X>[1]):Relation<T>[1];");
+    }
+
+    @Test
+    public void testRelationTypeUsingSubsetForInferenceCollectionError()
+    {
+        try
+        {
+            compileInferenceTest(
+                    "import meta::pure::metamodel::relation::*;" +
+                            "function f(t:Relation<(value:Integer,str:String,other:Boolean)>[1]):Relation<(value:Integer, str:String)>[1]\n" +
+                            "{\n" +
+                            "    $t->test(~[value, ster]);\n" +
+                            "}" +
+                            "native function test<T,X>(x:Relation<X>[1], rel:ColSpecArray<T⊆X>[1]):Relation<T>[1];");
+            fail();
+        }
+        catch (Exception e)
+        {
+            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:14), \"The column 'ster' can't be found in the relation (value:Integer, str:String, other:Boolean)\"", e.getMessage());
+        }
+    }
+
+    @Test
     public void testRelationTypeUsingSubsetForInference()
     {
         compileInferenceTest(
@@ -637,12 +669,61 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                         "}" +
                         "function f2(t:Relation<(value:Integer, name:String)>[1]):Relation<(value:Integer, na:String)>[1]\n" +
                         "{\n" +
-                        "    $t->cast(@TDS<(value:Integer, name:String)>)->ren(~name, ~na:String);\n" +
+                        "    $t->cast(@TDS<(value:Integer, name:String)>)->ren2(~name, ~na:String);\n" +
                         "}" +
                         "native function meta::pure::functions::relation::ren<T,Z,K,V>(r:Relation<T>[1], old:ColSpec<Z=(?:K)⊆T>[1], new:ColSpec<V=(?:K)>[1]):Relation<T-Z+V>[1];" +
-                        "function meta::pure::functions::relation::ren<T,Z,K,V>(r:TDS<T>[1], old:ColSpec<Z=(?:K)⊆T>[1], new:ColSpec<V=(?:K)>[1]):Relation<T-Z+V>[1]" +
+                        "function meta::pure::functions::relation::ren2<T,Z,K,V>(r:TDS<T>[1], old:ColSpec<Z=(?:K)⊆T>[1], new:ColSpec<V=(?:K)>[1]):Relation<T-Z+V>[1]" +
                         "{" +
                         "   ren($r->cast(@Relation<T>), $old, $new)" +
+                        "}");
+    }
+
+    @Test
+    public void testFunctionExpressionInferredTypes()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "Class meta::pure::functions::relation::SortInfo<T>\n" +
+                        "{\n" +
+                        "   column : ColSpec<T>[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "function meta::pure::functions::relation::descending<T>(column:ColSpec<T>[1]):SortInfo<T>[1]\n" +
+                        "{\n" +
+                        "   ^SortInfo<T>(column=$column)\n" +
+                        "}\n" +
+                        "function f(t:Relation<(value:Integer, name:String)>[1]):Relation<(value:Integer, name:String)>[1]\n" +
+                        "{\n" +
+                        "    $t->sort(descending(~value));\n" +
+                        "}" +
+                        "native function sort<X,T>(rel:Relation<T>[1], sortInfo:SortInfo<X⊆T>[*]):Relation<T>[1];\n");
+    }
+
+    @Test
+    public void testDistinctError()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "native function meta::pure::functions::relation::distinct<X,T>(rel:Relation<T>[1], columns:ColSpecArray<X⊆T>[1]):Relation<T>[1];\n" +
+                        "Class TDS<T> extends Relation<T>{}\n" +
+                        "function meta::pure::functions::relation::distinct<X,T>(rel:TDS<T>[1], columns:ColSpecArray<X⊆T>[1]):Relation<T>[1]\n" +
+                        "{\n" +
+                        "    $rel->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::distinct($columns);\n" +
+                        "}" +
+                        "function f(t:Relation<(value:Integer, name:String)>[1]):Relation<(value:Integer, name:String)>[1]\n" +
+                        "{\n" +
+                        "    $t->distinct(~[value]);\n" +
+                        "}");
+    }
+
+
+    @Test
+    public void testSort()
+    {
+        compileInferenceTest(
+                "function <<test.Test>> eat::testFormatList():Boolean[1]\n" +
+                        "{\n" +
+                        "    assertEq('the quick brown fox jumps over the lazy [dog, [cat, mouse]]', format('the quick brown %s jumps over the lazy %s', ['fox', ^List<Any>(values=['dog', ^List<String>(values=['cat', 'mouse'])])]));\n" +
                         "}");
     }
 

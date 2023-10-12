@@ -51,7 +51,7 @@ public class Sort extends Shared
         ListIterable<? extends CoreInstance> sortInfo = Instance.getValueForMetaPropertyToManyResolved(params.get(1), M3Properties.values, processorSupport);
         ListIterable<SortInfo> sortInfos = sortInfo.collect(c ->
         {
-            String name = c.getValueForMetaPropertyToOne("column").getName();
+            String name = c.getValueForMetaPropertyToOne("column").getValueForMetaPropertyToOne("name").getName();
             SortDirection direction = SortDirection.valueOf(c.getValueForMetaPropertyToOne("direction").getName());
             return new SortInfo(name, direction);
         });

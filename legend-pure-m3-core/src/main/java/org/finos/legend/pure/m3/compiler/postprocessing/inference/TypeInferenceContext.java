@@ -25,6 +25,7 @@ import org.eclipse.collections.api.tuple.Pair;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.GenericTypeOperation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
@@ -345,6 +346,15 @@ public class TypeInferenceContext
                 register((GenericType) templateGenType.getValueForMetaPropertyToOne("left"), genericTypeCopy, targetGenericsContext, observer);
             }
 
+            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperation(templateGenType, processorSupport) && org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperation(genericTypeCopy, processorSupport))
+            {
+                if (((GenericTypeOperation) templateGenType)._type().getName().equals(((GenericTypeOperation) genericTypeCopy)._type().getName()))
+                {
+                    register((GenericType) templateGenType.getValueForMetaPropertyToOne("left"), (GenericType) genericTypeCopy.getValueForMetaPropertyToOne("left"), targetGenericsContext, observer);
+                    register((GenericType) templateGenType.getValueForMetaPropertyToOne("right"), (GenericType) genericTypeCopy.getValueForMetaPropertyToOne("right"), targetGenericsContext, observer);
+                }
+            }
+
             String name = org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(templateGenType);
             if (name != null)
             {
@@ -632,6 +642,33 @@ public class TypeInferenceContext
     public void setScope(CoreInstance scope)
     {
         this.scope = scope;
+    }
+
+    public TypeInferenceContext findParentForOperation(CoreInstance actualTemplateToInferColumnType)
+    {
+        TypeInferenceContextState state = this.states.getLast();
+        for (String t : state.getTypeParameters())
+        {
+            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.genericTypesEqual(state.getTypeParameterValueWithFlag(t).getParameterValue(), actualTemplateToInferColumnType, processorSupport))
+            {
+                return state.getTypeParameterValueWithFlag(t).getTargetGenericsContext().findParentForOperation(actualTemplateToInferColumnType);
+            }
+        }
+        return this;
+    }
+
+    public void replace(CoreInstance actualTemplateToInferColumnType, GenericType instanceGenericType)
+    {
+        TypeInferenceContextState state = this.states.getLast();
+        for (String t : state.getTypeParameters())
+        {
+            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.genericTypesEqual(state.getTypeParameterValueWithFlag(t).getParameterValue(), actualTemplateToInferColumnType, processorSupport))
+            {
+                TypeInferenceContext trace = state.getTypeParameterValueWithFlag(t).getTargetGenericsContext();
+                state.putTypeParameterValue(t, instanceGenericType, this, true);
+                trace.replace(actualTemplateToInferColumnType, instanceGenericType);
+            }
+        }
     }
 
     private static class RegistrationRequest

@@ -30,6 +30,7 @@ import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.function.FunctionType;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -115,9 +116,12 @@ class FunctionExpressionExecutor implements Executor
             int typeParamsSize = typeParameters.size();
             if (typeArguments.size() != typeParamsSize)
             {
-                throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Mismatch between type parameter count (" + typeParamsSize + ") and type argument count (" + typeArguments.size() + ")\n" +
-                        "    Type parameters: " + typeParameters.collect(c -> c.getValueForMetaPropertyToOne("name").getName()) + "\n" +
-                        "    Type arguments: " + typeArguments.collect(c -> GenericType.print(c, processorSupport)));
+                throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(),
+                        "\nError while executing function " + function._functionName() + "\n" +
+                                FunctionType.print(functionType, processorSupport) + "\n" +
+                                "Mismatch between type parameter count (" + typeParamsSize + ") and type argument count (" + typeArguments.size() + ")\n" +
+                                "    Type parameters: " + typeParameters.collect(c -> c.getValueForMetaPropertyToOne("name").getName()) + "\n" +
+                                "    Type arguments: " + typeArguments.collect(c -> GenericType.print(c, processorSupport)));
             }
             for (int i = 0; i < typeParamsSize; i++)
             {
@@ -155,7 +159,7 @@ class FunctionExpressionExecutor implements Executor
                 ci = GenericType.makeTypeArgumentAsConcreteAsPossible(GenericType.copyGenericType(typeParameters.get(key), false, processorSupport), stackType.get(size).asUnmodifiable(), stackMul.get(size).asUnmodifiable(), processorSupport);
                 size--;
             }
-            if (!GenericType.isGenericTypeOperationEqual((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) ci, processorSupport) && !GenericType.isGenericTypeFullyConcrete(ci, processorSupport))
+            if (!GenericType.isGenericTypeOperation((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) ci, processorSupport) && !GenericType.isGenericTypeFullyConcrete(ci, processorSupport))
             {
                 throw new PureExecutionException((functionExpressionToUseInStack == null) ? null : functionExpressionToUseInStack.getSourceInformation(), "Can't resolve some type parameters in: " + GenericType.print(ci, processorSupport));
             }

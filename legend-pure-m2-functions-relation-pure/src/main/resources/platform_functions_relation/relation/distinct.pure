@@ -14,13 +14,12 @@
 
 import meta::pure::metamodel::relation::*;
 
-native function meta::pure::functions::relation::distinct<T>(rel:Relation<T>[1], columns:String[*]):Relation<T>[1];
+native function meta::pure::functions::relation::distinct<X,T>(rel:Relation<T>[1], columns:ColSpecArray<X⊆T>[1]):Relation<T>[1];
 
-function meta::pure::functions::relation::distinct<T>(rel:TDS<T>[1], columns:String[*]):Relation<T>[1]
+function meta::pure::functions::relation::distinct<X,T>(rel:TDS<T>[1], columns:ColSpecArray<X⊆T>[1]):Relation<T>[1]
 {
     $rel->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::distinct($columns);
 }
-
 
 function <<test.Test>> meta::pure::functions::relation::tests::distinct::testSimpleDistinct():Boolean[1]
 {
@@ -31,7 +30,7 @@ function <<test.Test>> meta::pure::functions::relation::tests::distinct::testSim
                 1, qw
                 5, wwe
                 5, weq
-              #->distinct('value');
+              #->distinct(~[value]);
     assertEquals(3, $res->size());
     assertEquals('135', $res->map(c|$c.value->toOne()->toString())->joinStrings(''));
 }

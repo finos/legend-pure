@@ -47,7 +47,7 @@ public class Distinct extends Shared
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         TestTDS tds = getTDS(params, 0, processorSupport);
-        MutableList<String> columns = Instance.getValueForMetaPropertyToManyResolved(params.get(1), M3Properties.values, processorSupport).collect(CoreInstance::getName).toList();
+        MutableList<String> columns = Instance.getValueForMetaPropertyToManyResolved(params.get(1), M3Properties.values, processorSupport).flatCollect(c -> c.getValueForMetaPropertyToMany("names")).collect(CoreInstance::getName).toList();
         return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.distinct(columns), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
     }
 }

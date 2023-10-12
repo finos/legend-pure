@@ -72,16 +72,18 @@ public class TypeInference
         return true;
     }
 
-    public static void storeInferredTypeParametersInFunctionExpression(FunctionExpression functionExpression, ProcessorState state, ProcessorSupport processorSupport, Function<?> foundFunction) throws PureCompilationException
+    public static void storeInferredTypeParametersInFunctionExpression(FunctionExpression functionExpression, ProcessorState state, ProcessorSupport processorSupport, Function<?> foundFunction, TypeInferenceObserver observer) throws PureCompilationException
     {
         // Store the inferred params in the FunctionExpression
         if (!(foundFunction instanceof QualifiedProperty))
         {
             TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
             FunctionType functionType = (FunctionType) processorSupport.function_getFunctionType(foundFunction);
+            observer.updateFunctionResolvedTypeParameters(foundFunction, functionType);
             functionType._typeParameters().forEach(typeParameter ->
             {
                 CoreInstance value = typeInferenceContext.getTypeParameterValue(typeParameter._name());
+                observer.updateFunctionResolvedTypeParameterValue(typeParameter, value);
                 if (value != null)
                 {
                     functionExpression._resolvedTypeParametersAdd((GenericType) value);

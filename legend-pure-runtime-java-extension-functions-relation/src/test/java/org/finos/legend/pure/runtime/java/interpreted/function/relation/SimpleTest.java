@@ -39,29 +39,27 @@ public class SimpleTest extends PureExpressionTest
         return new FunctionExecutionInterpreted();
     }
 
-//    @org.junit.Test
-//    public void testToOneError()
-//    {
-//        compileTestSource("fromString.pure",
-//                "" +
-//                        "function sum(x:Integer[*]):Integer[1]" +
-//                        "{" +
-//                        "   2;" +
-//                        "}" +
-//                        "function test():Any[*]\n" +
-//                        "{\n" +
-//                        "   let tds = #TDS\n" +
-//                        "                value, str\n" +
-//                        "                1, a\n" +
-//                        "                3, ewe\n" +
-//                        "                4, qw\n" +
-//                        "                5, wwe\n" +
-//                        "                5, weq\n" +
-//                        "              #->meta::pure::functions::relation::rename(~str, ~str2)->map(x|$x.str2);" +
-//                        "   print($tds, 1);" +
-//                        "}\n");
-//        this.execute("test():Any[*]");
-//    }
-
-
-}
+    @org.junit.Test
+    public void testToOneError()
+    {
+        compileTestSource("fromString.pure",
+                "" +
+                        "function sum(x:Integer[*]):Integer[1]" +
+                        "{" +
+                        "   2;" +
+                        "}" +
+                        "function test():Any[*]\n" +
+                        "{\n" +
+                        "   let tds = #TDS\n" +
+                        "                value, str\n" +
+                        "                1, a\n" +
+                        "                3, ewe\n" +
+                        "                4, qw\n" +
+                        "                5, wwe\n" +
+                        "                5, weq\n" +
+                        "              #->meta::pure::functions::relation::rename(~str, ~str2)->map(x|$x.str2);" +
+                        "   print($tds, 1);" +
+                        "}\n");
+        this.execute("test():Any[*]");
+    }
+    }

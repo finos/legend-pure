@@ -15,7 +15,9 @@
 package org.finos.legend.pure.m3.compiler.postprocessing.inference;
 
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.TypeParameter;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
@@ -344,6 +346,26 @@ public class PrintTypeInferenceObserver implements TypeInferenceObserver
         GenericType.print(this.appendable, templateGenType, this.processorState.getProcessorSupport());
         print(" <-> ");
         GenericType.print(this.appendable, genericType, this.processorState.getProcessorSupport());
+        print(" in ").print(typeInferenceContext.getId()).print("/").print(targetGenericsContext.getId()).print("   ");
+        return printNewline();
+    }
+
+    @Override
+    public TypeInferenceObserver updateFunctionResolvedTypeParameters(Function<?> foundFunction, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType functionType)
+    {
+        printTab().print("Update function expression's resolved type parameters");
+        print(foundFunction._functionName());
+        print(" ");
+        FunctionType.print(this.appendable, functionType, this.processorState.getProcessorSupport());
+        return printNewline();
+    }
+
+    @Override
+    public TypeInferenceObserver updateFunctionResolvedTypeParameterValue(TypeParameter typeParameter, CoreInstance value)
+    {
+        printTab().print("   ." + typeParameter._name());
+        print(" = ");
+        GenericType.print(this.appendable, value, this.processorState.getProcessorSupport());
         return printNewline();
     }
 }

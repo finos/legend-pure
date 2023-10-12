@@ -658,6 +658,15 @@ public class GenericType
             return true;
         }
 
+        // Operartion
+        if (GenericType.isGenericTypeOperation((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) genericType1, processorSupport))
+        {
+            return GenericType.isGenericTypeOperation((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) genericType2, processorSupport) &&
+                    ((GenericTypeOperation) genericType1)._type().getName().equals(((GenericTypeOperation) genericType2)._type().getName()) &&
+                    GenericType.genericTypesEqual(((GenericTypeOperation) genericType1)._left(), ((GenericTypeOperation) genericType2)._left(), processorSupport) &&
+                    GenericType.genericTypesEqual(((GenericTypeOperation) genericType1)._right(), ((GenericTypeOperation) genericType2)._right(), processorSupport);
+        }
+
         // Check raw type
         CoreInstance rawType1 = Instance.getValueForMetaPropertyToOneResolved(genericType1, M3Properties.rawType, processorSupport);
         CoreInstance rawType2 = Instance.getValueForMetaPropertyToOneResolved(genericType2, M3Properties.rawType, processorSupport);
