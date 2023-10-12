@@ -30,7 +30,7 @@ Class meta::pure::runtime::ConnectionElementAssociation
 
 Class meta::pure::runtime::Connection
 {
-   element : Any[1];
+   element : Any[0..1];
 }
 
 Class meta::pure::runtime::ExecutionContext
