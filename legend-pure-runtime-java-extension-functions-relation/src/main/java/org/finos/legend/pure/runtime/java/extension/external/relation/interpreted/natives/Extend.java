@@ -51,10 +51,11 @@ public class Extend extends Shared
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
-        CoreInstance filterFunction = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
-        LambdaFunction<CoreInstance> lambdaFunction = (LambdaFunction<CoreInstance>) LambdaFunctionCoreInstanceWrapper.toLambdaFunction(filterFunction.getValueForMetaPropertyToOne(M3Properties.function));
-        VariableContext evalVarContext = this.getParentOrEmptyVariableContextForLambda(variableContext, filterFunction);
         TestTDS tds = getTDS(params, 0, processorSupport);
+
+        CoreInstance extendFunction = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
+        LambdaFunction<CoreInstance> lambdaFunction = (LambdaFunction<CoreInstance>) LambdaFunctionCoreInstanceWrapper.toLambdaFunction(extendFunction.getValueForMetaPropertyToOne(M3Properties.function));
+        VariableContext evalVarContext = this.getParentOrEmptyVariableContextForLambda(variableContext, extendFunction);
 
         FixedSizeList<CoreInstance> parameters = Lists.fixedSize.with((CoreInstance) null);
         Type type = ((FunctionType) lambdaFunction._classifierGenericType()._typeArguments().getFirst()._rawType())._returnType()._rawType();
@@ -97,6 +98,6 @@ public class Extend extends Shared
             res = resDouble;
             resType = DataType.DOUBLE;
         }
-        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.addColumn(filterFunction.getValueForMetaPropertyToOne(M3Properties.name).getName(), resType, res), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
+        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.addColumn(extendFunction.getValueForMetaPropertyToOne(M3Properties.name).getName(), resType, res), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
     }
 }

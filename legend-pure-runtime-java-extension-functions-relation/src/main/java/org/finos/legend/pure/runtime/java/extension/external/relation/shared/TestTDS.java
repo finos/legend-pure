@@ -535,19 +535,22 @@ public class TestTDS
     public TestTDS distinct(MutableList<String> columns)
     {
         Pair<TestTDS, MutableList<Pair<Integer, Integer>>> res = this.sort(columns.collect(c -> new SortInfo(c, SortDirection.ASC)));
+        return res.getOne()._distinct(res.getTwo());
+    }
 
+    public TestTDS _distinct(MutableList<Pair<Integer, Integer>> ranges)
+    {
         MutableIntSet drop = new IntHashSet();
-
-        res.getTwo().forEach(r ->
+        ranges.forEach(r ->
         {
             for (int i = r.getOne() + 1; i < r.getTwo(); i++)
             {
                 drop.add(i);
             }
         });
-
-        return res.getOne().drop(drop);
+        return this.drop(drop);
     }
+
 
 
     private void sort(TestTDS copy, ListIterable<SortInfo> sortInfos, int start, int end, MutableList<Pair<Integer, Integer>> ranges)
@@ -571,16 +574,13 @@ public class TestTDS
                         if (src[i] != val || (src[i] == val && i == end - 1))
                         {
                             int realEnd = (src[i] == val && i == end - 1) ? end : i;
-                            if (realEnd - subStart > 1)
+                            if (sortInfos.size() > 1)
                             {
-                                if (sortInfos.size() > 1)
-                                {
-                                    sort(copy, sortInfos.subList(1, sortInfos.size()), subStart, realEnd, ranges);
-                                }
-                                else
-                                {
-                                    ranges.add(Tuples.pair(subStart, realEnd));
-                                }
+                                sort(copy, sortInfos.subList(1, sortInfos.size()), subStart, realEnd, ranges);
+                            }
+                            else
+                            {
+                                ranges.add(Tuples.pair(subStart, realEnd));
                             }
                             val = src[i];
                             subStart = i;
@@ -599,16 +599,13 @@ public class TestTDS
                         if (src[i] != val || (src[i] == val && i == end - 1))
                         {
                             int realEnd = (src[i] == val && i == end - 1) ? end : i;
-                            if (realEnd - subStart > 1)
+                            if (sortInfos.size() > 1)
                             {
-                                if (sortInfos.size() > 1)
-                                {
-                                    sort(copy, sortInfos.subList(1, sortInfos.size()), subStart, realEnd, ranges);
-                                }
-                                else
-                                {
-                                    ranges.add(Tuples.pair(subStart, realEnd));
-                                }
+                                sort(copy, sortInfos.subList(1, sortInfos.size()), subStart, realEnd, ranges);
+                            }
+                            else
+                            {
+                                ranges.add(Tuples.pair(subStart, realEnd));
                             }
                             val = src[i];
                             subStart = i;
@@ -626,16 +623,13 @@ public class TestTDS
                         if (!Objects.equals(src[i], val) || (Objects.equals(src[i], val) && i == end - 1))
                         {
                             int realEnd = (Objects.equals(src[i], val) && i == end - 1) ? end : i;
-                            if (realEnd - subStart > 1)
+                            if (sortInfos.size() > 1)
                             {
-                                if (sortInfos.size() > 1)
-                                {
-                                    sort(copy, sortInfos.subList(1, sortInfos.size()), subStart, realEnd, ranges);
-                                }
-                                else
-                                {
-                                    ranges.add(Tuples.pair(subStart, realEnd));
-                                }
+                                sort(copy, sortInfos.subList(1, sortInfos.size()), subStart, realEnd, ranges);
+                            }
+                            else
+                            {
+                                ranges.add(Tuples.pair(subStart, realEnd));
                             }
                             val = src[i];
                             subStart = i;
@@ -653,16 +647,13 @@ public class TestTDS
                         if (src[i] != val || (src[i] == val && i == end - 1))
                         {
                             int realEnd = (src[i] == val && i == end - 1) ? end : i;
-                            if (realEnd - subStart > 1)
+                            if (sortInfos.size() > 1)
                             {
-                                if (sortInfos.size() > 1)
-                                {
-                                    sort(copy, sortInfos.subList(1, sortInfos.size()), subStart, realEnd, ranges);
-                                }
-                                else
-                                {
-                                    ranges.add(Tuples.pair(subStart, realEnd));
-                                }
+                                sort(copy, sortInfos.subList(1, sortInfos.size()), subStart, realEnd, ranges);
+                            }
+                            else
+                            {
+                                ranges.add(Tuples.pair(subStart, realEnd));
                             }
                             val = src[i];
                             subStart = i;
@@ -670,6 +661,14 @@ public class TestTDS
                     }
                     break;
                 }
+            }
+        }
+        if (ranges.getLast() != null)
+        {
+            int lastVal = ranges.getLast().getTwo();
+            if (lastVal < end)
+            {
+                ranges.add(Tuples.pair(lastVal, end));
             }
         }
     }

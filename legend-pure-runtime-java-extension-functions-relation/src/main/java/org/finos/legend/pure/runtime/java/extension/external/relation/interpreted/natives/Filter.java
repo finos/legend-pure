@@ -49,10 +49,11 @@ public class Filter extends Shared
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
+        TestTDS tds = getTDS(params, 0, processorSupport);
+
         CoreInstance filterFunction = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
         LambdaFunction<CoreInstance> lambdaFunction = (LambdaFunction<CoreInstance>) LambdaFunctionCoreInstanceWrapper.toLambdaFunction(filterFunction);
         VariableContext evalVarContext = this.getParentOrEmptyVariableContextForLambda(variableContext, filterFunction);
-        TestTDS tds = getTDS(params, 0, processorSupport);
 
         MutableIntSet discardedRows = IntSets.mutable.empty();
         FixedSizeList<CoreInstance> parameters = Lists.fixedSize.with((CoreInstance) null);

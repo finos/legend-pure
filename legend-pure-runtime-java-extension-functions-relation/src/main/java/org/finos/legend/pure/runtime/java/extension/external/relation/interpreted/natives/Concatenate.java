@@ -17,9 +17,11 @@ package org.finos.legend.pure.runtime.java.extension.external.relation.interpret
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
+import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.shared.Shared;
@@ -29,6 +31,7 @@ import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.tests.Assert;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
 import java.util.Stack;
@@ -45,6 +48,15 @@ public class Concatenate extends Shared
     {
         TestTDS tds1 = getTDS(params, 0, processorSupport);
         TestTDS tds2 = getTDS(params, 1, processorSupport);
+
+        GenericType genericType1 = (GenericType) params.get(0).getValueForMetaPropertyToOne("genericType").getValueForMetaPropertyToMany("typeArguments").getFirst();
+        GenericType genericType2 = (GenericType) params.get(1).getValueForMetaPropertyToOne("genericType").getValueForMetaPropertyToMany("typeArguments").getFirst();
+
+        if (!_RelationType.canConcatenate(genericType1, genericType2, processorSupport))
+        {
+            throw new PureExecutionException("Can't concatenate the two Relations as their types are incompatible : " + _RelationType.print(genericType1, processorSupport) + " & " + _RelationType.print(genericType2, processorSupport));
+        }
+
         return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds1.concatenate(tds2), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
     }
 }

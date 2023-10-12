@@ -318,22 +318,14 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testTypeEqualityForMatchingFail()
     {
-        try
-        {
-            compileInferenceTest(
-                    "import meta::pure::metamodel::relation::*;" +
-                            "function f<T>(r:Relation<T>[1]):Integer[*]\n" +
-                            "{\n" +
-                            "   concat($r->cast(@Relation<(ae:String, f:String)>), $r->cast(@Relation<(a:Integer, f:String)>))->map(x|$x.a);\n" +
-                            "}" +
-                            "native function concat<T>(rel:Relation<T>[1], rel2:Relation<T>[1]):Relation<T>[1];" +
-                            "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];");
-            fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:4), \"Incompatible types (ae:String, f:String) && (a:Integer, f:String)\"", e.getMessage());
-        }
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "function f<T>(r:Relation<T>[1]):Relation<Any>[1]\n" +
+                        "{\n" +
+                        "   concat($r->cast(@Relation<(ae:String, f:String)>), $r->cast(@Relation<(a:Integer, f:String)>));" +
+                        "}" +
+                        "native function concat<T>(rel:Relation<T>[1], rel2:Relation<T>[1]):Relation<T>[1];" +
+                        "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];");
     }
 
     @Test

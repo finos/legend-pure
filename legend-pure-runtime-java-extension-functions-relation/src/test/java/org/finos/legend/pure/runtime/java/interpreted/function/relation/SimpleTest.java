@@ -40,26 +40,29 @@ public class SimpleTest extends PureExpressionTest
     }
 
     @org.junit.Test
-    public void testToOneError()
+    public void testGroupBy()
     {
         compileTestSource("fromString.pure",
-                "" +
-                        "function sum(x:Integer[*]):Integer[1]" +
-                        "{" +
-                        "   2;" +
-                        "}" +
-                        "function test():Any[*]\n" +
-                        "{\n" +
-                        "   let tds = #TDS\n" +
+                "function test():Any[*]\n" +
+                        "{ " +
+                        "    let res = #TDS\n" +
                         "                value, str\n" +
                         "                1, a\n" +
                         "                3, ewe\n" +
                         "                4, qw\n" +
-                        "                5, wwe\n" +
-                        "                5, weq\n" +
-                        "              #->meta::pure::functions::relation::rename(~str, ~str2)->map(x|$x.str2);" +
-                        "   print($tds, 1);" +
+                        "              #\n" +
+                        "              ->concatenate\n" +
+                        "              (\n" +
+                        "                  #TDS\n" +
+                        "                    value, str\n" +
+                        "                    5, qwea\n" +
+                        "                    6, eeewe\n" +
+                        "                    7, qqwew\n" +
+                        "                  #\n" +
+                        "              );\n" +
+                        "    assertEquals(6, $res->size());\n" +
+                        "    assertEquals('134567', $res->map(c|$c.value->toOne()->toString())->joinStrings(''));" +
                         "}\n");
         this.execute("test():Any[*]");
     }
-    }
+}

@@ -21,7 +21,6 @@ function meta::pure::functions::relation::map<T,V>(rel:TDS<T>[1], f:Function<{T[
     $rel->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::map($f);
 }
 
-
 function <<test.Test>> meta::pure::functions::relation::tests::map::testSimpleMap():Boolean[1]
 {
     let res = #TDS

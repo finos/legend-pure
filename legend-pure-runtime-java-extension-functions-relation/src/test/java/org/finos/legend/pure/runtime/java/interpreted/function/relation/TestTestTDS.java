@@ -110,7 +110,7 @@ public class TestTestTDS extends AbstractPureTestWithCoreCompiled
                 "1, Pierre, F";
         TestTDS tds = new TestTDS(initialTDS, repository, processorSupport);
 
-        Assert.assertEquals("[6:8]", tds.sort(Lists.mutable.with(new SortInfo("id", SortDirection.ASC), new SortInfo("name", SortDirection.ASC))).getTwo().toString());
+        Assert.assertEquals("[0:1, 1:2, 2:3, 3:4, 4:5, 5:6, 6:8]", tds.sort(Lists.mutable.with(new SortInfo("id", SortDirection.ASC), new SortInfo("name", SortDirection.ASC))).getTwo().toString());
     }
 
     @org.junit.Test

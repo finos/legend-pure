@@ -149,4 +149,14 @@ public class _RelationType
             return a && typeOne == typeTwo && b.getOne().getValueForMetaPropertyToOne("name").getName().equals(b.getTwo().getValueForMetaPropertyToOne("name").getName());
         });
     }
+
+    public static boolean canConcatenate(CoreInstance one, CoreInstance two, ProcessorSupport processorSupport)
+    {
+        MutableList<Column<?, ?>> columns1 = (MutableList<Column<?, ?>>) ((RelationType<?>) one.getValueForMetaPropertyToOne("rawType"))._columns().toList();
+        MutableList<Column<?, ?>> columns2 = (MutableList<Column<?, ?>>) ((RelationType<?>) two.getValueForMetaPropertyToOne("rawType"))._columns().toList();
+
+        return columns1.zip(columns2).injectInto(true, (a, b) -> a &&
+                (b.getOne()._nameWildCard() || b.getTwo()._nameWildCard() || b.getOne()._name().equals(b.getTwo()._name())) &&
+                org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericCompatibleWith(_Column.getColumnType(b.getOne()), _Column.getColumnType(b.getTwo()), processorSupport));
+    }
 }

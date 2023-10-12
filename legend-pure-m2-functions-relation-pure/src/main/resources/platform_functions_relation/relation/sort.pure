@@ -65,4 +65,21 @@ function <<test.Test>> meta::pure::functions::relation::tests::sort::testSimpleS
     '4 Alex\n'+
     '5 David', $tds->sort(ascending(~id))->map(x|$x.id->s() + ' ' + $x.name->s())->joinStrings('\n'));
 
+  assertEquals(
+    '1 Neema\n'+
+    '1 Sachin\n'+
+    '2 George\n'+
+    '2 Thierry\n'+
+    '3 Pierre\n'+
+    '4 Alex\n'+
+    '5 David', $tds->sort([ascending(~id), ascending(~name)])->map(x|$x.id->s() + ' ' + $x.name->s())->joinStrings('\n'));
+
+  assertEquals(
+    '5 David\n'+
+    '4 Alex\n'+
+    '3 Pierre\n'+
+    '2 George\n'+
+    '2 Thierry\n'+
+    '1 Neema\n'+
+    '1 Sachin', $tds->sort([descending(~id), ascending(~name)])->map(x|$x.id->s() + ' ' + $x.name->s())->joinStrings('\n'));
 }
