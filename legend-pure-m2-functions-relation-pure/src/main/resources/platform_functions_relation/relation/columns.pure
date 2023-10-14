@@ -14,11 +14,15 @@
 
 import meta::pure::metamodel::relation::*;
 
-function meta::pure::functions::relation::funcColSpecArray<U,T>(f:Function<{U[1]->Any[*]}>[*], s:String[*], cl:T[1]):FuncColSpecArray<{U[1]->Any[*]},T>[1]
+native function meta::pure::functions::relation::columns<T>(rel:Relation<T>[1]):Column<Nil,Any|*>[*];
+
+function <<test.Test>> meta::pure::functions::relation::tests::columns::testSimpleColumns():Boolean[1]
 {
-    ^FuncColSpecArray<{U[1]->Any[*]},T>
-    (
-        names = $s,
-        functions = $f
-    );
+    let res = #TDS
+                value, other
+                1, a
+                3, b
+                4, c
+              #->columns().name;
+    assertEquals(['value','other'], $res);
 }

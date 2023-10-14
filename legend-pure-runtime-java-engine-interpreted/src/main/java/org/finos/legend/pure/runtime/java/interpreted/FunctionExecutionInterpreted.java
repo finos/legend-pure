@@ -663,7 +663,6 @@ public class FunctionExecutionInterpreted implements FunctionExecution
 
     public static Executor findValueSpecificationExecutor(CoreInstance instance, CoreInstance functionExpressionToUseInStack, ProcessorSupport processorSupport, FunctionExecutionInterpreted functionExecutionInterpreted) throws PureExecutionException
     {
-
         if (!ValueSpecification.isExecutable(instance, processorSupport))
         {
             return NonExecutableValueSpecificationExecutor.INSTANCE;

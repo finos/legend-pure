@@ -43,26 +43,30 @@ public class SimpleTest extends PureExpressionTest
     public void testGroupBy()
     {
         compileTestSource("fromString.pure",
-                "function test():Any[*]\n" +
+                        "function test():Any[*]\n" +
                         "{ " +
-                        "    let res = #TDS\n" +
-                        "                value, str\n" +
-                        "                1, a\n" +
-                        "                3, ewe\n" +
-                        "                4, qw\n" +
-                        "              #\n" +
-                        "              ->concatenate\n" +
-                        "              (\n" +
-                        "                  #TDS\n" +
-                        "                    value, str\n" +
-                        "                    5, qwea\n" +
-                        "                    6, eeewe\n" +
-                        "                    7, qqwew\n" +
-                        "                  #\n" +
-                        "              );\n" +
-                        "    assertEquals(6, $res->size());\n" +
-                        "    assertEquals('134567', $res->map(c|$c.value->toOne()->toString())->joinStrings(''));" +
+                        "    let tds = #TDS\n" +
+                                "              id, name\n" +
+                                "              1, George\n" +
+                                "              2, Pierre\n" +
+                                "              3, Sachin\n" +
+                                "              4, David\n" +
+                                "            #;\n" +
+                                "\n" +
+                                "  let tds2 = #TDS\n" +
+                                "              id2, col, other\n" +
+                                "              1, More George 1, 1\n" +
+                                "              1, More George 2, 2\n" +
+                                "              4, More David, 1\n" +
+                                "            #;\n" +
+                                "\n" +
+                                "\n" +
+                                "  assertEquals(\n" +
+                                "    '1 1 George More George 1\\n'+\n" +
+                                "    '1 1 George More George 2\\n'+\n" +
+                                "    '4 4 David More David', $tds->join($tds2, JoinKind.INNER, {x,y| $x.id == $y.id2})->map(x|$x.id->s() + ' ' + $x.id2->s()+ ' ' + $x.name->s()+ ' ' + $x.col->s())->joinStrings('\\n'));" +
                         "}\n");
+
         this.execute("test():Any[*]");
     }
 }

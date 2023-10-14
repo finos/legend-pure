@@ -39,9 +39,9 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 import java.io.ByteArrayInputStream;
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 
 import static org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap.*;
@@ -129,8 +129,39 @@ public class TestTDS
         });
     }
 
-    private TestTDS()
+    public TestTDS(ModelRepository modelRepository, ProcessorSupport processorSupport)
     {
+        this.modelRepository = modelRepository;
+        this.processorSupport = processorSupport;
+    }
+
+    public TestTDS setNull()
+    {
+        TestTDS res = this.copy();
+        res.rowCount = 1;
+        boolean[] array = new boolean[(int) res.rowCount];
+        Arrays.fill(array, Boolean.TRUE);
+        res.columnType.keyValuesView().forEach(c ->
+        {
+            switch (c.getTwo())
+            {
+                case INT:
+                    res.dataByColumnName.put(c.getOne(), new int[1]);
+                    res.isNullByColumn.put(c.getOne(), array);
+                    break;
+                case CHAR:
+                    res.dataByColumnName.put(c.getOne(), new char[1]);
+                    res.isNullByColumn.put(c.getOne(), array);
+                    break;
+                case DOUBLE:
+                    res.dataByColumnName.put(c.getOne(), new double[1]);
+                    res.isNullByColumn.put(c.getOne(), array);
+                    break;
+                case STRING:
+                    res.dataByColumnName.put(c.getOne(), new String[1]);
+            }
+        });
+        return res;
     }
 
     public static CsvReader.Result readCsv(String csv)
@@ -206,10 +237,8 @@ public class TestTDS
 
     public TestTDS copy()
     {
-        TestTDS result = new TestTDS();
+        TestTDS result = new TestTDS(modelRepository, processorSupport);
         result.rowCount = rowCount;
-        result.modelRepository = modelRepository;
-        result.processorSupport = processorSupport;
         result.columnType = Maps.mutable.withMap(columnType);
         result.dataByColumnName = Maps.mutable.empty();
         result.isNullByColumn = Maps.mutable.empty();
@@ -386,9 +415,7 @@ public class TestTDS
 
     public TestTDS concatenate(TestTDS tds2)
     {
-        TestTDS result = new TestTDS();
-        result.modelRepository = modelRepository;
-        result.processorSupport = processorSupport;
+        TestTDS result = new TestTDS(modelRepository, processorSupport);
         result.rowCount = this.rowCount + tds2.rowCount;
         result.columnType = Maps.mutable.withMap(columnType);
         dataByColumnName.forEachKey(columnName ->
@@ -451,6 +478,16 @@ public class TestTDS
 
     public TestTDS addColumn(String name, DataType dataType, Object res)
     {
+        int size = Array.getLength(res);
+        if (this.rowCount == 0)
+        {
+            this.rowCount = size;
+        }
+        if (size != this.rowCount)
+        {
+            throw new RuntimeException("Error!");
+        }
+
         this.dataByColumnName.put(name, res);
         this.columnType.put(name, dataType);
         switch (dataType)
@@ -550,7 +587,6 @@ public class TestTDS
         });
         return this.drop(drop);
     }
-
 
 
     private void sort(TestTDS copy, ListIterable<SortInfo> sortInfos, int start, int end, MutableList<Pair<Integer, Integer>> ranges)

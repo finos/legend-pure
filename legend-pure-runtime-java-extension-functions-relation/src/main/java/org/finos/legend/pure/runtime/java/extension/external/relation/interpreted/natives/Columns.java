@@ -17,18 +17,13 @@ package org.finos.legend.pure.runtime.java.extension.external.relation.interpret
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.shared.Shared;
-import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.shared.TDSCoreInstance;
-import org.finos.legend.pure.runtime.java.extension.external.relation.shared.SortDirection;
-import org.finos.legend.pure.runtime.java.extension.external.relation.shared.SortInfo;
-import org.finos.legend.pure.runtime.java.extension.external.relation.shared.TestTDS;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
@@ -37,9 +32,9 @@ import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
 import java.util.Stack;
 
-public class Sort extends Shared
+public class Columns extends Shared
 {
-    public Sort(FunctionExecutionInterpreted functionExecution, ModelRepository repository)
+    public Columns(FunctionExecutionInterpreted functionExecution, ModelRepository repository)
     {
         super(functionExecution, repository);
     }
@@ -47,16 +42,7 @@ public class Sort extends Shared
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
-        CoreInstance returnGenericType = getReturnGenericType(resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, processorSupport);
-        TestTDS tds = getTDS(params, 0, processorSupport);
-        ListIterable<? extends CoreInstance> sortInfo = Instance.getValueForMetaPropertyToManyResolved(params.get(1), M3Properties.values, processorSupport);
-        ListIterable<SortInfo> sortInfos = sortInfo.collect(c ->
-        {
-            String name = c.getValueForMetaPropertyToOne("column").getValueForMetaPropertyToOne("name").getName();
-            SortDirection direction = SortDirection.valueOf(c.getValueForMetaPropertyToOne("direction").getName());
-            return new SortInfo(name, direction);
-        });
-        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.sort(sortInfos).getOne(), returnGenericType, repository, processorSupport), false, processorSupport);
+        RelationType<?> relationType = (RelationType<?>) params.get(0).getValueForMetaPropertyToOne("genericType").getValueForMetaPropertyToMany("typeArguments").getFirst().getValueForMetaPropertyToOne("rawType");
+        return ValueSpecificationBootstrap.wrapValueSpecification(relationType._columns(), false, processorSupport);
     }
 }
-

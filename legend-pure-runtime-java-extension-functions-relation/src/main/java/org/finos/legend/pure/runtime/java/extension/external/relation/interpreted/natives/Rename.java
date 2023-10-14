@@ -42,9 +42,10 @@ public class Rename extends Shared
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
+        CoreInstance returnGenericType = getReturnGenericType(resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, processorSupport);
         TestTDS tds = getTDS(params, 0, processorSupport);
         String oldName = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport).getValueForMetaPropertyToOne("name").getName();
         String newName = Instance.getValueForMetaPropertyToOneResolved(params.get(2), M3Properties.values, processorSupport).getValueForMetaPropertyToOne("name").getName();
-        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.rename(oldName, newName), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
+        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.rename(oldName, newName), returnGenericType, repository, processorSupport), false, processorSupport);
     }
 }

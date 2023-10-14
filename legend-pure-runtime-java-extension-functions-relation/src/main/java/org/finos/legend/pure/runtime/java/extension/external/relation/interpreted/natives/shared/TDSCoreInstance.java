@@ -14,6 +14,11 @@
 
 package org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.shared;
 
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -24,9 +29,10 @@ public class TDSCoreInstance extends SimpleCoreInstance
 {
     private final TestTDS tds;
 
-    public TDSCoreInstance(TestTDS tds, String name, SourceInformation sourceInformation, CoreInstance classifier, int internalSyntheticId, ModelRepository repository, boolean persistent)
+    public TDSCoreInstance(TestTDS tds, CoreInstance genericType, ModelRepository repository, ProcessorSupport processorSupport)
     {
-        super(name, sourceInformation, classifier, internalSyntheticId, repository, persistent);
+        super("", null, _Package.getByUserPath("meta::pure::metamodel::relation::TDS", processorSupport), -1, repository, false);
+        Instance.addValueToProperty(this, M3Properties.classifierGenericType, genericType, processorSupport);
         this.tds = tds;
     }
 

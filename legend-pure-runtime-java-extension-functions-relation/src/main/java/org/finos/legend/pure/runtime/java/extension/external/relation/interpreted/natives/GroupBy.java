@@ -24,6 +24,7 @@ import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionCoreInstanceWrapper;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
@@ -55,7 +56,11 @@ public class GroupBy extends Shared
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
+        CoreInstance returnGenericType = getReturnGenericType(resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, processorSupport);
+
         TestTDS tds = getTDS(params, 0, processorSupport);
+
+        RelationType<?> relationType = getRelationType(params, 0);
 
         ListIterable<String> ids = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport).getValueForMetaPropertyToMany("names").collect(CoreInstance::getName);
 
@@ -84,7 +89,7 @@ public class GroupBy extends Shared
                 MutableList<CoreInstance> subList = Lists.mutable.empty();
                 for (int i = r.getOne(); i < r.getTwo(); i++)
                 {
-                    parameters.set(0, new TDSWithCursorCoreInstance(res.getOne(), i, "", null, null, -1, repository, false));
+                    parameters.set(0, ValueSpecificationBootstrap.wrapValueSpecification(new TDSWithCursorCoreInstance(res.getOne(), i, "", null, relationType, -1, repository, false), true, processorSupport));
                     subList.add(this.functionExecution.executeFunction(false, mapF, parameters, resolvedTypeParameters, resolvedMultiplicityParameters, mapFVarContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport).getValueForMetaPropertyToOne("values"));
                 }
                 parameters.set(0, ValueSpecificationBootstrap.wrapValueSpecification(subList, true, processorSupport));
@@ -104,7 +109,7 @@ public class GroupBy extends Shared
                 MutableList<CoreInstance> subList = Lists.mutable.empty();
                 for (int i = r.getOne(); i < r.getTwo(); i++)
                 {
-                    parameters.set(0, new TDSWithCursorCoreInstance(res.getOne(), i, "", null, null, -1, repository, false));
+                    parameters.set(0, ValueSpecificationBootstrap.wrapValueSpecification(new TDSWithCursorCoreInstance(res.getOne(), i, "", null, relationType, -1, repository, false), true, processorSupport));
                     subList.add(this.functionExecution.executeFunction(false, mapF, parameters, resolvedTypeParameters, resolvedMultiplicityParameters, mapFVarContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport).getValueForMetaPropertyToOne("values"));
                 }
                 parameters.set(0, ValueSpecificationBootstrap.wrapValueSpecification(subList, true, processorSupport));
@@ -124,7 +129,7 @@ public class GroupBy extends Shared
                 MutableList<CoreInstance> subList = Lists.mutable.empty();
                 for (int i = r.getOne(); i < r.getTwo(); i++)
                 {
-                    parameters.set(0, new TDSWithCursorCoreInstance(res.getOne(), i, "", null, null, -1, repository, false));
+                    parameters.set(0, ValueSpecificationBootstrap.wrapValueSpecification(new TDSWithCursorCoreInstance(res.getOne(), i, "", null, relationType, -1, repository, false), true, processorSupport));
                     subList.add(this.functionExecution.executeFunction(false, mapF, parameters, resolvedTypeParameters, resolvedMultiplicityParameters, mapFVarContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport).getValueForMetaPropertyToOne("values"));
                 }
                 parameters.set(0, ValueSpecificationBootstrap.wrapValueSpecification(subList, true, processorSupport));
@@ -136,6 +141,6 @@ public class GroupBy extends Shared
         }
 
         tds = res.getOne()._distinct(res.getTwo());
-        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.addColumn(name, resType, _finalRes), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
+        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.addColumn(name, resType, _finalRes), returnGenericType, repository, processorSupport), false, processorSupport);
     }
 }

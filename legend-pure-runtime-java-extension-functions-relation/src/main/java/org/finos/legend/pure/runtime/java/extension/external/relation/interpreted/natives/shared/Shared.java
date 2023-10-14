@@ -18,7 +18,10 @@ import io.deephaven.csv.CsvSpecs;
 import io.deephaven.csv.reading.CsvReader;
 import io.deephaven.csv.sinks.SinkFactory;
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.map.MutableMap;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.extension.external.relation.shared.TestTDS;
@@ -26,6 +29,7 @@ import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpret
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 
 import java.io.ByteArrayInputStream;
+import java.util.Stack;
 
 public abstract class Shared extends NativeFunction
 {
@@ -47,6 +51,17 @@ public abstract class Shared extends NativeFunction
                 new TestTDS(readCsv((obj.getValueForMetaPropertyToOne("csv")).getName()), repository, processorSupport);
 
     }
+
+    public RelationType<?> getRelationType(ListIterable<? extends CoreInstance> params, int i)
+    {
+        return (RelationType<?>) params.get(i).getValueForMetaPropertyToOne("genericType").getValueForMetaPropertyToMany("typeArguments").getFirst().getValueForMetaPropertyToOne("rawType");
+    }
+
+    public static CoreInstance getReturnGenericType(Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, CoreInstance functionExpressionToUseInStack, ProcessorSupport processorSupport)
+    {
+        return GenericType.makeTypeArgumentAsConcreteAsPossible(functionExpressionToUseInStack.getValueForMetaPropertyToOne("genericType"), resolvedTypeParameters.get(0), resolvedMultiplicityParameters.get(0), processorSupport);
+    }
+
 
     public CsvReader.Result readCsv(String csv)
     {

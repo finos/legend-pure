@@ -23,6 +23,7 @@ import org.eclipse.collections.impl.factory.primitive.IntSets;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionCoreInstanceWrapper;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.*;
 import org.finos.legend.pure.m4.ModelRepository;
@@ -49,7 +50,11 @@ public class Filter extends Shared
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
+        CoreInstance returnGenericType = getReturnGenericType(resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, processorSupport);
+
         TestTDS tds = getTDS(params, 0, processorSupport);
+
+        RelationType<?> relationType = getRelationType(params, 0);
 
         CoreInstance filterFunction = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
         LambdaFunction<CoreInstance> lambdaFunction = (LambdaFunction<CoreInstance>) LambdaFunctionCoreInstanceWrapper.toLambdaFunction(filterFunction);
@@ -59,13 +64,13 @@ public class Filter extends Shared
         FixedSizeList<CoreInstance> parameters = Lists.fixedSize.with((CoreInstance) null);
         for (int i = 0; i < tds.getRowCount(); i++)
         {
-            parameters.set(0, new TDSWithCursorCoreInstance(tds, i, "", null, null, -1, repository, false));
+            parameters.set(0, ValueSpecificationBootstrap.wrapValueSpecification(new TDSWithCursorCoreInstance(tds, i, "", null, relationType, -1, repository, false), true, processorSupport));
             CoreInstance subResult = this.functionExecution.executeFunction(false, lambdaFunction, parameters, resolvedTypeParameters, resolvedMultiplicityParameters, evalVarContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
             if (!PrimitiveUtilities.getBooleanValue(Instance.getValueForMetaPropertyToOneResolved(subResult, M3Properties.values, processorSupport)))
             {
                 discardedRows.add(i);
             }
         }
-        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.drop(discardedRows), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
+        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.drop(discardedRows), returnGenericType, repository, processorSupport), false, processorSupport);
     }
 }

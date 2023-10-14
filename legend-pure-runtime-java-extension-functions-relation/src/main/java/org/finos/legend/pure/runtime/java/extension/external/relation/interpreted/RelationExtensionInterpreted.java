@@ -50,7 +50,9 @@ public class RelationExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("sort_Relation_1__SortInfo_MANY__Relation_1_", Sort::new),
                 Tuples.pair("join_Relation_1__Relation_1__JoinKind_1__Function_1__Relation_1_", Join::new),
                 Tuples.pair("distinct_Relation_1__ColSpecArray_1__Relation_1_", Distinct::new),
-                Tuples.pair("groupBy_Relation_1__ColSpecArray_1__AggColSpec_1__Relation_1_", GroupBy::new)
+                Tuples.pair("groupBy_Relation_1__ColSpecArray_1__AggColSpec_1__Relation_1_", GroupBy::new),
+                Tuples.pair("project_C_MANY__FuncColSpecArray_1__Relation_1_", Project::new),
+                Tuples.pair("columns_Relation_1__Column_MANY_", Columns::new)
         ));
     }
 
@@ -64,7 +66,7 @@ public class RelationExtensionInterpreted extends BaseInterpretedExtension
     {
         if (Instance.instanceOf(function, M3Paths.Column, processorSupport))
         {
-            return ((TDSWithCursorCoreInstance) params.get(0)).getValue(function._name());
+            return ((TDSWithCursorCoreInstance) params.get(0).getValueForMetaPropertyToOne("values")).getValue(function._name());
         }
         return null;
     }

@@ -22,6 +22,7 @@ import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionCoreInstanceWrapper;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
@@ -51,7 +52,11 @@ public class Extend extends Shared
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
+        CoreInstance returnGenericType = getReturnGenericType(resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, processorSupport);
+
         TestTDS tds = getTDS(params, 0, processorSupport);
+
+        RelationType<?> relationType = getRelationType(params, 0);
 
         CoreInstance extendFunction = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
         LambdaFunction<CoreInstance> lambdaFunction = (LambdaFunction<CoreInstance>) LambdaFunctionCoreInstanceWrapper.toLambdaFunction(extendFunction.getValueForMetaPropertyToOne(M3Properties.function));
@@ -67,7 +72,7 @@ public class Extend extends Shared
             String[] resStr = new String[(int) tds.getRowCount()];
             for (int i = 0; i < tds.getRowCount(); i++)
             {
-                parameters.set(0, new TDSWithCursorCoreInstance(tds, i, "", null, null, -1, repository, false));
+                parameters.set(0, ValueSpecificationBootstrap.wrapValueSpecification(new TDSWithCursorCoreInstance(tds, i, "", null, relationType, -1, repository, false), true, processorSupport));
                 CoreInstance newValue = this.functionExecution.executeFunction(false, lambdaFunction, parameters, resolvedTypeParameters, resolvedMultiplicityParameters, evalVarContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
                 resStr[i] = PrimitiveUtilities.getStringValue(newValue.getValueForMetaPropertyToOne("values"));
             }
@@ -79,7 +84,7 @@ public class Extend extends Shared
             int[] resInt = new int[(int) tds.getRowCount()];
             for (int i = 0; i < tds.getRowCount(); i++)
             {
-                parameters.set(0, new TDSWithCursorCoreInstance(tds, i, "", null, null, -1, repository, false));
+                parameters.set(0, ValueSpecificationBootstrap.wrapValueSpecification(new TDSWithCursorCoreInstance(tds, i, "", null, relationType, -1, repository, false), true, processorSupport));
                 CoreInstance newValue = this.functionExecution.executeFunction(false, lambdaFunction, parameters, resolvedTypeParameters, resolvedMultiplicityParameters, evalVarContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
                 resInt[i] = PrimitiveUtilities.getIntegerValue(newValue.getValueForMetaPropertyToOne("values")).intValue();
             }
@@ -91,13 +96,13 @@ public class Extend extends Shared
             double[] resDouble = new double[(int) tds.getRowCount()];
             for (int i = 0; i < tds.getRowCount(); i++)
             {
-                parameters.set(0, new TDSWithCursorCoreInstance(tds, i, "", null, null, -1, repository, false));
+                parameters.set(0, ValueSpecificationBootstrap.wrapValueSpecification(new TDSWithCursorCoreInstance(tds, i, "", null, relationType, -1, repository, false), true, processorSupport));
                 CoreInstance newValue = this.functionExecution.executeFunction(false, lambdaFunction, parameters, resolvedTypeParameters, resolvedMultiplicityParameters, evalVarContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
                 resDouble[i] = PrimitiveUtilities.getFloatValue(newValue.getValueForMetaPropertyToOne("values")).doubleValue();
             }
             res = resDouble;
             resType = DataType.DOUBLE;
         }
-        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.addColumn(extendFunction.getValueForMetaPropertyToOne(M3Properties.name).getName(), resType, res), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
+        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.addColumn(extendFunction.getValueForMetaPropertyToOne(M3Properties.name).getName(), resType, res), returnGenericType, repository, processorSupport), false, processorSupport);
     }
 }

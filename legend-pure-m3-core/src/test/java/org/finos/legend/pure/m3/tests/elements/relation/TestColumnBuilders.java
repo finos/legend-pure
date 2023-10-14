@@ -106,7 +106,7 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     public void testSimpleColumnWithFunctionArray()
     {
         compileTestSource("fromString.pure",
-                "function test<U>():meta::pure::metamodel::relation::FuncColSpecArray<{U[1]->Any[0..1]}, (name:String, val:Integer)>[1]" +
+                "function test<U>():meta::pure::metamodel::relation::FuncColSpecArray<{U[1]->Any[*]}, (name:String, val:Integer)>[1]" +
                         "{" +
                         "   ~[name:x|'ok', val:x|1];" +
                         "}");

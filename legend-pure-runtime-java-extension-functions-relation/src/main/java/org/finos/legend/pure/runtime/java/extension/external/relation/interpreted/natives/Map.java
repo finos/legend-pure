@@ -22,11 +22,13 @@ import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionCoreInstanceWrapper;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
+import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.shared.Shared;
@@ -52,6 +54,8 @@ public class Map extends Shared
     {
         TestTDS tds = getTDS(params, 0, processorSupport);
 
+        RelationType<?> relationType = getRelationType(params, 0);
+
         CoreInstance collectFunction = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
         LambdaFunction<CoreInstance> lambdaFunction = (LambdaFunction<CoreInstance>) LambdaFunctionCoreInstanceWrapper.toLambdaFunction(collectFunction);
         VariableContext evalVarContext = this.getParentOrEmptyVariableContextForLambda(variableContext, collectFunction);
@@ -60,7 +64,7 @@ public class Map extends Shared
         FixedSizeList<CoreInstance> parameters = Lists.fixedSize.with((CoreInstance) null);
         for (int i = 0; i < tds.getRowCount(); i++)
         {
-            parameters.set(0, new TDSWithCursorCoreInstance(tds, i, "", null, null, -1, repository, false));
+            parameters.set(0, ValueSpecificationBootstrap.wrapValueSpecification(new TDSWithCursorCoreInstance(tds, i, "", null, relationType, -1, repository, false), true, processorSupport));
             results.addAllIterable(
                     Instance.getValueForMetaPropertyToManyResolved(
                             this.functionExecution.executeFunction(false, lambdaFunction, parameters, resolvedTypeParameters, resolvedMultiplicityParameters, evalVarContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport),

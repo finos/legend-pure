@@ -46,6 +46,8 @@ public class Concatenate extends Shared
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
+        CoreInstance returnGenericType = getReturnGenericType(resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, processorSupport);
+
         TestTDS tds1 = getTDS(params, 0, processorSupport);
         TestTDS tds2 = getTDS(params, 1, processorSupport);
 
@@ -57,6 +59,6 @@ public class Concatenate extends Shared
             throw new PureExecutionException("Can't concatenate the two Relations as their types are incompatible : " + _RelationType.print(genericType1, processorSupport) + " & " + _RelationType.print(genericType2, processorSupport));
         }
 
-        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds1.concatenate(tds2), "", null, params.get(0).getValueForMetaPropertyToOne("values").getClassifier(), -1, repository, false), false, processorSupport);
+        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds1.concatenate(tds2), returnGenericType, repository, processorSupport), false, processorSupport);
     }
 }
