@@ -400,7 +400,7 @@ public class ExecuteInDb extends NativeFunction
     public void bulkInsertInDb(CoreInstance connectionInformation, CoreInstance table, Iterable<? extends Iterable<?>> values, CoreInstance functionExpressionToUseInStack, final ProcessorSupport processorSupport)
     {
 
-        if (!Instance.instanceOf(connectionInformation, "meta::relational::runtime::TestDatabaseConnection", processorSupport))
+        if (!Instance.instanceOf(connectionInformation, "meta::external::store::relational::runtime::TestDatabaseConnection", processorSupport))
         {
             throw new PureExecutionException("Bulk insert is only supported for the TestDatabaseConnection");
         }

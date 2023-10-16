@@ -23,8 +23,8 @@ import meta::relational::metamodel::execute::*;
 import meta::relational::metamodel::join::*;
 import meta::relational::metamodel::operation::*;
 import meta::relational::metamodel::relation::*;
-
 import meta::relational::runtime::*;
+import meta::external::store::relational::runtime::*;
 
 Class meta::relational::metamodel::Database extends meta::pure::store::set::SetBasedStore
 {
@@ -133,7 +133,7 @@ Enum meta::relational::metamodel::join::JoinType
 {
    INNER,
    LEFT_OUTER,
-   RIGHT_OUTER, 
+   RIGHT_OUTER,
    FULL_OUTER
 }
 

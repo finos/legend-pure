@@ -30,6 +30,6 @@ public class ExecuteInDb extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return "org.finos.legend.pure.generated.RelationalGen.executeInDb((String)" + transformedParams.get(0) + ", (Root_meta_relational_runtime_DatabaseConnection)" + transformedParams.get(1) + ", (Long)" + transformedParams.get(2) + ", (Long)" + transformedParams.get(3) + ", " + NativeFunctionProcessor.buildM4LineColumnSourceInformation(functionExpression.getSourceInformation()) + ", es)";
+        return "org.finos.legend.pure.generated.RelationalGen.executeInDb((String)" + transformedParams.get(0) + ", (Root_meta_external_store_relational_runtime_DatabaseConnection)" + transformedParams.get(1) + ", (Long)" + transformedParams.get(2) + ", (Long)" + transformedParams.get(3) + ", " + NativeFunctionProcessor.buildM4LineColumnSourceInformation(functionExpression.getSourceInformation()) + ", es)";
     }
 }

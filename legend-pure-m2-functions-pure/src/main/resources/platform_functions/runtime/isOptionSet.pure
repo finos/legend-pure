@@ -12,4 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::runtime::isOptionSet(option:String[1]):Boolean[1];
+native function meta::core::runtime::isOptionSet(option:String[1]):Boolean[1];

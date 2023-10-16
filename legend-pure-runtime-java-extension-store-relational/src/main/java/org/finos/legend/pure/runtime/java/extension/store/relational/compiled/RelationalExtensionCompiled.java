@@ -124,7 +124,7 @@ public class RelationalExtensionCompiled implements CompiledExtension
                         "        return null;\n" +
                         "    }\n" +
                         "\n" +
-                        "    public static Root_meta_relational_metamodel_execute_ResultSet fetchDbMetaData(Root_meta_relational_runtime_DatabaseConnection pureConnection, SqlFunction<DatabaseMetaData, java.sql.ResultSet> sqlFunction, ImmutableMap<String, ? extends Function<ListIterable<Object>, String>> extraValues, ExecutionSupport es)\n" +
+                        "    public static Root_meta_relational_metamodel_execute_ResultSet fetchDbMetaData(Root_meta_external_store_relational_runtime_DatabaseConnection pureConnection, SqlFunction<DatabaseMetaData, java.sql.ResultSet> sqlFunction, ImmutableMap<String, ? extends Function<ListIterable<Object>, String>> extraValues, ExecutionSupport es)\n" +
                         "    {\n" +
                         "        Root_meta_relational_metamodel_execute_ResultSet pureResult = new Root_meta_relational_metamodel_execute_ResultSet_Impl(\"\");\n" +
                         "\n" +
@@ -231,7 +231,7 @@ public class RelationalExtensionCompiled implements CompiledExtension
                         "        }\n" +
                         "    }\n" +
                         "\n" +
-                        "    public static Root_meta_relational_metamodel_execute_ResultSet executeInDb(String sql, Root_meta_relational_runtime_DatabaseConnection pureConnection, long queryTimeoutInSeconds, long fetchSize, SourceInformation si, ExecutionSupport es)\n" +
+                        "    public static Root_meta_relational_metamodel_execute_ResultSet executeInDb(String sql, Root_meta_external_store_relational_runtime_DatabaseConnection pureConnection, long queryTimeoutInSeconds, long fetchSize, SourceInformation si, ExecutionSupport es)\n" +
                         "    {\n" +
                         "        Root_meta_relational_metamodel_execute_ResultSet pureResult = new Root_meta_relational_metamodel_execute_ResultSet_Impl(\"OK\");\n" +
                         "\n" +
@@ -285,13 +285,13 @@ public class RelationalExtensionCompiled implements CompiledExtension
                         "        }\n" +
                         "    }\n" +
                         "\n" +
-                        "    public static Root_meta_relational_metamodel_execute_ResultSet dropTempTable(String tableName, String sql, Root_meta_relational_runtime_DatabaseConnection pureConnection, long queryTimeoutInSeconds, long fetchSize, SourceInformation si, ExecutionSupport es)\n" +
+                        "    public static Root_meta_relational_metamodel_execute_ResultSet dropTempTable(String tableName, String sql, Root_meta_external_store_relational_runtime_DatabaseConnection pureConnection, long queryTimeoutInSeconds, long fetchSize, SourceInformation si, ExecutionSupport es)\n" +
                         "    {\n" +
                         "        ((CompiledExecutionSupport)es).unRegisterIdentifableExecutionEndListener(tableName);\n" +
                         "        return executeInDb(sql, pureConnection, 0, 0, si, es);\n" +
                         "    }\n" +
                         "\n" +
-                        "    public static Root_meta_relational_metamodel_execute_ResultSet createTempTable(final String tableName, String sql, final Root_meta_relational_runtime_DatabaseConnection pureConnection, long queryTimeoutInSeconds, long fetchSize, final SourceInformation si, final boolean relyOnFinallyForCleanup, final ExecutionSupport es)\n" +
+                        "    public static Root_meta_relational_metamodel_execute_ResultSet createTempTable(final String tableName, String sql, final Root_meta_external_store_relational_runtime_DatabaseConnection pureConnection, long queryTimeoutInSeconds, long fetchSize, final SourceInformation si, final boolean relyOnFinallyForCleanup, final ExecutionSupport es)\n" +
                         "    {\n" +
                         "        ((CompiledExecutionSupport)es).registerIdentifableExecutionEndListener(new IdentifableExecutionEndListner()\n" +
                         "        {\n" +
@@ -339,7 +339,7 @@ public class RelationalExtensionCompiled implements CompiledExtension
                         "        }\n" +
                         "    }\n" +
                         "\n" +
-                        "    public static RichIterable<Object> loadCsvToDbTable(String filePath, Table table, Root_meta_relational_runtime_DatabaseConnection pureConnection, Long numberOfRows, ExecutionSupport es)\n" +
+                        "    public static RichIterable<Object> loadCsvToDbTable(String filePath, Table table, Root_meta_external_store_relational_runtime_DatabaseConnection pureConnection, Long numberOfRows, ExecutionSupport es)\n" +
                         "    {\n" +
                         "        Integer rowLimit = numberOfRows == null ? null : numberOfRows.intValue();\n" +
                         "        ListIterable<String> columnTypes = getColumnTypes(table, ((CompiledExecutionSupport)es).getProcessorSupport());\n" +
@@ -348,7 +348,7 @@ public class RelationalExtensionCompiled implements CompiledExtension
                         "        return Lists.mutable.empty();\n" +
                         "    }\n" +
                         "\n" +
-                        "    public static RichIterable<Object> loadValuesToDbTable(RichIterable<? extends Object> values, Table table, Root_meta_relational_runtime_DatabaseConnection pureConnection, ExecutionSupport es)\n" +
+                        "    public static RichIterable<Object> loadValuesToDbTable(RichIterable<? extends Object> values, Table table, Root_meta_external_store_relational_runtime_DatabaseConnection pureConnection, ExecutionSupport es)\n" +
                         "    {\n" +
                         "        ListIterable<String> columnTypes = getColumnTypes(table, ((CompiledExecutionSupport)es).getProcessorSupport());\n" +
                         "        Iterable<ListIterable<?>> columnValues = collectIterable(LazyIterate.drop(values, 3), columnTypes);\n" +
@@ -356,7 +356,7 @@ public class RelationalExtensionCompiled implements CompiledExtension
                         "        return Lists.mutable.empty();\n" +
                         "    }\n" +
                         "\n" +
-                        "    public static RichIterable<Object> loadValuesToDbTable(org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List<? extends Object>> values, Table table, Root_meta_relational_runtime_DatabaseConnection pureConnection, ExecutionSupport es)\n" +
+                        "    public static RichIterable<Object> loadValuesToDbTable(org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List<? extends Object>> values, Table table, Root_meta_external_store_relational_runtime_DatabaseConnection pureConnection, ExecutionSupport es)\n" +
                         "    {\n" +
                         "        ListIterable<String> columnTypes = getColumnTypes(table, ((CompiledExecutionSupport)es).getProcessorSupport());\n" +
                         "        Iterable<ListIterable<?>> columnValues = collectIterable(LazyIterate.drop(values._values(), 3), columnTypes);\n" +
@@ -376,9 +376,9 @@ public class RelationalExtensionCompiled implements CompiledExtension
                         "        }).toList();\n" +
                         "    }\n" +
                         "\n" +
-                        "    private static void bulkInsertInDb(Root_meta_relational_runtime_DatabaseConnection pureConnection, Table table, Iterable<ListIterable<?>> values, Integer rowLimit, ExecutionSupport es)\n" +
+                        "    private static void bulkInsertInDb(Root_meta_external_store_relational_runtime_DatabaseConnection pureConnection, Table table, Iterable<ListIterable<?>> values, Integer rowLimit, ExecutionSupport es)\n" +
                         "    {\n" +
-                        "        if (!(pureConnection instanceof Root_meta_relational_runtime_TestDatabaseConnection))\n" +
+                        "        if (!(pureConnection instanceof Root_meta_external_store_relational_runtime_TestDatabaseConnection))\n" +
                         "        {\n" +
                         "            throw new PureExecutionException(\"Bulk insert is only supported for the TestDatabaseConnection\");\n" +
                         "        }\n" +
