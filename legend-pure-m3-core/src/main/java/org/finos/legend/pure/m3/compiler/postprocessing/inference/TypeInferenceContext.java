@@ -325,6 +325,11 @@ public class TypeInferenceContext
 
     public void register(GenericType templateGenType, GenericType genericType, TypeInferenceContext targetGenericsContext, TypeInferenceObserver observer)
     {
+        register(templateGenType, genericType, targetGenericsContext, false, observer);
+    }
+
+    public void register(GenericType templateGenType, GenericType genericType, TypeInferenceContext targetGenericsContext, boolean merge, TypeInferenceObserver observer)
+    {
         observer.tryingRegistration(templateGenType, genericType, this, targetGenericsContext);
 
         Objects.requireNonNull(targetGenericsContext);
@@ -337,21 +342,21 @@ public class TypeInferenceContext
             {
                 if (targetGenericsContext.getParent() != null)
                 {
-                    getParent().register((GenericType) genericTypeCopy.getValueForMetaPropertyToOne("left"), (GenericType) genericTypeCopy.getValueForMetaPropertyToOne("right"), targetGenericsContext.getParent(), observer);
+                    getParent().register((GenericType) genericTypeCopy.getValueForMetaPropertyToOne("left"), (GenericType) genericTypeCopy.getValueForMetaPropertyToOne("right"), targetGenericsContext.getParent(), merge, observer);
                 }
             }
 
             if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationEqual(templateGenType, processorSupport))
             {
-                register((GenericType) templateGenType.getValueForMetaPropertyToOne("left"), genericTypeCopy, targetGenericsContext, observer);
+                register((GenericType) templateGenType.getValueForMetaPropertyToOne("left"), genericTypeCopy, targetGenericsContext, merge, observer);
             }
 
             if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperation(templateGenType, processorSupport) && org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperation(genericTypeCopy, processorSupport))
             {
                 if (((GenericTypeOperation) templateGenType)._type().getName().equals(((GenericTypeOperation) genericTypeCopy)._type().getName()))
                 {
-                    register((GenericType) templateGenType.getValueForMetaPropertyToOne("left"), (GenericType) genericTypeCopy.getValueForMetaPropertyToOne("left"), targetGenericsContext, observer);
-                    register((GenericType) templateGenType.getValueForMetaPropertyToOne("right"), (GenericType) genericTypeCopy.getValueForMetaPropertyToOne("right"), targetGenericsContext, observer);
+                    register((GenericType) templateGenType.getValueForMetaPropertyToOne("left"), (GenericType) genericTypeCopy.getValueForMetaPropertyToOne("left"), targetGenericsContext, merge, observer);
+                    register((GenericType) templateGenType.getValueForMetaPropertyToOne("right"), (GenericType) genericTypeCopy.getValueForMetaPropertyToOne("right"), targetGenericsContext, merge, observer);
                 }
             }
 
@@ -444,15 +449,25 @@ public class TypeInferenceContext
                 }
                 else if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(genericTypeCopy))
                 {
-                    if (!existing.getTargetGenericsContext().equals(this))
+                    if (existing.getParameterValue() instanceof GenericTypeOperation)
                     {
                         this.states.getLast().putTypeParameterValue(name, genericTypeCopy, targetGenericsContext, false);
-                        // forward the registration of this concrete type to the already referenced type
+                    }
+                    else if (!existing.getTargetGenericsContext().equals(this))
+                    {
                         forwards.add(new RegistrationRequest(existing.getTargetGenericsContext(), existing.getParameterValue(), genericTypeCopy));
                     }
-//                    else if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(existing.getParameterValue(), processorSupport))
+                    else if (!merge)
+                    {
+                        // We are in the right context and not in 'merge' mode, so it means we are propagating the inference UP.
+                        this.states.getLast().putTypeParameterValue(name, genericTypeCopy, targetGenericsContext, false);
+                    }
+//                    else
 //                    {
-//                        this.states.getLast().putTypeParameterValue(name, genericTypeCopy, targetGenericsContext, false);
+                        // 'Merge' means that we are looping through function parameters after parameter inference is true. In this case finding multiple values means that we have to take the most common type!
+                        // It is the case for if<T|m>(test:Boolean[1], valid:Function<{->T[m]}>[1], invalid:Function<{->T[m]}>[1]):T[m];
+                        // When we find multiple values for T (one is a type Parameter (K) and the other one is concrete), we should return Any after a merge..
+                        // We are not currently doing it, but it should eventually be fixed here
 //                    }
                 }
                 else
@@ -466,7 +481,7 @@ public class TypeInferenceContext
                 observer.register(templateGenType, genericTypeCopy, this, targetGenericsContext);
 
                 observer.shiftTab();
-                forwards.forEach(request -> request.context.register((GenericType) request.template, (GenericType) request.value, targetGenericsContext, observer));
+                forwards.forEach(request -> request.context.register((GenericType) request.template, (GenericType) request.value, targetGenericsContext, merge,observer));
                 observer.unShiftTab();
             }
 
@@ -488,7 +503,7 @@ public class TypeInferenceContext
                         RichIterable<? extends Column<?, ?>> templateColumns = ((RelationType<?>) templateGenType._rawType())._columns();
                         Pair<ListIterable<? extends Column<?, ?>>, ListIterable<? extends Column<?, ?>>> res = _RelationType.alignColumnSets(valColumns, templateColumns, processorSupport);
                         res.getTwo().zip(res.getOne()).forEach(c ->
-                                register(c.getOne()._classifierGenericType()._typeArguments().toList().get(1), c.getTwo()._classifierGenericType()._typeArguments().toList().get(1), targetGenericsContext, observer)
+                                register(c.getOne()._classifierGenericType()._typeArguments().toList().get(1), c.getTwo()._classifierGenericType()._typeArguments().toList().get(1), targetGenericsContext, merge, observer)
                         );
                     }
 
@@ -530,16 +545,16 @@ public class TypeInferenceContext
 
                             for (int i = 0; i < firstParams.size(); i++)
                             {
-                                register(firstParams.get(i)._genericType(), secondParams.get(i)._genericType(), targetGenericsContext, observer);
+                                register(firstParams.get(i)._genericType(), secondParams.get(i)._genericType(), targetGenericsContext, merge, observer);
                                 registerMul(firstParams.get(i)._multiplicity(), secondParams.get(i)._multiplicity(), targetGenericsContext, observer);
                             }
-                            register(firstFuncType._returnType(), secondFuncType._returnType(), targetGenericsContext, observer);
+                            register(firstFuncType._returnType(), secondFuncType._returnType(), targetGenericsContext, merge, observer);
                             registerMul(firstFuncType._returnMultiplicity(), secondFuncType._returnMultiplicity(), targetGenericsContext, observer);
                             observer.unShiftTab();
                         }
                         else
                         {
-                            register(first, second, targetGenericsContext, observer);
+                            register(first, second, targetGenericsContext, merge, observer);
                         }
                     }
                 }

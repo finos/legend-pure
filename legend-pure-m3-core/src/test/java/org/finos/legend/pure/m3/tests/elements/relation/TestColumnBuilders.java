@@ -166,7 +166,7 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     {
         compileTestSource("fromString.pure",
                 "native function sum(i:Integer[*]):Integer[1];" +
-                        "native function meta::pure::functions::relation::groupBy<U,V,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpec<{U[1]->V[0..1]},{V[*]->K[1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                        "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpec<{U[1]->T[0..1]},{T[*]->K[1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
                         "\n" +
                         "" +
                         "function test():Boolean[1]" +

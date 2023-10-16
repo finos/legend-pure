@@ -520,7 +520,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
         parametersValues.forEachWithIndex((instance, z) ->
         {
             TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
-            typeInferenceContext.register(paramsType.get(z)._genericType(), instance._genericType(), typeInferenceContext.getTopContext(), observer);
+            typeInferenceContext.register(paramsType.get(z)._genericType(), instance._genericType(), typeInferenceContext.getTopContext(), true, observer);
             typeInferenceContext.registerMul(paramsType.get(z)._multiplicity(), instance._multiplicity(), typeInferenceContext.getTopContext(), observer);
         });
     }
