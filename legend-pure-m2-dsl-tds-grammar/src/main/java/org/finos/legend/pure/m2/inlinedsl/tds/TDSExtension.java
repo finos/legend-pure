@@ -81,7 +81,7 @@ public class TDSExtension implements InlineDSL
         ProcessorSupport processorSupport = new M3ProcessorSupport(context, modelRepository);
         SourceInformation src = new SourceInformation(fileName, 0, 0, 0, 0);
         Class<?> tdsType = (Class<?>) processorSupport.package_getByUserPath(M2TDSPaths.TDS);
-        TDS<CoreInstance> tds = ((TDS<CoreInstance>) modelRepository.newEphemeralCoreInstance("", tdsType, src));
+        TDS<?> tds = ((TDS<?>) modelRepository.newEphemeralCoreInstance("", tdsType, src));
         GenericType tdsGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
         tdsGenericType._rawTypeCoreInstance(tdsType);
         GenericType typeParam = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);

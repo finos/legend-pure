@@ -16,12 +16,6 @@ import meta::pure::metamodel::relation::*;
 
 native function meta::pure::functions::relation::concatenate<T>(rel1:Relation<T>[1], rel2:Relation<T>[1]):Relation<T>[1];
 
-function meta::pure::functions::relation::concatenate<T>(rel1:TDS<T>[1], rel2:TDS<T>[1]):Relation<T>[1]
-{
-    $rel1->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::concatenate($rel2->cast(@meta::pure::metamodel::relation::Relation<T>));
-}
-
-
 function <<test.Test>> meta::pure::functions::relation::tests::concatenate::testSimpleConcatenate():Boolean[1]
 {
     let res = #TDS

@@ -16,11 +16,6 @@ import meta::pure::metamodel::relation::*;
 
 native function meta::pure::functions::relation::rename<T,Z,K,V>(r:Relation<T>[1], old:ColSpec<Z=(?:K)⊆T>[1], new:ColSpec<V=(?:K)>[1]):Relation<T-Z+V>[1];
 
-function meta::pure::functions::relation::rename<T,Z,K,V>(r:TDS<T>[1], old:ColSpec<Z=(?:K)⊆T>[1], new:ColSpec<V=(?:K)>[1]):Relation<T-Z+V>[1]
-{
-    $r->cast(@Relation<T>)->rename($old, $new);
-}
-
 function <<test.Test>> meta::pure::functions::relation::tests::rename::testSimpleRename():Boolean[1]
 {
     let res = #TDS

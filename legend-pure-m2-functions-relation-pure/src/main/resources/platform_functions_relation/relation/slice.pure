@@ -16,12 +16,6 @@ import meta::pure::metamodel::relation::*;
 
 native function meta::pure::functions::relation::slice<T>(rel:Relation<T>[1], start:Integer[1], stop: Integer[1]):Relation<T>[1];
 
-function meta::pure::functions::relation::slice<T>(rel:TDS<T>[1], start:Integer[1], stop: Integer[1]):Relation<T>[1]
-{
-    $rel->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::slice($start, $stop);
-}
-
-
 function <<test.Test>> meta::pure::functions::relation::tests::slice::testSimpleSlice():Boolean[1]
 {
     let res = #TDS

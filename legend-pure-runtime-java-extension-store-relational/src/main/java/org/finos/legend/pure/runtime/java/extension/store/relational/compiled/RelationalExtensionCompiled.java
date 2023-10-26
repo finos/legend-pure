@@ -20,19 +20,7 @@ import org.finos.legend.pure.m3.coreinstance.RelationalStoreCoreInstanceFactoryR
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.Native;
-import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.CreateTempTable;
-import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.CreateTempTableWithFinally;
-import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.DropTempTable;
-import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.ExecuteInDb;
-import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.FetchDbColumnsMetaData;
-import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.FetchDbImportedKeysMetaData;
-import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.FetchDbPrimaryKeysMetaData;
-import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.FetchDbSchemasMetaData;
-import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.FetchDbTablesMetaData;
-import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.LoadCsvToDbTable;
-import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.LoadValuesToDbTable;
-import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.LoadValuesToDbTableNew;
-import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.LogActivities;
+import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.*;
 
 import java.util.List;
 

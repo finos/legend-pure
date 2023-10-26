@@ -34,6 +34,7 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.shared.Shared;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.shared.TDSCoreInstance;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.shared.TestTDSInterpreted;
 import org.finos.legend.pure.runtime.java.extension.external.relation.shared.TestTDS;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
@@ -41,6 +42,7 @@ import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
+import java.util.List;
 import java.util.Stack;
 import java.util.function.Function;
 
@@ -66,51 +68,59 @@ public class Project extends Shared
 
         FixedSizeList<CoreInstance> parameters = Lists.fixedSize.with((CoreInstance) null);
 
-        int i = 0;
-        MutableList<TestTDS> allTDS = Lists.mutable.empty();
-        for (Pair<LambdaFunction<CoreInstance>, VariableContext> fInfo : funcs)
+        MutableList<TestTDSInterpreted> allRes = Lists.mutable.empty();
+        for (CoreInstance instance : values)
         {
-            Type type = ((FunctionType) fInfo.getOne()._classifierGenericType()._typeArguments().getFirst()._rawType())._returnType()._rawType();
-            TestTDS tds = new TestTDS(this.repository, processorSupport);
-            Object colRes = null;
-            DataType colResType = null;
-
-            MutableList<Object> vals = Lists.mutable.empty();
-
-            final Function<CoreInstance, Object> valExtractor = getExtractor(processorSupport, type);
-
-            for (CoreInstance instance : values)
+            parameters.set(0, ValueSpecificationBootstrap.wrapValueSpecification(instance, true, processorSupport));
+            int i = 0;
+            MutableList<TestTDS> allTDS = Lists.mutable.empty();
+            for (Pair<LambdaFunction<CoreInstance>, VariableContext> fInfo : funcs)
             {
-                parameters.set(0, ValueSpecificationBootstrap.wrapValueSpecification(instance, true, processorSupport));
+                Type type = ((FunctionType) fInfo.getOne()._classifierGenericType()._typeArguments().getFirst()._rawType())._returnType()._rawType();
+                TestTDS tds = new TestTDSInterpreted(this.repository, processorSupport);
+                Object colRes = null;
+                DataType colResType = null;
+
+                MutableList<Object> vals = Lists.mutable.empty();
+
+                final Function<CoreInstance, Object> valExtractor = getExtractor(processorSupport, type);
+
                 CoreInstance subResult = this.functionExecution.executeFunction(false, fInfo.getOne(), parameters, resolvedTypeParameters, resolvedMultiplicityParameters, fInfo.getTwo(), functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
                 subResult.getValueForMetaPropertyToMany("values").forEach(c -> vals.add(valExtractor.apply(c)));
-            }
 
-            if (type == _Package.getByUserPath("String", processorSupport))
-            {
-                colResType = DataType.STRING;
-                colRes = vals.toArray(new String[0]);
-            }
-            if (type == _Package.getByUserPath("Integer", processorSupport))
-            {
-                colResType = DataType.INT;
-                colRes = vals.stream().mapToInt(x -> (Integer) x).toArray();
-            }
-            if (type == _Package.getByUserPath("Float", processorSupport))
-            {
-                colResType = DataType.DOUBLE;
-                colRes = vals.stream().mapToDouble(x -> (Double) x).toArray();
-            }
+                if (type == _Package.getByUserPath("String", processorSupport))
+                {
+                    colResType = DataType.STRING;
+                    colRes = vals.toArray(new String[0]);
+                }
+                if (type == _Package.getByUserPath("Integer", processorSupport))
+                {
+                    colResType = DataType.INT;
+                    colRes = vals.stream().mapToInt(x -> (Integer) x).toArray();
+                }
+                if (type == _Package.getByUserPath("Float", processorSupport))
+                {
+                    colResType = DataType.DOUBLE;
+                    colRes = vals.stream().mapToDouble(x -> (Double) x).toArray();
+                }
 
-            TestTDS resTDS = tds.addColumn(names.get(i++), colResType, colRes);
-            if (vals.isEmpty())
-            {
-                resTDS = resTDS.setNull();
+                TestTDS resTDS = tds.addColumn(names.get(i++), colResType, colRes);
+                if (vals.isEmpty())
+                {
+                    resTDS = resTDS.setNull();
+                }
+                allTDS.add(resTDS);
             }
-            allTDS.add(resTDS);
+            TestTDS init = allTDS.get(0);
+            allRes.add(allTDS.drop(1).injectInto((TestTDSInterpreted) init, (a, b) -> (TestTDSInterpreted) a.join(b)));
         }
-        TestTDS init = allTDS.get(0);
-        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(allTDS.drop(0).injectInto(init, TestTDS::join), returnGenericType, repository, processorSupport), false, processorSupport);
+        TestTDSInterpreted res = allRes.get(0);
+        if (allRes.size() > 1)
+        {
+            TestTDS init = allRes.get(0);
+            res = allRes.drop(1).injectInto((TestTDSInterpreted)init, (a,b) -> (TestTDSInterpreted)a.concatenate(b));
+        }
+        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(res, returnGenericType, repository, processorSupport), false, processorSupport);
     }
 
     private static Function<CoreInstance, Object> getExtractor(ProcessorSupport processorSupport, Type type)

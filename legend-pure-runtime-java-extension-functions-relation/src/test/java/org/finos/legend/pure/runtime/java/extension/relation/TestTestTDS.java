@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.runtime.java.interpreted.function.relation;
+package org.finos.legend.pure.runtime.java.extension.relation;
 
 import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
@@ -57,7 +57,7 @@ public class TestTestTDS extends AbstractPureTestWithCoreCompiled
                 "3, Nop, E\n" +
                 "2, Neema, F\n" +
                 "1, Pierre, F";
-        TestTDS tds = new TestTDS(initialTDS, repository, processorSupport);
+        TestTDS tds = new TestTDS(initialTDS);
 
         TestTDS t = tds.sort(Lists.mutable.with(new SortInfo("id", SortDirection.ASC), new SortInfo("name", SortDirection.ASC))).getOne();
         Assert.assertEquals("id, name, otherOne\n" +
@@ -108,7 +108,7 @@ public class TestTestTDS extends AbstractPureTestWithCoreCompiled
                 "3, Nop, E\n" +
                 "2, Neema, F\n" +
                 "1, Pierre, F";
-        TestTDS tds = new TestTDS(initialTDS, repository, processorSupport);
+        TestTDS tds = new TestTDS(initialTDS);
 
         Assert.assertEquals("[0:1, 1:2, 2:3, 3:4, 4:5, 5:6, 6:8]", tds.sort(Lists.mutable.with(new SortInfo("id", SortDirection.ASC), new SortInfo("name", SortDirection.ASC))).getTwo().toString());
     }
@@ -125,7 +125,7 @@ public class TestTestTDS extends AbstractPureTestWithCoreCompiled
                 "3, Nop, E\n" +
                 "2, Neema, F\n" +
                 "1, Pierre, F";
-        TestTDS tds = new TestTDS(initialTDS, repository, processorSupport);
+        TestTDS tds = new TestTDS(initialTDS);
 
         Assert.assertEquals("id, name, otherOne\n" +
                 "1, Pierre, F\n" +
@@ -167,8 +167,8 @@ public class TestTestTDS extends AbstractPureTestWithCoreCompiled
                 "2, Pierre\n" +
                 "4, David";
 
-        TestTDS res = new TestTDS(resTDS, repository, processorSupport);
-        TestTDS left = new TestTDS(leftTDS, repository, processorSupport);
+        TestTDS res = new TestTDS(resTDS);
+        TestTDS left = new TestTDS(leftTDS);
 
         TestTDS t = left.compensateLeft(res).sort(new SortInfo("id", SortDirection.ASC)).getOne();
         Assert.assertEquals("id, id2, extra, name, extraInt\n" +
@@ -194,7 +194,7 @@ public class TestTestTDS extends AbstractPureTestWithCoreCompiled
                 "3, Nop, E\n" +
                 "2, Neema, F\n" +
                 "1, Pierre, F";
-        TestTDS tds = new TestTDS(initialTDS, repository, processorSupport);
+        TestTDS tds = new TestTDS(initialTDS);
 
         TestTDS t = tds.slice(1, 3);
         Assert.assertEquals("id, name, otherOne\n" +
@@ -218,8 +218,8 @@ public class TestTestTDS extends AbstractPureTestWithCoreCompiled
                 "2, Pierre\n" +
                 "4, David";
 
-        TestTDS res = new TestTDS(resTDS, repository, processorSupport);
-        TestTDS left = new TestTDS(leftTDS, repository, processorSupport);
+        TestTDS res = new TestTDS(resTDS);
+        TestTDS left = new TestTDS(leftTDS);
 
         TestTDS t = left.compensateLeft(res).slice(2, 4);
         Assert.assertEquals("id, id2, extra, name, extraInt\n" +
@@ -249,8 +249,8 @@ public class TestTestTDS extends AbstractPureTestWithCoreCompiled
                 "3, SimpleEE, A\n" +
                 "4, EphrimWW, C";
 
-        TestTDS tds1 = new TestTDS(initialTDS1, repository, processorSupport);
-        TestTDS tds2 = new TestTDS(initialTDS2, repository, processorSupport);
+        TestTDS tds1 = new TestTDS(initialTDS1);
+        TestTDS tds2 = new TestTDS(initialTDS2);
 
         TestTDS t = tds1.concatenate(tds2);
         Assert.assertEquals("id, name, otherOne\n" +
@@ -284,8 +284,8 @@ public class TestTestTDS extends AbstractPureTestWithCoreCompiled
                 "2, Pierre\n" +
                 "4, David";
 
-        TestTDS res = new TestTDS(resTDS, repository, processorSupport);
-        TestTDS left = new TestTDS(leftTDS, repository, processorSupport);
+        TestTDS res = new TestTDS(resTDS);
+        TestTDS left = new TestTDS(leftTDS);
 
         TestTDS t = res.concatenate(left.compensateLeft(res));
 
@@ -316,8 +316,8 @@ public class TestTestTDS extends AbstractPureTestWithCoreCompiled
                 "Y\n" +
                 "Z";
 
-        TestTDS tds1 = new TestTDS(initialTds1, repository, processorSupport);
-        TestTDS tds2 = new TestTDS(initialTds2, repository, processorSupport);
+        TestTDS tds1 = new TestTDS(initialTds1);
+        TestTDS tds2 = new TestTDS(initialTds2);
 
         TestTDS t = tds1.join(tds2);
 
@@ -351,9 +351,9 @@ public class TestTestTDS extends AbstractPureTestWithCoreCompiled
                 "1, A1\n" +
                 "3, A3";
 
-        TestTDS res = new TestTDS(initialRes, repository, processorSupport);
-        TestTDS left = new TestTDS(initialLeft, repository, processorSupport);
-        TestTDS third = new TestTDS(initialThird, repository, processorSupport);
+        TestTDS res = new TestTDS(initialRes);
+        TestTDS left = new TestTDS(initialLeft);
+        TestTDS third = new TestTDS(initialThird);
 
         TestTDS t = left.compensateLeft(res).join(third);
 
@@ -384,8 +384,8 @@ public class TestTestTDS extends AbstractPureTestWithCoreCompiled
                 "2, Pierre\n" +
                 "4, David";
 
-        TestTDS res = new TestTDS(resTDS, repository, processorSupport);
-        TestTDS left = new TestTDS(leftTDS, repository, processorSupport);
+        TestTDS res = new TestTDS(resTDS);
+        TestTDS left = new TestTDS(leftTDS);
         TestTDS t = left.compensateLeft(res);
 
         Assert.assertEquals("id, id2, extra, name, extraInt\n" +

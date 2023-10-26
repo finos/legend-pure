@@ -156,7 +156,8 @@
                                     /platform/pure/grammar/milestoning.pure,
                                     /platform/pure/routing.pure,
                                     /platform/pure/anonymousCollections.pure,
-                                    /platform/pure/relation.pure
+                                    /platform/pure/relation.pure,
+                                    /platform/pure/routing.pure
                                 </argument>
                             </arguments>
                         </configuration>

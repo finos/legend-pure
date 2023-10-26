@@ -22,13 +22,13 @@ import org.finos.legend.pure.runtime.java.extension.external.relation.shared.Tes
 
 public class TDSWithCursorCoreInstance extends SimpleCoreInstance
 {
-    private final TestTDS tds;
+    private final TestTDSInterpreted tds;
     private final int currentRow;
 
     public TDSWithCursorCoreInstance(TestTDS tds, int currentRow, String name, SourceInformation sourceInformation, CoreInstance classifier, int internalSyntheticId, ModelRepository repository, boolean persistent)
     {
         super(name, sourceInformation, classifier, internalSyntheticId, repository, persistent);
-        this.tds = tds;
+        this.tds = (TestTDSInterpreted)tds;
         this.currentRow = currentRow;
     }
 

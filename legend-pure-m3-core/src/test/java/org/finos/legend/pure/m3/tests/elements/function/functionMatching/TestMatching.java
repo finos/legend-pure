@@ -421,6 +421,28 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
         repository.validate(new VoidM4StateListener());
     }
 
+    @Test
+    public void testFunctionMatchingPrioritizeSubtypeVsGenerics() throws Exception
+    {
+        runtime.createInMemorySource("fromString.pure",
+                "Class SuperType{}\n" +
+                        "Class SubType extends SuperType{}\n" +
+                        "function theFunc(a:SuperType[1]):String[1]\n" +
+                        "{\n" +
+                        "   'aa';\n" +
+                        "}\n" +
+                        "function theFunc<K>(a:K[1]):Integer[1]\n" +
+                        "{\n" +
+                        "   1;\n" +
+                        "}\n" +
+                        "function func(a:Any[*]):Nil[0]\n" +
+                        "{\n" +
+                        "   print(theFunc(^SubType()) + 'a',2);\n" +
+                        "}");
+        runtime.compile();
+        repository.validate(new VoidM4StateListener());
+    }
+
     protected void assertFunctionExpressionFunction(CoreInstance expectedFunction, CoreInstance functionExpression)
     {
         CoreInstance func = Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.func, processorSupport);

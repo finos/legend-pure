@@ -18,8 +18,3 @@ Class meta::pure::metamodel::relation::TDS<T> extends meta::pure::metamodel::rel
 {
     csv : String[1];
 }
-
-
-//Class meta::pure::metamodel::relation::Table<T> extends meta::pure::metamodel::relation::Relation<T> // T is of RelationType kind
-//{
-//}

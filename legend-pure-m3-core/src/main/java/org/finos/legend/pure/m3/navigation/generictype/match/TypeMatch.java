@@ -62,7 +62,7 @@ abstract class TypeMatch implements Comparable<TypeMatch>
 
             if (other instanceof SimpleTypeMatch)
             {
-                return (((SimpleTypeMatch) other).typeDistance == 0) ? 1 : -1;
+                return 1;
             }
 
             return -1;
@@ -138,7 +138,7 @@ abstract class TypeMatch implements Comparable<TypeMatch>
 
             if (other == NON_CONCRETE_MATCH)
             {
-                return (this.typeDistance == 0) ? -1 : 1;
+                return -1;
             }
 
             if (!(other instanceof SimpleTypeMatch))

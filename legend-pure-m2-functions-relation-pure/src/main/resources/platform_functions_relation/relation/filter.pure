@@ -16,11 +16,6 @@ import meta::pure::metamodel::relation::*;
 
 native function meta::pure::functions::relation::filter<T>(rel:Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1];
 
-function meta::pure::functions::relation::filter<T>(rel:TDS<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1]
-{
-    $rel->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::filter($f);
-}
-
 
 function <<test.Test>> meta::pure::functions::relation::tests::filter::testSimpleFilter():Boolean[1]
 {

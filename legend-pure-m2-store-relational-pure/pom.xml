@@ -104,7 +104,8 @@
                                 <argument>RelationalStore</argument>
                                 <argument>
                                     /platform_store_relational/grammar/relational.pure,
-                                    /platform_store_relational/grammar/relationalMapping.pure
+                                    /platform_store_relational/grammar/relationalMapping.pure,
+                                    /platform_store_relational/grammar/relationAccessor.pure
                                 </argument>
                             </arguments>
                         </configuration>

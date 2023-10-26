@@ -44,12 +44,14 @@ public abstract class Shared extends NativeFunction
 
     public TestTDS getTDS(ListIterable<? extends CoreInstance> params, int position, ProcessorSupport processorSupport)
     {
-        TestTDS tds;
-        CoreInstance obj = params.get(position).getValueForMetaPropertyToOne("values");
-        return obj instanceof TDSCoreInstance ?
-                ((TDSCoreInstance) obj).getTDS() :
-                new TestTDS(readCsv((obj.getValueForMetaPropertyToOne("csv")).getName()), repository, processorSupport);
+        return getTDS(params.get(position).getValueForMetaPropertyToOne("values"), processorSupport);
+    }
 
+    public TestTDS getTDS(CoreInstance value, ProcessorSupport processorSupport)
+    {
+        return value instanceof TDSCoreInstance ?
+                ((TDSCoreInstance) value).getTDS() :
+                new TestTDSInterpreted(readCsv((value.getValueForMetaPropertyToOne("csv")).getName()), repository, processorSupport);
     }
 
     public RelationType<?> getRelationType(ListIterable<? extends CoreInstance> params, int i)
@@ -63,7 +65,7 @@ public abstract class Shared extends NativeFunction
     }
 
 
-    public CsvReader.Result readCsv(String csv)
+    public static CsvReader.Result readCsv(String csv)
     {
         try
         {

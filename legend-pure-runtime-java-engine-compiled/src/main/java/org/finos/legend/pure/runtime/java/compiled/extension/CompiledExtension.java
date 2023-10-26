@@ -15,6 +15,7 @@
 package org.finos.legend.pure.runtime.java.compiled.extension;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.block.function.Function3;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.set.SetIterable;
@@ -72,4 +73,9 @@ public interface CompiledExtension
     }
 
     String getRelatedRepository();
+
+    default Function3<CoreInstance, CoreInstance, ProcessorContext, String> getExtraFunctionGeneration()
+    {
+        return null;
+    }
 }

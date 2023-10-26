@@ -30,41 +30,42 @@ import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.set.mutable.primitive.IntHashSet;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.eclipse.collections.impl.utility.ArrayIterate;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
-import org.finos.legend.pure.m3.navigation._package._Package;
-import org.finos.legend.pure.m3.navigation.type.Type;
-import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 import java.io.ByteArrayInputStream;
 import java.lang.reflect.Array;
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Objects;
 
-import static org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap.*;
-
 public class TestTDS
 {
-    private MutableMap<String, Object> dataByColumnName = Maps.mutable.empty();
-    private MutableMap<String, Object> isNullByColumn = Maps.mutable.empty();
-    private MutableMap<String, DataType> columnType = Maps.mutable.empty();
-    private long rowCount;
-    private ModelRepository modelRepository;
-    private ProcessorSupport processorSupport;
+    protected MutableMap<String, Object> dataByColumnName = Maps.mutable.empty();
+    protected MutableMap<String, Object> isNullByColumn = Maps.mutable.empty();
+    protected MutableMap<String, DataType> columnType = Maps.mutable.empty();
+    protected long rowCount;
 
-    public TestTDS(String csv, ModelRepository modelRepository, ProcessorSupport processorSupport)
+    public TestTDS()
     {
-        this(readCsv(csv), modelRepository, processorSupport);
     }
 
-    public TestTDS(CsvReader.Result result, ModelRepository modelRepository, ProcessorSupport processorSupport)
+    public TestTDS newTDS()
+    {
+        return new TestTDS();
+    }
+
+    public TestTDS newTDS(MutableMap<String, DataType> columnType, int rows)
+    {
+        return new TestTDS(columnType, rows);
+    }
+
+    public TestTDS(String csv)
+    {
+        this(readCsv(csv));
+    }
+
+    public TestTDS(CsvReader.Result result)
     {
         this.rowCount = result.numRows();
-        this.modelRepository = modelRepository;
-        this.processorSupport = processorSupport;
+
         ArrayIterate.forEach(result.columns(), c ->
         {
             columnType.put(c.name(), c.dataType());
@@ -81,12 +82,10 @@ public class TestTDS
         });
     }
 
-    private TestTDS(MutableMap<String, DataType> columnType, int rows, ModelRepository modelRepository, ProcessorSupport processorSupport)
+    protected TestTDS(MutableMap<String, DataType> columnType, int rows)
     {
         this.columnType = columnType;
         this.rowCount = rows;
-        this.modelRepository = modelRepository;
-        this.processorSupport = processorSupport;
         this.columnType.keyValuesView().forEach(p ->
         {
             switch (p.getTwo())
@@ -127,12 +126,6 @@ public class TestTDS
                     throw new RuntimeException("ERROR " + columnType.get(p.getOne()) + " not supported in copy!");
             }
         });
-    }
-
-    public TestTDS(ModelRepository modelRepository, ProcessorSupport processorSupport)
-    {
-        this.modelRepository = modelRepository;
-        this.processorSupport = processorSupport;
     }
 
     public TestTDS setNull()
@@ -181,7 +174,7 @@ public class TestTDS
         MutableMap<String, DataType> columnTypes = Maps.mutable.empty();
         columnTypes.putAll(this.columnType);
         columnTypes.putAll(otherTDS.columnType);
-        TestTDS res = new TestTDS(columnTypes, (int) (rowCount * otherTDS.rowCount), modelRepository, processorSupport);
+        TestTDS res = newTDS(columnTypes, (int) (rowCount * otherTDS.rowCount));
 
         for (int i = 0; i < this.rowCount; i++)
         {
@@ -237,7 +230,7 @@ public class TestTDS
 
     public TestTDS copy()
     {
-        TestTDS result = new TestTDS(modelRepository, processorSupport);
+        TestTDS result = newTDS();
         result.rowCount = rowCount;
         result.columnType = Maps.mutable.withMap(columnType);
         result.dataByColumnName = Maps.mutable.empty();
@@ -369,45 +362,6 @@ public class TestTDS
         return copy;
     }
 
-    public CoreInstance getValueAsCoreInstance(String columnName, int rowNum)
-    {
-        Object dataAsObject = dataByColumnName.get(columnName);
-        boolean[] isNull = (boolean[]) isNullByColumn.get(columnName);
-        CoreInstance result;
-        switch (columnType.get(columnName))
-        {
-            case INT:
-            {
-                int[] data = (int[]) dataAsObject;
-                int value = data[rowNum];
-                result = !isNull[rowNum] ? newIntegerLiteral(modelRepository, value, processorSupport) : ValueSpecificationBootstrap.wrapValueSpecification_ResultGenericTypeIsKnown(Lists.mutable.empty(), Type.wrapGenericType(_Package.getByUserPath(M3Paths.Integer, processorSupport), processorSupport), true, processorSupport);
-                break;
-            }
-            case CHAR:
-            {
-                char[] data = (char[]) dataAsObject;
-                result = !isNull[rowNum] ? newStringLiteral(modelRepository, "" + data[rowNum], processorSupport) : ValueSpecificationBootstrap.wrapValueSpecification_ResultGenericTypeIsKnown(Lists.mutable.empty(), Type.wrapGenericType(_Package.getByUserPath(M3Paths.String, processorSupport), processorSupport), true, processorSupport);
-                break;
-            }
-            case STRING:
-            {
-                String[] data = (String[]) dataAsObject;
-                String value = data[rowNum];
-                result = value != null ? newStringLiteral(modelRepository, value, processorSupport) : ValueSpecificationBootstrap.wrapValueSpecification_ResultGenericTypeIsKnown(Lists.mutable.empty(), Type.wrapGenericType(_Package.getByUserPath(M3Paths.String, processorSupport), processorSupport), true, processorSupport);
-                break;
-            }
-            case DOUBLE:
-            {
-                double[] data = (double[]) dataAsObject;
-                result = !isNull[rowNum] ? newFloatLiteral(modelRepository, BigDecimal.valueOf(data[rowNum]), processorSupport) : ValueSpecificationBootstrap.wrapValueSpecification_ResultGenericTypeIsKnown(Lists.mutable.empty(), Type.wrapGenericType(_Package.getByUserPath(M3Paths.Float, processorSupport), processorSupport), true, processorSupport);
-                break;
-            }
-            default:
-                throw new RuntimeException("ERROR " + columnType.get(columnName) + " not supported in getValue");
-        }
-        return result;
-    }
-
     public long getRowCount()
     {
         return rowCount;
@@ -415,7 +369,7 @@ public class TestTDS
 
     public TestTDS concatenate(TestTDS tds2)
     {
-        TestTDS result = new TestTDS(modelRepository, processorSupport);
+        TestTDS result = newTDS();
         result.rowCount = this.rowCount + tds2.rowCount;
         result.columnType = Maps.mutable.withMap(columnType);
         dataByColumnName.forEachKey(columnName ->
@@ -920,7 +874,7 @@ public class TestTDS
             }
         }
 
-        TestTDS missingTDS = new TestTDS(res.columnType.clone(), missings.size(), modelRepository, processorSupport);
+        TestTDS missingTDS = newTDS(res.columnType.clone(), missings.size());
 
         int cursor = 0;
         for (Integer missing : missings)

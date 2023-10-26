@@ -268,13 +268,13 @@ public abstract class IncrementalCompiler implements SourceEventHandler
     {
         MutableSet<CoreInstance> excludes = Sets.mutable.withAll(repository.getTopLevels());
 
-        Package systemImports = (Package)processorSupport.package_getByUserPath("system::imports");
+        Package systemImports = (Package) processorSupport.package_getByUserPath("system::imports");
         for (PackageableElement impGrp : systemImports._children())
         {
             excludes.add(impGrp);
             if (impGrp instanceof ImportGroup)
             {
-                for (Import _import : ((ImportGroup)impGrp)._imports())
+                for (Import _import : ((ImportGroup) impGrp)._imports())
                 {
                     CoreInstance pkg = Imports.getImportPackage(_import, processorSupport);
                     if (pkg != null)
@@ -345,7 +345,7 @@ public abstract class IncrementalCompiler implements SourceEventHandler
 
     void cleanUpImportGroups(String sourceId)
     {
-        Package imports = (Package)this.processorSupport.package_getByUserPath("system::imports");
+        Package imports = (Package) this.processorSupport.package_getByUserPath("system::imports");
         MutableList<? extends PackageableElement> newImportGroups = imports._children().reject(ig -> Imports.isImportGroupForSource(ig, sourceId), Lists.mutable.empty());
         imports._children(newImportGroups);
     }

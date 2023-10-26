@@ -16,11 +16,6 @@ import meta::pure::metamodel::relation::*;
 
 native function meta::pure::functions::relation::distinct<X,T>(rel:Relation<T>[1], columns:ColSpecArray<X⊆T>[1]):Relation<T>[1];
 
-function meta::pure::functions::relation::distinct<X,T>(rel:TDS<T>[1], columns:ColSpecArray<X⊆T>[1]):Relation<T>[1]
-{
-    $rel->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::distinct($columns);
-}
-
 function <<test.Test>> meta::pure::functions::relation::tests::distinct::testSimpleDistinct():Boolean[1]
 {
     let res = #TDS

@@ -35,6 +35,7 @@ import org.finos.legend.pure.runtime.java.extension.functions.interpreted.native
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Drop;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Exists;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.ForAll;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Find;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.Get;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.GroupBy;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection.IndexOf;
@@ -163,6 +164,7 @@ public class FunctionExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("drop_T_MANY__Integer_1__T_MANY_", Drop::new),
                 Tuples.pair("exists_T_MANY__Function_1__Boolean_1_", Exists::new),
                 Tuples.pair("forAll_T_MANY__Function_1__Boolean_1_", ForAll::new),
+                Tuples.pair("find_T_MANY__Function_1__T_$0_1$_", Find::new),
                 Tuples.pair("get_T_MANY__String_1__T_$0_1$_", Get::new),
                 Tuples.pair("groupBy_X_MANY__Function_1__Map_1_", GroupBy::new),
                 Tuples.pair("indexOf_T_MANY__T_1__Integer_1_", IndexOf::new),

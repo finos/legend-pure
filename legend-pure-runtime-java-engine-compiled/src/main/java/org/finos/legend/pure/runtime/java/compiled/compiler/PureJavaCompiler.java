@@ -20,19 +20,15 @@ import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.Log;
 
+import javax.lang.model.SourceVersion;
+import javax.tools.*;
+import javax.tools.JavaCompiler.CompilationTask;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.jar.JarOutputStream;
-import javax.lang.model.SourceVersion;
-import javax.tools.DiagnosticCollector;
-import javax.tools.JavaCompiler;
-import javax.tools.JavaCompiler.CompilationTask;
-import javax.tools.JavaFileManager;
-import javax.tools.JavaFileObject;
-import javax.tools.ToolProvider;
 
 public class PureJavaCompiler
 {

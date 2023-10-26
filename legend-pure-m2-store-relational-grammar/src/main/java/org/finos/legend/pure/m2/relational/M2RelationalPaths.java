@@ -45,6 +45,7 @@ public class M2RelationalPaths
     public static final String UnaryOperation = "meta::relational::metamodel::operation::UnaryOperation";
     public static final String View = "meta::relational::metamodel::relation::View";
     public static final String Relation = "meta::relational::metamodel::relation::Relation";
+    public static final String RelationDatabaseAccessor = "meta::relational::metamodel::RelationDatabaseAccessor";
     public static final String NamedRelation = "meta::relational::metamodel::relation::NamedRelation";
     public static final String RelationalMappingSpecification = "meta::relational::metamodel::RelationalMappingSpecification";
     public static final String SQLNull = "meta::relational::metamodel::SQLNull";

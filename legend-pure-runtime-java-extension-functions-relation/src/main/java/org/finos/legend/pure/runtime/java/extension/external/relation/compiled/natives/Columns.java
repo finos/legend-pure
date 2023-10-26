@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.runtime.java.interpreted.function.relation;
+package org.finos.legend.pure.runtime.java.extension.external.relation.compiled.natives;
 
-import junit.framework.Test;
-import org.finos.legend.pure.runtime.java.interpreted.testHelper.PureTestBuilderInterpreted;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Relation;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
 
-public class TestRelationFunctions
+public class Columns extends AbstractNativeFunctionGeneric
 {
-    public static Test suite()
+    public Columns()
     {
-        return PureTestBuilderInterpreted.buildSuite("meta::pure::functions::relation");
+        super("org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.columns", new Class[]{Relation.class}, "columns_Relation_1__Column_MANY_");
     }
 }

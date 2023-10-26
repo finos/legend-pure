@@ -37,11 +37,6 @@ function meta::pure::functions::relation::ascending<T> (column:ColSpec<T>[1]):So
 
 native function meta::pure::functions::relation::sort<X,T>(rel:Relation<T>[1], sortInfo:SortInfo<X⊆T>[*]):Relation<T>[1];
 
-function meta::pure::functions::relation::sort<X,T>(rel:TDS<T>[1], sortInfo:SortInfo<X⊆T>[*]):Relation<T>[1]
-{
-    $rel->cast(@meta::pure::metamodel::relation::Relation<T>)->meta::pure::functions::relation::sort($sortInfo);
-}
-
 
 function <<test.Test>> meta::pure::functions::relation::tests::sort::testSimpleSort():Boolean[1]
 {
