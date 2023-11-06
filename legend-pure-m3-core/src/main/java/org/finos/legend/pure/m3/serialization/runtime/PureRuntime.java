@@ -617,6 +617,42 @@ public class PureRuntime
         return report;
     }
 
+    public UpdateReport update(String path, String version)
+    {
+        MutableRepositoryCodeStorage codeStorage = getCodeStorage();
+        UpdateReport report = new UpdateReport();
+        ((MutableVersionControlledCodeStorage) this.getCodeStorage()).update(report, path, version);
+        if (!report.isEmpty())
+        {
+            try
+            {
+                for (String updated : LazyIterate.concatenate(report.getModified(), report.getAdded(), report.getReplaced()))
+                {
+                    loadOrRefreshPureFileContent(codeStorage, updated);
+                }
+                for (String deleted : report.getDeleted())
+                {
+                    delete(deleted, true);
+                }
+            }
+            catch (RuntimeException e)
+            {
+                // An error occurred while updating state, so we probably have a corrupt state.  Best to reset.
+                reset();
+                throw e;
+            }
+            finally
+            {
+                this.cache.deleteCache();
+                if (this.executedTestTracker != null)
+                {
+                    this.executedTestTracker.invalidate();
+                }
+            }
+        }
+        return report;
+    }
+
     public void commit(ListIterable<String> paths, String message)
     {
         ((MutableVersionControlledCodeStorage) this.getCodeStorage()).commit(paths, message);
