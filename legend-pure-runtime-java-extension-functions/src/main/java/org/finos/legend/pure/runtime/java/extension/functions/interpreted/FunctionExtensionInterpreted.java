@@ -131,6 +131,8 @@ import org.finos.legend.pure.runtime.java.extension.functions.interpreted.native
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.EncodeUrl;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.EndsWith;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.IndexOfString;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.JaroWinklerSimilarity;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.LevenshteinDistance;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.LTrim;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.Matches;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.string.ParsePrimitiveBoolean;
@@ -286,6 +288,8 @@ public class FunctionExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("endsWith_String_1__String_1__Boolean_1_", EndsWith::new),
                 Tuples.pair("indexOf_String_1__String_1__Integer_1_", IndexOfString::new),
                 Tuples.pair("indexOf_String_1__String_1__Integer_1__Integer_1_", IndexOfString::new),
+                Tuples.pair("jaroWinklerSimilarity_String_1__String_1__Float_1_", JaroWinklerSimilarity::new),
+                Tuples.pair("levenshteinDistance_String_1__String_1__Integer_1_", LevenshteinDistance::new),
                 Tuples.pair("ltrim_String_1__String_1_", LTrim::new),
                 Tuples.pair("matches_String_1__String_1__Boolean_1_", Matches::new),
                 Tuples.pair("parseBoolean_String_1__Boolean_1_", ParsePrimitiveBoolean::new),
