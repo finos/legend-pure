@@ -1441,6 +1441,16 @@ public class CompiledSupport
         return left.doubleValue() <= right.doubleValue();
     }
 
+    public static Long indexOf(String str, String toFind)
+    {
+        return (long) str.indexOf(toFind);
+    }
+
+    public static Long indexOf(String str, String toFind, Number from)
+    {
+        return (long) str.indexOf(toFind, from.intValue());
+    }
+
     public static String substring(String str, Number start)
     {
         return str.substring(start.intValue());

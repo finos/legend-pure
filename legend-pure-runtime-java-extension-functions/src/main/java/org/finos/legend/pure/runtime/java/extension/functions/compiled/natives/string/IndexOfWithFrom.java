@@ -15,11 +15,12 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
-public class Char extends AbstractNativeFunctionGeneric
+public class IndexOfWithFrom extends AbstractNativeFunctionGeneric
 {
-    public Char()
+    public IndexOfWithFrom()
     {
-        super("FunctionsGen.character", new Class[]{Number.class}, "char_Integer_1__String_1_");
+        super(getMethod(CompiledSupport.class, "indexOf", String.class, String.class, Number.class), "indexOf_String_1__String_1__Integer_1__Integer_1_");
     }
 }

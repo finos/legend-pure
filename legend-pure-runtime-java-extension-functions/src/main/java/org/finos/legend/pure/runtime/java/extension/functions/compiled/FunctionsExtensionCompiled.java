@@ -557,6 +557,7 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                 new EncodeUrl(),
                 new EndsWith(),
                 new org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.IndexOf(),
+                new org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.IndexOfWithFrom(),
                 new JaroWinklerSimilarity(),
                 new LevenshteinDistance(),
                 new LTrim(),
