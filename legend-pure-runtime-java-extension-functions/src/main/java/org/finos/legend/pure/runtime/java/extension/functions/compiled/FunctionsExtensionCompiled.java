@@ -134,8 +134,6 @@ import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.s
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.EncodeBase64;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.EncodeUrl;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.EndsWith;
-import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.JaroWinklerSimilarity;
-import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.LevenshteinDistance;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.LTrim;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.Matches;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.ParseBoolean;
@@ -558,8 +556,6 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                 new EndsWith(),
                 new org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.IndexOf(),
                 new org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.string.IndexOfWithFrom(),
-                new JaroWinklerSimilarity(),
-                new LevenshteinDistance(),
                 new LTrim(),
                 new Matches(),
                 new ParseBoolean(),
