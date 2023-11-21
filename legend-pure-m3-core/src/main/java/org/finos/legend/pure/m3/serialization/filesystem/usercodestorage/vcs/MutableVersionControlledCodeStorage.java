@@ -43,6 +43,10 @@ public interface MutableVersionControlledCodeStorage extends VersionControlledCo
 
     void commit(ListIterable<String> paths, String message);
 
+    void commit(ListIterable<String> paths, String message, String userName, String email);
+
+    void rollback();
+
     InputStream getBase(String path);
 
     InputStream getConflictOld(String path);

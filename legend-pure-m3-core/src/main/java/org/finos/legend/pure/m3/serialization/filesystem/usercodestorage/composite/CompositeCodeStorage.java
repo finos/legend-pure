@@ -555,6 +555,85 @@ public class CompositeCodeStorage implements MutableVersionControlledCodeStorage
     }
 
     @Override
+    public void commit(ListIterable<String> paths, String message, String userName, String email)
+    {
+        if (paths.isEmpty())
+        {
+            return;
+        }
+
+        MutableVersionControlledCodeStorage codeStorage = null;
+        for (String path : paths)
+        {
+            if (path == null)
+            {
+                throw new PureCodeStorageException("Some of the paths provided for commit were found to be null");
+            }
+            RepositoryCodeStorage pathCodeStorage = getCodeStorage(path);
+            if (!(pathCodeStorage instanceof MutableVersionControlledCodeStorage))
+            {
+                throw new PureCodeStorageException("Cannot commit " + paths);
+            }
+            if (codeStorage == null)
+            {
+                codeStorage = (MutableVersionControlledCodeStorage) pathCodeStorage;
+            }
+            else if (codeStorage != pathCodeStorage)
+            {
+                throw new PureCodeStorageException("Cannot commit " + paths);
+            }
+        }
+        if (codeStorage == null)
+        {
+            throw new PureCodeStorageException("Cannot commit " + paths);
+        }
+        codeStorage.commit(paths, message, userName, email);
+    }
+
+    @Override
+    public void rollback()
+    {
+        MutableList<Exception> exceptions = Lists.mutable.empty();
+        for (RepositoryCodeStorage codeStorage : this.codeStorages)
+        {
+            if (codeStorage instanceof MutableVersionControlledCodeStorage)
+            {
+                try
+                {
+                    ((MutableVersionControlledCodeStorage) codeStorage).rollback();
+                }
+                catch (Exception e)
+                {
+                    exceptions.add(e);
+                }
+            }
+        }
+        if (exceptions.size() == 1)
+        {
+            Exception e = exceptions.get(0);
+            if (e instanceof PureCodeStorageException)
+            {
+                throw (PureCodeStorageException) e;
+            }
+            throw new PureCodeStorageException("Error performing rollback", e);
+        }
+        if (exceptions.size() > 1)
+        {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            pw.println("Multiple errors occurred during rollback:");
+            for (Exception e : exceptions)
+            {
+                pw.println("------");
+                e.printStackTrace(pw);
+            }
+            pw.println("------");
+            pw.flush();
+            throw new PureCodeStorageException(sw.toString());
+        }
+    }
+
+    @Override
     public void cleanup()
     {
         MutableList<Exception> exceptions = Lists.mutable.empty();
