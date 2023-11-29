@@ -24,7 +24,7 @@ import org.finos.legend.pure.m3.generator.par.PureJarGenerator;
 import java.io.File;
 import java.util.Set;
 
-@Mojo(name = "build-pure-jar")
+@Mojo(name = "build-pure-jar", threadSafe = true)
 public class PureJarMojo extends AbstractMojo
 {
     @Parameter

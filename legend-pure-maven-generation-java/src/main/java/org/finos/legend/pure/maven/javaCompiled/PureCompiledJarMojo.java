@@ -34,7 +34,7 @@ import java.util.Set;
 
 import static org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.JavaCodeGeneration.durationSinceInSeconds;
 
-@Mojo(name = "build-pure-compiled-jar")
+@Mojo(name = "build-pure-compiled-jar", threadSafe = true)
 public class PureCompiledJarMojo extends AbstractMojo
 {
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
