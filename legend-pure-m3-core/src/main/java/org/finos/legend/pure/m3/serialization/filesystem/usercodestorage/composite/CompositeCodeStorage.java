@@ -727,6 +727,35 @@ public class CompositeCodeStorage implements MutableVersionControlledCodeStorage
     }
 
     @Override
+    public void update(UpdateReport report, String version)
+    {
+        for (RepositoryCodeStorage codeStorage : this.codeStorages)
+        {
+            if (codeStorage instanceof MutableVersionControlledCodeStorage)
+            {
+                ((MutableVersionControlledCodeStorage) codeStorage).update(report, version);
+            }
+        }
+    }
+
+    @Override
+    public void update(UpdateReport report, String path, String version)
+    {
+        if (StringIterate.isEmpty(path) || CodeStorageTools.isRootPath(path))
+        {
+            update(report, version);
+        }
+        else
+        {
+            RepositoryCodeStorage codeStorage = getCodeStorage(path);
+            if (codeStorage instanceof MutableVersionControlledCodeStorage)
+            {
+                ((MutableVersionControlledCodeStorage) codeStorage).update(report, path, version);
+            }
+        }
+    }
+
+    @Override
     public void update(UpdateReport report, long version)
     {
         for (RepositoryCodeStorage codeStorage : this.codeStorages)
