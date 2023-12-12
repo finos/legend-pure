@@ -29,13 +29,8 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.factory.primitive.IntLists;
 import org.eclipse.collections.impl.factory.primitive.ObjectIntMaps;
 import org.eclipse.collections.impl.utility.Iterate;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
+import org.finos.legend.pure.m3.navigation.*;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.imports.Imports;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.type.Type;
@@ -113,19 +108,19 @@ public class BinaryModelSourceSerializer
         this.serializerLibrary = ExternalReferenceSerializerLibrary.newLibrary(parserLibrary);
 
         this.booleanType = processorSupport.package_getByUserPath(M3Paths.Boolean);
-        this.dateType =  processorSupport.package_getByUserPath(M3Paths.Date);
-        this.strictDateType =  processorSupport.package_getByUserPath(M3Paths.StrictDate);
-        this.dateTimeType =  processorSupport.package_getByUserPath(M3Paths.DateTime);
-        this.latestDateType =  processorSupport.package_getByUserPath(M3Paths.LatestDate);
-        this.floatType =  processorSupport.package_getByUserPath(M3Paths.Float);
+        this.dateType = processorSupport.package_getByUserPath(M3Paths.Date);
+        this.strictDateType = processorSupport.package_getByUserPath(M3Paths.StrictDate);
+        this.dateTimeType = processorSupport.package_getByUserPath(M3Paths.DateTime);
+        this.latestDateType = processorSupport.package_getByUserPath(M3Paths.LatestDate);
+        this.floatType = processorSupport.package_getByUserPath(M3Paths.Float);
         this.decimalType = processorSupport.package_getByUserPath(M3Paths.Decimal);
-        this.integerType =  processorSupport.package_getByUserPath(M3Paths.Integer);
-        this.stringType =  processorSupport.package_getByUserPath(M3Paths.String);
-        this.packageClass =  processorSupport.package_getByUserPath(M3Paths.Package);
-        this.packageableElementClass =  processorSupport.package_getByUserPath(M3Paths.PackageableElement);
-        this.importStubClass =  processorSupport.package_getByUserPath(M3Paths.ImportStub);
-        this.propertyStubClass =  processorSupport.package_getByUserPath(M3Paths.PropertyStub);
-        this.enumStubClass =  processorSupport.package_getByUserPath(M3Paths.EnumStub);
+        this.integerType = processorSupport.package_getByUserPath(M3Paths.Integer);
+        this.stringType = processorSupport.package_getByUserPath(M3Paths.String);
+        this.packageClass = processorSupport.package_getByUserPath(M3Paths.Package);
+        this.packageableElementClass = processorSupport.package_getByUserPath(M3Paths.PackageableElement);
+        this.importStubClass = processorSupport.package_getByUserPath(M3Paths.ImportStub);
+        this.propertyStubClass = processorSupport.package_getByUserPath(M3Paths.PropertyStub);
+        this.enumStubClass = processorSupport.package_getByUserPath(M3Paths.EnumStub);
         this.enumerationClass = processorSupport.package_getByUserPath(M3Paths.Enumeration);
     }
 
@@ -549,7 +544,7 @@ public class BinaryModelSourceSerializer
         {
             if (isImportStub(referenceInstance))
             {
-                ImportStub.processImportStub((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub)referenceInstance, this.repository, this.processorSupport);
+                ImportStub.processImportStub((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub) referenceInstance, this.repository, this.processorSupport);
             }
             else if (isPropertyStub(referenceInstance))
             {

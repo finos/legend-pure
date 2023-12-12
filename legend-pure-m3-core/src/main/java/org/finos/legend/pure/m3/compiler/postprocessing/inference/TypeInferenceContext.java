@@ -383,10 +383,8 @@ public class TypeInferenceContext
                         GenericType res;
                         if (_RelationType.canConcatenate(existing.getParameterValue(), genericTypeCopy, processorSupport))
                         {
-                            RelationType relationType = (RelationType<?>) processorSupport.newCoreInstance("", M3Paths.RelationType, existing.getParameterValue().getValueForMetaPropertyToOne("rawType").getSourceInformation());
-                            res = (GenericType) processorSupport.newGenericType(null, relationType, true);
-                            res._rawType(relationType);
-                            relationType._columns(columns1.zip(columns2).collect(c ->
+                            res = (GenericType) processorSupport.newGenericType(null, existing.getParameterValue(), true);
+                            res._rawType(_RelationType.build(columns1.zip(columns2).collect(c ->
                             {
                                 boolean wildcard = c.getOne()._nameWildCard() && c.getTwo()._nameWildCard();
                                 if (!c.getOne()._nameWildCard() && !c.getTwo()._nameWildCard())
@@ -402,7 +400,7 @@ public class TypeInferenceContext
                                 GenericType b = _Column.getColumnType(c.getTwo());
                                 GenericType merged = a._rawType() == null && b._rawType() == null ? a : (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(Lists.mutable.with(a, b), TypeParameter.isCovariant(templateGenType), false, genericType.getSourceInformation(), this.processorSupport);
                                 return _Column.getColumnInstance(cName, wildcard, res, merged, null, processorSupport);
-                            }));
+                            }), existing.getParameterValue().getValueForMetaPropertyToOne("rawType").getSourceInformation(), processorSupport));
                         }
                         else
                         {
@@ -464,10 +462,10 @@ public class TypeInferenceContext
                     }
 //                    else
 //                    {
-                        // 'Merge' means that we are looping through function parameters after parameter inference is true. In this case finding multiple values means that we have to take the most common type!
-                        // It is the case for if<T|m>(test:Boolean[1], valid:Function<{->T[m]}>[1], invalid:Function<{->T[m]}>[1]):T[m];
-                        // When we find multiple values for T (one is a type Parameter (K) and the other one is concrete), we should return Any after a merge..
-                        // We are not currently doing it, but it should eventually be fixed here
+                    // 'Merge' means that we are looping through function parameters after parameter inference is true. In this case finding multiple values means that we have to take the most common type!
+                    // It is the case for if<T|m>(test:Boolean[1], valid:Function<{->T[m]}>[1], invalid:Function<{->T[m]}>[1]):T[m];
+                    // When we find multiple values for T (one is a type Parameter (K) and the other one is concrete), we should return Any after a merge..
+                    // We are not currently doing it, but it should eventually be fixed here
 //                    }
                 }
                 else
@@ -481,7 +479,7 @@ public class TypeInferenceContext
                 observer.register(templateGenType, genericTypeCopy, this, targetGenericsContext);
 
                 observer.shiftTab();
-                forwards.forEach(request -> request.context.register((GenericType) request.template, (GenericType) request.value, targetGenericsContext, merge,observer));
+                forwards.forEach(request -> request.context.register((GenericType) request.template, (GenericType) request.value, targetGenericsContext, merge, observer));
                 observer.unShiftTab();
             }
 

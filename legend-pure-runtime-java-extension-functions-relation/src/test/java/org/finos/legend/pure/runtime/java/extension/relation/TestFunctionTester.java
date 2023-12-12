@@ -44,124 +44,123 @@ public class TestFunctionTester extends PureExpressionTest
     public void testFunction()
     {
         compileTestSource("fromString.pure",
-                        "function test():Any[*]\n" +
-                        "{ " +
-                        "    let tds = #TDS\n" +
-                                "              id, name\n" +
-                                "              1, George\n" +
-                                "              2, Pierre\n" +
-                                "              3, Sachin\n" +
-                                "              4, David\n" +
-                                "            #;\n" +
-                                "\n" +
-                                "  print(" +
-                                "       $tds->map(x|$x.id->toOne()->toString() + '  eeee   ' + $x.name->toOne()->toString())->joinStrings('\\n')" +
-                                "   ,2);" +
-                        "}\n");
+                                "function test():Any[*]\n" +
+                                        "{" +
+                                        "print(#TDS\n" +
+                                "                  value, str\n" +
+                                "                  1, a\n" +
+                                "                  3, ewe\n" +
+                                "                  4, qw\n" +
+                                "                #\n" +
+                                "                ->filter\n" +
+                                "                (\n" +
+                                "                  x|$x.value == 1" +
+                                        "        )->toString(),1);\n" +
+                                "}");
         this.execute("test():Any[*]");
         runtime.delete("fromString.pure");
 
-        //--------------------------------------------------------------------
-
-        compileTestSource("fromString.pure",
-                "function test():Any[*]\n" +
-                        "{ " +
-                        "    let tds = #TDS\n" +
-                        "              id, name\n" +
-                        "              1, George\n" +
-                        "              2, Pierre\n" +
-                        "              3, Sachin\n" +
-                        "              4, David\n" +
-                        "            #;\n" +
-                        "\n" +
-                        "  print(" +
-                        "       $tds->limit(2)->size()" +
-                        "   ,2);" +
-                        "}\n");
-        this.execute("test():Any[*]");
-        runtime.delete("fromString.pure");
-
-        //--------------------------------------------------------------------
-
-        compileTestSource("fromString.pure",
-                "function test():Any[*]\n" +
-                        "{ " +
-                        "    let tds = #TDS\n" +
-                        "              id, name\n" +
-                        "              1, George\n" +
-                        "              2, Pierre\n" +
-                        "              3, Sachin\n" +
-                        "              4, David\n" +
-                        "            #;\n" +
-                        "\n" +
-                        "  print(" +
-                        "       $tds->drop(3)->size()" +
-                        "   ,2);" +
-                        "}\n");
-        this.execute("test():Any[*]");
-        runtime.delete("fromString.pure");
-
-        //--------------------------------------------------------------------
-
-        compileTestSource("fromString.pure",
-                "function test():Any[*]\n" +
-                        "{ " +
-                        "    let tds = #TDS\n" +
-                        "              id, name\n" +
-                        "              1, George\n" +
-                        "              2, Pierre\n" +
-                        "              3, Sachin\n" +
-                        "              4, David\n" +
-                        "            #;\n" +
-                        "\n" +
-                        "  print(" +
-                        "       $tds->rename(~id,~newId)" +
-                        "   ,2);" +
-                        "}\n");
-        this.execute("test():Any[*]");
-        runtime.delete("fromString.pure");
-
-        //--------------------------------------------------------------------
-
-        compileTestSource("fromString.pure",
-                "function test():Any[*]\n" +
-                        "{ " +
-                        "    let tds = #TDS\n" +
-                        "              id, name\n" +
-                        "              1, George\n" +
-                        "              2, Pierre\n" +
-                        "              3, Sachin\n" +
-                        "              4, David\n" +
-                        "            #;\n" +
-                        "\n" +
-                        "  print(" +
-                        "       $tds->concatenate($tds)->size()" +
-                        "   ,2);" +
-                        "}\n");
-        this.execute("test():Any[*]");
-        runtime.delete("fromString.pure");
-
-
-        //--------------------------------------------------------------------
-
-        compileTestSource("fromString.pure",
-                "function test():Any[*]\n" +
-                        "{ " +
-                        "    let tds = #TDS\n" +
-                        "              id, name\n" +
-                        "              1, George\n" +
-                        "              2, Pierre\n" +
-                        "              3, Sachin\n" +
-                        "              4, David\n" +
-                        "            #;\n" +
-                        "\n" +
-                        "  print(" +
-                        "       $tds->filter(x | $x.id > 2)->size()" +
-                        "   ,2);" +
-                        "}\n");
-        this.execute("test():Any[*]");
-        runtime.delete("fromString.pure");
-
-        //--------------------------------------------------------------------
+//        //--------------------------------------------------------------------
+//
+//        compileTestSource("fromString.pure",
+//                "function test():Any[*]\n" +
+//                        "{ " +
+//                        "    let tds = #TDS\n" +
+//                        "              id, name\n" +
+//                        "              1, George\n" +
+//                        "              2, Pierre\n" +
+//                        "              3, Sachin\n" +
+//                        "              4, David\n" +
+//                        "            #;\n" +
+//                        "\n" +
+//                        "  print(" +
+//                        "       $tds->limit(2)->size()" +
+//                        "   ,2);" +
+//                        "}\n");
+//        this.execute("test():Any[*]");
+//        runtime.delete("fromString.pure");
+//
+//        //--------------------------------------------------------------------
+//
+//        compileTestSource("fromString.pure",
+//                "function test():Any[*]\n" +
+//                        "{ " +
+//                        "    let tds = #TDS\n" +
+//                        "              id, name\n" +
+//                        "              1, George\n" +
+//                        "              2, Pierre\n" +
+//                        "              3, Sachin\n" +
+//                        "              4, David\n" +
+//                        "            #;\n" +
+//                        "\n" +
+//                        "  print(" +
+//                        "       $tds->drop(3)->size()" +
+//                        "   ,2);" +
+//                        "}\n");
+//        this.execute("test():Any[*]");
+//        runtime.delete("fromString.pure");
+//
+//        //--------------------------------------------------------------------
+//
+//        compileTestSource("fromString.pure",
+//                "function test():Any[*]\n" +
+//                        "{ " +
+//                        "    let tds = #TDS\n" +
+//                        "              id, name\n" +
+//                        "              1, George\n" +
+//                        "              2, Pierre\n" +
+//                        "              3, Sachin\n" +
+//                        "              4, David\n" +
+//                        "            #;\n" +
+//                        "\n" +
+//                        "  print(" +
+//                        "       $tds->rename(~id,~newId)" +
+//                        "   ,2);" +
+//                        "}\n");
+//        this.execute("test():Any[*]");
+//        runtime.delete("fromString.pure");
+//
+//        //--------------------------------------------------------------------
+//
+//        compileTestSource("fromString.pure",
+//                "function test():Any[*]\n" +
+//                        "{ " +
+//                        "    let tds = #TDS\n" +
+//                        "              id, name\n" +
+//                        "              1, George\n" +
+//                        "              2, Pierre\n" +
+//                        "              3, Sachin\n" +
+//                        "              4, David\n" +
+//                        "            #;\n" +
+//                        "\n" +
+//                        "  print(" +
+//                        "       $tds->concatenate($tds)->size()" +
+//                        "   ,2);" +
+//                        "}\n");
+//        this.execute("test():Any[*]");
+//        runtime.delete("fromString.pure");
+//
+//
+//        //--------------------------------------------------------------------
+//
+//        compileTestSource("fromString.pure",
+//                "function test():Any[*]\n" +
+//                        "{ " +
+//                        "    let tds = #TDS\n" +
+//                        "              id, name\n" +
+//                        "              1, George\n" +
+//                        "              2, Pierre\n" +
+//                        "              3, Sachin\n" +
+//                        "              4, David\n" +
+//                        "            #;\n" +
+//                        "\n" +
+//                        "  print(" +
+//                        "       $tds->filter(x | $x.id > 2)->size()" +
+//                        "   ,2);" +
+//                        "}\n");
+//        this.execute("test():Any[*]");
+//        runtime.delete("fromString.pure");
+//
+//        //--------------------------------------------------------------------
     }
 }

@@ -59,14 +59,17 @@ public class _RelationType
         return (Function<?>) col;
     }
 
-    public static RelationType<?> build(GenericType parent, MutableList<CoreInstance> cols, SourceInformation pureSourceInformation, ProcessorSupport processorSupport)
+    public static RelationType<?> build(MutableList<CoreInstance> cols, SourceInformation pureSourceInformation, ProcessorSupport processorSupport)
     {
         RelationType<?> newRelationType = (RelationType<?>) processorSupport.newAnonymousCoreInstance(pureSourceInformation, M3Paths.RelationType);
+        GenericType source = (GenericType) processorSupport.type_wrapGenericType(newRelationType);
+
+        cols.forEach(c -> _Column.updateSource((Column<?, ?>) c, source));
 
         // Ensure T is set to parent
         GenericType classifierGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(pureSourceInformation, M3Paths.GenericType);
         classifierGenericType._rawType((Type) _Package.getByUserPath(M3Paths.RelationType, processorSupport));
-        classifierGenericType._typeArgumentsAdd(parent);
+        classifierGenericType._typeArgumentsAdd(source);
         newRelationType._classifierGenericType(classifierGenericType);
 
         // SubType of Any

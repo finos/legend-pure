@@ -436,7 +436,7 @@ abstract class TypeMatch implements Comparable<TypeMatch>
         }
     }
 
-    private static TypeMatch newRelationTypeMatch(RelationType<?> candidate, RelationType<?> signature, boolean covariant, NullMatchBehavior valueNullMatchBehavior, ParameterMatchBehavior targetParameterMatchBehavior, ParameterMatchBehavior valueParameterMatchBehavior, ProcessorSupport processorSupport)
+    private static TypeMatch newRelationTypeMatch(RelationType candidate, RelationType signature, boolean covariant, NullMatchBehavior valueNullMatchBehavior, ParameterMatchBehavior targetParameterMatchBehavior, ParameterMatchBehavior valueParameterMatchBehavior, ProcessorSupport processorSupport)
     {
 
         if (_RelationType.equalRelationType(candidate, signature, processorSupport))

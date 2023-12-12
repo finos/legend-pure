@@ -16,23 +16,34 @@ import meta::pure::metamodel::relation::*;
 
 native function meta::pure::functions::relation::concatenate<T>(rel1:Relation<T>[1], rel2:Relation<T>[1]):Relation<T>[1];
 
-function <<test.Test>> meta::pure::functions::relation::tests::concatenate::testSimpleConcatenate():Boolean[1]
+function <<RelationProfile.test>> meta::pure::functions::relation::tests::concatenate::testSimpleConcatenateShared<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
 {
-    let res = #TDS
-                value, str
-                1, a
-                3, ewe
-                4, qw
-              #
-              ->concatenate
-              (
+    let expr = {
+               | #TDS
+                  value, str
+                  1, a
+                  3, ewe
+                  4, qw
+                #
+                ->concatenate
+                (
                   #TDS
                     value, str
                     5, qwea
                     6, eeewe
                     7, qqwew
-                  #
-              );
-    assertEquals(6, $res->size());
-    assertEquals('134567', $res->map(c|$c.value->toOne()->toString())->joinStrings(''));
+                  #);
+              };
+
+    let res =  $f->eval($expr)->cast(@Relation<(value:Integer, str:String)>)->toOne();
+
+    assertEquals( '#TDS\n'+
+                  '   value,str\n'+
+                  '   1,a\n'+
+                  '   3,ewe\n'+
+                  '   4,qw\n'+
+                  '   5,qwea\n'+
+                  '   6,eeewe\n'+
+                  '   7,qqwew\n'+
+                  '#', $res->toString());
 }

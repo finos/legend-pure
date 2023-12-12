@@ -16,13 +16,26 @@ package org.finos.legend.pure.runtime.java.extension.external.relation.compiled.
 
 import io.deephaven.csv.parsers.DataType;
 import io.deephaven.csv.reading.CsvReader;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.finos.legend.pure.m2.inlinedsl.tds.M2TDSPaths;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation._package._Package;
+import org.finos.legend.pure.m3.navigation.relation._Column;
+import org.finos.legend.pure.m3.navigation.relation._RelationType;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.extension.external.relation.shared.TestTDS;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 
 public class TestTDSCompiled extends TestTDS
 {
+    private CoreInstance classifierGenericType;
+
     public TestTDSCompiled()
     {
         super();
@@ -33,21 +46,30 @@ public class TestTDSCompiled extends TestTDS
         super(result);
     }
 
-    public TestTDSCompiled(MutableMap<String, DataType> columnType, int rows)
+    public TestTDSCompiled(MutableList<String> columnOrdered, MutableMap<String, DataType> columnType, int rows)
     {
-        super(columnType, rows);
+        super(columnOrdered, columnType, rows);
+        System.out.println(this.hashCode() + " ->XXXX<- " + classifierGenericType);
+    }
+
+    public TestTDSCompiled(CsvReader.Result result, CoreInstance classifierGenericType)
+    {
+        super(result);
+        System.out.println(this.hashCode() + " XXXX " + classifierGenericType);
+        this.classifierGenericType = classifierGenericType;
     }
 
     @Override
     public TestTDS newTDS()
     {
+        System.out.println(this.hashCode() + " @->XXXX<-@ " + classifierGenericType);
         return new TestTDSCompiled();
     }
 
     @Override
-    public TestTDS newTDS(MutableMap<String, DataType> columnType, int rows)
+    public TestTDS newTDS(MutableList<String> columnOrdered, MutableMap<String, DataType> columnType, int rows)
     {
-        return new TestTDSCompiled(columnType, rows);
+        return new TestTDSCompiled(columnOrdered, columnType, rows);
     }
 
     public Object getValueAsCoreInstance(String columnName, int rowNum)
@@ -61,7 +83,7 @@ public class TestTDSCompiled extends TestTDS
             {
                 int[] data = (int[]) dataAsObject;
                 int value = data[rowNum];
-                result = !isNull[rowNum] ? (long)value : null;
+                result = !isNull[rowNum] ? (long) value : null;
                 break;
             }
             case CHAR:
@@ -86,5 +108,58 @@ public class TestTDSCompiled extends TestTDS
                 throw new RuntimeException("ERROR " + columnType.get(columnName) + " not supported in getValue");
         }
         return result;
+    }
+
+    public GenericType getClassifierGenericType()
+    {
+        return (GenericType) classifierGenericType;
+    }
+
+    @Override
+    public TestTDS copy()
+    {
+        TestTDSCompiled res = (TestTDSCompiled) super.copy();
+        res.classifierGenericType = this.classifierGenericType;
+        return res;
+    }
+
+    @Override
+    public TestTDS concatenate(TestTDS tds2)
+    {
+        TestTDSCompiled res = (TestTDSCompiled) super.concatenate(tds2);
+        res.classifierGenericType = this.classifierGenericType;
+        return res;
+    }
+
+    public void updateClassifierGenericType(CoreInstance coreInstance)
+    {
+        this.classifierGenericType = coreInstance;
+    }
+
+    public TestTDSCompiled updateColumns(ProcessorSupport processorSupport)
+    {
+        Class<?> relationDatabaseAccessorType = (Class<?>) processorSupport.package_getByUserPath(M2TDSPaths.TDS);
+        GenericType genericType = (GenericType) processorSupport.type_wrapGenericType(relationDatabaseAccessorType);
+        GenericType typeParam = (GenericType) processorSupport.newGenericType(null, relationDatabaseAccessorType, false);
+        MutableList<CoreInstance> columns = columnsOrdered.collect(c -> (CoreInstance) _Column.getColumnInstance(c,false, typeParam, (GenericType) processorSupport.type_wrapGenericType(_Package.getByUserPath(convert(columnType.get(c)), processorSupport)), null, processorSupport)).toList();
+        typeParam._rawType(_RelationType.build(columns, null, processorSupport));
+        genericType._typeArguments(Lists.mutable.with(typeParam));
+        this.classifierGenericType = genericType;
+        return this;
+    }
+
+    public String convert(DataType dataType)
+    {
+        switch (dataType)
+        {
+            case INT:
+                return "Integer";
+            case STRING:
+            case CHAR:
+                return "String";
+            case DOUBLE:
+                return "Float";
+        }
+        throw new RuntimeException("To Handle " + dataType);
     }
 }

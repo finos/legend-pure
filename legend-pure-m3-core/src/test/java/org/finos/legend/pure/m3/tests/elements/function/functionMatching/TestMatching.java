@@ -422,6 +422,20 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
     }
 
     @Test
+    public void testFunctionExpressionCastMatching() throws Exception
+    {
+        runtime.createInMemorySource("fromString.pure",
+                "native function meta::pure::functions::relation::map<T,V>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];\n" +
+                        "function func(a:Any[*]):Nil[0]\n" +
+                        "{\n" +
+                        "   [2]->cast(@meta::pure::metamodel::relation::Relation<(ok:Integer)>)->map(x|$x.ok);\n" +
+                        "   [];" +
+                        "}");
+        runtime.compile();
+        repository.validate(new VoidM4StateListener());
+    }
+
+    @Test
     public void testFunctionMatchingPrioritizeSubtypeVsGenerics() throws Exception
     {
         runtime.createInMemorySource("fromString.pure",

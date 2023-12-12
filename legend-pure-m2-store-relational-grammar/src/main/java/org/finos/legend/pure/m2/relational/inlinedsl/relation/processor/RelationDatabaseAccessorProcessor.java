@@ -35,7 +35,7 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class RelationAccessorProcessor extends Processor<RelationDatabaseAccessor<CoreInstance>>
+public class RelationDatabaseAccessorProcessor extends Processor<RelationDatabaseAccessor<CoreInstance>>
 {
     @Override
     public String getClassName()
@@ -75,14 +75,15 @@ public class RelationAccessorProcessor extends Processor<RelationDatabaseAccesso
         GenericType typeParam = (GenericType) processorSupport.newGenericType(instance.getSourceInformation(), relationDatabaseAccessorType, false);
 
         MutableList<CoreInstance> columns = table._columns().collect(c -> (CoreInstance) _Column.getColumnInstance(c.getValueForMetaPropertyToOne("name").getName(), false, typeParam, (GenericType) processorSupport.type_wrapGenericType(_Package.getByUserPath("String", processorSupport)), instance.getSourceInformation(), processorSupport)).toList();
-        typeParam._rawTypeCoreInstance(_RelationType.build(typeParam, columns, instance.getSourceInformation(), processorSupport));
+        typeParam._rawTypeCoreInstance(_RelationType.build(columns, instance.getSourceInformation(), processorSupport));
         genericType._typeArguments(Lists.mutable.with(typeParam));
 
         instance._classifierGenericType(genericType);
     }
 
     @Override
-    public void populateReferenceUsages(RelationDatabaseAccessor<CoreInstance> path, ModelRepository repository, ProcessorSupport processorSupport)
+    public void populateReferenceUsages(RelationDatabaseAccessor<CoreInstance> relationDatabaseAccessor, ModelRepository repository, ProcessorSupport processorSupport)
     {
+        this.addReferenceUsageForToOneProperty(relationDatabaseAccessor, relationDatabaseAccessor._database(), "database", repository, processorSupport);
     }
 }

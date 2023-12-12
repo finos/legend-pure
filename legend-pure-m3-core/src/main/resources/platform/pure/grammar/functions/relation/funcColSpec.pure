@@ -14,7 +14,7 @@
 
 import meta::pure::metamodel::relation::*;
 
-function meta::pure::functions::relation::funcColSpec<U,T>(f:Function<{U[1]->Any[1]}>[1], s:String[1], cl:T[1]):FuncColSpec<{U[1]->Any[1]}, T>[1]
+function <<functionType.NormalizeRequiredFunction>> meta::pure::functions::relation::funcColSpec<U,T>(f:Function<{U[1]->Any[1]}>[1], s:String[1], cl:T[1]):FuncColSpec<{U[1]->Any[1]}, T>[1]
 {
     ^FuncColSpec<{U[1]->Any[1]}, T>
     (

@@ -16,6 +16,7 @@ package org.finos.legend.pure.runtime.java.extension.external.relation.interpret
 
 import io.deephaven.csv.parsers.DataType;
 import io.deephaven.csv.reading.CsvReader;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -50,9 +51,9 @@ public class TestTDSInterpreted extends TestTDS
         this.processorSupport = processorSupport;
     }
 
-    private TestTDSInterpreted(MutableMap<String, DataType> columnType, int rows, ModelRepository repository, ProcessorSupport processorSupport)
+    private TestTDSInterpreted(MutableList<String> columnOrdered, MutableMap<String, DataType> columnType, int rows, ModelRepository repository, ProcessorSupport processorSupport)
     {
-        super(columnType, rows);
+        super(columnOrdered, columnType, rows);
         this.modelRepository = repository;
         this.processorSupport = processorSupport;
 
@@ -71,9 +72,9 @@ public class TestTDSInterpreted extends TestTDS
     }
 
     @Override
-    public TestTDS newTDS(MutableMap<String, DataType> columnType, int rows)
+    public TestTDS newTDS(MutableList<String> columnOrdered, MutableMap<String, DataType> columnType, int rows)
     {
-        return new TestTDSInterpreted(columnType, rows, this.modelRepository, this.processorSupport);
+        return new TestTDSInterpreted(columnOrdered, columnType, rows, this.modelRepository, this.processorSupport);
     }
 
     public CoreInstance getValueAsCoreInstance(String columnName, int rowNum)

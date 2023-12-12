@@ -14,10 +14,6 @@
 
 import meta::pure::metamodel::relation::*;
 
-Class meta::pure::metamodel::relation::Relation<T> // Where T is of type RelationType
-{
-}
-
 Class meta::pure::metamodel::relation::ColSpec<T> // Where T is of type RelationType
 {
     name : String[1];

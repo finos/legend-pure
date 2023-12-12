@@ -15,12 +15,13 @@
 package org.finos.legend.pure.runtime.java.extension.external.relation.compiled.natives;
 
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Relation;
+import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
 
 public class Limit extends AbstractNativeFunctionGeneric
 {
     public Limit()
     {
-        super("org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.limit", new Class[]{Relation.class, Long.class}, "limit_Relation_1__Integer_1__Relation_1_");
+        super("org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.limit", new Class[]{Relation.class, Long.class, ExecutionSupport.class}, false, true, false, "limit_Relation_1__Integer_1__Relation_1_");
     }
 }

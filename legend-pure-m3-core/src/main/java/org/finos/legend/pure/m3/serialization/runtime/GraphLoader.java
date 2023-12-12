@@ -35,13 +35,8 @@ import org.finos.legend.pure.m3.compiler.postprocessing.SpecializationProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.AnnotatedElementProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.Processor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
+import org.finos.legend.pure.m3.navigation.*;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
@@ -49,19 +44,9 @@ import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
-import org.finos.legend.pure.m3.serialization.runtime.binary.BinaryModelSourceDeserializer;
-import org.finos.legend.pure.m3.serialization.runtime.binary.DeserializationNode;
+import org.finos.legend.pure.m3.serialization.runtime.binary.*;
 import org.finos.legend.pure.m3.serialization.runtime.binary.DeserializationNode.ReferenceResolutionResult;
-import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJar;
-import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJarLibrary;
-import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJarTools;
-import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJars;
-import org.finos.legend.pure.m3.serialization.runtime.binary.SourceDeserializationResult;
-import org.finos.legend.pure.m3.serialization.runtime.binary.reference.CachedReferenceFactory;
-import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ExternalReferenceSerializerLibrary;
-import org.finos.legend.pure.m3.serialization.runtime.binary.reference.Reference;
-import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ReferenceFactory;
-import org.finos.legend.pure.m3.serialization.runtime.binary.reference.SimpleReferenceFactory;
+import org.finos.legend.pure.m3.serialization.runtime.binary.reference.*;
 import org.finos.legend.pure.m3.serialization.runtime.pattern.URLPatternLibrary;
 import org.finos.legend.pure.m3.tools.forkjoin.ForkJoinTools;
 import org.finos.legend.pure.m4.ModelRepository;
@@ -238,7 +223,7 @@ public class GraphLoader
     {
         if (message != null)
         {
-            message.setMessage(String.format("    Reading %,d files ...", + files.size()));
+            message.setMessage(String.format("    Reading %,d files ...", +files.size()));
         }
         MapIterable<String, byte[]> fileBytes = this.jarLibrary.readFiles(LazyIterate.reject(files, this::fileIsLoaded));
         loadFileBytes(fileBytes, message);
@@ -446,8 +431,8 @@ public class GraphLoader
     {
         MutableMap<CoreInstance, MutableList<Processor>> processorsByType = Maps.mutable.empty();
         RichIterable<Processor> processors = LazyIterate.concatenate(
-                this.parserLibrary.getParsers().asLazy().flatCollect(Parser::getProcessors),
-                this.inlineDSLLibrary.getInlineDSLs().asLazy().flatCollect(InlineDSL::getProcessors))
+                        this.parserLibrary.getParsers().asLazy().flatCollect(Parser::getProcessors),
+                        this.inlineDSLLibrary.getInlineDSLs().asLazy().flatCollect(InlineDSL::getProcessors))
                 .selectInstancesOf(Processor.class);
         for (Processor processor : processors)
         {

@@ -15,12 +15,13 @@
 package org.finos.legend.pure.runtime.java.extension.external.relation.compiled.natives;
 
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Relation;
+import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
 
 public class Concatenate extends AbstractNativeFunctionGeneric
 {
     public Concatenate()
     {
-        super("org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.concatenate", new Class[]{Relation.class, Relation.class}, "concatenate_Relation_1__Relation_1__Relation_1_");
+        super("org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.concatenate", new Class[]{Relation.class, Relation.class, ExecutionSupport.class}, false, true, false, "concatenate_Relation_1__Relation_1__Relation_1_");
     }
 }

@@ -85,13 +85,11 @@ public class TDSExtension implements InlineDSL
         GenericType tdsGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
         tdsGenericType._rawTypeCoreInstance(tdsType);
         GenericType typeParam = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
-        typeParam._rawType(_RelationType.build(typeParam, ArrayIterate.collect(result.columns(), c -> _Column.getColumnInstance(c.name(), false, typeParam, convertType(c.dataType()), src, processorSupport)), src, processorSupport));
+        typeParam._rawType(_RelationType.build(ArrayIterate.collect(result.columns(), c -> _Column.getColumnInstance(c.name(), false, typeParam, convertType(c.dataType()), src, processorSupport)), src, processorSupport));
         tdsGenericType._typeArgumentsAdd(typeParam);
         tds._classifierGenericType(tdsGenericType);
         Instance.setValueForProperty(tds, "csv", modelRepository.newStringCoreInstance(val), processorSupport);
-
         return tds;
-
     }
 
     private String convertType(DataType dataType)

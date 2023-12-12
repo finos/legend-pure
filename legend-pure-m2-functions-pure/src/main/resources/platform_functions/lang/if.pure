@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-function meta::pure::functions::collection::if<T|m>(condList:Pair<Function<{->Boolean[1]}>, Function<{->T[m]}>>[*], last:Function<{->T[m]}>[1]):T[m]
+function meta::pure::functions::lang::if<T|m>(condList:Pair<Function<{->Boolean[1]}>, Function<{->T[m]}>>[*], last:Function<{->T[m]}>[1]):T[m]
 {
   let matchCond = $condList->find(f|$f.first->eval());
   if ($matchCond->isEmpty(),
@@ -21,7 +21,7 @@ function meta::pure::functions::collection::if<T|m>(condList:Pair<Function<{->Bo
   );
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::if::testMultiIf():Boolean[1]
+function <<test.Test>> meta::pure::functions::lang::tests::if::testMultiIf():Boolean[1]
 {
     let val = 5;
     assertEquals(7, if(

@@ -16,12 +16,13 @@ package org.finos.legend.pure.runtime.java.extension.external.relation.compiled.
 
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.ColSpecArray;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Relation;
+import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
 
 public class Distinct extends AbstractNativeFunctionGeneric
 {
     public Distinct()
     {
-        super("org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.distinct", new Class[]{Relation.class, ColSpecArray.class}, "distinct_Relation_1__ColSpecArray_1__Relation_1_");
+        super("org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.distinct", new Class[]{Relation.class, ColSpecArray.class, ExecutionSupport.class}, false, true, false, "distinct_Relation_1__ColSpecArray_1__Relation_1_");
     }
 }

@@ -44,7 +44,7 @@ Class meta::pure::metamodel::valuespecification::StoreValueSpecificationContext 
    store: meta::pure::store::Store[1];
 }
 
-Class meta::pure::metamodel::relation::RelationStoreAccessor<T> extends meta::pure::metamodel::relation::Relation<T>
+Class meta::pure::metamodel::relation::RelationStoreAccessor<T> extends meta::pure::metamodel::relation::RelationPointer<T>
 {
    path : String[*];
    store : Store[1];

@@ -23,6 +23,7 @@ import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.primitive.IntSet;
 import org.eclipse.collections.api.set.primitive.MutableIntSet;
 import org.eclipse.collections.api.tuple.Pair;
@@ -30,10 +31,13 @@ import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.set.mutable.primitive.IntHashSet;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.eclipse.collections.impl.utility.ArrayIterate;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation._package._Package;
 
 import java.io.ByteArrayInputStream;
 import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 public class TestTDS
@@ -41,6 +45,7 @@ public class TestTDS
     protected MutableMap<String, Object> dataByColumnName = Maps.mutable.empty();
     protected MutableMap<String, Object> isNullByColumn = Maps.mutable.empty();
     protected MutableMap<String, DataType> columnType = Maps.mutable.empty();
+    protected MutableList<String> columnsOrdered = Lists.mutable.empty();
     protected long rowCount;
 
     public TestTDS()
@@ -52,9 +57,9 @@ public class TestTDS
         return new TestTDS();
     }
 
-    public TestTDS newTDS(MutableMap<String, DataType> columnType, int rows)
+    public TestTDS newTDS(MutableList<String> columnOrdered, MutableMap<String, DataType> columnType, int rows)
     {
-        return new TestTDS(columnType, rows);
+        return new TestTDS(columnOrdered, columnType, rows);
     }
 
     public TestTDS(String csv)
@@ -68,22 +73,39 @@ public class TestTDS
 
         ArrayIterate.forEach(result.columns(), c ->
         {
+            columnsOrdered.add(c.name());
             columnType.put(c.name(), c.dataType());
             dataByColumnName.put(c.name(), c.data());
+            boolean[] array = new boolean[(int) this.rowCount];
+            isNullByColumn.put(c.name(), array);
             switch (c.dataType())
             {
                 case INT:
+                    for (int i = 0; i < this.rowCount; i++)
+                    {
+                        System.out.println(((int[]) c.data())[i]);
+                        System.out.println(Integer.MIN_VALUE);
+                        array[i] = ((int[]) c.data())[i] == Integer.MIN_VALUE;
+                    }
+                    break;
                 case CHAR:
+                    for (int i = 0; i < this.rowCount; i++)
+                    {
+                        array[i] = ((char[]) c.data())[i] == Character.MIN_VALUE;
+                    }
+                    break;
                 case DOUBLE:
-                    boolean[] array = new boolean[(int) this.rowCount];
-                    Arrays.fill(array, Boolean.FALSE);
-                    isNullByColumn.put(c.name(), array);
+                    for (int i = 0; i < this.rowCount; i++)
+                    {
+                        array[i] = ((double[]) c.data())[i] == -Double.MAX_VALUE;
+                    }
             }
         });
     }
 
-    protected TestTDS(MutableMap<String, DataType> columnType, int rows)
+    protected TestTDS(MutableList<String> columnOrdered, MutableMap<String, DataType> columnType, int rows)
     {
+        this. columnsOrdered = columnOrdered;
         this.columnType = columnType;
         this.rowCount = rows;
         this.columnType.keyValuesView().forEach(p ->
@@ -157,11 +179,27 @@ public class TestTDS
         return res;
     }
 
+    private static SinkFactory makeMySinkFactory()
+    {
+        return SinkFactory.arrays(
+                Byte.MIN_VALUE,
+                Short.MIN_VALUE,
+                Integer.MIN_VALUE,
+                Long.MIN_VALUE,
+                -Float.MAX_VALUE,
+                -Double.MAX_VALUE,
+                Byte.MIN_VALUE,
+                Character.MIN_VALUE,
+                "null",
+                Long.MIN_VALUE,
+                Long.MIN_VALUE);
+    }
+
     public static CsvReader.Result readCsv(String csv)
     {
         try
         {
-            return CsvReader.read(CsvSpecs.csv(), new ByteArrayInputStream(csv.getBytes()), SinkFactory.arrays());
+            return CsvReader.read(CsvSpecs.csv(), new ByteArrayInputStream(csv.getBytes()), makeMySinkFactory());
         }
         catch (Exception e)
         {
@@ -174,7 +212,10 @@ public class TestTDS
         MutableMap<String, DataType> columnTypes = Maps.mutable.empty();
         columnTypes.putAll(this.columnType);
         columnTypes.putAll(otherTDS.columnType);
-        TestTDS res = newTDS(columnTypes, (int) (rowCount * otherTDS.rowCount));
+        MutableList<String> columnOrdered = Lists.mutable.empty();
+        columnOrdered.addAll(this.columnsOrdered);
+        columnOrdered.addAll(otherTDS.columnsOrdered);
+        TestTDS res = newTDS(columnOrdered, columnTypes, (int) (rowCount * otherTDS.rowCount));
 
         for (int i = 0; i < this.rowCount; i++)
         {
@@ -232,6 +273,7 @@ public class TestTDS
     {
         TestTDS result = newTDS();
         result.rowCount = rowCount;
+        result.columnsOrdered = Lists.mutable.withAll(columnsOrdered);
         result.columnType = Maps.mutable.withMap(columnType);
         result.dataByColumnName = Maps.mutable.empty();
         result.isNullByColumn = Maps.mutable.empty();
@@ -372,6 +414,8 @@ public class TestTDS
         TestTDS result = newTDS();
         result.rowCount = this.rowCount + tds2.rowCount;
         result.columnType = Maps.mutable.withMap(columnType);
+        result.columnsOrdered = Lists.mutable.withAll(columnsOrdered);
+
         dataByColumnName.forEachKey(columnName ->
         {
             Object dataAsObject1 = dataByColumnName.get(columnName);
@@ -441,8 +485,8 @@ public class TestTDS
         {
             throw new RuntimeException("Error!");
         }
-
         this.dataByColumnName.put(name, res);
+        this.columnsOrdered.add(name);
         this.columnType.put(name, dataType);
         switch (dataType)
         {
@@ -456,6 +500,15 @@ public class TestTDS
         return this;
     }
 
+    public TestTDS removeColumns(MutableSet<? extends String> columns)
+    {
+        this.columnsOrdered.removeAll(columns);
+        this.columnType.removeAllKeys(columns);
+        this.isNullByColumn.removeAllKeys(columns);
+        this.dataByColumnName.removeAllKeys(columns);
+        return this;
+    }
+
     public TestTDS rename(String oldName, String newName)
     {
         DataType type = this.columnType.get(oldName);
@@ -464,9 +517,11 @@ public class TestTDS
         this.columnType.put(newName, type);
         this.dataByColumnName.put(newName, data);
         this.isNullByColumn.put(newName, oldIsNull);
+        this.columnsOrdered.add(newName);
         this.columnType.remove(oldName);
         this.dataByColumnName.remove(oldName);
         this.isNullByColumn.remove(oldName);
+        this.columnsOrdered.remove(oldName);
         return this;
     }
 
@@ -874,7 +929,7 @@ public class TestTDS
             }
         }
 
-        TestTDS missingTDS = newTDS(res.columnType.clone(), missings.size());
+        TestTDS missingTDS = newTDS(res.columnsOrdered.clone(), res.columnType.clone(), missings.size());
 
         int cursor = 0;
         for (Integer missing : missings)
@@ -922,5 +977,10 @@ public class TestTDS
             }
         }
         return valid;
+    }
+
+    public MutableList<String> getColumnNames()
+    {
+        return this.columnsOrdered;
     }
 }

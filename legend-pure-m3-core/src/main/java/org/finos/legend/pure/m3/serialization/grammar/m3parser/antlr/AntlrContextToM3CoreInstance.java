@@ -987,7 +987,7 @@ public class AntlrContextToM3CoreInstance
                 }
                 columnInstances.add(_Column.getColumnInstance(oneColSpec.identifier().getText(), false, relationTypeGenericType, returnType, src, processorSupport));
             });
-            relationTypeGenericType._rawTypeCoreInstance(_RelationType.build(relationTypeGenericType, columnInstances, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport));
+            relationTypeGenericType._rawTypeCoreInstance(_RelationType.build(columnInstances, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport));
 
             // Build the function
             CoreInstance replacementFunction = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart()), null, null, importId, null);
@@ -1132,7 +1132,7 @@ public class AntlrContextToM3CoreInstance
     {
         String res = ctx.getText();
         res = res.substring(res.indexOf('#') + 1, res.lastIndexOf('#'));
-        if (res.trim().startsWith("/") || res.trim().startsWith("{") || res.trim().startsWith("TDS")  || res.trim().startsWith(">"))
+        if (res.trim().startsWith("/") || res.trim().startsWith("{") || res.trim().startsWith("TDS") || res.trim().startsWith(">"))
         {
             //TODO temporary hack till we move treepath completely away from dsl
             InlineDSLTextContent dslTextContext = new InlineDSLTextContent(res, ctx.getStart().getLine() + this.sourceInformation.getOffsetLine(), ctx.getStart().getCharPositionInLine() + 2);
@@ -1931,7 +1931,6 @@ public class AntlrContextToM3CoreInstance
             SourceInformation srcInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop());
             genericTypeInstance._rawTypeCoreInstance(
                     _RelationType.build(
-                            genericTypeInstance,
                             ListIterate.collect(
                                     ctx.columnType(),
                                     c -> _Column.getColumnInstance(c.QUESTION() != null ? "" : c.identifier().getText(), c.QUESTION() != null, genericTypeInstance, this.type(c.type(), typeParametersNames, spacePlusTabs(space, 5), importId, addLines), srcInfo, processorSupport)

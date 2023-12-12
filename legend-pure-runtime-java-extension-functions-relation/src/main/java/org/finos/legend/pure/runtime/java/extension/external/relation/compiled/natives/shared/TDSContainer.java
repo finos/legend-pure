@@ -15,14 +15,20 @@
 package org.finos.legend.pure.runtime.java.extension.external.relation.compiled.natives.shared;
 
 import org.finos.legend.pure.generated.Root_meta_pure_metamodel_relation_Relation_Impl;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 
 public class TDSContainer extends Root_meta_pure_metamodel_relation_Relation_Impl
 {
     public TestTDSCompiled tds;
 
-    public TDSContainer(TestTDSCompiled tds)
+    public TDSContainer(TestTDSCompiled tds, ProcessorSupport ps)
     {
-        super("0");
-        this.tds = tds;
+        super("TDS Container");
+        this.tds = tds.updateColumns(ps);
+        if (tds.getClassifierGenericType() == null)
+        {
+            throw new RuntimeException("");
+        }
+        this._classifierGenericType(tds.getClassifierGenericType());
     }
 }

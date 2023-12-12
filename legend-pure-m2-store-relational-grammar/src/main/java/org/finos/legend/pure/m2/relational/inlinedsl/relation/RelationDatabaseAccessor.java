@@ -17,9 +17,10 @@ package org.finos.legend.pure.m2.relational.inlinedsl.relation;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m2.relational.M2RelationalPaths;
-import org.finos.legend.pure.m2.relational.inlinedsl.relation.processor.RelationAccessorProcessor;
-import org.finos.legend.pure.m2.relational.inlinedsl.relation.unloader.RelationAccessorUnloader;
-import org.finos.legend.pure.m2.relational.inlinedsl.relation.validation.RelationAccessorValidation;
+import org.finos.legend.pure.m2.relational.inlinedsl.relation.processor.RelationDatabaseAccessorProcessor;
+import org.finos.legend.pure.m2.relational.inlinedsl.relation.unloader.RelationDatabaseAccessorUnloader;
+import org.finos.legend.pure.m2.relational.inlinedsl.relation.validation.RelationDatabaseAccessorValidation;
+import org.finos.legend.pure.m2.relational.inlinedsl.relation.walker.RelationDatabaseAccessorWalker;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.M3CoreInstanceFactoryRegistry;
@@ -37,7 +38,7 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 public class RelationDatabaseAccessor implements InlineDSL
 {
-    private static VisibilityValidator VISIBILITY_VALIDATOR = new RelationAccessorValidation();
+    private static VisibilityValidator VISIBILITY_VALIDATOR = new RelationDatabaseAccessorValidation();
 
     @Override
     public String getName()
@@ -78,19 +79,19 @@ public class RelationDatabaseAccessor implements InlineDSL
     @Override
     public RichIterable<MatchRunner> getProcessors()
     {
-        return Lists.immutable.with(new RelationAccessorProcessor());
+        return Lists.immutable.with(new RelationDatabaseAccessorProcessor());
     }
 
     @Override
     public RichIterable<MatchRunner> getUnLoadWalkers()
     {
-        return Lists.mutable.empty();
+        return Lists.mutable.with(new RelationDatabaseAccessorWalker());
     }
 
     @Override
     public RichIterable<MatchRunner> getUnLoadUnbinders()
     {
-        return Lists.immutable.with(new RelationAccessorUnloader());
+        return Lists.immutable.with(new RelationDatabaseAccessorUnloader());
     }
 
     @Override

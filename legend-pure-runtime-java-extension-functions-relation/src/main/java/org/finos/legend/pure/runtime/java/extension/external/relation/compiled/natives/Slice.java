@@ -15,12 +15,13 @@
 package org.finos.legend.pure.runtime.java.extension.external.relation.compiled.natives;
 
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Relation;
+import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
 
 public class Slice extends AbstractNativeFunctionGeneric
 {
     public Slice()
     {
-        super("org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.slice", new Class[]{Relation.class, Long.class, Long.class}, "slice_Relation_1__Integer_1__Integer_1__Relation_1_");
+        super("org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.slice", new Class[]{Relation.class, Long.class, Long.class, ExecutionSupport.class}, false, true, false, "slice_Relation_1__Integer_1__Integer_1__Relation_1_");
     }
 }

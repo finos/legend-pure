@@ -15,12 +15,13 @@
 package org.finos.legend.pure.runtime.java.extension.external.relation.compiled.natives;
 
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Relation;
+import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
 
 public class Drop extends AbstractNativeFunctionGeneric
 {
     public Drop()
     {
-        super("org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.drop", new Class[]{Relation.class, Long.class}, "drop_Relation_1__Integer_1__Relation_1_");
+        super("org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.drop", new Class[]{Relation.class, Long.class, ExecutionSupport.class}, false, true, false, "drop_Relation_1__Integer_1__Relation_1_");
     }
 }

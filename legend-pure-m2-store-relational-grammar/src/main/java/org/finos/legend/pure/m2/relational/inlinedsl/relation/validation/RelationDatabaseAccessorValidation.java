@@ -14,21 +14,21 @@
 
 package org.finos.legend.pure.m2.relational.inlinedsl.relation.validation;
 
+import org.finos.legend.pure.m2.relational.M2RelationalPaths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.validation.ValidatorState;
 import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.VisibilityValidator;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class RelationAccessorValidation implements VisibilityValidator
+public class RelationDatabaseAccessorValidation implements VisibilityValidator
 {
     @Override
     public void validate(CoreInstance value, CoreInstance pkg, String sourceId, Context context, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
     {
-        if (processorSupport.package_getByUserPath(M3Paths.Relation) != null && Instance.instanceOf(value, M3Paths.Relation, processorSupport))
+        if (processorSupport.package_getByUserPath(M2RelationalPaths.RelationDatabaseAccessor) != null && Instance.instanceOf(value, M2RelationalPaths.RelationDatabaseAccessor, processorSupport))
         {
             validatePath(value, pkg, sourceId, context, validatorState, processorSupport);
         }

@@ -19,7 +19,8 @@ function meta::pure::functions::meta::elementToPath(element:Function<Any>[1]):St
     $element->match(
         [
             p : PackageableElement[1] | $p->elementToPath('::'),
-            p : AbstractProperty<Any>[1] | $p.name->toOne()
+            p : AbstractProperty<Any>[1] | $p.name->toOne(),
+            c : meta::pure::metamodel::relation::Column<Nil,Any|*>[1] | $c.name->toOne()
         ]
     )
 }

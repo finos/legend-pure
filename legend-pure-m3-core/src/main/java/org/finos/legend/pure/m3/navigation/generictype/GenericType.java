@@ -128,15 +128,16 @@ public class GenericType
             if (processorSupport.instance_instanceOf(typeArgument.getValueForMetaPropertyToOne("rawType"), M3Paths.RelationType))
             {
                 RelationType<?> rel = (RelationType<?>) typeArgument.getValueForMetaPropertyToOne("rawType");
-                rel._columns().collect(c ->
-                {
-                    org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType colType = _Column.getColumnType(c);
-                    org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType newType = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) makeTypeArgumentAsConcreteAsPossible(colType, filteredGenericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
-                    MutableList<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType> args = Lists.mutable.withAll(c._classifierGenericType()._typeArguments());
-                    args.set(1, newType);
-                    c._classifierGenericType()._typeArguments(args);
-                    return c;
-                });
+                return processorSupport.type_wrapGenericType(_RelationType.build(rel._columns().collect(c ->
+                        (CoreInstance) _Column.getColumnInstance(
+                                c._name(),
+                                c._nameWildCard(),
+                                null,
+                                (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) makeTypeArgumentAsConcreteAsPossible(_Column.getColumnType(c), filteredGenericTypeByTypeParameterNames, sourceMulBinding, processorSupport),
+                                c.getSourceInformation(),
+                                processorSupport
+                        )
+                ).toList(), null, processorSupport));
             }
 
             if (org.finos.legend.pure.m3.navigation.function.FunctionType.isFunctionType(Instance.getValueForMetaPropertyToOneResolved(typeArgument, M3Properties.rawType, processorSupport), processorSupport))
@@ -237,7 +238,7 @@ public class GenericType
         }
 
         // Set RelationType on Generic
-        newGenericType._rawType(_RelationType.build(newGenericType, newColumnSet, gLeft.getValueForMetaPropertyToOne("rawType").getSourceInformation(), processorSupport));
+        newGenericType._rawType(_RelationType.build(newColumnSet, gLeft.getValueForMetaPropertyToOne("rawType").getSourceInformation(), processorSupport));
         return newGenericType;
     }
 
@@ -1008,9 +1009,13 @@ public class GenericType
         {
             return copyConcreteGenericType(genericType, replaceSourceInfo, newSourceInfo, processorSupport, inferred);
         }
-        else
+        else if (genericType.getValueForMetaPropertyToOne(M3Properties.typeParameter) != null)
         {
             return copyNonConcreteGenericType(genericType, replaceSourceInfo, newSourceInfo, processorSupport, inferred);
+        }
+        else
+        {
+            return processorSupport.newGenericType(replaceSourceInfo ? newSourceInfo : genericType.getSourceInformation(), genericType, inferred);
         }
     }
 
@@ -1123,7 +1128,24 @@ public class GenericType
             }
             return functionType;
         }
-        if (processorSupport.instance_instanceOf(type, M3Paths.ImportStub))
+        else if (processorSupport.instance_instanceOf(type, M3Paths.RelationType))
+        {
+            RelationType<?> src = (RelationType<?>) type;
+            return _RelationType.build(
+                    src._columns().collect(c -> (CoreInstance) _Column.getColumnInstance(
+                                    c._name(),
+                                    c._nameWildCard(),
+                                    null,
+                                    (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) copyGenericType(_Column.getColumnType(c), replaceSourceInfo, newSourceInfo, processorSupport, inferred),
+                                    replaceSourceInfo ? newSourceInfo : src.getSourceInformation(),
+                                    processorSupport
+                            )
+                    ).toList(),
+                    replaceSourceInfo ? newSourceInfo : src.getSourceInformation(),
+                    processorSupport
+            );
+        }
+        else if (processorSupport.instance_instanceOf(type, M3Paths.ImportStub))
         {
 /*            if (inferred)
             {

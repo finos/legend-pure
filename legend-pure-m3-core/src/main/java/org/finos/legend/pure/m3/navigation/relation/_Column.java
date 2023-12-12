@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.navigation.relation;
 
+import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
@@ -23,6 +24,8 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+
+import java.util.List;
 
 public class _Column
 {
@@ -44,6 +47,13 @@ public class _Column
         columnGenericType._multiplicityArgumentsAdd((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport));
         columnInstance.setKeyValues(Lists.mutable.with("classifierGenericType"), Lists.mutable.with(columnGenericType));
         return columnInstance;
+    }
+
+    public static Column<?, ?> updateSource(Column<?, ?> col, GenericType sourceType)
+    {
+        List<? extends GenericType> _typeArguments = col._classifierGenericType()._typeArguments().toList();
+        col._classifierGenericType()._typeArguments(Lists.mutable.with(sourceType, _typeArguments.get(1)));
+        return col;
     }
 
     public static GenericType getColumnType(Column<?, ?> column)

@@ -39,7 +39,7 @@ public class Shared
             cleanUpReferenceUsage(rawType, genericType, processorSupport);
             if (rawType instanceof FunctionType)
             {
-                cleanUpFunctionType((FunctionType)rawType, state, processorSupport);
+                cleanUpFunctionType((FunctionType) rawType, state, processorSupport);
             }
             else
             {
@@ -56,7 +56,7 @@ public class Shared
     {
         if (importStub instanceof ImportStub)
         {
-            ((ImportStub)importStub)._resolvedNodeRemove();
+            ((ImportStub) importStub)._resolvedNodeRemove();
         }
     }
 
@@ -64,10 +64,10 @@ public class Shared
     {
         if (propertyStub instanceof PropertyStub)
         {
-            if (((PropertyStub)propertyStub)._ownerCoreInstance() != null)
+            if (((PropertyStub) propertyStub)._ownerCoreInstance() != null)
             {
-                cleanImportStub(((PropertyStub)propertyStub)._ownerCoreInstance(), processorSupport);
-                ((PropertyStub)propertyStub)._resolvedPropertyRemove();
+                cleanImportStub(((PropertyStub) propertyStub)._ownerCoreInstance(), processorSupport);
+                ((PropertyStub) propertyStub)._resolvedPropertyRemove();
             }
         }
     }
@@ -76,10 +76,10 @@ public class Shared
     {
         if (enumStub instanceof EnumStub)
         {
-            if (((EnumStub)enumStub)._enumerationCoreInstance() != null)
+            if (((EnumStub) enumStub)._enumerationCoreInstance() != null)
             {
-                cleanImportStub(((EnumStub)enumStub)._enumerationCoreInstance(), processorSupport);
-                ((EnumStub)enumStub)._resolvedEnumRemove();
+                cleanImportStub(((EnumStub) enumStub)._enumerationCoreInstance(), processorSupport);
+                ((EnumStub) enumStub)._resolvedEnumRemove();
             }
         }
     }

@@ -116,6 +116,25 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
+    public void testColumnFunctionCollectionChainedWithNewFunctionInferenceWrapped()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "Class Firm{legalName:String[1];}" +
+                        "\n" +
+                        "function f():String[*]" +
+                        "{" +
+                        "   execute(|Firm.all()->project(~[legal:x|$x.legalName]));\n" +
+                        "}" +
+                        "\n" +
+                        "native function execute(rel:Function<Any>[1]):String[1];" +
+                        "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];" +
+                        "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];" +
+                        "\n"
+        );
+    }
+
+    @Test
     public void testColumnTypeInference()
     {
         compileInferenceTest(

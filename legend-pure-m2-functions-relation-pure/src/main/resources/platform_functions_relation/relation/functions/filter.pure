@@ -19,12 +19,25 @@ native function meta::pure::functions::relation::filter<T>(rel:Relation<T>[1], f
 
 function <<test.Test>> meta::pure::functions::relation::tests::filter::testSimpleFilter():Boolean[1]
 {
-    let res = #TDS
-                value
-                1
-                3
-                4
-              #->filter(x|$x.value > 1)
-               ->map(x|$x.value);
-    assertEquals([3,4], $res);
+  meta::pure::functions::relation::tests::filter::testSimpleFilterShared(meta::pure::functions::relation::testTDSMemoryRun_Function_1__Any_MANY_);
+}
+
+function <<RelationProfile.test>> meta::pure::functions::relation::tests::filter::testSimpleFilterShared<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
+{
+    let expr = {
+                  |#TDS
+                    value
+                    1
+                    3
+                    4
+                  #->filter(x|$x.value > 1)
+               };
+
+    let res =  $f->eval($expr)->cast(@Relation<(value:Integer)>)->toOne();
+
+    assertEquals( '#TDS\n'+
+                  '   value\n'+
+                  '   3\n'+
+                  '   4\n'+
+                  '#', $res->toString());
 }

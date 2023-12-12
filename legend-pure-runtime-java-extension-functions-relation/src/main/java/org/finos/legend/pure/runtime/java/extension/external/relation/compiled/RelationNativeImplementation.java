@@ -21,13 +21,17 @@ import org.eclipse.collections.api.block.function.Function3;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.primitive.MutableIntSet;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.set.mutable.primitive.IntHashSet;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.*;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 import org.finos.legend.pure.runtime.java.extension.external.relation.compiled.natives.shared.RowContainer;
 import org.finos.legend.pure.runtime.java.extension.external.relation.compiled.natives.shared.TDSContainer;
@@ -44,13 +48,13 @@ public class RelationNativeImplementation
     {
         return value instanceof TDSContainer ?
                 ((TDSContainer) value).tds :
-                new TestTDSCompiled(readCsv((((CoreInstance) value).getValueForMetaPropertyToOne("csv")).getName()));
+                new TestTDSCompiled(readCsv((((CoreInstance) value).getValueForMetaPropertyToOne("csv")).getName()), ((CoreInstance) value).getValueForMetaPropertyToOne(M3Properties.classifierGenericType));
     }
 
 
     public static <T> RichIterable<Column<?, ?>> columns(Relation<? extends T> t)
     {
-        return ((RelationType)t._classifierGenericType()._typeArguments().getFirst()._rawType())._columns();
+        return ((RelationType) t._classifierGenericType()._typeArguments().getFirst()._rawType())._columns();
     }
 
     public static <T, V> RichIterable<V> map(Relation<? extends T> rel, Function2<RowContainer, ExecutionSupport, RichIterable<V>> pureFunction, ExecutionSupport es)
@@ -64,9 +68,10 @@ public class RelationNativeImplementation
         return list;
     }
 
-    public static <T> Relation<? extends T> distinct(Relation<? extends T> rel, ColSpecArray<?> columns)
+    public static <T> Relation<? extends T> distinct(Relation<? extends T> rel, ColSpecArray<?> columns, ExecutionSupport es)
     {
-        return new TDSContainer((TestTDSCompiled) RelationNativeImplementation.getTDS(rel).distinct((MutableList) columns._names().toList()));
+        ProcessorSupport ps = ((CompiledExecutionSupport) es).getProcessorSupport();
+        return new TDSContainer((TestTDSCompiled) RelationNativeImplementation.getTDS(rel).distinct((MutableList) columns._names().toList()), ps);
     }
 
     public static <T> Long size(Relation<? extends T> res)
@@ -74,34 +79,40 @@ public class RelationNativeImplementation
         return RelationNativeImplementation.getTDS(res).getRowCount();
     }
 
-    public static <T> Relation<? extends T> limit(Relation<? extends T> rel, long size)
+    public static <T> Relation<? extends T> limit(Relation<? extends T> rel, long size, ExecutionSupport es)
     {
-        return new TDSContainer((TestTDSCompiled) RelationNativeImplementation.getTDS(rel).slice(0, (int) size));
+        ProcessorSupport ps = ((CompiledExecutionSupport) es).getProcessorSupport();
+        return new TDSContainer((TestTDSCompiled) RelationNativeImplementation.getTDS(rel).slice(0, (int) size), ps);
     }
 
-    public static <T> Relation<? extends T> slice(Relation<? extends T> rel, long start, long stop)
+    public static <T> Relation<? extends T> slice(Relation<? extends T> rel, long start, long stop, ExecutionSupport es)
     {
-        return new TDSContainer((TestTDSCompiled) RelationNativeImplementation.getTDS(rel).slice((int) start, (int) stop));
+        ProcessorSupport ps = ((CompiledExecutionSupport) es).getProcessorSupport();
+        return new TDSContainer((TestTDSCompiled) RelationNativeImplementation.getTDS(rel).slice((int) start, (int) stop), ps);
     }
 
-    public static <T> Relation<? extends T> drop(Relation<? extends T> relation, Long aLong)
+    public static <T> Relation<? extends T> drop(Relation<? extends T> relation, Long aLong, ExecutionSupport es)
     {
+        ProcessorSupport ps = ((CompiledExecutionSupport) es).getProcessorSupport();
         TestTDSCompiled tds = RelationNativeImplementation.getTDS(relation);
-        return new TDSContainer((TestTDSCompiled) tds.slice(aLong.intValue(), (int) tds.getRowCount()));
+        return new TDSContainer((TestTDSCompiled) tds.slice(aLong.intValue(), (int) tds.getRowCount()), ps);
     }
 
-    public static <T> Relation<? extends Object> rename(Relation<? extends T> r, ColSpec<?> old, ColSpec<?> aNew)
+    public static <T> Relation<? extends Object> rename(Relation<? extends T> r, ColSpec<?> old, ColSpec<?> aNew, ExecutionSupport es)
     {
-        return new TDSContainer((TestTDSCompiled) RelationNativeImplementation.getTDS(r).rename(old._name(), aNew._name()));
+        ProcessorSupport ps = ((CompiledExecutionSupport) es).getProcessorSupport();
+        return new TDSContainer((TestTDSCompiled) RelationNativeImplementation.getTDS(r).rename(old._name(), aNew._name()), ps);
     }
 
-    public static <T> Relation<? extends T> concatenate(Relation<? extends T> rel1, Relation<? extends T> rel2)
+    public static <T> Relation<? extends T> concatenate(Relation<? extends T> rel1, Relation<? extends T> rel2, ExecutionSupport es)
     {
-        return new TDSContainer((TestTDSCompiled) RelationNativeImplementation.getTDS(rel1).concatenate((TestTDSCompiled) RelationNativeImplementation.getTDS(rel2)));
+        ProcessorSupport ps = ((CompiledExecutionSupport) es).getProcessorSupport();
+        return new TDSContainer((TestTDSCompiled) RelationNativeImplementation.getTDS(rel1).concatenate((TestTDSCompiled) RelationNativeImplementation.getTDS(rel2)), ps);
     }
 
     public static <T> Relation<? extends T> filter(Relation<? extends T> rel, Function2 pureFunction, ExecutionSupport es)
     {
+        ProcessorSupport ps = ((CompiledExecutionSupport) es).getProcessorSupport();
         TestTDSCompiled tds = RelationNativeImplementation.getTDS(rel);
         MutableIntSet list = new IntHashSet();
         for (int i = 0; i < tds.getRowCount(); i++)
@@ -111,7 +122,7 @@ public class RelationNativeImplementation
                 list.add(i);
             }
         }
-        return new TDSContainer((TestTDSCompiled) tds.drop(list));
+        return new TDSContainer((TestTDSCompiled) tds.drop(list), ps);
     }
 
     public static <T, Z> Relation<? extends CoreInstance> extend(Relation<? extends T> rel, FuncColSpecArray f, ExecutionSupport es)
@@ -121,7 +132,10 @@ public class RelationNativeImplementation
 
     public static <T> Relation<? extends Object> extend(Relation<? extends T> rel, String s, Function2 pureFunction, String columnType, ExecutionSupport es)
     {
+        ProcessorSupport ps = ((CompiledExecutionSupport) es).getProcessorSupport();
+
         TestTDSCompiled tds = RelationNativeImplementation.getTDS(rel);
+
         switch (columnType)
         {
             case "String":
@@ -130,27 +144,29 @@ public class RelationNativeImplementation
                 {
                     res.add((String) pureFunction.value(new RowContainer(tds, i), es));
                 }
-                return new TDSContainer((TestTDSCompiled) tds.addColumn(s, DataType.STRING, res.toArray(new String[0])));
+                return new TDSContainer((TestTDSCompiled) tds.addColumn(s, DataType.STRING, res.toArray(new String[0])), ps);
             case "Integer":
                 int[] resultInt = new int[(int) tds.getRowCount()];
                 for (int i = 0; i < tds.getRowCount(); i++)
                 {
                     resultInt[i] = (int) (long) pureFunction.value(new RowContainer(tds, i), es);
                 }
-                return new TDSContainer((TestTDSCompiled) tds.addColumn(s, DataType.INT, resultInt));
+                return new TDSContainer((TestTDSCompiled) tds.addColumn(s, DataType.INT, resultInt), ps);
             case "Float":
                 double[] resultDouble = new double[(int) tds.getRowCount()];
                 for (int i = 0; i < tds.getRowCount(); i++)
                 {
                     resultDouble[i] = (double) pureFunction.value(new RowContainer(tds, i), es);
                 }
-                return new TDSContainer((TestTDSCompiled) tds.addColumn(s, DataType.DOUBLE, resultDouble));
+                return new TDSContainer((TestTDSCompiled) tds.addColumn(s, DataType.DOUBLE, resultDouble), ps);
         }
         throw new RuntimeException(columnType + " not supported yet");
     }
 
     public static <T, V> Relation<? extends Object> join(Relation<? extends T> rel1, Relation<? extends V> rel2, Enum joinKind, Function3 pureFunction, ExecutionSupport es)
     {
+        ProcessorSupport ps = ((CompiledExecutionSupport) es).getProcessorSupport();
+
         TestTDSCompiled tds1 = RelationNativeImplementation.getTDS(rel1);
         TestTDSCompiled tds2 = RelationNativeImplementation.getTDS(rel2);
         TestTDSCompiled tds = (TestTDSCompiled) tds1.join(tds2);
@@ -169,46 +185,52 @@ public class RelationNativeImplementation
             filtered = (TestTDSCompiled) tds1.compensateLeft(filtered);
         }
 
-        return new TDSContainer(filtered);
+        return new TDSContainer(filtered, ps);
     }
 
     public static <T> Relation<? extends T> sort(Relation<? extends T> rel, RichIterable<Pair<Enum, String>> collect, ExecutionSupport es)
     {
+        ProcessorSupport ps = ((CompiledExecutionSupport) es).getProcessorSupport();
         TestTDSCompiled tds1 = RelationNativeImplementation.getTDS(rel);
-        return new TDSContainer((TestTDSCompiled) tds1.sort(collect.collect(c -> new SortInfo(c.getTwo(), SortDirection.valueOf(c.getOne()._name()))).toList()).getOne());
+        return new TDSContainer((TestTDSCompiled) tds1.sort(collect.collect(c -> new SortInfo(c.getTwo(), SortDirection.valueOf(c.getOne()._name()))).toList()).getOne(), ps);
     }
 
     public static <T> Relation<? extends Object> groupBy(Relation<? extends T> rel, ColSpecArray<?> cols, String newColName, Function2 map, Function2 reduce, String reduceType, ExecutionSupport es)
     {
+        ProcessorSupport ps = ((CompiledExecutionSupport) es).getProcessorSupport();
+
         TestTDSCompiled tds = RelationNativeImplementation.getTDS(rel);
+
         Pair<TestTDS, MutableList<Pair<Integer, Integer>>> sortRes = tds.sort(cols._names().collect(name -> new SortInfo(name, SortDirection.ASC)).toList());
 
         int size = sortRes.getTwo().size();
 
+        MutableSet<String> columnsToRemove = tds.getColumnNames().clone().toSet();
+        columnsToRemove.removeAll(cols._names().toSet());
         TestTDSCompiled finalTDS = null;
         switch (reduceType)
         {
             case "String":
                 String[] finalRes = new String[size];
-                extracted(map, reduce, es, size, sortRes, (o, j) -> finalRes[j] = (String) o);
-                finalTDS = (TestTDSCompiled) sortRes.getOne()._distinct(sortRes.getTwo()).addColumn(newColName, DataType.STRING, finalRes);
+                performMapReduce(map, reduce, es, size, sortRes, (o, j) -> finalRes[j] = (String) o);
+                finalTDS = (TestTDSCompiled) sortRes.getOne()._distinct(sortRes.getTwo()).addColumn(newColName, DataType.STRING, finalRes).removeColumns(columnsToRemove);
                 break;
             case "Integer":
                 int[] finalResInt = new int[size];
-                extracted(map, reduce, es, size, sortRes, (o, j) -> finalResInt[j] = (int) (long) o);
-                finalTDS = (TestTDSCompiled) sortRes.getOne()._distinct(sortRes.getTwo()).addColumn(newColName, DataType.INT, finalResInt);
+                performMapReduce(map, reduce, es, size, sortRes, (o, j) -> finalResInt[j] = (int) (long) o);
+                finalTDS = (TestTDSCompiled) sortRes.getOne()._distinct(sortRes.getTwo()).addColumn(newColName, DataType.INT, finalResInt).removeColumns(columnsToRemove);
                 break;
             case "Float":
                 double[] finalResDouble = new double[size];
-                extracted(map, reduce, es, size, sortRes, (o, j) -> finalResDouble[j] = (double) o);
-                finalTDS = (TestTDSCompiled) sortRes.getOne()._distinct(sortRes.getTwo()).addColumn(newColName, DataType.FLOAT, finalResDouble);
+                performMapReduce(map, reduce, es, size, sortRes, (o, j) -> finalResDouble[j] = (double) o);
+                finalTDS = (TestTDSCompiled) sortRes.getOne()._distinct(sortRes.getTwo()).addColumn(newColName, DataType.FLOAT, finalResDouble).removeColumns(columnsToRemove);
                 break;
         }
 
-        return new TDSContainer(finalTDS);
+        return new TDSContainer(finalTDS, ps);
     }
 
-    private static void extracted(Function2 map, Function2 reduce, ExecutionSupport es, int size, Pair<TestTDS, MutableList<Pair<Integer, Integer>>> sortRes, Function2<Object, Integer, Object> val)
+    private static void performMapReduce(Function2 map, Function2 reduce, ExecutionSupport es, int size, Pair<TestTDS, MutableList<Pair<Integer, Integer>>> sortRes, Function2<Object, Integer, Object> val)
     {
         for (int j = 0; j < size; j++)
         {
@@ -224,6 +246,8 @@ public class RelationNativeImplementation
 
     public static Relation<?> project(RichIterable<?> objects, RichIterable<String> names, RichIterable<Function2> transforms, RichIterable<String> types, ExecutionSupport es)
     {
+        ProcessorSupport ps = ((CompiledExecutionSupport) es).getProcessorSupport();
+
         MutableList<String> typesL = types.toList();
         MutableList<String> namesL = names.toList();
         ListIterable<TestTDSCompiled> pre = objects.collect(o ->
@@ -253,9 +277,9 @@ public class RelationNativeImplementation
                 subList.add(one);
                 i++;
             }
-            return subList.drop(1).injectInto(subList.get(0), (a, b) ->  (TestTDSCompiled) a.join(b));
+            return subList.drop(1).injectInto(subList.get(0), (a, b) -> (TestTDSCompiled) a.join(b));
         }).toList();
-        return new TDSContainer(pre.drop(1).injectInto(pre.get(0), (a, b) -> (TestTDSCompiled) a.concatenate(b)));
+        return new TDSContainer(pre.drop(1).injectInto(pre.get(0), (a, b) -> (TestTDSCompiled) a.concatenate(b)), ps);
     }
 
     public static Object toInt(RichIterable<?> li)

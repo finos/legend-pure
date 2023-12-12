@@ -14,7 +14,7 @@
 
 import meta::pure::metamodel::relation::*;
 
-function meta::pure::functions::relation::colSpecArray<T>(s:String[*], cl:T[1]):ColSpecArray<T>[1]
+function <<functionType.NormalizeRequiredFunction>> meta::pure::functions::relation::colSpecArray<T>(s:String[*], cl:T[1]):ColSpecArray<T>[1]
 {
     ^ColSpecArray<T>
     (
