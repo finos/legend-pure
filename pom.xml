@@ -60,16 +60,18 @@
         <module>legend-pure-m2-dsl-mapping-pure</module>
         <module>legend-pure-runtime-java-extension-dsl-mapping</module>
 
-        <module>legend-pure-m2-dsl-diagram-grammar</module>
         <module>legend-pure-m2-dsl-diagram-pure</module>
+        <module>legend-pure-m2-dsl-diagram-grammar</module>
         <module>legend-pure-runtime-java-extension-dsl-diagram</module>
+
+        <module>legend-pure-m2-dsl-tds-pure</module>
+        <module>legend-pure-m2-dsl-tds-grammar</module>
+        <module>legend-pure-runtime-java-extension-dsl-tds</module>
 
         <module>legend-pure-m2-store-relational-pure</module>
         <module>legend-pure-m2-store-relational-grammar</module>
         <module>legend-pure-runtime-java-extension-store-relational</module>
 
-        <module>legend-pure-m2-dsl-tds-pure</module>
-        <module>legend-pure-m2-dsl-tds-grammar</module>
         <module>legend-pure-m2-functions-relation-pure</module>
         <module>legend-pure-runtime-java-extension-functions-relation</module>
 
