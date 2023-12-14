@@ -26,12 +26,12 @@ function meta::pure::functions::relation::toString<T>(rel:Relation<T>[1]):String
 function <<test.Test>> meta::pure::functions::relation::tests::toString::testToString():Boolean[1]
 {
     assertEquals( '#TDS\n'+
-                  '   value,other,txt\n'+
+                  '   val,other,txt\n'+
                   '   1,2,aa\n'+
                   '   2,3,ee\n'+
                   '   3,2,eewe\n'+
                   '#', #TDS
-                          value, other, txt
+                          val, other, txt
                           1, 2, aa
                           2, 3, ee
                           3, 2, eewe

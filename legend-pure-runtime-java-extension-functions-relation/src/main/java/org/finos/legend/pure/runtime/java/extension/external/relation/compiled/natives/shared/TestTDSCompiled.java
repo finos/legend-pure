@@ -49,20 +49,17 @@ public class TestTDSCompiled extends TestTDS
     public TestTDSCompiled(MutableList<String> columnOrdered, MutableMap<String, DataType> columnType, int rows)
     {
         super(columnOrdered, columnType, rows);
-        System.out.println(this.hashCode() + " ->XXXX<- " + classifierGenericType);
     }
 
     public TestTDSCompiled(CsvReader.Result result, CoreInstance classifierGenericType)
     {
         super(result);
-        System.out.println(this.hashCode() + " XXXX " + classifierGenericType);
         this.classifierGenericType = classifierGenericType;
     }
 
     @Override
     public TestTDS newTDS()
     {
-        System.out.println(this.hashCode() + " @->XXXX<-@ " + classifierGenericType);
         return new TestTDSCompiled();
     }
 

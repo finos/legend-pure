@@ -19,13 +19,13 @@ native function meta::pure::functions::relation::columns<T>(rel:Relation<T>[1]):
 function <<test.Test>> meta::pure::functions::relation::tests::columns::testSimpleColumns():Boolean[1]
 {
     let t = #TDS
-                value, other, txt
+                val, other, txt
                 1, 2, aa
                 2, 3, ee
                 3, 2, eewe
               #;
 
-    assertEquals(['value','other','txt'], $t->columns().name);
+    assertEquals(['val','other','txt'], $t->columns().name);
 
     let cols = $t->columns();
     assertEquals('1,2,aa\n2,3,ee\n3,2,eewe', $t->map(x|$cols->map(c|$c->eval($x)->toOne()->toString())->joinStrings(','))->joinStrings('\n'));

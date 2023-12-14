@@ -83,8 +83,6 @@ public class TestTDS
                 case INT:
                     for (int i = 0; i < this.rowCount; i++)
                     {
-                        System.out.println(((int[]) c.data())[i]);
-                        System.out.println(Integer.MIN_VALUE);
                         array[i] = ((int[]) c.data())[i] == Integer.MIN_VALUE;
                     }
                     break;

@@ -20,7 +20,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::drop::
 {
     let expr = {
                |#TDS
-                value, str
+                val, str
                 1, a
                 3, ewe
                 4, qw
@@ -29,10 +29,10 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::drop::
                 #->drop(3)
               };
 
-    let res =  $f->eval($expr)->cast(@Relation<(value:Integer, str:String)>)->toOne();
+    let res =  $f->eval($expr)->cast(@Relation<(val:Integer, str:String)>)->toOne();
 
     assertEquals( '#TDS\n'+
-                  '   value,str\n'+
+                  '   val,str\n'+
                   '   5,wwe\n'+
                   '   6,weq\n'+
                   '#', $res->toString());

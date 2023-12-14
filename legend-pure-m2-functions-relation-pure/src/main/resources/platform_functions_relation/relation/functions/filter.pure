@@ -26,17 +26,17 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::filter
 {
     let expr = {
                   |#TDS
-                    value
+                    val
                     1
                     3
                     4
-                  #->filter(x|$x.value > 1)
+                  #->filter(x|$x.val > 1)
                };
 
-    let res =  $f->eval($expr)->cast(@Relation<(value:Integer)>)->toOne();
+    let res =  $f->eval($expr)->cast(@Relation<(val:Integer)>)->toOne();
 
     assertEquals( '#TDS\n'+
-                  '   value\n'+
+                  '   val\n'+
                   '   3\n'+
                   '   4\n'+
                   '#', $res->toString());

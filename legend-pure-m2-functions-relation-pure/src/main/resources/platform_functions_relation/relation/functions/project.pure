@@ -19,7 +19,7 @@ native function meta::pure::functions::relation::project<C,T>(cl:C[*], x:FuncCol
 
 Class meta::pure::functions::relation::tests::project::Address
 {
-  value : String[1];
+  val : String[1];
 }
 
 Class meta::pure::functions::relation::tests::project::TypeForProjectTest
@@ -31,7 +31,7 @@ Class meta::pure::functions::relation::tests::project::TypeForProjectTest
 
 Class meta::pure::functions::relation::tests::project::PrimitiveContainer
 {
-  value : Integer[1];
+  val : Integer[1];
 }
 
 function <<RelationProfile.test>> meta::pure::functions::relation::tests::project::testSimpleProject<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
@@ -41,18 +41,18 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::projec
                   (
                     name = 'ok',
                     addresses = [
-                        ^Address(value='no'),
-                        ^Address(value='other')
+                        ^Address(val='no'),
+                        ^Address(val='other')
                     ],
                     values = [
-                      ^PrimitiveContainer(value=1),
-                      ^PrimitiveContainer(value=2),
-                      ^PrimitiveContainer(value=3)
+                      ^PrimitiveContainer(val=1),
+                      ^PrimitiveContainer(val=2),
+                      ^PrimitiveContainer(val=3)
                     ]
                   )->project(~[
                           one:x|$x.name,
-                          two:x|$x.addresses.value,
-                          three:x|$x.values.value
+                          two:x|$x.addresses.val,
+                          three:x|$x.values.val
                        ])
             };
 
@@ -79,31 +79,31 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::projec
                       (
                         name = 'ok',
                         addresses = [
-                            ^Address(value='no'),
-                            ^Address(value='other')
+                            ^Address(val='no'),
+                            ^Address(val='other')
                         ],
                         values = [
-                                   ^PrimitiveContainer(value=1),
-                                   ^PrimitiveContainer(value=2),
-                                   ^PrimitiveContainer(value=3)
+                                   ^PrimitiveContainer(val=1),
+                                   ^PrimitiveContainer(val=2),
+                                   ^PrimitiveContainer(val=3)
                                  ]
                       ),
                       ^TypeForProjectTest
                       (
                         name = 'ok3',
                         addresses = [
-                            ^Address(value='no')
+                            ^Address(val='no')
                         ],
                         values = [
-                                   ^PrimitiveContainer(value=1),
-                                   ^PrimitiveContainer(value=2),
-                                   ^PrimitiveContainer(value=3)
+                                   ^PrimitiveContainer(val=1),
+                                   ^PrimitiveContainer(val=2),
+                                   ^PrimitiveContainer(val=3)
                                  ]
                       )
                   ]->project(~[
                                   one:x|$x.name,
-                                  two:x|$x.addresses.value,
-                                  three:x|$x.values.value
+                                  two:x|$x.addresses.val,
+                                  three:x|$x.values.val
                               ])
              };
 
@@ -132,14 +132,14 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::projec
                 (
                   name = 'ok',
                   addresses = [
-                      ^Address(value='no'),
-                      ^Address(value='other')
+                      ^Address(val='no'),
+                      ^Address(val='other')
                   ],
                   values = []
                 )->project(~[
                                 one:x|$x.name,
-                                two:x|$x.addresses.value,
-                                three:x|$x.values.value
+                                two:x|$x.addresses.val,
+                                three:x|$x.values.val
                             ])
               };
 

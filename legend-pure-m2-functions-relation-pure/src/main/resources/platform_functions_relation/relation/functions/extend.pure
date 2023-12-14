@@ -23,19 +23,19 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::extend
 {
     let expr = {
                 |#TDS
-                  value, str
+                  val, str
                   1, a
                   3, ewe
                   4, qw
                   5, wwe
                   6, weq
-                #->extend(~name:c|$c.str->toOne() + $c.value->toOne()->toString())
+                #->extend(~name:c|$c.str->toOne() + $c.val->toOne()->toString())
               };
 
-    let res =  $f->eval($expr)->cast(@Relation<(value:Integer, str:String, name:String)>)->toOne();
+    let res =  $f->eval($expr)->cast(@Relation<(val:Integer, str:String, name:String)>)->toOne();
 
     assertEquals( '#TDS\n'+
-                  '   value,str,name\n'+
+                  '   val,str,name\n'+
                   '   1,a,a1\n'+
                   '   3,ewe,ewe3\n'+
                   '   4,qw,qw4\n'+
@@ -47,13 +47,13 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::extend
 function <<test.Test>> meta::pure::functions::relation::tests::extend::testSimpleExtendInt():Boolean[1]
 {
     let res = #TDS
-                value, str
+                val, str
                 1, a
                 3, ewe
                 4, qw
                 5, wwe
                 6, weq
-              #->extend(~name:c|$c.value->toOne() + 1);
+              #->extend(~name:c|$c.val->toOne() + 1);
     assertEquals(5, $res->size());
     assertEquals('24567', $res->map(c|$c.name->toOne()->toString())->joinStrings(''));
 }
@@ -61,7 +61,7 @@ function <<test.Test>> meta::pure::functions::relation::tests::extend::testSimpl
 function <<test.Test>> meta::pure::functions::relation::tests::extend::testSimpleExtendFloat():Boolean[1]
 {
     let res = #TDS
-                value, doub
+                val, doub
                 1, 1.2
                 3, 2.3
                 4, 4.2
