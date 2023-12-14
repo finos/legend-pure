@@ -37,13 +37,23 @@ public class Project extends AbstractNative implements Native
         result.append(transformedParams.get(1));
         result.append("._names(), ");
         result.append(transformedParams.get(1));
-        result.append("._functions().collect(ff -> ");
-        result.append(" (org.eclipse.collections.api.block.function.Function2)PureCompiledLambda.getPureFunction((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>)ff, es)");
-        result.append("),");
+        result.append("._functions().collect(new DefendedFunction()\n" +
+                "{\n" +
+                "    @Override\n" +
+                "    public Object valueOf(Object ff)\n" +
+                "    {\n" +
+                "        return PureCompiledLambda.getPureFunction((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>)ff, es);\n" +
+                "    }\n" +
+                "}),");
         result.append(transformedParams.get(1));
-        result.append("._functions().collect(ff -> ");
-        result.append(" ((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType)((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>)ff)._classifierGenericType()._typeArguments().toList().get(0)._rawType())._returnType()._rawType()._name()");
-        result.append("), es)\n");
+        result.append("._functions().collect(new DefendedFunction()\n" +
+                "{\n" +
+                "    @Override\n" +
+                "    public Object valueOf(Object ff)\n" +
+                "    {\n" +
+                "        return ((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType)((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>)ff)._classifierGenericType()._typeArguments().toList().get(0)._rawType())._returnType()._rawType()._name();\n" +
+                "    }\n" +
+                "}), es)\n");
         return result.toString();
     }
 }

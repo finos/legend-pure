@@ -31,7 +31,6 @@ public class Join extends AbstractNative implements Native
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        ProcessorSupport processorSupport = processorContext.getSupport();
         StringBuilder result = new StringBuilder("org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.join");
         result.append('(');
         result.append(transformedParams.get(0));
