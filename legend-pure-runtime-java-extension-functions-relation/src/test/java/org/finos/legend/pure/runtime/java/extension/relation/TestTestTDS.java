@@ -398,4 +398,25 @@ public class TestTestTDS extends AbstractPureTestWithCoreCompiled
         Assert.assertEquals(resTDS, res.toString());
         Assert.assertEquals(leftTDS, left.toString());
     }
+
+
+    @org.junit.Test
+    public void testSentinel()
+    {
+        String resTDS = "id,name,id2,col,other\n" +
+                "1,George,1,More George 1,1\n" +
+                "1,George,1,More George 2,2\n" +
+                "2,Pierre,-2147483648,null,-2147483648\n" +
+                "3,Sachin,-2147483648,null,-2147483648\n" +
+                "4,David,4,More David,1";
+
+        TestTDS res = new TestTDS(resTDS);
+
+        Assert.assertEquals("id, col, other, id2, name\n" +
+                "1, More George 1, 1, 1, George\n" +
+                "1, More George 2, 2, 1, George\n" +
+                "2, NULL, NULL, NULL, Pierre\n" +
+                "3, NULL, NULL, NULL, Sachin\n" +
+                "4, More David, 1, 4, David", res.toString());
+    }
 }

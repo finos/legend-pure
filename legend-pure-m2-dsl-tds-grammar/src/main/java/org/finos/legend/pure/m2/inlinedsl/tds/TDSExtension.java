@@ -67,8 +67,14 @@ public class TDSExtension implements InlineDSL
     public CoreInstance parse(String code, ImportGroup importId, String fileName, int offsetX, int offsetY, ModelRepository modelRepository, Context context)
     {
         String val = code.substring("TDS".length()).trim();
+        ProcessorSupport processorSupport = new M3ProcessorSupport(context, modelRepository);
+        return parse(val, fileName, processorSupport);
+    }
 
+    public static TDS<?> parse(String val, String fileName, ProcessorSupport processorSupport)
+    {
         final CsvReader.Result result;
+
         try
         {
             result = CsvReader.read(CsvSpecs.csv(), new ByteArrayInputStream(val.getBytes()), SinkFactory.arrays());
@@ -78,21 +84,21 @@ public class TDSExtension implements InlineDSL
             throw new RuntimeException(e);
         }
 
-        ProcessorSupport processorSupport = new M3ProcessorSupport(context, modelRepository);
         SourceInformation src = new SourceInformation(fileName, 0, 0, 0, 0);
         Class<?> tdsType = (Class<?>) processorSupport.package_getByUserPath(M2TDSPaths.TDS);
-        TDS<?> tds = ((TDS<?>) modelRepository.newEphemeralCoreInstance("", tdsType, src));
+        TDS<?> tds = ((TDS<?>) processorSupport.newEphemeralAnonymousCoreInstance(M2TDSPaths.TDS));
         GenericType tdsGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
-        tdsGenericType._rawTypeCoreInstance(tdsType);
+        tdsGenericType._rawType(tdsType);
         GenericType typeParam = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
         typeParam._rawType(_RelationType.build(ArrayIterate.collect(result.columns(), c -> _Column.getColumnInstance(c.name(), false, typeParam, convertType(c.dataType()), src, processorSupport)), src, processorSupport));
         tdsGenericType._typeArgumentsAdd(typeParam);
         tds._classifierGenericType(tdsGenericType);
-        Instance.setValueForProperty(tds, "csv", modelRepository.newStringCoreInstance(val), processorSupport);
+        tds._csv(val);
+
         return tds;
     }
 
-    private String convertType(DataType dataType)
+    private static String convertType(DataType dataType)
     {
         String value = "";
         switch (dataType)

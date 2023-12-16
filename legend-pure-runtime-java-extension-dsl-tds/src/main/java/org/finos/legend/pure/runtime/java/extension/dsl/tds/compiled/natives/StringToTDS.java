@@ -12,11 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::pure::metamodel::relation::*;
+package org.finos.legend.pure.runtime.java.extension.dsl.tds.compiled.natives;
 
-Class meta::pure::metamodel::relation::TDS<T> extends meta::pure::metamodel::relation::Relation<T> // T is of RelationType kind
+import org.finos.legend.pure.m3.execution.ExecutionSupport;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
+
+public class StringToTDS extends AbstractNativeFunctionGeneric
 {
-    csv : String[1];
+    public StringToTDS()
+    {
+        super("org.finos.legend.pure.runtime.java.extension.dsl.tds.compiled.TDSNativeImplementation.parse", new Class[]{String.class, ExecutionSupport.class}, false, true, false, "stringToTDS_String_1__TDS_1_");
+    }
 }
-
-native function meta::pure::metamodel::relation::stringToTDS(s:String[1]):meta::pure::metamodel::relation::TDS<Any>[1];

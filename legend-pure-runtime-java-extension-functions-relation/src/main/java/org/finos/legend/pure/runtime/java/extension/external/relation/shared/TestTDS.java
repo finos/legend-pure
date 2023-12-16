@@ -31,13 +31,11 @@ import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.set.mutable.primitive.IntHashSet;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.eclipse.collections.impl.utility.ArrayIterate;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation._package._Package;
 
 import java.io.ByteArrayInputStream;
 import java.lang.reflect.Array;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 
 public class TestTDS
@@ -97,13 +95,22 @@ public class TestTDS
                     {
                         array[i] = ((double[]) c.data())[i] == -Double.MAX_VALUE;
                     }
+                    break;
+                case STRING:
+                    for (int i = 0; i < this.rowCount; i++)
+                    {
+                        if ("null".equals(((String[]) c.data())[i]))
+                        {
+                            ((String[]) c.data())[i] = null;
+                        }
+                    }
             }
         });
     }
 
     protected TestTDS(MutableList<String> columnOrdered, MutableMap<String, DataType> columnType, int rows)
     {
-        this. columnsOrdered = columnOrdered;
+        this.columnsOrdered = columnOrdered;
         this.columnType = columnType;
         this.rowCount = rows;
         this.columnType.keyValuesView().forEach(p ->
@@ -197,11 +204,11 @@ public class TestTDS
     {
         try
         {
-            return CsvReader.read(CsvSpecs.csv(), new ByteArrayInputStream(csv.getBytes()), makeMySinkFactory());
+            return CsvReader.read(CsvSpecs.csv(), new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), SinkFactory.arrays());
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error parsing:\n" + csv, e);
         }
     }
 
