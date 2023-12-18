@@ -28,9 +28,12 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.eclipse.collections.impl.utility.Iterate;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m4.serialization.Writer;
 
 import java.io.IOException;
@@ -292,21 +295,33 @@ public class DistributedMetadataSpecification
      */
     public static List<DistributedMetadataSpecification> loadSpecifications(ClassLoader classLoader, Iterable<String> metadataNames)
     {
-        Set<String> visited = Sets.mutable.empty();
-        List<DistributedMetadataSpecification> metadataList = Lists.mutable.empty();
-        Deque<String> toLoad = Iterate.addAllTo(metadataNames, new ArrayDeque<>());
-        ObjectReader reader = getSpecObjectReader();
-        while (!toLoad.isEmpty())
+        MutableMap<String, Set<String>> dependenciesByRepo = Maps.mutable.empty();
+        try
         {
-            String name = toLoad.removeLast();
-            if (visited.add(name))
+            Set<String> visited = Sets.mutable.empty();
+            List<DistributedMetadataSpecification> metadataList = Lists.mutable.empty();
+            Deque<String> toLoad = Iterate.addAllTo(metadataNames, new ArrayDeque<>());
+            ObjectReader reader = getSpecObjectReader();
+            while (!toLoad.isEmpty())
             {
-                DistributedMetadataSpecification metadata = loadSpecFromClassLoader(classLoader, name, reader);
-                metadataList.add(metadata);
-                toLoad.addAll(metadata.getDependencies());
+                String name = toLoad.removeLast();
+                if (visited.add(name))
+                {
+                    DistributedMetadataSpecification metadata = loadSpecFromClassLoader(classLoader, name, reader);
+                    metadataList.add(metadata);
+                    dependenciesByRepo.put(name, metadata.getDependencies());
+                    toLoad.addAll(metadata.getDependencies());
+                }
             }
+            return metadataList;
         }
-        return metadataList;
+        catch (Exception e)
+        {
+            throw new RuntimeException(e.getMessage() +
+                    "\nDirectly asked for:" + metadataNames +
+                    "\nLoaded up to now (with dependencies):" + dependenciesByRepo +
+                    "\nThe requested repos are coming from PAR projects scanning. You may not have included the project containing the distributed metadata for Java generation.", e);
+        }
     }
 
     /**
@@ -459,7 +474,7 @@ public class DistributedMetadataSpecification
             }
             catch (IOException e)
             {
-                throw new UncheckedIOException("Error reading definition of metadata \"" + metadataName + "\" from " + otherUrl, e);
+                throw new UncheckedIOException("Error reading definition of metadata \"" + metadataName + "\" from " + otherUrl + "\nFound Repositories on the ClassPath: " + CodeRepositoryProviderHelper.findCodeRepositories().collect(CodeRepository::getName), e);
             }
             if (!metadata.equals(otherMetadata))
             {

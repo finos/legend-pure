@@ -14,15 +14,21 @@
 
 package org.finos.legend.pure.m3.navigation.generictype.match;
 
+import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.tuple.Pair;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionType;
 import org.finos.legend.pure.m3.navigation.multiplicity.MultiplicityMatch;
+import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
@@ -56,7 +62,7 @@ abstract class TypeMatch implements Comparable<TypeMatch>
 
             if (other instanceof SimpleTypeMatch)
             {
-                return (((SimpleTypeMatch) other).typeDistance == 0) ? 1 : -1;
+                return 1;
             }
 
             return -1;
@@ -132,7 +138,7 @@ abstract class TypeMatch implements Comparable<TypeMatch>
 
             if (other == NON_CONCRETE_MATCH)
             {
-                return (this.typeDistance == 0) ? -1 : 1;
+                return -1;
             }
 
             if (!(other instanceof SimpleTypeMatch))
@@ -147,6 +153,82 @@ abstract class TypeMatch implements Comparable<TypeMatch>
         public String toString()
         {
             return "<TypeMatch typeDistance=" + this.typeDistance + ">";
+        }
+    }
+
+    private static class RelationTypeMatch extends TypeMatch
+    {
+        private final ImmutableList<MultiplicityMatch> columnsMultiplicityMatches;
+        private final ImmutableList<GenericTypeMatch> columnsTypeMatches;
+
+        private RelationTypeMatch(Iterable<? extends GenericTypeMatch> columnsTypeMatches, Iterable<? extends MultiplicityMatch> columnsMultiplicityMatches)
+        {
+            this.columnsTypeMatches = Lists.immutable.withAll(columnsTypeMatches);
+            this.columnsMultiplicityMatches = Lists.immutable.withAll(columnsMultiplicityMatches);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int hash = this.columnsTypeMatches.hashCode();
+            return (43 * hash) + this.columnsMultiplicityMatches.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object other)
+        {
+            if (this == other)
+            {
+                return true;
+            }
+
+            if (!(other instanceof RelationTypeMatch))
+            {
+                return false;
+            }
+
+            RelationTypeMatch otherMatch = (RelationTypeMatch) other;
+            return this.columnsTypeMatches.equals(otherMatch.columnsTypeMatches) &&
+                    this.columnsMultiplicityMatches.equals(otherMatch.columnsMultiplicityMatches);
+        }
+
+        @Override
+        public String toString()
+        {
+            StringBuilder builder = new StringBuilder("<TypeMatch RelationType");
+            this.columnsTypeMatches.appendString(builder, " columnsTypeMatches=[", ", ", "]");
+            this.columnsMultiplicityMatches.appendString(builder, " columnsMultiplicityMatches=[", ", ", "]");
+            return builder.append('>').toString();
+        }
+
+        @Override
+        public int compareTo(TypeMatch other)
+        {
+            if (this == other)
+            {
+                return 0;
+            }
+
+            if ((other == NON_CONCRETE_MATCH) || (other instanceof SimpleTypeMatch))
+            {
+                return 1;
+            }
+
+            if (!(other instanceof RelationTypeMatch))
+            {
+                return -1;
+            }
+
+            RelationTypeMatch otherMatch = (RelationTypeMatch) other;
+            int comparison;
+
+            comparison = GenericTypeMatch.compareMatchLists(this.columnsTypeMatches, otherMatch.columnsTypeMatches);
+            if (comparison != 0)
+            {
+                return comparison;
+            }
+
+            return GenericTypeMatch.compareMatchLists(this.columnsMultiplicityMatches, otherMatch.columnsMultiplicityMatches);
         }
     }
 
@@ -275,6 +357,7 @@ abstract class TypeMatch implements Comparable<TypeMatch>
         {
             throw new IllegalArgumentException("Target type cannot be null");
         }
+
         if (valueType == null)
         {
             switch (GenericTypeMatch.getNullMatchBehavior(valueNullMatchBehavior))
@@ -305,6 +388,11 @@ abstract class TypeMatch implements Comparable<TypeMatch>
 
         CoreInstance superType = covariant ? targetType : valueType;
         CoreInstance subType = covariant ? valueType : targetType;
+
+        if (processorSupport.instance_instanceOf(superType, M3Paths.RelationType) && processorSupport.instance_instanceOf(subType, M3Paths.RelationType))
+        {
+            return newRelationTypeMatch((RelationType<?>) subType, (RelationType<?>) superType, covariant, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior, processorSupport);
+        }
 
         if (Type.isBottomType(subType, processorSupport))
         {
@@ -345,6 +433,75 @@ abstract class TypeMatch implements Comparable<TypeMatch>
             {
                 return new SimpleTypeMatch(distance);
             }
+        }
+    }
+
+    private static TypeMatch newRelationTypeMatch(RelationType candidate, RelationType signature, boolean covariant, NullMatchBehavior valueNullMatchBehavior, ParameterMatchBehavior targetParameterMatchBehavior, ParameterMatchBehavior valueParameterMatchBehavior, ProcessorSupport processorSupport)
+    {
+
+        if (_RelationType.equalRelationType(candidate, signature, processorSupport))
+        {
+            return newExactTypeMatch();
+        }
+        else
+        {
+            // Check Any
+            if (signature == processorSupport.type_TopType())
+            {
+                return new SimpleTypeMatch(1);
+            }
+
+            // Check other has the right type
+            if (!processorSupport.instance_instanceOf(signature, M3Paths.RelationType))
+            {
+                return null;
+            }
+
+            RichIterable<? extends Column<?, ?>> candidateColumns = candidate._columns();
+            RichIterable<? extends Column<?, ?>> signatureColumns = signature._columns();
+
+            if (candidateColumns.size() < signatureColumns.size())
+            {
+                return null;
+            }
+
+            Pair<ListIterable<? extends Column<?, ?>>, ListIterable<? extends Column<?, ?>>> res = _RelationType.alignColumnSets(candidateColumns, signatureColumns, processorSupport);
+            ListIterable<? extends Column<?, ?>> sortedCandidateSub = res.getOne();
+            ListIterable<? extends Column<?, ?>> sortedSignatures = res.getTwo();
+
+            if (sortedSignatures.size() != sortedCandidateSub.size())
+            {
+                return null;
+            }
+
+            int count = sortedSignatures.size();
+            MutableList<GenericTypeMatch> columnsTypeMatches = Lists.mutable.ofInitialCapacity(count);
+            MutableList<MultiplicityMatch> columnsMultMatches = Lists.mutable.ofInitialCapacity(count);
+            for (int i = 0; i < count; i++)
+            {
+                CoreInstance candidateColumn = sortedCandidateSub.get(i);
+                CoreInstance signatureColumn = sortedSignatures.get(i);
+
+                CoreInstance candidateColumnType = candidateColumn.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToMany(M3Properties.typeArguments).toList().get(1);
+                CoreInstance signatureColumnType = signatureColumn.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToMany(M3Properties.typeArguments).toList().get(1);
+
+                GenericTypeMatch paramTypeMatch = GenericTypeMatch.newGenericTypeMatch(signatureColumnType, candidateColumnType, covariant, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior, processorSupport);
+                if (paramTypeMatch == null)
+                {
+                    return null;
+                }
+                columnsTypeMatches.add(paramTypeMatch);
+
+                CoreInstance paramParamMult = Instance.getValueForMetaPropertyToOneResolved(candidateColumn, M3Properties.classifierGenericType, processorSupport).getValueForMetaPropertyToMany(M3Properties.multiplicityArguments).getFirst();
+                CoreInstance valueParamMult = Instance.getValueForMetaPropertyToOneResolved(signatureColumn, M3Properties.classifierGenericType, processorSupport).getValueForMetaPropertyToMany(M3Properties.multiplicityArguments).getFirst();
+                MultiplicityMatch paramMultMatch = MultiplicityMatch.newMultiplicityMatch(paramParamMult, valueParamMult, covariant, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
+                if (paramMultMatch == null)
+                {
+                    return null;
+                }
+                columnsMultMatches.add(paramMultMatch);
+            }
+            return new RelationTypeMatch(columnsTypeMatches, columnsMultMatches);
         }
     }
 

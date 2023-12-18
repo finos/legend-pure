@@ -60,13 +60,20 @@
         <module>legend-pure-m2-dsl-mapping-pure</module>
         <module>legend-pure-runtime-java-extension-dsl-mapping</module>
 
-        <module>legend-pure-m2-dsl-diagram-grammar</module>
         <module>legend-pure-m2-dsl-diagram-pure</module>
+        <module>legend-pure-m2-dsl-diagram-grammar</module>
         <module>legend-pure-runtime-java-extension-dsl-diagram</module>
+
+        <module>legend-pure-m2-dsl-tds-pure</module>
+        <module>legend-pure-m2-dsl-tds-grammar</module>
+        <module>legend-pure-runtime-java-extension-dsl-tds</module>
 
         <module>legend-pure-m2-store-relational-pure</module>
         <module>legend-pure-m2-store-relational-grammar</module>
         <module>legend-pure-runtime-java-extension-store-relational</module>
+
+        <module>legend-pure-m2-functions-relation-pure</module>
+        <module>legend-pure-runtime-java-extension-functions-relation</module>
 
         <module>legend-pure-maven-generation-par</module>
         <module>legend-pure-maven-generation-java</module>
@@ -530,7 +537,17 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-runtime-java-extension-functions-relation</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-m2-functions-json-pure</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-m2-functions-relation-pure</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -597,6 +614,13 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-runtime-java-extension-functions-json</artifactId>
+                <type>test-jar</type>
+                <scope>test</scope>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-runtime-java-extension-functions-shared-conversion</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -623,6 +647,16 @@
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-m2-dsl-mapping-pure</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-m2-dsl-tds-pure</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-m2-dsl-tds-grammar</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

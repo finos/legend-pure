@@ -47,16 +47,16 @@ public class InstanceValueUnbind implements MatchRunner<InstanceValue>
         {
             if (!(value instanceof Property))
             {
-                ((UnbindState)state).freeProcessedAndValidated(value);
+                ((UnbindState) state).freeProcessedAndValidated(value);
             }
 
             Shared.cleanUpReferenceUsage(value, instanceValue, processorSupport);
 
             if (value instanceof KeyExpression)
             {
-                ((UnbindState) state).freeProcessedAndValidated(modelRepository.newBooleanCoreInstance(((KeyExpression)value)._add()));
-                ((UnbindState) state).freeProcessedAndValidated(((KeyExpression)value)._key());
-                matcher.fullMatch(((KeyExpression)value)._expression(), state);
+                ((UnbindState) state).freeProcessedAndValidated(modelRepository.newBooleanCoreInstance(((KeyExpression) value)._add()));
+                ((UnbindState) state).freeProcessedAndValidated(((KeyExpression) value)._key());
+                matcher.fullMatch(((KeyExpression) value)._expression(), state);
             }
             else if (value instanceof ImportStub)
             {
@@ -69,7 +69,7 @@ public class InstanceValueUnbind implements MatchRunner<InstanceValue>
 
             if (value instanceof ValueSpecification)
             {
-                ((ValueSpecification)value)._usageContextRemove();
+                ((ValueSpecification) value)._usageContextRemove();
             }
         }
     }

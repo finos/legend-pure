@@ -15,7 +15,8 @@
  limitations under the License.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure</artifactId>
@@ -76,10 +77,10 @@
                         <version>${project.version}</version>
                     </dependency>
                     <dependency>
-                    <groupId>org.finos.legend.pure</groupId>
-                    <artifactId>legend-pure-m2-dsl-mapping-pure</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
+                        <groupId>org.finos.legend.pure</groupId>
+                        <artifactId>legend-pure-m2-dsl-mapping-pure</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
                 </dependencies>
             </plugin>
             <plugin>
@@ -103,7 +104,8 @@
                                 <argument>RelationalStore</argument>
                                 <argument>
                                     /platform_store_relational/grammar/relational.pure,
-                                    /platform_store_relational/grammar/relationalMapping.pure
+                                    /platform_store_relational/grammar/relationalMapping.pure,
+                                    /platform_store_relational/grammar/relationAccessor.pure
                                 </argument>
                             </arguments>
                         </configuration>

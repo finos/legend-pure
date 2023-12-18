@@ -135,7 +135,6 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                         "}\n");
     }
 
-
     @Test
     public void inferVariableTypeOfFunctionUsedAsParameter()
     {
@@ -343,7 +342,7 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                         "}\n"));
         assertPureException(PureCompilationException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "tt(_:Integer[3],_:FunctionDefinition<{Integer[1]->Any[1]}>[2])\n" +
                 PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_IMPORTED_MESSAGE +
-                "\ttt(T[*], Function[*]):Any[*]\n" +
+                "\ttt(T[*], Function<{T[1]->Integer[1]}>[*]):Any[*]\n" +
                 PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE, inferenceTestFileName, 11, 12, e);
     }
 

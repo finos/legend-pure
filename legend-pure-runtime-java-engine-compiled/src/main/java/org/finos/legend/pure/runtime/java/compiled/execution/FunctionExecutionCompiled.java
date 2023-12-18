@@ -168,10 +168,17 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
     @Override
     public CoreInstance start(CoreInstance functionDefinition, ListIterable<? extends CoreInstance> arguments)
     {
-        CompiledExecutionSupport executionSupport = new CompiledExecutionSupport(this.javaCompilerEventHandler.getJavaCompileState(),
-                (CompiledProcessorSupport) this.getProcessorSupport(), this.sourceRegistry, this.runtime.getCodeStorage(),
-                this.runtime.getIncrementalCompiler(), this.executionActivityListener, this.consoleCompiled,
-                this.javaCompilerEventHandler.getFunctionCache(), this.javaCompilerEventHandler.getClassCache(), this.metadataCompilerEventHandler, this.extraSupportedTypes, this.extensions, this.runtime.getOptions());
+        CompiledExecutionSupport executionSupport =
+                new CompiledExecutionSupport(
+                        this.javaCompilerEventHandler.getJavaCompileState(),
+                        (CompiledProcessorSupport) this.getProcessorSupport(),
+                        this.sourceRegistry,
+                        this.runtime.getCodeStorage(),
+                        this.runtime.getIncrementalCompiler(),
+                        this.executionActivityListener,
+                        this.consoleCompiled,
+                        this.javaCompilerEventHandler.getFunctionCache(), this.javaCompilerEventHandler.getClassCache(), this.metadataCompilerEventHandler, this.extraSupportedTypes, this.extensions, this.runtime.getOptions()
+                );
         Exception exception = null;
         try
         {

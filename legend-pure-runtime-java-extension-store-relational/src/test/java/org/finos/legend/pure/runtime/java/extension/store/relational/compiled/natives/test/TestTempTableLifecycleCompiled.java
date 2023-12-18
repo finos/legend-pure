@@ -24,6 +24,6 @@ public class TestTempTableLifecycleCompiled extends AbstractTestTempTableLifecyc
     @Before
     public void setUp()
     {
-        setUpRuntime(new FunctionExecutionCompiledBuilder().build(), JavaModelFactoryRegistryLoader.loader());
+        setUpRuntime(new FunctionExecutionCompiledBuilder().build());
     }
 }

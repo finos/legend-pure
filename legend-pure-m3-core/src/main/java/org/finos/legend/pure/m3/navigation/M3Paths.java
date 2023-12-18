@@ -38,6 +38,7 @@ public class M3Paths
     public static final String Class = "meta::pure::metamodel::type::Class";
     public static final String ClassConstraintValueSpecificationContext = "meta::pure::metamodel::valuespecification::ClassConstraintValueSpecificationContext";
     public static final String ClassProjection = "meta::pure::metamodel::type::ClassProjection";
+    public static final String Column = "meta::pure::metamodel::relation::Column";
     public static final String ConcreteFunctionDefinition = "meta::pure::metamodel::function::ConcreteFunctionDefinition";
     public static final String Constraint = "meta::pure::metamodel::constraint::Constraint";
     public static final String ConstraintsOverride = "meta::pure::metamodel::type::ConstraintsOverride";
@@ -66,6 +67,8 @@ public class M3Paths
     public static final String Generalization = "meta::pure::metamodel::relationship::Generalization";
     public static final String GeneralizationView = "meta::pure::diagram::GeneralizationView";
     public static final String GenericType = "meta::pure::metamodel::type::generics::GenericType";
+    public static final String GenericTypeOperation = "meta::pure::metamodel::relation::GenericTypeOperation";
+    public static final String GenericTypeOperationType = "meta::pure::metamodel::relation::GenericTypeOperationType";
     public static final String GetterOverride = "meta::pure::metamodel::type::GetterOverride";
     public static final String GrammarInfoStub = "meta::pure::tools::GrammarInfoStub";
     public static final String ImportGroup = "meta::pure::metamodel::import::ImportGroup";
@@ -103,6 +106,9 @@ public class M3Paths
     public static final String PureZero = "meta::pure::metamodel::multiplicity::PureZero";
     public static final String QualifiedProperty = "meta::pure::metamodel::function::property::QualifiedProperty";
     public static final String ReferenceUsage = "meta::pure::metamodel::ReferenceUsage";
+    public static final String Relation = "meta::pure::metamodel::relation::Relation";
+    public static final String RelationPointer = "meta::pure::metamodel::relation::RelationPointer";
+    public static final String RelationType = "meta::pure::metamodel::relation::RelationType";
     public static final String Root = "Root";
     public static final String RootRouteNode = "meta::pure::metamodel::treepath::RootRouteNode";
     public static final String RouteNodePropertyStub = "meta::pure::metamodel::treepath::RouteNodePropertyStub";

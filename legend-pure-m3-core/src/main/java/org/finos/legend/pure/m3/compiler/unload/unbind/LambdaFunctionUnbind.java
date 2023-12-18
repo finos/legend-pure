@@ -14,12 +14,12 @@
 
 package org.finos.legend.pure.m3.compiler.unload.unbind;
 
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
@@ -38,7 +38,7 @@ public class LambdaFunctionUnbind implements MatchRunner<LambdaFunction>
     public void run(LambdaFunction lambda, MatcherState state, Matcher matcher, ModelRepository repository, Context context) throws PureCompilationException
     {
         ProcessorSupport processorSupport = state.getProcessorSupport();
-        FunctionType functionType = (FunctionType)ImportStub.withImportStubByPass(lambda._classifierGenericType()._typeArguments().getFirst()._rawTypeCoreInstance(), processorSupport);
+        FunctionType functionType = (FunctionType) ImportStub.withImportStubByPass(lambda._classifierGenericType()._typeArguments().getFirst()._rawTypeCoreInstance(), processorSupport);
         functionType._returnTypeRemove();
         functionType._returnMultiplicityRemove();
         context.update(lambda);

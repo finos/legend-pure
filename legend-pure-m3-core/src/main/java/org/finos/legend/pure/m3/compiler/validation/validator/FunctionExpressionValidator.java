@@ -20,13 +20,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.validation.Validator;
 import org.finos.legend.pure.m3.compiler.validation.ValidatorState;
-import org.finos.legend.pure.m3.compiler.validation.functionExpression.CopyValidator;
-import org.finos.legend.pure.m3.compiler.validation.functionExpression.EnumValidator;
-import org.finos.legend.pure.m3.compiler.validation.functionExpression.GetAllValidator;
-import org.finos.legend.pure.m3.compiler.validation.functionExpression.GetAllVersionsInRangeValidator;
-import org.finos.legend.pure.m3.compiler.validation.functionExpression.GetAllVersionsValidator;
-import org.finos.legend.pure.m3.compiler.validation.functionExpression.NewValidator;
-import org.finos.legend.pure.m3.compiler.validation.functionExpression.SubTypeValidator;
+import org.finos.legend.pure.m3.compiler.validation.functionExpression.*;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
@@ -40,6 +34,7 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericTypeWithXArguments;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
@@ -155,7 +150,11 @@ public class FunctionExpressionValidator implements MatchRunner<FunctionExpressi
 
                             if (typeArgument2 != null && (covariant ? !org.finos.legend.pure.m3.navigation.type.Type.subTypeOf(typeArgument2, typeArgument1, processorSupport) : !org.finos.legend.pure.m3.navigation.type.Type.subTypeOf(typeArgument1, typeArgument2, processorSupport)))
                             {
-                                if (!("Any".equals(typeArgument1.getName()) && "FunctionType".equals(typeArgument2.getClassifier().getName())))
+                                if
+                                (
+                                        !("Any".equals(typeArgument1.getName()) && "FunctionType".equals(typeArgument2.getClassifier().getName())) &&
+                                                !(processorSupport.instance_instanceOf(typeArgument1, M3Paths.RelationType)) && _RelationType.equalRelationType(typeArgument1, typeArgument2, processorSupport)
+                                )
                                 {
                                     throw new PureCompilationException(instance.getSourceInformation(), function.getName() + " " + " / typeArgument mismatch! Expected:" + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(parameters.get(i)._genericType(), processorSupport)
                                             + " Found:" + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(inst._genericType(), processorSupport));

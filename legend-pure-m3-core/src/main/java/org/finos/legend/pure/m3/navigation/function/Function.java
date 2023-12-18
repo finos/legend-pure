@@ -16,12 +16,8 @@ package org.finos.legend.pure.m3.navigation.function;
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.*;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
@@ -40,6 +36,11 @@ public class Function
     private static CoreInstance computeFunctionType(CoreInstance function, ProcessorSupport processorSupport)
     {
         CoreInstance classifierGenericType = function.getValueForMetaPropertyToOne(M3Properties.classifierGenericType);
+
+        // Bug! should also include NativeFunction (not only FunctionDefinition) ->  || processorSupport.instance_instanceOf(function, M3Paths.NativeFunction)
+        // Fixing this bug ensures the TypeParameters are kept for Native Function
+        // This makes resolvedTypeParameters properly updated for their functions applications
+        // This currently creates issues with the Interpreted function execution.
         if ((classifierGenericType != null) && processorSupport.instance_instanceOf(function, M3Paths.FunctionDefinition))
         {
             ListIterable<? extends CoreInstance> typeArguments = classifierGenericType.getValueForMetaPropertyToMany(M3Properties.typeArguments);

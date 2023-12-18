@@ -238,7 +238,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
         {
             assertPureException(PureCompilationException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "func(_:Pair<String, Integer>[1])\n" +
                     PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_IMPORTED_MESSAGE +
-                    "\tfunc(Pair[1]):Integer[1]\n" +
+                    "\tfunc(Pair<String, String>[1]):Integer[1]\n" +
                     PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE, "fromString.pure", 7, 5, 7, 5, 7, 8, e);
         }
     }
@@ -416,6 +416,42 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "   print(myAdd('b','c'),2);\n" +
                         "   print('z',1);\n" +
+                        "}");
+        runtime.compile();
+        repository.validate(new VoidM4StateListener());
+    }
+
+    @Test
+    public void testFunctionExpressionCastMatching() throws Exception
+    {
+        runtime.createInMemorySource("fromString.pure",
+                "native function meta::pure::functions::relation::map<T,V>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];\n" +
+                        "function func(a:Any[*]):Nil[0]\n" +
+                        "{\n" +
+                        "   [2]->cast(@meta::pure::metamodel::relation::Relation<(ok:Integer)>)->map(x|$x.ok);\n" +
+                        "   [];" +
+                        "}");
+        runtime.compile();
+        repository.validate(new VoidM4StateListener());
+    }
+
+    @Test
+    public void testFunctionMatchingPrioritizeSubtypeVsGenerics() throws Exception
+    {
+        runtime.createInMemorySource("fromString.pure",
+                "Class SuperType{}\n" +
+                        "Class SubType extends SuperType{}\n" +
+                        "function theFunc(a:SuperType[1]):String[1]\n" +
+                        "{\n" +
+                        "   'aa';\n" +
+                        "}\n" +
+                        "function theFunc<K>(a:K[1]):Integer[1]\n" +
+                        "{\n" +
+                        "   1;\n" +
+                        "}\n" +
+                        "function func(a:Any[*]):Nil[0]\n" +
+                        "{\n" +
+                        "   print(theFunc(^SubType()) + 'a',2);\n" +
                         "}");
         runtime.compile();
         repository.validate(new VoidM4StateListener());

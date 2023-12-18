@@ -225,6 +225,8 @@ public class FunctionType
     public static <T extends Appendable> T print(T appendable, CoreInstance functionType, boolean fullPaths, boolean markImportStubs, ProcessorSupport processorSupport)
     {
         SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+        ListIterable<? extends CoreInstance> typeParameters = functionType.getValueForMetaPropertyToMany("typeParameters");
+        safeAppendable.append(typeParameters.isEmpty() ? "" : "<" + typeParameters.collect(c -> c.getValueForMetaPropertyToOne("name").getName()).makeString(",") + "> ");
         safeAppendable.append('{');
         ListIterable<? extends CoreInstance> params = functionType.getValueForMetaPropertyToMany(M3Properties.parameters);
         int size = params.size();

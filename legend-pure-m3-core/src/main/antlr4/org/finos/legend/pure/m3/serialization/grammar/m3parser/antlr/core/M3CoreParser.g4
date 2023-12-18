@@ -290,11 +290,21 @@ atomicExpression:
                  | expressionInstance
                  | unitInstance
                  | variable
+                 | columnBuilders
                  | (AT type)
                  | lambdaPipe
                  | lambdaFunction
                  | instanceReference
                  | (lambdaParam lambdaPipe)
+;
+
+columnBuilders: TILDE (oneColSpec | (BRACKET_OPEN oneColSpec(COMMA oneColSpec)* BRACKET_CLOSE))
+;
+
+oneColSpec: identifier ((COLON (type | lambdaParam lambdaPipe) extraFunction? ))?
+;
+
+extraFunction: (COLON lambdaParam lambdaPipe)
 ;
 
 instanceReference: (PATH_SEPARATOR | qualifiedName | unitName) allOrFunction?
@@ -426,7 +436,7 @@ booleanPart:  AND expression
 functionVariableExpression: identifier COLON type multiplicity
 ;
 
-type: ( qualifiedName (LESSTHAN typeArguments? (PIPE multiplicityArguments)? GREATERTHAN)? )
+type: ( qualifiedName (LESSTHAN (typeArguments? (PIPE multiplicityArguments)?) GREATERTHAN)? )
       |
       (
         CURLY_BRACKET_OPEN
@@ -435,7 +445,16 @@ type: ( qualifiedName (LESSTHAN typeArguments? (PIPE multiplicityArguments)? GRE
         CURLY_BRACKET_CLOSE
       )
       |
+      (
+        GROUP_OPEN
+            columnType (COMMA columnType)*
+        GROUP_CLOSE
+      )
+      |
       unitName
+;
+
+columnType : (QUESTION | identifier) COLON type
 ;
 
 multiplicity: BRACKET_OPEN multiplicityArgument BRACKET_CLOSE
@@ -475,7 +494,25 @@ multiplicityArguments: multiplicityArgument (COMMA multiplicityArgument)*
 multiplicityArgument: identifier | ((fromMultiplicity DOTDOT)? toMultiplicity)
 ;
 
-typeArguments: type (COMMA type)*
+typeArguments: typeWithOperation (COMMA typeWithOperation)*
+;
+
+typeWithOperation : type equalType? (typeAddSubOperation)* subsetType?
+;
+
+typeAddSubOperation: addType | subType
+;
+
+addType: PLUS type
+;
+
+subType: MINUS type
+;
+
+subsetType: SUBSET type
+;
+
+equalType: EQUAL type
 ;
 
 multiplictyParameters: PIPE identifier (COMMA identifier)*

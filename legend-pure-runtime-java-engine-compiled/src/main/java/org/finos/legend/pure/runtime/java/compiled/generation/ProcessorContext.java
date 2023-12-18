@@ -15,6 +15,7 @@
 package org.finos.legend.pure.runtime.java.compiled.generation;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.block.function.Function3;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
@@ -28,8 +29,8 @@ import org.eclipse.collections.api.multimap.list.MutableListMultimap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.factory.primitive.IntObjectMaps;
-import org.finos.legend.pure.m3.generator.bootstrap.M3CoreInstanceGenerator;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
+import org.finos.legend.pure.m3.generator.bootstrap.M3CoreInstanceGenerator;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
@@ -38,6 +39,8 @@ import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtensionLo
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.NativeFunctionProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.Native;
+
+import java.util.Objects;
 
 public class ProcessorContext
 {
@@ -51,6 +54,8 @@ public class ProcessorContext
     private final MutableIntObjectMap<CoreInstance> localLambdas = IntObjectMaps.mutable.empty();
     private final ProcessorSupport support;
     private final NativeFunctionProcessor nativeFunctionProcessor;
+
+    private final ListIterable<Function3<CoreInstance, CoreInstance, ProcessorContext, String>> extraFunctionGenerator;
     private boolean inLineAllLambda = false;
     private final boolean includePureStackTrace;
     private String classImplSuffix;
@@ -60,17 +65,18 @@ public class ProcessorContext
     private int id = 0;
     private final MutableMap<String, Object> objects = Maps.mutable.empty();
 
-    public ProcessorContext(ProcessorSupport support, Iterable<? extends CompiledExtension> compiledExtensions, IdBuilder idBuilder, boolean includePureStackTrace)
+    public ProcessorContext(ProcessorSupport support, ListIterable<? extends CompiledExtension> compiledExtensions, IdBuilder idBuilder, boolean includePureStackTrace)
     {
         this.support = support;
         this.nativeFunctionProcessor = NativeFunctionProcessor.newWithCompiledExtensions(compiledExtensions);
+        this.extraFunctionGenerator = compiledExtensions.collect(CompiledExtension::getExtraFunctionGeneration).select(Objects::nonNull);
         this.includePureStackTrace = includePureStackTrace;
         this.generator = M3CoreInstanceGenerator.generator(null, null, null);
         this.idBuilder = (idBuilder == null) ? IdBuilder.newIdBuilder(this.support) : idBuilder;
     }
 
     @Deprecated
-    public ProcessorContext(ProcessorSupport support, Iterable<? extends CompiledExtension> compiledExtensions, boolean includePureStackTrace)
+    public ProcessorContext(ProcessorSupport support, ListIterable<? extends CompiledExtension> compiledExtensions, boolean includePureStackTrace)
     {
         this(support, compiledExtensions, null, includePureStackTrace);
     }
@@ -103,6 +109,11 @@ public class ProcessorContext
     public NativeFunctionProcessor getNativeFunctionProcessor()
     {
         return this.nativeFunctionProcessor;
+    }
+
+    public ListIterable<Function3<CoreInstance, CoreInstance, ProcessorContext, String>> getExtraFunctionGenerator()
+    {
+        return extraFunctionGenerator;
     }
 
     public MutableList<StringJavaSource> getClasses()

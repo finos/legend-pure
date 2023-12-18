@@ -72,16 +72,18 @@ public class TypeInference
         return true;
     }
 
-    public static void storeInferredTypeParametersInFunctionExpression(FunctionExpression functionExpression, ProcessorState state, ProcessorSupport processorSupport, Function<?> foundFunction) throws PureCompilationException
+    public static void storeInferredTypeParametersInFunctionExpression(FunctionExpression functionExpression, ProcessorState state, ProcessorSupport processorSupport, Function<?> foundFunction, TypeInferenceObserver observer) throws PureCompilationException
     {
         // Store the inferred params in the FunctionExpression
         if (!(foundFunction instanceof QualifiedProperty))
         {
             TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
             FunctionType functionType = (FunctionType) processorSupport.function_getFunctionType(foundFunction);
+            observer.updateFunctionResolvedTypeParameters(foundFunction, functionType);
             functionType._typeParameters().forEach(typeParameter ->
             {
                 CoreInstance value = typeInferenceContext.getTypeParameterValue(typeParameter._name());
+                observer.updateFunctionResolvedTypeParameterValue(typeParameter, value);
                 if (value != null)
                 {
                     functionExpression._resolvedTypeParametersAdd((GenericType) value);
@@ -154,7 +156,6 @@ public class TypeInference
     public static void potentiallyUpdateParentTypeParamForInstanceValueWithManyElements(InstanceValue instance, TypeInferenceContext typeInferenceContext, ProcessorState state, ProcessorSupport processorSupport)
     {
         MutableList<TypeInferenceContextState> set = typeInferenceContext.drop(instance._values().size());
-
         if (typeInferenceContext.getParent() != null)
         {
             TypeInferenceContextState nonInstanceSpecificState = set.get(0);
@@ -174,7 +175,10 @@ public class TypeInference
                         allGenericTypes.add(v.getTypeParameterValue(typeParam));
                     }
                     CoreInstance res = org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(allGenericTypes, org.finos.legend.pure.m3.navigation.typeparameter.TypeParameter.isCovariant(possibleParentTypeParam), false, processorSupport);
-                    toRegisterTypes.put((GenericType) possibleParentTypeParam, (GenericType) res);
+                    if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(res))
+                    {
+                        toRegisterTypes.put((GenericType) possibleParentTypeParam, (GenericType) res);
+                    }
                 }
             }
 
@@ -194,7 +198,6 @@ public class TypeInference
                     toRegisterMultiplicities.put((Multiplicity) possibleParentMultiplicityTypeParam, (Multiplicity) res);
                 }
             }
-
             toRegisterTypes.forEachKeyValue((from, to) -> typeInferenceContext.getParent().register(from, to, typeInferenceContext.getParent(), state.getObserver()));
             toRegisterMultiplicities.forEachKeyValue((from, to) -> typeInferenceContext.getParent().registerMul(from, to, typeInferenceContext.getParent(), state.getObserver()));
         }

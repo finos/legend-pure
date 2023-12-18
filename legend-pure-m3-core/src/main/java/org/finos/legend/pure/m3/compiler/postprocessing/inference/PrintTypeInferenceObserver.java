@@ -15,7 +15,9 @@
 package org.finos.legend.pure.m3.compiler.postprocessing.inference;
 
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.TypeParameter;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
@@ -175,7 +177,7 @@ public class PrintTypeInferenceObserver implements TypeInferenceObserver
     @Override
     public TypeInferenceObserver register(CoreInstance templateGenType, CoreInstance valueForMetaPropertyToOne, TypeInferenceContext context, TypeInferenceContext targetGenericsContext)
     {
-        printTab().print(". Register ");
+        printTab().print("  . Register ");
         GenericType.print(this.appendable, templateGenType, this.processorState.getProcessorSupport());
         print(" / ");
         GenericType.print(this.appendable, valueForMetaPropertyToOne, this.processorState.getProcessorSupport());
@@ -186,7 +188,7 @@ public class PrintTypeInferenceObserver implements TypeInferenceObserver
     @Override
     public TypeInferenceObserver registerMul(CoreInstance templateMul, CoreInstance valueMul, TypeInferenceContext context, TypeInferenceContext targetGenericsContext)
     {
-        printTab().print(". Register Mul ");
+        printTab().print("  . Register Mul ");
         Multiplicity.print(this.appendable, templateMul, true);
         print(" / ");
         Multiplicity.print(this.appendable, valueMul, true);
@@ -328,5 +330,42 @@ public class PrintTypeInferenceObserver implements TypeInferenceObserver
             typeInferenceContext.print(this.appendable);
         }
         return this;
+    }
+
+    @Override
+    public TypeInferenceObserver updateFunctionExpressionReturn(boolean parametersInferenceSuccess, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericTypeCopy, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity returnMultiplicityCopy)
+    {
+        printTab().print("Updating return type to '" + GenericType.print(genericTypeCopy, processorState.getProcessorSupport()) + "' and multiplicity to: '" + Multiplicity.print(returnMultiplicityCopy) + "' (all parameters inference successful: '" + parametersInferenceSuccess + "')\n");
+        return this;
+    }
+
+    @Override
+    public TypeInferenceObserver tryingRegistration(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType templateGenType, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType, TypeInferenceContext typeInferenceContext, TypeInferenceContext targetGenericsContext)
+    {
+        printTab().print("  # Trying Registration ");
+        GenericType.print(this.appendable, templateGenType, this.processorState.getProcessorSupport());
+        print(" <-> ");
+        GenericType.print(this.appendable, genericType, this.processorState.getProcessorSupport());
+        print(" in ").print(typeInferenceContext.getId()).print("/").print(targetGenericsContext.getId()).print("   ");
+        return printNewline();
+    }
+
+    @Override
+    public TypeInferenceObserver updateFunctionResolvedTypeParameters(Function<?> foundFunction, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType functionType)
+    {
+        printTab().print("Update function expression's resolved type parameters");
+        print(foundFunction._functionName());
+        print(" ");
+        FunctionType.print(this.appendable, functionType, this.processorState.getProcessorSupport());
+        return printNewline();
+    }
+
+    @Override
+    public TypeInferenceObserver updateFunctionResolvedTypeParameterValue(TypeParameter typeParameter, CoreInstance value)
+    {
+        printTab().print("   ." + typeParameter._name());
+        print(" = ");
+        GenericType.print(this.appendable, value, this.processorState.getProcessorSupport());
+        return printNewline();
     }
 }

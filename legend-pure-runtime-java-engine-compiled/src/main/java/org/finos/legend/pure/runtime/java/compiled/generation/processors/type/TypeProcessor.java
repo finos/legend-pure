@@ -16,6 +16,7 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.type;
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.GenericTypeOperation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -88,15 +89,27 @@ public class TypeProcessor
 
     public static String pureTypeToJava(CoreInstance genericType, boolean typeParam, boolean primitiveIfPossible, boolean fullyQualify, ProcessorSupport processorSupport)
     {
+        if (genericType instanceof GenericTypeOperation)
+        {
+            return "java.lang.Object";
+        }
+
         CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
         if (rawType == null)
         {
             return typeParam ? GenericType.getTypeParameterName(genericType) : "java.lang.Object";
         }
+
+        if ("RelationType".equals(processorSupport.getClassifier(rawType).getName()))
+        {
+            return "java.lang.Object";
+        }
+
         if ("FunctionType".equals(processorSupport.getClassifier(rawType).getName()))
         {
             return "java.lang.Object";
         }
+
         String javaType = pureSystemPathToJava_simpleCases(PackageableElement.getUserPathForPackageableElement(rawType), primitiveIfPossible);
         if (javaType != null)
         {
@@ -111,6 +124,17 @@ public class TypeProcessor
         {
             return UnitProcessor.convertToJavaCompatibleClassName(finalRawTypeSystemPath) + "_Instance";
         }
+
+        // Manage magical TDS structures
+        if ("org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.ColSpec".equals(finalRawTypeSystemPath) ||
+                "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.ColSpecArray".equals(finalRawTypeSystemPath) ||
+                "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.FuncColSpec".equals(finalRawTypeSystemPath) ||
+                "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.FuncColSpecArray".equals(finalRawTypeSystemPath) ||
+                "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.AggColSpec".equals(finalRawTypeSystemPath))
+        {
+            return finalRawTypeSystemPath;
+        }
+
         return typeParam ? (finalRawTypeSystemPath + buildTypeArgumentsString(genericType, true, processorSupport)) : finalRawTypeSystemPath;
     }
 

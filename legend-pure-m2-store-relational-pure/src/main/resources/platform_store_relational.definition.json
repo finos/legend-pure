@@ -1,5 +1,9 @@
 {
-  "name" : "platform_store_relational",
-  "pattern" : "(meta::relational|meta::external::store::relational|meta::pure::functions::io)(::.*)?",
-  "dependencies" : ["platform","platform_functions","platform_dsl_mapping"]
+  "name": "platform_store_relational",
+  "pattern": "(meta::relational|meta::external::store::relational|meta::pure::functions::io)(::.*)?",
+  "dependencies": [
+    "platform",
+    "platform_functions",
+    "platform_dsl_mapping"
+  ]
 }

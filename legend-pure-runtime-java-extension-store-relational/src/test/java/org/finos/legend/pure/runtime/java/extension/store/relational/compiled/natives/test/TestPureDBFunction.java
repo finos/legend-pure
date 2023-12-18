@@ -24,6 +24,6 @@ public class TestPureDBFunction extends AbstractTestPureDBFunction
     @Before
     public void setUp()
     {
-        setUpRuntime(new FunctionExecutionCompiledBuilder().build(), JavaModelFactoryRegistryLoader.loader());
+        setUpRuntime(new FunctionExecutionCompiledBuilder().build());
     }
 }

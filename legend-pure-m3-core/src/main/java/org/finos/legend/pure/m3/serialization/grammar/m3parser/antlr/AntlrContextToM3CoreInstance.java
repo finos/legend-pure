@@ -43,163 +43,36 @@ import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.PackageInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpressionInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.EnumStubInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.Import;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroupInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStubInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.PropertyStub;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.PropertyStubInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.*;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.constraint.Constraint;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.constraint.ConstraintInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.ProfileInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.StereotypeInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Tag;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TagInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TaggedValue;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TaggedValueInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.*;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinitionInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunctionInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.DefaultValue;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.DefaultValueInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.PropertyInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedPropertyInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.*;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.MultiplicityInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.MultiplicityValueInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.GenericTypeOperationInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.AssociationInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.AssociationProjectionInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.GeneralizationInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.ExistingPropertyRouteNode;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.ExistingPropertyRouteNodeInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.NewPropertyRouteNode;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.NewPropertyRouteNodeFunctionDefinition;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.NewPropertyRouteNodeFunctionDefinitionInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.NewPropertyRouteNodeInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.PropertyRouteNode;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.RootRouteNode;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.RootRouteNodeInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.RouteNode;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.RouteNodePropertyStub;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.RouteNodePropertyStubInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassProjectionInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.*;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.EnumerationInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionTypeInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.MeasureInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.UnitInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.*;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericTypeInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.TypeParameter;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.TypeParameterInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValueInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.SimpleFunctionExpression;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.SimpleFunctionExpressionInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpressionInstance;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.*;
+import org.finos.legend.pure.m3.navigation.*;
 import org.finos.legend.pure.m3.navigation._package._Package;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.AllOrFunctionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ArithmeticPartContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.AssociationContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.AssociationProjectionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.AtomicExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.BooleanPartContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.BuildMilestoningVariableExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ClassDefinitionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.CodeBlockContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.CombinedArithmeticOnlyContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.CombinedExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ComplexPropertyContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ConstraintContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ConstraintsContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ContravarianceTypeParameterContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DefaultValueContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DefaultValueExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DefinitionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DerivedPropertyContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DslContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.EnumDefinitionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.EnumValueContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.EqualNotEqualContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ExpressionInstanceAtomicRightSideContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ExpressionInstanceContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ExpressionInstanceParserPropertyAssignmentContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ExpressionInstanceRightSideContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ExpressionOrExpressionGroupContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ExpressionPartContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.FunctionDefinitionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.FunctionExpressionParametersContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.FunctionTypePureTypeContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.FunctionTypeSignatureContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.FunctionVariableExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.IdentifierContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.Import_statementContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ImportsContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.InstanceAtomicRightSideContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.InstanceContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.InstanceLiteralContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.InstanceLiteralTokenContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.InstancePropertyAssignmentContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.InstanceReferenceContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.InstanceRightSideContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.LambdaParamTypeContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.LambdaPipeContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.LetExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MappingContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MappingLineContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MultiplicityArgumentContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MultiplicityArgumentsContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.NativeFunctionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.NotExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.PackagePathContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ProfileContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ProgramLineContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.PropertiesContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.PropertyContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.PropertyExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.PropertyOrFunctionExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.PropertyRefContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.QualifiedNameContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.QualifiedPropertyContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.SignedExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.SimplePropertyContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.SourceAndTargetMappingIdContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.StereotypeContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.StereotypeDefinitionsContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.StereotypesContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TagDefinitionsContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TaggedValueContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TaggedValuesContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TreePathClassBodyContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TreePathContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TreePathPropertyParameterTypeContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TypeAndMultiplicityParametersContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TypeArgumentsContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TypeContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TypeParameterContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TypeParametersWithContravarianceAndMultiplicityParametersContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.VariableContext;
+import org.finos.legend.pure.m3.navigation.relation._Column;
+import org.finos.legend.pure.m3.navigation.relation._RelationType;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.*;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLTextContent;
@@ -209,6 +82,7 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
@@ -1083,6 +957,72 @@ public class AntlrContextToM3CoreInstance
         {
             result = this.instanceLiteralToken(ctx.instanceLiteralToken(), wrapFlag);
         }
+        else if (ctx.columnBuilders() != null)
+        {
+            SourceInformation src = this.sourceInformation.getPureSourceInformation(ctx.getStart());
+
+            // Create the RelationType
+            GenericTypeInstance relationTypeGenericType = GenericTypeInstance.createPersistent(this.repository);
+            MutableList<CoreInstance> lambdas = Lists.mutable.empty();
+            MutableList<CoreInstance> columnNames = Lists.mutable.empty();
+            MutableList<CoreInstance> columnInstances = Lists.mutable.empty();
+            MutableList<CoreInstance> extraFunction = Lists.mutable.empty();
+            ListIterate.forEach(ctx.columnBuilders().oneColSpec(), oneColSpec ->
+            {
+                columnNames.add(this.repository.newStringCoreInstance(oneColSpec.identifier().getText()));
+                String returnType = null;
+                if (oneColSpec.lambdaParam() != null && oneColSpec.lambdaPipe() != null)
+                {
+                    lambdas.add(processSingleParamLambda(oneColSpec.lambdaParam(), oneColSpec.lambdaPipe(), Lists.mutable.empty(), lambdaContext, space, false, importId, addLines, Lists.mutable.empty()));
+                    if (oneColSpec.extraFunction() != null)
+                    {
+                        ExtraFunctionContext extraFunctionContext = oneColSpec.extraFunction();
+                        extraFunction.add(processSingleParamLambda(extraFunctionContext.lambdaParam(), extraFunctionContext.lambdaPipe(), Lists.mutable.empty(), lambdaContext, space, false, importId, addLines, Lists.mutable.empty()));
+                    }
+                }
+                else if (oneColSpec.type() != null)
+                {
+                    GenericType returnGType = type(oneColSpec.type(), typeParametersNames, "", importId, addLines);
+                    returnType = returnGType._rawType().getName();
+                }
+                columnInstances.add(_Column.getColumnInstance(oneColSpec.identifier().getText(), false, relationTypeGenericType, returnType, src, processorSupport));
+            });
+            relationTypeGenericType._rawTypeCoreInstance(_RelationType.build(columnInstances, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport));
+
+            // Build the function
+            CoreInstance replacementFunction = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart()), null, null, importId, null);
+
+            // FunctionName
+            boolean isArray = ctx.columnBuilders().BRACKET_OPEN() != null;
+            List<Boolean> nonFunctions = ListIterate.collect(ctx.columnBuilders().oneColSpec(), x -> x.type() != null | x.COLON() == null).distinct();
+            if (isArray && nonFunctions.size() > 1)
+            {
+                throw new PureCompilationException("Can't mix column types");
+            }
+            if (isArray && extraFunction.size() > 1)
+            {
+                throw new PureCompilationException("Can't use multi-functions in an Array");
+            }
+            boolean nonFunction = nonFunctions.get(0);
+            String functionName = !extraFunction.isEmpty() ? "aggColSpec" : nonFunction ? isArray ? "colSpecArray" : "colSpec" : isArray ? "funcColSpecArray" : "funcColSpec";
+            replacementFunction.setKeyValues(Lists.mutable.with("functionName"), Lists.mutable.with(this.repository.newStringCoreInstance(functionName)));
+
+            // Function Parameters
+            MutableList<CoreInstance> parameters = Lists.mutable.empty();
+            if (!nonFunction)
+            {
+                parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(lambdas, true, processorSupport));
+            }
+            if (!extraFunction.isEmpty())
+            {
+                parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(extraFunction.getFirst(), true, processorSupport));
+            }
+            parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(columnNames, true, processorSupport));
+            parameters.add(InstanceValueInstance.createPersistent(this.repository, "", relationTypeGenericType, this.getPureOne()));
+            replacementFunction.setKeyValues(Lists.mutable.with("parametersValues"), parameters);
+
+            result = replacementFunction;
+        }
         else if (ctx.dsl() != null)
         {
             dsl = this.dsl(ctx.dsl(), importId);
@@ -1111,24 +1051,11 @@ public class AntlrContextToM3CoreInstance
         }
         else if (ctx.lambdaFunction() != null)
         {
-            boolean hasLambdaParams = false;
-            if (ctx.lambdaFunction().lambdaParam() != null)
-            {
-                for (int i = 0; i < ctx.lambdaFunction().lambdaParam().size(); i++)
-                {
-                    hasLambdaParams = true;
-                    IdentifierContext idCtx = ctx.lambdaFunction().lambdaParam(i).identifier();
-                    expr = this.lambdaParam(ctx.lambdaFunction().lambdaParam(i).lambdaParamType(), idCtx, typeParametersNames, space, importId);
-                    expressions.add(expr);
-                }
-            }
-            result = this.lambdaPipe(ctx.lambdaFunction().lambdaPipe(), hasLambdaParams ? ctx.lambdaFunction().lambdaParam(0).getStart() : null, expressions, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+            result = processMultiParamLambda(ctx.lambdaFunction(), typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines, expressions);
         }
         else if (ctx.lambdaParam() != null && ctx.lambdaPipe() != null)
         {
-            expr = this.lambdaParam(ctx.lambdaParam().lambdaParamType(), ctx.lambdaParam().identifier(), typeParametersNames, space, importId);
-            expressions.add(expr);
-            result = this.lambdaPipe(ctx.lambdaPipe(), ctx.lambdaParam().getStart(), expressions, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+            result = processSingleParamLambda(ctx.lambdaParam(), ctx.lambdaPipe(), typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines, expressions);
         }
         else if (ctx.instanceReference() != null)
         {
@@ -1141,6 +1068,36 @@ public class AntlrContextToM3CoreInstance
         }
         return result;
     }
+
+    private CoreInstance processMultiParamLambda(LambdaFunctionContext ctx, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines, MutableList<VariableExpression> expressions)
+    {
+        CoreInstance result;
+        VariableExpression expr;
+        boolean hasLambdaParams = false;
+        if (ctx.lambdaParam() != null)
+        {
+            for (int i = 0; i < ctx.lambdaParam().size(); i++)
+            {
+                hasLambdaParams = true;
+                IdentifierContext idCtx = ctx.lambdaParam(i).identifier();
+                expr = this.lambdaParam(ctx.lambdaParam(i).lambdaParamType(), idCtx, typeParametersNames, space, importId);
+                expressions.add(expr);
+            }
+        }
+        return this.lambdaPipe(ctx.lambdaPipe(), hasLambdaParams ? ctx.lambdaParam(0).getStart() : null, expressions, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+    }
+
+
+    private CoreInstance processSingleParamLambda(M3Parser.LambdaParamContext lambdaCtxt, M3Parser.LambdaPipeContext pipeContext, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines, MutableList<VariableExpression> expressions)
+    {
+        VariableExpression expr;
+        CoreInstance result;
+        expr = this.lambdaParam(lambdaCtxt.lambdaParamType(), lambdaCtxt.identifier(), typeParametersNames, space, importId);
+        expressions.add(expr);
+        result = this.lambdaPipe(pipeContext, lambdaCtxt.getStart(), expressions, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+        return result;
+    }
+
 
     private CoreInstance instanceReference(InstanceReferenceContext ctx, MutableList<String> typeParametersNames, LambdaContext lambdaContext, ImportGroup importId, String space, boolean addLines)
     {
@@ -1175,7 +1132,7 @@ public class AntlrContextToM3CoreInstance
     {
         String res = ctx.getText();
         res = res.substring(res.indexOf('#') + 1, res.lastIndexOf('#'));
-        if (res.trim().startsWith("/") || res.trim().startsWith("{"))
+        if (res.trim().startsWith("/") || res.trim().startsWith("{") || res.trim().startsWith("TDS") || res.trim().startsWith(">"))
         {
             //TODO temporary hack till we move treepath completely away from dsl
             InlineDSLTextContent dslTextContext = new InlineDSLTextContent(res, ctx.getStart().getLine() + this.sourceInformation.getOffsetLine(), ctx.getStart().getCharPositionInLine() + 2);
@@ -1226,7 +1183,8 @@ public class AntlrContextToM3CoreInstance
             this.checkExists(ctx.qualifiedName().size() == 1 ? null : ctx.qualifiedName(1), ctx.identifier(), sourceInfo);
         }
 
-        CoreInstance classifier = this.processorSupport.package_getByUserPath(this.getQualifiedNameString(ctx.qualifiedName(0)));;
+        CoreInstance classifier = this.processorSupport.package_getByUserPath(this.getQualifiedNameString(ctx.qualifiedName(0)));
+        ;
         CoreInstance instance = ctx.identifier() == null ? this.repository.newAnonymousCoreInstance(sourceInfo, classifier) : this.repository.newCoreInstance(ctx.identifier().getText(), classifier, sourceInfo);
 
         if (topLevel)
@@ -1951,20 +1909,37 @@ public class AntlrContextToM3CoreInstance
         {
             return this.processUnitType(ctx.unitName(), importId);
         }
-
-        GenericType returnType = this.type(ctx.type(), typeParametersNames, spacePlusTabs(space, 5), importId, addLines);
-        Multiplicity returnMultiplicity = this.buildMultiplicity(ctx.multiplicity().multiplicityArgument());
-        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop());
-        FunctionTypeInstance functionTypeInstance = FunctionTypeInstance.createPersistent(this.repository, sourceInfo, returnMultiplicity, returnType);
-
-        MutableList<VariableExpression> params = ListIterate.collect(ctx.functionTypePureType(), fCtx -> typeFunctionTypePureType(fCtx, typeParametersNames, space, importId, addLines));
-        if (params.notEmpty())
+        if (ctx.CURLY_BRACKET_OPEN() != null)
         {
-            functionTypeInstance._parameters(params);
+            GenericType returnType = this.type(ctx.type(), typeParametersNames, spacePlusTabs(space, 5), importId, addLines);
+            Multiplicity returnMultiplicity = this.buildMultiplicity(ctx.multiplicity().multiplicityArgument());
+            SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop());
+            FunctionTypeInstance functionTypeInstance = FunctionTypeInstance.createPersistent(this.repository, sourceInfo, returnMultiplicity, returnType);
+
+            MutableList<VariableExpression> params = ListIterate.collect(ctx.functionTypePureType(), fCtx -> typeFunctionTypePureType(fCtx, typeParametersNames, space, importId, addLines));
+            if (params.notEmpty())
+            {
+                functionTypeInstance._parameters(params);
+            }
+            GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
+            genericTypeInstance._rawTypeCoreInstance(functionTypeInstance);
+            return genericTypeInstance;
         }
-        GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
-        genericTypeInstance._rawTypeCoreInstance(functionTypeInstance);
-        return genericTypeInstance;
+        if (ctx.GROUP_OPEN() != null)
+        {
+            GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
+            SourceInformation srcInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop());
+            genericTypeInstance._rawTypeCoreInstance(
+                    _RelationType.build(
+                            ListIterate.collect(
+                                    ctx.columnType(),
+                                    c -> _Column.getColumnInstance(c.QUESTION() != null ? "" : c.identifier().getText(), c.QUESTION() != null, genericTypeInstance, this.type(c.type(), typeParametersNames, spacePlusTabs(space, 5), importId, addLines), srcInfo, processorSupport)
+                            ), srcInfo, processorSupport
+                    )
+            );
+            return genericTypeInstance;
+        }
+        throw new PureParserException(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), "Type not understood");
     }
 
     private SimpleFunctionExpression functionExpression(QualifiedNameContext funcName, MutableList<ValueSpecification> parameters, ImportGroup importId)
@@ -3190,11 +3165,62 @@ public class AntlrContextToM3CoreInstance
     private ListIterable<GenericType> typeArguments(TypeArgumentsContext ctx, MutableList<String> typeParametersNames, ImportGroup importId, boolean addLines)
     {
         MutableList<GenericType> result = Lists.mutable.empty();
-        if (ctx != null && ctx.type() != null)
+        if (ctx != null && ctx.typeWithOperation() != null)
         {
-            ListIterate.collect(ctx.type(), typeCtx -> type(typeCtx, typeParametersNames, "", importId, addLines), result);
+            ListIterate.collect(ctx.typeWithOperation(), typeCtx -> typeWithOperation(typeCtx, typeParametersNames, "", importId, addLines), result);
         }
         return result;
+    }
+
+    private GenericType typeWithOperation(TypeWithOperationContext typeCtx, MutableList<String> typeParametersNames, String space, ImportGroup importId, boolean addLines)
+    {
+        GenericType left = type(typeCtx.type(), typeParametersNames, space, importId, addLines);
+
+        if (typeCtx.equalType() != null)
+        {
+            GenericType newLeft = type(typeCtx.equalType().type(), typeParametersNames, space, importId, addLines);
+            GenericType right = buildSubset(buildAddSub(newLeft, typeCtx.typeAddSubOperation(), typeParametersNames, space, importId, addLines), typeCtx.subsetType(), typeParametersNames, space, importId, addLines);
+            return GenericTypeOperationInstance.createPersistent(repository, left, right, (Enum) findEnum(M3Paths.GenericTypeOperationType, "Equal", repository));
+        }
+
+        if (typeCtx.subsetType() != null)
+        {
+            return buildSubset(
+                    buildAddSub(left, typeCtx.typeAddSubOperation(), typeParametersNames, space, importId, addLines),
+                    typeCtx.subsetType(),
+                    typeParametersNames, space, importId, addLines);
+        }
+
+        return buildAddSub(left, typeCtx.typeAddSubOperation(), typeParametersNames, space, importId, addLines);
+    }
+
+    private GenericType buildSubset(GenericType left, SubsetTypeContext subsetTypeContext, MutableList<String> typeParametersNames, String space, ImportGroup importId, boolean addLines)
+    {
+        if (subsetTypeContext != null)
+        {
+            return GenericTypeOperationInstance.createPersistent(repository, left, type(subsetTypeContext.type(), typeParametersNames, space, importId, addLines), (Enum) findEnum(M3Paths.GenericTypeOperationType, "Subset", repository));
+        }
+        return left;
+    }
+
+    public GenericType buildAddSub(GenericType start, List<TypeAddSubOperationContext> addSub, MutableList<String> typeParametersNames, String space, ImportGroup importId, boolean addLines)
+    {
+        if (!addSub.isEmpty())
+        {
+            return ListIterate.injectInto(
+                    start,
+                    addSub,
+                    (genericType, typeOperationContext) ->
+                    {
+                        GenericType right = type(
+                                typeOperationContext.addType() != null ?
+                                        typeOperationContext.addType().type() : typeOperationContext.subType().type(),
+                                typeParametersNames, space, importId, addLines);
+                        String type = typeOperationContext.addType() != null ? "Union" : "Difference";
+                        return GenericTypeOperationInstance.createPersistent(repository, genericType, right, (Enum) findEnum(M3Paths.GenericTypeOperationType, type, repository));
+                    });
+        }
+        return start;
     }
 
     private GenericType processType(QualifiedNameContext classParserPath, MutableList<String> typeParametersNames, ListIterable<GenericType> possibleTypeArguments, ListIterable<Multiplicity> possibleMultiplicityArguments, ImportGroup importId)

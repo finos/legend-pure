@@ -97,12 +97,12 @@ public abstract class AbstractTestDynamicNewConstraintsHandler extends AbstractP
         assertOriginatingPureException(PureUnmatchedFunctionException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "dynamicNew(_:Class<Employee>[1],_:KeyValue[1],_:ConcreteFunctionDefinition<{Any[1], Property<Nil, Any|0..1>[1]->Any[0..1]}>[1],_:ConcreteFunctionDefinition<{Any[1], Property<Nil, Any|*>[1]->Any[*]}>[1],_:String[1],_:ConcreteFunctionDefinition<{Any[1]->Any[*]}>[1])\n" +
                 PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_IMPORTED_MESSAGE +
                 PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE +
-                "\tmeta::pure::functions::lang::dynamicNew(Class[1], KeyValue[*]):Any[1]\n" +
-                "\tmeta::pure::functions::lang::dynamicNew(Class[1], KeyValue[*], Function[0..1], Function[0..1], Any[0..1]):Any[1]\n" +
-                "\tmeta::pure::functions::lang::dynamicNew(Class[1], KeyValue[*], Function[0..1], Function[0..1], Any[0..1], Function[0..1]):Any[1]\n" +
+                "\tmeta::pure::functions::lang::dynamicNew(Class<Any>[1], KeyValue[*]):Any[1]\n" +
+                "\tmeta::pure::functions::lang::dynamicNew(Class<Any>[1], KeyValue[*], Function<{Any[1], Property<Nil, Any|0..1>[1]->Any[0..1]}>[0..1], Function<{Any[1], Property<Nil, Any|*>[1]->Any[*]}>[0..1], Any[0..1]):Any[1]\n" +
+                "\tmeta::pure::functions::lang::dynamicNew(Class<Any>[1], KeyValue[*], Function<{Any[1], Property<Nil, Any|0..1>[1]->Any[0..1]}>[0..1], Function<{Any[1], Property<Nil, Any|*>[1]->Any[*]}>[0..1], Any[0..1], Function<{Any[1]->Any[1]}>[0..1]):Any[1]\n" +
                 "\tmeta::pure::functions::lang::dynamicNew(GenericType[1], KeyValue[*]):Any[1]\n" +
-                "\tmeta::pure::functions::lang::dynamicNew(GenericType[1], KeyValue[*], Function[0..1], Function[0..1], Any[0..1]):Any[1]\n" +
-                "\tmeta::pure::functions::lang::dynamicNew(GenericType[1], KeyValue[*], Function[0..1], Function[0..1], Any[0..1], Function[0..1]):Any[1]\n", 22, 11, e);
+                "\tmeta::pure::functions::lang::dynamicNew(GenericType[1], KeyValue[*], Function<{Any[1], Property<Nil, Any|0..1>[1]->Any[0..1]}>[0..1], Function<{Any[1], Property<Nil, Any|*>[1]->Any[*]}>[0..1], Any[0..1]):Any[1]\n" +
+                "\tmeta::pure::functions::lang::dynamicNew(GenericType[1], KeyValue[*], Function<{Any[1], Property<Nil, Any|0..1>[1]->Any[0..1]}>[0..1], Function<{Any[1], Property<Nil, Any|*>[1]->Any[*]}>[0..1], Any[0..1], Function<{Any[1]->Any[1]}>[0..1]):Any[1]\n", 22, 11, e);
     }
 
     @Test

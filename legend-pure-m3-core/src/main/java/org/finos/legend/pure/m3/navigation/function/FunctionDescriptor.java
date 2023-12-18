@@ -153,23 +153,7 @@ public class FunctionDescriptor
 
     static void writeDescriptorTypeAndMultiplicity(SafeAppendable appendable, CoreInstance genericType, CoreInstance multiplicity, ProcessorSupport processorSupport)
     {
-        if (GenericType.isGenericTypeConcrete(genericType))
-        {
-            CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
-            if (FunctionType.isFunctionType(rawType, processorSupport))
-            {
-                FunctionType.print(appendable, rawType, processorSupport);
-            }
-            else
-            {
-                appendable.append(rawType.getName());
-            }
-        }
-        else
-        {
-            appendable.append(GenericType.getTypeParameterName(genericType));
-        }
-
+        appendable.append(GenericType.print(genericType, processorSupport));
         Multiplicity.print(appendable, multiplicity, true);
     }
 

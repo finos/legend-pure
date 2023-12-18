@@ -120,7 +120,10 @@ public class TestDistributedMetadataSpecification
         Assert.assertEquals(Collections.emptyList(), ListIterate.select(DistributedMetadataSpecification.loadAllSpecifications(Thread.currentThread().getContextClassLoader()), x -> !x.getName().equals("platform")));
 
         RuntimeException e = Assert.assertThrows(RuntimeException.class, () -> DistributedMetadataSpecification.loadSpecifications(Thread.currentThread().getContextClassLoader(), "non_existent"));
-        Assert.assertEquals("Cannot find metadata \"non_existent\" (resource name \"metadata/specs/non_existent.json\")", e.getMessage());
+        Assert.assertEquals("Cannot find metadata \"non_existent\" (resource name \"metadata/specs/non_existent.json\")\n" +
+                "Directly asked for:[non_existent]\n" +
+                "Loaded up to now (with dependencies):{}\n" +
+                "The requested repos are coming from PAR projects scanning. You may not have included the project containing the distributed metadata for Java generation.", e.getMessage());
     }
 
     @Test
@@ -144,10 +147,16 @@ public class TestDistributedMetadataSpecification
             Assert.assertEquals(Sets.mutable.withAll(dir1Metadata).with(dir2Metadata.get(0)), Sets.mutable.withAll(DistributedMetadataSpecification.loadSpecifications(classLoader, "ghi")));
 
             RuntimeException e1 = Assert.assertThrows(RuntimeException.class, () -> DistributedMetadataSpecification.loadSpecifications(classLoader, "ghi", "jkl"));
-            Assert.assertEquals("Cannot find metadata \"xyz\" (resource name \"metadata/specs/xyz.json\")", e1.getMessage());
+            Assert.assertEquals("Cannot find metadata \"xyz\" (resource name \"metadata/specs/xyz.json\")\n" +
+                    "Directly asked for:[ghi, jkl]\n" +
+                    "Loaded up to now (with dependencies):{jkl=[xyz]}\n" +
+                    "The requested repos are coming from PAR projects scanning. You may not have included the project containing the distributed metadata for Java generation.", e1.getMessage());
 
             RuntimeException e2 = Assert.assertThrows(RuntimeException.class, () -> DistributedMetadataSpecification.loadSpecifications(classLoader, "ghi", "mno"));
-            Assert.assertEquals("Cannot find metadata \"mno\" (resource name \"metadata/specs/mno.json\")", e2.getMessage());
+            Assert.assertEquals("Cannot find metadata \"mno\" (resource name \"metadata/specs/mno.json\")\n" +
+                    "Directly asked for:[ghi, mno]\n" +
+                    "Loaded up to now (with dependencies):{}\n" +
+                    "The requested repos are coming from PAR projects scanning. You may not have included the project containing the distributed metadata for Java generation.", e2.getMessage());
         }
     }
 
@@ -188,10 +197,16 @@ public class TestDistributedMetadataSpecification
             Assert.assertEquals(Sets.mutable.withAll(jar1Metadata).with(jar2Metadata.get(0)), Sets.mutable.withAll(DistributedMetadataSpecification.loadSpecifications(classLoader, "ghi")));
 
             RuntimeException e1 = Assert.assertThrows(RuntimeException.class, () -> DistributedMetadataSpecification.loadSpecifications(classLoader, "ghi", "jkl"));
-            Assert.assertEquals("Cannot find metadata \"xyz\" (resource name \"metadata/specs/xyz.json\")", e1.getMessage());
+            Assert.assertEquals("Cannot find metadata \"xyz\" (resource name \"metadata/specs/xyz.json\")\n" +
+                    "Directly asked for:[ghi, jkl]\n" +
+                    "Loaded up to now (with dependencies):{jkl=[xyz]}\n" +
+                    "The requested repos are coming from PAR projects scanning. You may not have included the project containing the distributed metadata for Java generation.", e1.getMessage());
 
             RuntimeException e2 = Assert.assertThrows(RuntimeException.class, () -> DistributedMetadataSpecification.loadSpecifications(classLoader, "ghi", "mno"));
-            Assert.assertEquals("Cannot find metadata \"mno\" (resource name \"metadata/specs/mno.json\")", e2.getMessage());
+            Assert.assertEquals("Cannot find metadata \"mno\" (resource name \"metadata/specs/mno.json\")\n" +
+                    "Directly asked for:[ghi, mno]\n" +
+                    "Loaded up to now (with dependencies):{}\n" +
+                    "The requested repos are coming from PAR projects scanning. You may not have included the project containing the distributed metadata for Java generation.", e2.getMessage());
         }
     }
 }

@@ -35,19 +35,7 @@ import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.a
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.anonymousCollections.map.Values;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.cipher.Decrypt;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.cipher.Encrypt;
-import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Drop;
-import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Exists;
-import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.ForAll;
-import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Get;
-import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.GroupBy;
-import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.IndexOf;
-import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Last;
-import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.RemoveAllOptimized;
-import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Repeat;
-import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Reverse;
-import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Slice;
-import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Take;
-import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.Zip;
+import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.collection.*;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.date.AdjustDate;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.date.DateDiff;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.date.DatePart;
@@ -441,6 +429,7 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                 // Collection
                 new Drop(),
                 new Exists(),
+                new Find(),
                 new ForAll(),
                 new Get(),
                 new GroupBy(),

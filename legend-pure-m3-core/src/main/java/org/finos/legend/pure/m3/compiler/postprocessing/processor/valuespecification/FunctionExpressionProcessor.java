@@ -48,37 +48,26 @@ import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.*;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassProjection;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.KeyValueValueSpecificationContext;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ParameterValueSpecificationContext;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.SimpleFunctionExpression;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.*;
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.*;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.navigation.relation._Column;
+import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
@@ -90,6 +79,9 @@ import org.finos.legend.pure.m4.exception.PureCompilationException;
 import java.util.Objects;
 import java.util.Optional;
 
+import static org.finos.legend.pure.m3.navigation.generictype.GenericType.getLeftFromSubset;
+import static org.finos.legend.pure.m3.navigation.generictype.GenericType.getSetFromSubset;
+
 public class FunctionExpressionProcessor extends Processor<FunctionExpression>
 {
     @Override
@@ -98,12 +90,172 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
         return M3Paths.FunctionExpression;
     }
 
+
+    private static class FunctionMatchResult
+    {
+        IntSet parametersRequiringTypeInference;
+        String functionName;
+        MutableList<Function<?>> foundFunctions;
+        ListIterable<? extends ValueSpecification> parametersValues;
+
+        public FunctionMatchResult(MutableList<Function<?>> foundFunctions, IntSet parametersRequiringTypeInference, String functionName, ListIterable<? extends ValueSpecification> parametersValues)
+        {
+            this.parametersRequiringTypeInference = parametersRequiringTypeInference;
+            this.functionName = functionName;
+            this.foundFunctions = foundFunctions;
+            this.parametersValues = parametersValues;
+        }
+    }
+
     @Override
     public void process(FunctionExpression functionExpression, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
     {
         TypeInferenceObserver observer = state.getObserver();
         state.pushTypeInferenceContext();
 
+        FunctionMatchResult matchResult = matchFunction(functionExpression, state, matcher, repository, context, processorSupport);
+
+        Function<?> finalFunction = null;
+        boolean someInferenceFailed = false;
+
+        for (Function<?> foundFunction : matchResult.foundFunctions)
+        {
+            functionExpression._funcRemove();
+            functionExpression._funcCoreInstance(foundFunction);
+
+            state.getTypeInferenceContext().setScope(foundFunction);
+            FunctionType foundFunctionType = (FunctionType) processorSupport.function_getFunctionType(foundFunction);
+
+            observer.functionMatched(foundFunction, foundFunctionType);
+
+            // SECOND PASS
+            ListIterable<? extends VariableExpression> paramsType = ListHelper.wrapListIterable(foundFunctionType._parameters());
+            // enumValues, autoMaps, etc...
+            ListIterable<? extends ValueSpecification> parametersValues = ListHelper.wrapListIterable(functionExpression._parametersValues());
+
+            boolean lambdaParametersInferenceSuccess = true;
+            boolean columnTypeInferenceSuccess = true;
+
+            if (matchResult.parametersRequiringTypeInference.notEmpty())
+            {
+                observer.firstPassInferenceFailed().shiftTab(2).matchTypeParamsFromFoundFunction(foundFunction).shiftTab();
+
+                potentiallyUpdateTypeInferenceContextUsingFunctionSignature(parametersValues, paramsType, observer, state, processorSupport);
+
+                observer.unShiftTab().reverseMatching().shiftTab();
+                for (int z = 0; z < parametersValues.size(); z++)
+                {
+                    ValueSpecification instance = parametersValues.get(z);
+                    observer.processingParameter(functionExpression, z, instance).shiftTab();
+
+                    VariableExpression templateVariable = ListHelper.wrapListIterable(Objects.requireNonNull(getRawTypeFromGenericType(foundFunction, processorSupport))._parameters()).get(z);
+                    GenericType templateGenericType = templateVariable._genericType();
+
+                    if (isColumnWithEmptyType(instance, processorSupport))
+                    {
+                        columnTypeInferenceSuccess = processEmptyColumnType(templateGenericType, instance, paramsType, z, observer, state, processorSupport);
+                    }
+                    else if (isLambdaWithEmptyParamType(instance, processorSupport))
+                    {
+                        lambdaParametersInferenceSuccess = processLambda(functionExpression, state, matcher, repository, context, processorSupport, foundFunction, z, observer, instance, lambdaParametersInferenceSuccess, templateGenericType);
+                    }
+                    else if (matchResult.parametersRequiringTypeInference.contains(z))
+                    {
+                        handleParameter(state, matcher, repository, context, processorSupport, observer, paramsType, z, templateGenericType, instance);
+                    }
+                    observer.unShiftTab();
+                }
+                observer.unShiftTab(3);
+            }
+            else
+            {
+                observer.parameterInferenceSucceeded().shiftTab(2);
+
+                updateTypeInferenceContextUsingFunctionSignature(parametersValues, paramsType, observer, state);
+
+                // WARNING / returnType may need reverse matching to be found
+                GenericType returnGenericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(foundFunctionType._returnType(), state.getTypeInferenceContext().getTypeParameterToGenericType(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity(), processorSupport);
+                observer.returnType(returnGenericType);
+                if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(returnGenericType) && !state.getTypeInferenceContext().isTop(org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(returnGenericType)))
+                {
+                    updateTypeInferenceContextSoThatReturnTypeIsConcrete(functionExpression, state, matcher, repository, context, processorSupport, observer, parametersValues, paramsType, foundFunctionType);
+                }
+                observer.unShiftTab(2).finishedRegisteringParametersAndMultiplicities();
+            }
+
+            columnTypeInferenceSuccess = manageMagicColumnFunctions(functionExpression, foundFunction, columnTypeInferenceSuccess, state.getTypeInferenceContext(), observer, processorSupport);
+
+            updateFunctionExpressionReturnTypeAndMultiplicity(functionExpression, state, processorSupport, foundFunction, lambdaParametersInferenceSuccess && columnTypeInferenceSuccess, foundFunctionType, observer);
+
+            if (matchResult.functionName == null)
+            {
+                finalFunction = foundFunction;
+            }
+            else if (!lambdaParametersInferenceSuccess || !columnTypeInferenceSuccess)
+            {
+                someInferenceFailed = true;
+            }
+            else
+            {
+                Function<?> bestMatch = FunctionExpressionMatcher.getBestFunctionMatch(matchResult.foundFunctions, parametersValues, matchResult.functionName, functionExpression.getSourceInformation(), false, processorSupport);
+                if (bestMatch == foundFunction)
+                {
+                    finalFunction = foundFunction;
+                }
+            }
+
+            if (finalFunction != null)
+            {
+                break;
+            }
+
+            // Clean up before re-trying
+            if (matchResult.foundFunctions.size() > 1)
+            {
+                parametersValues.forEach(pv -> cleanProcess(pv, state, repository, context, processorSupport));
+                matchResult.parametersRequiringTypeInference = firstPassTypeInference(functionExpression, parametersValues, state, matcher, repository, context, processorSupport);
+            }
+        }
+
+
+        if (finalFunction != null)
+        {
+            finalFunction._applications(Lists.immutable.<FunctionExpression>withAll(finalFunction._applications()).newWith(functionExpression));
+
+            // Update the function in the function expression in the reverse
+            if ("new_Class_1__String_1__KeyExpression_MANY__T_1_".equals(finalFunction.getName()) || "new_Class_1__String_1__T_1_".equals(finalFunction.getName()))
+            {
+                this.addTraceForKeyExpressions(functionExpression, processorSupport);
+            }
+
+            if ("copy_T_1__String_1__KeyExpression_MANY__T_1_".equals(finalFunction.getName()) || "copy_T_1__String_1__T_1_".equals(finalFunction.getName()))
+            {
+                this.addTraceForKeyExpressions(functionExpression, processorSupport);
+            }
+
+            if ("letFunction_String_1__T_m__T_m_".equals(finalFunction.getName()))
+            {
+                try
+                {
+                    state.getVariableContext().getParent().registerValue(((InstanceValue) matchResult.parametersValues.get(0))._valuesCoreInstance().getAny().getName(), matchResult.parametersValues.get(1));
+                }
+                catch (VariableNameConflictException e)
+                {
+                    throw new PureCompilationException(functionExpression.getSourceInformation(), e.getMessage());
+                }
+            }
+        }
+        else if (!someInferenceFailed)
+        {
+            throwNoMatchException(functionExpression, state, processorSupport);
+        }
+
+        observer.unShiftTab().finishedProcessingFunctionExpression(functionExpression);
+        state.popTypeInferenceContext();
+    }
+
+    private FunctionMatchResult matchFunction(FunctionExpression functionExpression, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
+    {
         ListIterable<? extends ValueSpecification> parametersValues = ListHelper.wrapListIterable(functionExpression._parametersValues());
 
         // Process the function's parameters (FIRST PASS)
@@ -131,6 +283,11 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                 if (org.finos.legend.pure.m3.navigation.generictype.GenericType.subTypeOf(sourceGenericType, org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(processorSupport.package_getByUserPath(M3Paths.Enumeration), processorSupport), processorSupport))
                 {
                     reprocessEnumValueInExtractEnumValue(functionExpression, propertyName, state, repository, processorSupport);
+                }
+                else if (processorSupport.instance_instanceOf(sourceGenericType._rawType(), M3Paths.RelationType))
+                {
+                    String name = functionExpression._propertyName()._valuesCoreInstance().getAny().getName();
+                    foundFunctions.add(_RelationType.findColumn((RelationType<?>) sourceGenericType._rawType(), name, functionExpression.getSourceInformation(), processorSupport));
                 }
                 else
                 {
@@ -168,21 +325,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                     GenericType sourceGenericType = extractAndValidateGenericType(qualifiedPropertyName, source);
 
                     Multiplicity sourceMultiplicity = source._multiplicity();
-//                    if (!org.finos.legend.pure.m3.bootstrap.type.multiplicity.Multiplicity.isToOne(sourceMultiplicity, true) && org.finos.legend.pure.m3.bootstrap.type.multiplicity.Multiplicity.isToOne(sourceMultiplicity, false))
-//                    {
-//                        SourceInformation si = functionExpression.getSourceInformation();
-//                        String textToAppend = "{\"file\":\""+si.getSourceId()+"\",\"line\":"+si.getLine()+", \"column\":"+si.getColumn()+"}\n"; //new line in content
-//                        Path path = Paths.get("h:/temp/script.json");
-//                        try
-//                        {
-//                            System.out.print(textToAppend);
-//                            Files.write(path, textToAppend.getBytes(), StandardOpenOption.APPEND);  //Append mode
-//                        }
-//                        catch (IOException e)
-//                        {
-//                            e.printStackTrace();
-//                        }
-//                    }
+
                     if (org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isToOne(sourceMultiplicity, true))
                     {
                         ListIterable<QualifiedProperty<?>> qualifiedPropertyFuncs = findFunctionsForQualifiedPropertyBasedOnMultiplicity(functionExpression, sourceGenericType, parametersValues, processorSupport, matcher, state);
@@ -208,7 +351,6 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
 
                 }
             }
-
             if (foundFunctions.isEmpty())
             {
                 // Match the functionExpression with the Function library (may still need to do it even if the function is a property because it may have been reprocessed as a Collect!)
@@ -216,285 +358,316 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                 functionName = getFunctionName(functionExpression);
             }
         }
+        return new FunctionMatchResult(foundFunctions, parametersRequiringTypeInference, functionName, parametersValues);
+    }
 
-        Function<?> finalFunction = null;
-        boolean someInferenceFailed = false;
-        for (Function<?> foundFunction : foundFunctions)
+    private static boolean manageMagicColumnFunctions(FunctionExpression functionExpression, Function<?> foundFunction, boolean columnTypeInferenceSuccess, TypeInferenceContext ctx, TypeInferenceObserver observer, ProcessorSupport processorSupport)
+    {
+        if ("funcColSpecArray_Function_MANY__String_MANY__T_1__FuncColSpecArray_1_".equals(foundFunction.getName()) || "funcColSpec_Function_1__String_1__T_1__FuncColSpec_1_".equals(foundFunction.getName()))
         {
-            functionExpression._funcRemove();
-            functionExpression._funcCoreInstance(foundFunction);
-
-            state.getTypeInferenceContext().setScope(foundFunction);
-            FunctionType foundFunctionType = (FunctionType) processorSupport.function_getFunctionType(foundFunction);
-
-            observer.functionMatched(foundFunction, foundFunctionType);
-
-            // SECOND PASS
-            ListIterable<? extends VariableExpression> paramsType = ListHelper.wrapListIterable(foundFunctionType._parameters());
-            // enumValues, autoMaps, etc...
-            parametersValues = ListHelper.wrapListIterable(functionExpression._parametersValues());
-
-            boolean success = true;
-            if (parametersRequiringTypeInference.notEmpty())
+            MutableList<ValueSpecification> parameters = Lists.mutable.withAll(functionExpression._parametersValues());
+            MutableList<CoreInstance> lambdas = Lists.mutable.withAll(parameters.get(0).getValueForMetaPropertyToMany("values"));
+            MutableList<CoreInstance> columns = Lists.mutable.withAll(parameters.get(2).getValueForMetaPropertyToOne("genericType").getValueForMetaPropertyToOne("rawType").getValueForMetaPropertyToMany("columns"));
+            if (lambdas.size() != columns.size())
             {
-                observer.firstPassInferenceFailed().shiftTab(2)
-                        .matchTypeParamsFromFoundFunction(foundFunction).shiftTab();
-                parametersValues.forEachWithIndex((instance, z) ->
+                throw new PureCompilationException("Error while processing funcColSpecArray. The lambda count is different from the column number (" + lambdas.size() + " != " + columns.size() + ")");
+            }
+            columnTypeInferenceSuccess = true;
+            for (int i = 0; i < lambdas.size(); i++)
+            {
+                CoreInstance lambdaReturnType = lambdas.get(i).getValueForMetaPropertyToMany("expressionSequence").getLast().getValueForMetaPropertyToOne("genericType");
+                if (lambdaReturnType != null)
                 {
-                    if (isInferenceSuccess(instance, processorSupport))
-                    {
-                        observer.matchParam(z);
-                        GenericType templateGenType = paramsType.get(z)._genericType();
-                        TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
-                        typeInferenceContext.register(templateGenType, instance._genericType(), typeInferenceContext.getTopContext(), observer);
-                        typeInferenceContext.registerMul(paramsType.get(z)._multiplicity(), instance._multiplicity(), typeInferenceContext.getTopContext(), observer);
-                    }
-                    else
-                    {
-                        observer.paramInferenceFailed(z);
-                    }
-                });
-                observer.unShiftTab().reverseMatching().shiftTab();
-                for (int z = 0; z < parametersValues.size(); z++)
+                    CoreInstance columnGenericType = _Column.getColumnType((Column<?, ?>) columns.get(i));
+                    columnGenericType.setKeyValues(Lists.mutable.with("rawType"), Lists.mutable.with(lambdaReturnType.getValueForMetaPropertyToOne("rawType")));
+                    ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(2).getValueForMetaPropertyToOne("genericType"), (GenericType) parameters.get(2).getValueForMetaPropertyToOne("genericType"), ctx, observer);
+                }
+                else
                 {
-                    ValueSpecification instance = parametersValues.get(z);
-                    observer.processingParameter(functionExpression, z, instance).shiftTab();
+                    columnTypeInferenceSuccess = false;
+                }
+            }
+        }
+        if ("aggColSpec_Function_1__Function_1__String_1__T_1__AggColSpec_1_".equals(foundFunction.getName()))
+        {
+            MutableList<ValueSpecification> parameters = Lists.mutable.withAll(functionExpression._parametersValues());
+            CoreInstance reduceLambda = parameters.get(1).getValueForMetaPropertyToOne("values");
+            CoreInstance column = parameters.get(3).getValueForMetaPropertyToOne("genericType").getValueForMetaPropertyToOne("rawType").getValueForMetaPropertyToOne("columns");
+            CoreInstance lambdaReturnType = reduceLambda.getValueForMetaPropertyToMany("expressionSequence").getLast().getValueForMetaPropertyToOne("genericType");
+            if (lambdaReturnType != null)
+            {
+                CoreInstance columnGenericType = _Column.getColumnType((Column<?, ?>) column);
+                columnGenericType.setKeyValues(Lists.mutable.with("rawType"), Lists.mutable.with(lambdaReturnType.getValueForMetaPropertyToOne("rawType")));
+                ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(3).getValueForMetaPropertyToOne("genericType"), (GenericType) parameters.get(3).getValueForMetaPropertyToOne("genericType"), ctx, observer);
+                columnTypeInferenceSuccess = true;
+            }
+        }
+        return columnTypeInferenceSuccess;
+    }
 
-                    if (isLambdaWithEmptyParamType(instance, processorSupport))
+    private void updateTypeInferenceContextSoThatReturnTypeIsConcrete(FunctionExpression functionExpression, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport, TypeInferenceObserver observer, ListIterable<? extends ValueSpecification> parametersValues, ListIterable<? extends VariableExpression> paramsType, FunctionType foundFunctionType)
+    {
+        observer.shiftTab().returnTypeNotConcrete();
+
+        // reverse matching
+        parametersValues.forEachWithIndex((instance, z) ->
+        {
+            GenericType templateGenType = paramsType.get(z)._genericType();
+            Multiplicity templateMultiplicity = paramsType.get(z)._multiplicity();
+            GenericType resolvedGenericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(templateGenType, state.getTypeInferenceContext().getTypeParameterToGenericType(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity(), processorSupport);
+            Multiplicity resolvedMultiplicity = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.makeMultiplicityAsConcreteAsPossible(templateMultiplicity, state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity());
+
+            state.pushTypeInferenceContextAhead();
+            state.getTypeInferenceContext().setScope(instance instanceof FunctionExpression ? ((FunctionExpression) instance)._funcCoreInstance() : null);
+            observer.processingParameter(functionExpression, z, instance).shiftTab();
+            TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
+            typeInferenceContext.register(instance._genericType(), resolvedGenericType, typeInferenceContext.getParent(), observer);
+            typeInferenceContext.registerMul(instance._multiplicity(), resolvedMultiplicity, typeInferenceContext.getParent(), observer);
+
+            observer.reprocessingTheParameter().shiftTab();
+
+            // TODO do we need to clean here?
+            cleanProcess(instance, state, repository, context, processorSupport);
+            PostProcessor.processElement(matcher, instance, state, processorSupport);
+
+            observer.unShiftTab().finishedProcessParameter().unShiftTab();
+
+            state.popTypeInferenceContextAhead();
+        });
+        observer.unShiftTab();
+
+        observer.newReturnType(org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(foundFunctionType._returnType(), state.getTypeInferenceContext().getTypeParameterToGenericType(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity(), processorSupport));
+    }
+
+
+    private static void updateFunctionExpressionReturnTypeAndMultiplicity(FunctionExpression functionExpression, ProcessorState state, ProcessorSupport processorSupport, Function<?> foundFunction, boolean parametersInferenceSuccess, FunctionType foundFunctionType, TypeInferenceObserver observer)
+    {
+        if (parametersInferenceSuccess)
+        {
+            TypeInference.storeInferredTypeParametersInFunctionExpression(functionExpression, state, processorSupport, foundFunction, observer);
+
+            // Get the return type information
+            GenericType returnGenericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(foundFunctionType._returnType(), state.getTypeInferenceContext().getTypeParameterToGenericType().reject((s, coreInstance) -> org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationEqual((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) coreInstance, processorSupport)), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity(), processorSupport);
+            Multiplicity returnMultiplicity = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.makeMultiplicityAsConcreteAsPossible(foundFunctionType._returnMultiplicity(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity());
+
+            if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(returnGenericType, processorSupport) && !state.getTypeInferenceContext().isTop(org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(returnGenericType)))
+            {
+                CoreInstance func = functionExpression.getValueForMetaPropertyToOne(M3Properties.func);
+                String funcType = (func instanceof Property) ? "property" : ((func instanceof QualifiedProperty) ? "qualified property" : "function");
+                CoreInstance funcName = func.getValueForMetaPropertyToOne("property".equals(funcType) ? M3Properties.name : M3Properties.functionName);
+                throw new PureCompilationException(functionExpression.getSourceInformation(), "The system is not capable of inferring the return type (" + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(returnGenericType, processorSupport) + ") of the " + funcType + " '" + PrimitiveUtilities.getStringValue(funcName) + "'. Check your signatures!");
+            }
+
+            // Update the type
+            GenericType genericTypeCopy = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericTypeAsInferredGenericType(returnGenericType, functionExpression.getSourceInformation(), processorSupport);
+            functionExpression._genericType(genericTypeCopy);
+
+            // Update the multiplicity
+            Multiplicity returnMultiplicityCopy = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.copyMultiplicity(returnMultiplicity, functionExpression.getSourceInformation(), processorSupport);
+            functionExpression._multiplicity(returnMultiplicityCopy);
+            observer.updateFunctionExpressionReturn(parametersInferenceSuccess, genericTypeCopy, returnMultiplicityCopy);
+        }
+        else
+        {
+            // Inference failed...
+            FunctionType functionType = (FunctionType) processorSupport.function_getFunctionType(foundFunction);
+            GenericType returnGenericType = functionType._returnType();
+            GenericType genericTypeCopy = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericTypeAsInferredGenericType(returnGenericType, functionExpression.getSourceInformation(), processorSupport);
+            functionExpression._genericType(genericTypeCopy);
+            Multiplicity returnMultiplicity = functionType._returnMultiplicity();
+            Multiplicity returnMultiplicityCopy = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.copyMultiplicity(returnMultiplicity, functionExpression.getSourceInformation(), processorSupport);
+            functionExpression._multiplicity(returnMultiplicityCopy);
+            observer.updateFunctionExpressionReturn(parametersInferenceSuccess, genericTypeCopy, returnMultiplicityCopy);
+        }
+    }
+
+    private static void potentiallyUpdateTypeInferenceContextUsingFunctionSignature(ListIterable<? extends ValueSpecification> parametersValues, ListIterable<? extends VariableExpression> paramsType, TypeInferenceObserver observer, ProcessorState state, ProcessorSupport processorSupport)
+    {
+        parametersValues.forEachWithIndex((instance, z) ->
+        {
+            boolean isInferenceSuccess = isInferenceSuccess(instance, processorSupport);
+            if (isInferenceSuccess)
+            {
+                observer.matchParam(z);
+                TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
+                typeInferenceContext.register(paramsType.get(z)._genericType(), instance._genericType(), typeInferenceContext.getTopContext(), observer);
+                typeInferenceContext.registerMul(paramsType.get(z)._multiplicity(), instance._multiplicity(), typeInferenceContext.getTopContext(), observer);
+            }
+            else
+            {
+                observer.paramInferenceFailed(z);
+            }
+        });
+    }
+
+    private static void updateTypeInferenceContextUsingFunctionSignature(ListIterable<? extends ValueSpecification> parametersValues, ListIterable<? extends VariableExpression> paramsType, TypeInferenceObserver observer, ProcessorState state)
+    {
+        parametersValues.forEachWithIndex((instance, z) ->
+        {
+            TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
+            typeInferenceContext.register(paramsType.get(z)._genericType(), instance._genericType(), typeInferenceContext.getTopContext(), true, observer);
+            typeInferenceContext.registerMul(paramsType.get(z)._multiplicity(), instance._multiplicity(), typeInferenceContext.getTopContext(), observer);
+        });
+    }
+
+    private void handleParameter(ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport, TypeInferenceObserver observer, ListIterable<? extends VariableExpression> paramsType, int z, GenericType templateGenericType, ValueSpecification instance)
+    {
+        observer.reprocessingTheParameter().shiftTab();
+
+        GenericType templateGenType = paramsType.get(z)._genericType();
+        Multiplicity templateMultiplicity = paramsType.get(z)._multiplicity();
+        GenericType resolvedGenericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(templateGenType, state.getTypeInferenceContext().getTypeParameterToGenericType(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity(), processorSupport);
+        Multiplicity resolvedMultiplicity = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.makeMultiplicityAsConcreteAsPossible(templateMultiplicity, state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity());
+
+        state.pushTypeInferenceContextAhead();
+        TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
+        typeInferenceContext.setScope(instance instanceof SimpleFunctionExpression ? ((SimpleFunctionExpression) instance)._funcCoreInstance() : null);
+
+        typeInferenceContext.register(instance._genericType(), resolvedGenericType, typeInferenceContext.getParent(), observer);
+        typeInferenceContext.registerMul(instance._multiplicity(), resolvedMultiplicity, typeInferenceContext.getParent(), observer);
+        cleanProcess(instance, state, repository, context, processorSupport);
+        PostProcessor.processElement(matcher, instance, state, processorSupport);
+        observer.unShiftTab();
+
+        state.popTypeInferenceContextAhead();
+    }
+
+    private static boolean processLambda(FunctionExpression functionExpression, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport, Function<?> foundFunction, int z, TypeInferenceObserver observer, ValueSpecification instance, boolean lambdaParametersInferenceSuccess, GenericType templateGenericType)
+    {
+        VariableExpression templateToMatchLambdaTo = ListHelper.wrapListIterable(Objects.requireNonNull(getRawTypeFromGenericType(foundFunction, processorSupport))._parameters()).get(z);
+        observer.register(templateToMatchLambdaTo, templateToMatchLambdaTo, state.getTypeInferenceContext(), state.getTypeInferenceContext());
+
+        for (CoreInstance val : ((InstanceValue) instance)._valuesCoreInstance())
+        {
+            if (val instanceof LambdaFunction)
+            {
+                try (MilestoningDateContextScope ignore = MilestoningDatesPropagationFunctions.withNewMilestoningDateContext(functionExpression, val, state, repository, context, processorSupport))
+                {
+                    lambdaParametersInferenceSuccess = lambdaParametersInferenceSuccess && !TypeInference.processParamTypesOfLambdaUsedAsAFunctionExpressionParamValue(instance, (LambdaFunction<?>) val, templateToMatchLambdaTo, matcher, state, repository, processorSupport);
+                }
+
+                // Manage return type in any case
+                ClassInstance functionClass = (ClassInstance) processorSupport.package_getByUserPath(M3Paths.Function);
+                if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(templateGenericType) && org.finos.legend.pure.m3.navigation.type.Type.subTypeOf(ImportStub.withImportStubByPass(templateGenericType._rawTypeCoreInstance(), processorSupport), functionClass, processorSupport))
+                {
+                    GenericType templateGenFunctionType = ListHelper.wrapListIterable(templateGenericType._typeArguments()).get(0);
+                    if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(templateGenFunctionType) && !org.finos.legend.pure.m3.navigation.type.Type.isTopType(Instance.getValueForMetaPropertyToOneResolved(templateGenFunctionType, M3Properties.rawType, processorSupport), processorSupport))
                     {
-                        VariableExpression templateToMatchLambdaTo = ListHelper.wrapListIterable(Objects.requireNonNull(getRawTypeFromGenericType(foundFunction, processorSupport))._parameters()).get(z);
-                        observer.register(templateToMatchLambdaTo, templateToMatchLambdaTo, state.getTypeInferenceContext(), state.getTypeInferenceContext());
+                        GenericType templateReturnType = Optional.ofNullable(ImportStub.withImportStubByPass(templateGenFunctionType._rawTypeCoreInstance(), processorSupport)).map(i -> ((FunctionType) i)._returnType()).orElse(null);
 
-                        for (CoreInstance val : ((InstanceValue) instance)._valuesCoreInstance())
+                        // Generics in lambdas are relative to their environment (i.e. the function in which they are defined)
+                        TypeInferenceContext lambdaInferenceContext = state.getTypeInferenceContext().getTopContext();
+
+                        if (templateReturnType != null)
                         {
-                            if (val instanceof LambdaFunction)
+                            FunctionType lambdaFunctionType = Objects.requireNonNull(getRawTypeFromGenericType((LambdaFunction<?>) val, processorSupport));
+                            GenericType concreteGenericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(lambdaFunctionType._returnType(), lambdaInferenceContext.getTypeParameterToGenericType(), lambdaInferenceContext.getMultiplicityParameterToMultiplicity(), processorSupport);
+                            lambdaFunctionType._returnTypeRemove();
+                            lambdaFunctionType._returnType(concreteGenericType);
+                            if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(templateReturnType))
                             {
-                                try (MilestoningDateContextScope ignore = MilestoningDatesPropagationFunctions.withNewMilestoningDateContext(functionExpression, val, state, repository, context, processorSupport))
-                                {
-                                    success = success && !TypeInference.processParamTypesOfLambdaUsedAsAFunctionExpressionParamValue(instance, (LambdaFunction<?>) val, templateToMatchLambdaTo, matcher, state, repository, processorSupport);
-                                }
+                                TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
+                                typeInferenceContext.register(templateReturnType, concreteGenericType, typeInferenceContext.getParent(), observer);
+                            }
+                        }
 
-                                // Manage return type in any case
-                                GenericType templateGenericType = templateToMatchLambdaTo._genericType();
-                                ClassInstance functionClass = (ClassInstance) processorSupport.package_getByUserPath(M3Paths.Function);
-                                if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(templateGenericType) && org.finos.legend.pure.m3.navigation.type.Type.subTypeOf(ImportStub.withImportStubByPass(templateGenericType._rawTypeCoreInstance(), processorSupport), functionClass, processorSupport))
-                                {
-                                    GenericType templateGenFunctionType = ListHelper.wrapListIterable(templateGenericType._typeArguments()).get(0);
-                                    if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(templateGenFunctionType) && !org.finos.legend.pure.m3.navigation.type.Type.isTopType(Instance.getValueForMetaPropertyToOneResolved(templateGenFunctionType, M3Properties.rawType, processorSupport), processorSupport))
-                                    {
-                                        GenericType templateReturnType = Optional.ofNullable(ImportStub.withImportStubByPass(templateGenFunctionType._rawTypeCoreInstance(), processorSupport)).map(i -> ((FunctionType) i)._returnType()).orElse(null);
+                        Multiplicity templateReturnMultiplicity = Optional.ofNullable(ImportStub.withImportStubByPass(templateGenFunctionType._rawTypeCoreInstance(), processorSupport)).map(i -> ((FunctionType) i)._returnMultiplicity()).orElse(null);
+                        if (templateReturnMultiplicity != null)
+                        {
+                            FunctionType lambdaFunctionType = Objects.requireNonNull(getRawTypeFromGenericType((LambdaFunction<?>) val, processorSupport));
+                            Multiplicity concreteMultiplicity = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.makeMultiplicityAsConcreteAsPossible(Instance.getValueForMetaPropertyToOneResolved(lambdaFunctionType, M3Properties.returnMultiplicity, processorSupport), lambdaInferenceContext.getMultiplicityParameterToMultiplicity());
 
-                                        // Generics in lambdas are relative to their environment (i.e. the function in which they are defined)
-                                        TypeInferenceContext lambdaInferenceContext = state.getTypeInferenceContext().getTopContext();
-
-                                        if (templateReturnType != null)
-                                        {
-                                            FunctionType lambdaFunctionType = Objects.requireNonNull(getRawTypeFromGenericType((LambdaFunction<?>) val, processorSupport));
-                                            GenericType concreteGenericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(lambdaFunctionType._returnType(), lambdaInferenceContext.getTypeParameterToGenericType(), lambdaInferenceContext.getMultiplicityParameterToMultiplicity(), processorSupport);
-                                            lambdaFunctionType._returnTypeRemove();
-                                            lambdaFunctionType._returnType(concreteGenericType);
-                                            if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(templateReturnType))
-                                            {
-                                                TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
-                                                typeInferenceContext.register(templateReturnType, concreteGenericType, typeInferenceContext.getParent(), observer);
-                                            }
-                                        }
-
-                                        Multiplicity templateReturnMultiplicity = Optional.ofNullable(ImportStub.withImportStubByPass(templateGenFunctionType._rawTypeCoreInstance(), processorSupport)).map(i -> ((FunctionType) i)._returnMultiplicity()).orElse(null);
-                                        if (templateReturnMultiplicity != null)
-                                        {
-                                            FunctionType lambdaFunctionType = Objects.requireNonNull(getRawTypeFromGenericType((LambdaFunction<?>) val, processorSupport));
-                                            Multiplicity concreteMultiplicity = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.makeMultiplicityAsConcreteAsPossible(Instance.getValueForMetaPropertyToOneResolved(lambdaFunctionType, M3Properties.returnMultiplicity, processorSupport), lambdaInferenceContext.getMultiplicityParameterToMultiplicity());
-
-                                            lambdaFunctionType._returnMultiplicityRemove();
-                                            lambdaFunctionType._returnMultiplicity(concreteMultiplicity);
-                                            if (concreteMultiplicity != null)
-                                            {
-                                                TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
-                                                typeInferenceContext.registerMul(templateReturnMultiplicity, concreteMultiplicity, typeInferenceContext.getParent(), observer);
-                                            }
-                                        }
-                                    }
-                                }
+                            lambdaFunctionType._returnMultiplicityRemove();
+                            lambdaFunctionType._returnMultiplicity(concreteMultiplicity);
+                            if (concreteMultiplicity != null)
+                            {
+                                TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
+                                typeInferenceContext.registerMul(templateReturnMultiplicity, concreteMultiplicity, typeInferenceContext.getParent(), observer);
                             }
                         }
                     }
-                    else if (parametersRequiringTypeInference.contains(z))
+                }
+            }
+        }
+        return lambdaParametersInferenceSuccess;
+    }
+
+    private static boolean processEmptyColumnType(GenericType templateGenericType, ValueSpecification instance, ListIterable<? extends VariableExpression> paramsType, int z, TypeInferenceObserver observer, ProcessorState state, ProcessorSupport processorSupport)
+    {
+        CoreInstance actualTemplateToInferColumnType = state.getTypeInferenceContext().getTypeParameterToGenericType().get(org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(templateGenericType));
+        if (actualTemplateToInferColumnType != null)
+        {
+            GenericType _typeToAnalyze = (GenericType) actualTemplateToInferColumnType;
+            GenericType equalLeft = null;
+            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationEqual(_typeToAnalyze, processorSupport))
+            {
+                equalLeft = (GenericType) _typeToAnalyze.getValueForMetaPropertyToOne("left");
+                _typeToAnalyze = (GenericType) _typeToAnalyze.getValueForMetaPropertyToOne("right");
+            }
+            TypeInferenceContext foundParentToUpdate = state.getTypeInferenceContext().findParentForOperation(actualTemplateToInferColumnType);
+
+            GenericType instanceGenericType = instance._genericType();
+            final GenericType typeToAnalyze = _typeToAnalyze;
+            ((RelationType<?>) instanceGenericType._rawType())._columns().forEach(currentColumn ->
+            {
+                String colName = currentColumn._name();
+                GenericType potentialEmptyType = _Column.getColumnType(currentColumn);
+                if (potentialEmptyType._rawType() == null)
+                {
+                    if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationSubset(typeToAnalyze, processorSupport))
                     {
-                        observer.reprocessingTheParameter().shiftTab();
+                        // Search the reference type (right of contains) for the missing type column
+                        RelationType<?> referenceRelation = (RelationType<?>) ((GenericType) getSetFromSubset(typeToAnalyze, processorSupport))._rawType();
+                        if (referenceRelation != null)
+                        {
+                            Column<?, ?> foundColumn = referenceRelation._columns().select(e -> e._name().equals(colName)).getFirst();
+                            if (foundColumn == null)
+                            {
+                                throw new PureCompilationException("The column '" + colName + "' can't be found in the relation " + _RelationType.print(referenceRelation, processorSupport));
+                            }
+                            Type foundColumnType = _Column.getColumnType(foundColumn)._rawType();
 
-                        GenericType templateGenType = paramsType.get(z)._genericType();
-                        Multiplicity templateMultiplicity = paramsType.get(z)._multiplicity();
-                        GenericType resolvedGenericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(templateGenType, state.getTypeInferenceContext().getTypeParameterToGenericType(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity(), processorSupport);
-                        Multiplicity resolvedMultiplicity = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.makeMultiplicityAsConcreteAsPossible(templateMultiplicity, state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity());
+                            // Fill the type
+                            potentialEmptyType._rawType(foundColumnType);
 
-                        state.pushTypeInferenceContextAhead();
-                        TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
-                        typeInferenceContext.setScope(instance instanceof SimpleFunctionExpression ? ((SimpleFunctionExpression) instance)._funcCoreInstance() : null);
-                        typeInferenceContext.register(instance._genericType(), resolvedGenericType, typeInferenceContext.getParent(), observer);
-                        typeInferenceContext.registerMul(instance._multiplicity(), resolvedMultiplicity, typeInferenceContext.getParent(), observer);
-                        cleanProcess(instance, state, repository, context, processorSupport);
-                        PostProcessor.processElement(matcher, instance, state, processorSupport);
-                        observer.unShiftTab();
+                            CoreInstance left = getLeftFromSubset(typeToAnalyze, processorSupport);
+                            // Check if left is an EQUAL operation
+                            if (processorSupport.instance_instanceOf(left, M3Paths.GenericTypeOperation))
+                            {
+                                // Set the Type Param to the INSTANCE genericType
+                                CoreInstance param = left.getValueForMetaPropertyToOne("left");
+                                foundParentToUpdate.register((GenericType) param, instanceGenericType, foundParentToUpdate, observer);
+                                // Continue with the right side of EQUAL
+                                left = left.getValueForMetaPropertyToOne("right");
+                            }
 
-                        state.popTypeInferenceContextAhead();
+                            // Check compatibility
+                            if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericCompatibleWith(instanceGenericType, left, processorSupport))
+                            {
+                                throw new RuntimeException(org.finos.legend.pure.m3.navigation.generictype.GenericType.print(left, processorSupport) + " is not compatible with " + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(instanceGenericType, processorSupport));
+                            }
+                            state.getTypeInferenceContext().replace(actualTemplateToInferColumnType, instanceGenericType);
+                            foundParentToUpdate.register((GenericType) left, instanceGenericType, foundParentToUpdate, observer);
+                        }
                     }
-                    observer.unShiftTab();
                 }
-                observer.unShiftTab(3);
-            }
-            else
+            });
+
+            // Set the type parameter of the missing Column Type to the found type
+            if (equalLeft != null)
             {
-                observer.parameterInferenceSucceeded().shiftTab(2);
-                parametersValues.forEachWithIndex((instance, z) ->
-                {
-                    TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
-                    typeInferenceContext.register(paramsType.get(z)._genericType(), instance._genericType(), typeInferenceContext.getTopContext(), observer);
-                    typeInferenceContext.registerMul(paramsType.get(z)._multiplicity(), instance._multiplicity(), typeInferenceContext.getTopContext(), observer);
-                });
-
-                // WARNING / returnType may need reverse matching to be found
-                GenericType returnGenericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(foundFunctionType._returnType(), state.getTypeInferenceContext().getTypeParameterToGenericType(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity(), processorSupport);
-                observer.returnType(returnGenericType);
-                if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(returnGenericType) && !state.getTypeInferenceContext().isTop(org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(returnGenericType)))
-                {
-                    observer.shiftTab().returnTypeNotConcrete();
-
-                    // reverse matching
-                    parametersValues.forEachWithIndex((instance, z) ->
-                    {
-                        GenericType templateGenType = paramsType.get(z)._genericType();
-                        Multiplicity templateMultiplicity = paramsType.get(z)._multiplicity();
-                        GenericType resolvedGenericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(templateGenType, state.getTypeInferenceContext().getTypeParameterToGenericType(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity(), processorSupport);
-                        Multiplicity resolvedMultiplicity = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.makeMultiplicityAsConcreteAsPossible(templateMultiplicity, state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity());
-
-                        state.pushTypeInferenceContextAhead();
-                        state.getTypeInferenceContext().setScope(instance instanceof FunctionExpression ? ((FunctionExpression) instance)._funcCoreInstance() : null);
-                        observer.processingParameter(functionExpression, z, instance).shiftTab();
-                        TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
-                        typeInferenceContext.register(instance._genericType(), resolvedGenericType, typeInferenceContext.getParent(), observer);
-                        typeInferenceContext.registerMul(instance._multiplicity(), resolvedMultiplicity, typeInferenceContext.getParent(), observer);
-
-                        observer.reprocessingTheParameter().shiftTab();
-
-                        // TODO do we need to clean here?
-                        cleanProcess(instance, state, repository, context, processorSupport);
-                        PostProcessor.processElement(matcher, instance, state, processorSupport);
-
-                        observer.unShiftTab().finishedProcessParameter().unShiftTab();
-
-                        state.popTypeInferenceContextAhead();
-                    });
-                    observer.unShiftTab();
-
-                    returnGenericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(foundFunctionType._returnType(), state.getTypeInferenceContext().getTypeParameterToGenericType(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity(), processorSupport);
-                    observer.newReturnType(returnGenericType);
-                }
-                observer.unShiftTab(2).finishedRegisteringParametersAndMultiplicities();
-            }
-
-            // We can infer the parameter types for Lambdas given as parameters (now that we know which function to use).
-            if (success)
-            {
-                TypeInference.storeInferredTypeParametersInFunctionExpression(functionExpression, state, processorSupport, foundFunction);
-
-                // Get the return type information
-                //Pair<CoreInstance, CoreInstance> result = FunctionExpression.resolveFunctionGenericReturnTypeAndMultiplicity(functionExpression, context, processorSupport);
-                GenericType returnGenericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(foundFunctionType._returnType(), state.getTypeInferenceContext().getTypeParameterToGenericType(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity(), processorSupport);//result.getOne();
-                Multiplicity returnMultiplicity = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.makeMultiplicityAsConcreteAsPossible(foundFunctionType._returnMultiplicity(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity());
-
-                if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(returnGenericType) && !state.getTypeInferenceContext().isTop(org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(returnGenericType)))
-                {
-                    CoreInstance func = functionExpression.getValueForMetaPropertyToOne(M3Properties.func);
-                    String funcType = (func instanceof Property) ? "property" : ((func instanceof QualifiedProperty) ? "qualified property" : "function");
-                    CoreInstance funcName = func.getValueForMetaPropertyToOne("property".equals(funcType) ? M3Properties.name : M3Properties.functionName);
-                    throw new PureCompilationException(functionExpression.getSourceInformation(), "The system is not capable of inferring the return type of the " + funcType + " '" + PrimitiveUtilities.getStringValue(funcName) + "'. Check your signatures!");
-                }
-
-                // Update the type
-                GenericType genericTypeCopy = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericTypeAsInferredGenericType(returnGenericType, functionExpression.getSourceInformation(), processorSupport);
-                functionExpression._genericType(genericTypeCopy);
-
-                // Update the multiplicity
-                Multiplicity returnMultiplicityCopy = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.copyMultiplicity(returnMultiplicity, functionExpression.getSourceInformation(), processorSupport);
-                functionExpression._multiplicity(returnMultiplicityCopy);
-            }
-            else
-            {
-                // Inference failed...
-                FunctionType functionType = (FunctionType) processorSupport.function_getFunctionType(foundFunction);
-                GenericType returnGenericType = functionType._returnType();
-                GenericType genericTypeCopy = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericTypeAsInferredGenericType(returnGenericType, functionExpression.getSourceInformation(), processorSupport);
-                functionExpression._genericType(genericTypeCopy);
-                Multiplicity returnMultiplicity = functionType._returnMultiplicity();
-                Multiplicity returnMultiplicityCopy = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.copyMultiplicity(returnMultiplicity, functionExpression.getSourceInformation(), processorSupport);
-                functionExpression._multiplicity(returnMultiplicityCopy);
-            }
-
-            if (functionName == null)
-            {
-                finalFunction = foundFunction;
-            }
-            else if (!success)
-            {
-                someInferenceFailed = true;
-            }
-            else
-            {
-                Function<?> bestMatch = FunctionExpressionMatcher.getBestFunctionMatch(foundFunctions, parametersValues, functionName, functionExpression.getSourceInformation(), false, processorSupport);
-                if (bestMatch == foundFunction)
-                {
-                    finalFunction = foundFunction;
-                }
-            }
-
-            if (finalFunction != null)
-            {
-                break;
-            }
-
-            // Clean up before re-trying
-            if (foundFunctions.size() > 1)
-            {
-                parametersValues.forEach(pv -> cleanProcess(pv, state, repository, context, processorSupport));
-                parametersRequiringTypeInference = firstPassTypeInference(functionExpression, parametersValues, state, matcher, repository, context, processorSupport);
+                foundParentToUpdate.register((GenericType) equalLeft, instanceGenericType, foundParentToUpdate, observer);
             }
         }
-
-        if (finalFunction != null)
+        else
         {
-            finalFunction._applications(Lists.immutable.<FunctionExpression>withAll(finalFunction._applications()).newWith(functionExpression));
-
-            // Update the function in the function expression in the reverse
-            if ("new_Class_1__String_1__KeyExpression_MANY__T_1_".equals(finalFunction.getName()) || "new_Class_1__String_1__T_1_".equals(finalFunction.getName()))
-            {
-                this.addTraceForKeyExpressions(functionExpression, processorSupport);
-            }
-
-            if ("copy_T_1__String_1__KeyExpression_MANY__T_1_".equals(finalFunction.getName()) || "copy_T_1__String_1__T_1_".equals(finalFunction.getName()))
-            {
-                this.addTraceForKeyExpressions(functionExpression, processorSupport);
-            }
-
-            if ("letFunction_String_1__T_m__T_m_".equals(finalFunction.getName()))
-            {
-                try
-                {
-                    state.getVariableContext().getParent().registerValue(((InstanceValue) parametersValues.get(0))._valuesCoreInstance().getAny().getName(), parametersValues.get(1));
-                }
-                catch (VariableNameConflictException e)
-                {
-                    throw new PureCompilationException(functionExpression.getSourceInformation(), e.getMessage());
-                }
-            }
+            GenericType templateGenType = paramsType.get(z)._genericType();
+            TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
+            typeInferenceContext.register(templateGenType, instance._genericType(), typeInferenceContext.getTopContext(), observer);
+            typeInferenceContext.registerMul(paramsType.get(z)._multiplicity(), instance._multiplicity(), typeInferenceContext.getTopContext(), observer);
+            return org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeFullyConcrete(instance._genericType(), processorSupport);
         }
-        else if (!someInferenceFailed)
-        {
-            throwNoMatchException(functionExpression, state, processorSupport);
-        }
-
-        observer.unShiftTab().finishedProcessingFunctionExpression(functionExpression);
-        state.popTypeInferenceContext();
+        return true;
     }
 
     @Override
@@ -566,8 +739,12 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
         });
     }
 
-    private boolean isInferenceSuccess(CoreInstance boundVariable, ProcessorSupport processorSupport)
+    private static boolean isInferenceSuccess(CoreInstance boundVariable, ProcessorSupport processorSupport)
     {
+        if (isColumnWithEmptyType(boundVariable, processorSupport))
+        {
+            return false;
+        }
         if (isLambdaWithEmptyParamType(boundVariable, processorSupport))
         {
             return false;
@@ -582,7 +759,8 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             if (!(func instanceof AbstractProperty))
             {
                 FunctionType fType = (FunctionType) processorSupport.function_getFunctionType(func);
-                return fType._typeParameters().isEmpty() || ((FunctionExpression) boundVariable)._resolvedTypeParameters().notEmpty();
+                RichIterable<? extends GenericType> resolved = ((FunctionExpression) boundVariable)._resolvedTypeParameters();
+                return fType._typeParameters().isEmpty() || (resolved.notEmpty() && resolved.select(c -> isColumnWithEmptyTypeGenericType(c, processorSupport)).isEmpty());
             }
         }
         return true;
@@ -592,6 +770,26 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
     {
         return (boundVariable instanceof InstanceValue) &&
                 ((InstanceValue) boundVariable)._valuesCoreInstance().anySatisfy(v -> (v instanceof FunctionDefinition) && shouldInferTypesForFunctionParameters((FunctionDefinition<?>) v, processorSupport));
+    }
+
+    public static boolean isColumnWithEmptyType(CoreInstance boundVariable, ProcessorSupport processorSupport)
+    {
+        if (boundVariable instanceof InstanceValue)
+        {
+            CoreInstance genericType = boundVariable.getValueForMetaPropertyToOne("genericType");
+            return isColumnWithEmptyTypeGenericType(genericType, processorSupport);
+        }
+        return false;
+    }
+
+    public static boolean isColumnWithEmptyTypeGenericType(CoreInstance genericType, ProcessorSupport processorSupport)
+    {
+        CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, "rawType", processorSupport);
+        if (rawType != null && processorSupport.instance_instanceOf(rawType, "meta::pure::metamodel::relation::RelationType"))
+        {
+            return rawType.getValueForMetaPropertyToMany("columns").injectInto(true, (a, c) -> a && c.getValueForMetaPropertyToOne("classifierGenericType").getValueForMetaPropertyToMany("typeArguments").get(1).getValueForMetaPropertyToOne("rawType") == null);
+        }
+        return false;
     }
 
     private static boolean shouldInferTypesForFunctionParameters(FunctionDefinition<?> func, ProcessorSupport processorSupport)

@@ -35,6 +35,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.SourceI
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 
+import java.util.Objects;
+
 public class FunctionExpressionProcessor
 {
     public static String processFunctionExpression(CoreInstance topLevelElement, CoreInstance functionExpression, boolean topLevel, ProcessorContext processorContext)
@@ -113,7 +115,12 @@ public class FunctionExpressionProcessor
                     processFunctionParameterValues(topLevelElement, functionExpression, true, processorContext)
                     + ")";
         }
-        throw new RuntimeException("To Code! " + function.print(""));
+        MutableList<String> extra = processorContext.getExtraFunctionGenerator().select(Objects::nonNull).collect(c -> c.value(function, functionExpression, processorContext)).select(Objects::nonNull, Lists.mutable.empty());
+        if (extra.size() == 1)
+        {
+            return extra.get(0);
+        }
+        throw new RuntimeException("Error, can't manage " + function.getClass().getName() + " found:" + extra.size() + " extra generators.");
     }
 
     private static String processFunctionParameterValues(CoreInstance topLevelElement, CoreInstance functionExpression, boolean qualifier, ProcessorContext processorContext)

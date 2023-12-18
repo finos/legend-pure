@@ -469,7 +469,7 @@ Class meta::relational::metamodel::SQLNull
 Class meta::relational::metamodel::OrderBy
 {
     column : RelationalOperationElement[1];
-    direction : SortDirection[1];
+    direction : meta::relational::metamodel::SortDirection[1];
 }
 
 Enum meta::relational::metamodel::SortDirection

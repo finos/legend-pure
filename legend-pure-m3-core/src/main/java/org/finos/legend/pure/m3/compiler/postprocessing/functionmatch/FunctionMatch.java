@@ -106,8 +106,8 @@ class FunctionMatch implements Comparable<FunctionMatch>
     public String toString()
     {
         StringBuilder builder = new StringBuilder("<FunctionMatch ");
-        ArrayIterate.appendString(this.typeMatches, builder, "typeMatches=[", ", ", "]");
-        ArrayIterate.appendString(this.multiplicityMatches, builder, " multMatches=[", ", ", "]");
+        ArrayIterate.appendString(this.typeMatches, builder, "typeMatches=[\n", ",\n", "\n]");
+        ArrayIterate.appendString(this.multiplicityMatches, builder, " multMatches=[\n", ",\n", "\n]");
         return builder.append('>').toString();
     }
 
@@ -152,7 +152,6 @@ class FunctionMatch implements Comparable<FunctionMatch>
             }
             multiplicityMatches[i] = multiplicityMatch;
         }
-
         return new FunctionMatch(typeMatches, multiplicityMatches);
     }
 }
