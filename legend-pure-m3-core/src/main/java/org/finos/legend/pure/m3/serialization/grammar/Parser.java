@@ -19,7 +19,11 @@ import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.SetIterable;
+import org.eclipse.collections.api.tuple.Pair;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.runtime.SourceState;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ExternalReferenceSerializer;
 import org.finos.legend.pure.m3.serialization.runtime.navigation.NavigationHandler;
@@ -27,6 +31,7 @@ import org.finos.legend.pure.m3.statelistener.M3M4StateListener;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 public interface Parser extends CoreInstanceFactoriesRegistry
@@ -89,4 +94,9 @@ public interface Parser extends CoreInstanceFactoriesRegistry
      * @return required files
      */
     ListIterable<String> getRequiredFiles();
+
+    default Pair<Object, RelationType> resolveRelationElementAccessor(PackageableElement element, MutableList<? extends String> path, SourceInformation sourceInformation, ProcessorSupport processorSupport)
+    {
+        return null;
+    }
 }

@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m2.relational.inlinedsl.relation;
+package org.finos.legend.pure.m2.inlinedsl.store;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
-import org.finos.legend.pure.m2.relational.M2RelationalPaths;
-import org.finos.legend.pure.m2.relational.inlinedsl.relation.processor.RelationDatabaseAccessorProcessor;
-import org.finos.legend.pure.m2.relational.inlinedsl.relation.unloader.RelationDatabaseAccessorUnloader;
-import org.finos.legend.pure.m2.relational.inlinedsl.relation.validation.RelationDatabaseAccessorValidation;
-import org.finos.legend.pure.m2.relational.inlinedsl.relation.walker.RelationDatabaseAccessorWalker;
+import org.finos.legend.pure.m2.inlinedsl.store.processor.RelationStoreAccessorProcessor;
+import org.finos.legend.pure.m2.inlinedsl.store.unloader.RelationStoreAccessorUnloader;
+import org.finos.legend.pure.m2.inlinedsl.store.validation.RelationStoreAccessorValidation;
+import org.finos.legend.pure.m2.inlinedsl.store.walker.RelationStoreAccessorWalker;
+import org.finos.legend.pure.m2.dsl.store.M2StorePaths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
-import org.finos.legend.pure.m3.coreinstance.M3CoreInstanceFactoryRegistry;
+import org.finos.legend.pure.m3.coreinstance.StoreCoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
@@ -36,14 +36,14 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
-public class RelationDatabaseAccessor implements InlineDSL
+public class RelationStoreAccessor implements InlineDSL
 {
-    private static VisibilityValidator VISIBILITY_VALIDATOR = new RelationDatabaseAccessorValidation();
+    private static VisibilityValidator VISIBILITY_VALIDATOR = new RelationStoreAccessorValidation();
 
     @Override
     public String getName()
     {
-        return "RelationAccessor";
+        return "RelationStoreAccessor";
     }
 
     @Override
@@ -57,14 +57,11 @@ public class RelationDatabaseAccessor implements InlineDSL
     {
         ProcessorSupport processorSupport = new M3ProcessorSupport(context, modelRepository);
         SourceInformation src = new SourceInformation(fileName, offsetX, offsetY, offsetX, offsetY + code.length());
-
         String info = code.trim().substring(1);
+
         String[] path = info.split("\\.");
 
-        Class<?> relationType = (Class<?>) processorSupport.package_getByUserPath(M2RelationalPaths.RelationDatabaseAccessor);
-
-        org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.RelationDatabaseAccessor<?> rel = ((org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.RelationDatabaseAccessor<?>) modelRepository.newEphemeralCoreInstance("", relationType, src));
-
+        org.finos.legend.pure.m3.coreinstance.meta.pure.store.RelationStoreAccessor<?> rel = ((org.finos.legend.pure.m3.coreinstance.meta.pure.store.RelationStoreAccessor<?>) processorSupport.newAnonymousCoreInstance(src, M2StorePaths.RelationStoreAccessor));
         rel._path(Lists.mutable.with(path));
 
         return rel;
@@ -79,25 +76,25 @@ public class RelationDatabaseAccessor implements InlineDSL
     @Override
     public RichIterable<MatchRunner> getProcessors()
     {
-        return Lists.immutable.with(new RelationDatabaseAccessorProcessor());
+        return Lists.immutable.with(new RelationStoreAccessorProcessor());
     }
 
     @Override
     public RichIterable<MatchRunner> getUnLoadWalkers()
     {
-        return Lists.mutable.with(new RelationDatabaseAccessorWalker());
+        return Lists.mutable.with(new RelationStoreAccessorWalker());
     }
 
     @Override
     public RichIterable<MatchRunner> getUnLoadUnbinders()
     {
-        return Lists.immutable.with(new RelationDatabaseAccessorUnloader());
+        return Lists.immutable.with(new RelationStoreAccessorUnloader());
     }
 
     @Override
     public RichIterable<CoreInstanceFactoryRegistry> getCoreInstanceFactoriesRegistry()
     {
-        return Lists.immutable.with(M3CoreInstanceFactoryRegistry.REGISTRY);
+        return Lists.immutable.with(StoreCoreInstanceFactoryRegistry.REGISTRY);
     }
 
     @Override

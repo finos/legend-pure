@@ -107,7 +107,7 @@ public class M3Paths
     public static final String QualifiedProperty = "meta::pure::metamodel::function::property::QualifiedProperty";
     public static final String ReferenceUsage = "meta::pure::metamodel::ReferenceUsage";
     public static final String Relation = "meta::pure::metamodel::relation::Relation";
-    public static final String RelationPointer = "meta::pure::metamodel::relation::RelationPointer";
+    public static final String RelationElementAccessor = "meta::pure::metamodel::relation::RelationElementAccessor";
     public static final String RelationType = "meta::pure::metamodel::relation::RelationType";
     public static final String Root = "Root";
     public static final String RootRouteNode = "meta::pure::metamodel::treepath::RootRouteNode";

@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m2.relational.inlinedsl.relation.validation;
+package org.finos.legend.pure.m2.inlinedsl.store.validation;
 
-import org.finos.legend.pure.m2.relational.M2RelationalPaths;
+import org.finos.legend.pure.m2.dsl.store.M2StorePaths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.validation.ValidatorState;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -23,12 +23,12 @@ import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.Visibil
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class RelationDatabaseAccessorValidation implements VisibilityValidator
+public class RelationStoreAccessorValidation implements VisibilityValidator
 {
     @Override
     public void validate(CoreInstance value, CoreInstance pkg, String sourceId, Context context, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
     {
-        if (processorSupport.package_getByUserPath(M2RelationalPaths.RelationDatabaseAccessor) != null && Instance.instanceOf(value, M2RelationalPaths.RelationDatabaseAccessor, processorSupport))
+        if (processorSupport.package_getByUserPath(M2StorePaths.RelationStoreAccessor) != null && Instance.instanceOf(value, M2StorePaths.RelationStoreAccessor, processorSupport))
         {
             validatePath(value, pkg, sourceId, context, validatorState, processorSupport);
         }

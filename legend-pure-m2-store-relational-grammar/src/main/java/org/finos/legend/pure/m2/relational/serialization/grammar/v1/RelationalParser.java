@@ -23,6 +23,8 @@ import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.SetIterable;
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalGraphBuilder;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.navigation.EmbeddedRelationalInstanceSetImplementationNavigationHandler;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.navigation.FilterMappingNavigationHandler;
@@ -52,6 +54,16 @@ import org.finos.legend.pure.m2.relational.serialization.runtime.binary.referenc
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.RelationalStoreCoreInstanceFactoryRegistry;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
+import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database;
+import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Schema;
+import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.Table;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation._package._Package;
+import org.finos.legend.pure.m3.navigation.relation._Column;
+import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.AntlrContextToM3CoreInstance;
@@ -63,6 +75,8 @@ import org.finos.legend.pure.m3.statelistener.M3M4StateListener;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrDescriptiveErrorListener;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureAntlrErrorStrategy;
@@ -247,7 +261,7 @@ public class RelationalParser implements IRelationalParser
                 "/platform_store_relational/grammar/relationalMapping.pure",
                 "/platform_store_relational/relationalRuntime.pure",
                 "/platform_store_relational/relationalLogging.pure"
-                );
+        );
     }
 
     private org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser initAntlrParser(boolean fastParser, String code, String sourceName, int offsetLine, int offsetColumn, boolean addLines)
@@ -267,4 +281,23 @@ public class RelationalParser implements IRelationalParser
         return parser;
     }
 
+    @Override
+    public Pair<Object, RelationType> resolveRelationElementAccessor(PackageableElement element, MutableList<? extends String> path, SourceInformation sourceInformation, ProcessorSupport processorSupport)
+    {
+        Database store = (Database) element;
+
+        Table table = null;
+
+        if (path.size() == 2)
+        {
+            Schema schema = store._schemas().select(c -> c._name().equals("default")).getFirst();
+            table = schema._tables().select(c -> c._name().equals(path.get(1))).getFirst();
+            if (table == null)
+            {
+                throw new PureCompilationException(sourceInformation, "The table '" + path.get(1) + "' can't be found in the database '" + path.get(0) + "'");
+            }
+        }
+        RelationType relationType = _RelationType.build(table._columns().collect(c -> (CoreInstance) _Column.getColumnInstance(c.getValueForMetaPropertyToOne("name").getName(), false, null, (GenericType) processorSupport.type_wrapGenericType(_Package.getByUserPath("String", processorSupport)), sourceInformation, processorSupport)).toList(), sourceInformation, processorSupport);
+        return Tuples.pair(table, relationType);
+    }
 }

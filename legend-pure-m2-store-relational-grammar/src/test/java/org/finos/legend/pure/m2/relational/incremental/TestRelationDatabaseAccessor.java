@@ -91,7 +91,7 @@ public class TestRelationDatabaseAccessor extends AbstractPureRelationalTestWith
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("source3.pure")
-                        .compileWithExpectedCompileFailure("The database 'test::TestDB' can't be found", "source1.pure", 5, 5)
+                        .compileWithExpectedCompileFailure("The store 'test::TestDB' can't be found", "source1.pure", 5, 5)
                         .createInMemorySource("source3.pure", STORE)
                         .compile(),
                 runtime, functionExecution, Lists.fixedSize.empty());

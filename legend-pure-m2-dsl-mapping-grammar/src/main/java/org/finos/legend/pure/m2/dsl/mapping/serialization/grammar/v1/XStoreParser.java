@@ -40,7 +40,7 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
-public class XStoreParser implements Parser
+public class XStoreParser implements IMappingParser
 {
     @Override
     public String getName()

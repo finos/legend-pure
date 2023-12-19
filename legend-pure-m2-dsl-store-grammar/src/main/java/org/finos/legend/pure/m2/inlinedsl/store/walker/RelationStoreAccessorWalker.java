@@ -13,11 +13,11 @@
 // limitations under the License.
 
 
-package org.finos.legend.pure.m2.relational.inlinedsl.relation.walker;
+package org.finos.legend.pure.m2.inlinedsl.store.walker;
 
-import org.finos.legend.pure.m2.relational.M2RelationalPaths;
+import org.finos.legend.pure.m2.dsl.store.M2StorePaths;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.RelationDatabaseAccessor;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.store.RelationStoreAccessor;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
@@ -25,16 +25,16 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class RelationDatabaseAccessorWalker implements MatchRunner<RelationDatabaseAccessor<CoreInstance>>
+public class RelationStoreAccessorWalker implements MatchRunner<RelationStoreAccessor<CoreInstance>>
 {
     @Override
     public String getClassName()
     {
-        return M2RelationalPaths.RelationDatabaseAccessor;
+        return M2StorePaths.RelationStoreAccessor;
     }
 
     @Override
-    public void run(RelationDatabaseAccessor<CoreInstance> relationalDatabaseAccessor, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
+    public void run(RelationStoreAccessor<CoreInstance> relationalDatabaseAccessor, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
         relationalDatabaseAccessor._referenceUsages().forEach(e -> matcher.fullMatch(e._ownerCoreInstance(), state));
     }

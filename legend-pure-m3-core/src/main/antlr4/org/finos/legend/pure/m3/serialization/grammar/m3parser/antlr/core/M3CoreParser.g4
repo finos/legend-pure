@@ -132,7 +132,7 @@ enumValue: stereotypes? taggedValues? identifier
 nativeFunction: NATIVE FUNCTION stereotypes? qualifiedName typeAndMultiplicityParameters? functionTypeSignature END_LINE
 ;
 
-functionTypeSignature:  GROUP_OPEN (functionVariableExpression (COMMA functionVariableExpression)*)? GROUP_CLOSE COLON type multiplicity
+functionTypeSignature: GROUP_OPEN (functionVariableExpression (COMMA functionVariableExpression)*)? GROUP_CLOSE COLON type multiplicity
 ;
 
 functionDefinition: FUNCTION stereotypes? taggedValues? qualifiedName typeAndMultiplicityParameters? functionTypeSignature

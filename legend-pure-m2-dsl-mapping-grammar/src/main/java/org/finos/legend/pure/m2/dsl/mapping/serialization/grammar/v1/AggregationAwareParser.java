@@ -47,7 +47,7 @@ import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 import static org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.ParsingUtils.isAntlrRecognitionExceptionUsingFastParser;
 
-public class AggregationAwareParser implements Parser
+public class AggregationAwareParser implements IMappingParser
 {
     private ParserLibrary parserLibrary;
 

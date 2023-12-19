@@ -12,10 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::relational::metamodel::*;
+package org.finos.legend.pure.code.core;
 
-Class meta::relational::metamodel::RelationDatabaseAccessor<T> extends meta::pure::metamodel::relation::RelationStoreAccessor<T>
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProvider;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+
+public class StoreCodeRepositoryProvider implements CodeRepositoryProvider
 {
-   database : meta::relational::metamodel::Database[1];
-   relation : meta::relational::metamodel::relation::NamedRelation[1];
+    @Override
+    public CodeRepository repository()
+    {
+        return GenericCodeRepository.build("platform_dsl_store.definition.json");
+    }
 }

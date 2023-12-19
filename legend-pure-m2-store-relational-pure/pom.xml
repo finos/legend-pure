@@ -77,6 +77,11 @@
                     </dependency>
                     <dependency>
                         <groupId>org.finos.legend.pure</groupId>
+                        <artifactId>legend-pure-m2-dsl-store-pure</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.finos.legend.pure</groupId>
                         <artifactId>legend-pure-m2-dsl-mapping-pure</artifactId>
                         <version>${project.version}</version>
                     </dependency>
@@ -103,8 +108,7 @@
                                 <argument>RelationalStore</argument>
                                 <argument>
                                     /platform_store_relational/grammar/relational.pure,
-                                    /platform_store_relational/grammar/relationalMapping.pure,
-                                    /platform_store_relational/grammar/relationAccessor.pure
+                                    /platform_store_relational/grammar/relationalMapping.pure
                                 </argument>
                             </arguments>
                         </configuration>
@@ -127,6 +131,10 @@
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-m2-dsl-mapping-pure</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-m2-dsl-store-pure</artifactId>
         </dependency>
 
         <dependency>

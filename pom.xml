@@ -60,6 +60,10 @@
         <module>legend-pure-m2-dsl-mapping-pure</module>
         <module>legend-pure-runtime-java-extension-dsl-mapping</module>
 
+        <module>legend-pure-m2-dsl-store-grammar</module>
+        <module>legend-pure-m2-dsl-store-pure</module>
+        <module>legend-pure-runtime-java-extension-dsl-store</module>
+
         <module>legend-pure-m2-dsl-diagram-pure</module>
         <module>legend-pure-m2-dsl-diagram-grammar</module>
         <module>legend-pure-runtime-java-extension-dsl-diagram</module>
@@ -522,6 +526,17 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-runtime-java-extension-dsl-store</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-runtime-java-extension-dsl-store</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-runtime-java-extension-dsl-mapping</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -648,6 +663,16 @@
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-m2-dsl-mapping-pure</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-m2-dsl-store-pure</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-m2-dsl-store-grammar</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

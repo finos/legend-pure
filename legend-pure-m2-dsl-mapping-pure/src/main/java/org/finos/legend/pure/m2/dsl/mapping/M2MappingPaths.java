@@ -40,7 +40,6 @@ public class M2MappingPaths
     public static final String PropertyOwnerImplementation = "meta::pure::mapping::PropertyOwnerImplementation";
     public static final String PureInstanceSetImplementation = "meta::external::store::model::PureInstanceSetImplementation";
     public static final String SetImplementation = "meta::pure::mapping::SetImplementation";
-    public static final String Store = "meta::pure::store::Store";
     public static final String SubstituteStore = "meta::pure::mapping::SubstituteStore";
     public static final String ValueTransformer = "meta::pure::mapping::ValueTransformer";
     public static final String XStoreAssociationImplementation = "meta::pure::mapping::xStore::XStoreAssociationImplementation";
