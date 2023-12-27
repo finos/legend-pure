@@ -36,6 +36,23 @@ public class TestRelationAccessor extends AbstractPureRelationalTestWithCoreComp
         createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
     }
 
+    @Test
+    public void testRelationAccessorWithSpace()
+    {
+        String sourceCode =
+                "###Pure\n" +
+                        "function f():meta::pure::metamodel::relation::Relation<Any>[1]" +
+                        "{" +
+                        "   #>{my::mainDb.PersonTable}#->filter(f|$f.'first Name' == 'ee');" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database my::mainDb\n" +
+                        "( \n" +
+                        "   Table PersonTable(\"first Name\" VARCHAR(200), lastName VARCHAR(200), firmId INTEGER)\n" +
+                        ")\n";
+        createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
+    }
+
     private static void createAndCompileSourceCode(PureRuntime runtime, String sourceId, String sourceCode)
     {
         runtime.delete(sourceId);

@@ -38,7 +38,6 @@ public class TestCodeRepositorySet
         GenericCodeRepository testRepoA = new GenericCodeRepository("test_repo_a", "test::a::.*", "platform");
         GenericCodeRepository testRepoB = new GenericCodeRepository("test_repo_b", "test::b::.*", "platform", "test_repo_a");
         GenericCodeRepository badDependenciesRepo = new GenericCodeRepository("test_repo_bad_deps", "test3::.*", "platform", "non_existent");
-System.out.println(CodeRepositoryProviderHelper.findCodeRepositories());
         CodeRepositorySet set1 = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findPlatformCodeRepository()).withCodeRepositories(testRepoA, testRepoB).build();
         Assert.assertEquals(3, set1.size());
         Assert.assertEquals(Sets.fixedSize.with("platform", "test_repo_a", "test_repo_b"), set1.getRepositories().collect(CodeRepository::getName, Sets.mutable.empty()));

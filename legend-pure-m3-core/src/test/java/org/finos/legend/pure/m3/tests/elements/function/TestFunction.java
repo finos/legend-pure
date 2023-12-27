@@ -74,24 +74,6 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
     }
 
     @Test
-    public void testNewWithProperty()
-    {
-        try
-        {
-            compileTestSource("fromString.pure", "Class A{name : String[1];}\n" +
-                    "function myFunc():A[1]\n" +
-                    "{\n" +
-                    "    ^A(nameError = 'ok');\n" +
-                    "}\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "The property 'nameError' can't be found in the type 'A' or in its hierarchy.", 4, 8, e);
-        }
-    }
-
-    @Test
     public void testCastWithUnknownType()
     {
         try

@@ -17,7 +17,7 @@ package org.finos.legend.pure.m3.tests.function.base.string;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.junit.Test;
 
-public class AbstractTestChar extends AbstractPureTestWithCoreCompiled
+public abstract class AbstractTestChar extends AbstractPureTestWithCoreCompiled
 {
     @Test
     public void testBasicParse()

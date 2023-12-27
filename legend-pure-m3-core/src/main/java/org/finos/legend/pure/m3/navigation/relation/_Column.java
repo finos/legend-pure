@@ -39,7 +39,7 @@ public class _Column
     public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType sourceType, GenericType targetType, SourceInformation src, ProcessorSupport processorSupport)
     {
         Column<?, ?> columnInstance = (Column<?, ?>) processorSupport.newAnonymousCoreInstance(src, M3Paths.Column);
-        columnInstance._name(name);
+        columnInstance._name(removeQuotes(name));
         columnInstance._nameWildCard(nameWildCard);
         GenericType columnGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
         columnGenericType._rawType((Type) _Package.getByUserPath(M3Paths.Column, processorSupport));
@@ -47,6 +47,12 @@ public class _Column
         columnGenericType._multiplicityArgumentsAdd((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport));
         columnInstance.setKeyValues(Lists.mutable.with("classifierGenericType"), Lists.mutable.with(columnGenericType));
         return columnInstance;
+    }
+
+    private static String removeQuotes(String name)
+    {
+        name = name.trim();
+        return name.startsWith("\"") ? name.substring(1, name.length() - 1) : name;
     }
 
     public static Column<?, ?> updateSource(Column<?, ?> col, GenericType sourceType)

@@ -817,7 +817,7 @@ public class AntlrContextToM3CoreInstance
     {
         parameters.clear();
         boolean function = false;
-        IdentifierContext property = ctx.identifier();
+        PropertyNameContext property = ctx.propertyName();
         CoreInstance parameter;
         if (ctx.functionExpressionParameters() != null)
         {
@@ -840,7 +840,7 @@ public class AntlrContextToM3CoreInstance
         if (!function)
         {
             SimpleFunctionExpressionInstance sfe = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(property.getStart()), null, null, importId, null);
-            InstanceValue instanceValue = this.doWrap(property, false);
+            InstanceValue instanceValue = this.doWrap(property);
             //Going to become an auto-map lambda so set a name to be used for the lambda
             instanceValue.setName(lambdaContext.getLambdaFunctionUniqueName());
             instanceValue._multiplicity(this.getPureOne());
@@ -855,7 +855,7 @@ public class AntlrContextToM3CoreInstance
         else
         {
             SimpleFunctionExpressionInstance sfe = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(property.getStart()), null, null, importId, null);
-            InstanceValue instanceValue = this.doWrap(property, false);
+            InstanceValue instanceValue = this.doWrap(property);
             //Going to become an auto-map lambda so set a name to be used for the lambda
             instanceValue.setName(lambdaContext.getLambdaFunctionUniqueName());
             instanceValue._multiplicity(this.getPureOne());
@@ -1241,7 +1241,7 @@ public class AntlrContextToM3CoreInstance
     private void instanceParserPropertyAssignment(InstancePropertyAssignmentContext ctx, MutableMap<String, ListIterable<CoreInstance>> propertyValues, boolean wrapFlag, ImportGroup importId, boolean addLines, String space, boolean useImportStubsInInstanceParser) throws PureParserException
     {
         ListIterable<CoreInstance> values = this.instanceParserRightSide(ctx.instanceRightSide(), wrapFlag, importId, addLines, space, useImportStubsInInstanceParser);
-        propertyValues.put(ctx.identifier().getText(), values);
+        propertyValues.put(ctx.propertyName().getText(), values);
     }
 
     private ListIterable<CoreInstance> instanceParserRightSide(InstanceRightSideContext ctx, boolean wrapFlag, ImportGroup importId, boolean addLines, String space, boolean useImportStubsInInstanceParser) throws PureParserException
@@ -1610,9 +1610,9 @@ public class AntlrContextToM3CoreInstance
 
     private CoreInstance expressionInstanceParserPropertyAssignment(ExpressionInstanceParserPropertyAssignmentContext ctx, MutableList<String> typeParametersNames, ImportGroup importId, boolean addLines, String space, LambdaContext lambdaContext)
     {
-        MutableList<IdentifierContext> properties = Lists.mutable.withAll(ctx.identifier());
+        MutableList<PropertyNameContext> properties = Lists.mutable.withAll(ctx.propertyName());
         CoreInstance result = this.expressionInstanceParserRightSide(ctx.expressionInstanceRightSide(), typeParametersNames, importId, lambdaContext, addLines, space);
-        InstanceValue instanceVal = properties.size() == 1 ? this.doWrap(properties.getFirst(), false) : this.doWrap(properties, false);
+        InstanceValue instanceVal = properties.size() == 1 ? this.doWrap(properties.getFirst()) : this.doWrap(properties);
         return KeyExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.EQUAL().getSymbol()), (ValueSpecification) result, instanceVal)
                 ._add(ctx.PLUS() != null);
     }
@@ -2753,7 +2753,7 @@ public class AntlrContextToM3CoreInstance
         GenericType genericType;
         Multiplicity multiplicity;
         String aggregation;
-        String propertyName = ctx.identifier().getText();
+        String propertyName = removeQuotes(ctx.propertyName().getText());
 
         if (ctx.aggregation() != null)
         {
@@ -2779,7 +2779,7 @@ public class AntlrContextToM3CoreInstance
 
         Enumeration<?> agg = (Enumeration<?>) this.processorSupport.package_getByUserPath(M3Paths.AggregationKind);
         Enum aggKind = (Enum) agg._values().detect(v -> aggregation.equals(((Enum) v).getName()));
-        SourceInformation propertySourceInfo = this.sourceInformation.getPureSourceInformation(ctx.identifier().getStart(), ctx.identifier().getStart(), ctx.getStop());
+        SourceInformation propertySourceInfo = this.sourceInformation.getPureSourceInformation(ctx.propertyName().getStart(), ctx.propertyName().getStart(), ctx.getStop());
         PropertyInstance propertyInstance = PropertyInstance.createPersistent(this.repository, propertyName, propertySourceInfo, aggKind, genericType, multiplicity, null);
         propertyInstance._name(propertyName);
 
@@ -3962,9 +3962,21 @@ public class AntlrContextToM3CoreInstance
         return this.doWrap(Lists.mutable.with(stringInstance), content.getStart());
     }
 
-    private InstanceValue doWrap(MutableList<IdentifierContext> content, boolean addQuote)
+    private InstanceValue doWrap(PropertyNameContext content)
     {
-        ListIterable<CoreInstance> values = content.collect(val -> this.repository.newStringCoreInstance_cached(addQuote ? "'" + val.getText() + "'" : val.getText()));
+        CoreInstance stringInstance = this.repository.newStringCoreInstance_cached(removeQuotes(content.getText()));
+        return this.doWrap(Lists.mutable.with(stringInstance), content.getStart());
+    }
+
+    private static String removeQuotes(String name)
+    {
+        name = name.trim();
+        return name.startsWith("'") ? name.substring(1, name.length() - 1) : name;
+    }
+
+    private InstanceValue doWrap(MutableList<PropertyNameContext> content)
+    {
+        ListIterable<CoreInstance> values = content.collect(val -> this.repository.newStringCoreInstance_cached(removeQuotes(val.getText())));
         return InstanceValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(content.getFirst().getStart(), content.getFirst().getStart(), content.getLast().getStart()), null, null)
                 ._values(values);
     }
