@@ -297,7 +297,10 @@ public class RelationalParser implements IRelationalParser
                 throw new PureCompilationException(sourceInformation, "The table '" + path.get(1) + "' can't be found in the database '" + path.get(0) + "'");
             }
         }
-        RelationType relationType = _RelationType.build(table._columns().collect(c -> (CoreInstance) _Column.getColumnInstance(c.getValueForMetaPropertyToOne("name").getName(), false, null, (GenericType) processorSupport.type_wrapGenericType(_Package.getByUserPath("String", processorSupport)), sourceInformation, processorSupport)).toList(), sourceInformation, processorSupport);
-        return Tuples.pair(table, relationType);
+        else
+        {
+            throw new PureCompilationException("Schemas are not supported yet");
+        }
+        return Tuples.pair(table, _RelationType.build(table._columns().collect(c -> (CoreInstance) _Column.getColumnInstance(c.getValueForMetaPropertyToOne("name").getName(), false, null, (GenericType) processorSupport.type_wrapGenericType(_Package.getByUserPath("String", processorSupport)), sourceInformation, processorSupport)).toList(), sourceInformation, processorSupport));
     }
 }

@@ -43,7 +43,7 @@ public class TestRelationDatabaseAccessor extends AbstractPureRelationalTestWith
                         "\n" +
                         "function myFunc():Any[1]\n" +
                         "{\n" +
-                        "   #>test::TestDB.personTb#\n" +
+                        "   #>{test::TestDB.personTb}#\n" +
                         "}");
         this.sources.put(STORE_SOURCE_ID,
                 "###Relational\n" +
@@ -77,7 +77,7 @@ public class TestRelationDatabaseAccessor extends AbstractPureRelationalTestWith
                 "\n" +
                 "function myFunc():Any[1]\n" +
                 "{ \n" +
-                "   #>test::TestDB.personTb#->filter(t|$t.name == 'ee')\n" +
+                "   #>{test::TestDB.personTb}#->filter(t|$t.name == 'ee')\n" +
                 "}";
 
         String STORE = "###Relational\n" +
@@ -105,7 +105,7 @@ public class TestRelationDatabaseAccessor extends AbstractPureRelationalTestWith
                 "\n" +
                 "function myFunc():Any[1]\n" +
                 "{ \n" +
-                "   #>test::TestDB.personTb#" +
+                "   #>{test::TestDB.personTb}#" +
                 "       ->filter(t|$t.name == 'ee')" +
                 "}";
 
@@ -126,7 +126,7 @@ public class TestRelationDatabaseAccessor extends AbstractPureRelationalTestWith
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source3.pure", STORE2)
-                        .compileWithExpectedCompileFailure("The system can't find the column name in the Relation (name22:String, firmId:String)", "source1.pure", 5, 49)
+                        .compileWithExpectedCompileFailure("The system can't find the column name in the Relation (name22:String, firmId:String)", "source1.pure", 5, 51)
                         .updateSource("source3.pure", STORE)
                         .compile(),
                 runtime, functionExecution, Lists.fixedSize.empty());
@@ -139,7 +139,7 @@ public class TestRelationDatabaseAccessor extends AbstractPureRelationalTestWith
                 "\n" +
                 "function myFunc():Any[1]\n" +
                 "{ \n" +
-                "   #>test::TestDB.personTb#" +
+                "   #>{test::TestDB.personTb}#" +
                 "       ->filter(t|$t.name == 'ee')" +
                 "}";
 
@@ -160,7 +160,7 @@ public class TestRelationDatabaseAccessor extends AbstractPureRelationalTestWith
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source1.pure", INITIAL_DATA + STORE2)
-                        .compileWithExpectedCompileFailure("The system can't find the column name in the Relation (name22:String, firmId:String)", "source1.pure", 5, 49)
+                        .compileWithExpectedCompileFailure("The system can't find the column name in the Relation (name22:String, firmId:String)", "source1.pure", 5, 51)
                         .updateSource("source1.pure", INITIAL_DATA + STORE)
                         .compile(),
                 runtime, functionExecution, Lists.fixedSize.empty());

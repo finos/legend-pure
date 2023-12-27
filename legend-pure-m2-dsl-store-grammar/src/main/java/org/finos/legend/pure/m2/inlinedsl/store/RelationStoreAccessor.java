@@ -16,16 +16,15 @@ package org.finos.legend.pure.m2.inlinedsl.store;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
+import org.finos.legend.pure.m2.dsl.store.M2StorePaths;
 import org.finos.legend.pure.m2.inlinedsl.store.processor.RelationStoreAccessorProcessor;
 import org.finos.legend.pure.m2.inlinedsl.store.unloader.RelationStoreAccessorUnloader;
 import org.finos.legend.pure.m2.inlinedsl.store.validation.RelationStoreAccessorValidation;
 import org.finos.legend.pure.m2.inlinedsl.store.walker.RelationStoreAccessorWalker;
-import org.finos.legend.pure.m2.dsl.store.M2StorePaths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.StoreCoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
@@ -35,6 +34,8 @@ import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 public class RelationStoreAccessor implements InlineDSL
 {
@@ -55,9 +56,17 @@ public class RelationStoreAccessor implements InlineDSL
     @Override
     public CoreInstance parse(String code, ImportGroup importId, String fileName, int offsetX, int offsetY, ModelRepository modelRepository, Context context)
     {
+        AntlrSourceInformation sourceInformation = new AntlrSourceInformation(offsetX, offsetY, fileName, true);
+
         ProcessorSupport processorSupport = new M3ProcessorSupport(context, modelRepository);
         SourceInformation src = new SourceInformation(fileName, offsetX, offsetY, offsetX, offsetY + code.length());
-        String info = code.trim().substring(1);
+        String info = code.trim().substring(1).trim();
+        String first = info.substring(0, 1);
+        if (!"{".equals(first) && !"}".equals(info.substring(info.length() - 2, info.length() - 1)))
+        {
+            throw new PureParserException(sourceInformation.getPureSourceInformation(0, 0, 0, code.length()), "RelationStoreAccessor must be of the form #>{a::Store.table}#");
+        }
+        info = info.substring(1, info.length() - 1);
 
         String[] path = info.split("\\.");
 

@@ -26,7 +26,7 @@ public class TestRelationAccessor extends AbstractPureRelationalTestWithCoreComp
                 "###Pure\n" +
                 "function f():meta::pure::metamodel::relation::Relation<Any>[1]" +
                 "{" +
-                "   #>my::mainDb.PersonTable#->filter(f|$f.lastName == 'ee');" +
+                "   #>{my::mainDb.PersonTable}#->filter(f|$f.lastName == 'ee');" +
                 "}\n" +
                 "###Relational\n" +
                 "Database my::mainDb\n" +
