@@ -402,6 +402,25 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                 columnTypeInferenceSuccess = true;
             }
         }
+        if ("aggColSpecArray_AggColSpec_MANY__P_1__AggColSpecArray_1_".equals(foundFunction.getName()))
+        {
+            MutableList<ValueSpecification> parameters = Lists.mutable.withAll(functionExpression._parametersValues());
+            MutableList<? extends Column<?, ?>> found = ((InstanceValue) parameters.get(0))._values().collect(v ->
+            {
+                Type relationType = ((ValueSpecification) v)._genericType()._typeArguments().toList().get(2)._rawType();
+                return relationType == null ? null : ((RelationType<?>) relationType)._columns().getFirst();
+            }).toList();
+            if (found.contains(null))
+            {
+                columnTypeInferenceSuccess = false;
+            }
+            else
+            {
+                ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(1).getValueForMetaPropertyToOne("genericType"), (GenericType) processorSupport.type_wrapGenericType(_RelationType.build(found.collect(foundC -> _Column.getColumnInstance(foundC._name(), false, null, _Column.getColumnType(foundC), null, processorSupport)), null, processorSupport)), ctx, observer);
+                columnTypeInferenceSuccess = true;
+            }
+
+        }
         return columnTypeInferenceSuccess;
     }
 

@@ -244,12 +244,12 @@ public class RelationNativeImplementation
         }
     }
 
-    public static Relation<?> project(RichIterable<?> objects, RichIterable<String> names, RichIterable<Function2> transforms, RichIterable<String> types, ExecutionSupport es)
+    public static Relation<?> project(RichIterable<?> objects, RichIterable<? extends String> names, RichIterable<Function2> transforms, RichIterable<? extends String> types, ExecutionSupport es)
     {
         ProcessorSupport ps = ((CompiledExecutionSupport) es).getProcessorSupport();
 
-        MutableList<String> typesL = types.toList();
-        MutableList<String> namesL = names.toList();
+        MutableList<? extends String> typesL = types.toList();
+        MutableList<? extends String> namesL = names.toList();
         ListIterable<TestTDSCompiled> pre = objects.collect(o ->
         {
             int i = 0;
@@ -258,7 +258,7 @@ public class RelationNativeImplementation
             {
                 TestTDSCompiled one = new TestTDSCompiled();
                 RichIterable<?> li = CompiledSupport.toPureCollection(f.apply(o, es));
-                switch (typesL.get(i))
+                switch ((String) typesL.get(i))
                 {
                     case "String":
                         one.addColumn(namesL.get(i), DataType.STRING, li.toArray(new String[0]));

@@ -45,3 +45,8 @@ Class meta::pure::metamodel::relation::AggColSpec<Z,V,T> // Where T is of type R
     reduce : Function<V>[1];
 }
 
+Class meta::pure::metamodel::relation::AggColSpecArray<A,B,T>
+{
+  aggSpecs : meta::pure::metamodel::relation::AggColSpec<A,B,Any>[*];
+}
+

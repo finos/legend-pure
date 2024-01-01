@@ -15,6 +15,7 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.type;
 
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.GenericTypeOperation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
@@ -130,9 +131,15 @@ public class TypeProcessor
                 "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.ColSpecArray".equals(finalRawTypeSystemPath) ||
                 "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.FuncColSpec".equals(finalRawTypeSystemPath) ||
                 "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.FuncColSpecArray".equals(finalRawTypeSystemPath) ||
-                "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.AggColSpec".equals(finalRawTypeSystemPath))
+                "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.AggColSpec".equals(finalRawTypeSystemPath) ||
+                "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.AggColSpecArray".equals(finalRawTypeSystemPath))
         {
-            return finalRawTypeSystemPath;
+            CoreInstance typeArg = genericType.getValueForMetaPropertyToMany("typeArguments").getLast();
+            if (typeArg != null)
+            {
+                typeArg.setKeyValues(Lists.mutable.with("rawType"), Lists.mutable.with(processorSupport.type_TopType()));
+                typeArg.setKeyValues(Lists.mutable.with("typeArguments"), Lists.mutable.empty());
+            }
         }
 
         return typeParam ? (finalRawTypeSystemPath + buildTypeArgumentsString(genericType, true, processorSupport)) : finalRawTypeSystemPath;

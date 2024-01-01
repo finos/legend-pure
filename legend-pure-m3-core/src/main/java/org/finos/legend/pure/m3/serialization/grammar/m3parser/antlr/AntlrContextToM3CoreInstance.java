@@ -999,29 +999,56 @@ public class AntlrContextToM3CoreInstance
             {
                 throw new PureCompilationException("Can't mix column types");
             }
-            if (isArray && extraFunction.size() > 1)
-            {
-                throw new PureCompilationException("Can't use multi-functions in an Array");
-            }
             boolean nonFunction = nonFunctions.get(0);
-            String functionName = !extraFunction.isEmpty() ? "aggColSpec" : nonFunction ? isArray ? "colSpecArray" : "colSpec" : isArray ? "funcColSpecArray" : "funcColSpec";
-            replacementFunction.setKeyValues(Lists.mutable.with("functionName"), Lists.mutable.with(this.repository.newStringCoreInstance(functionName)));
 
-            // Function Parameters
-            MutableList<CoreInstance> parameters = Lists.mutable.empty();
-            if (!nonFunction)
+            if (!extraFunction.isEmpty() && isArray)
             {
-                parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(lambdas, true, processorSupport));
-            }
-            if (!extraFunction.isEmpty())
-            {
-                parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(extraFunction.getFirst(), true, processorSupport));
-            }
-            parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(columnNames, true, processorSupport));
-            parameters.add(InstanceValueInstance.createPersistent(this.repository, "", relationTypeGenericType, this.getPureOne()));
-            replacementFunction.setKeyValues(Lists.mutable.with("parametersValues"), parameters);
+                MutableList<CoreInstance> allColSpecs = Lists.mutable.empty();
+                for (int i = 0; i < lambdas.size(); i++)
+                {
+                    GenericType localColumnType = GenericTypeInstance.createPersistent(this.repository);
+                    localColumnType._rawTypeCoreInstance(_RelationType.build(Lists.mutable.with(_Column.getColumnInstance(columnNames.get(i).getName(), false, null, (String) null, src, processorSupport)), this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport));
 
-            result = replacementFunction;
+                    CoreInstance aggColFunc = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart()), null, null, importId, null);
+                    aggColFunc.setKeyValues(Lists.mutable.with("functionName"), Lists.mutable.with(this.repository.newStringCoreInstance("aggColSpec")));
+                    MutableList<CoreInstance> parameters = Lists.mutable.empty();
+                    parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(lambdas.get(i), true, processorSupport));
+                    parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(extraFunction.get(i), true, processorSupport));
+                    parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(columnNames.get(i), true, processorSupport));
+                    parameters.add(InstanceValueInstance.createPersistent(this.repository, "", localColumnType, this.getPureOne()));
+                    aggColFunc.setKeyValues(Lists.mutable.with("parametersValues"), parameters);
+                    allColSpecs.add(aggColFunc);
+                }
+                replacementFunction.setKeyValues(Lists.mutable.with("functionName"), Lists.mutable.with(this.repository.newStringCoreInstance("aggColSpecArray")));
+                MutableList<CoreInstance> parameters = Lists.mutable.empty();
+                parameters.add(InstanceValueInstance.createPersistent(this.repository, null, null)._values(allColSpecs));
+                parameters.add(InstanceValueInstance.createPersistent(this.repository, "", relationTypeGenericType, this.getPureOne()));
+                replacementFunction.setKeyValues(Lists.mutable.with("parametersValues"), parameters);
+                result = replacementFunction;
+            }
+            else
+            {
+                String functionName = !extraFunction.isEmpty() ? "aggColSpec" : nonFunction ? isArray ? "colSpecArray" : "colSpec" : isArray ? "funcColSpecArray" : "funcColSpec";
+                replacementFunction.setKeyValues(Lists.mutable.with("functionName"), Lists.mutable.with(this.repository.newStringCoreInstance(functionName)));
+
+                // Function Parameters
+                MutableList<CoreInstance> parameters = Lists.mutable.empty();
+                if (!nonFunction)
+                {
+                    parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(lambdas, true, processorSupport));
+                }
+                if (!extraFunction.isEmpty())
+                {
+                    parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(extraFunction.getFirst(), true, processorSupport));
+                }
+                parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(columnNames, true, processorSupport));
+                parameters.add(InstanceValueInstance.createPersistent(this.repository, "", relationTypeGenericType, this.getPureOne()));
+                replacementFunction.setKeyValues(Lists.mutable.with("parametersValues"), parameters);
+
+                result = replacementFunction;
+            }
+
+
         }
         else if (ctx.dsl() != null)
         {

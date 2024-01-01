@@ -176,6 +176,163 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
                         "}");
     }
 
+    @Test
+    public void testColumnWithExtraReduceFunctionArray()
+    {
+        compileTestSource("fromString.pure",
+                "native function sum(i:Integer[*]):Integer[1];" +
+                        "function test<U>():meta::pure::metamodel::relation::AggColSpecArray<{Nil[1]->Any[0..1]}, {Nil[*]->Any[1]}, (name:Integer, newO:String)>[1]" +
+                        "{" +
+                        "   ~[name: x|1 : y|$y->sum(), newO: z|'a' : y|$y->joinStrings(',')]" +
+                        "}");
+    }
+
+    @Test
+    public void testColumnFunctionInferenceWithExtraReduceFunctionArray()
+    {
+        compileTestSource("fromString.pure",
+                "native function sum(i:Integer[*]):Integer[1];" +
+                        "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                        "\n" +
+                        "" +
+                        "function test():Boolean[1]" +
+                        "{" +
+                        "   []->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.ok : y|$y->sum()]);" +
+                        "   true;" +
+                        "}");
+    }
+
+    @Test
+    public void testColumnFunctionInferenceWithExtraReduceFunctionArrayMultiple()
+    {
+        compileTestSource("fromString.pure",
+                "native function sum(i:Integer[*]):Integer[1];" +
+                        "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                        "\n" +
+                        "" +
+                        "function test():Boolean[1]" +
+                        "{" +
+                        "   []->cast(@meta::pure::metamodel::relation::Relation<(id:String, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.ok : y|$y->sum(), otherOne : x|$x.id : y|$y->joinStrings(',')]);" +
+                        "   true;" +
+                        "}");
+    }
+
+    @Test
+    public void testColumnFunctionInferenceWithExtraReduceFunctionArrayMultipleChained()
+    {
+        compileTestSource("fromString.pure",
+                "native function sum(i:Integer[*]):Integer[1];" +
+                        "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                        "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
+                        "\n" +
+                        "" +
+                        "function test():Boolean[1]" +
+                        "{" +
+                        "   []->cast(@meta::pure::metamodel::relation::Relation<(id:String, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.ok : y|$y->sum(), otherOne : x|$x.id : y|$y->joinStrings(',')])->filter(x|$x.otherOne == 'boom');" +
+                        "   true;" +
+                        "}");
+    }
+
+    @Test
+    public void testColumnFunctionInferenceWithExtraReduceFunctionArrayMultipleChainedError()
+    {
+        try
+        {
+            compileTestSource("fromString.pure",
+                    "native function sum(i:Integer[*]):Integer[1];" +
+                            "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                            "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
+                            "\n" +
+                            "" +
+                            "function test():Boolean[1]" +
+                            "{" +
+                            "   []->cast(@meta::pure::metamodel::relation::Relation<(id:String, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.ok : y|$y->sum(), otherOne : x|$x.id : y|$y->joinStrings(',')])->filter(x|$x.otherXne == 'boom');" +
+                            "   true;" +
+                            "}");
+            Assert.fail();
+        }
+        catch (Exception e)
+        {
+            Assert.assertEquals("Compilation error at (resource:fromString.pure line:4 column:217), \"The system can't find the column otherXne in the Relation (id:String, ok:Integer, name:Integer, otherOne:String)\"", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testColumnFunctionInferenceWithExtraReduceFunctionArrayError()
+    {
+        try
+        {
+            compileTestSource("fromString.pure",
+                    "native function sum(i:Integer[*]):Integer[1];" +
+                            "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                            "\n" +
+                            "" +
+                            "function test():Boolean[1]" +
+                            "{" +
+                            "   []->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.oke : y|$y->sum()]);" +
+                            "   true;" +
+                            "}");
+            Assert.fail();
+        }
+        catch (Exception e)
+        {
+            Assert.assertEquals("Compilation error at (resource:fromString.pure line:3 column:141), \"The system can't find the column oke in the Relation (id:Integer, ok:Integer)\"", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testColumnFunctionInferenceWithExtraReduceFunctionArrayMultipleError()
+    {
+        try
+        {
+            compileTestSource("fromString.pure",
+                    "native function sum(i:Integer[*]):Integer[1];" +
+                            "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                            "\n" +
+                            "" +
+                            "function test():Boolean[1]" +
+                            "{" +
+                            "   []->cast(@meta::pure::metamodel::relation::Relation<(id:String, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.ok : y|$y->sum(), otherOne : x|$x.icd : y|$y->joinStrings(',')]);" +
+                            "   true;" +
+                            "}");
+            Assert.fail();
+        }
+        catch (Exception e)
+        {
+            Assert.assertEquals("Compilation error at (resource:fromString.pure line:3 column:174), \"The system can't find the column icd in the Relation (id:String, ok:Integer)\"", e.getMessage());
+        }
+    }
+
+
+    @Test
+    public void testColumnFunctionInferenceWithExtraReduceFunctionArrayMultipleAggError()
+    {
+        try
+        {
+            compileTestSource("fromString.pure",
+                    "native function sum(i:Integer[*]):Integer[1];" +
+                            "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                            "\n" +
+                            "" +
+                            "function test():Boolean[1]" +
+                            "{" +
+                            "   []->cast(@meta::pure::metamodel::relation::Relation<(id:String, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.ok : y|$y->sum(), otherOne : x|$x.id : y|$y->sum()]);" +
+                            "   true;" +
+                            "}");
+            Assert.fail();
+        }
+        catch (Exception e)
+        {
+            Assert.assertEquals("Compilation error at (resource:fromString.pure line:3 column:185), \"The system can't find a match for the function: sum(_:String[*])\n" +
+                    "\n" +
+                    "These functions, in packages already imported, would match the function call if you changed the parameters.\n" +
+                    "\tsum(Integer[*]):Integer[1]\n" +
+                    "\n" +
+                    "No functions, in packages not imported, match the function name.\n" +
+                    "\"", e.getMessage());
+        }
+    }
+
 
     @Test
     public void testColumnSimpleFunctionInference()
