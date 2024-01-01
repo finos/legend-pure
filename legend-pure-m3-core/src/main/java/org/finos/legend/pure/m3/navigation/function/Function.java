@@ -33,7 +33,7 @@ public class Function
         return (context == null) ? computeFunctionType(function, processorSupport) : context.getIfAbsentPutFunctionType(function, func -> computeFunctionType(func, processorSupport));
     }
 
-    private static CoreInstance computeFunctionType(CoreInstance function, ProcessorSupport processorSupport)
+    public static CoreInstance computeFunctionType(CoreInstance function, ProcessorSupport processorSupport)
     {
         CoreInstance classifierGenericType = function.getValueForMetaPropertyToOne(M3Properties.classifierGenericType);
 
