@@ -126,7 +126,7 @@ public class TestRelationDatabaseAccessor extends AbstractPureRelationalTestWith
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source3.pure", STORE2)
-                        .compileWithExpectedCompileFailure("The system can't find the column name in the Relation (name22:String, firmId:String)", "source1.pure", 5, 51)
+                        .compileWithExpectedCompileFailure("The system can't find the column name in the Relation (name22:String, firmId:Integer)", "source1.pure", 5, 51)
                         .updateSource("source3.pure", STORE)
                         .compile(),
                 runtime, functionExecution, Lists.fixedSize.empty());
@@ -160,7 +160,7 @@ public class TestRelationDatabaseAccessor extends AbstractPureRelationalTestWith
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source1.pure", INITIAL_DATA + STORE2)
-                        .compileWithExpectedCompileFailure("The system can't find the column name in the Relation (name22:String, firmId:String)", "source1.pure", 5, 51)
+                        .compileWithExpectedCompileFailure("The system can't find the column name in the Relation (name22:String, firmId:Integer)", "source1.pure", 5, 51)
                         .updateSource("source1.pure", INITIAL_DATA + STORE)
                         .compile(),
                 runtime, functionExecution, Lists.fixedSize.empty());

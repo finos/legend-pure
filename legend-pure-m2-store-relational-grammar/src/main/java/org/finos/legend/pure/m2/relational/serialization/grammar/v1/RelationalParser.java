@@ -301,6 +301,39 @@ public class RelationalParser implements IRelationalParser
         {
             throw new PureCompilationException("Schemas are not supported yet");
         }
-        return Tuples.pair(table, _RelationType.build(table._columns().collect(c -> (CoreInstance) _Column.getColumnInstance(c.getValueForMetaPropertyToOne("name").getName(), false, null, (GenericType) processorSupport.type_wrapGenericType(_Package.getByUserPath("String", processorSupport)), sourceInformation, processorSupport)).toList(), sourceInformation, processorSupport));
+        return Tuples.pair(
+                table,
+                _RelationType.build(
+                        table._columns().collect(c -> (CoreInstance) _Column.getColumnInstance(
+                                        c.getValueForMetaPropertyToOne("name").getName(),
+                                        false,
+                                        null,
+                                        convertType(c.getValueForMetaPropertyToOne("type").getClassifier().getName(), processorSupport),
+                                        sourceInformation,
+                                        processorSupport
+                                )
+                        ).toList(),
+                        sourceInformation,
+                        processorSupport
+                )
+        );
+    }
+
+    public GenericType convertType(String type, ProcessorSupport processorSupport)
+    {
+        String result = "";
+        switch (type.toUpperCase())
+        {
+            case "VARCHAR":
+                result = "String";
+                break;
+            case "INT":
+            case "INTEGER":
+                result = "Integer";
+                break;
+            default:
+                throw new RuntimeException(type.toUpperCase() + " not supported yet!");
+        }
+        return (GenericType) processorSupport.type_wrapGenericType(_Package.getByUserPath(result, processorSupport));
     }
 }

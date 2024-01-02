@@ -1043,6 +1043,7 @@ public class AntlrContextToM3CoreInstance
                 }
                 parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(columnNames, true, processorSupport));
                 parameters.add(InstanceValueInstance.createPersistent(this.repository, "", relationTypeGenericType, this.getPureOne()));
+
                 replacementFunction.setKeyValues(Lists.mutable.with("parametersValues"), parameters);
 
                 result = replacementFunction;

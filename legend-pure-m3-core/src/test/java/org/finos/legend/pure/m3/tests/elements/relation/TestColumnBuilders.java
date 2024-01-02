@@ -363,4 +363,19 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
                         "}");
     }
 
+
+    @Test
+    public void testExtendWithColumnArray()
+    {
+        compileTestSource("fromString.pure",
+                "native function meta::pure::functions::relation::extend<T,Z>(r:meta::pure::metamodel::relation::Relation<T>[1], f:meta::pure::metamodel::relation::FuncColSpecArray<{T[1]->Any[*]},Z>[1]):meta::pure::metamodel::relation::Relation<T+Z>[1];\n" +
+                        "\n" +
+                        "" +
+                        "function test():Boolean[1]" +
+                        "{" +
+                        "   []->toOne()->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, ok:Integer)>)->extend(~[name:c|$c.id->toOne()]);" +
+                        "   true;" +
+                        "}");
+    }
+
 }
