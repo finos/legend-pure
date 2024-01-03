@@ -33,8 +33,7 @@ Class meta::pure::metamodel::relation::FuncColSpec<Z,T> // Where T is of type Re
 
 Class meta::pure::metamodel::relation::FuncColSpecArray<Z,T> // Where T is of type RelationType
 {
-    names : String[*];
-    functions : Function<Z>[*];
+    funcSpecs : meta::pure::metamodel::relation::FuncColSpec<Z,Any>[*];
 }
 
 
@@ -47,6 +46,6 @@ Class meta::pure::metamodel::relation::AggColSpec<Z,V,T> // Where T is of type R
 
 Class meta::pure::metamodel::relation::AggColSpecArray<A,B,T>
 {
-  aggSpecs : meta::pure::metamodel::relation::AggColSpec<A,B,Any>[*];
+  aggSpecs : AggColSpec<A,B,Any>[*];
 }
 

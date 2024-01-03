@@ -15,16 +15,20 @@
 package org.finos.legend.pure.runtime.java.extension.external.relation.compiled.natives;
 
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.Native;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.GroupBy;
 
-public class GroupBy extends AbstractNative implements Native
+import static org.finos.legend.pure.runtime.java.extension.external.relation.compiled.natives.GroupBy.processAggColSpec;
+
+public class GroupByArray extends AbstractNative implements Native
 {
-    public GroupBy()
+    public GroupByArray()
     {
-        super("groupBy_Relation_1__ColSpec_1__AggColSpec_1__Relation_1_", "groupBy_Relation_1__ColSpecArray_1__AggColSpec_1__Relation_1_");
+        super("groupBy_Relation_1__ColSpec_1__AggColSpecArray_1__Relation_1_", "groupBy_Relation_1__ColSpecArray_1__AggColSpecArray_1__Relation_1_");
     }
 
     @Override
@@ -36,27 +40,10 @@ public class GroupBy extends AbstractNative implements Native
         result.append(", ");
         result.append(transformedParams.get(1));
         result.append(", ");
-        result.append("Lists.mutable.with(" + transformedParams.get(2) + ")");
-
+        result.append("Lists.mutable.withAll(" + transformedParams.get(2) + "._aggSpecs())");
         processAggColSpec(transformedParams, result);
-
         result.append(", es)");
         return result.toString();
     }
 
-    static void processAggColSpec(ListIterable<String> transformedParams, StringBuilder result)
-    {
-        result.append(".collect(");
-        result.append("new DefendedFunction<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.AggColSpec<? extends Object, ? extends Object, ? extends Object>, org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.AggColSpecTrans>()\n" +
-                "{\n" +
-                "    @Override\n" +
-                "    public  org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.AggColSpecTrans valueOf(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.AggColSpec<?, ?, ?> c)\n" +
-                "    {\n");
-        result.append("return new org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.AggColSpecTrans(c._name(),");
-        result.append("(Function2)PureCompiledLambda.getPureFunction(c._map(),es),");
-        result.append("(Function2)PureCompiledLambda.getPureFunction(c._reduce(),es),");
-        result.append("((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType)c._reduce()._classifierGenericType()._typeArguments().toList().get(0)._rawType())._returnType()._rawType()._name());");
-        result.append("    }\n" +
-                "})");
-    }
 }

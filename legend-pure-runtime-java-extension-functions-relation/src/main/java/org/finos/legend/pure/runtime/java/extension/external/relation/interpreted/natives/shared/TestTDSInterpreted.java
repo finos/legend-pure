@@ -80,6 +80,10 @@ public class TestTDSInterpreted extends TestTDS
     public CoreInstance getValueAsCoreInstance(String columnName, int rowNum)
     {
         Object dataAsObject = dataByColumnName.get(columnName);
+        if (dataAsObject == null)
+        {
+            throw new RuntimeException("The column " + columnName + " can't be found in the TDS");
+        }
         boolean[] isNull = (boolean[]) isNullByColumn.get(columnName);
         CoreInstance result;
         switch (columnType.get(columnName))

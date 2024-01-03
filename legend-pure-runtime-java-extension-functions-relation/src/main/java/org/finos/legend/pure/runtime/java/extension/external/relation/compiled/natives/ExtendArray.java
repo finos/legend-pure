@@ -14,15 +14,25 @@
 
 package org.finos.legend.pure.runtime.java.extension.external.relation.compiled.natives;
 
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.FuncColSpecArray;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Relation;
-import org.finos.legend.pure.m3.execution.ExecutionSupport;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
+import org.eclipse.collections.api.list.ListIterable;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.Native;
 
-public class ExtendArray extends AbstractNativeFunctionGeneric
+import static org.finos.legend.pure.runtime.java.extension.external.relation.compiled.natives.Extend.buildCode;
+
+public class ExtendArray extends AbstractNative implements Native
 {
     public ExtendArray()
     {
-        super("org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.extend", new Class[]{Relation.class, FuncColSpecArray.class, ExecutionSupport.class}, false, true, false, "extend_Relation_1__FuncColSpecArray_1__Relation_1_");
+        super("extend_Relation_1__FuncColSpecArray_1__Relation_1_");
+    }
+
+    @Override
+    public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
+    {
+        StringBuilder result = buildCode(transformedParams, s -> "Lists.mutable.withAll(" + transformedParams.get(1) + "._funcSpecs())");
+        return result.toString();
     }
 }
