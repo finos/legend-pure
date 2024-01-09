@@ -58,7 +58,9 @@ public class RelationExtensionCompiled implements CompiledExtension
                 new GroupBy(),
                 new GroupByArray(),
                 new Slice(),
-                new Distinct()
+                new Distinct(),
+                new Select(),
+                new SelectArray()
         );
     }
 

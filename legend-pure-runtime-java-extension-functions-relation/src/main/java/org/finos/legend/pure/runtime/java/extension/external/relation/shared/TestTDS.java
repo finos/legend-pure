@@ -20,6 +20,7 @@ import io.deephaven.csv.reading.CsvReader;
 import io.deephaven.csv.sinks.SinkFactory;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
@@ -507,27 +508,36 @@ public class TestTDS
 
     public TestTDS removeColumns(MutableSet<? extends String> columns)
     {
-        this.columnsOrdered.removeAll(columns);
-        this.columnType.removeAllKeys(columns);
-        this.isNullByColumn.removeAllKeys(columns);
-        this.dataByColumnName.removeAllKeys(columns);
-        return this;
+        TestTDS copy = this.copy();
+        copy.columnsOrdered.removeAll(columns);
+        copy.columnType.removeAllKeys(columns);
+        copy.isNullByColumn.removeAllKeys(columns);
+        copy.dataByColumnName.removeAllKeys(columns);
+        return copy;
+    }
+
+    public TestTDS select(MutableSet<? extends String> columns)
+    {
+        MutableSet<String> allColumns = Sets.mutable.withAll(this.getColumnNames());
+        allColumns.removeAll(columns);
+        return removeColumns(allColumns);
     }
 
     public TestTDS rename(String oldName, String newName)
     {
-        DataType type = this.columnType.get(oldName);
-        Object data = this.dataByColumnName.get(oldName);
-        Object oldIsNull = this.isNullByColumn.get(oldName);
-        this.columnType.put(newName, type);
-        this.dataByColumnName.put(newName, data);
-        this.isNullByColumn.put(newName, oldIsNull);
-        this.columnsOrdered.add(newName);
-        this.columnType.remove(oldName);
-        this.dataByColumnName.remove(oldName);
-        this.isNullByColumn.remove(oldName);
-        this.columnsOrdered.remove(oldName);
-        return this;
+        TestTDS copy = this.copy();
+        DataType type = copy.columnType.get(oldName);
+        Object data = copy.dataByColumnName.get(oldName);
+        Object oldIsNull = copy.isNullByColumn.get(oldName);
+        copy.columnType.put(newName, type);
+        copy.dataByColumnName.put(newName, data);
+        copy.isNullByColumn.put(newName, oldIsNull);
+        copy.columnsOrdered.add(newName);
+        copy.columnType.remove(oldName);
+        copy.dataByColumnName.remove(oldName);
+        copy.isNullByColumn.remove(oldName);
+        copy.columnsOrdered.remove(oldName);
+        return copy;
     }
 
     public TestTDS slice(int from, int to)
