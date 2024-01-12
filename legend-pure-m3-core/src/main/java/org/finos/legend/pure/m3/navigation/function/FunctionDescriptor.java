@@ -43,12 +43,12 @@ public class FunctionDescriptor
 {
     private static final Pattern DESCRIPTOR_MAIN = Pattern.compile("^\\s*+([^(\\s]++)\\s*+\\(\\s*+([^)]*+)\\s*+\\)\\s*+:\\s*+(.*\\S)\\s*+$");
     private static final Pattern PARAMETER_DELIMITER = Pattern.compile("\\s*+,\\s*+");
-    private static final Pattern TYPE_WITH_MULTIPLICITY_NUM = Pattern.compile("^\\s*+([~\\w]++)\\s*+\\[\\s*+(\\d++)\\s*+\\]\\s*+$");
-    private static final Pattern TYPE_WITH_MULTIPLICITY_MANY = Pattern.compile("^\\s*+([~\\w]++)\\s*+\\[\\s*+(\\*)\\s*+\\]\\s*+$");
-    private static final Pattern TYPE_WITH_MULTIPLICITY_NUM_TO_NUM = Pattern.compile("^\\s*+([~\\w]++)\\s*+\\[\\s*+(\\d++)\\s*+\\.\\.\\s*+(\\d++)\\]\\s*+$");
-    private static final Pattern TYPE_WITH_MULTIPLICITY_NUM_TO_MANY = Pattern.compile("^\\s*+([~\\w]++)\\s*+\\[\\s*+(\\d++)\\s*+\\.\\.\\s*+(\\*)\\]\\s*+$");
-    private static final Pattern TYPE_WITH_MULTIPLICITY_PARAMETER = Pattern.compile("^\\s*+([~\\w]++)\\s*+\\[\\s*+([a-zA-Z]\\w*+)\\s*+\\]\\s*+$");
-    private static final Pattern FULL_MATCH = Pattern.compile("^\\s*+([\\w\\d_$]++::)*+[\\w\\d_$]++\\s*+\\(\\s*+(\\w++\\s*+\\[\\s*+(\\*|([a-zA-Z]\\w*+)|(\\d++(\\s*+\\.\\.\\s*+(\\d++|\\*))?+))\\s*+\\]\\s*+(?!,\\s*+\\)),?+\\s*+)*+\\s*+\\)\\s*+:\\s*+\\w++\\s*+\\[\\s*+(\\*|([a-zA-Z]\\w*+)|(\\d++(\\s*+\\.\\.\\s*+(\\d++|\\*))?+))\\s*+\\]\\s*+$");
+    private static final Pattern TYPE_WITH_MULTIPLICITY_NUM = Pattern.compile("^\\s*+([~\\w]++)\\s*+(<([^>]*)>)?\\[\\s*+(\\d++)\\s*+\\]\\s*+$");
+    private static final Pattern TYPE_WITH_MULTIPLICITY_MANY = Pattern.compile("^\\s*+([~\\w]++)\\s*+(<([^>]*)>)?\\[\\s*+(\\*)\\s*+\\]\\s*+$");
+    private static final Pattern TYPE_WITH_MULTIPLICITY_NUM_TO_NUM = Pattern.compile("^\\s*+([~\\w]++)\\s*+(<([^>]*)>)?\\[\\s*+(\\d++)\\s*+\\.\\.\\s*+(\\d++)\\]\\s*+$");
+    private static final Pattern TYPE_WITH_MULTIPLICITY_NUM_TO_MANY = Pattern.compile("^\\s*+([~\\w]++)\\s*+(<([^>]*)>)?\\[\\s*+(\\d++)\\s*+\\.\\.\\s*+(\\*)\\]\\s*+$");
+    private static final Pattern TYPE_WITH_MULTIPLICITY_PARAMETER = Pattern.compile("^\\s*+([~\\w]++)\\s*+(<([^>]*)>)?\\[\\s*+([a-zA-Z]\\w*+)\\s*+\\]\\s*+$");
+    private static final Pattern FULL_MATCH = Pattern.compile("^\\s*+([\\w\\d_$]++::)*+[\\w\\d_$]++\\s*+\\(\\s*+(\\w++\\s*+(<([^>]*)>)?\\[\\s*+(\\*|([a-zA-Z]\\w*+)|(\\d++(\\s*+\\.\\.\\s*+(\\d++|\\*))?+))\\s*+\\]\\s*+(?!,\\s*+\\)),?+\\s*+)*+\\s*+\\)\\s*+:\\s*+\\w++\\s*+(<([^>]*)>)?\\[\\s*+(\\*|([a-zA-Z]\\w*+)|(\\d++(\\s*+\\.\\.\\s*+(\\d++|\\*))?+))\\s*+\\]\\s*+$");
 
     /**
      * Return whether string is possibly a function descriptor.  This
@@ -199,7 +199,6 @@ public class FunctionDescriptor
             {
                 ArrayIterate.forEach(PARAMETER_DELIMITER.split(paramsString), p -> typeWithMultiplicityDescriptorToId(builder, p));
             }
-
             typeWithMultiplicityDescriptorToId(builder, matcher.group(3));
         }
         catch (IllegalArgumentException e)
@@ -214,7 +213,7 @@ public class FunctionDescriptor
         Matcher matcher = TYPE_WITH_MULTIPLICITY_NUM.matcher(typeWithMultiplicityDescriptor);
         if (matcher.matches())
         {
-            builder.append('_').append(matcher.group(1)).append('_').append(Integer.parseInt(matcher.group(2))).append('_');
+            builder.append('_').append(matcher.group(1)).append('_').append(Integer.parseInt(matcher.group(4))).append('_');
             return;
         }
 
@@ -229,8 +228,8 @@ public class FunctionDescriptor
         if (matcher.matches())
         {
             builder.append('_').append(matcher.group(1)).append('_');
-            int num1 = Integer.parseInt(matcher.group(2));
-            int num2 = Integer.parseInt(matcher.group(3));
+            int num1 = Integer.parseInt(matcher.group(4));
+            int num2 = Integer.parseInt(matcher.group(5));
             if (num1 == num2)
             {
                 builder.append(num1);
@@ -247,7 +246,7 @@ public class FunctionDescriptor
         if (matcher.matches())
         {
             builder.append('_').append(matcher.group(1)).append('_');
-            int num = Integer.parseInt(matcher.group(2));
+            int num = Integer.parseInt(matcher.group(4));
             if (num == 0)
             {
                 builder.append("MANY_");
@@ -262,7 +261,7 @@ public class FunctionDescriptor
         matcher = TYPE_WITH_MULTIPLICITY_PARAMETER.matcher(typeWithMultiplicityDescriptor);
         if (matcher.matches())
         {
-            builder.append('_').append(matcher.group(1)).append('_').append(matcher.group(2)).append('_');
+            builder.append('_').append(matcher.group(1)).append('_').append(matcher.group(4)).append('_');
             return;
         }
 

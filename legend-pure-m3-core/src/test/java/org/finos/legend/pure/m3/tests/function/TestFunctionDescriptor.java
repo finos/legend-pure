@@ -75,6 +75,7 @@ public class TestFunctionDescriptor
         Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("pkg1::pkg2::func(Integer[1], String[ 1..  5]):Boolean[1]"));
         Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("   pkg1::pkg2::func  (   \t Integer [ 1 ] , String [ 1       ..  5   ] )   : Boolean\t[  1 ] "));
         Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("func(Integer[16..20]):Boolean[1]"));
+        Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("func(A<K>[16..20]):Z<K>[1]"));
     }
 
     @Test
@@ -148,6 +149,7 @@ public class TestFunctionDescriptor
         Assert.assertEquals("meta::pure::functions::collection::get_T_MANY__String_1__T_$0_1$_", FunctionDescriptor.functionDescriptorToId("meta::pure::functions::collection::get(T[*], String[1]):T[0..1]"));
         Assert.assertEquals("meta::json::toJSON_Any_MANY__Integer_$0_1$__Boolean_1__String_1_", FunctionDescriptor.functionDescriptorToId("meta::json::toJSON(Any[*], Integer[0..1], Boolean[1]):String[1]"));
         Assert.assertEquals("meta::pure::functions::string::toString_Any_1__String_1_", FunctionDescriptor.functionDescriptorToId("meta::pure::functions::string::toString(Any[1]):String[1]"));
+        Assert.assertEquals("meta::pure::functions::collection::tests::map::classPropertyByName_Class_1__String_1__Property_$0_1$_", FunctionDescriptor.functionDescriptorToId("meta::pure::functions::collection::tests::map::classPropertyByName(Class<Any>[1], String[1]):Property<Nil,Any|*>[0..1]"));
     }
 
     @Test
