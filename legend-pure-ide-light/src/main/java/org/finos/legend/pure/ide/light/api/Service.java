@@ -56,10 +56,6 @@ public class Service
             return;
         }
 
-        Map<String, String[]> requestParams = result.getTwo();
-        requestParams.putAll(request.getParameterMap());
-        requestParams.put(ExecutionManager.OUTPUT_FORMAT_PARAMETER, new String[]{ExecutionManager.OUTPUT_FORMAT_RAW});
-
         ExecutionManager executionManager = new ExecutionManager(pureSession.getFunctionExecution());
         executionManager.execute(new ExecutionRequest(result.getTwo()), new HttpServletResponseWriter(response), ContentType.text);
     }
