@@ -259,13 +259,17 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.nativeFunctions.put("abs_Number_1__Number_1_", abs);
 
         // Meta
+        this.nativeFunctions.put("elementPath_PackageableElement_1__PackageableElement_$1_MANY$_", new ElementPath());
+        this.nativeFunctions.put("elementToPath_PackageableElement_1__String_1__Boolean_1__String_1_", new ElementToPath(repository));
         this.nativeFunctions.put("evaluateAndDeactivate_T_m__T_m_", new EvaluateAndDeactivate());
         this.nativeFunctions.put("genericType_Any_MANY__GenericType_1_", new GenericType());
         this.nativeFunctions.put("genericTypeClass_GenericType_1__Class_1_", new GenericTypeClass(repository));
         this.nativeFunctions.put("getUnitValue_Any_1__Number_1_", new GetUnitValue(this, repository));
         this.nativeFunctions.put("id_Any_1__String_1_", new Id(repository));
         this.nativeFunctions.put("instanceOf_Any_1__Type_1__Boolean_1_", new InstanceOf(repository));
+        this.nativeFunctions.put("lenientPathToElement_String_1__String_1__PackageableElement_$0_1$_", new PathToElement(true));
         this.nativeFunctions.put("newUnit_Unit_1__Number_1__Any_1_", new NewUnit(this, repository));
+        this.nativeFunctions.put("pathToElement_String_1__String_1__PackageableElement_1_", new PathToElement(false));
 
         // String
         this.nativeFunctions.put("format_String_1__Any_MANY__String_1_", new Format(repository, this));

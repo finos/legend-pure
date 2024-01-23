@@ -40,63 +40,129 @@ function meta::pure::functions::meta::elementToPath(element:PackageableElement[1
     $element->elementToPath('::')
 }
 
-function meta::pure::functions::meta::elementToPath(element:PackageableElement[1], separator:String[1]):String[1]
+function meta::pure::functions::meta::elementToPath(element:PackageableElement[1], includeRoot:Boolean[1]):String[1]
 {
-    let path = $element->elementPath();
-    if($path->size() == 1,
-       | let first = $path->at(0);
-         if(is(::, $first),
-            | '',
-            | $first.name->toOne());,
-       | $path->tail()->map(e | $e.name)->joinStrings($separator));
+    $element->elementToPath('::', $includeRoot)
 }
 
-function meta::pure::functions::meta::elementPath(element:PackageableElement[1]):PackageableElement[1..*]
+function meta::pure::functions::meta::elementToPath(element:PackageableElement[1], separator:String[1]):String[1]
 {
-    let pkg = $element.package;
-    if ($pkg->isEmpty(),
-        | $element->toOneMany(), // this is a hack to work around a problem with the compiled execution
-        | elementPath($pkg->toOne())->add($element));
+    $element->elementToPath($separator, false)
 }
+
+native function meta::pure::functions::meta::elementToPath(element:PackageableElement[1], separator:String[1], includeRoot:Boolean[1]):String[1];
+
+native function meta::pure::functions::meta::elementPath(element:PackageableElement[1]):PackageableElement[1..*];
 
 
 
 
 function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testElementToPath():Boolean[1]
 {
-    let path = 'meta::pure::functions::lang';
-    assertEquals($path, elementToPath($path->pathToElement()));
+    assertEquals('meta::pure::functions::meta', elementToPath('meta::pure::functions::meta'->pathToElement()));
+    assertEquals('meta::pure::functions::meta', elementToPath(meta::pure::functions::meta));
+    assertEquals('Root::meta::pure::functions::meta', elementToPath(meta::pure::functions::meta, true));
 }
 
 function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testTopLevelElementToPath():Boolean[1]
 {
     assertEquals('Package', elementToPath(Package));
+    assertEquals('Package', elementToPath(Package, '::', true));
     assertEquals('Number', elementToPath(Number));
+    assertEquals('Number', elementToPath(Number, '::', true));
     assertEquals('Boolean', elementToPath(Boolean));
+    assertEquals('Boolean', elementToPath(Boolean, '::', true));
     assertEquals('Date', elementToPath(Date));
+    assertEquals('Date', elementToPath(Date, '::', true));
     assertEquals('Float', elementToPath(Float));
+    assertEquals('Float', elementToPath(Float, '::', true));
     assertEquals('Integer', elementToPath(Integer));
+    assertEquals('Integer', elementToPath(Integer, '::', true));
     assertEquals('String', elementToPath(String));
+    assertEquals('String', elementToPath(String, '::', true));
 }
 
 function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testRootElementToPath():Boolean[1]
 {
     assertEquals('', elementToPath(::));
     assertEquals('', elementToPath(::, '.'));
+    assertEquals('Root', elementToPath(::, '::', true));
 }
 
 function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testPackageablesToPath():Boolean[1]
 {
     assertEquals('meta::pure::functions::meta::tests::model::CC_Person', elementToPath(CC_Person));
     assertEquals('meta.pure.functions.meta.tests.model.CC_Person', elementToPath(CC_Person, '.'));
+    assertEquals('Root_meta_pure_functions_meta_tests_model_CC_Person', elementToPath(CC_Person, '_', true));
     assertEquals('meta::pure::functions::meta::tests::model', elementToPath(CC_Person.package->at(0)));
     assertEquals('meta_pure_functions_meta_tests_model', elementToPath(CC_Person.package->at(0), '_'));
+    assertEquals('Root$meta$pure$functions$meta$tests$model', elementToPath(CC_Person.package->at(0), '$', true));
 }
 
 function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testEnumerationToPath():Boolean[1]
 {
     assertEquals('meta::pure::functions::meta::tests::model::CC_GeographicEntityType', elementToPath(CC_GeographicEntityType));
     assertEquals('meta_pure_functions_meta_tests_model_CC_GeographicEntityType', elementToPath(CC_GeographicEntityType, '_'));
+    assertEquals('Root.meta.pure.functions.meta.tests.model.CC_GeographicEntityType', elementToPath(CC_GeographicEntityType, '.', true));
     assertEquals('meta::pure::functions::meta::tests::model', elementToPath(CC_GeographicEntityType->cast(@PackageableElement).package->at(0)));
     assertEquals('meta.pure.functions.meta.tests.model', elementToPath(CC_GeographicEntityType->cast(@PackageableElement).package->at(0), '.'));
+    assertEquals('Root&meta&pure&functions&meta&tests&model', elementToPath(CC_GeographicEntityType->cast(@PackageableElement).package->at(0), '&', true));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testTopLevelElementPath():Boolean[1]
+{
+    assertEquals([Package], elementPath(Package));
+    assertEquals([Number], elementPath(Number));
+    assertEquals([Boolean], elementPath(Boolean));
+    assertEquals([Date], elementPath(Date));
+    assertEquals([Float], elementPath(Float));
+    assertEquals([Integer], elementPath(Integer));
+    assertEquals([String], elementPath(String));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testRootElementPath():Boolean[1]
+{
+    assertEquals([::], elementPath(::));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testElementPath():Boolean[1]
+{
+    assertEquals(
+        [
+         ::,
+         meta,
+         meta::pure,
+         meta::pure::functions,
+         meta::pure::functions::meta,
+         meta::pure::functions::meta::tests,
+         meta::pure::functions::meta::tests::model,
+         meta::pure::functions::meta::tests::model::CC_Person
+        ],
+        elementPath(CC_Person));
+    assertEquals(
+        [
+         ::,
+         meta,
+         meta::pure,
+         meta::pure::functions,
+         meta::pure::functions::meta,
+         meta::pure::functions::meta::tests,
+         meta::pure::functions::meta::tests::model,
+         meta::pure::functions::meta::tests::model::CC_GeographicEntityType
+        ],
+        elementPath(CC_GeographicEntityType));
+    assertEquals(
+        [
+         ::,
+         meta,
+         meta::pure,
+         meta::pure::functions
+        ],
+        elementPath(meta::pure::functions));
+    assertEquals(
+        [
+         ::,
+         meta
+        ],
+        elementPath(meta));
 }

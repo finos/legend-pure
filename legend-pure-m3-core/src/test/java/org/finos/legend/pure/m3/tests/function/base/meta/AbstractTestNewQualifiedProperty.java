@@ -17,39 +17,46 @@ package org.finos.legend.pure.m3.tests.function.base.meta;
 import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.junit.After;
 import org.junit.Test;
 
 public abstract class AbstractTestNewQualifiedProperty extends AbstractPureTestWithCoreCompiled
 {
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("StandardCall.pure");
+        runtime.compile();
+    }
+
     @Test
     public void standardCall()
     {
-        String source =
-            "function go():Any[*]\n" +
-            "{\n" +
-                "let classA = 'meta::pure::functions::meta::A'->newClass();\n" +
-                "let classB = 'meta::pure::functions::meta::B'->newClass();\n" +
-                "let qualifiedProperty = newQualifiedProperty('a', ^GenericType(rawType=$classB), ^GenericType(rawType=$classA), PureOne, [^VariableExpression(name = 'newName', multiplicity = ZeroOne, genericType = ^GenericType(rawType = Any))]);\n" +
-                "assert('a' == $qualifiedProperty.name, |'Expected qualified property to have name');\n" +
-                "assert('a' == $qualifiedProperty.functionName, |'Expected qualified property to have name');\n" +
-                "assert('B' == $qualifiedProperty.owner.name->toOne(), |'Expected qualified property owner to have name');\n" +
-                "assert(PureOne == $qualifiedProperty.multiplicity, |'Expected qualified property multiplicity');\n" +
-                "assert('A' == $qualifiedProperty.genericType.rawType->toOne().name, |'Expected qualified property generic type to have name');\n" +
-                "assert('QualifiedProperty' == $qualifiedProperty.classifierGenericType.rawType->toOne().name, |'Expected qualified property generic type');\n" +
-                "let typeArguments = $qualifiedProperty.classifierGenericType.typeArguments;\n" +
-                "assert(1 == $typeArguments->size(), |'Expected qualified property to have one type argument');\n" +
-                "assert($typeArguments->toOne().rawType->toOne()->instanceOf(FunctionType), |'Expected qualified property type argument to be instance of FunctionType');\n" +
-                "assert('A' == $typeArguments->toOne().rawType->toOne()->cast(@FunctionType).returnType.rawType->toOne().name, |'Expected function type return type to be qualified property return type');\n" + 
-                "assert(PureOne == $typeArguments->toOne().rawType->toOne()->cast(@FunctionType).returnMultiplicity, |'Expected function type return multiplicity to be qualified property return multiplicity');\n" + 
-                "let params = $typeArguments->toOne().rawType->toOne()->cast(@FunctionType).parameters->evaluateAndDeactivate();\n" +
-                "assert(1 == $params->size(), |'Expected function type to have one parameter');\n" +
-                "assert($params->toOne()->instanceOf(Any), |'Expected function type to have one parameter');\n" +
-                "assert(ZeroOne == $params->toOne().multiplicity, |'Expected function type parameter multiplicity to be ZeroOne');\n" +
-                "assert('newName' == $params.name, |'Expected function type parameter name to be name');\n" + 
-            "}";
+        String source = "function go():Any[*]\n" +
+                "{\n" +
+                "    let classA = 'meta::pure::functions::meta::A'->newClass();\n" +
+                "    let classB = 'meta::pure::functions::meta::B'->newClass();\n" +
+                "    let qualifiedProperty = newQualifiedProperty('a', ^GenericType(rawType=$classB), ^GenericType(rawType=$classA), PureOne, [^VariableExpression(name = 'newName', multiplicity = ZeroOne, genericType = ^GenericType(rawType = Any))]);\n" +
+                "    assertEquals('a', $qualifiedProperty.name);\n" +
+                "    assertEquals('a', $qualifiedProperty.functionName);\n" +
+                "    assertEquals('B', $qualifiedProperty.owner.name->toOne());\n" +
+                "    assertEquals(PureOne, $qualifiedProperty.multiplicity);\n" +
+                "    assertEquals('A', $qualifiedProperty.genericType.rawType->toOne().name);\n" +
+                "    assertEquals('QualifiedProperty', $qualifiedProperty.classifierGenericType.rawType->toOne().name);\n" +
+                "    let typeArguments = $qualifiedProperty.classifierGenericType.typeArguments;\n" +
+                "    assertEquals(1, $typeArguments->size());\n" +
+                "    assert($typeArguments->toOne().rawType->toOne()->instanceOf(FunctionType), |'Expected qualified property type argument to be instance of FunctionType');\n" +
+                "    assertEquals('A', $typeArguments->toOne().rawType->toOne()->cast(@FunctionType).returnType.rawType->toOne().name);\n" +
+                "    assertEquals(PureOne, $typeArguments->toOne().rawType->toOne()->cast(@FunctionType).returnMultiplicity);\n" +
+                "    let params = $typeArguments->toOne().rawType->toOne()->cast(@FunctionType).parameters->evaluateAndDeactivate();\n" +
+                "    assertEquals(1, $params->size());\n" +
+                "    assert($params->toOne()->instanceOf(Any), |'Expected function type to have one parameter');\n" +
+                "    assertEquals(ZeroOne, $params->toOne().multiplicity);\n" +
+                "    assertEquals('newName', $params.name);\n" +
+                "}";
 
-        this.compileTestSource("StandardCall.pure", source);
-        CoreInstance func = this.runtime.getFunction("go():Any[*]");
-        this.functionExecution.start(func, Lists.immutable.empty());
+        compileTestSource("StandardCall.pure", source);
+        CoreInstance func = runtime.getFunction("go():Any[*]");
+        functionExecution.start(func, Lists.immutable.empty());
     }
 }

@@ -18,6 +18,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
+import org.junit.After;
 import org.junit.Test;
 
 public abstract class AbstractTestCompileValueSpecification extends AbstractPureTestWithCoreCompiled
@@ -31,6 +32,16 @@ public abstract class AbstractTestCompileValueSpecification extends AbstractPure
             "   $vs.result->toOne()->reactivate(^Map<String, List<Any>>())->cast(@Function<{->Any[*]}>)->toOne()->eval();\n" +
             "}\n";
 
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("testSource.pure");
+        runtime.delete("exec1.pure");
+        runtime.delete("source1.pure");
+        runtime.delete("source2.pure");
+        runtime.delete("source3.pure");
+        runtime.compile();
+    }
 
     @Test
     public void testEvalSingle()
@@ -71,7 +82,7 @@ public abstract class AbstractTestCompileValueSpecification extends AbstractPure
                                 "   assert('The variable \\'a\\' is unknown!' == $res.failure.message, |'');\n" +
                                 "}\n"
                 ).compile(), new RuntimeTestScriptBuilder().executeFunction("test():Any[1]"),
-                this.runtime, this.functionExecution, this.getExecutionVerifiers());
+                runtime, functionExecution, this.getExecutionVerifiers());
     }
 
     @Test
@@ -90,7 +101,7 @@ public abstract class AbstractTestCompileValueSpecification extends AbstractPure
                                 "   assert($res.failure.sourceInformation.source->isEmpty(),|'');\n" +
                                 "}\n"
                 ).compile(), new RuntimeTestScriptBuilder().executeFunction("test():Any[1]"),
-                this.runtime, this.functionExecution, this.getExecutionVerifiers());
+                runtime, functionExecution, this.getExecutionVerifiers());
     }
 
     @Test
@@ -110,7 +121,7 @@ public abstract class AbstractTestCompileValueSpecification extends AbstractPure
                                 "   assert(!$res.result->isEmpty(), |'');\n" +
                                 "}\n"
                 ).compile(), new RuntimeTestScriptBuilder().executeFunction("test():Any[1]"),
-                this.runtime, this.functionExecution, this.getExecutionVerifiers());
+                runtime, functionExecution, this.getExecutionVerifiers());
 
     }
 
@@ -134,7 +145,7 @@ public abstract class AbstractTestCompileValueSpecification extends AbstractPure
                                 "   assert(!$res->at(1).result->isEmpty(),|'');\n" +
                                 "}\n"
                 ).compile(), new RuntimeTestScriptBuilder().executeFunction("test():Any[1]"),
-                this.runtime, this.functionExecution, this.getExecutionVerifiers());
+                runtime, functionExecution, this.getExecutionVerifiers());
 
     }
 
@@ -147,7 +158,6 @@ public abstract class AbstractTestCompileValueSpecification extends AbstractPure
     @Test
     public void testExecuteSimpleBlockDeactivated()
     {
-
         String codeBlock = "let f = [1,2,3]->map(e | $e * 2)->deactivate()->cast(@FunctionExpression);\n" +
                            "$f.func->evaluate($f.parametersValues->map(p | ^List<Any>(values=$p->reactivate(^Map<String, List<Any>>()))))->map(s|$s->toString())->joinStrings(',');";
         this.testExecuteCodeBlockIsStable(codeBlock, "2,4,6");
@@ -186,9 +196,8 @@ public abstract class AbstractTestCompileValueSpecification extends AbstractPure
                 .createInMemorySource("source2.pure", "function testOutsideCompileValSpec():Any[*]\n{ assert('" + expectedResult + "' == doSomething(), |'');}")
                 .createInMemorySource("source3.pure", "function test():Any[*]\n{ assert('" + expectedResult + "' == apps::pure::api::execution::compileAndExecuteCodeBlock('" + escapedCode + "'), |'');}").compile()
                 .executeFunction("testOutsideCompileValSpec():Any[*]"),
-                new RuntimeTestScriptBuilder().executeFunction("test():Any[*]"),this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                new RuntimeTestScriptBuilder().executeFunction("test():Any[*]"),runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     public abstract ListIterable<RuntimeVerifier.FunctionExecutionStateVerifier> getExecutionVerifiers();
-
 }

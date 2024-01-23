@@ -44,13 +44,17 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.lang.If;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.lang.Match;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.math.Abs;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.ElementPath;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.ElementToPath;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.EvaluateAndDeactivate;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.GenericType;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.GenericTypeClass;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.GetUnitValue;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.Id;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.InstanceOf;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.LenientPathToElement;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.NewUnit;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.PathToElement;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.string.Format;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.string.Length;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.string.Replace;
@@ -281,13 +285,17 @@ public class NativeFunctionProcessor
         registerNative(map, new Abs());
 
         //Meta
+        registerNative(map, new ElementPath());
+        registerNative(map, new ElementToPath());
         registerNative(map, new EvaluateAndDeactivate());
         registerNative(map, new GenericType());
         registerNative(map, new GenericTypeClass());
         registerNative(map, new GetUnitValue());
         registerNative(map, new Id());
         registerNative(map, new InstanceOf());
+        registerNative(map, new LenientPathToElement());
         registerNative(map, new NewUnit());
+        registerNative(map, new PathToElement());
 
         //String
         registerNative(map, new Format());

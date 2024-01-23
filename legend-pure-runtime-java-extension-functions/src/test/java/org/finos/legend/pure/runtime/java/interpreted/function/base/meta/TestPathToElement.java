@@ -1,4 +1,4 @@
-// Copyright 2020 Goldman Sachs
+// Copyright 2024 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,16 +15,16 @@
 package org.finos.legend.pure.runtime.java.interpreted.function.base.meta;
 
 import org.finos.legend.pure.m3.execution.FunctionExecution;
-import org.finos.legend.pure.m3.tests.function.base.meta.AbstractTestNewClass;
+import org.finos.legend.pure.m3.tests.function.base.meta.AbstractTestPathToElement;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.BeforeClass;
 
-public class TestNewClassInterpreted extends AbstractTestNewClass
+public class TestPathToElement extends AbstractTestPathToElement
 {
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getFunctionExecution());
+        setUpRuntime(getFunctionExecution(), getCodeStorage(), getExtra());
     }
 
     protected static FunctionExecution getFunctionExecution()

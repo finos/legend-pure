@@ -20,27 +20,14 @@ import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.tests.function.base.meta.AbstractTestCompileValueSpecification;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.junit.After;
 import org.junit.BeforeClass;
 
 public class TestCompileValueSpecification extends AbstractTestCompileValueSpecification
 {
-
     @BeforeClass
     public static void setUp()
     {
         setUpRuntime(getFunctionExecution());
-    }
-
-    @After
-    public void cleanRuntime()
-    {
-        runtime.delete("testSource.pure");
-        runtime.delete("exec1.pure");
-        runtime.delete("source1.pure");
-        runtime.delete("source2.pure");
-        runtime.delete("source3.pure");
-        runtime.compile();
     }
 
     protected static FunctionExecution getFunctionExecution()

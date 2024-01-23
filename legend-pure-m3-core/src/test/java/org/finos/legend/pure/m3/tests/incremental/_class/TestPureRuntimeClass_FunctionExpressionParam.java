@@ -14,8 +14,6 @@
 
 package org.finos.legend.pure.m3.tests.incremental._class;
 
-import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
@@ -39,6 +37,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
         runtime.delete("sourceId2.pure");
         runtime.delete("userId.pure");
         runtime.delete("other.pure");
+        runtime.compile();
     }
 
     @Test
@@ -53,7 +52,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
                         .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 93)
                         .createInMemorySource("sourceId.pure", "Class A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
@@ -71,7 +70,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
                         .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 93)
                         .updateSource("sourceId.pure", "Class A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -85,7 +84,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
                         .compile()
                         .createInMemorySource("sourceId.pure", "function f(c:Class<Any>[1]):Any[1]{$c} function k():Nil[0]{f(A);[];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
         Assert.assertEquals("A instance Class\n" +
                 "    classifierGenericType(Property):\n" +
@@ -100,7 +99,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
                 "        Root instance Package\n" +
                 "    referenceUsages(Property):\n" +
                 "        Anonymous_StripedId instance ReferenceUsage\n" +
-                "            [... >0]", this.runtime.getCoreInstance("A").printWithoutDebug("", 0));
+                "            [... >0]", runtime.getCoreInstance("A").printWithoutDebug("", 0));
     }
 
     @Test
@@ -114,7 +113,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
                         .deleteSource("other.pure")
                         .createInMemorySource("other.pure", "Class XX{ok:String[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
     }
 
@@ -130,7 +129,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
                         .createInMemorySource("sourceId.pure", "function test():Nil[0]{^XX(ok='1');[];}" +
                                 "function go():Nil[0]{assert(3 == XX.referenceUsages->size(), |'');[];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
     }
 
@@ -166,7 +165,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
                                 "}"
                         )
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
     }
 
@@ -192,7 +191,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
                 new RuntimeTestScriptBuilder()
                         .updateSource("sourceId.pure", "////Comment\n" + source)
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
@@ -241,7 +240,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
                 new RuntimeTestScriptBuilder()
                         .updateSource("sourceId.pure", "////Comment\n" + source)
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
@@ -298,11 +297,6 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
                 new RuntimeTestScriptBuilder()
                         .updateSource("sourceId.pure", "////Comment\n" + source)
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
-    }
-
-    protected ListIterable<RuntimeVerifier.FunctionExecutionStateVerifier> getAdditionalVerifiers()
-    {
-        return Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of();
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 }

@@ -18,7 +18,6 @@ import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.meta.AbstractTestNewQualifiedProperty;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
-import org.junit.After;
 import org.junit.BeforeClass;
 
 public class TestNewQualifiedPropertyCompiled extends AbstractTestNewQualifiedProperty
@@ -27,13 +26,6 @@ public class TestNewQualifiedPropertyCompiled extends AbstractTestNewQualifiedPr
     public static void setUp()
     {
         setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
-    }
-
-    @After
-    public void cleanRuntime()
-    {
-        runtime.delete("StandardCall.pure");
-        runtime.compile();
     }
 
     protected static FunctionExecution getFunctionExecution()

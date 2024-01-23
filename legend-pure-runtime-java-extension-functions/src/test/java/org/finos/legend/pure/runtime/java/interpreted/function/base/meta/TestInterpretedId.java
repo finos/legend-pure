@@ -17,7 +17,6 @@ package org.finos.legend.pure.runtime.java.interpreted.function.base.meta;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.meta.AbstractTestId;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.junit.After;
 import org.junit.BeforeClass;
 
 public class TestInterpretedId extends AbstractTestId
@@ -26,13 +25,6 @@ public class TestInterpretedId extends AbstractTestId
     public static void setUp()
     {
         setUpRuntime(getFunctionExecution());
-    }
-
-    @After
-    public void cleanRuntime()
-    {
-        runtime.delete("fromString.pure");
-        runtime.compile();
     }
 
     protected static FunctionExecution getFunctionExecution()
