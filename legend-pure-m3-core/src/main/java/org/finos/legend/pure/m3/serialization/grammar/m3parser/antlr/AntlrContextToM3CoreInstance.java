@@ -518,7 +518,7 @@ public class AntlrContextToM3CoreInstance
                 {
                     searchPropertyValues = !(next instanceof Package);
                 }
-                else if (oldSourceInfo.getSourceId().equals(sourceInfo.getSourceId()) && oldSourceInfo.contains(sourceInfo))
+                else if (oldSourceInfo.subsumes(sourceInfo))
                 {
                     this.newSourceInfoMap.add(Tuples.pair(next, new SourceInformation(sourceInfo.getSourceId(), sourceInfo.getStartLine() + offset, sourceInfo.getStartColumn(), sourceInfo.getLine() + offset, sourceInfo.getColumn(), sourceInfo.getEndLine() + offset, sourceInfo.getEndColumn())));
                     searchPropertyValues = true;

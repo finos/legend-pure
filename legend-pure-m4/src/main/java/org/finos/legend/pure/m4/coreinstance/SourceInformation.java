@@ -84,18 +84,30 @@ public class SourceInformation implements Comparable<SourceInformation>
         return appendMessage(new StringBuilder(this.sourceId.length() + 16)).toString();
     }
 
+    /**
+     * This method is deprecated and kept only for backward compatibility. Use {@link #appendMessage} instead.
+     */
     @Deprecated
     public void writeMessage(StringBuilder builder)
     {
         appendMessage(builder);
     }
 
+    /**
+     * This method is deprecated and kept only for backward compatibility. Use {@link #appendMessage} instead.
+     */
     @Deprecated
     public void writeMessage(Appendable appendable) throws IOException
     {
         appendMessage(appendable);
     }
 
+    /**
+     * Append the source information message to the given Appendable, and return the Appendable.
+     *
+     * @param appendable target appendable
+     * @return given appendable
+     */
     public <T extends Appendable> T appendMessage(T appendable)
     {
         SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
@@ -125,6 +137,9 @@ public class SourceInformation implements Comparable<SourceInformation>
         return getM4SourceString(this.sourceId, this.startLine, this.startColumn, this.line, this.column, this.endLine, this.endColumn);
     }
 
+    /**
+     * This method is deprecated and kept only for backward compatibility. Use {@link #appendM4String} instead.
+     */
     @Deprecated
     public void writeM4String(Appendable appendable)
     {
@@ -214,12 +229,31 @@ public class SourceInformation implements Comparable<SourceInformation>
         return Integer.compare(this.endColumn, other.endColumn);
     }
 
+    /**
+     * This method is deprecated and kept only for backward compatibility. Use {@link #subsumes} instead.
+     */
+    @Deprecated
     public boolean contains(SourceInformation contained)
     {
         return (contained.getStartLine() > this.getStartLine() && contained.getEndLine() < this.getEndLine()) ||
                 (contained.getStartLine() == this.getStartLine() && contained.getEndLine() < this.getEndLine() && contained.getStartColumn() >= this.getStartColumn()) ||
                 (contained.getStartLine() > this.getStartLine() && contained.getEndLine() == this.getEndLine() && this.getEndColumn() >= contained.getEndColumn()) ||
                 (contained.getStartLine() == this.getStartLine() && contained.getEndLine() == this.getEndLine() && contained.getStartColumn() >= this.getStartColumn() && this.getEndColumn() >= contained.getEndColumn());
+    }
+
+    /**
+     * Check whether this source information subsumes other. This is true if the source ids are equal, and the start and
+     * end boundaries of other are contained within or equal to the start and end boundaries of this.
+     *
+     * @param other other source information
+     * @return whether this subsumes other
+     */
+    public boolean subsumes(SourceInformation other)
+    {
+        return (other != null) &&
+                this.sourceId.equals(other.sourceId) &&
+                ((this.startLine < other.startLine) || ((this.startLine == other.startLine) && (this.startColumn <= other.startColumn))) &&
+                ((this.endLine > other.endLine) || ((this.endLine == other.endLine) && (this.endColumn >= other.endColumn)));
     }
 
     @Override
@@ -233,12 +267,18 @@ public class SourceInformation implements Comparable<SourceInformation>
         return appendM4SourceInformation(new StringBuilder(sourceId.length() + 32), sourceId, startLine, startColumn, line, column, endLine, endColumn).toString();
     }
 
+    /**
+     * This method is deprecated and kept for backward compatibility. Use {@link #appendM4SourceInformation} instead.
+     */
     @Deprecated
     public static void writeM4SourceInformation(StringBuilder builder, String sourceId, int startLine, int startColumn, int line, int column, int endLine, int endColumn)
     {
         appendM4SourceInformation(builder, sourceId, startLine, startColumn, line, column, endLine, endColumn);
     }
 
+    /**
+     * This method is deprecated and kept for backward compatibility. Use {@link #appendM4SourceInformation} instead.
+     */
     @Deprecated
     public static void writeM4SourceInformation(Appendable appendable, String sourceId, int startLine, int startColumn, int line, int column, int endLine, int endColumn)
     {
