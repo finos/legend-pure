@@ -20,20 +20,33 @@ import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
 
+import java.io.File;
+import java.nio.file.Path;
+import java.util.Objects;
+
 class ClassLoaderDirectoryNode extends ClassLoaderCodeStorageNode
 {
+    private final Path filePath;
     private ImmutableList<CodeStorageNode> childNodes;
     private ImmutableList<ClassLoaderCodeStorageNode> descendantNodes;
 
-    protected ClassLoaderDirectoryNode(String path)
+    protected ClassLoaderDirectoryNode(String path, Path filePath)
     {
         super(path);
+        Objects.requireNonNull(filePath, "filePath");
+        this.filePath = filePath;
     }
 
     @Override
     public boolean isDirectory()
     {
         return true;
+    }
+
+    @Override
+    public long lastModified()
+    {
+        return filePath.toFile().lastModified();
     }
 
     void initializeChildren(RichIterable<ClassLoaderCodeStorageNode> allNodes)
