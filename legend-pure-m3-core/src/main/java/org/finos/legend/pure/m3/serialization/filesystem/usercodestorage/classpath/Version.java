@@ -28,7 +28,7 @@ public class Version
     public static final String MODEL = version("/pure_model_version", "version", DEFAULT_MODEL_VERSION);
     public static final String PLATFORM = EMULATE_VERSION == null ? version("/org/finos/legend/pure/platform.properties", "version", null) : EMULATE_VERSION;
 
-    private static String version(String resourceName, String property, String defaultVersion)
+    protected static String version(String resourceName, String property, String defaultVersion)
     {
         try
         {
