@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -28,8 +27,7 @@ abstract class ClassLoaderFileNode extends ClassLoaderCodeStorageNode
     protected ClassLoaderFileNode(String path, Path filePath)
     {
         super(path);
-        Objects.requireNonNull(filePath, "filePath");
-        this.filePath = filePath;
+        this.filePath = Objects.requireNonNull(filePath, "filePath");
     }
 
     @Override
@@ -50,6 +48,6 @@ abstract class ClassLoaderFileNode extends ClassLoaderCodeStorageNode
     @Override
     public long lastModified()
     {
-        return filePath.toFile().lastModified();
+        return this.filePath.toFile().lastModified();
     }
 }

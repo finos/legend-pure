@@ -24,7 +24,6 @@ import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Objects;
 import java.util.jar.JarEntry;
 
 class ClassLoaderURLFileNode extends ClassLoaderFileNode
@@ -34,27 +33,13 @@ class ClassLoaderURLFileNode extends ClassLoaderFileNode
     ClassLoaderURLFileNode(String path, URL url, Path filePath)
     {
         super(path, filePath);
-        Objects.requireNonNull(filePath, "filePath");
         this.url = url;
-    }
-
-    private static Path urlToPath(URL url)
-    {
-        try
-        {
-            return Paths.get(url.toURI());
-        }
-        catch (URISyntaxException e)
-        {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
     protected void writeToStringMessage(StringBuilder message)
     {
-        message.append(" url=");
-        message.append(this.url);
+        message.append(" url=").append(this.url);
     }
 
     @Override
