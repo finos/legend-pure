@@ -175,7 +175,7 @@ public class FileTools
     {
         directory = Arrays.asList(directory)
                 .stream()
-                .filter(x -> x == null)
+                .filter(x -> x != null)
                 .collect(Collectors.toList()).toArray(new Path[]{});
 
         if (directory.length == 0)
@@ -208,7 +208,7 @@ public class FileTools
         final AtomicLong minModifiedTime = new AtomicLong(0);
         final AtomicReference<Path> minModifiedPath = new AtomicReference<>();
 
-        if (Files.exists(directory))
+        if (directory != null && Files.exists(directory))
         {
             Files.walkFileTree(Paths.get(directory.toAbsolutePath().toString()), new SimpleFileVisitor<Path>()
             {
