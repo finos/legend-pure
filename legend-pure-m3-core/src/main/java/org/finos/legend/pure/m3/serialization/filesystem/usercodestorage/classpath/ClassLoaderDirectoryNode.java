@@ -15,23 +15,19 @@
 package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.list.ImmutableList;
+import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
-
-import java.nio.file.Path;
-import java.util.Objects;
 
 class ClassLoaderDirectoryNode extends ClassLoaderCodeStorageNode
 {
-    private final Path filePath;
     private ImmutableList<CodeStorageNode> childNodes;
     private ImmutableList<ClassLoaderCodeStorageNode> descendantNodes;
 
-    protected ClassLoaderDirectoryNode(String path, Path filePath)
+    protected ClassLoaderDirectoryNode(String path)
     {
         super(path);
-        this.filePath = Objects.requireNonNull(filePath, "filePath");
     }
 
     @Override
@@ -40,22 +36,20 @@ class ClassLoaderDirectoryNode extends ClassLoaderCodeStorageNode
         return true;
     }
 
-    @Override
-    public long lastModified()
-    {
-        return filePath.toFile().lastModified();
-    }
-
     void initializeChildren(RichIterable<ClassLoaderCodeStorageNode> allNodes)
     {
         if (this.childNodes == null)
         {
             final String prefix = getPath() + "/";
             final int prefixLength = prefix.length();
-            this.childNodes = Lists.immutable.withAll(allNodes.select(node ->
+            this.childNodes = Lists.immutable.<CodeStorageNode>withAll(allNodes.select(new Predicate<ClassLoaderCodeStorageNode>()
             {
-                String path = node.getPath();
-                return path.startsWith(prefix) && (path.length() > prefixLength) && (path.indexOf('/', prefixLength) == -1);
+                @Override
+                public boolean accept(ClassLoaderCodeStorageNode node)
+                {
+                    String path = node.getPath();
+                    return path.startsWith(prefix) && (path.length() > prefixLength) && (path.indexOf('/', prefixLength) == -1);
+                }
             }));
         }
     }
@@ -71,10 +65,14 @@ class ClassLoaderDirectoryNode extends ClassLoaderCodeStorageNode
         {
             final String prefix = getPath() + "/";
             final int prefixLength = prefix.length();
-            this.descendantNodes = Lists.immutable.withAll(allNodes.select(node ->
+            this.descendantNodes = Lists.immutable.withAll(allNodes.select(new Predicate<ClassLoaderCodeStorageNode>()
             {
-                String path = node.getPath();
-                return path.startsWith(prefix) && (path.length() > prefixLength);
+                @Override
+                public boolean accept(ClassLoaderCodeStorageNode node)
+                {
+                    String path = node.getPath();
+                    return path.startsWith(prefix) && (path.length() > prefixLength);
+                }
             }));
         }
     }

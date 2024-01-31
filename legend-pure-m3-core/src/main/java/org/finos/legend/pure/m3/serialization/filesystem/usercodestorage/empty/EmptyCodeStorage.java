@@ -188,11 +188,5 @@ public class EmptyCodeStorage extends AbstractMultipleRepositoryCodeStorage
         {
             return CodeStorageNodeStatus.NORMAL;
         }
-
-        @Override
-        public long lastModified()
-        {
-            return 0;
-        }
     }
 }

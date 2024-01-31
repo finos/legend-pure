@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
 
 class ClassLoaderPathFileNode extends ClassLoaderFileNode
 {
@@ -26,14 +25,16 @@ class ClassLoaderPathFileNode extends ClassLoaderFileNode
 
     ClassLoaderPathFileNode(String path, Path filePath)
     {
-        super(path, filePath);
-        this.filePath = Objects.requireNonNull(filePath, "filePath");
+        super(path);
+        this.filePath = filePath;
     }
 
     @Override
     protected void writeToStringMessage(StringBuilder message)
     {
-        message.append(" path='").append(this.filePath).append('\'');
+        message.append(" path='");
+        message.append(this.filePath);
+        message.append('\'');
     }
 
     @Override
