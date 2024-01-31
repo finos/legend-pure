@@ -113,7 +113,7 @@ public class PureJarSerializer
         for (String repositoryName : repositoriesToSerialize.collect(CodeRepository::getName))
         {
             Path outputFile = outputDirectory.resolve("pure-" + repositoryName + "." + ARCHIVE_FILE_EXTENSION);
-            log.info("      Writing par: " + outputFile);
+            log.info("      Writing " + outputFile);
             try (OutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(outputFile)))
             {
                 BinaryModelRepositorySerializer.serialize(outputStream, platformVersion, modelVersion, repositoryName, runtime);

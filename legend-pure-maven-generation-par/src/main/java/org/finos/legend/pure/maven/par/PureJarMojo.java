@@ -53,8 +53,14 @@ public class PureJarMojo extends AbstractMojo
     {
         try
         {
-            PureJarGenerator.doGeneratePAR(
-                    new PureJarGenerator.ParGenerateParams(this.repositories, this.excludedRepositories, this.extraRepositories, this.purePlatformVersion, this.modelVersion, this.sourceDirectory, this.outputDirectory, new Log()
+            PureJarGenerator.doGeneratePAR(this.repositories,
+                    this.excludedRepositories,
+                    this.extraRepositories,
+                    this.purePlatformVersion,
+                    this.modelVersion,
+                    this.sourceDirectory,
+                    this.outputDirectory,
+                    new Log()
                     {
                         @Override
                         public void info(String txt)
@@ -67,7 +73,7 @@ public class PureJarMojo extends AbstractMojo
                         {
                             getLog().error(txt, e);
                         }
-                    }));
+                    });
         }
         catch (Exception e)
         {

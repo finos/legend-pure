@@ -30,16 +30,17 @@ class ClassLoaderURLFileNode extends ClassLoaderFileNode
 {
     private final URL url;
 
-    ClassLoaderURLFileNode(String path, URL url, Path filePath)
+    ClassLoaderURLFileNode(String path, URL url)
     {
-        super(path, filePath);
+        super(path);
         this.url = url;
     }
 
     @Override
     protected void writeToStringMessage(StringBuilder message)
     {
-        message.append(" url=").append(this.url);
+        message.append(" url=");
+        message.append(this.url);
     }
 
     @Override
