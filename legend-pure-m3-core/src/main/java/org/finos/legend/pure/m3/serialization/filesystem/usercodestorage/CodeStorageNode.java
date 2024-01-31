@@ -73,8 +73,5 @@ public interface CodeStorageNode
 
     CodeStorageNodeStatus getStatus();
 
-    default long lastModified()
-    {
-        return 0;
-    }
+    long lastModified();
 }
