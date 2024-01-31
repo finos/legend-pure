@@ -49,13 +49,9 @@ abstract class ClassLoaderCodeStorageNode implements CodeStorageNode
     @Override
     public String toString()
     {
-        StringBuilder builder = new StringBuilder();
-        builder.append('<');
-        builder.append(getClass().getSimpleName());
-        builder.append(" path='");
-        builder.append(this.path);
-        builder.append("' directory=");
-        builder.append(isDirectory());
+        StringBuilder builder = new StringBuilder().append('<').append(getClass().getSimpleName())
+                .append(" path='").append(this.path)
+                .append("' directory=").append(isDirectory());
         writeToStringMessage(builder);
         builder.append('>');
         return builder.toString();

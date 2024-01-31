@@ -27,16 +27,13 @@ class ClassLoaderPathFileNode extends ClassLoaderFileNode
     ClassLoaderPathFileNode(String path, Path filePath)
     {
         super(path, filePath);
-        Objects.requireNonNull(filePath, "filePath");
-        this.filePath = filePath;
+        this.filePath = Objects.requireNonNull(filePath, "filePath");
     }
 
     @Override
     protected void writeToStringMessage(StringBuilder message)
     {
-        message.append(" path='");
-        message.append(this.filePath);
-        message.append('\'');
+        message.append(" path='").append(this.filePath).append('\'');
     }
 
     @Override

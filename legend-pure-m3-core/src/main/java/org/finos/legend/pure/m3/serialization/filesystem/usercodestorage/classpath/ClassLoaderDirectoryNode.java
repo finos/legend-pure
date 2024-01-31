@@ -15,12 +15,10 @@
 package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ImmutableList;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.Objects;
 
@@ -33,8 +31,7 @@ class ClassLoaderDirectoryNode extends ClassLoaderCodeStorageNode
     protected ClassLoaderDirectoryNode(String path, Path filePath)
     {
         super(path);
-        Objects.requireNonNull(filePath, "filePath");
-        this.filePath = filePath;
+        this.filePath = Objects.requireNonNull(filePath, "filePath");
     }
 
     @Override
@@ -55,14 +52,10 @@ class ClassLoaderDirectoryNode extends ClassLoaderCodeStorageNode
         {
             final String prefix = getPath() + "/";
             final int prefixLength = prefix.length();
-            this.childNodes = Lists.immutable.<CodeStorageNode>withAll(allNodes.select(new Predicate<ClassLoaderCodeStorageNode>()
+            this.childNodes = Lists.immutable.withAll(allNodes.select(node ->
             {
-                @Override
-                public boolean accept(ClassLoaderCodeStorageNode node)
-                {
-                    String path = node.getPath();
-                    return path.startsWith(prefix) && (path.length() > prefixLength) && (path.indexOf('/', prefixLength) == -1);
-                }
+                String path = node.getPath();
+                return path.startsWith(prefix) && (path.length() > prefixLength) && (path.indexOf('/', prefixLength) == -1);
             }));
         }
     }
@@ -78,14 +71,10 @@ class ClassLoaderDirectoryNode extends ClassLoaderCodeStorageNode
         {
             final String prefix = getPath() + "/";
             final int prefixLength = prefix.length();
-            this.descendantNodes = Lists.immutable.withAll(allNodes.select(new Predicate<ClassLoaderCodeStorageNode>()
+            this.descendantNodes = Lists.immutable.withAll(allNodes.select(node ->
             {
-                @Override
-                public boolean accept(ClassLoaderCodeStorageNode node)
-                {
-                    String path = node.getPath();
-                    return path.startsWith(prefix) && (path.length() > prefixLength);
-                }
+                String path = node.getPath();
+                return path.startsWith(prefix) && (path.length() > prefixLength);
             }));
         }
     }
