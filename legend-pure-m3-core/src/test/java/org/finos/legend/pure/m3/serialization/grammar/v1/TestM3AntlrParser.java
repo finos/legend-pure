@@ -19,6 +19,7 @@ import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunctionInstance;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
 import org.finos.legend.pure.m3.statelistener.StatsStateListener;
+import org.finos.legend.pure.m3.statelistener.VoidM3M4StateListener;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.Assert;
@@ -58,7 +59,7 @@ public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
                 "               title + ' ' +  this.firstName + ' ' + this.lastName" +
                 "          }: String[1];" +
                 "      }";
-        new M3AntlrParser(null).parse(imports + code, "test", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
+        new M3AntlrParser(null).parse(imports + code, "test1", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
     }
 
     @Test
@@ -83,7 +84,7 @@ public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
                 "   //filterByBatchIDs(batchIds: Float[*]) { and ($batchIds->map(batchId|$batchId == $this.vlfBatchIdIn)); } : Boolean[1];\n" +
                 "   filterByProcessingTime(processingTime: Date[1]) { ($processingTime >= $this.inZ) && ($processingTime <= $this.outZ); } : Boolean[1];\n" +
                 "}";
-        new M3AntlrParser(null).parse(code, "test", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
+        new M3AntlrParser(null).parse(code, "test2", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
     }
 
     @Test
@@ -174,7 +175,7 @@ public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
                 "        if($substitute->isEmpty(), |$store, |$substitute->toOne());\n" +
                 "    }:Store[1];\n" +
                 "}";
-        new M3AntlrParser(null).parse(code, "test", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
+        new M3AntlrParser(null).parse(code, "test3", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
     }
 
     @Test
@@ -189,7 +190,7 @@ public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
                 "   referenceUsages : ReferenceUsage[*];\n" +
                 "   name : String[0..1];\n" +
                 "}";
-        new M3AntlrParser(null).parse(code, "test", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
+        new M3AntlrParser(null).parse(code, "test4", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
     }
 
 
@@ -204,8 +205,41 @@ public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
                 "               title + ' ' +  this.firstName + ' ' + this.lastName" +
                 "          }: String[1];" +
                 "      }";
-        new M3AntlrParser(null).parse(code, "test", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
+        new M3AntlrParser(null).parse(code, "test5", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
     }
+
+    @Test
+    public void testClassWithPropertiesHavingSpaces()
+    {
+        String code = "Class Person4\n" +
+                "      {\n" +
+                "         'first Name': String[1];\n" +
+                "         lastName: String[1];\n" +
+                "         fullName(title: String[*]) {" +
+                "               title + ' ' +  this.firstName + ' ' + this.lastName" +
+                "          }: String[1];" +
+                "      }";
+        new M3AntlrParser(null).parse(code, "test6", true, 0, repository, this.newInstances, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context, 0, null);
+    }
+
+    @Test
+    public void testAccessingPropertyWithSpace()
+    {
+        String code = "Class Person5\n" +
+                "      {\n" +
+                "         'first Name': String[1];\n" +
+                "         lastName: String[1];\n" +
+                "         fullName(title: String[*]) {" +
+                "               title + ' ' +  this.firstName + ' ' + this.lastName" +
+                "          }: String[1];\n" +
+                "      }\n" +
+                "      function myT():Person3[*]" +
+                "      {" +
+                "           Person5.all()->filter(p|$p.'first name' == 'ok')" +
+                "      }";
+        new M3AntlrParser(null).parse(code, "test7", true, 0, repository, this.newInstances, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context, 0, null);
+    }
+
 
     @Test
     public void testFunctionDefinition()
@@ -222,7 +256,7 @@ public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
                 "      {" +
                 "           'hello world'" +
                 "      }";
-        new M3AntlrParser(null).parse(code, "test", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
+        new M3AntlrParser(null).parse(code, "test8", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
     }
 
     @Test
@@ -505,7 +539,7 @@ public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
                 "            | datamarts::dm::mapping::ParUpMapping,\n" +
                 "            | datamarts::dm::mapping::ParUnionMapping))\n" +
                 "}";
-        new M3AntlrParser(null).parse(code, "test", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
+        new M3AntlrParser(null).parse(code, "test9", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
     }
 
     @Test
@@ -553,7 +587,7 @@ public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
                 "    {JsonSerializationInfo.enumValue = 'isEmpty'} IsEmpty, \n" +
                 "    {JsonSerializationInfo.enumValue = 'isNotEmpty'} IsNotEmpty \n" +
                 "}\n";
-        new M3AntlrParser(null).parse(code, "test", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
+        new M3AntlrParser(null).parse(code, "test10", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
     }
 
     @Test
@@ -586,7 +620,7 @@ public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
                 "    test_maturity_advocate: GsPerson[1];\n" +
                 "    test_maturity_advocate_products: Product[*];\n" +
                 "}\n";
-        new M3AntlrParser(null).parse(code, "test", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
+        new M3AntlrParser(null).parse(code, "test11", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
     }
 
     @Test
@@ -598,24 +632,24 @@ public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
                 "    stereotypes: [ignore, execute];\n" +
                 "    tags: [enumValue, propertyName];\n" +
                 "}\n";
-        new M3AntlrParser(null).parse(code, "test", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
+        new M3AntlrParser(null).parse(code, "test12", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
         code = "\n" +
                 "Profile apps::global::dsb::mapping::json::JsonSerializationInfoST\n" +
                 "{\n" +
                 "    stereotypes: [ignore, execute];\n" +
                 "}\n";
-        new M3AntlrParser(null).parse(code, "test", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
+        new M3AntlrParser(null).parse(code, "test13", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
         code = "\n" +
                 "Profile apps::global::dsb::mapping::json::JsonSerializationInfoTO\n" +
                 "{\n" +
                 "    tags: [enumValue, propertyName];\n" +
                 "}\n";
-        new M3AntlrParser(null).parse(code, "test", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
+        new M3AntlrParser(null).parse(code, "test14", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
         code = "\n" +
                 "Profile apps::global::dsb::mapping::json::JsonSerializationInfoBlank\n" +
                 "{\n" +
                 "}\n";
-        new M3AntlrParser(null).parse(code, "test", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
+        new M3AntlrParser(null).parse(code, "test15", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
     }
 
     @Test
@@ -628,7 +662,7 @@ public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
                 "native function meta::pure::functions::date::date(year:Integer[1], month:Integer[1], day:Integer[1], hour:Integer[1]):Date[1];\n" +
                 "native function meta::pure::functions::date::date(year:Integer[1], month:Integer[1], day:Integer[1], hour:Integer[1], minute:Integer[1]):Date[1];\n" +
                 "native function meta::pure::functions::date::date(year:Integer[1], month:Integer[1], day:Integer[1], hour:Integer[1], minute:Integer[1], second:Number[1]):Date[1];\n";
-        new M3AntlrParser(null).parse(code, "test", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
+        new M3AntlrParser(null).parse(code, "test16", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
     }
 
     @Test
@@ -641,7 +675,7 @@ public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
                         "   stereotypes : [Dummy];" +
                         "}\n" +
                         "native function <<dummyProfile.Dummy>> meta::pure::functions::date::date(year:Integer[1]):Date[1];\n";
-        new M3AntlrParser(null).parse(code, "test", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
+        new M3AntlrParser(null).parse(code, "test17", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
         Assert.assertEquals(1, this.newInstances.selectInstancesOf(NativeFunctionInstance.class).getOnly()._stereotypesCoreInstance().size());
     }
 
@@ -649,6 +683,6 @@ public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
     public void testInstanceParsingWithRootPackageReference()
     {
         String code = "^meta::pure::functions::lang::KeyValue(key='pkg', value=::)";
-        new M3AntlrParser(null).parse(code, "test", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
+        new M3AntlrParser(null).parse(code, "test18", true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
     }
 }

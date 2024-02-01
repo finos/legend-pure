@@ -72,6 +72,11 @@
                 <dependencies>
                     <dependency>
                         <groupId>org.finos.legend.pure</groupId>
+                        <artifactId>legend-pure-m2-dsl-store-pure</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.finos.legend.pure</groupId>
                         <artifactId>legend-pure-m2-functions-pure</artifactId>
                         <version>${project.version}</version>
                     </dependency>
@@ -97,8 +102,7 @@
                                 <argument>${project.build.directory}/generated-sources/</argument>
                                 <argument>Mapping</argument>
                                 <argument>
-                                    /platform_dsl_mapping/grammar/mapping.pure,
-                                    /platform_dsl_mapping/grammar/store.pure
+                                    /platform_dsl_mapping/grammar/mapping.pure
                                 </argument>
                             </arguments>
                         </configuration>
@@ -118,6 +122,10 @@
             <artifactId>legend-pure-m3-core</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-m2-dsl-store-pure</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-m2-functions-pure</artifactId>

@@ -1,0 +1,51 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::store::set::*;
+import meta::pure::store::*;
+
+Class meta::pure::store::Store extends PackageableElement
+{
+    includes : Store[*];
+}
+
+Class meta::pure::store::set::SetBasedStore extends meta::pure::store::Store
+{
+    namespaces : Namespace[*];
+}
+
+Class meta::pure::store::set::Namespace
+{
+    relations : SetRelation[*];
+}
+
+Class meta::pure::store::set::SetRelation
+{
+    setColumns : SetColumn[*];
+}
+
+Class meta::pure::store::set::SetColumn
+{
+}
+
+Class meta::pure::metamodel::valuespecification::StoreValueSpecificationContext extends meta::pure::metamodel::valuespecification::ValueSpecificationContext
+{
+   store: meta::pure::store::Store[1];
+}
+
+Class meta::pure::store::RelationStoreAccessor<T> extends meta::pure::metamodel::relation::RelationElementAccessor<T>
+{
+   store : Store[1];
+   path : String[*];
+}

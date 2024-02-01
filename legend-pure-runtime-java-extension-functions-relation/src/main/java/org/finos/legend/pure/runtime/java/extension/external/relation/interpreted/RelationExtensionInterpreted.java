@@ -41,6 +41,7 @@ public class RelationExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("concatenate_Relation_1__Relation_1__Relation_1_", Concatenate::new),
                 Tuples.pair("drop_Relation_1__Integer_1__Relation_1_", Drop::new),
                 Tuples.pair("extend_Relation_1__FuncColSpec_1__Relation_1_", Extend::new),
+                Tuples.pair("extend_Relation_1__FuncColSpecArray_1__Relation_1_", Extend::new),
                 Tuples.pair("filter_Relation_1__Function_1__Relation_1_", Filter::new),
                 Tuples.pair("map_Relation_1__Function_1__V_MANY_", Map::new),
                 Tuples.pair("size_Relation_1__Integer_1_", Size::new),
@@ -51,8 +52,13 @@ public class RelationExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("join_Relation_1__Relation_1__JoinKind_1__Function_1__Relation_1_", Join::new),
                 Tuples.pair("distinct_Relation_1__ColSpecArray_1__Relation_1_", Distinct::new),
                 Tuples.pair("groupBy_Relation_1__ColSpecArray_1__AggColSpec_1__Relation_1_", GroupBy::new),
+                Tuples.pair("groupBy_Relation_1__ColSpec_1__AggColSpec_1__Relation_1_", GroupBy::new),
+                Tuples.pair("groupBy_Relation_1__ColSpec_1__AggColSpecArray_1__Relation_1_", GroupBy::new),
+                Tuples.pair("groupBy_Relation_1__ColSpecArray_1__AggColSpecArray_1__Relation_1_", GroupBy::new),
                 Tuples.pair("project_C_MANY__FuncColSpecArray_1__Relation_1_", Project::new),
-                Tuples.pair("columns_Relation_1__Column_MANY_", Columns::new)
+                Tuples.pair("columns_Relation_1__Column_MANY_", Columns::new),
+                Tuples.pair("select_Relation_1__ColSpec_1__Relation_1_", Select::new),
+                Tuples.pair("select_Relation_1__ColSpecArray_1__Relation_1_", Select::new)
         ));
     }
 

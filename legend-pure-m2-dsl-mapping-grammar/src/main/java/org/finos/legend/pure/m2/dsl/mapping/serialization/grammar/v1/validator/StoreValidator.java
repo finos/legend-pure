@@ -20,6 +20,7 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.set.mutable.UnifiedSet;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
+import org.finos.legend.pure.m2.dsl.store.M2StorePaths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.store.Store;
@@ -36,7 +37,7 @@ public class StoreValidator implements MatchRunner<Store>
     @Override
     public String getClassName()
     {
-        return M2MappingPaths.Store;
+        return M2StorePaths.Store;
     }
 
     @Override

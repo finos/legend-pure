@@ -16,7 +16,7 @@
 package org.finos.legend.pure.m3.navigation.relation;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.factory.Bags;
+import org.eclipse.collections.api.bag.Bag;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
@@ -66,6 +66,13 @@ public class _RelationType
 
         cols.forEach(c -> _Column.updateSource((Column<?, ?>) c, source));
 
+        Bag<String> duplicates = cols.collect(c -> ((Column<?, ?>) c)._name()).toBag().selectDuplicates();
+        if (!duplicates.isEmpty())
+        {
+            throw new PureCompilationException("The relation contains duplicates: " + Sets.mutable.withAll(duplicates));
+        }
+
+
         // Ensure T is set to parent
         GenericType classifierGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(pureSourceInformation, M3Paths.GenericType);
         classifierGenericType._rawType((Type) _Package.getByUserPath(M3Paths.RelationType, processorSupport));
@@ -79,13 +86,6 @@ public class _RelationType
         anyG._rawType((Class<?>) processorSupport.package_getByUserPath(M3Paths.Any));
         generalization._general(anyG);
         newRelationType._generalizationsAdd(generalization);
-
-        // Check duplicate names
-        MutableSet<String> potentialDups = Sets.mutable.withAll(Bags.mutable.withAll(cols.collect(c -> c.getValueForMetaPropertyToOne("name").getName())).selectDuplicates());
-        if (!potentialDups.isEmpty())
-        {
-            throw new PureCompilationException("The relation contains duplicates: " + potentialDups);
-        }
 
         // Set columns
         newRelationType.setKeyValues(Lists.mutable.with("columns"), cols);
@@ -161,5 +161,37 @@ public class _RelationType
         return columns1.zip(columns2).injectInto(true, (a, b) -> a &&
                 (b.getOne()._nameWildCard() || b.getTwo()._nameWildCard() || b.getOne()._name().equals(b.getTwo()._name())) &&
                 org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericCompatibleWith(_Column.getColumnType(b.getOne()), _Column.getColumnType(b.getTwo()), processorSupport));
+    }
+
+    public static GenericType merge(GenericType existingGenericType, GenericType genericTypeCopy, boolean isCovariant, ProcessorSupport processorSupport)
+    {
+        MutableList<Column<?, ?>> columns1 = (MutableList<Column<?, ?>>) ((RelationType<?>) existingGenericType.getValueForMetaPropertyToOne("rawType"))._columns().toList();
+        MutableList<Column<?, ?>> columns2 = (MutableList<Column<?, ?>>) ((RelationType<?>) genericTypeCopy.getValueForMetaPropertyToOne("rawType"))._columns().toList();
+
+        GenericType res = (GenericType) processorSupport.newGenericType(null, existingGenericType, true);
+        res._rawType(
+                _RelationType.build(
+                        columns1.zip(columns2).collect(c ->
+                        {
+                            boolean wildcard = c.getOne()._nameWildCard() && c.getTwo()._nameWildCard();
+                            if (!c.getOne()._nameWildCard() && !c.getTwo()._nameWildCard())
+                            {
+                                if (!c.getOne()._name().equals(c.getTwo()._name()))
+                                {
+                                    throw new PureCompilationException("Incompatible types " + _RelationType.print((RelationType<?>) existingGenericType.getValueForMetaPropertyToOne("rawType"), processorSupport) + " && " +
+                                            _RelationType.print((RelationType<?>) genericTypeCopy.getValueForMetaPropertyToOne("rawType"), processorSupport));
+                                }
+                            }
+                            String cName = c.getOne()._nameWildCard() ? c.getTwo()._name() : c.getOne()._name();
+                            GenericType a = _Column.getColumnType(c.getOne());
+                            GenericType b = _Column.getColumnType(c.getTwo());
+                            GenericType merged = a._rawType() == null && b._rawType() == null ? a : (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(Lists.mutable.with(a, b), isCovariant, false, genericTypeCopy.getSourceInformation(), processorSupport);
+                            return _Column.getColumnInstance(cName, wildcard, res, merged, null, processorSupport);
+                        }),
+                        existingGenericType.getValueForMetaPropertyToOne("rawType").getSourceInformation(),
+                        processorSupport
+                )
+        );
+        return res;
     }
 }

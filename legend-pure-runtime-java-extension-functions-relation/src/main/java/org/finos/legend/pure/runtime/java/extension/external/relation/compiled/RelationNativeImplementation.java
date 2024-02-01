@@ -19,6 +19,7 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function2;
 import org.eclipse.collections.api.block.function.Function3;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
@@ -104,6 +105,18 @@ public class RelationNativeImplementation
         return new TDSContainer((TestTDSCompiled) RelationNativeImplementation.getTDS(r).rename(old._name(), aNew._name()), ps);
     }
 
+    public static <T> Relation<? extends Object> select(Relation<? extends T> r, ColSpec<?> col, ExecutionSupport es)
+    {
+        ProcessorSupport ps = ((CompiledExecutionSupport) es).getProcessorSupport();
+        return new TDSContainer((TestTDSCompiled) RelationNativeImplementation.getTDS(r).select(Sets.mutable.with(col._name())), ps);
+    }
+
+    public static <T> Relation<? extends Object> select(Relation<? extends T> r, ColSpecArray<?> cols, ExecutionSupport es)
+    {
+        ProcessorSupport ps = ((CompiledExecutionSupport) es).getProcessorSupport();
+        return new TDSContainer((TestTDSCompiled) RelationNativeImplementation.getTDS(r).select(Sets.mutable.withAll(cols._names())), ps);
+    }
+
     public static <T> Relation<? extends T> concatenate(Relation<? extends T> rel1, Relation<? extends T> rel2, ExecutionSupport es)
     {
         ProcessorSupport ps = ((CompiledExecutionSupport) es).getProcessorSupport();
@@ -125,42 +138,55 @@ public class RelationNativeImplementation
         return new TDSContainer((TestTDSCompiled) tds.drop(list), ps);
     }
 
-    public static <T, Z> Relation<? extends CoreInstance> extend(Relation<? extends T> rel, FuncColSpecArray f, ExecutionSupport es)
+    public static class ColFuncSpecTrans
     {
-        return null;
+        public String newColName;
+        public Function2 func;
+        public String columnType;
+
+        public ColFuncSpecTrans(String newColName, Function2 func, String columnType)
+        {
+            this.newColName = newColName;
+            this.func = func;
+            this.columnType = columnType;
+        }
     }
 
-    public static <T> Relation<? extends Object> extend(Relation<? extends T> rel, String s, Function2 pureFunction, String columnType, ExecutionSupport es)
+    public static <T> Relation<? extends Object> extend(Relation<? extends T> rel, MutableList<ColFuncSpecTrans> colFuncSpecTrans, ExecutionSupport es)
     {
         ProcessorSupport ps = ((CompiledExecutionSupport) es).getProcessorSupport();
-
         TestTDSCompiled tds = RelationNativeImplementation.getTDS(rel);
+        TestTDSCompiled t = colFuncSpecTrans.injectInto(tds, (a, b) -> performExtend(b, es, a, ps));
+        return new TDSContainer(t, ps);
+    }
 
-        switch (columnType)
+    private static TestTDSCompiled performExtend(ColFuncSpecTrans colFuncSpecTrans, ExecutionSupport es, TestTDSCompiled tds, ProcessorSupport ps)
+    {
+        switch (colFuncSpecTrans.columnType)
         {
             case "String":
                 MutableList<String> res = Lists.mutable.empty();
                 for (int i = 0; i < tds.getRowCount(); i++)
                 {
-                    res.add((String) pureFunction.value(new RowContainer(tds, i), es));
+                    res.add((String) colFuncSpecTrans.func.value(new RowContainer(tds, i), es));
                 }
-                return new TDSContainer((TestTDSCompiled) tds.addColumn(s, DataType.STRING, res.toArray(new String[0])), ps);
+                return (TestTDSCompiled) tds.addColumn(colFuncSpecTrans.newColName, DataType.STRING, res.toArray(new String[0]));
             case "Integer":
                 int[] resultInt = new int[(int) tds.getRowCount()];
                 for (int i = 0; i < tds.getRowCount(); i++)
                 {
-                    resultInt[i] = (int) (long) pureFunction.value(new RowContainer(tds, i), es);
+                    resultInt[i] = (int) (long) colFuncSpecTrans.func.value(new RowContainer(tds, i), es);
                 }
-                return new TDSContainer((TestTDSCompiled) tds.addColumn(s, DataType.INT, resultInt), ps);
+                return (TestTDSCompiled) tds.addColumn(colFuncSpecTrans.newColName, DataType.INT, resultInt);
             case "Float":
                 double[] resultDouble = new double[(int) tds.getRowCount()];
                 for (int i = 0; i < tds.getRowCount(); i++)
                 {
-                    resultDouble[i] = (double) pureFunction.value(new RowContainer(tds, i), es);
+                    resultDouble[i] = (double) colFuncSpecTrans.func.value(new RowContainer(tds, i), es);
                 }
-                return new TDSContainer((TestTDSCompiled) tds.addColumn(s, DataType.DOUBLE, resultDouble), ps);
+                return (TestTDSCompiled) tds.addColumn(colFuncSpecTrans.newColName, DataType.DOUBLE, resultDouble);
         }
-        throw new RuntimeException(columnType + " not supported yet");
+        throw new RuntimeException(colFuncSpecTrans.columnType + " not supported yet");
     }
 
     public static <T, V> Relation<? extends Object> join(Relation<? extends T> rel1, Relation<? extends V> rel2, Enum joinKind, Function3 pureFunction, ExecutionSupport es)
@@ -195,36 +221,66 @@ public class RelationNativeImplementation
         return new TDSContainer((TestTDSCompiled) tds1.sort(collect.collect(c -> new SortInfo(c.getTwo(), SortDirection.valueOf(c.getOne()._name()))).toList()).getOne(), ps);
     }
 
-    public static <T> Relation<? extends Object> groupBy(Relation<? extends T> rel, ColSpecArray<?> cols, String newColName, Function2 map, Function2 reduce, String reduceType, ExecutionSupport es)
+    public static class AggColSpecTrans
+    {
+        public String newColName;
+        public Function2 map;
+        public Function2 reduce;
+        public String reduceType;
+
+        public AggColSpecTrans(String newColName, Function2 map, Function2 reduce, String reduceType)
+        {
+            this.newColName = newColName;
+            this.map = map;
+            this.reduce = reduce;
+            this.reduceType = reduceType;
+        }
+    }
+
+    public static <T> Relation<? extends Object> groupBy(Relation<? extends T> rel, ColSpec<?> cols, MutableList<AggColSpecTrans> aggColSpecTrans, ExecutionSupport es)
+    {
+        return groupBy(rel, Lists.mutable.with(cols._name()), aggColSpecTrans, es);
+    }
+
+    public static <T> Relation<? extends Object> groupBy(Relation<? extends T> rel, ColSpecArray<?> cols, MutableList<AggColSpecTrans> aggColSpecTransAll, ExecutionSupport es)
+    {
+        return groupBy(rel, Lists.mutable.withAll(cols._names()), aggColSpecTransAll, es);
+    }
+
+    private static <T> Relation<? extends Object> groupBy(Relation<? extends T> rel, MutableList<String> cols, MutableList<AggColSpecTrans> aggColSpecTransAll, ExecutionSupport es)
     {
         ProcessorSupport ps = ((CompiledExecutionSupport) es).getProcessorSupport();
-
         TestTDSCompiled tds = RelationNativeImplementation.getTDS(rel);
 
-        Pair<TestTDS, MutableList<Pair<Integer, Integer>>> sortRes = tds.sort(cols._names().collect(name -> new SortInfo(name, SortDirection.ASC)).toList());
+        Pair<TestTDS, MutableList<Pair<Integer, Integer>>> sortRes = tds.sort(cols.collect(name -> new SortInfo(name, SortDirection.ASC)).toList());
 
         int size = sortRes.getTwo().size();
 
         MutableSet<String> columnsToRemove = tds.getColumnNames().clone().toSet();
-        columnsToRemove.removeAll(cols._names().toSet());
-        TestTDSCompiled finalTDS = null;
-        switch (reduceType)
+        columnsToRemove.removeAll(cols.toSet());
+
+        TestTDSCompiled finalTDS = (TestTDSCompiled) sortRes.getOne()._distinct(sortRes.getTwo()).removeColumns(columnsToRemove);
+
+        for (AggColSpecTrans aggColSpecTrans : aggColSpecTransAll)
         {
-            case "String":
-                String[] finalRes = new String[size];
-                performMapReduce(map, reduce, es, size, sortRes, (o, j) -> finalRes[j] = (String) o);
-                finalTDS = (TestTDSCompiled) sortRes.getOne()._distinct(sortRes.getTwo()).addColumn(newColName, DataType.STRING, finalRes).removeColumns(columnsToRemove);
-                break;
-            case "Integer":
-                int[] finalResInt = new int[size];
-                performMapReduce(map, reduce, es, size, sortRes, (o, j) -> finalResInt[j] = (int) (long) o);
-                finalTDS = (TestTDSCompiled) sortRes.getOne()._distinct(sortRes.getTwo()).addColumn(newColName, DataType.INT, finalResInt).removeColumns(columnsToRemove);
-                break;
-            case "Float":
-                double[] finalResDouble = new double[size];
-                performMapReduce(map, reduce, es, size, sortRes, (o, j) -> finalResDouble[j] = (double) o);
-                finalTDS = (TestTDSCompiled) sortRes.getOne()._distinct(sortRes.getTwo()).addColumn(newColName, DataType.FLOAT, finalResDouble).removeColumns(columnsToRemove);
-                break;
+            switch ((String) aggColSpecTrans.reduceType)
+            {
+                case "String":
+                    String[] finalRes = new String[size];
+                    performMapReduce(aggColSpecTrans.map, aggColSpecTrans.reduce, es, size, sortRes, (o, j) -> finalRes[j] = (String) o);
+                    finalTDS.addColumn(aggColSpecTrans.newColName, DataType.STRING, finalRes);
+                    break;
+                case "Integer":
+                    int[] finalResInt = new int[size];
+                    performMapReduce(aggColSpecTrans.map, aggColSpecTrans.reduce, es, size, sortRes, (o, j) -> finalResInt[j] = (int) (long) o);
+                    finalTDS.addColumn(aggColSpecTrans.newColName, DataType.INT, finalResInt);
+                    break;
+                case "Float":
+                    double[] finalResDouble = new double[size];
+                    performMapReduce(aggColSpecTrans.map, aggColSpecTrans.reduce, es, size, sortRes, (o, j) -> finalResDouble[j] = (double) o);
+                    finalTDS.addColumn(aggColSpecTrans.newColName, DataType.FLOAT, finalResDouble);
+                    break;
+            }
         }
 
         return new TDSContainer(finalTDS, ps);
@@ -244,21 +300,21 @@ public class RelationNativeImplementation
         }
     }
 
-    public static Relation<?> project(RichIterable<?> objects, RichIterable<String> names, RichIterable<Function2> transforms, RichIterable<String> types, ExecutionSupport es)
+    public static Relation<?> project(RichIterable<?> objects, RichIterable<? extends ColFuncSpecTrans> colFuncs, ExecutionSupport es)
     {
         ProcessorSupport ps = ((CompiledExecutionSupport) es).getProcessorSupport();
 
-        MutableList<String> typesL = types.toList();
-        MutableList<String> namesL = names.toList();
+        MutableList<? extends String> typesL = colFuncs.collect(c -> c.columnType).toList();
+        MutableList<? extends String> namesL = colFuncs.collect(c -> c.newColName).toList();
         ListIterable<TestTDSCompiled> pre = objects.collect(o ->
         {
             int i = 0;
             MutableList<TestTDSCompiled> subList = Lists.mutable.empty();
-            for (Function2 f : transforms)
+            for (Function2 f : colFuncs.collect(c -> c.func))
             {
                 TestTDSCompiled one = new TestTDSCompiled();
                 RichIterable<?> li = CompiledSupport.toPureCollection(f.apply(o, es));
-                switch (typesL.get(i))
+                switch ((String) typesL.get(i))
                 {
                     case "String":
                         one.addColumn(namesL.get(i), DataType.STRING, li.toArray(new String[0]));

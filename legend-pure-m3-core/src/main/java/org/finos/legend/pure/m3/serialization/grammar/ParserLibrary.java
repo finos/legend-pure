@@ -14,8 +14,6 @@
 
 package org.finos.legend.pure.m3.serialization.grammar;
 
-import java.util.Comparator;
-
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
@@ -23,10 +21,20 @@ import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
+import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.factory.Sets;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.runtime.navigation.NavigationHandler;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+
+import java.util.Comparator;
+import java.util.Objects;
+
+import static org.junit.Assert.assertEquals;
 
 public class ParserLibrary
 {
@@ -134,6 +142,13 @@ public class ParserLibrary
             }
         }
         return files;
+    }
+
+    public Pair<Object, RelationType> resolveRelationElementAccessor(PackageableElement element, MutableList<? extends String> path, SourceInformation sourceInformation, ProcessorSupport processorSupport)
+    {
+        MutableList<Pair<Object, RelationType>> res = this.parsers.valuesView().collect(c -> c.resolveRelationElementAccessor(element, path, sourceInformation, processorSupport)).select(Objects::nonNull).toList();
+        assertEquals("Found 0 ore more than one (" + res.size() + ") handlers for resolving the element Accessor " + element.getName() + " " + path.makeString("."), 1, res.size());
+        return res.get(0);
     }
 
     public class InvalidParserLibraryException extends Exception

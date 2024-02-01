@@ -93,7 +93,10 @@ classBody: CURLY_BRACKET_OPEN
 properties: ( property | qualifiedProperty )*
 ;
 
-property: stereotypes? taggedValues? aggregation? identifier COLON propertyReturnType defaultValue? END_LINE
+propertyName: (identifier | STRING)
+;
+
+property: stereotypes? taggedValues? aggregation? propertyName COLON propertyReturnType defaultValue? END_LINE
 ;
 
 qualifiedProperty:  stereotypes? taggedValues? identifier qualifiedPropertyBody COLON propertyReturnType  END_LINE
@@ -132,7 +135,7 @@ enumValue: stereotypes? taggedValues? identifier
 nativeFunction: NATIVE FUNCTION stereotypes? qualifiedName typeAndMultiplicityParameters? functionTypeSignature END_LINE
 ;
 
-functionTypeSignature:  GROUP_OPEN (functionVariableExpression (COMMA functionVariableExpression)*)? GROUP_CLOSE COLON type multiplicity
+functionTypeSignature: GROUP_OPEN (functionVariableExpression (COMMA functionVariableExpression)*)? GROUP_CLOSE COLON type multiplicity
 ;
 
 functionDefinition: FUNCTION stereotypes? taggedValues? qualifiedName typeAndMultiplicityParameters? functionTypeSignature
@@ -182,7 +185,7 @@ unitInstance: unitInstanceLiteral unitName
 unitName: qualifiedName TILDE identifier
 ;
 
-instancePropertyAssignment: identifier EQUAL instanceRightSide
+instancePropertyAssignment: propertyName EQUAL instanceRightSide
 ;
 
 instanceRightSide: instanceAtomicRightSideScalar |  instanceAtomicRightSideVector
@@ -197,7 +200,7 @@ instanceAtomicRightSideVector: BRACKET_OPEN (instanceAtomicRightSide (COMMA inst
 instanceAtomicRightSide: instanceLiteral | LATEST_DATE | instance  | qualifiedName | enumReference | stereotypeReference | tagReference | identifier
 ;
 
-enumReference: qualifiedName  DOT identifier
+enumReference: qualifiedName DOT identifier
 ;
 
 stereotypeReference: qualifiedName AT identifier
@@ -270,9 +273,10 @@ expressionOrExpressionGroup: expression
 expressionsArray: BRACKET_OPEN ( expression (COMMA expression)* )? BRACKET_CLOSE
 ;
 
-propertyOrFunctionExpression: propertyExpression | functionExpression;
+propertyOrFunctionExpression: propertyExpression | functionExpression
+;
 
-propertyExpression: DOT identifier (functionExpressionLatestMilestoningDateParameter | functionExpressionParameters)?
+propertyExpression: DOT propertyName (functionExpressionLatestMilestoningDateParameter | functionExpressionParameters)?
 ;
 
 functionExpression: ARROW qualifiedName functionExpressionParameters (ARROW qualifiedName functionExpressionParameters)*
@@ -351,7 +355,7 @@ expressionInstanceRightSide: expressionInstanceAtomicRightSide
 expressionInstanceAtomicRightSide: combinedExpression | expressionInstance | qualifiedName
 ;
 
-expressionInstanceParserPropertyAssignment: identifier (DOT identifier)* PLUS? EQUAL expressionInstanceRightSide
+expressionInstanceParserPropertyAssignment: propertyName (DOT propertyName)* PLUS? EQUAL expressionInstanceRightSide
 ;
 
 sliceExpression: BRACKET_OPEN ( (COLON expression) | (expression COLON expression) |  (expression COLON expression COLON expression) ) BRACKET_CLOSE

@@ -25,6 +25,8 @@ import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionCoreInstanceWrapper;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.FuncColSpecAccessor;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.FuncColSpecArray;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
@@ -42,7 +44,6 @@ import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
-import java.util.List;
 import java.util.Stack;
 import java.util.function.Function;
 
@@ -60,8 +61,10 @@ public class Project extends Shared
 
         ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(params.get(0), M3Properties.values, processorSupport);
 
-        ListIterable<? extends CoreInstance> functions = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport).getValueForMetaPropertyToMany("functions");
-        ListIterable<? extends String> names = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport).getValueForMetaPropertyToMany("names").collect(CoreInstance::getName);
+        FuncColSpecArray<?, ?> funcColSpecArray = (FuncColSpecArray<?, ?>) Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
+        ListIterable<CoreInstance> functions = funcColSpecArray._funcSpecs().collect(c -> (CoreInstance)c._function()).toList();
+        ListIterable<? extends String> names = funcColSpecArray._funcSpecs().collect(FuncColSpecAccessor::_name).toList();
+
         ListIterable<Pair<LambdaFunction<CoreInstance>, VariableContext>> funcs = functions.collect(f ->
                 Tuples.pair((LambdaFunction<CoreInstance>) LambdaFunctionCoreInstanceWrapper.toLambdaFunction(f), this.getParentOrEmptyVariableContextForLambda(variableContext, f))
         );
@@ -118,7 +121,7 @@ public class Project extends Shared
         if (allRes.size() > 1)
         {
             TestTDS init = allRes.get(0);
-            res = allRes.drop(1).injectInto((TestTDSInterpreted)init, (a,b) -> (TestTDSInterpreted)a.concatenate(b));
+            res = allRes.drop(1).injectInto((TestTDSInterpreted) init, (a, b) -> (TestTDSInterpreted) a.concatenate(b));
         }
         return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(res, returnGenericType, repository, processorSupport), false, processorSupport);
     }

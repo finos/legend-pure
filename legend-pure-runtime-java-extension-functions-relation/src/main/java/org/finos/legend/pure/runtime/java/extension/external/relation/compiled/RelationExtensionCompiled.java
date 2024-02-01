@@ -56,8 +56,11 @@ public class RelationExtensionCompiled implements CompiledExtension
                 new Rename(),
                 new Project(),
                 new GroupBy(),
+                new GroupByArray(),
                 new Slice(),
-                new Distinct()
+                new Distinct(),
+                new Select(),
+                new SelectArray()
         );
     }
 

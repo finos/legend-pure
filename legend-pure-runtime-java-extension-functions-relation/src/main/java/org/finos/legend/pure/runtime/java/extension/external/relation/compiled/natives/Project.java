@@ -20,6 +20,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.Native;
 
+import static org.finos.legend.pure.runtime.java.extension.external.relation.compiled.natives.Extend.buildCollectFuncSpec;
+
 public class Project extends AbstractNative implements Native
 {
     public Project()
@@ -30,30 +32,34 @@ public class Project extends AbstractNative implements Native
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        StringBuilder result = new StringBuilder("org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.project");
-        result.append("(CompiledSupport.toPureCollection(");
+        StringBuilder result = new StringBuilder("org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.project(");
+        result.append("CompiledSupport.toPureCollection(");
         result.append(transformedParams.get(0));
         result.append("), ");
-        result.append(transformedParams.get(1));
-        result.append("._names(), ");
-        result.append(transformedParams.get(1));
-        result.append("._functions().collect(new DefendedFunction()\n" +
-                "{\n" +
-                "    @Override\n" +
-                "    public Object valueOf(Object ff)\n" +
-                "    {\n" +
-                "        return PureCompiledLambda.getPureFunction((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>)ff, es);\n" +
-                "    }\n" +
-                "}),");
-        result.append(transformedParams.get(1));
-        result.append("._functions().collect(new DefendedFunction()\n" +
-                "{\n" +
-                "    @Override\n" +
-                "    public Object valueOf(Object ff)\n" +
-                "    {\n" +
-                "        return ((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType)((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>)ff)._classifierGenericType()._typeArguments().toList().get(0)._rawType())._returnType()._rawType()._name();\n" +
-                "    }\n" +
-                "}), es)\n");
+        result.append("Lists.mutable.withAll(" + transformedParams.get(1) + "._funcSpecs())");
+
+        buildCollectFuncSpec(result);
+
+//        result.append("._names(), ");
+//        result.append(transformedParams.get(1));
+//        result.append("._functions().collect(new DefendedFunction()\n" +
+//                "{\n" +
+//                "    @Override\n" +
+//                "    public Object valueOf(Object ff)\n" +
+//                "    {\n" +
+//                "        return PureCompiledLambda.getPureFunction((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>)ff, es);\n" +
+//                "    }\n" +
+//                "}),");
+//        result.append(transformedParams.get(1));
+//        result.append("._functions().collect(new DefendedFunction()\n" +
+//                "{\n" +
+//                "    @Override\n" +
+//                "    public Object valueOf(Object ff)\n" +
+//                "    {\n" +
+//                "        return ((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType)((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>)ff)._classifierGenericType()._typeArguments().toList().get(0)._rawType())._returnType()._rawType()._name();\n" +
+//                "    }\n" +
+//        result.append("}), es)\n");
+        result.append(",es)");
         return result.toString();
     }
 }

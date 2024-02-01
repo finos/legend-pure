@@ -68,7 +68,7 @@ import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 import static org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.ParsingUtils.isAntlrRecognitionExceptionUsingFastParser;
 
-public class MappingParser implements Parser
+public class MappingParser implements IMappingParser
 {
     private ParserLibrary parserLibrary;
 

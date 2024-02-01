@@ -22,6 +22,8 @@ import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionCoreInstanceWrapper;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.FuncColSpec;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.FuncColSpecArray;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
@@ -59,8 +61,36 @@ public class Extend extends Shared
         RelationType<?> relationType = getRelationType(params, 0);
 
         CoreInstance extendFunction = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
-        LambdaFunction<CoreInstance> lambdaFunction = (LambdaFunction<CoreInstance>) LambdaFunctionCoreInstanceWrapper.toLambdaFunction(extendFunction.getValueForMetaPropertyToOne(M3Properties.function));
-        VariableContext evalVarContext = this.getParentOrEmptyVariableContextForLambda(variableContext, extendFunction);
+
+        TestTDS result;
+        if (extendFunction instanceof FuncColSpec)
+        {
+            result = processFuncColSpec(tds,
+                    (LambdaFunction<CoreInstance>) LambdaFunctionCoreInstanceWrapper.toLambdaFunction(extendFunction.getValueForMetaPropertyToOne(M3Properties.function)),
+                    extendFunction.getValueForMetaPropertyToOne(M3Properties.name).getName(),
+                    resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport, processorSupport, relationType
+            );
+        }
+        else if (extendFunction instanceof FuncColSpecArray)
+        {
+            result = ((FuncColSpecArray<?, ?>) extendFunction)._funcSpecs().injectInto(tds, (a, b) ->
+                    processFuncColSpec(a,
+                            (LambdaFunction<CoreInstance>) b._function(),
+                            b._name(),
+                            resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport, processorSupport, relationType
+                    ));
+        }
+        else
+        {
+            throw new RuntimeException("Not possible");
+        }
+
+        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(result, returnGenericType, repository, processorSupport), false, processorSupport);
+    }
+
+    private TestTDS processFuncColSpec(TestTDS tds, LambdaFunction<CoreInstance> lambdaFunction, String name, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, ProcessorSupport processorSupport, RelationType<?> relationType)
+    {
+        VariableContext evalVarContext = this.getParentOrEmptyVariableContextForLambda(variableContext, lambdaFunction);
 
         FixedSizeList<CoreInstance> parameters = Lists.fixedSize.with((CoreInstance) null);
         Type type = ((FunctionType) lambdaFunction._classifierGenericType()._typeArguments().getFirst()._rawType())._returnType()._rawType();
@@ -103,6 +133,6 @@ public class Extend extends Shared
             res = resDouble;
             resType = DataType.DOUBLE;
         }
-        return ValueSpecificationBootstrap.wrapValueSpecification(new TDSCoreInstance(tds.addColumn(extendFunction.getValueForMetaPropertyToOne(M3Properties.name).getName(), resType, res), returnGenericType, repository, processorSupport), false, processorSupport);
+        return tds.addColumn(name, resType, res);
     }
 }

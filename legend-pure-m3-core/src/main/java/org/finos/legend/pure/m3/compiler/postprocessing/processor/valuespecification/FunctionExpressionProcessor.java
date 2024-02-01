@@ -363,7 +363,25 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
 
     private static boolean manageMagicColumnFunctions(FunctionExpression functionExpression, Function<?> foundFunction, boolean columnTypeInferenceSuccess, TypeInferenceContext ctx, TypeInferenceObserver observer, ProcessorSupport processorSupport)
     {
-        if ("funcColSpecArray_Function_MANY__String_MANY__T_1__FuncColSpecArray_1_".equals(foundFunction.getName()) || "funcColSpec_Function_1__String_1__T_1__FuncColSpec_1_".equals(foundFunction.getName()))
+        if ("funcColSpecArray_FuncColSpec_MANY__P_1__FuncColSpecArray_1_".equals(foundFunction.getName()))
+        {
+            MutableList<ValueSpecification> parameters = Lists.mutable.withAll(functionExpression._parametersValues());
+            MutableList<? extends Column<?, ?>> found = ((InstanceValue) parameters.get(0))._values().collect(v ->
+            {
+                Type relationType = ((ValueSpecification) v)._genericType()._typeArguments().toList().getLast()._rawType();
+                return relationType == null ? null : ((RelationType<?>) relationType)._columns().getFirst();
+            }).toList();
+            if (found.contains(null))
+            {
+                columnTypeInferenceSuccess = false;
+            }
+            else
+            {
+                ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(1).getValueForMetaPropertyToOne("genericType"), (GenericType) processorSupport.type_wrapGenericType(_RelationType.build(found.collect(foundC -> _Column.getColumnInstance(foundC._name(), false, null, _Column.getColumnType(foundC), null, processorSupport)), null, processorSupport)), ctx, observer);
+                columnTypeInferenceSuccess = true;
+            }
+        }
+        if ("funcColSpec_Function_1__String_1__T_1__FuncColSpec_1_".equals(foundFunction.getName()))
         {
             MutableList<ValueSpecification> parameters = Lists.mutable.withAll(functionExpression._parametersValues());
             MutableList<CoreInstance> lambdas = Lists.mutable.withAll(parameters.get(0).getValueForMetaPropertyToMany("values"));
@@ -399,6 +417,24 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                 CoreInstance columnGenericType = _Column.getColumnType((Column<?, ?>) column);
                 columnGenericType.setKeyValues(Lists.mutable.with("rawType"), Lists.mutable.with(lambdaReturnType.getValueForMetaPropertyToOne("rawType")));
                 ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(3).getValueForMetaPropertyToOne("genericType"), (GenericType) parameters.get(3).getValueForMetaPropertyToOne("genericType"), ctx, observer);
+                columnTypeInferenceSuccess = true;
+            }
+        }
+        if ("aggColSpecArray_AggColSpec_MANY__P_1__AggColSpecArray_1_".equals(foundFunction.getName()))
+        {
+            MutableList<ValueSpecification> parameters = Lists.mutable.withAll(functionExpression._parametersValues());
+            MutableList<? extends Column<?, ?>> found = ((InstanceValue) parameters.get(0))._values().collect(v ->
+            {
+                Type relationType = ((ValueSpecification) v)._genericType()._typeArguments().toList().getLast()._rawType();
+                return relationType == null ? null : ((RelationType<?>) relationType)._columns().getFirst();
+            }).toList();
+            if (found.contains(null))
+            {
+                columnTypeInferenceSuccess = false;
+            }
+            else
+            {
+                ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(1).getValueForMetaPropertyToOne("genericType"), (GenericType) processorSupport.type_wrapGenericType(_RelationType.build(found.collect(foundC -> _Column.getColumnInstance(foundC._name(), false, null, _Column.getColumnType(foundC), null, processorSupport)), null, processorSupport)), ctx, observer);
                 columnTypeInferenceSuccess = true;
             }
         }

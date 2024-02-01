@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.extension.external.relation.compiled.natives;
 
+import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
@@ -30,17 +31,37 @@ public class Extend extends AbstractNative implements Native
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        StringBuilder result = new StringBuilder("org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.extend");
-        result.append('(');
-        result.append(transformedParams.get(0));
-        result.append(", ");
-        result.append(transformedParams.get(1));
-        result.append("._name(),");
-        result.append("(Function2)PureCompiledLambda.getPureFunction(");
-        result.append(transformedParams.get(1));
-        result.append("._function(),es), ((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType)");
-        result.append(transformedParams.get(1));
-        result.append("._function()._classifierGenericType()._typeArguments().toList().get(0)._rawType())._returnType()._rawType()._name(), es)\n");
+        StringBuilder result = buildCode(transformedParams, s -> "Lists.mutable.with(" + transformedParams.get(1) + ")");
         return result.toString();
+    }
+
+    static StringBuilder buildCode(ListIterable<String> transformedParams, Function<String, String> collection)
+    {
+        StringBuilder result = new StringBuilder("org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.extend(");
+        result.append(transformedParams.get(0) + ", ");
+        result.append(collection.valueOf(transformedParams.get(1)));
+        buildCollectFuncSpec(result);
+        result.append(", es)");
+        return result;
+    }
+
+    static void buildCollectFuncSpec(StringBuilder result)
+    {
+        result.append(".collect(");
+        result.append("new DefendedFunction<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.FuncColSpec<? extends Object, ? extends Object>, org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.ColFuncSpecTrans>()\n" +
+                "{\n" +
+                "    @Override\n" +
+                "    public  org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.ColFuncSpecTrans valueOf(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.FuncColSpec<?, ?> c)\n" +
+                "    {\n");
+
+        result.append("return new org.finos.legend.pure.runtime.java.extension.external.relation.compiled.RelationNativeImplementation.ColFuncSpecTrans(");
+        result.append("c._name(),");
+        result.append("(Function2)PureCompiledLambda.getPureFunction(c._function(),es),");
+        result.append(" ((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType)c._function()._classifierGenericType()._typeArguments().toList().get(0)._rawType())._returnType()._rawType()._name()\n");
+        result.append(");\n");
+
+        result.append("    }\n" +
+                "   }" +
+                ")");
     }
 }

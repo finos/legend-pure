@@ -16,7 +16,7 @@ import meta::pure::metamodel::relation::*;
 
 native function meta::pure::functions::relation::extend<T,Z>(r:Relation<T>[1], f:FuncColSpec<{T[1]->Any[0..1]},Z>[1]):Relation<T+Z>[1];
 
-native function meta::pure::functions::relation::extend<T,Z>(r:Relation<T>[1], fs:FuncColSpecArray<{T[1]->Any[0..1]},Z>[1]):Relation<T+Z>[1];
+native function meta::pure::functions::relation::extend<T,Z>(r:Relation<T>[1], fs:FuncColSpecArray<{T[1]->Any[*]},Z>[1]):Relation<T+Z>[1];
 
 
 function <<RelationProfile.test>> meta::pure::functions::relation::tests::extend::testSimpleExtendStrShared<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
@@ -44,30 +44,77 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::extend
                   '#', $res->toString());
 }
 
-function <<test.Test>> meta::pure::functions::relation::tests::extend::testSimpleExtendInt():Boolean[1]
+function <<RelationProfile.test>> meta::pure::functions::relation::tests::extend::testSimpleExtendInt<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
 {
-    let res = #TDS
-                val, str
-                1, a
-                3, ewe
-                4, qw
-                5, wwe
-                6, weq
-              #->extend(~name:c|$c.val->toOne() + 1);
-    assertEquals(5, $res->size());
-    assertEquals('24567', $res->map(c|$c.name->toOne()->toString())->joinStrings(''));
+    let expr = {
+                | #TDS
+                  val, str
+                  1, a
+                  3, ewe
+                  4, qw
+                  5, wwe
+                  6, weq
+                #->extend(~name:c|$c.val->toOne() + 1)
+               };
+
+    let res =  $f->eval($expr)->cast(@Relation<(val:Integer, str:String, name:Integer)>)->toOne();
+
+    assertEquals( '#TDS\n'+
+                  '   val,str,name\n'+
+                  '   1,a,2\n'+
+                  '   3,ewe,4\n'+
+                  '   4,qw,5\n'+
+                  '   5,wwe,6\n'+
+                  '   6,weq,7\n'+
+                  '#', $res->toString());
 }
 
-function <<test.Test>> meta::pure::functions::relation::tests::extend::testSimpleExtendFloat():Boolean[1]
+function <<RelationProfile.test>> meta::pure::functions::relation::tests::extend::testSimpleExtendFloat<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
 {
-    let res = #TDS
-                val, doub
-                1, 1.2
-                3, 2.3
-                4, 4.2
-                5, 4.2
-                6, 4.5
-              #->extend(~name:c|$c.doub->toOne() + 1.0);
-    assertEquals(5, $res->size());
-    assertEquals('2.23.35.25.25.5', $res->map(c|$c.name->toOne()->toString())->joinStrings(''));
+    let expr = {
+               | #TDS
+                  val, doub
+                  1, 1.2
+                  3, 2.3
+                  4, 4.2
+                  5, 4.2
+                  6, 4.5
+                 #->extend(~name:c|$c.doub->toOne() + 1.0)
+              };
+
+    let res =  $f->eval($expr)->cast(@Relation<(val:Integer, doub:Float, name:Float)>)->toOne();
+
+    assertEquals( '#TDS\n'+
+                  '   val,doub,name\n'+
+                  '   1,1.2,2.2\n'+
+                  '   3,2.3,3.3\n'+
+                  '   4,4.2,5.2\n'+
+                  '   5,4.2,5.2\n'+
+                  '   6,4.5,5.5\n'+
+                  '#', $res->toString());
+}
+
+function <<RelationProfile.test>> meta::pure::functions::relation::tests::extend::testSimpleMultipleColumns<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
+{
+    let expr = {
+                | #TDS
+                  val, str
+                  1, a
+                  3, ewe
+                  4, qw
+                  5, wwe
+                  6, weq
+                #->extend(~[name:c|$c.val->toOne() + 1, other:x|$x.str->toOne()+'_ext'])
+               };
+
+    let res =  $f->eval($expr)->cast(@Relation<(val:Integer, str:String, name:Integer, other:String)>)->toOne();
+
+    assertEquals( '#TDS\n'+
+                  '   val,str,name,other\n'+
+                  '   1,a,2,a_ext\n'+
+                  '   3,ewe,4,ewe_ext\n'+
+                  '   4,qw,5,qw_ext\n'+
+                  '   5,wwe,6,wwe_ext\n'+
+                  '   6,weq,7,weq_ext\n'+
+                  '#', $res->toString());
 }
