@@ -31,6 +31,15 @@ public class InvalidFunctionDescriptorException extends Exception
 
     private static String createMessage(String invalidDescriptor)
     {
-        return "Invalid function descriptor: '" + invalidDescriptor + "'";
+        StringBuilder builder = new StringBuilder("Invalid function descriptor: ");
+        if (invalidDescriptor == null)
+        {
+            builder.append((String) null);
+        }
+        else
+        {
+            builder.append('\'').append(invalidDescriptor).append('\'');
+        }
+        return builder.toString();
     }
 }

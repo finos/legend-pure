@@ -145,6 +145,15 @@ functionDefinition: FUNCTION stereotypes? taggedValues? qualifiedName typeAndMul
           CURLY_BRACKET_CLOSE
 ;
 
+functionDescriptorType: identifier (LESSTHAN (typeArguments? (PIPE multiplicityArguments)?) GREATERTHAN)?
+;
+
+functionDescriptorTypeMultiplicity: functionDescriptorType multiplicity
+;
+
+functionDescriptor: qualifiedName GROUP_OPEN (functionDescriptorTypeMultiplicity (COMMA functionDescriptorTypeMultiplicity)*)? GROUP_CLOSE COLON functionDescriptorTypeMultiplicity
+;
+
 expression:
     (
         (
