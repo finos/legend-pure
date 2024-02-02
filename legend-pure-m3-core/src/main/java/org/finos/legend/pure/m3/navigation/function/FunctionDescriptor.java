@@ -32,6 +32,7 @@ import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Lexer;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.FunctionDescriptorContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.FunctionDescriptorTypeMultiplicityContext;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.IdentifierContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MultiplicityArgumentContext;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
@@ -196,8 +197,19 @@ public class FunctionDescriptor
 
     private static void descriptorTypeAndMultToId(StringBuilder builder, FunctionDescriptorTypeMultiplicityContext typeMultContext)
     {
-        builder.append('_').append(typeMultContext.functionDescriptorType().identifier().getText()).append('_');
+        descriptorTypeToId(builder.append('_'), typeMultContext.functionDescriptorType()).append('_');
         descriptorMultToId(builder, typeMultContext.multiplicity().multiplicityArgument()).append('_');
+    }
+
+    private static StringBuilder descriptorTypeToId(StringBuilder builder, M3Parser.FunctionDescriptorTypeContext typeContext)
+    {
+        List<IdentifierContext> identifiers = typeContext.identifier();
+        builder.append(identifiers.get(0).getText());
+        if (identifiers.size() > 1)
+        {
+            builder.append('~').append(identifiers.get(1).getText());
+        }
+        return builder;
     }
 
     private static StringBuilder descriptorMultToId(StringBuilder builder, MultiplicityArgumentContext multContext)

@@ -64,6 +64,7 @@ public class TestFunctionDescriptor
         Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("   pkg1::pkg2::func  (   \t Integer [ 1 ] , String [ 1       ..  5   ] )   : Boolean\t[  1 ] "));
         Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("func(Integer[16..20]):Boolean[1]"));
         Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("func(A<K>[16..20]):Z<K>[1]"));
+        Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("pkg::myFunc():Mass~Gram[1]"));
         Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("meta::pure::functions::collection::removeDuplicates(T[*],Function<{T[1]->V[1]}>[0..1],Function<{V[1],V[1]->Boolean[1]}>[0..1]):T[*]"));
         Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("meta::pure::functions::collection::removeDuplicates(T[*], Function<{T[1]->V[1]}>[0..1], Function<{V[1],V[1]->Boolean[1]}>[0..1]):T[*]"));
         Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("meta::pure::functions::collection::removeDuplicates(T[*], Function< { T [1] -> V [1] } > [0..1], Function< { V [1], V [1] -> Boolean [ 1 ] } >[0..1]):T[*]"));
@@ -142,6 +143,13 @@ public class TestFunctionDescriptor
     {
         Assert.assertEquals("curry_Function_1__T_m__Function_1_", FunctionDescriptor.functionDescriptorToId("curry(Function<{T[m],U[n]->V[o]}>[1], T[m]):Function<{U[n]->V[o]}>[1]"));
         Assert.assertEquals("curry_Function_1__T_m__Function_1_", FunctionDescriptor.functionDescriptorToId("curry(Function<{T[m],U[n],V[o]->W[p]}>[1], T[m]):Function<{U[n],V[o]->W[p]}>[1]"));
+    }
+
+    @Test
+    public void testFunctionDescriptorToIdUnits() throws InvalidFunctionDescriptorException
+    {
+        Assert.assertEquals("pkg::myFunc__Mass~Gram_1_", FunctionDescriptor.functionDescriptorToId("pkg::myFunc():Mass~Gram[1]"));
+        Assert.assertEquals("pkg::myFunc__Mass~Gram_1_", FunctionDescriptor.functionDescriptorToId(" \t \tpkg::myFunc(       ) : Mass ~ Gram[\t\t1\t]"));
     }
 
     @Test

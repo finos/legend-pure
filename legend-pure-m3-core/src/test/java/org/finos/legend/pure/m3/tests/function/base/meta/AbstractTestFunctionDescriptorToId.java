@@ -14,49 +14,44 @@
 
 package org.finos.legend.pure.m3.tests.function.base.meta;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.exception.PureException;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
 public abstract class AbstractTestFunctionDescriptorToId extends AbstractPureTestWithCoreCompiled
 {
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("testModel.pure");
+        runtime.delete("testFunc.pure");
+        runtime.compile();
+    }
+
     @Test
     public void testInvalidFunctionDescriptorException()
     {
-        try
-        {
-            compileTestSource("testFunc.pure",
-                    "function test():String[1]\n" +
-                    "{\n" +
-                    "   meta::pure::functions::meta::functionDescriptorToId('meta::pure::functions::meta::pathToElement(path:String[1]):PackageableElement[1]');\n" +
-                    "}\n");
-            this.execute("test():String[1]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            PureException pe = PureException.findPureException(e);
-            Assert.assertNotNull(pe);
-            Assert.assertTrue(pe instanceof PureExecutionException);
-            PureException originalPE = pe.getOriginatingPureException();
-            Assert.assertNotNull(originalPE);
-            Assert.assertTrue(originalPE instanceof PureExecutionException);
-            Assert.assertEquals("Invalid function descriptor: meta::pure::functions::meta::pathToElement(path:String[1]):PackageableElement[1]", originalPE.getInfo());
-        }
+        compileTestSource("testFunc.pure",
+                "function test():String[1]\n" +
+                        "{\n" +
+                        "   meta::pure::functions::meta::functionDescriptorToId('meta::pure::functions::meta::pathToElement(path:String[1]):PackageableElement[1]');\n" +
+                        "}\n");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("test():String[1]"));
+        assertPureException(PureExecutionException.class, "Invalid function descriptor: meta::pure::functions::meta::pathToElement(path:String[1]):PackageableElement[1]", "testFunc.pure", 3, 33, e);
     }
 
     @Test
     public void testCorrectDescriptorNoException()
     {
-            compileTestSource("testFunc.pure",
-                    "function test():String[1]\n" +
-                    "{\n" +
-                    "   meta::pure::functions::meta::functionDescriptorToId('meta::pure::functions::meta::pathToElement(String[1]):PackageableElement[1]');\n" +
-                    "}\n");
+        compileTestSource("testFunc.pure",
+                "function test():String[1]\n" +
+                        "{\n" +
+                        "   meta::pure::functions::meta::functionDescriptorToId('meta::pure::functions::meta::pathToElement(String[1]):PackageableElement[1]');\n" +
+                        "}\n");
         CoreInstance result = this.execute("test():String[1]");
         Assert.assertEquals("meta::pure::functions::meta::pathToElement_String_1__PackageableElement_1_", result.getValueForMetaPropertyToMany(M3Properties.values).get(0).getName());
     }

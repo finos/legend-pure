@@ -15,11 +15,9 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.base.meta;
 
 import org.finos.legend.pure.m3.execution.FunctionExecution;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.function.base.meta.AbstractTestFunctionDescriptorToId;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
-import org.junit.After;
 import org.junit.BeforeClass;
 
 public class TestFunctionDescriptorToIdCompiled extends AbstractTestFunctionDescriptorToId
@@ -27,14 +25,7 @@ public class TestFunctionDescriptorToIdCompiled extends AbstractTestFunctionDesc
     @BeforeClass
     public static void setUp()
     {
-        AbstractPureTestWithCoreCompiled.setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
-    }
-
-    @After
-    public void cleanRuntime()
-    {
-        AbstractPureTestWithCoreCompiled.runtime.delete("testModel.pure");
-        AbstractPureTestWithCoreCompiled.runtime.delete("testFunc.pure");
+        setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
     }
 
     protected static FunctionExecution getFunctionExecution()
