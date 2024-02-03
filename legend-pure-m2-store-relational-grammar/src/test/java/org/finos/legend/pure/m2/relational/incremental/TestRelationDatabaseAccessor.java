@@ -133,6 +133,46 @@ public class TestRelationDatabaseAccessor extends AbstractPureRelationalTestWith
     }
 
     @Test
+    public void testCompileAndDeleteRenameTable()
+    {
+        String INITIAL_DATA = "import test::*;\n" +
+                "\n" +
+                "function myFunc():Any[1]\n" +
+                "{ \n" +
+                "   #>{test::mainDb.PersonTable}#" +
+                "}";
+
+        String STORE1 = "###Relational\n" +
+                "Database test::incDb\n" +
+                "( \n" +
+                "   Table PersonTable(firstName VARCHAR(200), lastName VARCHAR(200), firmId INTEGER)\n" +
+                ")\n";
+
+        String STORE1_CHANGED = "###Relational\n" +
+                "Database test::incDb\n" +
+                "( \n" +
+                "   Table PersonTable_Renamed(firstName VARCHAR(200), lastName VARCHAR(200), firmId INTEGER)\n" +
+                ")\n";
+
+        String STORE2 = "###Relational\n" +
+                "Database test::mainDb\n" +
+                "( \n" +
+                "   include test::incDb\n" +
+                "   Table FirmTable(legalName VARCHAR(200), firmId INTEGER)\n" +
+                ")\n";
+
+        RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
+                                org.eclipse.collections.api.factory.Maps.mutable.with("source1.pure", INITIAL_DATA, "source2.pure", STORE1, "source3.pure", STORE2))
+                        .compile(),
+                new RuntimeTestScriptBuilder()
+                        .updateSource("source2.pure", STORE1_CHANGED)
+                        .compileWithExpectedCompileFailure("The table 'PersonTable' can't be found in the schema 'default' in the database 'test::mainDb'", "source1.pure", 5, 5)
+                        .updateSource("source2.pure", STORE1)
+                        .compile(),
+                runtime, functionExecution, Lists.fixedSize.empty());
+    }
+
+    @Test
     public void testCompileAndDeleteFull()
     {
         String INITIAL_DATA = "import test::*;\n" +

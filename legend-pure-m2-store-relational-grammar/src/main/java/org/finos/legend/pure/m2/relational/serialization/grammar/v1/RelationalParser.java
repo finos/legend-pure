@@ -290,11 +290,11 @@ public class RelationalParser implements IRelationalParser
 
         if (path.size() == 2)
         {
-            Schema schema = store._schemas().select(c -> c._name().equals("default")).getFirst();
-            table = schema._tables().select(c -> c._name().equals(path.get(1))).getFirst();
+            String schemaName = DatabaseProcessor.DEFAULT_SCHEMA_NAME;
+            table = (Table) org.finos.legend.pure.m2.relational.Database.findTable(store, schemaName, path.get(1), processorSupport);
             if (table == null)
             {
-                throw new PureCompilationException(sourceInformation, "The table '" + path.get(1) + "' can't be found in the database '" + path.get(0) + "'");
+                throw new PureCompilationException(sourceInformation, "The table '" + path.get(1) + "' can't be found in the schema '" + schemaName + "' in the database '" + path.get(0) + "'");
             }
         }
         else
