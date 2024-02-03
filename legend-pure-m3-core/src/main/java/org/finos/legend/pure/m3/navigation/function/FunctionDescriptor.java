@@ -14,8 +14,12 @@
 
 package org.finos.legend.pure.m3.navigation.function;
 
+import org.antlr.v4.runtime.BailErrorStrategy;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.atn.PredictionMode;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -24,11 +28,16 @@ import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Lexer;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.FunctionDescriptorContext;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.FunctionDescriptorTypeMultiplicityContext;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.IdentifierContext;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MultiplicityArgumentContext;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.List;
 
 /**
  * A function descriptor is a human readable expression which unambiguously
@@ -41,30 +50,13 @@ import java.util.regex.Pattern;
  */
 public class FunctionDescriptor
 {
-    private static final Pattern DESCRIPTOR_MAIN = Pattern.compile("^\\s*+([^(\\s]++)\\s*+\\(\\s*+([^)]*+)\\s*+\\)\\s*+:\\s*+(.*\\S)\\s*+$");
-    private static final Pattern PARAMETER_DELIMITER = Pattern.compile("\\s*+,\\s*+");
-    private static final Pattern TYPE_WITH_MULTIPLICITY_NUM = Pattern.compile("^\\s*+([~\\w]++)\\s*+(<([^>]*)>)?\\[\\s*+(\\d++)\\s*+\\]\\s*+$");
-    private static final Pattern TYPE_WITH_MULTIPLICITY_MANY = Pattern.compile("^\\s*+([~\\w]++)\\s*+(<([^>]*)>)?\\[\\s*+(\\*)\\s*+\\]\\s*+$");
-    private static final Pattern TYPE_WITH_MULTIPLICITY_NUM_TO_NUM = Pattern.compile("^\\s*+([~\\w]++)\\s*+(<([^>]*)>)?\\[\\s*+(\\d++)\\s*+\\.\\.\\s*+(\\d++)\\]\\s*+$");
-    private static final Pattern TYPE_WITH_MULTIPLICITY_NUM_TO_MANY = Pattern.compile("^\\s*+([~\\w]++)\\s*+(<([^>]*)>)?\\[\\s*+(\\d++)\\s*+\\.\\.\\s*+(\\*)\\]\\s*+$");
-    private static final Pattern TYPE_WITH_MULTIPLICITY_PARAMETER = Pattern.compile("^\\s*+([~\\w]++)\\s*+(<([^>]*)>)?\\[\\s*+([a-zA-Z]\\w*+)\\s*+\\]\\s*+$");
-    private static final Pattern FULL_MATCH = Pattern.compile("^\\s*+([\\w\\d_$]++::)*+[\\w\\d_$]++\\s*+\\(\\s*+(\\w++\\s*+(<([^>]*)>)?\\[\\s*+(\\*|([a-zA-Z]\\w*+)|(\\d++(\\s*+\\.\\.\\s*+(\\d++|\\*))?+))\\s*+\\]\\s*+(?!,\\s*+\\)),?+\\s*+)*+\\s*+\\)\\s*+:\\s*+\\w++\\s*+(<([^>]*)>)?\\[\\s*+(\\*|([a-zA-Z]\\w*+)|(\\d++(\\s*+\\.\\.\\s*+(\\d++|\\*))?+))\\s*+\\]\\s*+$");
-
     /**
-     * Return whether string is possibly a function descriptor.  This
-     * is a strictly syntactic test which can be used to weed out
-     * strings which cannot possibly be function descriptors.  If this
-     * function returns false for a string, then that string is not a
-     * function descriptor.  If the function returns true, the string
-     * may or may not be a function descriptor, but a more expensive
-     * test will be required to determine.
-     *
-     * @param string possible function descriptor
-     * @return whether string is possibly a function descriptor
+     * Deprecated. Use {@link #isValidFunctionDescriptor} instead.
      */
+    @Deprecated
     public static boolean isPossiblyFunctionDescriptor(String string)
     {
-        return DESCRIPTOR_MAIN.matcher(string).matches();
+        return isValidFunctionDescriptor(string);
     }
 
     /**
@@ -77,7 +69,15 @@ public class FunctionDescriptor
      */
     public static boolean isValidFunctionDescriptor(String functionDescriptorCandidate)
     {
-        return FULL_MATCH.matcher(functionDescriptorCandidate).matches();
+        try
+        {
+            parse(functionDescriptorCandidate);
+            return true;
+        }
+        catch (InvalidFunctionDescriptorException e)
+        {
+            return false;
+        }
     }
 
     /**
@@ -107,8 +107,7 @@ public class FunctionDescriptor
         CoreInstance pkg = function.getValueForMetaPropertyToOne(M3Properties._package);
         if ((pkg != null) && !M3Paths.Root.equals(pkg.getName()))
         {
-            PackageableElement.writeUserPathForPackageableElement(appendable, pkg);
-            safeAppendable.append(PackageableElement.DEFAULT_PATH_SEPARATOR);
+            PackageableElement.writeUserPathForPackageableElement(safeAppendable, pkg, PackageableElement.DEFAULT_PATH_SEPARATOR).append(PackageableElement.DEFAULT_PATH_SEPARATOR);
         }
 
         // Write function name
@@ -141,10 +140,9 @@ public class FunctionDescriptor
                 writeDescriptorTypeAndMultiplicity(safeAppendable, parameterType, parameterMultiplicity, processorSupport);
             }
         }
-        safeAppendable.append(')');
+        safeAppendable.append("):");
 
         // Write return type and multiplicity
-        safeAppendable.append(':');
         CoreInstance returnType = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnType, processorSupport);
         CoreInstance returnMultiplicity = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, processorSupport);
         writeDescriptorTypeAndMultiplicity(safeAppendable, returnType, returnMultiplicity, processorSupport);
@@ -153,7 +151,7 @@ public class FunctionDescriptor
 
     static void writeDescriptorTypeAndMultiplicity(SafeAppendable appendable, CoreInstance genericType, CoreInstance multiplicity, ProcessorSupport processorSupport)
     {
-        appendable.append(GenericType.print(genericType, processorSupport));
+        GenericType.print(appendable, genericType, false, processorSupport);
         Multiplicity.print(appendable, multiplicity, true);
     }
 
@@ -181,90 +179,100 @@ public class FunctionDescriptor
      */
     public static String functionDescriptorToId(String functionDescriptor) throws InvalidFunctionDescriptorException
     {
-        Matcher matcher = DESCRIPTOR_MAIN.matcher(functionDescriptor);
-        if (!matcher.matches())
-        {
-            throw new InvalidFunctionDescriptorException(functionDescriptor);
-        }
+        FunctionDescriptorContext context = parse(functionDescriptor);
 
-        StringBuilder builder = new StringBuilder(matcher.group(1));
-        try
+        StringBuilder builder = new StringBuilder(context.qualifiedName().getText());
+        List<FunctionDescriptorTypeMultiplicityContext> typeMults = context.functionDescriptorTypeMultiplicity();
+        if (typeMults.size() == 1)
         {
-            String paramsString = matcher.group(2);
-            if (paramsString.isEmpty())
-            {
-                builder.append('_');
-            }
-            else
-            {
-                ArrayIterate.forEach(PARAMETER_DELIMITER.split(paramsString), p -> typeWithMultiplicityDescriptorToId(builder, p));
-            }
-            typeWithMultiplicityDescriptorToId(builder, matcher.group(3));
+            // no parameters, only return type
+            descriptorTypeAndMultToId(builder.append('_'), typeMults.get(0));
         }
-        catch (IllegalArgumentException e)
+        else
         {
-            throw new InvalidFunctionDescriptorException(functionDescriptor, e);
+            typeMults.forEach(p -> descriptorTypeAndMultToId(builder, p));
         }
         return builder.toString();
     }
 
-    private static void typeWithMultiplicityDescriptorToId(StringBuilder builder, String typeWithMultiplicityDescriptor)
+    private static void descriptorTypeAndMultToId(StringBuilder builder, FunctionDescriptorTypeMultiplicityContext typeMultContext)
     {
-        Matcher matcher = TYPE_WITH_MULTIPLICITY_NUM.matcher(typeWithMultiplicityDescriptor);
-        if (matcher.matches())
+        descriptorTypeToId(builder.append('_'), typeMultContext.functionDescriptorType()).append('_');
+        descriptorMultToId(builder, typeMultContext.multiplicity().multiplicityArgument()).append('_');
+    }
+
+    private static StringBuilder descriptorTypeToId(StringBuilder builder, M3Parser.FunctionDescriptorTypeContext typeContext)
+    {
+        List<IdentifierContext> identifiers = typeContext.identifier();
+        builder.append(identifiers.get(0).getText());
+        if (identifiers.size() > 1)
         {
-            builder.append('_').append(matcher.group(1)).append('_').append(Integer.parseInt(matcher.group(4))).append('_');
-            return;
+            builder.append('~').append(identifiers.get(1).getText());
+        }
+        return builder;
+    }
+
+    private static StringBuilder descriptorMultToId(StringBuilder builder, MultiplicityArgumentContext multContext)
+    {
+        if (multContext.identifier() != null)
+        {
+            return builder.append(multContext.identifier().getText());
         }
 
-        matcher = TYPE_WITH_MULTIPLICITY_MANY.matcher(typeWithMultiplicityDescriptor);
-        if (matcher.matches())
+        String fromMult = (multContext.fromMultiplicity() == null) ? null : multContext.fromMultiplicity().getText();
+        String toMult = multContext.toMultiplicity().getText();
+        if ("*".equals(toMult))
         {
-            builder.append('_').append(matcher.group(1)).append("_MANY_");
-            return;
+            long lower = (fromMult == null) ? 0L : Long.parseLong(fromMult);
+            return (lower == 0) ?
+                   builder.append("MANY") :
+                   builder.append('$').append(lower).append("_MANY$");
         }
 
-        matcher = TYPE_WITH_MULTIPLICITY_NUM_TO_NUM.matcher(typeWithMultiplicityDescriptor);
-        if (matcher.matches())
+        long upper = Long.parseLong(toMult);
+        long lower = (fromMult == null) ? upper : Long.parseLong(fromMult);
+        return (lower == upper) ?
+               builder.append(upper) :
+               builder.append('$').append(lower).append('_').append(upper).append('$');
+    }
+
+    private static FunctionDescriptorContext parse(String functionDescriptor) throws InvalidFunctionDescriptorException
+    {
+        if ((functionDescriptor == null) || functionDescriptor.isEmpty())
         {
-            builder.append('_').append(matcher.group(1)).append('_');
-            int num1 = Integer.parseInt(matcher.group(4));
-            int num2 = Integer.parseInt(matcher.group(5));
-            if (num1 == num2)
+            throw new InvalidFunctionDescriptorException(functionDescriptor);
+        }
+
+        M3Lexer lexer = new M3Lexer(CharStreams.fromString(functionDescriptor));
+        lexer.removeErrorListeners();
+
+        M3Parser parser = new M3Parser(new CommonTokenStream(lexer));
+        parser.removeErrorListeners();
+        parser.setErrorHandler(new BailErrorStrategy());
+        parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
+
+        FunctionDescriptorContext result;
+        try
+        {
+            result = parser.functionDescriptor();
+        }
+        catch (ParseCancellationException e)
+        {
+            throw new InvalidFunctionDescriptorException(functionDescriptor, e.getCause());
+        }
+        catch (Exception e)
+        {
+            throw new InvalidFunctionDescriptorException(functionDescriptor, e);
+        }
+
+        // ensure there's no unparsed text left over
+        for (int i = result.getStop().getStopIndex() + 1, len = functionDescriptor.length(); i < len; i++)
+        {
+            if (!Character.isWhitespace(functionDescriptor.charAt(i)))
             {
-                builder.append(num1);
+                throw new InvalidFunctionDescriptorException(functionDescriptor);
             }
-            else
-            {
-                builder.append('$').append(num1).append('_').append(num2).append('$');
-            }
-            builder.append('_');
-            return;
         }
-
-        matcher = TYPE_WITH_MULTIPLICITY_NUM_TO_MANY.matcher(typeWithMultiplicityDescriptor);
-        if (matcher.matches())
-        {
-            builder.append('_').append(matcher.group(1)).append('_');
-            int num = Integer.parseInt(matcher.group(4));
-            if (num == 0)
-            {
-                builder.append("MANY_");
-            }
-            else
-            {
-                builder.append('$').append(num).append("_MANY$_");
-            }
-            return;
-        }
-
-        matcher = TYPE_WITH_MULTIPLICITY_PARAMETER.matcher(typeWithMultiplicityDescriptor);
-        if (matcher.matches())
-        {
-            builder.append('_').append(matcher.group(1)).append('_').append(matcher.group(4)).append('_');
-            return;
-        }
-
-        throw new IllegalArgumentException("Invalid type with multiplicity descriptor: '" + typeWithMultiplicityDescriptor + "'");
+        return result;
     }
 }

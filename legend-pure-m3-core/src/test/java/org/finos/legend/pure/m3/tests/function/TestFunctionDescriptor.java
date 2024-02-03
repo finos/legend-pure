@@ -17,33 +17,21 @@ package org.finos.legend.pure.m3.tests.function;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
 import org.finos.legend.pure.m3.navigation.function.InvalidFunctionDescriptorException;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.nio.file.Paths;
-
 public class TestFunctionDescriptor
 {
     @Test
-    public void testIsPossiblyFunctionDescriptor()
-    {
-        Assert.assertFalse(FunctionDescriptor.isPossiblyFunctionDescriptor(""));
-        Assert.assertFalse(FunctionDescriptor.isPossiblyFunctionDescriptor("abcde"));
-        Assert.assertFalse(FunctionDescriptor.isPossiblyFunctionDescriptor("pkg1::pkg2::func(Boolean[1])"));
-        Assert.assertFalse(FunctionDescriptor.isPossiblyFunctionDescriptor("pkg1::pkg2::func:Boolean[1]"));
-
-        Assert.assertTrue(FunctionDescriptor.isPossiblyFunctionDescriptor("pkg1::pkg2::func(Integer[1]):Boolean[1]"));
-    }
-
-    @Test
     public void testIsValidFunctionDescriptor()
     {
+        Assert.assertFalse(FunctionDescriptor.isValidFunctionDescriptor(null));
         Assert.assertFalse(FunctionDescriptor.isValidFunctionDescriptor(""));
         //parameter name not allowed just parameter type and it's multiplicity
         Assert.assertFalse(FunctionDescriptor.isValidFunctionDescriptor("meta::pure::functions::meta::pathToElement(path:String[1]):PackageableElement[1]"));
@@ -76,6 +64,12 @@ public class TestFunctionDescriptor
         Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("   pkg1::pkg2::func  (   \t Integer [ 1 ] , String [ 1       ..  5   ] )   : Boolean\t[  1 ] "));
         Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("func(Integer[16..20]):Boolean[1]"));
         Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("func(A<K>[16..20]):Z<K>[1]"));
+        Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("pkg::myFunc():Mass~Gram[1]"));
+        Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("meta::pure::functions::collection::removeDuplicates(T[*],Function<{T[1]->V[1]}>[0..1],Function<{V[1],V[1]->Boolean[1]}>[0..1]):T[*]"));
+        Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("meta::pure::functions::collection::removeDuplicates(T[*], Function<{T[1]->V[1]}>[0..1], Function<{V[1],V[1]->Boolean[1]}>[0..1]):T[*]"));
+        Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("meta::pure::functions::collection::removeDuplicates(T[*], Function< { T [1] -> V [1] } > [0..1], Function< { V [1], V [1] -> Boolean [ 1 ] } >[0..1]):T[*]"));
+        Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("curry(Function<{T[m],U[n]->V[o]}>[1], T[m]):Function<{U[n]->V[o]}>[1]"));
+        Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("curry(Function<{T[m],U[n],V[o]->W[p]}>[1], T[m]):Function<{U[n],V[o]->W[p]}>[1]"));
     }
 
     @Test
@@ -84,24 +78,24 @@ public class TestFunctionDescriptor
         PureRuntime runtime = new PureRuntimeBuilder(new CompositeCodeStorage(new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository()))).build();
         runtime.loadAndCompileCore();
         runtime.createInMemorySource("fromString.pure", "function pkg1::pkg2::pkg3::func1(string1:String[1], string2:String[1]):String[1]\n" +
-                                                   "{\n" +
-                                                   "    $string1 + $string2 + ' (from private)'\n" +
-                                                   "}\n" +
-                                                   "\n" +
-                                                   "function pkg1::func2(s:String[1]):Integer[1]\n" +
-                                                   "{\n" +
-                                                   "    pkg1::pkg2::pkg3::func1($s, ' from public')->length()\n" +
-                                                   "}\n" +
-                                                   "\n" +
-                                                   "function func3():Boolean[1]\n" +
-                                                   "{\n" +
-                                                   "    false\n" +
-                                                   "}\n" +
-                                                   "\n" +
-                                                   "function func4<T|m>(t:T[m]):T[m]\n" +
-                                                   "{\n" +
-                                                   "    $t\n" +
-                                                   "}");
+                "{\n" +
+                "    $string1 + $string2 + ' (from private)'\n" +
+                "}\n" +
+                "\n" +
+                "function pkg1::func2(s:String[1]):Integer[1]\n" +
+                "{\n" +
+                "    pkg1::pkg2::pkg3::func1($s, ' from public')->length()\n" +
+                "}\n" +
+                "\n" +
+                "function func3():Boolean[1]\n" +
+                "{\n" +
+                "    false\n" +
+                "}\n" +
+                "\n" +
+                "function func4<T|m>(t:T[m]):T[m]\n" +
+                "{\n" +
+                "    $t\n" +
+                "}");
         runtime.compile();
         ProcessorSupport processorSupport = runtime.getProcessorSupport();
 
@@ -127,6 +121,7 @@ public class TestFunctionDescriptor
     {
         Assert.assertEquals("pkg1::pkg2::pkg3::func_Integer_1__String_1_", FunctionDescriptor.functionDescriptorToId("pkg1::pkg2::pkg3::func(Integer[1]):String[1]"));
         Assert.assertEquals("pkg1::pkg2::pkg3::func_Integer_1__String_1_", FunctionDescriptor.functionDescriptorToId("    pkg1::pkg2::pkg3::func ( Integer  \t [ 1 ]   ) : String [ 1 ]   "));
+        Assert.assertEquals("pkg1::pkg2::pkg3::func_Integer_MANY__String_$1_MANY$_", FunctionDescriptor.functionDescriptorToId("pkg1::pkg2::pkg3::func(Integer[0..*]):String[1..*]"));
     }
 
     @Test
@@ -144,46 +139,43 @@ public class TestFunctionDescriptor
     }
 
     @Test
+    public void testFunctionDescriptorToIdWithTypeParameters() throws InvalidFunctionDescriptorException
+    {
+        Assert.assertEquals("curry_Function_1__T_m__Function_1_", FunctionDescriptor.functionDescriptorToId("curry(Function<{T[m],U[n]->V[o]}>[1], T[m]):Function<{U[n]->V[o]}>[1]"));
+        Assert.assertEquals("curry_Function_1__T_m__Function_1_", FunctionDescriptor.functionDescriptorToId("curry(Function<{T[m],U[n],V[o]->W[p]}>[1], T[m]):Function<{U[n],V[o]->W[p]}>[1]"));
+    }
+
+    @Test
+    public void testFunctionDescriptorToIdUnits() throws InvalidFunctionDescriptorException
+    {
+        Assert.assertEquals("pkg::myFunc__Mass~Gram_1_", FunctionDescriptor.functionDescriptorToId("pkg::myFunc():Mass~Gram[1]"));
+        Assert.assertEquals("pkg::myFunc__Mass~Gram_1_", FunctionDescriptor.functionDescriptorToId(" \t \tpkg::myFunc(       ) : Mass ~ Gram[\t\t1\t]"));
+    }
+
+    @Test
     public void testFunctionDescriptorToIdRealFunctions() throws InvalidFunctionDescriptorException
     {
         Assert.assertEquals("meta::pure::functions::collection::get_T_MANY__String_1__T_$0_1$_", FunctionDescriptor.functionDescriptorToId("meta::pure::functions::collection::get(T[*], String[1]):T[0..1]"));
         Assert.assertEquals("meta::json::toJSON_Any_MANY__Integer_$0_1$__Boolean_1__String_1_", FunctionDescriptor.functionDescriptorToId("meta::json::toJSON(Any[*], Integer[0..1], Boolean[1]):String[1]"));
         Assert.assertEquals("meta::pure::functions::string::toString_Any_1__String_1_", FunctionDescriptor.functionDescriptorToId("meta::pure::functions::string::toString(Any[1]):String[1]"));
         Assert.assertEquals("meta::pure::functions::collection::tests::map::classPropertyByName_Class_1__String_1__Property_$0_1$_", FunctionDescriptor.functionDescriptorToId("meta::pure::functions::collection::tests::map::classPropertyByName(Class<Any>[1], String[1]):Property<Nil,Any|*>[0..1]"));
+        Assert.assertEquals("meta::pure::functions::collection::removeDuplicates_T_MANY__Function_$0_1$__Function_$0_1$__T_MANY_", FunctionDescriptor.functionDescriptorToId("meta::pure::functions::collection::removeDuplicates(T[*],Function<{T[1]->V[1]}>[0..1],Function<{V[1],V[1]->Boolean[1]}>[0..1]):T[*]"));
+        Assert.assertEquals("meta::pure::functions::collection::removeDuplicates_T_MANY__Function_$0_1$__Function_$0_1$__T_MANY_", FunctionDescriptor.functionDescriptorToId("meta::pure::functions::collection::removeDuplicates(T[*], Function<{T[1]->V[1]}>[0..1], Function<{V[1],V[1]->Boolean[1]}>[0..1]):T[*]"));
+        Assert.assertEquals("meta::pure::functions::collection::removeDuplicates_T_MANY__Function_$0_1$__Function_$0_1$__T_MANY_", FunctionDescriptor.functionDescriptorToId("meta::pure::functions::collection::removeDuplicates(T[*], Function< { T [1] -> V [1] } > [0..1], Function< { V [1], V [1] -> Boolean [ 1 ] } >[0..1]):T[*]"));
     }
 
     @Test
     public void testInvalidFunctionDescriptorToId()
     {
-        try
-        {
-            FunctionDescriptor.functionDescriptorToId("not a function descriptor");
-            Assert.fail();
-        }
-        catch (InvalidFunctionDescriptorException e)
-        {
-            // Success
-        }
+        assertInvalidFunctionDescriptor("Invalid function descriptor: 'not a function descriptor'", "not a function descriptor");
+        assertInvalidFunctionDescriptor("Invalid function descriptor: 'func(Type1, Type2):String[1]'", "func(Type1, Type2):String[1]");
+        assertInvalidFunctionDescriptor("Invalid function descriptor: 'func)'", "func)");
+    }
 
-        try
-        {
-            FunctionDescriptor.functionDescriptorToId("func(Type1, Type2):String[1]");
-            Assert.fail();
-        }
-        catch (InvalidFunctionDescriptorException e)
-        {
-            // Success
-        }
-
-        try
-        {
-            FunctionDescriptor.functionDescriptorToId("func)");
-            Assert.fail();
-        }
-        catch (InvalidFunctionDescriptorException e)
-        {
-            // Success
-        }
+    private void assertInvalidFunctionDescriptor(String expectedMessage, String string)
+    {
+        InvalidFunctionDescriptorException e = Assert.assertThrows(InvalidFunctionDescriptorException.class, () -> FunctionDescriptor.functionDescriptorToId(string));
+        Assert.assertEquals(expectedMessage, e.getMessage());
     }
 
     @Test
@@ -192,48 +184,51 @@ public class TestFunctionDescriptor
         PureRuntime runtime = new PureRuntimeBuilder(new CompositeCodeStorage(new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository()))).build();
         runtime.loadAndCompileCore();
         runtime.createInMemorySource("fromString.pure", "function test1():Integer[1]\n" +
-                                                   "{\n" +
-                                                   "    5\n" +
-                                                   "}\n" +
-                                                   "function pkg1::pkg2::test2(s:String[0..5], i:Integer[*], j:Integer[0..*]):Date[2]\n" +
-                                                   "{\n" +
-                                                   "    [%2014, %2013]\n" +
-                                                   "}\n");
+                "{\n" +
+                "    5\n" +
+                "}\n" +
+                "function pkg1::pkg2::test2(s:String[0..5], i:Integer[*], j:Integer[0..*]):Date[2]\n" +
+                "{\n" +
+                "    [%2014, %2013]\n" +
+                "}\n");
         runtime.compile();
         ProcessorSupport processorSupport = runtime.getProcessorSupport();
 
-        CoreInstance expected;
-        CoreInstance actual;
-
         // Test functions
-        expected = processorSupport.package_getByUserPath("test1__Integer_1_");
-        Assert.assertNotNull(expected);
-        actual = FunctionDescriptor.getFunctionByDescriptor("test1():Integer[1]", processorSupport);
-        Assert.assertSame(expected, actual);
-        actual = FunctionDescriptor.getFunctionByDescriptor("test1():Integer[1..1]", processorSupport);
-        Assert.assertSame(expected, actual);
+        assertGetFunctionByDescriptor(
+                "test1__Integer_1_",
+                "test1():Integer[1]",
+                processorSupport);
+        assertGetFunctionByDescriptor(
+                "test1__Integer_1_",
+                "test1():Integer[1..1]",
+                processorSupport);
 
-        expected = processorSupport.package_getByUserPath("pkg1::pkg2::test2_String_$0_5$__Integer_MANY__Integer_MANY__Date_2_");
-        Assert.assertNotNull(expected);
-        actual = FunctionDescriptor.getFunctionByDescriptor("pkg1::pkg2::test2(String[0..5], Integer[*], Integer[*]):Date[2]", processorSupport);
-        Assert.assertSame(expected, actual);
-        actual = FunctionDescriptor.getFunctionByDescriptor("pkg1::pkg2::test2(String[0..5], Integer[0..*], Integer[0..*]):Date[2..2]", processorSupport);
-        Assert.assertSame(expected, actual);
+        assertGetFunctionByDescriptor(
+                "pkg1::pkg2::test2_String_$0_5$__Integer_MANY__Integer_MANY__Date_2_",
+                "pkg1::pkg2::test2(String[0..5], Integer[*], Integer[*]):Date[2]",
+                processorSupport);
+        assertGetFunctionByDescriptor(
+                "pkg1::pkg2::test2_String_$0_5$__Integer_MANY__Integer_MANY__Date_2_",
+                "pkg1::pkg2::test2(String[0..5], Integer[0..*], Integer[0..*]):Date[2..2]",
+                processorSupport);
 
         // Real functions
-//        expected = processorSupport.package_getByUserPath("meta::pure::functions::collection::get_T_MANY__String_1__T_$0_1$_");
-//        Assert.assertNotNull(expected);
-//        actual = FunctionDescriptor.getFunctionByDescriptor("meta::pure::functions::collection::get(T[*], String[1]):T[0..1]", processorSupport);
-//        Assert.assertSame(expected, actual);
+        assertGetFunctionByDescriptor(
+                "meta::pure::functions::collection::removeDuplicates_T_MANY__Function_$0_1$__Function_$0_1$__T_MANY_",
+                "meta::pure::functions::collection::removeDuplicates(T[*],Function<{T[1]->V[1]}>[0..1],Function<{V[1],V[1]->Boolean[1]}>[0..1]):T[*]",
+                processorSupport);
+        assertGetFunctionByDescriptor(
+                "meta::pure::functions::string::plus_String_MANY__String_1_",
+                "meta::pure::functions::string::plus(String[*]):String[1]",
+                processorSupport);
+    }
 
-//        expected = processorSupport.package_getByUserPath("meta::pure::functions::string::toString_Any_1__String_1_");
-//        Assert.assertNotNull(expected);
-//        actual = FunctionDescriptor.getFunctionByDescriptor("meta::pure::functions::string::toString(Any[1]):String[1]", processorSupport);
-//        Assert.assertSame(expected, actual);
-
-        expected = processorSupport.package_getByUserPath("meta::pure::functions::string::plus_String_MANY__String_1_");
-        Assert.assertNotNull(expected);
-        actual = FunctionDescriptor.getFunctionByDescriptor("meta::pure::functions::string::plus(String[*]):String[1]", processorSupport);
-        Assert.assertSame(expected, actual);
+    private void assertGetFunctionByDescriptor(String path, String descriptor, ProcessorSupport processorSupport) throws InvalidFunctionDescriptorException
+    {
+        CoreInstance expected = processorSupport.package_getByUserPath(path);
+        Assert.assertNotNull(path, expected);
+        CoreInstance actual = FunctionDescriptor.getFunctionByDescriptor(descriptor, processorSupport);
+        Assert.assertSame(descriptor, actual, expected);
     }
 }

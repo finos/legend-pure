@@ -17,7 +17,6 @@ package org.finos.legend.pure.runtime.java.interpreted.function.base.meta;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.meta.AbstractTestFunctionDescriptorToId;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.junit.After;
 import org.junit.BeforeClass;
 
 public class TestFunctionDescriptorToId extends AbstractTestFunctionDescriptorToId
@@ -26,14 +25,6 @@ public class TestFunctionDescriptorToId extends AbstractTestFunctionDescriptorTo
     public static void setUp()
     {
         setUpRuntime(getFunctionExecution());
-    }
-
-    @After
-    public void cleanRuntime()
-    {
-        runtime.delete("testModel.pure");
-        runtime.delete("testFunc.pure");
-        runtime.compile();
     }
 
     protected static FunctionExecution getFunctionExecution()
