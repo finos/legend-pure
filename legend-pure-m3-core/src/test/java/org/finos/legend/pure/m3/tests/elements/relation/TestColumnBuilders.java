@@ -155,7 +155,7 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     {
         compileTestSource("fromString.pure",
                 "native function sum(i:Integer[*]):Integer[1];" +
-                        "function test<U>():meta::pure::metamodel::relation::AggColSpec<{U[1]->Integer[0..1]}, {Integer[*]->Integer[1]}, (name:Integer)>[1]" +
+                        "function test<U>():meta::pure::metamodel::relation::AggColSpec<{U[1]->Integer[0..1]}, {Integer[*]->Integer[0..1]}, (name:Integer)>[1]" +
                         "{" +
                         "   ~name: x|1 : y|$y->sum();" +
                         "}");
@@ -166,7 +166,7 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     {
         compileTestSource("fromString.pure",
                 "native function sum(i:Integer[*]):Integer[1];" +
-                        "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpec<{U[1]->T[0..1]},{T[*]->K[1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                        "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpec<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
                         "\n" +
                         "" +
                         "function test():Boolean[1]" +
@@ -181,7 +181,7 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     {
         compileTestSource("fromString.pure",
                 "native function sum(i:Integer[*]):Integer[1];" +
-                        "function test<U>():meta::pure::metamodel::relation::AggColSpecArray<{Nil[1]->Any[0..1]}, {Nil[*]->Any[1]}, (name:Integer, newO:String)>[1]" +
+                        "function test<U>():meta::pure::metamodel::relation::AggColSpecArray<{Nil[1]->Any[0..1]}, {Nil[*]->Any[0..1]}, (name:Integer, newO:String)>[1]" +
                         "{" +
                         "   ~[name: x|1 : y|$y->sum(), newO: z|'a' : y|$y->joinStrings(',')]" +
                         "}");
@@ -192,7 +192,7 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     {
         compileTestSource("fromString.pure",
                 "native function sum(i:Integer[*]):Integer[1];" +
-                        "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                        "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
                         "\n" +
                         "" +
                         "function test():Boolean[1]" +
@@ -207,7 +207,7 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     {
         compileTestSource("fromString.pure",
                 "native function sum(i:Integer[*]):Integer[1];" +
-                        "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                        "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
                         "\n" +
                         "" +
                         "function test():Boolean[1]" +
@@ -222,7 +222,7 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     {
         compileTestSource("fromString.pure",
                 "native function sum(i:Integer[*]):Integer[1];" +
-                        "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                        "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
                         "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
                         "\n" +
                         "" +
@@ -240,7 +240,7 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
         {
             compileTestSource("fromString.pure",
                     "native function sum(i:Integer[*]):Integer[1];" +
-                            "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                            "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
                             "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
                             "\n" +
                             "" +
@@ -264,7 +264,7 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
         {
             compileTestSource("fromString.pure",
                     "native function sum(i:Integer[*]):Integer[1];" +
-                            "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                            "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
                             "\n" +
                             "" +
                             "function test():Boolean[1]" +
@@ -287,7 +287,7 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
         {
             compileTestSource("fromString.pure",
                     "native function sum(i:Integer[*]):Integer[1];" +
-                            "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                            "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
                             "\n" +
                             "" +
                             "function test():Boolean[1]" +
@@ -311,7 +311,7 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
         {
             compileTestSource("fromString.pure",
                     "native function sum(i:Integer[*]):Integer[1];" +
-                            "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                            "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
                             "\n" +
                             "" +
                             "function test():Boolean[1]" +
@@ -333,6 +333,18 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
         }
     }
 
+    @Test
+    public void testGroupByNullableAggregation()
+    {
+        compileTestSource("fromString.pure",
+                        "native function max(i:Integer[*]):Integer[0..1];" +
+                        "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                        "function test():Boolean[1]" +
+                        "{" +
+                        "   []->cast(@meta::pure::metamodel::relation::Relation<(id:String, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.ok : y|$y->max(), otherOne : x|$x.id : y|$y->joinStrings(',')]);" +
+                        "   true;" +
+                        "}");
+    }
 
     @Test
     public void testColumnSimpleFunctionInference()
