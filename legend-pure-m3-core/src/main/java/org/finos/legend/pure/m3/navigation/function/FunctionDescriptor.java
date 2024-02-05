@@ -31,9 +31,11 @@ import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Lexer;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.FunctionDescriptorContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.FunctionDescriptorTypeMultiplicityContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.IdentifierContext;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.FunctionTypePureTypeContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MultiplicityArgumentContext;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.QualifiedNameContext;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TypeContext;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.UnitNameContext;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 
@@ -182,7 +184,7 @@ public class FunctionDescriptor
         FunctionDescriptorContext context = parse(functionDescriptor);
 
         StringBuilder builder = new StringBuilder(context.qualifiedName().getText());
-        List<FunctionDescriptorTypeMultiplicityContext> typeMults = context.functionDescriptorTypeMultiplicity();
+        List<FunctionTypePureTypeContext> typeMults = context.functionTypePureType();
         if (typeMults.size() == 1)
         {
             // no parameters, only return type
@@ -195,21 +197,16 @@ public class FunctionDescriptor
         return builder.toString();
     }
 
-    private static void descriptorTypeAndMultToId(StringBuilder builder, FunctionDescriptorTypeMultiplicityContext typeMultContext)
+    private static void descriptorTypeAndMultToId(StringBuilder builder, FunctionTypePureTypeContext typeMultContext)
     {
-        descriptorTypeToId(builder.append('_'), typeMultContext.functionDescriptorType()).append('_');
+        descriptorTypeToId(builder.append('_'), typeMultContext.type()).append('_');
         descriptorMultToId(builder, typeMultContext.multiplicity().multiplicityArgument()).append('_');
     }
 
-    private static StringBuilder descriptorTypeToId(StringBuilder builder, M3Parser.FunctionDescriptorTypeContext typeContext)
+    private static StringBuilder descriptorTypeToId(StringBuilder builder, TypeContext typeContext)
     {
-        List<IdentifierContext> identifiers = typeContext.identifier();
-        builder.append(identifiers.get(0).getText());
-        if (identifiers.size() > 1)
-        {
-            builder.append('~').append(identifiers.get(1).getText());
-        }
-        return builder;
+        UnitNameContext unitNameContext = typeContext.unitName();
+        return builder.append((unitNameContext == null) ? typeContext.qualifiedName().getText() : unitNameContext.getText());
     }
 
     private static StringBuilder descriptorMultToId(StringBuilder builder, MultiplicityArgumentContext multContext)
@@ -236,14 +233,14 @@ public class FunctionDescriptor
                builder.append('$').append(lower).append('_').append(upper).append('$');
     }
 
-    private static FunctionDescriptorContext parse(String functionDescriptor) throws InvalidFunctionDescriptorException
+    private static FunctionDescriptorContext parse(String text) throws InvalidFunctionDescriptorException
     {
-        if ((functionDescriptor == null) || functionDescriptor.isEmpty())
+        if ((text == null) || text.isEmpty())
         {
-            throw new InvalidFunctionDescriptorException(functionDescriptor);
+            throw new InvalidFunctionDescriptorException(text);
         }
 
-        M3Lexer lexer = new M3Lexer(CharStreams.fromString(functionDescriptor));
+        M3Lexer lexer = new M3Lexer(CharStreams.fromString(text));
         lexer.removeErrorListeners();
 
         M3Parser parser = new M3Parser(new CommonTokenStream(lexer));
@@ -251,28 +248,64 @@ public class FunctionDescriptor
         parser.setErrorHandler(new BailErrorStrategy());
         parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
 
-        FunctionDescriptorContext result;
         try
         {
-            result = parser.functionDescriptor();
+            return validateParseResult(parser.functionDescriptor(), text);
         }
         catch (ParseCancellationException e)
         {
-            throw new InvalidFunctionDescriptorException(functionDescriptor, e.getCause());
+            throw new InvalidFunctionDescriptorException(text, e.getCause());
         }
         catch (Exception e)
         {
-            throw new InvalidFunctionDescriptorException(functionDescriptor, e);
+            throw new InvalidFunctionDescriptorException(text, e);
         }
+    }
 
+    private static FunctionDescriptorContext validateParseResult(FunctionDescriptorContext result, String text)
+    {
         // ensure there's no unparsed text left over
-        for (int i = result.getStop().getStopIndex() + 1, len = functionDescriptor.length(); i < len; i++)
+        for (int i = result.getStop().getStopIndex() + 1, len = text.length(); i < len; i++)
         {
-            if (!Character.isWhitespace(functionDescriptor.charAt(i)))
+            if (!Character.isWhitespace(text.charAt(i)))
             {
-                throw new InvalidFunctionDescriptorException(functionDescriptor);
+                throw new RuntimeException("Unparsed text from index " + i + ": '" + text.substring(i) + "'");
             }
         }
+
+        // validate types
+        result.functionTypePureType().forEach(FunctionDescriptor::validateTypeMult);
+
         return result;
+    }
+
+    private static void validateTypeMult(FunctionTypePureTypeContext typeMultContext)
+    {
+        validateType(typeMultContext.type());
+    }
+
+    private static void validateType(TypeContext typeContext)
+    {
+        UnitNameContext unitNameContext = typeContext.unitName();
+        if (unitNameContext != null)
+        {
+            if (unitNameContext.qualifiedName().packagePath() != null)
+            {
+                throw new RuntimeException("Package path not allowed in types: " +  typeContext.getText());
+            }
+            return;
+        }
+
+        QualifiedNameContext qualifiedNameContext = typeContext.qualifiedName();
+        if (qualifiedNameContext != null)
+        {
+            if (qualifiedNameContext.packagePath() != null)
+            {
+                throw new RuntimeException("Package path not allowed in types: " + typeContext.getText());
+            }
+            return;
+        }
+
+        throw new RuntimeException("Unsupported type: " + typeContext.getText());
     }
 }

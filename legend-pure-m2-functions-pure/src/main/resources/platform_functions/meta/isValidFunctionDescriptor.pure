@@ -13,3 +13,19 @@
 // limitations under the License.
 
 native function meta::pure::functions::meta::isValidFunctionDescriptor(functionDescriptor:String[1]):Boolean[1];
+
+function <<test.Test>> meta::pure::functions::meta::tests::isValidFunctionDescriptor::testIsValidFunctionDescriptor():Boolean[1]
+{
+    assert('meta::pure::functions::meta::tests::functionDescriptorToId():Boolean[1]'->isValidFunctionDescriptor());
+    assert('meta::pure::functions::collection::removeDuplicates(T[*], Function<{T[1]->V[1]}>[0..1], Function<{V[1], V[1]->Boolean[1]}>[0..1]):T[*]'->isValidFunctionDescriptor());
+    assert('meta::pure::functions::collection::removeDuplicates(T[*], Function[0..1], Function[0..1]):T[*]'->isValidFunctionDescriptor());
+    assert('meta::pure::functions::collection::removeDuplicates(T[*],Function[0..1],Function[0..1]):T[0..*]'->isValidFunctionDescriptor());
+    assert('meta::pure::functions::meta::pathToElement(String[1]):PackageableElement[1]'->isValidFunctionDescriptor());
+    assert('my::test::testUnits(Mass~Kilogram[1]):Mass~Kilogram[1]'->isValidFunctionDescriptor());
+
+    assertFalse(''->isValidFunctionDescriptor());
+    assertFalse('the quick brown fox jumps over the lazy dog'->isValidFunctionDescriptor());
+    assertFalse('meta::pure::functions::meta::pathToElement(path:String[1]):PackageableElement[1]'->isValidFunctionDescriptor());
+    assertFalse('meta::pure::functions::meta::pathToElement(String[[1]]):PackageableElement[1]'->isValidFunctionDescriptor());
+    assertFalse('meta::pure::functions::meta::pathToElement(String[*..*]):PackageableElement[1]'->isValidFunctionDescriptor());
+}
