@@ -74,9 +74,7 @@ public class NativeFunctionProcessor
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*;\n",
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.*;\n",
             "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n",
-            "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.*;\n",
-            //tests only
-            "import org.junit.Test;\n");
+            "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.*;\n");
 
     private final MutableMap<String, Native> natives;
 

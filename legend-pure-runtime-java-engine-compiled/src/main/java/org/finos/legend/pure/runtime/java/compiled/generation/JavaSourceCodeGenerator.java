@@ -100,7 +100,6 @@ public final class JavaSourceCodeGenerator
                     "import org.finos.legend.pure.m3.navigation.ProcessorSupport;\n" +
                     "import org.finos.legend.pure.m3.execution.ExecutionSupport;\n" +
 
-                    "import org.junit.Test;\n" +
                     "import org.finos.legend.pure.m3.exception.PureExecutionException;\n" +
                     "import org.finos.legend.pure.m4.coreinstance.CoreInstance;\n" +
                     "import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;\n" +
