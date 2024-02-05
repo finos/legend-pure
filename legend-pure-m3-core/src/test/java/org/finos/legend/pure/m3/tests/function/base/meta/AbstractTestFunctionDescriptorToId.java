@@ -15,9 +15,7 @@
 package org.finos.legend.pure.m3.tests.function.base.meta;
 
 import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -27,7 +25,6 @@ public abstract class AbstractTestFunctionDescriptorToId extends AbstractPureTes
     @After
     public void cleanRuntime()
     {
-        runtime.delete("testModel.pure");
         runtime.delete("testFunc.pure");
         runtime.compile();
     }
@@ -42,41 +39,5 @@ public abstract class AbstractTestFunctionDescriptorToId extends AbstractPureTes
                         "}\n");
         PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("test():String[1]"));
         assertPureException(PureExecutionException.class, "Invalid function descriptor: meta::pure::functions::meta::pathToElement(path:String[1]):PackageableElement[1]", "testFunc.pure", 3, 33, e);
-    }
-
-    @Test
-    public void testCorrectDescriptorNoException()
-    {
-        compileTestSource("testFunc.pure",
-                "function test():String[1]\n" +
-                        "{\n" +
-                        "   meta::pure::functions::meta::functionDescriptorToId('meta::pure::functions::meta::pathToElement(String[1]):PackageableElement[1]');\n" +
-                        "}\n");
-        CoreInstance result = this.execute("test():String[1]");
-        Assert.assertEquals("meta::pure::functions::meta::pathToElement_String_1__PackageableElement_1_", result.getValueForMetaPropertyToMany(M3Properties.values).get(0).getName());
-    }
-
-    @Test
-    public void testUnitFunctionDescriptorNoException()
-    {
-        compileTestSource("testModel.pure",
-                "Measure pkg::Mass\n" +
-                        "{\n" +
-                        "   *Gram: x -> $x;\n" +
-                        "   Kilogram: x -> $x*1000;\n" +
-                        "   Pound: x -> $x*453.59;\n" +
-                        "}\n");
-        compileTestSource("testFunc.pure",
-                "import pkg::*;\n" +
-                        "function my::test::testUnits(k: Mass~Kilogram[1]):Mass~Kilogram[1]\n" +
-                        "{\n" +
-                        "   $k;\n" +
-                        "}\n" +
-                        "function test():String[1]\n" +
-                        "{\n" +
-                        "   meta::pure::functions::meta::functionDescriptorToId('my::test::testUnits(Mass~Kilogram[1]):Mass~Kilogram[1]');\n" +
-                        "}\n");
-        CoreInstance result = this.execute("test():String[1]");
-        Assert.assertEquals("my::test::testUnits_Mass~Kilogram_1__Mass~Kilogram_1_", result.getValueForMetaPropertyToMany(M3Properties.values).get(0).getName());
     }
 }
