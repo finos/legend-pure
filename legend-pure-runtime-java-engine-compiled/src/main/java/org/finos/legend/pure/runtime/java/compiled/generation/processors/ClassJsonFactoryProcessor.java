@@ -42,7 +42,6 @@ public class ClassJsonFactoryProcessor
             "import org.finos.legend.pure.runtime.java.extension.external.json.compiled.natives.JsonParserHelper;\n" +
             "import org.finos.legend.pure.m4.exception.PureException;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.*;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n" +
