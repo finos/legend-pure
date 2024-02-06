@@ -42,7 +42,6 @@ import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.transaction.framework.Transaction;
 import org.finos.legend.pure.m4.transaction.framework.TransactionManager;
 
-import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -52,9 +51,7 @@ import java.util.regex.PatternSyntaxException;
 
 public class URLPatternLibrary
 {
-    static final Comparator<PurePattern> URLPatternComparator = URLPatternLibrary::comparePatterns;
-
-    private static final Pattern PATTERN_PARSING_PATTERN = Pattern.compile("([^{]+)|\\{([a-zA-Z_0-9]+)(:(([^}]+)))?\\}");
+    private static final Pattern PATTERN_PARSING_PATTERN = Pattern.compile("(?<nonparam>[^{]++)|(\\{(?<param>[a-zA-Z_0-9]++)(:(?<regex>[^}]++))?})");
 
     private State mainState = new State();
     private final URLPatternLibraryTransactionManager transactionManager = new URLPatternLibraryTransactionManager();
@@ -113,23 +110,23 @@ public class URLPatternLibrary
 
         while (matcher.find())
         {
-            String group1 = matcher.group(1);
-            if (group1 != null)
+            String nonParam = matcher.group("nonparam");
+            if (nonParam != null)
             {
-                if ((first == null) && !group1.isEmpty())
+                if ((first == null) && !nonParam.isEmpty())
                 {
-                    first = group1;
+                    first = nonParam;
                 }
-                builder.append(group1);
+                builder.append(nonParam);
             }
             else
             {
-                String group2 = matcher.group(2);
-                urlArguments.add(group2);
-                builder.append("(?<").append(group2);
+                String param = matcher.group("param");
+                urlArguments.add(param);
+                builder.append("(?<").append(param);
 
-                String group4 = matcher.group(4);
-                if (group4 == null)
+                String regex = matcher.group("regex");
+                if (regex == null)
                 {
                     builder.append(">.+)");
                 }
@@ -137,19 +134,22 @@ public class URLPatternLibrary
                 {
                     try
                     {
-                        Pattern.compile(group4);
+                        Pattern.compile(regex);
                     }
                     catch (PatternSyntaxException e)
                     {
-                        throw new PureCompilationException(new SourceInformation(function.getSourceInformation().getSourceId(), taggedValue.getSourceInformation().getLine(), taggedValue.getSourceInformation().getColumn() + 1 + matcher.start(4) + e.getIndex(), -1, -1), "Error in the user provided regexp: " + group4, e);
+                        SourceInformation sourceInfo = taggedValue.getSourceInformation();
+                        int regexStart = sourceInfo.getColumn() + matcher.start("regex") + 1;
+                        int regexEnd = sourceInfo.getColumn() + matcher.end("regex");
+                        throw new PureCompilationException(new SourceInformation(sourceInfo.getSourceId(), sourceInfo.getLine(), regexStart, sourceInfo.getLine(), regexEnd), "Error in the user provided regexp: " + regex, e);
                     }
-                    builder.append('>').append(group4).append(")");
+                    builder.append('>').append(regex).append(")");
                 }
             }
         }
         if (first == null)
         {
-            throw new PureCompilationException(taggedValue.getSourceInformation(), "Error in the user provided regexp: " + pattern);
+            throw new PureCompilationException(taggedValue.getSourceInformation(), "Error in the user provided pattern: " + pattern);
         }
 
         SetIterable<CoreInstance> supportedTypes = PrimitiveUtilities.getPrimitiveTypes(processorSupport).toSet();
@@ -304,7 +304,7 @@ public class URLPatternLibrary
                 }
                 this.patternByFuncId.put(funcId, pattern);
                 this.patterns.add(pattern);
-                this.patterns.sortThis(URLPatternComparator);
+                this.patterns.sortThis(URLPatternLibrary::comparePatterns);
                 return true;
             }
             finally

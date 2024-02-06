@@ -30,7 +30,7 @@ public class TestURLPatternLibraryOrder
                 new PurePattern(null, "/gggg/ppppppppp/current/account/{accountId}/{user}", null, null, Lists.fixedSize.empty()),
                 new PurePattern(null, "/gggg/ppppppppp/current/{user}", null, null, Lists.fixedSize.empty()));
 
-        MutableList<PurePattern> res = patterns.sortThis(URLPatternLibrary.URLPatternComparator);
+        MutableList<PurePattern> res = patterns.sortThis(URLPatternLibrary::comparePatterns);
 
         Assert.assertEquals(Lists.mutable.with("/pure/diagram/colors",
                 "/gggg/ppppppppp/current/account/{accountId}/{user}",
