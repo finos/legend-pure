@@ -32,7 +32,6 @@ public class UnitInterfaceProcessor
             "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.*;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*;" +
             "import org.finos.legend.pure.m3.execution.ExecutionSupport;\n";
 

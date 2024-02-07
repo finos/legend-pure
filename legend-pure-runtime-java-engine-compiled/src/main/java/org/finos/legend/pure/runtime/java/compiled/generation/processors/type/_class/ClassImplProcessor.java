@@ -56,7 +56,6 @@ public class ClassImplProcessor
             "import org.finos.legend.pure.m4.ModelRepository;\n" +
             "import org.finos.legend.pure.m4.coreinstance.SourceInformation;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.*;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n" +

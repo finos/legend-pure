@@ -14,11 +14,11 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -28,12 +28,37 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.Native;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.collection.Add;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.collection.At;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.collection.Concatenate;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.collection.Fold;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.collection.Init;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.collection.RemoveDuplicates;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.collection.Sort;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.collection.Tail;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.io.Print;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.collection.*;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.lang.*;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.lang.Cast;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.lang.DynamicNew;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.lang.Eval;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.lang.Evaluate;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.lang.If;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.lang.Match;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.math.Abs;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.*;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.string.*;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.EvaluateAndDeactivate;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.GenericType;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.GenericTypeClass;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.GetUnitValue;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.Id;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.InstanceOf;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.NewUnit;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.string.Format;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.string.Length;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.string.Replace;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.string.Split;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.string.StartsWith;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.string.Substring2;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.string.Substring3;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.string.ToString;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.tests.Assert;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.conjunctions.And;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.conjunctions.Not;
@@ -43,9 +68,24 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.equality.Is;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.inequalities.LessThan;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.inequalities.LessThanEqual;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.*;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.*;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.math.*;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.Filter;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.First;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.IsEmpty;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.Map;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.Range;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.Size;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.Compare;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.Copy;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.ExtractEnumValue;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.GetAll;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.Let;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.New;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.NewWithKeyExpr;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.math.Divide;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.math.DivideDecimal;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.math.Minus;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.math.Plus;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.math.Times;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.mulitplicity.ToOne;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.mulitplicity.ToOneMany;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.mulitplicity.ToOneManyWithMessage;
@@ -61,7 +101,6 @@ public class NativeFunctionProcessor
             "import org.eclipse.collections.api.map.MutableMap;\n",
             "import org.eclipse.collections.impl.factory.Lists;\n",
             "import org.eclipse.collections.impl.map.mutable.UnifiedMap;\n",
-            "import org.finos.legend.pure.runtime.java.compiled.*;\n",
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.*;\n",
             "import org.eclipse.collections.api.block.function.Function2;\n",
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;\n",
@@ -70,13 +109,10 @@ public class NativeFunctionProcessor
             "import org.finos.legend.pure.m3.execution.ExecutionSupport;\n",
             "import org.eclipse.collections.impl.factory.Maps;\n",
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.*;\n",
-            "import org.finos.legend.pure.runtime.java.compiled.*;\n",
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*;\n",
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.*;\n",
             "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n",
-            "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.*;\n",
-            //tests only
-            "import org.junit.Test;\n");
+            "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.*;\n");
 
     private final MutableMap<String, Native> natives;
 

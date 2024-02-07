@@ -21,8 +21,12 @@ import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.Log;
 
 import javax.lang.model.SourceVersion;
-import javax.tools.*;
+import javax.tools.DiagnosticCollector;
+import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
+import javax.tools.JavaFileManager;
+import javax.tools.JavaFileObject;
+import javax.tools.ToolProvider;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -40,13 +44,18 @@ public class PureJavaCompiler
     private final MemoryFileManager dynamicManager;
     private MemoryClassLoader globalClassLoader;
 
-    public PureJavaCompiler(Message message)
+    public PureJavaCompiler(Message message, ClassLoader parentClassLoader)
     {
         this.compiler = ToolProvider.getSystemJavaCompiler();
         this.coreManager = new MemoryFileManager(this.compiler, message);
         this.dynamicManager = new MemoryFileManager(this.compiler, this.coreManager, message);
-        this.coreClassLoader = new MemoryClassLoader(this.coreManager, Thread.currentThread().getContextClassLoader());
+        this.coreClassLoader = new MemoryClassLoader(this.coreManager, (parentClassLoader == null) ? Thread.currentThread().getContextClassLoader() : parentClassLoader);
         this.globalClassLoader = new MemoryClassLoader(this.dynamicManager, this.coreClassLoader);
+    }
+
+    public PureJavaCompiler(Message message)
+    {
+        this(message, null);
     }
 
     public MemoryClassLoader compile(Iterable<? extends StringJavaSource> javaSources) throws PureJavaCompileException
@@ -125,8 +134,7 @@ public class PureJavaCompiler
             throw new IllegalArgumentException("Source version must be at least 7, got: " + sourceVersion);
         }
         String versionString = (sourceVersion == null) ? "7" : sourceVersion.toString();
-        // When JDK 9+ is allowed, use this code instead: Runtime.version().version().get(0) <= 8
-        if ("7".equals(versionString) || (SourceVersion.latest().ordinal() <= 8))
+        if ("7".equals(versionString) || getCurrentJavaVersion() <= 8)
         {
             // if source version is less than 8 or if this JVM is version 8 or older, we use -source and -target options
             options.with("-source").with(versionString)
@@ -139,6 +147,12 @@ public class PureJavaCompiler
         }
         options.add("-XDuseUnsharedTable=true");
         return options;
+    }
+
+    private static int getCurrentJavaVersion()
+    {
+        // When JDK 9+ is allowed, use this code instead: Runtime.version().version().get(0)
+        return SourceVersion.latest().ordinal();
     }
 
     private static String getClassPath()
