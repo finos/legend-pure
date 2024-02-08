@@ -167,11 +167,11 @@ public class Map extends AbstractNative implements Native
                "                }\n" +
                "                if (Pure.hasToOneUpperBound(multiplicity))\n" +
                "                {\n" +
-               "                    return CompiledSupport.mapToOneOverMany((RichIterable)o, (Function2)CoreGen.getSharedPureFunction(func,es), es);\n" +
+               "                    return CompiledSupport.mapToOneOverMany(CompiledSupport.toPureCollection(o), (Function2)CoreGen.getSharedPureFunction(func,es), es);\n" +
                "                }\n" +
                "                else\n" +
                "                {\n" +
-               "                    return CompiledSupport.mapToManyOverMany((RichIterable)o, (Function2)CoreGen.getSharedPureFunction(func,es), es);\n" +
+               "                    return CompiledSupport.mapToManyOverMany(CompiledSupport.toPureCollection(o), (Function2)CoreGen.getSharedPureFunction(func,es), es);\n" +
                "                }\n" +
                "            }\n" +
                "        }";
