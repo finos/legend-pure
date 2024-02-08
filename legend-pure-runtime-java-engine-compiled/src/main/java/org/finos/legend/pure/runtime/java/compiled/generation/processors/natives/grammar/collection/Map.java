@@ -81,22 +81,18 @@ public class Map extends AbstractNative implements Native
             CoreInstance sourceType = GenericType.reprocessTypeParametersUsingGenericTypeOwnerContext(source.getValueForMetaPropertyToOne(M3Properties.genericType), Instance.getValueForMetaPropertyToManyResolved(classifierGenericType, "typeArguments", processorSupport).get(0), processorSupport);
             String type = TypeProcessor.typeToJavaObjectSingle(sourceType, true, processorSupport);
 
-            result.append(Multiplicity.isToOne(returnMultiplicity, false) ? "One" : "Many");
-            result.append("Over");
-            result.append(isSourceToOne ? "One" : "Many");
-            result.append('(');
-            result.append(isFunctionReturnToOne ? list : "CompiledSupport.toPureCollection(" + list + ")");
-            result.append(", new org.eclipse.collections.api.block.function.Function2<");
-            result.append(type);
-            result.append(", ExecutionSupport, ");
-            result.append(returnType);
-            result.append(">(){public ");
-            result.append(returnType);
-            result.append(" value(final ");
-            result.append(type);
-            result.append(" _lambdaParameter, final ExecutionSupport executionSupport){return _lambdaParameter._");
-            result.append(PackageableElement.getSystemPathForPackageableElement(property, "_"));
-            result.append("();}}, es)\n");
+            result.append(Multiplicity.isToOne(returnMultiplicity, false) ? "One" : "Many").append("Over").append(isSourceToOne ? "One" : "Many").append('(');
+            if (isFunctionReturnToOne)
+            {
+                result.append(list);
+            }
+            else
+            {
+                result.append("CompiledSupport.toPureCollection(").append(list).append(")");
+            }
+            result.append(", new org.eclipse.collections.api.block.function.Function2<").append(type).append(", ExecutionSupport, ").append(returnType).append(">(){public ").append(returnType);
+            result.append(" value(final ").append(type).append(" _lambdaParameter, final ExecutionSupport executionSupport){return _lambdaParameter._");
+            PackageableElement.writeSystemPathForPackageableElement(result, property, "_").append("();}}, es)\n");
         }
         else
         {
@@ -112,27 +108,25 @@ public class Map extends AbstractNative implements Native
                 list = TypeProcessor.typeToJavaObjectSingle(Instance.getValueForMetaPropertyToOneResolved(param, M3Properties.genericType, processorSupport), false, processorSupport) + processorContext.getClassImplSuffix() + "." + list;
             }
 
-            result.append(isFunctionReturnToOne ? "One" : "Many");
-            result.append("Over");
-            result.append(isSourceToOne ? "One" : "Many");
-            result.append('(');
-            result.append(isSourceToOne ? list : "CompiledSupport.toPureCollection(" + list + ")");
-            result.append(", (org.eclipse.collections.api.block.function.Function2<");
-            result.append(type);
-            result.append(", ExecutionSupport, ");
-            result.append(returnType);
-
-            if (processorSupport.valueSpecification_instanceOf(lambdaOrProperty, M3Paths.LambdaFunction) && processorSupport.instance_instanceOf(lambdaOrProperty, M3Paths.InstanceValue) && !processorContext.isInLineAllLambda())
+            result.append(isFunctionReturnToOne ? "One" : "Many").append("Over").append(isSourceToOne ? "One" : "Many").append('(');
+            if (isSourceToOne)
             {
-                result.append(">)(");
-                result.append(ValueSpecificationProcessor.createFunctionForLambda(topLevelElement, lambdaOrProperty.getValueForMetaPropertyToOne(M3Properties.values), false, processorSupport, processorContext));
-                result.append("), es)\n");
+                result.append(list);
             }
             else
             {
-                result.append(">)(PureCompiledLambda.getPureFunction(");
-                result.append(transformedParams.get(1));
-                result.append(", es)), es)\n");
+                result.append("CompiledSupport.toPureCollection(").append(list).append(")");
+            }
+            result.append(", (org.eclipse.collections.api.block.function.Function2<").append(type).append(", ExecutionSupport, ").append(returnType);
+
+            if (processorSupport.valueSpecification_instanceOf(lambdaOrProperty, M3Paths.LambdaFunction) && processorSupport.instance_instanceOf(lambdaOrProperty, M3Paths.InstanceValue) && !processorContext.isInLineAllLambda())
+            {
+                result.append(">)(")
+                        .append(ValueSpecificationProcessor.createFunctionForLambda(topLevelElement, lambdaOrProperty.getValueForMetaPropertyToOne(M3Properties.values), false, processorSupport, processorContext)).append("), es)\n");
+            }
+            else
+            {
+                result.append(">)(PureCompiledLambda.getPureFunction(").append(transformedParams.get(1)).append(", es)), es)\n");
             }
         }
         if (isSourceToOne && isFunctionReturnToOne && !isFunctionExpressionToOne)
@@ -163,15 +157,15 @@ public class Map extends AbstractNative implements Native
                "                }\n" +
                "                else\n" +
                "                {\n" +
-               "                    throw new RuntimeException(func+\" is not supported yet!\");\n" +
+               "                    throw new RuntimeException(func + \" is not supported yet!\");\n" +
                "                }\n" +
                "                if (Pure.hasToOneUpperBound(multiplicity))\n" +
                "                {\n" +
-               "                    return CompiledSupport.mapToOneOverMany((RichIterable)o, (Function2)CoreGen.getSharedPureFunction(func,es), es);\n" +
+               "                    return (o instanceof RichIterable) ? CompiledSupport.mapToOneOverMany((RichIterable)o, (Function2)CoreGen.getSharedPureFunction(func,es), es) : CompiledSupport.mapToOneOverOne(o, (Function2)CoreGen.getSharedPureFunction(func,es), es);\n" +
                "                }\n" +
                "                else\n" +
                "                {\n" +
-               "                    return CompiledSupport.mapToManyOverMany((RichIterable)o, (Function2)CoreGen.getSharedPureFunction(func,es), es);\n" +
+               "                    return (o instanceof RichIterable) ? CompiledSupport.mapToManyOverMany((RichIterable)o, (Function2)CoreGen.getSharedPureFunction(func,es), es) : CompiledSupport.mapToManyOverOne(o, (Function2)CoreGen.getSharedPureFunction(func,es), es);\n" +
                "                }\n" +
                "            }\n" +
                "        }";

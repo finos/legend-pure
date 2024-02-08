@@ -69,7 +69,17 @@ function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::func
     assertEquals(['a','b','c'], $f->map($property));
 }
 
+Class meta::pure::functions::collection::tests::map::OptionalString
+{
+    value : String[0..1];
+}
 
+function <<test.Test>> meta::pure::functions::collection::tests::map::testMapWithDynamicFunctionFromZeroOneToZeroOne():Boolean[1]
+{
+    let x = {|^meta::pure::functions::collection::tests::map::OptionalString(value='1')->map(x|$x.value);};
+    let n = ^LambdaFunction<{->String[0..1]}>(expressionSequence = $x.expressionSequence);
+    assertEquals('1', $n->evaluate([]));
+}
 
 Class meta::pure::functions::collection::tests::map::model::M_Person
 {

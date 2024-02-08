@@ -23,7 +23,11 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.*;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
@@ -33,6 +37,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecificat
 import org.finos.legend.pure.m3.coreinstance.meta.pure.router.RoutedValueSpecification;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.runtime.java.compiled.compiler.PureDynamicReactivateException;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;
@@ -150,7 +155,28 @@ public class Reactivator
         Objects.requireNonNull(lambdaOpenVariablesMap, "lambdaOpenVariablesMap");
         Objects.requireNonNull(es, "es");
 
-        return reactivateWithoutJavaCompilationImpl(valueSpecification, lambdaOpenVariablesMap, es, true, bridge);
+        try
+        {
+            return reactivateWithoutJavaCompilationImpl(valueSpecification, lambdaOpenVariablesMap, es, true, bridge);
+        }
+        catch (PureException e)
+        {
+            if (e.getSourceInformation() == null)
+            {
+                throw new PureDynamicReactivateException(valueSpecification.getSourceInformation(), e.getInfo(), e);
+            }
+            throw e;
+        }
+        catch (Exception e)
+        {
+            StringBuilder builder = new StringBuilder("Error during dynamic reactivation");
+            String message = e.getMessage();
+            if (message != null)
+            {
+                builder.append(": ").append(message);
+            }
+            throw new PureDynamicReactivateException(valueSpecification.getSourceInformation(), builder.toString(), e);
+        }
     }
 
     private static Object reactivateWithoutJavaCompilationImpl(ValueSpecification valueSpecification, PureMap lambdaOpenVariablesMap, ExecutionSupport es, boolean atRoot, Bridge bridge)
@@ -256,14 +282,9 @@ public class Reactivator
         String funcName = func._name();
         if (funcName != null)
         {
-            switch (func._name())
+            switch (funcName)
             {
                 case "new_Class_1__String_1__KeyExpression_MANY__T_1_":
-                {
-                    //Have to get the first param from the generic type
-                    paramValues.set(0, Lists.fixedSize.of(sfe._genericType()._rawType()));
-                    break;
-                }
                 case "new_Class_1__String_1__T_1_":
                 {
                     //Have to get the first param from the generic type
