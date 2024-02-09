@@ -161,11 +161,7 @@ public class Reactivator
         }
         catch (PureException e)
         {
-            if (e.getSourceInformation() == null)
-            {
-                throw new PureDynamicReactivateException(valueSpecification.getSourceInformation(), e.getInfo(), e);
-            }
-            throw e;
+            throw new PureDynamicReactivateException(valueSpecification.getSourceInformation(), e.getInfo(), e);
         }
         catch (Exception e)
         {
@@ -269,6 +265,10 @@ public class Reactivator
         MutableList<RichIterable<?>> paramValues = sfe._parametersValues().collect(value ->
         {
             Object newValue = reactivateWithoutJavaCompilationImpl(value, lambdaOpenVariablesMap, es, false, bridge);
+            if (newValue == null)
+            {
+                return Lists.fixedSize.empty();
+            }
             if (newValue instanceof RichIterable)
             {
                 return (RichIterable<?>) newValue;

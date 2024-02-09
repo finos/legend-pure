@@ -63,6 +63,7 @@ import org.finos.legend.pure.m4.coreinstance.primitive.date.DateTime;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate;
+import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.runtime.java.compiled.compiler.PureDynamicReactivateException;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
@@ -78,13 +79,13 @@ import org.finos.legend.pure.runtime.java.compiled.metadata.JavaMethodWithParams
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataAccessor;
 import org.json.simple.JSONObject;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -370,41 +371,49 @@ public class Pure
     {
         if (func instanceof Property)
         {
+            if (paramInputs.size() > 1)
+            {
+                throw new PureExecutionException(func.getSourceInformation(), "Error accessing property '" + func.getName() + "': too many arguments (expected 1, got " + paramInputs.size() + ")");
+            }
+            Object instance = getInstanceForPropertyEvaluate(paramInputs, func.getName(), func.getSourceInformation());
             try
             {
-                Object o = ((RichIterable<?>) paramInputs.getFirst()).getFirst();
-                return o.getClass().getMethod("_" + func.getName()).invoke(o);
+                return instance.getClass().getMethod("_" + func.getName()).invoke(instance);
             }
-            catch (RuntimeException e)
+            catch (InvocationTargetException e)
             {
-                throw e;
+                Throwable cause = e.getCause();
+                if (cause instanceof Error)
+                {
+                    throw (Error) cause;
+                }
+                if (cause instanceof PureException)
+                {
+                    throw (PureException) cause;
+                }
+                throw new PureExecutionException(func.getSourceInformation(), "Error invoking property '" + func.getName() + "'", cause);
             }
             catch (Exception e)
             {
-                throw new RuntimeException(e);
+                throw new PureExecutionException(func.getSourceInformation(), "Error accessing property '" + func.getName() + "'", e);
             }
         }
 
-        RichIterable<? extends VariableExpression> params = ((FunctionType) func._classifierGenericType()._typeArguments().getFirst()._rawType())._parameters();
+        RichIterable<? extends VariableExpression> params = ((FunctionType) func._classifierGenericType()._typeArguments().getAny()._rawType())._parameters();
         Class<?>[] paramClasses = new Class<?>[params.size()];
         int index = 0;
         for (VariableExpression o : params)
         {
-            paramClasses[index] = pureTypeToJavaClassForExecution(o, bridge, es);
-            index++;
+            paramClasses[index++] = pureTypeToJavaClassForExecution(o, bridge, es);
         }
 
         Object[] paramInstances = new Object[params.size()];
-        Iterator<?> iterator = paramInputs.iterator();
-        for (int i = 0; i < params.size(); i++)
-        {
-            paramInstances[i] = (paramClasses[i] == RichIterable.class) ? iterator.next() : ((RichIterable<?>) iterator.next()).getFirst();
-        }
+        paramInputs.forEachWithIndex((input, i) -> paramInstances[i] = (paramClasses[i] == RichIterable.class) ? input : ((RichIterable<?>) input).getAny());
         try
         {
             if (func instanceof QualifiedProperty)
             {
-                Object o = ((RichIterable<?>) paramInputs.getFirst()).getFirst();
+                Object o = getInstanceForPropertyEvaluate(paramInputs, func._functionName(), func.getSourceInformation());
                 return CompiledSupport.executeMethod(o.getClass(), func._functionName(), func, Arrays.copyOfRange(paramClasses, 1, paramClasses.length),
                         o, Arrays.copyOfRange(paramInstances, 1, paramInstances.length), es);
             }
@@ -436,8 +445,49 @@ public class Pure
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            StringBuilder builder = new StringBuilder("Error executing ");
+            String name = func._name();
+            if (name == null)
+            {
+                builder.append("anonymous function");
+            }
+            else
+            {
+                builder.append("'").append(name).append("'");
+            }
+            String message = e.getMessage();
+            if (message != null)
+            {
+                builder.append(": ").append(message);
+            }
+            throw new PureExecutionException(func.getSourceInformation(), builder.toString(), e);
         }
+    }
+
+    private static Object getInstanceForPropertyEvaluate(ListIterable<?> paramInputs, String name, SourceInformation sourceInfo)
+    {
+        if (paramInputs.notEmpty())
+        {
+            Object first = paramInputs.get(0);
+            if (first instanceof Iterable)
+            {
+                Object instance = Iterate.getFirst((Iterable<?>) first);
+                if (instance != null)
+                {
+                    int size = Iterate.sizeOf((Iterable<?>) first);
+                    if (size > 1)
+                    {
+                        throw new PureExecutionException(sourceInfo, "Error accessing property '" + name + "': got too many instances (expected 1, got " + size + ")");
+                    }
+                    return instance;
+                }
+            }
+            else if (first != null)
+            {
+                return first;
+            }
+        }
+        throw new PureExecutionException(sourceInfo, "Error accessing property '" + name + "': no instance");
     }
 
     @SuppressWarnings("unchecked")

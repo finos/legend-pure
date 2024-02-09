@@ -15,11 +15,9 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.base.collection;
 
 import org.finos.legend.pure.m3.execution.FunctionExecution;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.function.base.collection.AbstractTestMap;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
-import org.junit.After;
 import org.junit.BeforeClass;
 
 public class TestMapCompiled extends AbstractTestMap
@@ -27,14 +25,7 @@ public class TestMapCompiled extends AbstractTestMap
     @BeforeClass
     public static void setUp()
     {
-        AbstractPureTestWithCoreCompiled.setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
-    }
-
-    @After
-    public void cleanRuntime()
-    {
-        AbstractPureTestWithCoreCompiled.runtime.delete("fromString.pure");
-        AbstractPureTestWithCoreCompiled.runtime.delete("classes.pure");
+        setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
     }
 
     public static FunctionExecution getFunctionExecution()
