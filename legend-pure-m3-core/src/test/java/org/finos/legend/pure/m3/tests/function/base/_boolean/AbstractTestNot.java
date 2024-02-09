@@ -15,20 +15,28 @@
 package org.finos.legend.pure.m3.tests.function.base._boolean;
 
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.junit.After;
 import org.junit.Test;
 
 public abstract class AbstractTestNot extends AbstractPureTestWithCoreCompiled
 {
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+        runtime.compile();
+    }
+
     @Test
     public void testBasicParse()
     {
-            compileTestSource("fromString.pure",
-                    "function test():Boolean[1]\n" +
-                            "{\n" +
-                            "   assert(true == not(false), |'');\n" +
-                            "   assert(false == not(true), |'');\n" +
-                            "}\n");
-            this.execute("test():Boolean[1]");
+        compileTestSource("fromString.pure",
+                "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   assert(true == not(false), |'');\n" +
+                        "   assert(false == not(true), |'');\n" +
+                        "}\n");
+        execute("test():Boolean[1]");
     }
 
     @Test
@@ -40,6 +48,6 @@ public abstract class AbstractTestNot extends AbstractPureTestWithCoreCompiled
                         "   assert(true == not_Boolean_1__Boolean_1_->eval(false), |'');\n" +
                         "   assert(false == not_Boolean_1__Boolean_1_->eval(true), |'');\n" +
                         "}\n");
-        this.execute("test():Boolean[1]");
+        execute("test():Boolean[1]");
     }
 }

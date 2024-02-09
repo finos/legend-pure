@@ -126,9 +126,9 @@ public class If extends AbstractNative
         return "new DefendedPureFunction3<Boolean, " + FullJavaPaths.Function + ", " + FullJavaPaths.Function + ", Object>()\n" +
                 "        {\n" +
                 "            @Override\n" +
-                "            public Object value(Boolean condition, " + FullJavaPaths.Function + " truth, " + FullJavaPaths.Function + " falsy, ExecutionSupport es)\n" +
+                "            public Object value(Boolean condition, " + FullJavaPaths.Function + " t, " + FullJavaPaths.Function + " f, ExecutionSupport es)\n" +
                 "            {\n" +
-                "                return condition ? CoreGen.evaluate(es, truth, Lists.mutable.empty()) : CoreGen.evaluate(es, falsy, Lists.mutable.empty());\n" +
+                "                return condition ? CoreGen.evaluate(es, t, Lists.fixedSize.empty()) : CoreGen.evaluate(es, f, Lists.fixedSize.empty());\n" +
                 "            }\n" +
                 "        }";
     }
