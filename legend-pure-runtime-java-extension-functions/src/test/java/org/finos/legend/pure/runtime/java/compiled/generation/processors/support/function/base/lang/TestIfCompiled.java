@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.base.lang;
 
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.impl.test.Verify;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
@@ -32,44 +32,39 @@ public class TestIfCompiled extends AbstractPureTestWithCoreCompiled
     @BeforeClass
     public static void setUp()
     {
-        AbstractPureTestWithCoreCompiled.setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
+        setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
     }
 
     @After
     public void cleanRuntime()
     {
-        AbstractPureTestWithCoreCompiled.runtime.delete("fromString.pure");
+        runtime.delete("fromString.pure");
+        runtime.compile();
     }
 
     @Test
     public void testUnAssignedIfInFuncExpression()
     {
-        try
-        {
-            String func = "function meta::pure::functions::lang::tests::if::testUnAssignedIfInFuncExpression():String[1]\n" +
-                    "{\n" +
-                    "   let ifVar =  if(true, | let b = 'true', | if(true, | let b = 'true', | 'false'););\n" +
-                    "   if(true, | let b = 'true', | if(true, | let b = 'true', | 'false'););\n" +
-                    "   if(true, | let b = 'true', | if(true, | let b = 'true', | 'false'););\n" +
-                    "   let iff = if(true, | let b = 'true', | if(true, | let b = 'true', | 'false'););\n" +
-                    "   if(true, | let b = 'true'; if(true, | let b = 'true', | 'false'); let bb = 'bb';, | let c = 'see');\n" +
-                    "   let a = 'be';\n" +
-                    "   if(true, | let b = 'true', | 'false');\n" +
-                    "}";
-            this.compileTestSource("fromString.pure", func);
-        }
-        catch (Exception e)
-        {
-            Assert.fail(e.getMessage());
-        }
+        compileTestSource(
+                "fromString.pure",
+                "function meta::pure::functions::lang::tests::if::testUnAssignedIfInFuncExpression():String[1]\n" +
+                "{\n" +
+                "   let ifVar =  if(true, | let b = 'true', | if(true, | let b = 'true', | 'false'););\n" +
+                "   if(true, | let b = 'true', | if(true, | let b = 'true', | 'false'););\n" +
+                "   if(true, | let b = 'true', | if(true, | let b = 'true', | 'false'););\n" +
+                "   let iff = if(true, | let b = 'true', | if(true, | let b = 'true', | 'false'););\n" +
+                "   if(true, | let b = 'true'; if(true, | let b = 'true', | 'false'); let bb = 'bb';, | let c = 'see');\n" +
+                "   let a = 'be';\n" +
+                "   if(true, | let b = 'true', | 'false');\n" +
+                "}");
     }
 
     @Test
     public void testIfWithDifferentMultiplicities()
     {
-        try
-        {
-            AbstractPureTestWithCoreCompiled.compileTestSource("fromString.pure", "Class A\n" +
+        compileTestSource(
+                "fromString.pure",
+                "Class A\n" +
                     "{\n" +
                     "  id : Integer[1];\n" +
                     "}\n" +
@@ -82,11 +77,6 @@ public class TestIfCompiled extends AbstractPureTestWithCoreCompiled
                     "      | let newIds = $ids->tail();\n" +
                     "        $ids->map(id | $newIds->testFn());)\n" +
                     "}");
-        }
-        catch (Exception e)
-        {
-            Assert.fail(e.getMessage());
-        }
     }
 
     @Test
@@ -113,9 +103,9 @@ public class TestIfCompiled extends AbstractPureTestWithCoreCompiled
                 "  $result;\n" +
                 "}\n");
 
-        CoreInstance testTrue = this.runtime.getFunction("test::testTrue():Any[*]");
+        CoreInstance testTrue = runtime.getFunction("test::testTrue():Any[*]");
         Assert.assertNotNull(testTrue);
-        CoreInstance resultTrue = this.functionExecution.start(testTrue, Lists.immutable.<CoreInstance>empty());
+        CoreInstance resultTrue = functionExecution.start(testTrue, Lists.immutable.empty());
         Verify.assertInstanceOf(InstanceValue.class, resultTrue);
         InstanceValue trueInstanceValue = (InstanceValue) resultTrue;
         Verify.assertSize(1, trueInstanceValue._values());
@@ -123,9 +113,9 @@ public class TestIfCompiled extends AbstractPureTestWithCoreCompiled
         Verify.assertInstanceOf(Double.class, trueValue);
         Assert.assertEquals(1.0d, trueValue);
 
-        CoreInstance testFalse = this.runtime.getFunction("test::testFalse():Any[*]");
+        CoreInstance testFalse = runtime.getFunction("test::testFalse():Any[*]");
         Assert.assertNotNull(testFalse);
-        CoreInstance resultFalse = this.functionExecution.start(testFalse, Lists.immutable.<CoreInstance>empty());
+        CoreInstance resultFalse = functionExecution.start(testFalse, Lists.immutable.empty());
         Verify.assertInstanceOf(InstanceValue.class, resultFalse);
         InstanceValue falseInstanceValue = (InstanceValue) resultFalse;
         Verify.assertSize(1, falseInstanceValue._values());

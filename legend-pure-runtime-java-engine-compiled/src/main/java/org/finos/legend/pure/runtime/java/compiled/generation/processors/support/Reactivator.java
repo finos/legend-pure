@@ -262,6 +262,17 @@ public class Reactivator
             throw new PureDynamicReactivateException(sfe.getSourceInformation(), "Can not reactivate function, unexpected:" + func._name());
         }
 
+        String funcName = func._name();
+        // The functions "and" and "or" require special handling to avoid premature evaluation of parameters
+        if ("and_Boolean_1__Boolean_1__Boolean_1_".equals(funcName))
+        {
+            return sfe._parametersValues().allSatisfy(value -> (Boolean) reactivateWithoutJavaCompilationImpl(value, lambdaOpenVariablesMap, es, false, bridge));
+        }
+        if ("or_Boolean_1__Boolean_1__Boolean_1_".equals(funcName))
+        {
+            return sfe._parametersValues().anySatisfy(value -> (Boolean) reactivateWithoutJavaCompilationImpl(value, lambdaOpenVariablesMap, es, false, bridge));
+        }
+
         MutableList<RichIterable<?>> paramValues = sfe._parametersValues().collect(value ->
         {
             Object newValue = reactivateWithoutJavaCompilationImpl(value, lambdaOpenVariablesMap, es, false, bridge);
@@ -279,7 +290,7 @@ public class Reactivator
             }
             return Lists.fixedSize.of(newValue);
         }, Lists.mutable.empty());
-        String funcName = func._name();
+
         if (funcName != null)
         {
             switch (funcName)
