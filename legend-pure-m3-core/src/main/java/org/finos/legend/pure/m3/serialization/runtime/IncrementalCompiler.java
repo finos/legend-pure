@@ -16,7 +16,6 @@ package org.finos.legend.pure.m3.serialization.runtime;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.procedure.Procedure;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
@@ -43,8 +42,8 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportG
 import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.imports.Imports;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.CoreInstanceFactoriesRegistry;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
@@ -225,22 +224,13 @@ public abstract class IncrementalCompiler implements SourceEventHandler
 
     SourceMutation finishRepoCompilation(String repoName, MutableList<CoreInstance> newInstancesConsolidated, ValidationType validationType, PostProcessorObserver postProcessorObserver) throws PureCompilationException
     {
-        Procedure<CoreInstance> registerInContext = instance ->
-        {
-            if (instance instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function)
-            {
-                this.context.registerFunctionByName(instance);
-            }
-            this.context.registerInstanceByClassifier(instance);
-            this.context.update(instance);
-        };
         if (shouldParallelize(newInstancesConsolidated.size(), CONTEXT_REGISTRATION_THRESHOLD))
         {
-            ForkJoinTools.forEach(this.forkJoinPool, newInstancesConsolidated, registerInContext, CONTEXT_REGISTRATION_THRESHOLD);
+            ForkJoinTools.forEach(this.forkJoinPool, newInstancesConsolidated, this::registerInstanceInContext, CONTEXT_REGISTRATION_THRESHOLD);
         }
         else
         {
-            newInstancesConsolidated.forEach(registerInContext);
+            newInstancesConsolidated.forEach(this::registerInstanceInContext);
         }
 
         SourceMutation sourceMutation = PostProcessor.process(newInstancesConsolidated, this.modelRepository, this.library, this.dslLibrary, this.codeStorage, this.context, this.processorSupport, this.urlPatternLibrary, this.message, postProcessorObserver);
@@ -262,6 +252,16 @@ public abstract class IncrementalCompiler implements SourceEventHandler
         this.message.clearMessage();
 
         return sourceMutation;
+    }
+
+    protected void registerInstanceInContext(CoreInstance instance)
+    {
+        if (instance instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function)
+        {
+            this.context.registerFunctionByName(instance);
+        }
+        this.context.registerInstanceByClassifier(instance);
+        this.context.update(instance);
     }
 
     public static SetIterable<CoreInstance> rebuildExclusionSet(ModelRepository repository, ProcessorSupport processorSupport) throws PureCompilationException
