@@ -110,3 +110,12 @@ function <<test.Test>> meta::pure::functions::string::tests::format::testFormatR
     assertEq('the quick brown fox jumps over the lazy %2014-01-01T00:00:00.000+0000', format('the quick brown %s jumps over the lazy %r', ['fox', %2014-01-01T00:00:00.000]));
 }
 
+function <<test.Test>> meta::pure::functions::string::tests::format::testFormatInEval():Boolean[1]
+{
+    assertEq('the quick brown fox jumps over the lazy dog', format_String_1__Any_MANY__String_1_->eval('the quick brown %s jumps over the lazy %s', ['fox', 'dog']));
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::format::testFormatInEvaluate():Boolean[1]
+{
+    assertEquals('the quick brown fox jumps over the lazy dog', format_String_1__Any_MANY__String_1_->evaluate([^List<String>(values='the quick brown %s jumps over the lazy %s'), ^List<Any>(values=['fox', 'dog'])]));
+}

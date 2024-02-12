@@ -38,8 +38,6 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.exception.PureException;
 
-import java.nio.file.Path;
-
 public class Loader
 {
     private static void updateStateFullContextCache(ListIterable<CoreInstance> parsedResults, Context context) throws PureCompilationException

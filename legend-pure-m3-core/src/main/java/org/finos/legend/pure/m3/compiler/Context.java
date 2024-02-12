@@ -14,17 +14,10 @@
 
 package org.finos.legend.pure.m3.compiler;
 
-import org.finos.legend.pure.m3.compiler.visibility.AccessLevel;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.tools.ConcurrentHashSet;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.function.Function0;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.map.ConcurrentMutableMap;
 import org.eclipse.collections.api.map.ImmutableMap;
@@ -33,22 +26,20 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.block.factory.Functions;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
+import org.finos.legend.pure.m3.compiler.visibility.AccessLevel;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.tools.ConcurrentHashSet;
+
+import java.util.function.Supplier;
 
 public class Context
 {
-    private static final Function0<ConcurrentHashSet<CoreInstance>> NEW_CONCURRENT_CORE_INSTANCE_SET = new Function0<ConcurrentHashSet<CoreInstance>>()
-    {
-        @Override
-        public ConcurrentHashSet<CoreInstance> value()
-        {
-            return ConcurrentHashSet.newSet();
-        }
-    };
-
     private final ConcurrentMutableMap<String, CoreInstance> coreInstanceByPath = ConcurrentHashMap.newMap();
     private final ConcurrentMutableMap<CoreInstance, CoreInstance> functionTypes = ConcurrentHashMap.newMap();
     private final ConcurrentMutableMap<CoreInstance, ImmutableMap<String, CoreInstance>> classPropertiesByName = ConcurrentHashMap.newMap();
@@ -127,12 +118,12 @@ public class Context
      * @param factory function to find the element
      * @return element with the given path
      */
-    public CoreInstance getIfAbsentPutElementByPath(String path, Function0<? extends CoreInstance> factory)
+    public CoreInstance getIfAbsentPutElementByPath(String path, Supplier<? extends CoreInstance> factory)
     {
         CoreInstance instance = this.coreInstanceByPath.get(path);
         if (instance == null)
         {
-            CoreInstance newInstance = factory.value();
+            CoreInstance newInstance = factory.get();
             if (newInstance != null)
             {
                 instance = this.coreInstanceByPath.getIfAbsentPut(path, newInstance);
@@ -173,7 +164,7 @@ public class Context
         {
             throw new IllegalArgumentException("Null classifier for " + instance);
         }
-        this.instancesByClassifier.getIfAbsentPut(classifier, NEW_CONCURRENT_CORE_INSTANCE_SET).add(instance);
+        this.instancesByClassifier.getIfAbsentPut(classifier, ConcurrentHashSet::newSet).add(instance);
     }
 
     /**
@@ -182,14 +173,10 @@ public class Context
      * that case, the context is not updated at all.
      *
      * @param instances Pure instances
-     * @param <T>
      */
-    public <T extends CoreInstance> void registerInstancesByClassifier(Iterable<T> instances)
+    public void registerInstancesByClassifier(Iterable<? extends CoreInstance> instances)
     {
-        for (T instance : instances)
-        {
-            registerInstanceByClassifier(instance);
-        }
+        instances.forEach(this::registerInstanceByClassifier);
     }
 
     /**
@@ -201,7 +188,7 @@ public class Context
     public SetIterable<CoreInstance> getClassifierInstances(CoreInstance classifier)
     {
         MutableSet<CoreInstance> instances = this.instancesByClassifier.get(classifier);
-        return (instances == null) ? Sets.immutable.<CoreInstance>with() : instances.asUnmodifiable();
+        return (instances == null) ? Sets.immutable.empty() : instances.asUnmodifiable();
     }
 
     /**
@@ -211,18 +198,16 @@ public class Context
      */
     public SetIterable<CoreInstance> getAllInstances()
     {
-        return this.instancesByClassifier.valuesView().flatCollect(Functions.<Iterable<CoreInstance>>getPassThru(), Sets.mutable.<CoreInstance>with());
+        MutableSet<CoreInstance> allInstances = Sets.mutable.empty();
+        this.instancesByClassifier.valuesView().forEach(allInstances::addAll);
+        return allInstances;
     }
 
     public MapIterable<String, Integer> countInstancesByClassifier()
     {
-        MutableMap<String, Integer> values = Maps.mutable.of();
-
-        for (CoreInstance key : this.instancesByClassifier.keySet())
-        {
-            values.put(PackageableElement.getUserPathForPackageableElement(key), this.instancesByClassifier.get(key).size());
-        }
-        return values;
+        MutableMap<String, Integer> result = Maps.mutable.ofInitialCapacity(this.instancesByClassifier.size());
+        this.instancesByClassifier.forEachKeyValue((classifier, instances) -> result.put(PackageableElement.getUserPathForPackageableElement(classifier), instances.size()));
+        return result;
     }
 
     /**
@@ -237,7 +222,7 @@ public class Context
         String functionName = getFunctionName(function);
         if (functionName != null)
         {
-            this.functionsByName.getIfAbsentPut(functionName, NEW_CONCURRENT_CORE_INSTANCE_SET).add(function);
+            this.functionsByName.getIfAbsentPut(functionName, ConcurrentHashSet::newSet).add(function);
         }
     }
 
@@ -247,14 +232,10 @@ public class Context
      * non-function passed in is not registered.
      *
      * @param functions Pure functions
-     * @param <T>
      */
-    public <T extends CoreInstance> void registerFunctionsByName(Iterable<T> functions)
+    public void registerFunctionsByName(Iterable<? extends CoreInstance> functions)
     {
-        for (T function : functions)
-        {
-            registerFunctionByName(function);
-        }
+        functions.forEach(this::registerFunctionByName);
     }
 
     /**
@@ -266,7 +247,7 @@ public class Context
     public SetIterable<CoreInstance> getFunctionsForName(String functionName)
     {
         MutableSet<CoreInstance> functions = this.functionsByName.get(functionName);
-        return (functions == null) ? Sets.immutable.<CoreInstance>with() : functions.asUnmodifiable();
+        return (functions == null) ? Sets.immutable.empty() : functions.asUnmodifiable();
     }
 
     /**
@@ -280,7 +261,7 @@ public class Context
         return this.functionsByName.keysView();
     }
 
-    public CoreInstance getIfAbsentPutAny(Function0<? extends CoreInstance> factory)
+    public CoreInstance getIfAbsentPutAny(Supplier<? extends CoreInstance> factory)
     {
         if (this.anyType == null)
         {
@@ -289,7 +270,7 @@ public class Context
         return this.anyType;
     }
 
-    public CoreInstance getIfAbsentPutNil(Function0<? extends CoreInstance> factory)
+    public CoreInstance getIfAbsentPutNil(Supplier<? extends CoreInstance> factory)
     {
         if (this.nilType == null)
         {

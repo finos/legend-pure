@@ -295,32 +295,33 @@ public class DistributedMetadataSpecification
      */
     public static List<DistributedMetadataSpecification> loadSpecifications(ClassLoader classLoader, Iterable<String> metadataNames)
     {
-        MutableMap<String, Set<String>> dependenciesByRepo = Maps.mutable.empty();
+        MutableMap<String, DistributedMetadataSpecification> repoSpecs = Maps.mutable.empty();
         try
         {
-            Set<String> visited = Sets.mutable.empty();
-            List<DistributedMetadataSpecification> metadataList = Lists.mutable.empty();
             Deque<String> toLoad = Iterate.addAllTo(metadataNames, new ArrayDeque<>());
             ObjectReader reader = getSpecObjectReader();
             while (!toLoad.isEmpty())
             {
                 String name = toLoad.removeLast();
-                if (visited.add(name))
+                if (!repoSpecs.containsKey(name))
                 {
                     DistributedMetadataSpecification metadata = loadSpecFromClassLoader(classLoader, name, reader);
-                    metadataList.add(metadata);
-                    dependenciesByRepo.put(name, metadata.getDependencies());
+                    repoSpecs.put(name, metadata);
                     toLoad.addAll(metadata.getDependencies());
                 }
             }
-            return metadataList;
+            return Lists.mutable.withAll(repoSpecs.values());
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e.getMessage() +
-                    "\nDirectly asked for:" + metadataNames +
-                    "\nLoaded up to now (with dependencies):" + dependenciesByRepo +
-                    "\nThe requested repos are coming from PAR projects scanning. You may not have included the project containing the distributed metadata for Java generation.", e);
+            String eMessage = e.getMessage();
+            StringBuilder builder = new StringBuilder((eMessage == null) ? "Error loading specifications" : eMessage);
+            Iterate.appendString(metadataNames, builder, "\nDirectly asked for: [", ", ", "]");
+            builder.append("\nLoaded up to now (with dependencies): {");
+            int len = builder.length();
+            repoSpecs.forEachKeyValue((repo, spec) -> Iterate.appendString(spec.getDependencies(), ((builder.length() == len) ? builder : builder.append(", ")).append(repo), "=[", ", ", "]"));
+            builder.append("}\nThe requested repos are coming from PAR projects scanning. You may not have included the project containing the distributed metadata for Java generation.");
+            throw new RuntimeException(builder.toString(), e);
         }
     }
 

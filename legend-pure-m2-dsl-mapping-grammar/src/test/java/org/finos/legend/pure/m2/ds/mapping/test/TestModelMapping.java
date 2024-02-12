@@ -14,26 +14,26 @@
 
 package org.finos.legend.pure.m2.ds.mapping.test;
 
-import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.EnumerationMapping;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping;
+import org.finos.legend.pure.m2.dsl.mapping.M2MappingProperties;
 import org.finos.legend.pure.m3.coreinstance.meta.external.store.model.PureInstanceSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.external.store.model.PurePropertyMapping;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.EnumerationMapping;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.tools.test.ToFix;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
 public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
 {
-    GraphWalker graphWalker;
-
     @BeforeClass
     public static void setUp()
     {
@@ -46,12 +46,7 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
         runtime.delete("mapping.pure");
         runtime.delete("model.pure");
         runtime.delete("projection.pure");
-    }
-
-    @Before
-    public void setUpRelational()
-    {
-        this.graphWalker = new GraphWalker(runtime, processorSupport);
+        runtime.compile();
     }
 
     @Test
@@ -112,58 +107,44 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         "    enumVal : myEnum.z\n" +
                         "  }\n" +
                         ")");
-        try
-        {
-            runtime.compile();
-            Assert.fail("Expected compilation exception");
-        }
-        catch (PureCompilationException e)
-        {
-            assertPureException(PureCompilationException.class,
-                    "The enum value 'z' can't be found in the enumeration myEnum",
-                    "mapping.pure", 6, 22, 6, 22, 6, 22, e);
 
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class,
+                "The enum value 'z' can't be found in the enumeration myEnum",
+                "mapping.pure", 6, 22, 6, 22, 6, 22, e);
     }
 
     @Test
     public void testCompileFailureWithMappingTests()
     {
-        try
-        {
-            runtime.createInMemorySource("model.pure",
-                    "###Mapping\n" +
-                            "Mapping my::query::TestMapping\n" +
-                            "(\n" +
-                            "MappingTests\n" +
-                            "   [\n" +
-                            "      test1\n" +
-                            "      (\n" +
-                            "         ~query: {x:ui::ClassA|$x.propA},\n" +
-                            "         ~inputData: [],\n" +
-                            "         ~assert: 'assertString'\n" +
-                            "      ),\n" +
-                            "      defaultTest\n" +
-                            "      (\n" +
-                            "         ~query: {|model::domain::Target.all()->graphFetchChecked(#{ClassNotHere{name}}#)->serialize(#{model::domain::Target{name}}#)},\n" +
-                            "         ~inputData: \n" +
-                            "           [" +
-                            "           <Object,model::domain::Source, '{\"oneName\":\"oneName 2\",\"anotherName\":\"anotherName 16\",\"oneDate\":\"2020-02-05\",\"anotherDate\":\"2020-04-13\",\"oneNumber\":24,\"anotherNumber\":29}'>," +
-                            "           <Object,SourceClass, '{\"oneName\":\"oneName 2\",\"anotherName\":\"anotherName 16\",\"oneDate\":\"2020-02-05\",\"anotherDate\":\"2020-04-13\",\"oneNumber\":24,\"anotherNumber\":29}'>" +
-                            "           ]," +
-                            "         ~assert: '{\"defects\":[],\"value\":{\"name\":\"oneName 2\"},\"source\":{\"defects\":[],\"value\":{\"oneName\":\"oneName 2\"},\"source\":{\"number\":1,\"record\":\"{\"oneName\":\"oneName 2\",\"anotherName\":\"anotherName 16\",\"oneDate\":\"2020-02-05\",\"anotherDate\":\"2020-04-13\",\"oneNumber\":24,\"anotherNumber\":29}\"}}}'\n" +
-                            "      )\n" +
-                            "   ]" +
-                            ")");
-            runtime.compile();
-            Assert.fail("Expected compilation exception");
-        }
-        catch (PureParserException e)
-        {
-            assertPureException(PureParserException.class,
-                    "Grammar Tests in Mapping currently not supported in Pure",
-                    "model.pure", 4, 1, 4, 1, 4, 12, e);
-        }
+        runtime.createInMemorySource("model.pure",
+                "###Mapping\n" +
+                        "Mapping my::query::TestMapping\n" +
+                        "(\n" +
+                        "MappingTests\n" +
+                        "   [\n" +
+                        "      test1\n" +
+                        "      (\n" +
+                        "         ~query: {x:ui::ClassA|$x.propA},\n" +
+                        "         ~inputData: [],\n" +
+                        "         ~assert: 'assertString'\n" +
+                        "      ),\n" +
+                        "      defaultTest\n" +
+                        "      (\n" +
+                        "         ~query: {|model::domain::Target.all()->graphFetchChecked(#{ClassNotHere{name}}#)->serialize(#{model::domain::Target{name}}#)},\n" +
+                        "         ~inputData: \n" +
+                        "           [" +
+                        "           <Object,model::domain::Source, '{\"oneName\":\"oneName 2\",\"anotherName\":\"anotherName 16\",\"oneDate\":\"2020-02-05\",\"anotherDate\":\"2020-04-13\",\"oneNumber\":24,\"anotherNumber\":29}'>," +
+                        "           <Object,SourceClass, '{\"oneName\":\"oneName 2\",\"anotherName\":\"anotherName 16\",\"oneDate\":\"2020-02-05\",\"anotherDate\":\"2020-04-13\",\"oneNumber\":24,\"anotherNumber\":29}'>" +
+                        "           ]," +
+                        "         ~assert: '{\"defects\":[],\"value\":{\"name\":\"oneName 2\"},\"source\":{\"defects\":[],\"value\":{\"oneName\":\"oneName 2\"},\"source\":{\"number\":1,\"record\":\"{\"oneName\":\"oneName 2\",\"anotherName\":\"anotherName 16\",\"oneDate\":\"2020-02-05\",\"anotherDate\":\"2020-04-13\",\"oneNumber\":24,\"anotherNumber\":29}\"}}}'\n" +
+                        "      )\n" +
+                        "   ]" +
+                        ")");
+        PureParserException e = Assert.assertThrows(PureParserException.class, runtime::compile);
+        assertPureException(PureParserException.class,
+                "Grammar Tests in Mapping currently not supported in Pure",
+                "model.pure", 4, 1, 4, 1, 4, 12, e);
     }
 
     @Test
@@ -285,18 +266,11 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         "    legalName : $src.nameX\n" +
                         "  }\n" +
                         ")");
-        try
-        {
-            runtime.compile();
-            Assert.fail("Expected compilation exception");
-        }
-        catch (PureCompilationException e)
-        {
-            assertPureException(PureCompilationException.class,
-                    "Can't find the property 'nameX' in the class pack::FirmSource",
-                    "mapping.pure", 6, 22, 6, 22, 6, 26, e);
 
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class,
+                "Can't find the property 'nameX' in the class pack::FirmSource",
+                "mapping.pure", 6, 22, 6, 22, 6, 26, e);
     }
 
     @Test
@@ -318,18 +292,11 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         "    legalName : 'name'\n" +
                         "  }\n" +
                         ")");
-        try
-        {
-            runtime.compile();
-            Assert.fail("Expected compilation exception");
-        }
-        catch (PureCompilationException e)
-        {
-            assertPureException(PureCompilationException.class,
-                    "pack::FirmSource has not been defined!",
-                    "mapping.pure", 5, 10, 5, 10, 5, 13, e);
 
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class,
+                "pack::FirmSource has not been defined!",
+                "mapping.pure", 5, 10, 5, 10, 5, 13, e);
     }
 
     @Test
@@ -350,18 +317,11 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         "    legalName : 1\n" +
                         "  }\n" +
                         ")");
-        try
-        {
-            runtime.compile();
-            Assert.fail("Expected compilation exception");
-        }
-        catch (PureCompilationException e)
-        {
-            assertPureException(PureCompilationException.class,
-                    "Type Error: 'Integer' not a subtype of 'String'",
-                    "mapping.pure", 5, 17, 5, 17, 5, 17, e);
 
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class,
+                "Type Error: 'Integer' not a subtype of 'String'",
+                "mapping.pure", 5, 17, 5, 17, 5, 17, e);
     }
 
 
@@ -383,18 +343,11 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         "    legalName : ['a','b']\n" +
                         "  }\n" +
                         ")");
-        try
-        {
-            runtime.compile();
-            Assert.fail("Expected compilation exception");
-        }
-        catch (PureCompilationException e)
-        {
-            assertPureException(PureCompilationException.class,
-                    "Multiplicity Error ' The property 'legalName' has a multiplicity range of [1] when the given expression has a multiplicity range of [2]",
-                    "mapping.pure", 5, 17, 5, 17, 5, 25, e);
 
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class,
+                "Multiplicity Error ' The property 'legalName' has a multiplicity range of [1] when the given expression has a multiplicity range of [2]",
+                "mapping.pure", 5, 17, 5, 17, 5, 25, e);
     }
 
 
@@ -424,16 +377,14 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
         runtime.createInMemorySource("mapping.pure", source);
         runtime.compile();
         assertSetSourceInformation(source, "Firm");
-        CoreInstance mapping = this.graphWalker.getMapping("test::TestMapping");
+        CoreInstance mapping = runtime.getCoreInstance("test::TestMapping");
         Assert.assertNotNull(mapping);
-        Assert.assertNotNull(mapping.getSourceInformation());
-        Assert.assertEquals(2, mapping.getSourceInformation().getStartLine());
-        Assert.assertEquals(10, mapping.getSourceInformation().getEndLine());
-        CoreInstance classMapping = this.graphWalker.getClassMappingById(mapping, "firm");
+        Assert.assertEquals(new SourceInformation("mapping.pure", 2, 1, 2, 15, 10, 1), mapping.getSourceInformation());
+        PureInstanceSetImplementation classMapping = (PureInstanceSetImplementation) mapping.getValueInValueForMetaPropertyToManyWithKey(M2MappingProperties.classMappings, M3Properties.id, "firm");
         Assert.assertNotNull(classMapping);
-        Assert.assertNotNull(classMapping.getSourceInformation());
-        Assert.assertEquals(4, classMapping.getSourceInformation().getStartLine());
-        Assert.assertEquals(9, classMapping.getSourceInformation().getEndLine());
+        Assert.assertEquals(new SourceInformation("mapping.pure", 4, 3, 9, 3), classMapping.getSourceInformation());
+        Assert.assertNotNull(classMapping._filter());
+        Assert.assertNotNull(classMapping._filter().getSourceInformation());
     }
 
     @Test
@@ -460,18 +411,11 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         "    legalName : $src.val\n" +
                         "  }\n" +
                         ")");
-        try
-        {
-            runtime.compile();
-            Assert.fail("Expected a compilation error");
-        }
-        catch (PureCompilationException e)
-        {
-            assertPureException(PureCompilationException.class,
-                    "Can't find the property 'valX' in the class FirmSource",
-                    "mapping.pure", 6, 18, 6, 18, 6, 21, e);
 
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class,
+                "Can't find the property 'valX' in the class FirmSource",
+                "mapping.pure", 6, 18, 6, 18, 6, 21, e);
     }
 
 
@@ -499,18 +443,11 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         "    legalName : $src.val\n" +
                         "  }\n" +
                         ")");
-        try
-        {
-            runtime.compile();
-            Assert.fail("Expected a compilation error");
-        }
-        catch (PureCompilationException e)
-        {
-            assertPureException(PureCompilationException.class,
-                    "A filter should be a Boolean expression",
-                    "mapping.pure", 6, 18, 6, 18, 6, 20, e);
 
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class,
+                "A filter should be a Boolean expression",
+                "mapping.pure", 6, 18, 6, 18, 6, 20, e);
     }
 
     @Test
@@ -590,18 +527,11 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         "    firms : $src.firms" +
                         "  }\n" +
                         ")");
-        try
-        {
-            runtime.compile();
-            Assert.fail("Expected a compilation error");
-        }
-        catch (PureCompilationException e)
-        {
-            assertPureException(PureCompilationException.class,
-                    "Type Error: '_Person' is not '_Firm'",
-                    "mapping.pure", 11, 18, 11, 18, 11, 22, e);
 
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class,
+                "Type Error: '_Person' is not '_Firm'",
+                "mapping.pure", 11, 18, 11, 18, 11, 22, e);
     }
 
     @Test
@@ -641,18 +571,11 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         "    firms[f2] : $src.firms" +
                         "  }\n" +
                         ")");
-        try
-        {
-            runtime.compile();
-            Assert.fail("Expected a compilation error");
-        }
-        catch (PureCompilationException e)
-        {
-            assertPureException(PureCompilationException.class,
-                    "The set implementation 'f2' is unknown in the mapping 'TestMapping'",
-                    "mapping.pure", 11, 5, 11, 5, 11, 9, e);
 
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class,
+                "The set implementation 'f2' is unknown in the mapping 'TestMapping'",
+                "mapping.pure", 11, 5, 11, 5, 11, 9, e);
     }
 
     @Test
@@ -736,28 +659,21 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         ")"
         );
 
-        try
-        {
-            runtime.compile();
-            Mapping mapping = (Mapping) runtime.getCoreInstance("my::modelMapping");
-            PureInstanceSetImplementation m2mMapping = mapping._classMappings().selectInstancesOf(PureInstanceSetImplementation.class).getFirst();
+        runtime.compile();
+        Mapping mapping = (Mapping) runtime.getCoreInstance("my::modelMapping");
+        PureInstanceSetImplementation m2mMapping = mapping._classMappings().selectInstancesOf(PureInstanceSetImplementation.class).getFirst();
 
-            PurePropertyMapping purePropertyMapping1 = m2mMapping._propertyMappings().selectInstancesOf(PurePropertyMapping.class).getFirst();
-            Assert.assertNull(purePropertyMapping1._transformer());
+        PurePropertyMapping purePropertyMapping1 = m2mMapping._propertyMappings().selectInstancesOf(PurePropertyMapping.class).getFirst();
+        Assert.assertNull(purePropertyMapping1._transformer());
 
-            PurePropertyMapping purePropertyMapping2 = m2mMapping._propertyMappings().selectInstancesOf(PurePropertyMapping.class).getLast();
-            Assert.assertNotNull(purePropertyMapping2._transformer());
-            Assert.assertTrue(purePropertyMapping2._transformer() instanceof EnumerationMapping);
+        PurePropertyMapping purePropertyMapping2 = m2mMapping._propertyMappings().selectInstancesOf(PurePropertyMapping.class).getLast();
+        Assert.assertNotNull(purePropertyMapping2._transformer());
+        Assert.assertTrue(purePropertyMapping2._transformer() instanceof EnumerationMapping);
 
-            EnumerationMapping transformer = (EnumerationMapping) purePropertyMapping2._transformer();
-            Assert.assertEquals("StateMapping", transformer._name());
-            Assert.assertEquals("my::State", PackageableElement.getUserPathForPackageableElement(transformer._enumeration()));
-            Assert.assertEquals(2, transformer._enumValueMappings().size());
-        }
-        catch (Exception e)
-        {
-            Assert.fail();
-        }
+        EnumerationMapping<?> transformer = (EnumerationMapping<?>) purePropertyMapping2._transformer();
+        Assert.assertEquals("StateMapping", transformer._name());
+        Assert.assertEquals("my::State", PackageableElement.getUserPathForPackageableElement(transformer._enumeration()));
+        Assert.assertEquals(2, transformer._enumValueMappings().size());
     }
 
     @Test
@@ -813,15 +729,8 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         ")"
         );
 
-        try
-        {
-            runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Property : [state] is of type : [my::State] but enumeration mapping : [OptionMapping] is defined on enumeration : [my::Option].", "mapping.pure", 10, 7, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "Property : [state] is of type : [my::State] but enumeration mapping : [OptionMapping] is defined on enumeration : [my::Option].", "mapping.pure", 10, 7, e);
     }
 
     @Test
@@ -829,7 +738,7 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
     @ToFix
     public void testMissingRequiredPropertyError()
     {
-        compileTestSource("/test/model.pure",
+        compileTestSource("model.pure",
                 "Class test::SourceClass\n" +
                         "{\n" +
                         "    prop1 : String[1];\n" +
@@ -840,25 +749,20 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                         "    prop2 : String[1];\n" +
                         "    prop3 : Integer[1];\n" +
                         "}\n");
-        try
-        {
-            compileTestSource("/test/mapping.pure",
-                    "###Mapping\n" +
-                            "import test::*;\n" +
-                            "Mapping test::TestMapping\n" +
-                            "(\n" +
-                            "    TargetClass : Pure\n" +
-                            "    {\n" +
-                            "        ~src SourceClass\n" +
-                            "        prop2 : $src.prop1\n" +
-                            "    }\n" +
-                            ")\n");
-            Assert.fail("Expected a compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "The following required properties for test::TargetClass are not mapped: prop3", "/test/mapping.pure", 5, 5, 5, 5, 5, 15, e);
-        }
+
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "mapping.pure",
+                "###Mapping\n" +
+                        "import test::*;\n" +
+                        "Mapping test::TestMapping\n" +
+                        "(\n" +
+                        "    TargetClass : Pure\n" +
+                        "    {\n" +
+                        "        ~src SourceClass\n" +
+                        "        prop2 : $src.prop1\n" +
+                        "    }\n" +
+                        ")\n"));
+        assertPureException(PureCompilationException.class, "The following required properties for test::TargetClass are not mapped: prop3", "/test/mapping.pure", 5, 5, 5, 5, 5, 15, e);
     }
 
     @Test
@@ -977,18 +881,10 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
 
         runtime.createInMemorySource("mapping.pure", source);
 
-        try
-        {
-            runtime.compile();
-            Assert.fail("Expected compilation exception");
-        }
-        catch (PureCompilationException e)
-        {
-            assertPureException(PureCompilationException.class,
-                    "Merge validation function for class: Person does not return Boolean",
-                    "mapping.pure", 23, 5, 23, 14, 26, 12, e);
-
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class,
+                "Merge validation function for class: Person does not return Boolean",
+                "mapping.pure", 23, 5, 23, 14, 26, 12, e);
     }
 
     @Test
@@ -1048,19 +944,9 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
 
 
         runtime.createInMemorySource("mapping.pure", source);
-
-        try
-        {
-            runtime.compile();
-            Assert.fail("Expected compilation exception");
-        }
-        catch (PureCompilationException e)
-        {
-            assertPureException(PureCompilationException.class,
-                    "Merge validation function for class: Person has an invalid parameter. All parameters must be a src class of a merged set",
-                    "mapping.pure", 24, 5, 24, 14, 27, 12, e);
-
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class,
+                "Merge validation function for class: Person has an invalid parameter. All parameters must be a src class of a merged set",
+                "mapping.pure", 24, 5, 24, 14, 27, 12, e);
     }
-
 }

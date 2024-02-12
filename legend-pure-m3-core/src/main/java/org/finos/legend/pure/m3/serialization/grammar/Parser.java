@@ -95,7 +95,7 @@ public interface Parser extends CoreInstanceFactoriesRegistry
      */
     ListIterable<String> getRequiredFiles();
 
-    default Pair<Object, RelationType> resolveRelationElementAccessor(PackageableElement element, MutableList<? extends String> path, SourceInformation sourceInformation, ProcessorSupport processorSupport)
+    default Pair<?, RelationType<?>> resolveRelationElementAccessor(PackageableElement element, ListIterable<? extends String> path, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
         return null;
     }

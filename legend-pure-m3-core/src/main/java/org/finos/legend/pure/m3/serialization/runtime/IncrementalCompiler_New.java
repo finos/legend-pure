@@ -304,22 +304,13 @@ public class IncrementalCompiler_New extends IncrementalCompiler
 
     private SourceMutation finishRepoCompilation(String repoName, MutableList<CoreInstance> allInstances, MutableList<CoreInstance> newInstancesConsolidated, ValidationType validationType, PostProcessorObserver observer) throws PureCompilationException
     {
-        Procedure<CoreInstance> registerInContext = instance ->
+        if (shouldParallelize(allInstances.size(), CONTEXT_REGISTRATION_THRESHOLD))
         {
-            if (instance instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function)
-            {
-                this.context.registerFunctionByName(instance);
-            }
-            this.context.registerInstanceByClassifier(instance);
-            this.context.update(instance);
-        };
-        if (this.shouldParallelize(allInstances.size(), CONTEXT_REGISTRATION_THRESHOLD))
-        {
-            ForkJoinTools.forEach(this.forkJoinPool, allInstances, registerInContext, CONTEXT_REGISTRATION_THRESHOLD);
+            ForkJoinTools.forEach(this.forkJoinPool, allInstances, this::registerInstanceInContext, CONTEXT_REGISTRATION_THRESHOLD);
         }
         else
         {
-            allInstances.forEach(registerInContext);
+            allInstances.forEach(this::registerInstanceInContext);
         }
 
         SourceMutation sourceMutation = PostProcessor.process(newInstancesConsolidated, this.modelRepository, this.library, this.dslLibrary, this.codeStorage, this.context, this.processorSupport, this.urlPatternLibrary, this.message, observer);
@@ -342,7 +333,6 @@ public class IncrementalCompiler_New extends IncrementalCompiler
 
         return sourceMutation;
     }
-
 
     private MutableSet<CoreInstance> removeNodesFromRemovedSources(MutableSet<CoreInstance> toProcess)
     {

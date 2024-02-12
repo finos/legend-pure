@@ -72,20 +72,16 @@ public class ParserLibrary
     public void validate() throws InvalidParserLibraryException
     {
         MutableSet<String> errorMessages = Sets.mutable.with();
-        for (Parser parser : this.parsers)
+        this.parsers.forEachValue(parser -> parser.getRequiredParsers().forEach(required ->
         {
-            for (String requiredParserName : parser.getRequiredParsers())
+            if (!this.parsers.containsKey(required))
             {
-                if (!this.parsers.containsKey(requiredParserName))
-                {
-                    errorMessages.add("Parser '" + requiredParserName + "' is required by parser '" + parser.getName() + "' but is not present.");
-                }
+                errorMessages.add("Parser '" + required + "' is required by parser '" + parser.getName() + "' but is not present.");
             }
-        }
-
+        }));
         if (errorMessages.notEmpty())
         {
-            throw new InvalidParserLibraryException(errorMessages);
+            throw new InvalidParserLibraryException(errorMessages.toSortedList());
         }
     }
 
@@ -99,9 +95,9 @@ public class ParserLibrary
         return files;
     }
 
-    public Pair<Object, RelationType> resolveRelationElementAccessor(PackageableElement element, MutableList<? extends String> path, SourceInformation sourceInformation, ProcessorSupport processorSupport)
+    public Pair<?, RelationType<?>> resolveRelationElementAccessor(PackageableElement element, MutableList<? extends String> path, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
-        MutableList<Pair<Object, RelationType>> res = this.parsers.valuesView()
+        MutableList<? extends Pair<?, RelationType<?>>> res = this.parsers.valuesView()
                 .collect(c -> c.resolveRelationElementAccessor(element, path, sourceInformation, processorSupport))
                 .select(Objects::nonNull, Lists.mutable.empty());
         if (res.size() != 1)
@@ -111,7 +107,7 @@ public class ParserLibrary
         return res.get(0);
     }
 
-    public class InvalidParserLibraryException extends Exception
+    public static class InvalidParserLibraryException extends Exception
     {
         private final RichIterable<String> messages;
 
@@ -123,7 +119,7 @@ public class ParserLibrary
         @Override
         public String getMessage()
         {
-            return "Invalid parser library." + this.messages.makeString("\n\t", "\n\t", "");
+            return this.messages.makeString("Invalid parser library.\n\t", "\n\t", "");
         }
     }
 
