@@ -55,7 +55,7 @@ public class Evaluate extends AbstractNative
                 "            public Object value(" + FullJavaPaths.Function + " func, Object params, ExecutionSupport es)\n" +
                 "            {\n" +
                 "                return CompiledSupport.toPureCollection(\n" +
-                "                       CoreGen.evaluateToMany(es, func, params instanceof RichIterable || params == null ? CompiledSupport.toPureCollection((ListIterable<" + FullJavaPaths.List + ">) params) : Lists.mutable.with((" + FullJavaPaths.List + ")params))\n" +
+                "                       CoreGen.evaluateToMany(es, func, params instanceof RichIterable || params == null ? CompiledSupport.toPureCollection((ListIterable<" + FullJavaPaths.List + "<?>>) params) : Lists.mutable.with((" + FullJavaPaths.List + "<?>)params))\n" +
                 "                       );\n" +
                 "            }\n" +
                 "        }";

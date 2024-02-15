@@ -80,6 +80,8 @@ import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -96,8 +98,6 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.StringTokenizer;
 import java.util.function.BiFunction;
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
 
 public class CompiledSupport
 {
@@ -818,7 +818,7 @@ public class CompiledSupport
         }
     }
 
-    public static String format(String formatString, Object formatArgs, BiFunction toRepresentationFunction, ExecutionSupport executionSupport)
+    public static String format(String formatString, Object formatArgs, BiFunction<Object, ? super ExecutionSupport, ? extends String> toRepresentationFunction, ExecutionSupport executionSupport)
     {
         return PureStringFormat.format(formatString, (formatArgs instanceof Iterable) ? (Iterable<?>) formatArgs : Lists.immutable.with(formatArgs), toRepresentationFunction, executionSupport);
     }

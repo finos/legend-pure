@@ -29,15 +29,19 @@ public class Format extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return "CompiledSupport.format(" + transformedParams.get(0) + ", "
-                + transformedParams.get(1)
-                + ", new DefendedFunction2<Object,ExecutionSupport,String>(){\n" +
-                "       public String value(Object any, ExecutionSupport executionSupport)\n" +
-                "       {\n" +
-                "           return CoreGen.toRepresentation(any, executionSupport);\n" +
-                "       }\n" +
-                "   }\n"
-                + ", es)\n";
+        return "CoreGen.format(" + transformedParams.get(0) + ", " + transformedParams.get(1) + ", es)";
+    }
+
+    @Override
+    public String buildBody()
+    {
+        return "new DefendedPureFunction2<String, Object, Object>()\n" +
+                "        {\n" +
+                "            @Override\n" +
+                "            public Object value(String formatString, Object formatArgs, ExecutionSupport es)\n" +
+                "            {\n" +
+                "               return CoreGen.format(formatString, formatArgs, es);\n" +
+                "            }\n" +
+                "        }";
     }
 }
-

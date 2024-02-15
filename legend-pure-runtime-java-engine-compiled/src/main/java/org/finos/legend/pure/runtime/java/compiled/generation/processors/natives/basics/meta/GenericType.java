@@ -29,7 +29,7 @@ public class GenericType extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return "CoreGen.safeGetGenericType(" + transformedParams.get(0) + ", ((CompiledExecutionSupport)es).getMetadataAccessor(), ((CompiledExecutionSupport)es).getProcessorSupport())";
+        return "CoreGen.safeGetGenericType(" + transformedParams.get(0) + ", es)";
     }
 
     @Override
@@ -40,7 +40,7 @@ public class GenericType extends AbstractNative
                 "            @Override\n" +
                 "            public Object value(Object o, ExecutionSupport es)\n" +
                 "            {\n" +
-                "               return CoreGen.safeGetGenericType(o, ((CompiledExecutionSupport)es).getMetadataAccessor(), ((CompiledExecutionSupport)es).getProcessorSupport());" +
+                "               return CoreGen.safeGetGenericType(o, es);\n" +
                 "            }\n" +
                 "        }";
     }
