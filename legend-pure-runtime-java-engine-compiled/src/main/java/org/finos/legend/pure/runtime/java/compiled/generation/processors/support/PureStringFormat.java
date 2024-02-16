@@ -57,8 +57,8 @@ public class PureStringFormat
                         }
                         case 'r':
                         {
-                            Object arg = toRepresentationFunction.apply(argIterator.next(), executionSupport);
-                            builder.append(CompiledSupport.pureToString(arg, executionSupport));
+                            Object arg = argIterator.next();
+                            builder.append(toRepresentationFunction.apply(arg, executionSupport));
                             break;
                         }
                         case 'd':

@@ -149,6 +149,12 @@ public class Pure
         return enumeration._values().detect(e -> name.equals(((Enum) e)._name()));
     }
 
+    public static org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType safeGetGenericType(Object val, Supplier<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType> genericTypeBuilder, ExecutionSupport execSupport)
+    {
+        CompiledExecutionSupport compExecSupport = (CompiledExecutionSupport) execSupport;
+        return safeGetGenericType(val, compExecSupport.getMetadataAccessor(), genericTypeBuilder, compExecSupport.getProcessorSupport());
+    }
+
     public static org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType safeGetGenericType(Object val, MetadataAccessor ma, Supplier<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType> genericTypeBuilder, ProcessorSupport processorSupport)
     {
         if (val == null)

@@ -46,7 +46,7 @@ public class Eval extends AbstractNative
         parameters = transformedParams.size() == 1 ? transformedParams.get(0) + ", new Object[]{}" : parameters;
         parameters = transformedParams.size() == 2 && "null".equals(transformedParams.get(1)) ? transformedParams.get(0) + ", new Object[]{null}" : parameters;
 
-        String eval = "CoreGen.evaluate(es, (" + FullJavaPaths.Function + ")" + parameters + ")";
+        String eval = "CoreGen.evaluate(es, (" + FullJavaPaths.Function + "<?>)" + parameters + ")";
         return "((" + type + ")(Object)" + (Multiplicity.isToOne(multiplicity, false) ? eval : "CompiledSupport.toPureCollection(" + eval + ")") + ")";
     }
 
@@ -58,7 +58,7 @@ public class Eval extends AbstractNative
                 "        @Override\n" +
                 "        public Object execute(ListIterable<?> vars, final ExecutionSupport es)\n" +
                 "        {\n" +
-                "           org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function func = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function) vars.get(0);\n" +
+                "           org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>) vars.get(0);\n" +
                 "           Object[] params = vars.size() == 1 ? new Object[]{} : vars.drop(1).toArray();\n" +
                 "           Object value = CoreGen.evaluate(es, func, params);\n" +
                 "           return value instanceof Iterable ? CompiledSupport.toPureCollection(value) : value;\n" +
