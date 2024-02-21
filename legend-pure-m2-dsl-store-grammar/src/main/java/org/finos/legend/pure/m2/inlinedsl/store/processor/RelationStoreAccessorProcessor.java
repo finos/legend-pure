@@ -30,10 +30,9 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class RelationStoreAccessorProcessor extends Processor<RelationStoreAccessor<CoreInstance>>
+public class RelationStoreAccessorProcessor extends Processor<RelationStoreAccessor<?>>
 {
     @Override
     public String getClassName()
@@ -42,19 +41,19 @@ public class RelationStoreAccessorProcessor extends Processor<RelationStoreAcces
     }
 
     @Override
-    public void process(RelationStoreAccessor<CoreInstance> instance, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
+    public void process(RelationStoreAccessor<?> instance, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
     {
-        MutableList<? extends String> path = instance._path().toList();
+        MutableList<String> path = Lists.mutable.withAll(instance._path());
 
         Store store = (Store) _Package.getByUserPath(path.get(0), processorSupport);
         if (store == null)
         {
-            throw new PureCompilationException(instance.getSourceInformation(), "The store '" + path.getFirst() + "' can't be found");
+            throw new PureCompilationException(instance.getSourceInformation(), "The store '" + path.get(0) + "' can't be found");
         }
 
         instance._store(store);
 
-        Pair<Object, RelationType> result = state.getParserLibrary().resolveRelationElementAccessor(store, path, instance.getSourceInformation(), processorSupport);
+        Pair<?, RelationType<?>> result = state.getParserLibrary().resolveRelationElementAccessor(store, path, instance.getSourceInformation(), processorSupport);
 
         instance._sourceElement(result.getOne());
 
@@ -69,7 +68,7 @@ public class RelationStoreAccessorProcessor extends Processor<RelationStoreAcces
     }
 
     @Override
-    public void populateReferenceUsages(RelationStoreAccessor<CoreInstance> relationDatabaseAccessor, ModelRepository repository, ProcessorSupport processorSupport)
+    public void populateReferenceUsages(RelationStoreAccessor<?> relationDatabaseAccessor, ModelRepository repository, ProcessorSupport processorSupport)
     {
         this.addReferenceUsageForToOneProperty(relationDatabaseAccessor, relationDatabaseAccessor._store(), "store", repository, processorSupport);
     }

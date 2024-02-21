@@ -16,7 +16,6 @@ package org.finos.legend.pure.m4.tools;
 
 import org.eclipse.collections.api.block.procedure.Procedure;
 import org.eclipse.collections.api.map.ConcurrentMutableMap;
-import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.ParallelUnsortedSetIterable;
 import org.eclipse.collections.api.set.UnsortedSetIterable;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
@@ -24,6 +23,7 @@ import org.eclipse.collections.impl.set.mutable.AbstractMutableSet;
 import org.eclipse.collections.impl.set.mutable.SetAdapter;
 
 import java.util.Iterator;
+import java.util.Spliterator;
 import java.util.concurrent.ExecutorService;
 
 public class ConcurrentHashSet<T> extends AbstractMutableSet<T>
@@ -41,12 +41,12 @@ public class ConcurrentHashSet<T> extends AbstractMutableSet<T>
 
     public ConcurrentHashSet()
     {
-        this(ConcurrentHashMap.<T, Object>newMap());
+        this(ConcurrentHashMap.newMap());
     }
 
     public ConcurrentHashSet(int initialSize)
     {
-        this(ConcurrentHashMap.<T, Object>newMap(initialSize));
+        this(ConcurrentHashMap.newMap(initialSize));
     }
 
     @Override
@@ -86,28 +86,28 @@ public class ConcurrentHashSet<T> extends AbstractMutableSet<T>
     }
 
     @Override
-    public MutableSet<T> with(T element)
+    public ConcurrentHashSet<T> with(T element)
     {
         add(element);
         return this;
     }
 
     @Override
-    public MutableSet<T> without(T element)
+    public ConcurrentHashSet<T> without(T element)
     {
         remove(element);
         return this;
     }
 
     @Override
-    public MutableSet<T> withAll(Iterable<? extends T> elements)
+    public ConcurrentHashSet<T> withAll(Iterable<? extends T> elements)
     {
         addAllIterable(elements);
         return this;
     }
 
     @Override
-    public MutableSet<T> withoutAll(Iterable<? extends T> elements)
+    public ConcurrentHashSet<T> withoutAll(Iterable<? extends T> elements)
     {
         removeAllIterable(elements);
         return this;
@@ -146,7 +146,7 @@ public class ConcurrentHashSet<T> extends AbstractMutableSet<T>
     @Override
     public void each(Procedure<? super T> procedure)
     {
-        this.keySet.each(procedure);
+        this.map.forEachKey(procedure);
     }
 
     @Override
@@ -156,9 +156,17 @@ public class ConcurrentHashSet<T> extends AbstractMutableSet<T>
     }
 
     @Override
+    public Spliterator<T> spliterator()
+    {
+        return this.keySet.spliterator();
+    }
+
+    @Override
     public ConcurrentHashSet<T> clone()
     {
-        return new ConcurrentHashSet<>(ConcurrentHashMap.newMap(this.map));
+        ConcurrentHashSet<T> clone = (ConcurrentHashSet<T>) super.clone();
+        clone.map.putAll(this.map);
+        return clone;
     }
 
     public static <NT> ConcurrentHashSet<NT> newSet()

@@ -73,6 +73,10 @@ public interface SafeAppendable extends Appendable
         {
             return wrap((StringBuilder) appendable);
         }
+        if (appendable instanceof StringBuffer)
+        {
+            return wrap((StringBuffer) appendable);
+        }
         return new SafeAppendable()
         {
             @Override
@@ -190,6 +194,82 @@ public interface SafeAppendable extends Appendable
             public SafeAppendable append(Object o)
             {
                 builder.append(o);
+                return this;
+            }
+        };
+    }
+
+    static SafeAppendable wrap(StringBuffer buffer)
+    {
+        return new SafeAppendable()
+        {
+            @Override
+            public SafeAppendable append(CharSequence csq)
+            {
+                buffer.append(csq);
+                return this;
+            }
+
+            @Override
+            public SafeAppendable append(CharSequence csq, int start, int end)
+            {
+                buffer.append(csq);
+                return this;
+            }
+
+            @Override
+            public SafeAppendable append(char c)
+            {
+                buffer.append(c);
+                return this;
+            }
+
+            @Override
+            public SafeAppendable append(String s)
+            {
+                buffer.append(s);
+                return this;
+            }
+
+            @Override
+            public SafeAppendable append(boolean b)
+            {
+                buffer.append(b);
+                return this;
+            }
+
+            @Override
+            public SafeAppendable append(int i)
+            {
+                buffer.append(i);
+                return this;
+            }
+
+            @Override
+            public SafeAppendable append(long l)
+            {
+                buffer.append(l);
+                return this;
+            }
+
+            @Override
+            public SafeAppendable append(float f)
+            {
+                buffer.append(f);
+                return this;
+            }
+
+            @Override
+            public SafeAppendable append(double d)
+            {
+                buffer.append(d);
+                return this;
+            }
+
+            @Override
+            public SafeAppendable append(Object o)
+            {
+                buffer.append(o);
                 return this;
             }
         };

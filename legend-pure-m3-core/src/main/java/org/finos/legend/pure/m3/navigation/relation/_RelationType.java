@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package org.finos.legend.pure.m3.navigation.relation;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.bag.Bag;
+import org.eclipse.collections.api.factory.Bags;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
@@ -34,13 +34,12 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
-
-import java.util.Comparator;
 
 public class _RelationType
 {
@@ -51,23 +50,23 @@ public class _RelationType
 
     public static Function<?> findColumn(RelationType<?> type, String name, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
-        CoreInstance col = Instance.getValueForMetaPropertyToManyResolved(type, "columns", processorSupport).select(c -> Instance.getValueForMetaPropertyToOneResolved(c, "name", processorSupport).getName().equals(name)).getFirst();
+        CoreInstance col = Instance.getValueForMetaPropertyToManyResolved(type, "columns", processorSupport).select(c -> Instance.getValueForMetaPropertyToOneResolved(c, M3Properties.name, processorSupport).getName().equals(name)).getFirst();
         if (col == null)
         {
-            throw new PureCompilationException("The system can't find the column " + name + " in the Relation " + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(processorSupport.type_wrapGenericType(type), processorSupport));
+            throw new PureCompilationException(sourceInformation, "The system can't find the column " + name + " in the Relation " + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(processorSupport.type_wrapGenericType(type), processorSupport));
         }
         return (Function<?>) col;
     }
 
-    public static RelationType<?> build(MutableList<CoreInstance> cols, SourceInformation pureSourceInformation, ProcessorSupport processorSupport)
+    public static RelationType<?> build(ListIterable<? extends CoreInstance> cols, SourceInformation pureSourceInformation, ProcessorSupport processorSupport)
     {
         RelationType<?> newRelationType = (RelationType<?>) processorSupport.newAnonymousCoreInstance(pureSourceInformation, M3Paths.RelationType);
         GenericType source = (GenericType) processorSupport.type_wrapGenericType(newRelationType);
 
         cols.forEach(c -> _Column.updateSource((Column<?, ?>) c, source));
 
-        Bag<String> duplicates = cols.collect(c -> ((Column<?, ?>) c)._name()).toBag().selectDuplicates();
-        if (!duplicates.isEmpty())
+        Bag<String> duplicates = cols.collect(c -> ((Column<?, ?>) c)._name(), Bags.mutable.empty()).selectDuplicates();
+        if (duplicates.notEmpty())
         {
             throw new PureCompilationException("The relation contains duplicates: " + Sets.mutable.withAll(duplicates));
         }
@@ -83,7 +82,7 @@ public class _RelationType
         Generalization generalization = (Generalization) processorSupport.newAnonymousCoreInstance(pureSourceInformation, M3Paths.Generalization);
         generalization._specific(newRelationType);
         org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType anyG = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) processorSupport.newAnonymousCoreInstance(pureSourceInformation, M3Paths.GenericType);
-        anyG._rawType((Class<?>) processorSupport.package_getByUserPath(M3Paths.Any));
+        anyG._rawType((Class<?>) processorSupport.type_TopType());
         generalization._general(anyG);
         newRelationType._generalizationsAdd(generalization);
 
@@ -96,19 +95,21 @@ public class _RelationType
     public static Pair<ListIterable<? extends Column<?, ?>>, ListIterable<? extends Column<?, ?>>> alignColumnSets(RichIterable<? extends Column<?, ?>> candidateColumns, RichIterable<? extends Column<?, ?>> signatureColumns, ProcessorSupport processorSupport)
     {
         // Manage wildcards
-        RichIterable<? extends Pair<? extends Column<?, ?>, ? extends Column<?, ?>>> wildCard = signatureColumns.zip(candidateColumns).select(c -> c.getOne()._nameWildCard());
-        MutableList<Column<?, ?>> _candidateColumns = (MutableList<Column<?, ?>>) candidateColumns.toList();
-        _candidateColumns.removeAll(wildCard.collect(c -> c.getTwo()).toList());
+        MutableList<? extends Pair<? extends Column<?, ?>, ? extends Column<?, ?>>> wildCard = signatureColumns.zip(candidateColumns).select(c -> c.getOne()._nameWildCard(), Lists.mutable.empty());
+        MutableList<Column<?, ?>> _candidateColumns = Lists.mutable.withAll(candidateColumns);
+        _candidateColumns.removeAll(wildCard.collect(Pair::getTwo));
 
         // Sort both sets and keep the candidate that aligns to the signature.
-        RichIterable<Column<?, ?>> _signatureColumns = (MutableList<Column<?, ?>>) signatureColumns.toList();
-        MutableSet<String> signatureNames = _signatureColumns.collect(FunctionAccessor::_name).toSet();
-        MutableList<Column<?, ?>> sortedCandidateSub = _candidateColumns.select(c -> signatureNames.contains(c._name())).toSortedList(Comparator.comparing(FunctionAccessor::_name));
-        MutableList<Column<?, ?>> sortedSignatures = _signatureColumns.toSortedList(Comparator.comparing(FunctionAccessor::_name));
+        MutableList<Column<?, ?>> sortedSignatures = Lists.mutable.<Column<?, ?>>withAll(signatureColumns).sortThisBy(FunctionAccessor::_name);
+        MutableSet<String> signatureNames = sortedSignatures.collect(FunctionAccessor::_name, Sets.mutable.empty());
+        MutableList<Column<?, ?>> sortedCandidateSub = _candidateColumns.select(c -> signatureNames.contains(c._name())).sortThisBy(FunctionAccessor::_name);
 
         // Add the wildcards back
-        sortedSignatures.addAllIterable(wildCard.collect(Pair::getOne));
-        sortedCandidateSub.addAllIterable(wildCard.collect(Pair::getTwo));
+        wildCard.forEach(pair ->
+        {
+            sortedSignatures.add(pair.getOne());
+            sortedCandidateSub.add(pair.getTwo());
+        });
         return Tuples.pair(sortedCandidateSub, sortedSignatures);
     }
 
@@ -147,16 +148,16 @@ public class _RelationType
         }
         return col_one.zip(col_two).injectInto(true, (a, b) ->
         {
-            CoreInstance typeOne = b.getOne().getValueForMetaPropertyToOne("classifierGenericType").getValueForMetaPropertyToMany("typeArguments").get(1).getValueForMetaPropertyToOne("rawType");
-            CoreInstance typeTwo = b.getTwo().getValueForMetaPropertyToOne("classifierGenericType").getValueForMetaPropertyToMany("typeArguments").get(1).getValueForMetaPropertyToOne("rawType");
-            return a && typeOne == typeTwo && b.getOne().getValueForMetaPropertyToOne("name").getName().equals(b.getTwo().getValueForMetaPropertyToOne("name").getName());
+            CoreInstance typeOne = b.getOne().getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToMany(M3Properties.typeArguments).get(1).getValueForMetaPropertyToOne(M3Properties.rawType);
+            CoreInstance typeTwo = b.getTwo().getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToMany(M3Properties.typeArguments).get(1).getValueForMetaPropertyToOne(M3Properties.rawType);
+            return a && typeOne == typeTwo && b.getOne().getValueForMetaPropertyToOne(M3Properties.name).getName().equals(b.getTwo().getValueForMetaPropertyToOne(M3Properties.name).getName());
         });
     }
 
     public static boolean canConcatenate(CoreInstance one, CoreInstance two, ProcessorSupport processorSupport)
     {
-        MutableList<Column<?, ?>> columns1 = (MutableList<Column<?, ?>>) ((RelationType<?>) one.getValueForMetaPropertyToOne("rawType"))._columns().toList();
-        MutableList<Column<?, ?>> columns2 = (MutableList<Column<?, ?>>) ((RelationType<?>) two.getValueForMetaPropertyToOne("rawType"))._columns().toList();
+        MutableList<Column<?, ?>> columns1 = Lists.mutable.withAll(((RelationType<?>) one.getValueForMetaPropertyToOne(M3Properties.rawType))._columns());
+        MutableList<Column<?, ?>> columns2 = Lists.mutable.withAll(((RelationType<?>) two.getValueForMetaPropertyToOne(M3Properties.rawType))._columns());
 
         return columns1.zip(columns2).injectInto(true, (a, b) -> a &&
                 (b.getOne()._nameWildCard() || b.getTwo()._nameWildCard() || b.getOne()._name().equals(b.getTwo()._name())) &&
@@ -165,8 +166,8 @@ public class _RelationType
 
     public static GenericType merge(GenericType existingGenericType, GenericType genericTypeCopy, boolean isCovariant, ProcessorSupport processorSupport)
     {
-        MutableList<Column<?, ?>> columns1 = (MutableList<Column<?, ?>>) ((RelationType<?>) existingGenericType.getValueForMetaPropertyToOne("rawType"))._columns().toList();
-        MutableList<Column<?, ?>> columns2 = (MutableList<Column<?, ?>>) ((RelationType<?>) genericTypeCopy.getValueForMetaPropertyToOne("rawType"))._columns().toList();
+        MutableList<Column<?, ?>> columns1 = Lists.mutable.withAll(((RelationType<?>) existingGenericType.getValueForMetaPropertyToOne(M3Properties.rawType))._columns());
+        MutableList<Column<?, ?>> columns2 = Lists.mutable.withAll(((RelationType<?>) genericTypeCopy.getValueForMetaPropertyToOne(M3Properties.rawType))._columns());
 
         GenericType res = (GenericType) processorSupport.newGenericType(null, existingGenericType, true);
         res._rawType(
@@ -178,8 +179,8 @@ public class _RelationType
                             {
                                 if (!c.getOne()._name().equals(c.getTwo()._name()))
                                 {
-                                    throw new PureCompilationException("Incompatible types " + _RelationType.print((RelationType<?>) existingGenericType.getValueForMetaPropertyToOne("rawType"), processorSupport) + " && " +
-                                            _RelationType.print((RelationType<?>) genericTypeCopy.getValueForMetaPropertyToOne("rawType"), processorSupport));
+                                    throw new PureCompilationException("Incompatible types " + _RelationType.print(existingGenericType.getValueForMetaPropertyToOne(M3Properties.rawType), processorSupport) + " && " +
+                                            _RelationType.print(genericTypeCopy.getValueForMetaPropertyToOne(M3Properties.rawType), processorSupport));
                                 }
                             }
                             String cName = c.getOne()._nameWildCard() ? c.getTwo()._name() : c.getOne()._name();
@@ -188,7 +189,7 @@ public class _RelationType
                             GenericType merged = a._rawType() == null && b._rawType() == null ? a : (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(Lists.mutable.with(a, b), isCovariant, false, genericTypeCopy.getSourceInformation(), processorSupport);
                             return _Column.getColumnInstance(cName, wildcard, res, merged, null, processorSupport);
                         }),
-                        existingGenericType.getValueForMetaPropertyToOne("rawType").getSourceInformation(),
+                        existingGenericType.getValueForMetaPropertyToOne(M3Properties.rawType).getSourceInformation(),
                         processorSupport
                 )
         );

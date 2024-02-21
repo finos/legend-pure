@@ -58,8 +58,8 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElem
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database;
-import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Schema;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.Table;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.navigation.relation._Column;
@@ -282,12 +282,11 @@ public class RelationalParser implements IRelationalParser
     }
 
     @Override
-    public Pair<Object, RelationType> resolveRelationElementAccessor(PackageableElement element, MutableList<? extends String> path, SourceInformation sourceInformation, ProcessorSupport processorSupport)
+    public Pair<?, RelationType<?>> resolveRelationElementAccessor(PackageableElement element, ListIterable<? extends String> path, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
         Database store = (Database) element;
 
-        Table table = null;
-
+        Table table;
         if (path.size() == 2)
         {
             String schemaName = DatabaseProcessor.DEFAULT_SCHEMA_NAME;
@@ -311,8 +310,9 @@ public class RelationalParser implements IRelationalParser
                                         convertType(c.getValueForMetaPropertyToOne("type").getClassifier().getName(), processorSupport),
                                         sourceInformation,
                                         processorSupport
-                                )
-                        ).toList(),
+                                ),
+                                Lists.mutable.empty()
+                        ),
                         sourceInformation,
                         processorSupport
                 )
@@ -321,18 +321,24 @@ public class RelationalParser implements IRelationalParser
 
     public GenericType convertType(String type, ProcessorSupport processorSupport)
     {
-        String result = "";
+        String result;
         switch (type.toUpperCase())
         {
             case "VARCHAR":
-                result = "String";
+            {
+                result = M3Paths.String;
                 break;
+            }
             case "INT":
             case "INTEGER":
-                result = "Integer";
+            {
+                result = M3Paths.Integer;
                 break;
+            }
             default:
+            {
                 throw new RuntimeException(type.toUpperCase() + " not supported yet!");
+            }
         }
         return (GenericType) processorSupport.type_wrapGenericType(_Package.getByUserPath(result, processorSupport));
     }

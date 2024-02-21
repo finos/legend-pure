@@ -15,15 +15,13 @@
 package org.finos.legend.pure.runtime.java.compiled.execution;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.multimap.list.MutableListMultimap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.factory.Multimaps;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.map.sorted.mutable.TreeSortedMap;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.LazyIterate;
@@ -72,9 +70,11 @@ import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataEventObserve
 import org.finos.legend.pure.runtime.java.compiled.serialization.GraphSerializer;
 import org.finos.legend.pure.runtime.java.compiled.serialization.PreCompiledPureGraphCache;
 import org.finos.legend.pure.runtime.java.compiled.statelistener.JavaCompilerEventObserver;
+import org.finos.legend.pure.runtime.java.compiled.statelistener.VoidJavaCompilerEventObserver;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -86,21 +86,14 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
     private SourceRegistry sourceRegistry;
     private final ExecutionActivityListener executionActivityListener;
     private final JavaCompilerEventObserver javaCompilerEventObserver;
-    private MutableList<CompiledExtension> extensions;
+    private final MutableList<CompiledExtension> extensions;
 
     private MutableSet<String> extraSupportedTypes;
 
     private JavaCompilerEventHandler javaCompilerEventHandler;
     private CompilerEventHandlerMetadataProvider metadataCompilerEventHandler;
 
-    private final ConsoleCompiled consoleCompiled = new ConsoleCompiled(new Predicate<Object>()
-    {
-        @Override
-        public boolean accept(Object object)
-        {
-            return FunctionExecutionCompiled.this.isExcluded(object);
-        }
-    });
+    private final ConsoleCompiled consoleCompiled = new ConsoleCompiled(this::isExcluded);
 
     private PureRuntime runtime;
 
@@ -108,13 +101,10 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
 
     private Metadata providedMetadata = null;
 
-    private FunctionExecutionCompiled(ExecutionActivityListener executionActivityListener,
-                                      JavaCompilerEventObserver javaCompilerEventObserver,
-                                      boolean includePureStackTrace,
-                                      MutableList<CompiledExtension> extensions)
+    private FunctionExecutionCompiled(ExecutionActivityListener executionActivityListener, JavaCompilerEventObserver javaCompilerEventObserver, boolean includePureStackTrace, MutableList<CompiledExtension> extensions)
     {
         this.executionActivityListener = executionActivityListener;
-        this.javaCompilerEventObserver = javaCompilerEventObserver;
+        this.javaCompilerEventObserver = (javaCompilerEventObserver == null) ? VoidJavaCompilerEventObserver.VOID_JAVA_COMPILER_EVENT_OBSERVER : javaCompilerEventObserver;
         this.includePureStackTrace = includePureStackTrace;
         this.extensions = extensions;
     }
@@ -127,7 +117,7 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
         this.context = runtime.getContext();
         this.sourceRegistry = runtime.getSourceRegistry();
         this.javaCompilerEventHandler = new JavaCompilerEventHandler(runtime, message, this.includePureStackTrace, this.javaCompilerEventObserver, this.extensions);
-        this.metadataCompilerEventHandler = new MetadataEagerCompilerEventHandler(runtime.getModelRepository(), (MetadataEventObserver) this.javaCompilerEventObserver, message, runtime.getProcessorSupport());
+        this.metadataCompilerEventHandler = new MetadataEagerCompilerEventHandler(runtime.getModelRepository(), getMetadataEventObserver(), message, runtime.getProcessorSupport());
 
         runtime.addEventHandler(this);
         runtime.getIncrementalCompiler().addCompilerEventHandler(this.javaCompilerEventHandler);
@@ -135,12 +125,16 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
 
         initializeFromRuntimeState();
 
-        this.extraSupportedTypes = runtime.getIncrementalCompiler().getParserLibrary().getParsers().flatCollect(CoreInstanceFactoriesRegistry::getCoreInstanceFactoriesRegistry).flatCollect(CoreInstanceFactoryRegistry::allManagedTypes).toSet();
+        this.extraSupportedTypes = runtime.getIncrementalCompiler().getParserLibrary().getParsers()
+                .flatCollect(CoreInstanceFactoriesRegistry::getCoreInstanceFactoriesRegistry)
+                .flatCollect(CoreInstanceFactoryRegistry::allManagedTypes, Sets.mutable.empty());
 
-        CodeRepositorySet codeRepositorySet = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(Thread.currentThread().getContextClassLoader(), true)).build();
+        CodeRepositorySet codeRepositorySet = CodeRepositorySet.newBuilder()
+                .withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(Thread.currentThread().getContextClassLoader(), true))
+                .build();
         this.extensions.forEach(c ->
         {
-            if (!(codeRepositorySet.hasRepository(c.getRelatedRepository())))
+            if (!codeRepositorySet.hasRepository(c.getRelatedRepository()))
             {
                 throw new RuntimeException("The repository " + c.getRelatedRepository() + " related to the extension " + c.getClass().getSimpleName() + " can't be found");
             }
@@ -164,31 +158,39 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
         return this.javaCompilerEventHandler.getJavaCompiler();
     }
 
+    public CompiledExecutionSupport getExecutionSupport()
+    {
+        return new CompiledExecutionSupport(
+                this.javaCompilerEventHandler.getJavaCompileState(),
+                getProcessorSupport(),
+                this.sourceRegistry,
+                this.runtime.getCodeStorage(),
+                this.runtime.getIncrementalCompiler(),
+                this.executionActivityListener,
+                this.consoleCompiled,
+                this.javaCompilerEventHandler.getFunctionCache(),
+                this.javaCompilerEventHandler.getClassCache(),
+                this.metadataCompilerEventHandler,
+                this.extraSupportedTypes,
+                this.extensions,
+                this.runtime.getOptions()
+        );
+    }
 
     @Override
     public CoreInstance start(CoreInstance functionDefinition, ListIterable<? extends CoreInstance> arguments)
     {
-        CompiledExecutionSupport executionSupport =
-                new CompiledExecutionSupport(
-                        this.javaCompilerEventHandler.getJavaCompileState(),
-                        (CompiledProcessorSupport) this.getProcessorSupport(),
-                        this.sourceRegistry,
-                        this.runtime.getCodeStorage(),
-                        this.runtime.getIncrementalCompiler(),
-                        this.executionActivityListener,
-                        this.consoleCompiled,
-                        this.javaCompilerEventHandler.getFunctionCache(), this.javaCompilerEventHandler.getClassCache(), this.metadataCompilerEventHandler, this.extraSupportedTypes, this.extensions, this.runtime.getOptions()
-                );
+        CompiledExecutionSupport executionSupport = getExecutionSupport();
         Exception exception = null;
         try
         {
             Object result = this.executeFunction(functionDefinition, arguments, executionSupport);
             return convertResult(result, this.javaCompilerEventHandler.getJavaCompiler().getClassLoader(), this.metadataCompilerEventHandler.getMetadata(), this.extraSupportedTypes);
         }
-        catch (PureExecutionException ex)
+        catch (PureExecutionException e)
         {
-            exception = ex;
-            throw ex;
+            exception = e;
+            throw e;
         }
         finally
         {
@@ -196,14 +198,11 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
         }
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     public void start(CoreInstance func, ListIterable<? extends CoreInstance> arguments, OutputStream outputStream, OutputWriter writer)
     {
-        CompiledExecutionSupport executionSupport = new CompiledExecutionSupport(this.javaCompilerEventHandler.getJavaCompileState(),
-                (CompiledProcessorSupport) this.getProcessorSupport(), this.sourceRegistry, this.runtime.getCodeStorage(),
-                this.runtime.getIncrementalCompiler(), this.executionActivityListener, this.consoleCompiled,
-                this.javaCompilerEventHandler.getFunctionCache(), this.javaCompilerEventHandler.getClassCache(), this.metadataCompilerEventHandler, this.extraSupportedTypes, this.extensions, this.runtime.getOptions());
-
+        CompiledExecutionSupport executionSupport = getExecutionSupport();
         Exception exception = null;
         try
         {
@@ -212,15 +211,15 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
             {
                 writer.write(result, outputStream);
             }
-            catch (PureExecutionException ex)
+            catch (PureExecutionException e)
             {
-                exception = ex;
-                throw new PureExecutionStreamingException(ex);
+                exception = e;
+                throw new PureExecutionStreamingException(e);
             }
             catch (IOException e)
             {
                 exception = e;
-                throw new RuntimeException("Failed to write results to OutputStream", e);
+                throw new UncheckedIOException("Failed to write results to OutputStream", e);
             }
         }
         finally
@@ -233,11 +232,10 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
     {
         ProcessorSupport processorSupport = new M3ProcessorSupport(this.context, this.repository);
 
-        Object result;
         try
         {
-            result = this.executeFunction(functionDefinition, arguments, executionSupport,
-                    this.javaCompilerEventHandler.getJavaCompiler().getClassLoader(), processorSupport);
+            Object result = executeFunction(functionDefinition, arguments, executionSupport, this.javaCompilerEventHandler.getJavaCompiler().getClassLoader(), processorSupport);
+            return (result == null) ? Lists.immutable.empty() : result;
         }
         catch (PureException pe)
         {
@@ -253,21 +251,16 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
             }
             catch (Exception ignore)
             {
-                builder = new StringBuilder("Error executing ");
-                builder.append(functionDefinition);
+                builder = new StringBuilder("Error executing ").append(functionDefinition);
             }
-            builder.append(". ");
-            if (e.getMessage() != null)
+            builder.append('.');
+            String eMessage = e.getMessage();
+            if (eMessage != null)
             {
-                builder.append(e.getMessage());
+                builder.append(' ').append(eMessage);
             }
             throw new RuntimeException(builder.toString(), e);
         }
-        if (result == null)
-        {
-            result = Lists.immutable.empty();
-        }
-        return result;
     }
 
     private static CoreInstance convertResult(Object result, ClassLoader classLoader, Metadata metadata, MutableSet<String> extraSupportedTypes)
@@ -281,70 +274,53 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
                 return ValueSpecificationBootstrap.wrapValueSpecification((CoreInstance) null, true, compiledProcessorSupport);
             }
             //Optimized check to see if the list is size 1
-            else if (CompiledSupport.isEmpty(CompiledSupport.tail(iterable)))
+            if (CompiledSupport.isEmpty(CompiledSupport.tail(iterable)))
             {
                 Object first = Iterate.getFirst(iterable);
-                if (first instanceof CoreInstance)
-                {
-                    return ValueSpecificationBootstrap.wrapValueSpecification((CoreInstance) first, true, compiledProcessorSupport);
-                }
-                else
-                {
-                    return wrapOneOptimized(first, classLoader, metadata);
-                }
+                return (first instanceof CoreInstance) ?
+                       ValueSpecificationBootstrap.wrapValueSpecification((CoreInstance) first, true, compiledProcessorSupport) :
+                       wrapOneOptimized(first, classLoader, metadata);
             }
-            else
+            RichIterable<CoreInstance> instances = LazyIterate.collect(iterable, object ->
             {
-                RichIterable<CoreInstance> instances = LazyIterate.collect(iterable, new Function<Object, CoreInstance>()
+                if (object instanceof CoreInstance)
                 {
-                    @Override
-                    public CoreInstance valueOf(Object object)
-                    {
-                        if (object instanceof CoreInstance)
-                        {
-                            return (CoreInstance) object;
-                        }
-                        else if (object instanceof String)
-                        {
-                            return compiledProcessorSupport.newCoreInstance((String) object, M3Paths.String, null);
-                        }
-                        else if (object instanceof Boolean)
-                        {
-                            return compiledProcessorSupport.newCoreInstance(object.toString(), M3Paths.Boolean, null);
-                        }
-                        else if (object instanceof PureDate)
-                        {
-                            PureDate date = (PureDate) object;
-                            String type = date.hasHour() ? M3Paths.DateTime : M3Paths.StrictDate;
-                            return compiledProcessorSupport.newCoreInstance(object.toString(), type, null);
-                        }
-                        else if ((object instanceof Integer) || (object instanceof Long) || (object instanceof BigInteger))
-                        {
-                            return compiledProcessorSupport.newCoreInstance(object.toString(), M3Paths.Integer, null);
-                        }
-                        else if ((object instanceof Float) || (object instanceof Double) || (object instanceof BigDecimal))
-                        {
-                            return compiledProcessorSupport.newCoreInstance(object.toString(), M3Paths.Float, null);
-                        }
-                        else
-                        {
-                            throw new RuntimeException("Cannot convert to core instance: " + object);
-                        }
-                    }
-                });
-                return ValueSpecificationBootstrap.wrapValueSpecification(instances, true, compiledProcessorSupport);
-            }
+                    return (CoreInstance) object;
+                }
+                if (object instanceof String)
+                {
+                    return compiledProcessorSupport.newCoreInstance((String) object, M3Paths.String, null);
+                }
+                if (object instanceof Boolean)
+                {
+                    return compiledProcessorSupport.newCoreInstance(object.toString(), M3Paths.Boolean, null);
+                }
+                if (object instanceof PureDate)
+                {
+                    PureDate date = (PureDate) object;
+                    String type = date.hasHour() ? M3Paths.DateTime : M3Paths.StrictDate;
+                    return compiledProcessorSupport.newCoreInstance(object.toString(), type, null);
+                }
+                if ((object instanceof Integer) || (object instanceof Long) || (object instanceof BigInteger))
+                {
+                    return compiledProcessorSupport.newCoreInstance(object.toString(), M3Paths.Integer, null);
+                }
+                if ((object instanceof Float) || (object instanceof Double) || (object instanceof BigDecimal))
+                {
+                    return compiledProcessorSupport.newCoreInstance(object.toString(), M3Paths.Float, null);
+                }
+                throw new RuntimeException("Cannot convert to core instance: " + object);
+            });
+            return ValueSpecificationBootstrap.wrapValueSpecification(instances, true, compiledProcessorSupport);
         }
-        else if (result instanceof CoreInstance)
+        if (result instanceof CoreInstance)
         {
             return ValueSpecificationBootstrap.wrapValueSpecification((CoreInstance) result, true, compiledProcessorSupport);
         }
-        else
-        {
-            return wrapOneOptimized(result, classLoader, metadata);
-        }
+        return wrapOneOptimized(result, classLoader, metadata);
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private static CoreInstance wrapOneOptimized(Object first, ClassLoader classLoader, Metadata metadata)
     {
         try
@@ -365,7 +341,7 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
 
             return (CoreInstance) instanceValueObject;
         }
-        catch (Exception e)
+        catch (ReflectiveOperationException e)
         {
             throw new RuntimeException(e);
         }
@@ -463,7 +439,7 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
                 paramClasses[i] = RichIterable.class;
                 if (!(val instanceof MutableList))
                 {
-                    val = FastList.newListWith(val);
+                    val = Lists.mutable.with(val);
                 }
             }
             params[i] = val;
@@ -483,10 +459,10 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
 
 
     @Override
-    public ProcessorSupport getProcessorSupport()
+    public CompiledProcessorSupport getProcessorSupport()
     {
-        return new CompiledProcessorSupport(this.getJavaCompiler().getClassLoader(), this.providedMetadata == null ?
-                this.metadataCompilerEventHandler.getMetadata() : this.providedMetadata, this.extraSupportedTypes);
+        Metadata metadata = (this.providedMetadata == null) ? this.metadataCompilerEventHandler.getMetadata() : this.providedMetadata;
+        return new CompiledProcessorSupport(getJavaCompiler().getClassLoader(), metadata, this.extraSupportedTypes);
     }
 
     @Override
@@ -496,7 +472,7 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
     }
 
     @Override
-    public OutputWriter newOutputWriter()
+    public OutputWriter<?> newOutputWriter()
     {
         return new OutputWriterCompiled();
     }
@@ -551,13 +527,18 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
         return this.metadataCompilerEventHandler.getExcluded().contains(object);
     }
 
-    static FunctionExecutionCompiled createFunctionExecutionCompiled(ExecutionActivityListener executionActivityListener, boolean includePureStackTrace, JavaCompilerEventObserver javaCompilerEventObserver)
-    {
-        return new FunctionExecutionCompiled(executionActivityListener, javaCompilerEventObserver, includePureStackTrace, CompiledExtensionLoader.extensions());
-    }
-
     public int getClassCacheSize()
     {
         return 0;//this.metadataCompilerEventHandler.getInstanceBuilder().getClassCacheSize();
+    }
+
+    private MetadataEventObserver getMetadataEventObserver()
+    {
+        return (this.javaCompilerEventHandler instanceof MetadataEventObserver) ? (MetadataEventObserver) this.javaCompilerEventObserver : VoidJavaCompilerEventObserver.VOID_JAVA_COMPILER_EVENT_OBSERVER;
+    }
+
+    static FunctionExecutionCompiled createFunctionExecutionCompiled(ExecutionActivityListener executionActivityListener, boolean includePureStackTrace, JavaCompilerEventObserver javaCompilerEventObserver)
+    {
+        return new FunctionExecutionCompiled(executionActivityListener, javaCompilerEventObserver, includePureStackTrace, CompiledExtensionLoader.extensions());
     }
 }

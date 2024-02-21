@@ -19,10 +19,12 @@ import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 public final class JavaMethodSharedPureFunction<R> implements SharedPureFunction<R>
@@ -48,13 +50,19 @@ public final class JavaMethodSharedPureFunction<R> implements SharedPureFunction
         {
             throw new PureExecutionException(this.sourceInformation, "Error during dynamic function evaluation. The type " + ((CompiledExecutionSupport) es).getProcessorSupport().getClassifier((CoreInstance) vars.get(0)).getName() + " is not compatible with the type " + CompiledSupport.getPureClassName(this.propertyMethod.getDeclaringClass()), e);
         }
-        catch (RuntimeException e)
-        {
-            throw e;
-        }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            PureException pureException = PureException.findPureException(e);
+            if (pureException != null)
+            {
+                throw pureException;
+            }
+            StringBuilder builder = new StringBuilder("Unexpected error executing function");
+            if (vars.notEmpty() && vars.anySatisfy(v -> !(v instanceof ExecutionSupport)))
+            {
+                vars.asLazy().reject(v -> v instanceof ExecutionSupport).appendString(builder, " with params [", ", ", "]");
+            }
+            throw new PureExecutionException(this.sourceInformation, builder.toString(), (e instanceof InvocationTargetException) ? e.getCause() : e);
         }
     }
 }

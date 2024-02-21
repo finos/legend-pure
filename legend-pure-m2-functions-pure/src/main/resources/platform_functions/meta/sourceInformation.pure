@@ -28,7 +28,7 @@ Class meta::pure::functions::meta::SourceInformation
 native function meta::pure::functions::meta::sourceInformation(node:Any[1]):SourceInformation[0..1];
 
 
-function <<test.Test>>   meta::pure::functions::meta::tests::sourceInformation::testClassSourceInformation():Boolean[1]
+function <<test.Test>> meta::pure::functions::meta::tests::sourceInformation::testClassSourceInformation():Boolean[1]
 {
     let sourceInfo = TestClass->sourceInformation()->toOne();
     assertEq('/platform_functions/meta/sourceInformation.pure', $sourceInfo.source);
