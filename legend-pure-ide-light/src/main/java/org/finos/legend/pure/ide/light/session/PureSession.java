@@ -30,11 +30,7 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.Mutable
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.welcome.WelcomeCodeStorage;
-import org.finos.legend.pure.m3.serialization.runtime.ExecutedTestTracker;
-import org.finos.legend.pure.m3.serialization.runtime.Message;
-import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
-import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
-import org.finos.legend.pure.m3.serialization.runtime.Source;
+import org.finos.legend.pure.m3.serialization.runtime.*;
 import org.finos.legend.pure.m3.statelistener.VoidExecutionActivityListener;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -48,6 +44,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
@@ -69,6 +66,9 @@ public class PureSession
     public Message message = new Message("");
 
     public MutableList<RepositoryCodeStorage> repos;
+    private final Map<String, Boolean> pureRuntimeOptions = new ConcurrentHashMap<>();
+
+    private final String PURE_OPTION_PREFIX = "pure.option.";
 
     public PureSession(SourceLocationConfiguration sourceLocationConfiguration, MutableList<RepositoryCodeStorage> repos)
     {
@@ -82,8 +82,28 @@ public class PureSession
 
         this.functionExecution = new FunctionExecutionInterpreted(VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER);
 
+        for (String property : System.getProperties().stringPropertyNames())
+        {
+            if (property.startsWith(PURE_OPTION_PREFIX))
+            {
+                setPureRuntimeOption(property.substring(PURE_OPTION_PREFIX.length()), Boolean.getBoolean(property));
+            }
+        }
+
         this.codeStorage = new CompositeCodeStorage(this.repos.toArray(new RepositoryCodeStorage[0]));
-        this.pureRuntime = new PureRuntimeBuilder(this.codeStorage).withMessage(this.message).setUseFastCompiler(true).build();
+        this.pureRuntime = new PureRuntimeBuilder(this.codeStorage)
+                                .withMessage(this.message)
+                                .setUseFastCompiler(true)
+                                .withOptions(new RuntimeOptions()
+                                {
+                                    @Override
+                                    public boolean isOptionSet(String name)
+                                    {
+                                        return getPureRuntimeOption(name);
+                                    }
+                                })
+                                .build();
+
         this.functionExecution.init(this.pureRuntime, this.message);
         this.codeStorage.initialize(this.message);
     }
@@ -101,6 +121,22 @@ public class PureSession
     public FunctionExecution getFunctionExecution()
     {
         return this.functionExecution;
+    }
+
+    public boolean getPureRuntimeOption(String optionName)
+    {
+        Boolean value = this.pureRuntimeOptions.get(optionName);
+        return value != null && value;
+    }
+
+    public Map<String, Boolean> getAllPureRuntimeOptions()
+    {
+        return this.pureRuntimeOptions;
+    }
+
+    public void setPureRuntimeOption(String optionName, boolean value)
+    {
+        this.pureRuntimeOptions.put(optionName, value);
     }
 
     public TestRunner newTestRunner(int testRunId, TestCollection collection)
