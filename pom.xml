@@ -30,59 +30,14 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>legend-pure-test-reports</module>
-
-        <module>legend-pure-m4</module>
-
-        <module>legend-pure-m3-bootstrap-generator</module>
-        <module>legend-pure-m3-core</module>
-
-        <module>legend-pure-runtime-java-engine-interpreted</module>
-        <module>legend-pure-runtime-java-engine-compiled</module>
-        <module>legend-pure-runtime-java-engine-shared</module>
-
-        <module>legend-pure-m2-functions-pure</module>
-        <module>legend-pure-runtime-java-extension-functions</module>
-
-        <module>legend-pure-m2-functions-json-pure</module>
-        <module>legend-pure-runtime-java-extension-functions-json</module>
-        <module>legend-pure-runtime-java-extension-functions-shared-conversion</module>
-
-        <module>legend-pure-m2-dsl-path-pure</module>
-        <module>legend-pure-m2-dsl-path-grammar</module>
-        <module>legend-pure-runtime-java-extension-dsl-path</module>
-
-        <module>legend-pure-m2-dsl-graph-pure</module>
-        <module>legend-pure-m2-dsl-graph-grammar</module>
-        <module>legend-pure-runtime-java-extension-dsl-graph</module>
-
-        <module>legend-pure-m2-dsl-mapping-grammar</module>
-        <module>legend-pure-m2-dsl-mapping-pure</module>
-        <module>legend-pure-runtime-java-extension-dsl-mapping</module>
-
-        <module>legend-pure-m2-dsl-store-grammar</module>
-        <module>legend-pure-m2-dsl-store-pure</module>
-        <module>legend-pure-runtime-java-extension-dsl-store</module>
-
-        <module>legend-pure-m2-dsl-diagram-pure</module>
-        <module>legend-pure-m2-dsl-diagram-grammar</module>
-        <module>legend-pure-runtime-java-extension-dsl-diagram</module>
-
-        <module>legend-pure-m2-dsl-tds-pure</module>
-        <module>legend-pure-m2-dsl-tds-grammar</module>
-        <module>legend-pure-runtime-java-extension-dsl-tds</module>
-
-        <module>legend-pure-m2-store-relational-pure</module>
-        <module>legend-pure-m2-store-relational-grammar</module>
-        <module>legend-pure-runtime-java-extension-store-relational</module>
-
-        <module>legend-pure-m2-functions-relation-pure</module>
-        <module>legend-pure-runtime-java-extension-functions-relation</module>
-
-        <module>legend-pure-maven-generation-par</module>
-        <module>legend-pure-maven-generation-java</module>
-
+        <module>legend-pure-core</module>
+        <module>legend-pure-dsl</module>
+        <module>legend-pure-functions</module>
+        <module>legend-pure-maven</module>
+        <module>legend-pure-runtime</module>
+        <module>legend-pure-store</module>
         <module>legend-pure-ide-light</module>
+        <module>legend-pure-test-reports</module>
     </modules>
 
     <properties>
