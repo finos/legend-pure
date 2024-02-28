@@ -39,18 +39,21 @@ public class PureRuntimeOptions
     }
 
     @GET
+    @Path("setPureRuntimeOption/{name}/{value}")
     public void setPureRuntimeOption(@PathParam("name") String optionName, @PathParam("value") Boolean value)
     {
         this.pureSession.setPureRuntimeOption(optionName, value);
     }
 
     @GET
+    @Path("getPureRuntimeOption/{name}")
     public Boolean getPureRuntimeOption(@PathParam("optionName") String optionName)
     {
         return this.pureSession.getPureRuntimeOption(optionName);
     }
 
     @GET
+    @Path("getAllPureRuntimeOptions")
     public Response getAllPureRuntimeOptions(@Context HttpServletRequest request, @Context HttpServletResponse response)
     {
         return Response.ok((StreamingOutput) outputStream ->
