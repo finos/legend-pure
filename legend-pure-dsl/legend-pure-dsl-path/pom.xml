@@ -29,6 +29,7 @@
     <modules>
         <module>legend-pure-m2-dsl-path-grammar</module>
         <module>legend-pure-m2-dsl-path-pure</module>
-        <module>legend-pure-runtime-java-extension-dsl-path</module>
+        <module>legend-pure-runtime-java-extension-compiled-dsl-path</module>
+        <module>legend-pure-runtime-java-extension-interpreted-dsl-path</module>
     </modules>
 </project>

@@ -1,6 +1,6 @@
 {
   "name": "platform_dsl_mapping",
-  "pattern": "(meta::pure::mapping|meta::external::store::model|meta::pure::metamodel|meta::pure::runtime|meta::core::runtime)(::.*)?",
+  "pattern": "(meta::pure::mapping|meta::external::store::model|meta::pure::metamodel)(::.*)?",
   "dependencies": [
     "platform",
     "platform_functions",

@@ -29,6 +29,6 @@
     <modules>
         <module>legend-pure-m2-dsl-store-grammar</module>
         <module>legend-pure-m2-dsl-store-pure</module>
-        <module>legend-pure-runtime-java-extension-dsl-store</module>
+        <module>legend-pure-runtime-java-extension-compiled-dsl-store</module>
     </modules>
 </project>

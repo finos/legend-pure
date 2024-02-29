@@ -29,6 +29,9 @@
     <modules>
         <module>legend-pure-m2-store-relational-grammar</module>
         <module>legend-pure-m2-store-relational-pure</module>
-        <module>legend-pure-runtime-java-extension-store-relational</module>
+        <module>legend-pure-runtime-java-extension-compiled-store-relational</module>
+        <module>legend-pure-runtime-java-extension-functions-compiled-store-relational</module>
+        <module>legend-pure-runtime-java-extension-functions-interpreted-store-relational</module>
+        <module>legend-pure-runtime-java-extension-functions-shared-store-relational</module>
     </modules>
 </project>

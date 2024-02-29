@@ -29,6 +29,6 @@
     <modules>
         <module>legend-pure-m2-dsl-graph-grammar</module>
         <module>legend-pure-m2-dsl-graph-pure</module>
-        <module>legend-pure-runtime-java-extension-dsl-graph</module>
+        <module>legend-pure-runtime-java-extension-compiled-dsl-graph</module>
     </modules>
 </project>

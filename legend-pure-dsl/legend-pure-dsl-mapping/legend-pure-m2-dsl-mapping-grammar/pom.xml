@@ -23,7 +23,6 @@
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure-dsl-mapping</artifactId>
         <version>5.1.4-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>legend-pure-m2-dsl-mapping-grammar</artifactId>

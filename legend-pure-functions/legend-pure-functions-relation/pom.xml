@@ -28,6 +28,8 @@
 
     <modules>
         <module>legend-pure-m2-functions-relation-pure</module>
-        <module>legend-pure-runtime-java-extension-functions-relation</module>
+        <module>legend-pure-runtime-java-extension-functions-compiled-relation</module>
+        <module>legend-pure-runtime-java-extension-functions-interpreted-relation</module>
+        <module>legend-pure-runtime-java-extension-functions-shared-relation</module>
     </modules>
 </project>

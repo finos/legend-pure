@@ -29,6 +29,8 @@
     <modules>
         <module>legend-pure-m2-dsl-tds-grammar</module>
         <module>legend-pure-m2-dsl-tds-pure</module>
-        <module>legend-pure-runtime-java-extension-dsl-tds</module>
+        <module>legend-pure-runtime-java-extension-compiled-dsl-tds</module>
+        <module>legend-pure-runtime-java-extension-functions-compiled-dsl-tds</module>
+        <module>legend-pure-runtime-java-extension-functions-interpreted-dsl-tds</module>
     </modules>
 </project>

@@ -152,7 +152,7 @@
         </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-m2-functions-pure</artifactId>
+            <artifactId>legend-pure-m2-functions-base-pure</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -262,7 +262,7 @@
         </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-runtime-java-extension-dsl-diagram</artifactId>
+            <artifactId>legend-pure-runtime-java-extension-compiled-dsl-diagram</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -272,7 +272,7 @@
         </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-runtime-java-extension-dsl-graph</artifactId>
+            <artifactId>legend-pure-runtime-java-extension-compiled-dsl-graph</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -282,7 +282,7 @@
         </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-runtime-java-extension-dsl-mapping</artifactId>
+            <artifactId>legend-pure-runtime-java-extension-compiled-dsl-mapping</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -292,7 +292,7 @@
         </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-runtime-java-extension-dsl-path</artifactId>
+            <artifactId>legend-pure-runtime-java-extension-compiled-dsl-path</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -302,7 +302,7 @@
         </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-runtime-java-extension-functions-json</artifactId>
+            <artifactId>legend-pure-runtime-java-extension-functions-compiled-json</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -322,7 +322,7 @@
         </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-runtime-java-extension-functions</artifactId>
+            <artifactId>legend-pure-runtime-java-extension-functions-compiled-base</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -332,7 +332,7 @@
         </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-runtime-java-extension-store-relational</artifactId>
+            <artifactId>legend-pure-runtime-java-extension-compiled-store-relational</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

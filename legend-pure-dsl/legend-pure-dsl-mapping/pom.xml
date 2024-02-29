@@ -29,6 +29,6 @@
     <modules>
         <module>legend-pure-m2-dsl-mapping-grammar</module>
         <module>legend-pure-m2-dsl-mapping-pure</module>
-        <module>legend-pure-runtime-java-extension-dsl-mapping</module>
+        <module>legend-pure-runtime-java-extension-compiled-dsl-mapping</module>
     </modules>
 </project>

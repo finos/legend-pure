@@ -27,7 +27,9 @@
     <name>Legend - Pure - Functions - Base</name>
 
     <modules>
-        <module>legend-pure-m2-functions-pure</module>
-        <module>legend-pure-runtime-java-extension-functions</module>
+        <module>legend-pure-m2-functions-base-pure</module>
+        <module>legend-pure-runtime-java-extension-functions-compiled-base</module>
+        <module>legend-pure-runtime-java-extension-functions-interpreted-base</module>
+        <module>legend-pure-runtime-java-extension-functions-shared-base</module>
     </modules>
 </project>
