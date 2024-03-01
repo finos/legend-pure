@@ -23,6 +23,7 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.*;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.tools.FileTools;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -281,6 +282,12 @@ public class FSCodeStorage extends AbstractSingleRepositoryCodeStorage
         public CodeStorageNodeStatus getStatus()
         {
             return CodeStorageNodeStatus.UNKNOWN;
+        }
+
+        @Override
+        public long lastModified()
+        {
+            return path.toFile().lastModified();
         }
     }
 }

@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.orchestrator;
 
+import org.apache.commons.cli.*;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
@@ -34,167 +35,296 @@ import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
 import org.finos.legend.pure.m3.serialization.runtime.cache.CacheState;
 import org.finos.legend.pure.m3.serialization.runtime.cache.ClassLoaderPureGraphCache;
+import org.finos.legend.pure.m3.tools.FileTools;
+import org.finos.legend.pure.m3.tools.GeneratorTools;
 import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompiler;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtensionLoader;
 import org.finos.legend.pure.runtime.java.compiled.generation.Generate;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaStandaloneLibraryGenerator;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphSerializer;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Set;
+import java.nio.file.*;
+import java.util.*;
 
 public class JavaCodeGeneration
 {
-    public static void main(String... args) throws Exception
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(JavaCodeGeneration.class);
+
+    public static void main(String... args)
     {
+        LOGGER.info("Starting " + JavaCodeGeneration.class.getSimpleName() + " execution");
+
         Log log = new Log()
         {
             @Override
             public void info(String txt)
             {
-                System.out.println(txt);
+                LOGGER.info(txt);
             }
 
             @Override
             public void error(String txt, Exception e)
             {
-                System.out.println(txt);
-                e.printStackTrace();
+                LOGGER.error(txt, e);
             }
 
             @Override
-            public void error(String format)
+            public void error(String msg)
             {
-                System.out.println(format);
+                LOGGER.error(msg);
             }
 
             @Override
             public void warn(String s)
             {
-                System.out.println(s);
+                LOGGER.warn(s);
             }
         };
-        doIt(
-                Sets.mutable.with(args[0]),
-                Sets.mutable.empty(),
-                Sets.mutable.empty(),
-                GenerationType.modular,
+
+        Set<String> excludedRepositories = Sets.mutable.empty();
+        Set<String> extraRepositories = Sets.mutable.empty();
+        GenerationType modular = GenerationType.modular;
+
+        // For backwards compatibility
+        String externalAPIPackage;
+        Set<String> repositories;
+        File classesDirectory;
+        Path targetDirectoryForSource;
+        Path targetDirectoryForMetadata;
+
+        // Define the command line options
+        Option repositoryOption = new Option("repo", "repository", true, "repository name, e.g. 'platform'");
+        repositoryOption.setRequired(true);
+        repositoryOption.setArgName("repositoryName");
+
+        Option targetResourceDirectoryOption = new Option("trd", "targetResourceDir", true, "target output directory for resources");
+        targetResourceDirectoryOption.setRequired(true);
+        targetResourceDirectoryOption.setArgs(1);
+        targetResourceDirectoryOption.setArgName("directory");
+
+        Option targetSourceDirectoryOption = new Option("tsd", "targetSourceDir", true, "target output directory for sources");
+        targetSourceDirectoryOption.setRequired(true);
+        targetSourceDirectoryOption.setArgs(1);
+        targetSourceDirectoryOption.setArgName("directory");
+
+        Option targetMetadataDirectoryOption = new Option("tmd", "targetMetadataDir", true, "target output directory for metadata");
+        targetMetadataDirectoryOption.setRequired(true);
+        targetMetadataDirectoryOption.setArgs(1);
+        targetMetadataDirectoryOption.setArgName("directory");
+
+        Option externalApiPackageNameOption = new Option("eapn", "externalApiPackageName", true, "package name for external api");
+        externalApiPackageNameOption.setRequired(false);
+        externalApiPackageNameOption.setArgs(1);
+        externalApiPackageNameOption.setArgName("packageName");
+
+        // create Options object
+        Options options = new Options();
+        options.addOption(repositoryOption);
+        options.addOption(targetResourceDirectoryOption);
+        options.addOption(targetSourceDirectoryOption);
+        options.addOption(targetMetadataDirectoryOption);
+        options.addOption(externalApiPackageNameOption);
+
+        CommandLineParser parser = new BasicParser();
+        CommandLine cmd;
+        try
+        {
+            if (args.length > 0 && !Arrays.stream(args).anyMatch(v -> v.startsWith("-")))
+            {
+                args = new String[]{
+                    "-" + repositoryOption.getOpt(),
+                    args[0],
+                    "-" + targetResourceDirectoryOption.getOpt(),
+                    args[1],
+                    "-" + targetSourceDirectoryOption.getOpt(),
+                    Paths.get(args[2]).resolve("generated-test-sources").toString(),
+                    "-" + targetMetadataDirectoryOption.getOpt(),
+                    Paths.get(args[2]).resolve("metadata-distributed").toString(),
+                    };
+            }
+
+            cmd = parser.parse(options, args);
+
+            repositories = new HashSet<>(Arrays.asList(cmd.getOptionValues(repositoryOption.getOpt())));
+            classesDirectory = new File(cmd.getOptionValue(targetResourceDirectoryOption.getOpt()));
+            targetDirectoryForSource = Paths.get(cmd.getOptionValue(targetSourceDirectoryOption.getOpt()));
+            targetDirectoryForMetadata = Paths.get(cmd.getOptionValue(targetMetadataDirectoryOption.getOpt()));
+            externalAPIPackage = cmd.getOptionValue(externalApiPackageNameOption.getOpt(), "");
+        }
+        catch (ParseException e)
+        {
+            System.out.println(e.getMessage());
+
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp(JavaCodeGeneration.class.getName(), options);
+
+            System.exit(1);
+            throw new RuntimeException(e);
+        }
+
+        doIt(new GenerateParams(
+                repositories,
+                excludedRepositories,
+                extraRepositories,
+                modular,
                 false,
                 false,
-                args.length == 4 ? args[3] : "",
+                externalAPIPackage,
                 true,
                 true,
                 true,
                 true,
-                true,
-                new File(args[1]),
-                new File(args[2]),
+                classesDirectory,
+                targetDirectoryForSource,
+                targetDirectoryForMetadata,
                 log
-        );
+            ));
     }
 
 
-    public static void doIt(Set<String> repositories,
-                            Set<String> excludedRepositories,
-                            Set<String> extraRepositories,
-                            JavaCodeGeneration.GenerationType generationType,
-                            boolean skip,
-                            boolean addExternalAPI,
-                            String externalAPIPackage,
-                            boolean generateMetadata,
-                            boolean useSingleDir,
-                            boolean generateSources,
-                            boolean generateTest,
-                            boolean preventJavaCompilation,
-                            File classesDirectory,
-                            File targetDirectory,
-                            Log log)
+    public static void doIt(GenerateParams generateParams)
     {
         // DO NOT DELETE - Needed to avoid circular calls later during static initialization
         SetIterable<String> res = JavaPackageAndImportBuilder.M3_CLASSES;
         // DO NOT DELETE - Needed to avoid circular calls later during static initialization
 
-        if (skip)
+        Log genLogger = generateParams.getLog();
+
+        if (generateParams.isSkip())
         {
-            log.info("Skipping Java Compiled JAR generation");
+            genLogger.info("Skipping Java Compiled JAR generation");
             return;
         }
 
         long start = System.nanoTime();
-        log.info("Generating Java Compiled JAR");
-        log.info("  Requested repositories: " + repositories);
-        log.info("  Excluded repositories: " + excludedRepositories);
-        log.info("  Extra repositories: " + extraRepositories);
-        log.info("  Generation type: " + generationType);
-        log.info("  Generate External API: '" + addExternalAPI + "' in package '" + externalAPIPackage + "'");
+        genLogger.info("Generating Java Compiled JAR");
+        genLogger.info("  Requested repositories: " + generateParams.getRepositories());
+        genLogger.info("  Excluded repositories: " + generateParams.getExcludedRepositories());
+        genLogger.info("  Extra repositories: " + generateParams.getExtraRepositories());
+        genLogger.info("  Generation type: " + generateParams.getGenerationType());
+        genLogger.info("  Generate External API: addExternalAPI='" + generateParams.isAddExternalAPI() + "', in package '" + generateParams.getExternalAPIPackage() + "'");
+        genLogger.info("  classesDirectory: '" + generateParams.getTargetDirectoryForResources());
+        genLogger.info("  targetDirectoryForSources: '" + generateParams.getTargetDirectoryForSources());
+        genLogger.info("  targetDirectoryForMetadata: '" + generateParams.getTargetDirectoryForMetadata());
+        genLogger.info("  Other options: " +
+                " skip=" + generateParams.isSkip() +
+                "; generateMetadata=" + generateParams.isGenerateMetadata() +
+                "; useSingleDir=" + generateParams.isUseSingleDir() +
+                "; generateSources=" + generateParams.isGenerateSources()
+                );
+        genLogger.info("  Working directory: '" + FileSystems.getDefault().getPath("").toAbsolutePath());
 
         try
         {
-            CodeRepositorySet allRepositories = getAllRepositories(extraRepositories);
-            log.info(allRepositories.getRepositories().collect(CodeRepository::getName).makeString("  Found repositories: ", ", ", ""));
-            log.info(new ParserService().parsers().collect(Parser::getName).makeString("  Found parsers: ", ", ", ""));
-            log.info(new ParserService().inlineDSLs().collect(InlineDSL::getName).makeString("  Found DSL parsers: ", ", ", ""));
-            MutableSet<String> selectedRepositories = getSelectedRepositories(allRepositories, repositories, excludedRepositories);
-            log.info(selectedRepositories.makeString("  Selected repositories: ", ", ", ""));
+            CodeRepositorySet allRepositories = getAllRepositories(generateParams.getExtraRepositories());
+            genLogger.info(allRepositories.getRepositories().collect(CodeRepository::getName).makeString("  Found repositories: ", ", ", ""));
+            genLogger.info(new ParserService().parsers().collect(Parser::getName).makeString("  Found parsers: ", ", ", ""));
+            genLogger.info(new ParserService().inlineDSLs().collect(InlineDSL::getName).makeString("  Found DSL parsers: ", ", ", ""));
+            MutableSet<String> selectedRepositories = getSelectedRepositories(allRepositories, generateParams.getRepositories(), generateParams.getExcludedRepositories());
+            genLogger.info(selectedRepositories.makeString("  Selected repositories: ", ", ", ""));
+
+
+            genLogger.info("  Checking code last modified timestamp");
+            CompositeCodeStorage codeStorage = new CompositeCodeStorage(
+                    new ClassLoaderCodeStorage(Thread.currentThread().getContextClassLoader(), allRepositories.subset(selectedRepositories).getRepositories())
+                    );
+            long codeLastModified = codeStorage.lastModified();
+            genLogger.info("  Code repositories last modified: " + new Date(codeLastModified));
 
             Path distributedMetadataDirectory;
-            if (!generateMetadata)
+            if (!generateParams.isGenerateMetadata())
             {
                 distributedMetadataDirectory = null;
-                log.info("  Classes output directory: " + classesDirectory);
-                log.info("  No metadata output");
+                genLogger.info("  Classes output directory: " + generateParams.getTargetDirectoryForResources());
+                genLogger.info("  No metadata output");
             }
-            else if (useSingleDir)
+            else if (generateParams.isUseSingleDir())
             {
-                distributedMetadataDirectory = classesDirectory.toPath();
-                log.info("  All in output directory: " + classesDirectory);
+                distributedMetadataDirectory = generateParams.getTargetDirectoryForResources().toPath();
+                genLogger.info("  All in output directory: " + generateParams.getTargetDirectoryForResources());
             }
             else
             {
-                distributedMetadataDirectory = targetDirectory.toPath().resolve("metadata-distributed");
-                log.info("  Classes output directory: " + classesDirectory);
-                log.info("  Distributed metadata output directory: " + distributedMetadataDirectory);
+                distributedMetadataDirectory = generateParams.getTargetDirectoryForMetadata();
+                genLogger.info("  Classes output directory: " + generateParams.getTargetDirectoryForResources());
+                genLogger.info("  Distributed metadata output directory: " + distributedMetadataDirectory);
             }
 
             Path codegenDirectory;
-            if (generateSources)
+            if (generateParams.isGenerateSources())
             {
-                codegenDirectory = targetDirectory.toPath().resolve(generateTest ? "generated-test-sources" : "generated-sources");
-                log.info("  Codegen output directory: " + codegenDirectory);
+                codegenDirectory = generateParams.getTargetDirectoryForSources();
+                genLogger.info("  Codegen output directory: " + codegenDirectory);
             }
             else
             {
                 codegenDirectory = null;
             }
 
-            // Generate metadata and Java sources
-            Generate generate = generate(System.nanoTime(), allRepositories, selectedRepositories, distributedMetadataDirectory, codegenDirectory, generateMetadata, addExternalAPI, externalAPIPackage, generationType, generateSources, log);
 
-            // Compile Java sources
-            if (!preventJavaCompilation)
+            Optional<Path> oldestOutputFile = FileTools.findOldestModified(
+                    distributedMetadataDirectory,
+                    codegenDirectory,
+                    Paths.get(generateParams.getTargetDirectoryForResources().getAbsolutePath())
+                    );
+
+            String modifiedMsgSummary = "oldestOutputFile=" + oldestOutputFile + "; " + (oldestOutputFile.isPresent() ? oldestOutputFile.get().toFile().lastModified() : null) + ";" + "codeLastModified=" + codeLastModified;
+
+
+            if (GeneratorTools.skipGenerationForNonStaleOutput() && (oldestOutputFile.isPresent() && oldestOutputFile.get().toFile().lastModified() > codeLastModified))
             {
-                long startCompilation = System.nanoTime();
-                log.info("  Start compiling Java classes");
-                PureJavaCompiler compiler = compileJavaSources(startCompilation, generate, addExternalAPI, log);
-                writeJavaClassFiles(startCompilation, compiler, classesDirectory, log);
-                log.info(String.format("  Finished compiling Java classes (%.9fs)", durationSinceInSeconds(startCompilation)));
+                genLogger.info("  No changes detected, output is not is not stale - skipping generation (" + modifiedMsgSummary + ")");
             }
             else
             {
-                log.info("  Java classes compilation: skipped");
-            }
+                if (oldestOutputFile.isPresent())
+                {
+                    GeneratorTools.assertRegenerationPermitted(modifiedMsgSummary);
+                }
 
-            // Write class files
-            log.info(String.format("  Finished building Pure compiled mode jar (%.9fs)", durationSinceInSeconds(start)));
+                genLogger.info("  Changes detected - regenerating the output (" + modifiedMsgSummary + ")");
+
+                // Generate metadata and Java sources
+                Generate generate = generate(
+                        System.nanoTime(),
+                        allRepositories,
+                        selectedRepositories,
+                        distributedMetadataDirectory,
+                        codegenDirectory,
+                        generateParams.isGenerateMetadata(),
+                        generateParams.isAddExternalAPI(),
+                        generateParams.getExternalAPIPackage(),
+                        generateParams.getGenerationType(),
+                        generateParams.isGenerateSources(),
+                        genLogger
+                    );
+
+                // Compile Java sources
+                if (!generateParams.isPreventJavaCompilation())
+                {
+                    long startCompilation = System.nanoTime();
+                    genLogger.info("  Start compiling Java classes");
+                    PureJavaCompiler compiler = compileJavaSources(startCompilation, generate, generateParams.isAddExternalAPI(), genLogger);
+                    writeJavaClassFiles(startCompilation, compiler, generateParams.getTargetDirectoryForResources(), genLogger);
+                    genLogger.info(String.format("  Finished compiling Java classes (%.9fs)", durationSinceInSeconds(startCompilation)));
+                }
+                else
+                {
+                    genLogger.info("  Java classes compilation: skipped");
+                }
+
+                // Write class files
+                genLogger.info(String.format("  Finished building Pure compiled mode jar (%.9fs)", durationSinceInSeconds(start)));
+            }
         }
         catch (Exception e)
         {
-            log.error(String.format("    Error (%.9fs)", durationSinceInSeconds(start)), e);
-            log.error(String.format("    FAILURE building Pure compiled mode jar (%.9fs)", durationSinceInSeconds(start)));
+            genLogger.error(String.format("    Error (%.9fs)", durationSinceInSeconds(start)), e);
+            genLogger.error(String.format("    FAILURE building Pure compiled mode jar (%.9fs)", durationSinceInSeconds(start)));
             throw new RuntimeException("Error building Pure compiled mode jar", e);
         }
     }
@@ -469,5 +599,134 @@ public class JavaCodeGeneration
     public enum GenerationType
     {
         monolithic, modular
+    }
+
+    public static class GenerateParams
+    {
+        private final Set<String> repositories;
+        private final Set<String> excludedRepositories;
+        private final Set<String> extraRepositories;
+        private final GenerationType generationType;
+        private final boolean skip;
+        private final boolean addExternalAPI;
+        private final String externalAPIPackage;
+        private final boolean generateMetadata;
+        private final boolean useSingleDir;
+        private final boolean generateSources;
+        private final boolean preventJavaCompilation;
+        private final File targetDirectoryForResources;
+        private Path targetDirectoryForSources;
+        private Path targetDirectoryForMetadata;
+        private final Log log;
+
+        public GenerateParams(
+                Set<String> repositories,
+                Set<String> excludedRepositories,
+                Set<String> extraRepositories,
+                GenerationType generationType,
+                boolean skip,
+                boolean addExternalAPI,
+                String externalAPIPackage,
+                boolean generateMetadata,
+                boolean useSingleDir,
+                boolean generateSources,
+                boolean preventJavaCompilation,
+                File targetDirectoryForResources,
+                Path targetDirectoryForSources,
+                Path targetDirectoryForMetadata,
+                Log log
+                )
+        {
+            this.repositories = repositories;
+            this.excludedRepositories = excludedRepositories;
+            this.extraRepositories = extraRepositories;
+            this.generationType = generationType;
+            this.skip = skip;
+            this.addExternalAPI = addExternalAPI;
+            this.externalAPIPackage = externalAPIPackage;
+            this.generateMetadata = generateMetadata;
+            this.useSingleDir = useSingleDir;
+            this.generateSources = generateSources;
+            this.preventJavaCompilation = preventJavaCompilation;
+            this.targetDirectoryForResources = targetDirectoryForResources;
+            this.targetDirectoryForSources = targetDirectoryForSources;
+            this.targetDirectoryForMetadata = targetDirectoryForMetadata;
+            this.log = log;
+        }
+
+        public Set<String> getRepositories()
+        {
+            return repositories;
+        }
+
+        public Set<String> getExcludedRepositories()
+        {
+            return excludedRepositories;
+        }
+
+        public Set<String> getExtraRepositories()
+        {
+            return extraRepositories;
+        }
+
+        public GenerationType getGenerationType()
+        {
+            return generationType;
+        }
+
+        public boolean isSkip()
+        {
+            return skip;
+        }
+
+        public boolean isAddExternalAPI()
+        {
+            return addExternalAPI;
+        }
+
+        public String getExternalAPIPackage()
+        {
+            return externalAPIPackage;
+        }
+
+        public boolean isGenerateMetadata()
+        {
+            return generateMetadata;
+        }
+
+        public boolean isUseSingleDir()
+        {
+            return useSingleDir;
+        }
+
+        public boolean isGenerateSources()
+        {
+            return generateSources;
+        }
+
+        public boolean isPreventJavaCompilation()
+        {
+            return preventJavaCompilation;
+        }
+
+        public File getTargetDirectoryForResources()
+        {
+            return targetDirectoryForResources;
+        }
+
+        public Log getLog()
+        {
+            return log;
+        }
+
+        public Path getTargetDirectoryForSources()
+        {
+            return this.targetDirectoryForSources;
+        }
+
+        public Path getTargetDirectoryForMetadata()
+        {
+            return this.targetDirectoryForMetadata;
+        }
     }
 }

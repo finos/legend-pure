@@ -852,6 +852,12 @@ public class CompositeCodeStorage implements MutableVersionControlledCodeStorage
         {
             return CodeStorageNodeStatus.UNKNOWN;
         }
+
+        @Override
+        public long lastModified()
+        {
+            return 0;
+        }
     }
 
     public static String getSourceRepoName(String sourceId)

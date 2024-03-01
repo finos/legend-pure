@@ -37,15 +37,25 @@ import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeReposito
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
+import org.finos.legend.pure.m3.tools.FileTools;
+import org.finos.legend.pure.m3.tools.GeneratorTools;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 
 public class M3CoreInstanceGenerator
 {
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(M3CoreInstanceGenerator.class);
+
     public static void main(String[] args)
     {
+        LOGGER.info("Starting " + M3CoreInstanceGenerator.class.getSimpleName() + " execution");
+
         String outputDir = args[0];
         String factoryNamePrefix = args[1];
         String fileNameStr = args[2];
@@ -55,14 +65,45 @@ public class M3CoreInstanceGenerator
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         CodeRepositorySet.Builder builder = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true));
         RichIterable<CodeRepository> repositories = builder.build().getRepositories();
-        PureRuntime runtime = new PureRuntimeBuilder(new CompositeCodeStorage(new ClassLoaderCodeStorage(repositories))).setTransactionalByDefault(false).build();
+        CompositeCodeStorage codeStorage = new CompositeCodeStorage(new ClassLoaderCodeStorage(repositories));
 
-        ModelRepository repository = runtime.getModelRepository();
-        runtime.loadAndCompileCore();
-        runtime.loadAndCompileSystem();
+        long codeLastModified = codeStorage.lastModified();
+        Optional<Path> outputEarliestModified;
+        try
+        {
+            outputEarliestModified = FileTools.findOldestModified(Paths.get(outputDir));
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
 
-        M3ToJavaGenerator m3ToJavaGenerator = generator(outputDir, factoryNamePrefix, repository);
-        m3ToJavaGenerator.generate(repository, filePaths, fileNameStartsWith);
+        String modifiedMsgSummary = "outputEarliestModified=" + outputEarliestModified + "; " + (outputEarliestModified.isPresent() ? outputEarliestModified.get().toFile().lastModified() : null) + ";" + "codeLastModified=" + codeLastModified;
+
+        if (GeneratorTools.skipGenerationForNonStaleOutput() && (outputEarliestModified.isPresent() && outputEarliestModified.get().toFile().lastModified() > codeLastModified))
+        {
+            LOGGER.info("No changes detected, output is not is not stale - skipping generation (" + modifiedMsgSummary + ")");
+        }
+        else
+        {
+            if (outputEarliestModified.isPresent())
+            {
+                GeneratorTools.assertRegenerationPermitted(modifiedMsgSummary);
+            }
+
+            LOGGER.info("Changes detected - regenerating the output (" + modifiedMsgSummary + ")");
+
+            PureRuntime runtime = new PureRuntimeBuilder(codeStorage).setTransactionalByDefault(false).build();
+
+            ModelRepository repository = runtime.getModelRepository();
+            runtime.loadAndCompileCore();
+            runtime.loadAndCompileSystem();
+
+            LOGGER.info("Generating to: " + filePaths);
+
+            M3ToJavaGenerator m3ToJavaGenerator = generator(outputDir, factoryNamePrefix, repository);
+            m3ToJavaGenerator.generate(repository, filePaths, fileNameStartsWith);
+        }
     }
 
     public static M3ToJavaGenerator generator(String outputFir, String factoryNamePrefix, ModelRepository repository)

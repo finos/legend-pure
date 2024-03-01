@@ -355,7 +355,7 @@ public class BinaryRepositorySerializer
         // Second pass
         if (message != null)
         {
-            message.message("Loading from cache<BR>Second pass node instantiation<BR>(" + nodes.size() + " nodes)");
+            message.message("Loading from cache - Second pass node instantiation (" + nodes.size() + " nodes)");
         }
         nodes.forEach(node ->
         {
