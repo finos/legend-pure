@@ -26,55 +26,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>legend-pure-runtime-java-extension-compiled-dsl-tds</artifactId>
+    <artifactId>legend-pure-runtime-java-extension-interpreted-dsl-tds</artifactId>
     <packaging>jar</packaging>
-    <name>Legend Pure - Runtime - Java Extension - Compiled - DSL TDS</name>
-
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>pre-compile</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
-                        <configuration>
-                            <mainClass>org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.JavaModelFactoryGenerator</mainClass>
-                            <arguments>
-                                <argument>TDS</argument>
-                                <argument>org.finos.legend.pure.m2.inlinedsl.tds.TDSExtension</argument>
-                                <argument>${project.build.directory}/generated-sources/</argument>
-                            </arguments>
-                            <includeProjectDependencies>true</includeProjectDependencies>
-                            <includePluginDependencies>true</includePluginDependencies>
-                        </configuration>
-                    </execution>
-                </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.finos.legend.pure</groupId>
-                        <artifactId>legend-pure-m2-dsl-tds-grammar</artifactId>
-                        <version>${project.version}</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-        </plugins>
-    </build>
+    <name>Legend Pure - Runtime - Java Extension - Interpreted - DSL TDS</name>
 
     <dependencies>
         <dependency>
@@ -98,7 +52,7 @@
 
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-runtime-java-engine-compiled</artifactId>
+            <artifactId>legend-pure-runtime-java-engine-interpreted</artifactId>
         </dependency>
 
         <dependency>
@@ -115,7 +69,7 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
+       <dependency>
             <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-runtime-java-engine-compiled</artifactId>
             <type>test-jar</type>
@@ -127,5 +81,10 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
+
+        <!--        <dependency>-->
+<!--            <groupId>junit</groupId>-->
+<!--            <artifactId>junit</artifactId>-->
+<!--        </dependency>-->
     </dependencies>
 </project>

@@ -78,7 +78,7 @@
                     </dependency>
                     <dependency>
                         <groupId>org.finos.legend.pure</groupId>
-                        <artifactId>legend-pure-m2-functions-pure</artifactId>
+                        <artifactId>legend-pure-m2-functions-base-pure</artifactId>
                         <version>${project.version}</version>
                     </dependency>
                 </dependencies>
@@ -92,7 +92,7 @@
         </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-m2-dsl-tds-pure</artifactId>
+            <artifactId>legend-pure-m2-dsl-tds-grammar</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>

@@ -28,9 +28,9 @@
 
     <modules>
         <module>legend-pure-m2-functions-json-pure</module>
-        <module>legend-pure-runtime-java-extension-functions-compiled-json</module>
-        <module>legend-pure-runtime-java-extension-functions-interpreted-json</module>
-        <module>legend-pure-runtime-java-extension-functions-shared-json</module>
-        <module>legend-pure-runtime-java-extension-functions-shared-conversion</module>
+        <module>legend-pure-runtime-java-extension-compiled-functions-json</module>
+        <module>legend-pure-runtime-java-extension-interpreted-functions-json</module>
+        <module>legend-pure-runtime-java-extension-shared-functions-json</module>
+        <module>legend-pure-runtime-java-extension-shared-functions-conversion</module>
     </modules>
 </project>

@@ -558,17 +558,17 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-runtime-java-extension-functions-shared-base</artifactId>
+                <artifactId>legend-pure-runtime-java-extension-shared-functions-base</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-runtime-java-extension-functions-interpreted-base</artifactId>
+                <artifactId>legend-pure-runtime-java-extension-interpreted-functions-base</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-runtime-java-extension-functions-compiled-base</artifactId>
+                <artifactId>legend-pure-runtime-java-extension-compiled-functions-base</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -579,17 +579,17 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-runtime-java-extension-functions-shared-json</artifactId>
+                <artifactId>legend-pure-runtime-java-extension-shared-functions-json</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-runtime-java-extension-functions-compiled-json</artifactId>
+                <artifactId>legend-pure-runtime-java-extension-compiled-functions-json</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-runtime-java-extension-functions-shared-conversion</artifactId>
+                <artifactId>legend-pure-runtime-java-extension-shared-functions-conversion</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -600,12 +600,12 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-runtime-java-extension-functions-shared-relation</artifactId>
+                <artifactId>legend-pure-runtime-java-extension-shared-functions-relation</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-runtime-java-extension-functions-compiled-relation</artifactId>
+                <artifactId>legend-pure-runtime-java-extension-compiled-functions-relation</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -648,7 +648,7 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-runtime-java-extension-functions-shared-store-relational</artifactId>
+                <artifactId>legend-pure-runtime-java-extension-shared-store-relational</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1093,14 +1093,14 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-runtime-java-extension-functions-compiled-json</artifactId>
+                <artifactId>legend-pure-runtime-java-extension-compiled-functions-json</artifactId>
                 <type>test-jar</type>
                 <scope>test</scope>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-runtime-java-extension-functions-compiled-base</artifactId>
+                <artifactId>legend-pure-runtime-java-extension-compiled-functions-base</artifactId>
                 <type>test-jar</type>
                 <scope>test</scope>
                 <version>${project.version}</version>

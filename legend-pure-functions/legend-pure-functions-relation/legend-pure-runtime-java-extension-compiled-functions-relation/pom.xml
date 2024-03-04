@@ -21,14 +21,13 @@
 
     <parent>
         <groupId>org.finos.legend.pure</groupId>
-        <artifactId>legend-pure-dsl-tds</artifactId>
+        <artifactId>legend-pure-functions-relation</artifactId>
         <version>5.1.4-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>legend-pure-runtime-java-extension-compiled-dsl-tds</artifactId>
+    <artifactId>legend-pure-runtime-java-extension-compiled-functions-relation</artifactId>
     <packaging>jar</packaging>
-    <name>Legend Pure - Runtime - Java Extension - Compiled - DSL TDS</name>
+    <name>Legend Pure - Runtime - Java Extension - Compiled - Functions - Relation</name>
 
     <build>
         <plugins>
@@ -49,16 +48,38 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <phase>generate-sources</phase>
+                        <id>GenerateTestJavaCode</id>
+                        <phase>compile</phase>
                         <goals>
                             <goal>java</goal>
                         </goals>
                         <configuration>
-                            <mainClass>org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.JavaModelFactoryGenerator</mainClass>
+                            <mainClass>
+                                org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.JavaCodeGeneration
+                            </mainClass>
                             <arguments>
-                                <argument>TDS</argument>
-                                <argument>org.finos.legend.pure.m2.inlinedsl.tds.TDSExtension</argument>
-                                <argument>${project.build.directory}/generated-sources/</argument>
+                                <argument>platform_functions_relation</argument>
+                                <argument>${project.build.directory}/generated-test-resources</argument>
+                                <argument>${project.build.directory}</argument>
+                            </arguments>
+                            <includeProjectDependencies>true</includeProjectDependencies>
+                            <includePluginDependencies>true</includePluginDependencies>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>GenerateTestJavaCodeTDS</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>
+                                org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.JavaCodeGeneration
+                            </mainClass>
+                            <arguments>
+                                <argument>platform_dsl_tds</argument>
+                                <argument>${project.build.directory}/generated-test-resources</argument>
+                                <argument>${project.build.directory}</argument>
                             </arguments>
                             <includeProjectDependencies>true</includeProjectDependencies>
                             <includePluginDependencies>true</includePluginDependencies>
@@ -68,10 +89,26 @@
                 <dependencies>
                     <dependency>
                         <groupId>org.finos.legend.pure</groupId>
+                        <artifactId>legend-pure-m2-functions-relation-pure</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.finos.legend.pure</groupId>
                         <artifactId>legend-pure-m2-dsl-tds-grammar</artifactId>
                         <version>${project.version}</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -81,7 +118,6 @@
             <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-m4</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-m3-core</artifactId>
@@ -89,13 +125,23 @@
 
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-m2-dsl-tds-pure</artifactId>
+            <artifactId>legend-pure-m2-functions-relation-pure</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-m2-dsl-tds-grammar</artifactId>
+            <artifactId>legend-pure-m2-dsl-tds-pure</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-runtime-java-extension-shared-functions-relation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-runtime-java-extension-compiled-functions-base</artifactId>
+            <scope>runtime</scope>
+        </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-runtime-java-engine-compiled</artifactId>
@@ -103,16 +149,33 @@
 
         <dependency>
             <groupId>org.eclipse.collections</groupId>
-            <artifactId>eclipse-collections-api</artifactId>
+            <artifactId>eclipse-collections</artifactId>
         </dependency>
         <dependency>
             <groupId>org.eclipse.collections</groupId>
-            <artifactId>eclipse-collections</artifactId>
+            <artifactId>eclipse-collections-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.deephaven</groupId>
+            <artifactId>deephaven-csv</artifactId>
+            <version>0.12.0</version>
         </dependency>
 
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-m2-dsl-tds-grammar</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-runtime-java-extension-compiled-functions-base</artifactId>
+            <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>

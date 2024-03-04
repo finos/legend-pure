@@ -145,7 +145,7 @@
         </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-runtime-java-extension-functions-compiled-base</artifactId>
+            <artifactId>legend-pure-runtime-java-extension-compiled-functions-base</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -181,7 +181,7 @@
         </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-runtime-java-extension-functions-compiled-base</artifactId>
+            <artifactId>legend-pure-runtime-java-extension-compiled-functions-base</artifactId>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>

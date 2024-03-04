@@ -25,7 +25,7 @@
 
     <artifactId>legend-pure-runtime-java-extension-compiled-store-relational</artifactId>
     <packaging>jar</packaging>
-    <name>Legend Pure - Runtime - Java Extension - Store - Compiled - Relational</name>
+    <name>Legend Pure - Runtime - Java Extension - Compiled - Store -Relational</name>
 
     <build>
         <plugins>
@@ -132,6 +132,14 @@
 
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-runtime-java-engine-shared</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-runtime-java-extension-shared-store-relational</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-runtime-java-engine-compiled</artifactId>
         </dependency>
 
@@ -154,8 +162,23 @@
         </dependency>
 
         <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-runtime-java-extension-compiled-dsl-store</artifactId>
+            <artifactId>legend-pure-m2-store-relational-grammar</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-m2-store-relational-grammar</artifactId>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -167,13 +190,25 @@
         </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-runtime-java-extension-compiled-dsl-store</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-runtime-java-engine-compiled</artifactId>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-runtime-java-extension-functions-compiled-base</artifactId>
+            <artifactId>legend-pure-runtime-java-extension-compiled-functions-base</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-m3-core</artifactId>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>

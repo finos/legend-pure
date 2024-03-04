@@ -302,7 +302,7 @@
         </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-runtime-java-extension-functions-compiled-json</artifactId>
+            <artifactId>legend-pure-runtime-java-extension-compiled-functions-json</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -312,7 +312,7 @@
         </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-runtime-java-extension-functions-shared-conversion</artifactId>
+            <artifactId>legend-pure-runtime-java-extension-shared-functions-conversion</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -322,7 +322,7 @@
         </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-runtime-java-extension-functions-compiled-base</artifactId>
+            <artifactId>legend-pure-runtime-java-extension-compiled-functions-base</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

@@ -28,8 +28,8 @@
 
     <modules>
         <module>legend-pure-m2-functions-base-pure</module>
-        <module>legend-pure-runtime-java-extension-functions-compiled-base</module>
-        <module>legend-pure-runtime-java-extension-functions-interpreted-base</module>
-        <module>legend-pure-runtime-java-extension-functions-shared-base</module>
+        <module>legend-pure-runtime-java-extension-compiled-functions-base</module>
+        <module>legend-pure-runtime-java-extension-interpreted-functions-base</module>
+        <module>legend-pure-runtime-java-extension-shared-functions-base</module>
     </modules>
 </project>
