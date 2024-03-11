@@ -17,12 +17,11 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.suppor
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.tests.function.base.meta.AbstractTestCompileValueSpecification;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
-import org.junit.After;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.CompiledMetadataStateVerifier;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -32,17 +31,7 @@ public class TestCompileValueSpecification extends AbstractTestCompileValueSpeci
     @BeforeClass
     public static void setUp()
     {
-        AbstractPureTestWithCoreCompiled.setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
-    }
-
-    @After
-    public void cleanRuntime()
-    {
-        AbstractPureTestWithCoreCompiled.runtime.delete("testSource.pure");
-        AbstractPureTestWithCoreCompiled.runtime.delete("exec1.pure");
-        AbstractPureTestWithCoreCompiled.runtime.delete("source1.pure");
-        AbstractPureTestWithCoreCompiled.runtime.delete("source2.pure");
-        AbstractPureTestWithCoreCompiled.runtime.delete("source3.pure");
+        setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
     }
 
     protected static FunctionExecution getFunctionExecution()
@@ -60,6 +49,6 @@ public class TestCompileValueSpecification extends AbstractTestCompileValueSpeci
     @Override
     public ListIterable<RuntimeVerifier.FunctionExecutionStateVerifier> getExecutionVerifiers()
     {
-        return Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of(new org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.CompiledMetadataStateVerifier());
+        return Lists.fixedSize.with(new CompiledMetadataStateVerifier());
     }
 }

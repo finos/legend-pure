@@ -256,7 +256,7 @@ public class CompiledProcessorSupport implements ProcessorSupport
     public CoreInstance package_getByUserPath(String path)
     {
         // Check top level elements
-        if (M3Paths.Root.equals(path) || "::".equals(path))
+        if (path.isEmpty() || M3Paths.Root.equals(path) || "::".equals(path))
         {
             return this.metadataAccessor.getPackage(M3Paths.Root);
         }
@@ -288,6 +288,10 @@ public class CompiledProcessorSupport implements ProcessorSupport
 
             // Get the Root package, then search its children
             Package pkg = this.metadataAccessor.getPackage(M3Paths.Root);
+            if (pkg == null)
+            {
+                throw new RuntimeException("Cannot find " + M3Paths.Root);
+            }
             return pkg._children().detect(c -> path.equals(c.getName()));
         }
 
@@ -317,7 +321,7 @@ public class CompiledProcessorSupport implements ProcessorSupport
         }
         if (pkg == null)
         {
-            // Package doesn't exist, so the element
+            // Package doesn't exist, so the element doesn't exist
             return null;
         }
 

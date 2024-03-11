@@ -35,14 +35,30 @@ public class _Package
 
     public static CoreInstance getByUserPath(String path, ProcessorSupport processorSupport)
     {
+        if (path.isEmpty() || PackageableElement.DEFAULT_PATH_SEPARATOR.equals(path))
+        {
+            return processorSupport.repository_getTopLevel(M3Paths.Root);
+        }
+        if (isTopLevelName(path))
+        {
+            return processorSupport.repository_getTopLevel(path);
+        }
         return getByUserPath(PackageableElement.splitUserPath(path), processorSupport);
     }
 
     public static CoreInstance getByUserPath(ListIterable<String> path, ProcessorSupport processorSupport)
     {
-        if ((path.size() == 1) && isTopLevelName(path.get(0)))
+        if (path.size() == 1)
         {
-            return processorSupport.repository_getTopLevel(path.get(0));
+            String name = path.get(0);
+            if (name.isEmpty())
+            {
+                return processorSupport.repository_getTopLevel(M3Paths.Root);
+            }
+            if (isTopLevelName(name))
+            {
+                return processorSupport.repository_getTopLevel(name);
+            }
         }
 
         CoreInstance element = processorSupport.repository_getTopLevel(M3Paths.Root);

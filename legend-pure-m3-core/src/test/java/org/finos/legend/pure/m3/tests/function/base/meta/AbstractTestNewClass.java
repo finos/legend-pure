@@ -14,84 +14,78 @@
 
 package org.finos.legend.pure.m3.tests.function.base.meta;
 
-import org.eclipse.collections.impl.list.mutable.FastList;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.apache.commons.lang3.StringUtils;
+import org.junit.After;
 import org.junit.Test;
 
 public abstract class AbstractTestNewClass extends AbstractPureTestWithCoreCompiled
 {
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("StandardCall.pure");
+        runtime.compile();
+    }
+
     @Test
     public void standardCall()
     {
-        String[] rawSource = {
-                "function go():Any[*]",
-                "{",
-                    "let newClass = 'meta::pure::functions::meta::newClass'->newClass();",
-                    "assert('newClass' == $newClass.name, |'');",
-                    "assert('meta' == $newClass.package.name, |'');",
-                    "assert('meta::pure::functions::meta::newClass' == $newClass->elementToPath(), |'');",
-                "}"
-        };
-        String source = StringUtils.join(rawSource, "\n") + "\n";
+        String source = "function go():Any[*]\n" +
+                "{\n" +
+                "    let newClass = 'meta::pure::functions::meta::newClass'->newClass();\n" +
+                "    assertEquals('newClass', $newClass.name);\n" +
+                "    assertEquals('meta', $newClass.package.name);\n" +
+                "    assertEquals('meta::pure::functions::meta::newClass', $newClass->elementToPath());\n" +
+                "}\n";
 
-        this.compileTestSource("StandardCall.pure", source);
-        CoreInstance func = this.runtime.getFunction("go():Any[*]");
-        this.functionExecution.start(func, FastList.<CoreInstance>newList());
+        compileTestSource("StandardCall.pure", source);
+        CoreInstance func = runtime.getFunction("go():Any[*]");
+        functionExecution.start(func, Lists.immutable.empty());
     }
 
     @Test
     public void callWithEmptyPackage()
     {
-        String[] rawSource = {
-                "function go():Any[*]",
-                "{",
-                "let newClass = 'MyNewClass'->newClass();",
-                "assert('MyNewClass' == $newClass.name, |'');",
-                "assert('MyNewClass' == $newClass->elementToPath(), |'');",
-                "}"
-        };
-        String source = StringUtils.join(rawSource, "\n") + "\n";
+        String source = "function go():Any[*]\n" +
+                "{\n" +
+                "    let newClass = 'MyNewClass'->newClass();\n" +
+                "    assertEquals('MyNewClass', $newClass.name);\n" +
+                "    assertEquals('MyNewClass', $newClass->elementToPath());\n" +
+                "}\n";
 
-        this.compileTestSource("StandardCall.pure", source);
-        CoreInstance func = this.runtime.getFunction("go():Any[*]");
-        this.functionExecution.start(func, FastList.<CoreInstance>newList());
+        compileTestSource("StandardCall.pure", source);
+        CoreInstance func = runtime.getFunction("go():Any[*]");
+        functionExecution.start(func, Lists.immutable.empty());
     }
 
     @Test
     public void callWithEmpty()
     {
-        String[] rawSource = {
-                "function go():Any[*]",
-                "{",
-                "let newClass = ''->newClass();",
-                "assert('' == $newClass.name, |'');",
-                "assert('' == $newClass->elementToPath(), |'');",
-                "}"
-        };
-        String source = StringUtils.join(rawSource, "\n") + "\n";
+        String source = "function go():Any[*]\n" +
+                "{\n" +
+                "    let newClass = ''->newClass();\n" +
+                "    assertEquals('', $newClass.name);\n" +
+                "    assertEquals('', $newClass->elementToPath());\n" +
+                "}\n";
 
-        this.compileTestSource("StandardCall.pure", source);
-        CoreInstance func = this.runtime.getFunction("go():Any[*]");
-        this.functionExecution.start(func, FastList.<CoreInstance>newList());
+        compileTestSource("StandardCall.pure", source);
+        CoreInstance func = runtime.getFunction("go():Any[*]");
+        functionExecution.start(func, Lists.immutable.empty());
     }
 
     @Test
     public void newPackage()
     {
-        String[] rawSource = {
-                "function go():Any[*]",
-                "{",
-                    "let newClass = 'foo::bar::newClass'->newClass();",
-                    "assert('foo::bar::newClass' == $newClass->elementToPath(), |'');",
-                "}"
-        };
-        String source = StringUtils.join(rawSource, "\n") + "\n";
+        String source = "function go():Any[*]\n" +
+                "{\n" +
+                "    let newClass = 'foo::bar::newClass'->newClass();\n" +
+                "    assertEquals('foo::bar::newClass', $newClass->elementToPath());\n" +
+                "}\n";
 
-        this.compileTestSource("StandardCall.pure", source);
-        CoreInstance func = this.runtime.getFunction("go():Any[*]");
-        this.functionExecution.start(func, FastList.<CoreInstance>newList());
+        compileTestSource("StandardCall.pure", source);
+        CoreInstance func = runtime.getFunction("go():Any[*]");
+        functionExecution.start(func, Lists.immutable.empty());
     }
-
 }

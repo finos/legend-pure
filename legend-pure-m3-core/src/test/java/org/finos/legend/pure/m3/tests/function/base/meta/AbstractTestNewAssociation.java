@@ -14,102 +14,96 @@
 
 package org.finos.legend.pure.m3.tests.function.base.meta;
 
-import org.apache.commons.lang3.StringUtils;
-import org.eclipse.collections.impl.list.mutable.FastList;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.junit.After;
 import org.junit.Test;
 
 public abstract class AbstractTestNewAssociation extends AbstractPureTestWithCoreCompiled
 {
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("StandardCall.pure");
+        runtime.compile();
+    }
+
     @Test
     public void standardCall()
     {
-        String[] rawSource = {
-                "function go():Any[*]",
-                "{",
-                    "let classA = 'meta::pure::functions::meta::A'->newClass();",
-                    "let classB = 'meta::pure::functions::meta::B'->newClass();",
-                    "let propertyA = newProperty('a', ^GenericType(rawType=$classB), ^GenericType(rawType=$classA), PureOne);",
-                    "let propertyB = newProperty('b', ^GenericType(rawType=$classA), ^GenericType(rawType=$classB), ZeroMany);",
-                    "let newAssociation = 'meta::pure::functions::meta::A_B'->newAssociation($propertyA, $propertyB);",
-                    "assert('A_B' == $newAssociation.name, |'');",
-                    "assert('meta' == $newAssociation.package.name, |'');",
-                    "assert('meta::pure::functions::meta::A_B' == $newAssociation->elementToPath(), |'');",
-                    "assert('a' == $newAssociation.properties->at(0).name, |'not a');",
-                    "assert('b' == $newAssociation.properties->at(1).name, |'');",
-                "}"
-        };
-        String source = StringUtils.join(rawSource, "\n") + "\n";
+        String source = "function go():Any[*]\n" +
+                "{\n" +
+                "    let classA = 'meta::pure::functions::meta::A'->newClass();\n" +
+                "    let classB = 'meta::pure::functions::meta::B'->newClass();\n" +
+                "    let propertyA = newProperty('a', ^GenericType(rawType=$classB), ^GenericType(rawType=$classA), PureOne);\n" +
+                "    let propertyB = newProperty('b', ^GenericType(rawType=$classA), ^GenericType(rawType=$classB), ZeroMany);\n" +
+                "    let newAssociation = 'meta::pure::functions::meta::A_B'->newAssociation($propertyA, $propertyB);\n" +
+                "    assertEquals('A_B', $newAssociation.name);\n" +
+                "    assertEquals('meta', $newAssociation.package.name);\n" +
+                "    assertEquals('meta::pure::functions::meta::A_B', $newAssociation->elementToPath());\n" +
+                "    assertEquals('a', $newAssociation.properties->at(0).name);\n" +
+                "    assertEquals('b', $newAssociation.properties->at(1).name);\n" +
+                "}\n";
 
-        this.compileTestSource("StandardCall.pure", source);
-        CoreInstance func = this.runtime.getFunction("go():Any[*]");
-        this.functionExecution.start(func, FastList.<CoreInstance>newList());
+        compileTestSource("StandardCall.pure", source);
+        CoreInstance func = runtime.getFunction("go():Any[*]");
+        functionExecution.start(func, Lists.immutable.empty());
     }
 
     @Test
     public void callWithEmptyPackage()
     {
-        String[] rawSource = {
-                "function go():Any[*]",
-                "{",
-                    "let classA = 'A'->newClass();",
-                    "let classB = 'B'->newClass();",
-                    "let propertyA = newProperty('a', ^GenericType(rawType=$classB), ^GenericType(rawType=$classA), PureOne);",
-                    "let propertyB = newProperty('b', ^GenericType(rawType=$classA), ^GenericType(rawType=$classB), ZeroMany);",
-                    "let newAssociation = 'A_B'->newAssociation($propertyA, $propertyB);",
-                    "assert('A_B' == $newAssociation.name, |'');",
-                    "assert('A_B' == $newAssociation->elementToPath(), |'');",
-                "}"
-        };
-        String source = StringUtils.join(rawSource, "\n") + "\n";
+        String source = "function go():Any[*]\n" +
+                "{\n" +
+                "    let classA = 'A'->newClass();\n" +
+                "    let classB = 'B'->newClass();\n" +
+                "    let propertyA = newProperty('a', ^GenericType(rawType=$classB), ^GenericType(rawType=$classA), PureOne);\n" +
+                "    let propertyB = newProperty('b', ^GenericType(rawType=$classA), ^GenericType(rawType=$classB), ZeroMany);\n" +
+                "    let newAssociation = 'A_B'->newAssociation($propertyA, $propertyB);\n" +
+                "    assertEquals('A_B', $newAssociation.name);\n" +
+                "    assertEquals('A_B', $newAssociation->elementToPath());\n" +
+                "}";
 
-        this.compileTestSource("StandardCall.pure", source);
-        CoreInstance func = this.runtime.getFunction("go():Any[*]");
-        this.functionExecution.start(func, FastList.<CoreInstance>newList());
+        compileTestSource("StandardCall.pure", source);
+        CoreInstance func = runtime.getFunction("go():Any[*]");
+        functionExecution.start(func, Lists.immutable.empty());
     }
 
     @Test
     public void callWithEmpty()
     {
-        String[] rawSource = {
-                "function go():Any[*]",
-                "{",
-                    "let classA = 'A'->newClass();",
-                    "let classB = 'B'->newClass();",
-                    "let propertyA = newProperty('a', ^GenericType(rawType=$classB), ^GenericType(rawType=$classA), PureOne);",
-                    "let propertyB = newProperty('b', ^GenericType(rawType=$classA), ^GenericType(rawType=$classB), ZeroMany);",
-                    "let newAssociation = ''->newAssociation($propertyA, $propertyB);",
-                    "assert('' == $newAssociation.name, |'');",
-                    "assert('' == $newAssociation->elementToPath(), |'');",
-                "}"
-        };
-        String source = StringUtils.join(rawSource, "\n") + "\n";
+        String source = "function go():Any[*]\n" +
+                "{\n" +
+                "    let classA = 'A'->newClass();\n" +
+                "    let classB = 'B'->newClass();\n" +
+                "    let propertyA = newProperty('a', ^GenericType(rawType=$classB), ^GenericType(rawType=$classA), PureOne);\n" +
+                "    let propertyB = newProperty('b', ^GenericType(rawType=$classA), ^GenericType(rawType=$classB), ZeroMany);\n" +
+                "    let newAssociation = ''->newAssociation($propertyA, $propertyB);\n" +
+                "    assertEquals('', $newAssociation.name);\n" +
+                "    assertEquals('', $newAssociation->elementToPath());\n" +
+                "}";
 
-        this.compileTestSource("StandardCall.pure", source);
-        CoreInstance func = this.runtime.getFunction("go():Any[*]");
-        this.functionExecution.start(func, FastList.<CoreInstance>newList());
+        compileTestSource("StandardCall.pure", source);
+        CoreInstance func = runtime.getFunction("go():Any[*]");
+        functionExecution.start(func, Lists.immutable.empty());
     }
 
     @Test
     public void newPackage()
     {
-        String[] rawSource = {
-                "function go():Any[*]",
-                "{",
-                    "let classA = 'A'->newClass();",
-                    "let classB = 'B'->newClass();",
-                    "let propertyA = newProperty('a', ^GenericType(rawType=$classB), ^GenericType(rawType=$classA), PureOne);",
-                    "let propertyB = newProperty('b', ^GenericType(rawType=$classA), ^GenericType(rawType=$classB), ZeroMany);",
-                    "let newAssociation = 'foo::bar::A_B'->newAssociation($propertyA, $propertyB);",
-                    "assert('foo::bar::A_B' == $newAssociation->elementToPath(), |'');",
-                "}"
-        };
-        String source = StringUtils.join(rawSource, "\n") + "\n";
+        String source = "function go():Any[*]\n" +
+                "{\n" +
+                "    let classA = 'A'->newClass();\n" +
+                "    let classB = 'B'->newClass();\n" +
+                "    let propertyA = newProperty('a', ^GenericType(rawType=$classB), ^GenericType(rawType=$classA), PureOne);\n" +
+                "    let propertyB = newProperty('b', ^GenericType(rawType=$classA), ^GenericType(rawType=$classB), ZeroMany);\n" +
+                "    let newAssociation = 'foo::bar::A_B'->newAssociation($propertyA, $propertyB);\n" +
+                "    assertEquals('foo::bar::A_B', $newAssociation->elementToPath());\n" +
+                "}";
 
-        this.compileTestSource("StandardCall.pure", source);
-        CoreInstance func = this.runtime.getFunction("go():Any[*]");
-        this.functionExecution.start(func, FastList.<CoreInstance>newList());
+        compileTestSource("StandardCall.pure", source);
+        CoreInstance func = runtime.getFunction("go():Any[*]");
+        functionExecution.start(func, Lists.immutable.empty());
     }
-
 }

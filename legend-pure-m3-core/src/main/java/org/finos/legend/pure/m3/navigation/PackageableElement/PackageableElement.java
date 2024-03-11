@@ -141,14 +141,27 @@ public class PackageableElement
         return result;
     }
 
-    public static String getUserPathForPackageableElement(CoreInstance packageableElement)
+    public static String getUserPathForPackageableElement(CoreInstance element)
     {
-        return getUserPathForPackageableElement(packageableElement, null);
+        return getUserPathForPackageableElement(element, null);
     }
 
-    public static String getUserPathForPackageableElement(CoreInstance packageableElement, String sep)
+    public static String getUserPathForPackageableElement(CoreInstance element, String sep)
     {
-        return writeUserPathForPackageableElement(new StringBuilder(64), packageableElement, sep).toString();
+        String name = element.getName();
+        CoreInstance parent = element.getValueForMetaPropertyToOne(M3Properties._package);
+        if (parent == null)
+        {
+            return (name == null) ? "" : name;
+        }
+
+        StringBuilder builder = new StringBuilder(64);
+        writeUserPathForParentPackage(SafeAppendable.wrap(builder), parent, (sep == null) ? DEFAULT_PATH_SEPARATOR : sep);
+        if (name != null)
+        {
+            builder.append(name);
+        }
+        return builder.toString();
     }
 
     @Deprecated
@@ -174,23 +187,34 @@ public class PackageableElement
         return writeUserPathForPackageableElement(appendable, packageableElement, null);
     }
 
-    public static <T extends Appendable> T writeUserPathForPackageableElement(T appendable, CoreInstance packageableElement, String sep)
+    public static <T extends Appendable> T writeUserPathForPackageableElement(T appendable, CoreInstance element, String sep)
     {
-        writeUserPathForPackageableElement_Recursive(SafeAppendable.wrap(appendable), packageableElement, (sep == null) ? DEFAULT_PATH_SEPARATOR : sep);
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+        CoreInstance parent = element.getValueForMetaPropertyToOne(M3Properties._package);
+        if (parent != null)
+        {
+            writeUserPathForParentPackage(safeAppendable, parent, (sep == null) ? DEFAULT_PATH_SEPARATOR : sep);
+        }
+        String name = element.getName();
+        if (name != null)
+        {
+            safeAppendable.append(name);
+        }
         return appendable;
     }
 
-    private static void writeUserPathForPackageableElement_Recursive(SafeAppendable appendable, CoreInstance packageableElement, String sep)
+    private static void writeUserPathForParentPackage(SafeAppendable appendable, CoreInstance element, String sep)
     {
-        CoreInstance pkg = packageableElement.getValueForMetaPropertyToOne(M3Properties._package);
-        if ((pkg == null) || M3Paths.Root.equals(pkg.getName()))
+        String name = element.getName();
+        CoreInstance parent = element.getValueForMetaPropertyToOne(M3Properties._package);
+        if (parent != null)
         {
-            appendable.append(packageableElement.getName());
-        }
-        else
-        {
-            writeUserPathForPackageableElement_Recursive(appendable, pkg, sep);
-            appendable.append(sep).append(packageableElement.getName());
+            writeUserPathForParentPackage(appendable, parent, sep);
+            if (name != null)
+            {
+                appendable.append(name);
+            }
+            appendable.append(sep);
         }
     }
 

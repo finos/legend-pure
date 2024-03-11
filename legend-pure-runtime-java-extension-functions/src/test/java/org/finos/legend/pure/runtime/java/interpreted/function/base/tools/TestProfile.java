@@ -32,22 +32,31 @@ public class TestProfile extends AbstractPureTestWithCoreCompiled
     @Test
     public void testPathToElementProfile()
     {
-        compileTestSource("Class A::B::C::D::E" +
-                "{" +
-                "}" +
-                "Class A::B::C::K::D" +
-                "{" +
-                "}" +
-                "function testProfile():Nil[0]\n" +
+        compileTestSource("Class A::B::C::D::E\n" +
                 "{\n" +
-                "    print('A::B::C::K::D'->pathToElement('::')->profile(false).result, 1);\n" +
+                "}\n" +
+                "\n" +
+                "Class A::B::C::K::D\n" +
+                "{\n" +
+                "}\n" +
+                "\n" +
+                "function test::findElement(path:String[1], separator:String[1]):PackageableElement[1]\n" +
+                "{\n" +
+                "    $path->split($separator)->fold({str:String[1], pkg:PackageableElement[1] | let p = $pkg->cast(@Package).children->filter(c | $c.name == $str);\n" +
+                "                                                                               if ($p->isEmpty(), | fail(| $path + ' is not a valid PackageableElement. Package \\'' + $str + '\\' not found'); $p->toOne();, | $p->toOne());\n" +
+                "                                   }, ::)\n" +
+                "}\n" +
+                "\n" +
+                "function test::testProfile():Nil[0]\n" +
+                "{\n" +
+                "    print('A::B::C::K::D'->test::findElement('::')->profile(false).result, 1);\n" +
                 "}\n");
-        this.execute("testProfile():Nil[0]");
+        this.execute("test::testProfile():Nil[0]");
         Assert.assertEquals("'\n" +
                 "################################################## Profiler report ##################################################\n" +
                 "       ##---------------------------- TreeStart\n" +
                 "       + 1 profile_T_m__Boolean_1__ProfileResult_1_\n" +
-                "       +     1 pathToElement_String_1__String_1__PackageableElement_1_\n" +
+                "       +     1 findElement_String_1__String_1__PackageableElement_1_\n" +
                 "       +         1 fold_T_MANY__Function_1__V_m__V_m_\n" +
                 "       +             1 split_String_1__String_1__String_MANY_\n" +
                 "       +             5 letFunction_String_1__T_m__T_m_\n" +

@@ -19,13 +19,14 @@ function meta::pure::functions::meta::pathToElement(path:String[1]):PackageableE
     $path->pathToElement('::')
 }
 
-function meta::pure::functions::meta::pathToElement(path:String[1], separator:String[1]):PackageableElement[1]
+native function meta::pure::functions::meta::pathToElement(path:String[1], separator:String[1]):PackageableElement[1];
+
+function meta::pure::functions::meta::lenientPathToElement(path:String[1]):PackageableElement[0..1]
 {
-    $path->split($separator)->fold({str:String[1], pkg:PackageableElement[1] | let p = $pkg->cast(@Package).children->filter(c | $c.name == $str);
-                                                                               if ($p->isEmpty(), | fail(| $path + ' is not a valid PackageableElement. Package \'' + $str + '\' not found'); $p->toOne();, | $p->toOne());
-                                   }, ::)
+    $path->lenientPathToElement('::')
 }
 
+native function meta::pure::functions::meta::lenientPathToElement(path:String[1], separator:String[1]):PackageableElement[0..1];
 
 
 function <<test.Test>> meta::pure::functions::meta::tests::pathToElement::testPathToElement():Boolean[1]
@@ -36,18 +37,49 @@ function <<test.Test>> meta::pure::functions::meta::tests::pathToElement::testPa
     assertIs(CC_Person.package->toOne(), pathToElement('meta_pure_functions_meta_tests_model', '_'));
 }
 
+function <<test.Test>> meta::pure::functions::meta::tests::pathToElement::testLenientPathToElement():Boolean[1]
+{
+    assertIs(CC_Person, lenientPathToElement('meta::pure::functions::meta::tests::model::CC_Person')->toOne());
+    assertIs(CC_Person, lenientPathToElement('meta.pure.functions.meta.tests.model.CC_Person', '.')->toOne());
+    assertEmpty(lenientPathToElement('meta::pure::functions::meta::tests::model::CCC_Person'));
+    assertEmpty(lenientPathToElement('meta.pure.functions.meta.tests.model.CCC_Person', '.'));
+    assertEmpty(lenientPathToElement('meta::pure::functions::meta::tests::models::CC_Person'));
+    assertEmpty(lenientPathToElement('meta.pure.functions.meta.tests.models.CC_Person', '.'));
+
+    assertIs(CC_Person.package->toOne(), lenientPathToElement('meta::pure::functions::meta::tests::model')->toOne());
+    assertIs(CC_Person.package->toOne(), lenientPathToElement('meta_pure_functions_meta_tests_model', '_')->toOne());
+    assertEmpty(lenientPathToElement('meta::pure::functions::metal::tests::model'));
+    assertEmpty(lenientPathToElement('meta_pure_functions_metal_tests_model', '_'));
+}
+
 function <<test.Test>> meta::pure::functions::meta::tests::pathToElement::testRootPathToElement():Boolean[1]
 {
     assertIs(::, pathToElement('::'));
     assertIs(::, pathToElement('.', '.'));
+    assertIs(::, pathToElement('Root'));
+    assertIs(::, pathToElement('Root', '_'));
+    assertIs(::, pathToElement(''));
+    assertIs(::, pathToElement('', '$'));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::testIsNativeFunctions():Boolean[1]
+function <<test.Test>> meta::pure::functions::meta::tests::pathToElement::testNativeFunctionPathToElement():Boolean[1]
 {
-    assert(is(meta::pure::functions::string::toString_Any_1__String_1_, pathToElement('meta::pure::functions::string::toString_Any_1__String_1_')));
+    assertIs(meta::pure::functions::string::toString_Any_1__String_1_, pathToElement('meta::pure::functions::string::toString_Any_1__String_1_'));
 }
 
-function <<test.Test, test.ToFix>> meta::pure::functions::boolean::tests::testIsConcreteFunctionDefinitions():Boolean[1]
+function <<test.Test>> meta::pure::functions::meta::tests::pathToElement::testConcreteFunctionDefinitionPathToElement():Boolean[1]
 {
-    assert(is(meta::pure::functions::boolean::greaterThan_Number_1__Number_1__Boolean_1_, pathToElement('meta::pure::functions::boolean::greaterThan_Number_1__Number_1__Boolean_1_')));
+    assertIs(meta::pure::functions::boolean::greaterThan_Number_1__Number_1__Boolean_1_, pathToElement('meta::pure::functions::boolean::greaterThan_Number_1__Number_1__Boolean_1_'));
+}
+
+// To be removed
+function <<test.Test, meta::pure::profiles::doc.deprecated>> meta::pure::functions::boolean::tests::testIsNativeFunctions():Boolean[1]
+{
+    true;
+}
+
+// To be removed
+function <<test.Test, meta::pure::profiles::doc.deprecated>> meta::pure::functions::boolean::tests::testIsConcreteFunctionDefinitions():Boolean[1]
+{
+    true;
 }

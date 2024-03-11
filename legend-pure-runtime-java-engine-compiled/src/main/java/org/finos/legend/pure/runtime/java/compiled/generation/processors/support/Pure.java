@@ -28,7 +28,6 @@ import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.StringIterate;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.ModelElementAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
@@ -53,6 +52,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.router.RoutedValueSpecifi
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.tools.ListHelper;
@@ -86,29 +86,153 @@ import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
-import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class Pure
 {
-    public static String elementToPath(PackageableElement element, String separator)
+    public static ListIterable<PackageableElement> elementPath(PackageableElement element)
     {
-        MutableList<PackageableElement> elements = Lists.mutable.empty();
-        elements(element, elements);
-        return elements.toReversed().subList(1, elements.size()).collect(ModelElementAccessor::_name).makeString(separator);
+        return elementPath(element, 1);
     }
 
-    private static void elements(PackageableElement element, List<PackageableElement> elements)
+    private static MutableList<PackageableElement> elementPath(PackageableElement element, int size)
     {
-        elements.add(element);
-        if (element._package() != null)
+        Package pkg = element._package();
+        return ((pkg == null) ? Lists.mutable.<PackageableElement>ofInitialCapacity(size) : elementPath(pkg, size + 1)).with(element);
+    }
+
+    public static String elementToPath(PackageableElement element, String separator)
+    {
+        return elementToPath(element, separator, false);
+    }
+
+    public static String elementToPath(PackageableElement element, String separator, boolean includeRoot)
+    {
+        String name = element._name();
+        Package pkg = element._package();
+        if (pkg == null)
         {
-            elements(element._package(), elements);
+            return ((name != null) && (includeRoot || !M3Paths.Root.equals(name))) ? name : "";
+        }
+
+        StringBuilder builder = new StringBuilder(64);
+        writeParentPackagePath(builder, pkg, separator, includeRoot);
+        if (name != null)
+        {
+            builder.append(name);
+        }
+        return builder.toString();
+    }
+
+    private static void writeParentPackagePath(StringBuilder builder, Package pkg, String separator, boolean includeRoot)
+    {
+        String name = pkg._name();
+        Package parent = pkg._package();
+        if (parent != null)
+        {
+            writeParentPackagePath(builder, parent, separator, includeRoot);
+            if (name != null)
+            {
+                builder.append(name);
+            }
+            builder.append(separator);
+        }
+        else if (includeRoot && (name != null))
+        {
+            builder.append(name).append(separator);
         }
     }
 
+    public static PackageableElement lenientPathToElement(String path, String separator, SourceInformation sourceInfo, ExecutionSupport executionSupport)
+    {
+        return pathToElement(path, separator, true, sourceInfo, executionSupport);
+    }
+
+    public static PackageableElement pathToElement(String path, String separator, SourceInformation sourceInfo, ExecutionSupport executionSupport)
+    {
+        return pathToElement(path, separator, false, sourceInfo, executionSupport);
+    }
+
+    private static PackageableElement pathToElement(String path, String separator, boolean allowNotFound, SourceInformation sourceInfo, ExecutionSupport executionSupport)
+    {
+        CompiledExecutionSupport compiledExecSupport = (CompiledExecutionSupport) executionSupport;
+        Package root = compiledExecSupport.getMetadataAccessor().getPackage(M3Paths.Root);
+        if (root == null)
+        {
+            throw new PureExecutionException(sourceInfo, "Cannot find " + M3Paths.Root);
+        }
+        if (path.isEmpty() || path.equals(separator) || M3Paths.Root.equals(path))
+        {
+            return root;
+        }
+
+        PackageableElement result = pathToElementFromRoot(root, path, separator);
+        if (result == null)
+        {
+            result = (PackageableElement) compiledExecSupport.getProcessorSupport().package_getByUserPath("::".equals(separator) ? path : path.replace(separator, "::"));
+            if ((result == null) && !allowNotFound)
+            {
+                throw new PureExecutionException(sourceInfo, pathToElementNotFoundErrorMessage(path, separator, compiledExecSupport));
+            }
+        }
+        return result;
+    }
+
+    private static PackageableElement pathToElementFromRoot(Package root, String path, String separator)
+    {
+        Package pkg = root;
+        ListIterable<String> pathElements = org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.splitUserPath(path, separator);
+        for (String name : pathElements.subList(0, pathElements.size() - 1))
+        {
+            PackageableElement element = pkg._children().detect(c -> name.equals(c._name()));
+            if (!(element instanceof Package))
+            {
+                return null;
+            }
+            pkg = (Package) element;
+        }
+        String name = pathElements.getLast();
+        return pkg._children().detect(c -> name.equals(c._name()));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static String pathToElementNotFoundErrorMessage(String path, String separator, CompiledExecutionSupport executionSupport)
+    {
+        if (M3Paths.Root.equals(path) || separator.equals(path))
+        {
+            return "Could not find " + path;
+        }
+
+        ListIterable<String> pathElements = org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.splitUserPath(path, separator);
+        if (pathElements.size() == 1)
+        {
+            return "'" + path + "' is not a valid PackageableElement";
+        }
+
+        MetadataAccessor metadataAccessor = executionSupport.getMetadataAccessor();
+        StringBuilder builder = new StringBuilder(path.length()).append('\'').append(path).append("' is not a valid PackageableElement");
+        for (int i = pathElements.size() - 1; i > 0; i--)
+        {
+            ListIterable<String> subList = pathElements.subList(0, i);
+            String packageString = subList.injectInto(new StringBuilder(M3Paths.Root), (b, e) -> b.append("::").append(e)).toString();
+            try
+            {
+                if (metadataAccessor.getPackage(packageString) != null)
+                {
+                    builder.append(": could not find '").append(pathElements.get(i)).append("' in ");
+                    subList.appendString(builder, separator);
+                    return builder.toString();
+                }
+            }
+            catch (Exception ignore)
+            {
+                // ignore exceptions when trying to generate the error message
+            }
+        }
+        return builder.append(": could not find '").append(pathElements.get(0)).append("' in ").append(M3Paths.Root).toString();
+    }
 
     public static boolean isToOne(Multiplicity multiplicity)
     {
@@ -604,7 +728,7 @@ public class Pure
     {
         try
         {
-            Class<?> c = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.platformJavaPackage() + ".Root_" + Pure.elementToPath(aClass, "_") + "_Impl");
+            Class<?> c = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.platformJavaPackage() + "." + Pure.elementToPath(aClass, "_", true) + "_Impl");
             Any result = (Any) c.getConstructor(String.class).newInstance(name);
             root_meta_pure_functions_lang_keyExpressions.forEach(new CheckedProcedure<KeyExpression>()
             {

@@ -48,6 +48,7 @@ public class JsonExtensionCompiled implements CompiledExtension
                         "import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;\n" +
                         "import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;\n" +
                         "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;\n" +
+                        "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Pure;\n" +
                         "import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.measureUnit.UnitProcessor;\n" +
                         "import org.finos.legend.pure.runtime.java.extension.external.json.compiled.natives.JsonParserHelper;\n" +
                         "import org.finos.legend.pure.runtime.java.extension.external.json.shared.JsonDeserializationCache;\n" +
@@ -59,9 +60,6 @@ public class JsonExtensionCompiled implements CompiledExtension
                         "import java.util.HashMap;\n" +
                         "import java.util.Map;\n" +
                         "\n" +
-                        "import static org.finos.legend.pure.generated.platform_pure_basics_meta_elementToPath.Root_meta_pure_functions_meta_elementToPath_PackageableElement_1__String_1__String_1_;\n" +
-                        "import static org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Pure.handleValidation;\n" +
-                        "\n" +
                         "public class JsonGen\n" +
                         "{\n" +
                         "    @Deprecated\n" +
@@ -69,7 +67,7 @@ public class JsonExtensionCompiled implements CompiledExtension
                         "    {\n" +
                         "        java.lang.Class c = ((CompiledExecutionSupport) es).getClassCache().getIfAbsentPutInterfaceForType(clazz);\n" +
                         "        T obj = (T) JsonParserHelper.fromJson(json, c, \"\", \"\", ((CompiledExecutionSupport) es).getMetadataAccessor(), ((CompiledExecutionSupport) es).getClassLoader(), si, config._typeKeyName(), config._failOnUnknownProperties(), config._constraintsHandler(), es);\n" +
-                        "        return (T) handleValidation(true, obj, si, es);\n" +
+                        "        return (T) Pure.handleValidation(true, obj, si, es);\n" +
                         "    }\n" +
                         "\n" +
                         "    public static String toJson(Object pureObject, Root_meta_json_JSONSerializationConfig jsonConfig, final SourceInformation si, final ExecutionSupport es)\n" +
@@ -108,7 +106,7 @@ public class JsonExtensionCompiled implements CompiledExtension
                         "        String targetClassName = null;\n" +
                         "        try\n" +
                         "        {\n" +
-                        "            targetClassName = JavaPackageAndImportBuilder.platformJavaPackage() + \".Root_\" + Root_meta_pure_functions_meta_elementToPath_PackageableElement_1__String_1__String_1_(clazz, \"_\", es);\n" +
+                        "            targetClassName = JavaPackageAndImportBuilder.platformJavaPackage() + \".Root_\" + Pure.elementToPath(clazz, \"_\");\n" +
                         "            c = ((CompiledExecutionSupport) es).getClassLoader().loadClass(targetClassName);\n" +
                         "        }\n" +
                         "        catch (ClassNotFoundException e)\n" +
@@ -140,7 +138,7 @@ public class JsonExtensionCompiled implements CompiledExtension
                         "                }\n" +
                         "                U result = (U) org.finos.legend.pure.generated.CoreGen.newObject(clazz, keyValues, null, null, null, null, null, null, es);\n" +
                         "                result._elementOverride(constraintsHandler);\n" +
-                        "                return (U) handleValidation(true, result, si, es);\n" +
+                        "                return (U) Pure.handleValidation(true, result, si, es);\n" +
                         "            }\n" +
                         "\n" +
                         "            public <T extends Any> T newUnitInstance(CoreInstance propertyType, String unitTypeString, Number unitValue) throws Exception\n" +

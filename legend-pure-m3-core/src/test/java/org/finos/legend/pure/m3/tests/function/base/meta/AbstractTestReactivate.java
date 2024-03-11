@@ -16,11 +16,19 @@ package org.finos.legend.pure.m3.tests.function.base.meta;
 
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
 public abstract class AbstractTestReactivate extends AbstractPureTestWithCoreCompiled
 {
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("testSource.pure");
+        runtime.compile();
+    }
+
     protected void compileAndExecuteVariableScopeFailure()
     {
         compileTestSource("testSource.pure",
@@ -45,7 +53,6 @@ public abstract class AbstractTestReactivate extends AbstractPureTestWithCoreCom
         );
         execute("go():Any[*]");
     }
-
 
     @Test
     public void testVariableScopeSuccess()
@@ -177,6 +184,6 @@ public abstract class AbstractTestReactivate extends AbstractPureTestWithCoreCom
                         "{\n" +
                         "  test::pkg1->map(p | $p)->deactivate()->reactivate(^Map<String, List<Any>>())->toOne()\n" +
                         "}\n");
-        Assert.assertEquals(this.runtime.getCoreInstance("test::pkg1"), ((InstanceValue)execute("test::pkg1::test():Any[1]"))._values().getFirst());
+        Assert.assertEquals(runtime.getCoreInstance("test::pkg1"), ((InstanceValue) execute("test::pkg1::test():Any[1]"))._values().getOnly());
     }
 }
