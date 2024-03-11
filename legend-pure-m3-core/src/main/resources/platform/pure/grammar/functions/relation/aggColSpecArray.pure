@@ -14,9 +14,9 @@
 
 import meta::pure::metamodel::relation::*;
 
-function <<functionType.NormalizeRequiredFunction>> meta::pure::functions::relation::aggColSpecArray<U,V,K,T,P>(map:AggColSpec<{U[1]->V[0..1]}, {V[*]->K[1]}, T>[*], cl:P[1]):AggColSpecArray<{U[1]->Any[0..1]},{Nil[*]->Any[1]},P>[1]
+function <<functionType.NormalizeRequiredFunction>> meta::pure::functions::relation::aggColSpecArray<U,V,K,T,P>(map:AggColSpec<{U[1]->V[0..1]}, {V[*]->K[0..1]}, T>[*], cl:P[1]):AggColSpecArray<{U[1]->Any[0..1]},{Nil[*]->Any[0..1]},P>[1]
 {
-  ^AggColSpecArray<{U[1]->Any[0..1]},{Nil[*]->Any[1]},P>
+  ^AggColSpecArray<{U[1]->Any[0..1]},{Nil[*]->Any[0..1]},P>
   (
     aggSpecs = $map
   )
