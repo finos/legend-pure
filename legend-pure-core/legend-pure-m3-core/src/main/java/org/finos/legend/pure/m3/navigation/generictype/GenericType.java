@@ -24,14 +24,20 @@ import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.GenericTypeOperation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.GenericTypeOperationInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.navigation.*;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.linearization.C3Linearization;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
@@ -109,137 +115,143 @@ public class GenericType
         }
 
         MapIterable<String, CoreInstance> filteredGenericTypeByTypeParameterNames = genericTypeByTypeParameterNames.reject((s, coreInstance) -> typeArgument.equals(coreInstance));
-
-        if (processorSupport.instance_instanceOf(typeArgument, M3Paths.GenericTypeOperation))
+        if (isGenericTypeOperation(typeArgument, processorSupport))
         {
             return resolveOperation(typeArgument, filteredGenericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
         }
-        else
+
+        if (!isGenericTypeConcrete(typeArgument))
         {
-            if (!isGenericTypeConcrete(typeArgument))
+            if (!hasFullyConcreteTypeArguments(typeArgument, processorSupport) || !hasConcreteMultiplicityArguments(typeArgument, processorSupport))
             {
-                if (!hasFullyConcreteTypeArguments(typeArgument, processorSupport) || !hasConcreteMultiplicityArguments(typeArgument, processorSupport))
-                {
-                    throw new RuntimeException("TO HANDLE! Don't want to process the replaced one ... but may want to process the original!");
-                }
-                return filteredGenericTypeByTypeParameterNames.getIfAbsentValue(getTypeParameterName(typeArgument, processorSupport), typeArgument);
+                throw new RuntimeException("TO HANDLE! Don't want to process the replaced one ... but may want to process the original!");
             }
-
-            if (processorSupport.instance_instanceOf(typeArgument.getValueForMetaPropertyToOne("rawType"), M3Paths.RelationType))
-            {
-                RelationType<?> rel = (RelationType<?>) typeArgument.getValueForMetaPropertyToOne("rawType");
-                return processorSupport.type_wrapGenericType(_RelationType.build(rel._columns().collect(c ->
-                        (CoreInstance) _Column.getColumnInstance(
-                                c._name(),
-                                c._nameWildCard(),
-                                null,
-                                (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) makeTypeArgumentAsConcreteAsPossible(_Column.getColumnType(c), filteredGenericTypeByTypeParameterNames, sourceMulBinding, processorSupport),
-                                c.getSourceInformation(),
-                                processorSupport
-                        )
-                ).toList(), null, processorSupport));
-            }
-
-            if (org.finos.legend.pure.m3.navigation.function.FunctionType.isFunctionType(Instance.getValueForMetaPropertyToOneResolved(typeArgument, M3Properties.rawType, processorSupport), processorSupport))
-            {
-                return Support.reprocessFunctionTypeReplaceTypeParamsByConcreteTypes(typeArgument, filteredGenericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
-            }
-
-            return Support.reprocessGenericTypeHavingNonConcreteTypeArguments(typeArgument, filteredGenericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
+            return filteredGenericTypeByTypeParameterNames.getIfAbsentValue(getTypeParameterName(typeArgument, processorSupport), typeArgument);
         }
+
+        if (_RelationType.isRelationType(typeArgument.getValueForMetaPropertyToOne(M3Properties.rawType), processorSupport))
+        {
+            RelationType<?> rel = (RelationType<?>) typeArgument.getValueForMetaPropertyToOne(M3Properties.rawType);
+            return processorSupport.type_wrapGenericType(_RelationType.build(rel._columns().collect(c ->
+                    (CoreInstance) _Column.getColumnInstance(
+                            c._name(),
+                            c._nameWildCard(),
+                            null,
+                            (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) makeTypeArgumentAsConcreteAsPossible(_Column.getColumnType(c), filteredGenericTypeByTypeParameterNames, sourceMulBinding, processorSupport),
+                            c.getSourceInformation(),
+                            processorSupport
+                    )
+            ).toList(), null, processorSupport));
+        }
+
+        if (org.finos.legend.pure.m3.navigation.function.FunctionType.isFunctionType(Instance.getValueForMetaPropertyToOneResolved(typeArgument, M3Properties.rawType, processorSupport), processorSupport))
+        {
+            return Support.reprocessFunctionTypeReplaceTypeParamsByConcreteTypes(typeArgument, filteredGenericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
+        }
+
+        return Support.reprocessGenericTypeHavingNonConcreteTypeArguments(typeArgument, filteredGenericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
     }
 
+    @Deprecated
     public static CoreInstance getSetFromSubset(CoreInstance type, ProcessorSupport processorSupport)
     {
-        if (type != null && processorSupport.instance_instanceOf(type, M3Paths.GenericTypeOperation))
-        {
-            if ("Subset".equals(((GenericTypeOperation) type)._type().getName()))
-            {
-                return type.getValueForMetaPropertyToOne("right");
-            }
-            throw new RuntimeException("Can only perform this action on Subset operation");
-        }
-        return type;
+        return getSetFromSubset(type);
     }
 
-    public static CoreInstance getLeftFromSubset(CoreInstance type, ProcessorSupport processorSupport)
+    public static CoreInstance getSetFromSubset(CoreInstance type)
     {
-        if (type != null && processorSupport.instance_instanceOf(type, M3Paths.GenericTypeOperation))
+        if (!(type instanceof GenericTypeOperation))
         {
-            if ("Subset".equals(((GenericTypeOperation) type)._type().getName()))
-            {
-                return type.getValueForMetaPropertyToOne("left");
-            }
+            throw new RuntimeException("Can only perform on an operation");
+        }
+        return getSetFromSubset((GenericTypeOperation) type);
+    }
+
+    public static CoreInstance getSetFromSubset(GenericTypeOperation type)
+    {
+        if (!isGenericTypeOperationSubset(type))
+        {
             throw new RuntimeException("Can only perform this action on Subset operation");
         }
-        throw new RuntimeException("Can only perform on an operation");
+        return type._right();
+    }
+
+    @Deprecated
+    public static CoreInstance getLeftFromSubset(CoreInstance type, ProcessorSupport processorSupport)
+    {
+        return getLeftFromSubset(type);
+    }
+
+    public static CoreInstance getLeftFromSubset(CoreInstance type)
+    {
+        if (!(type instanceof GenericTypeOperation))
+        {
+            throw new RuntimeException("Can only perform on an operation");
+        }
+        return getLeftFromSubset((GenericTypeOperation) type);
+    }
+
+    public static CoreInstance getLeftFromSubset(GenericTypeOperation type)
+    {
+        if (!isGenericTypeOperationSubset(type))
+        {
+            throw new RuntimeException("Can only perform this action on Subset operation");
+        }
+        return type._left();
     }
 
     public static CoreInstance resolveOperation(CoreInstance operation, MapIterable<String, CoreInstance> genericTypeByTypeParameterNames, MapIterable<String, CoreInstance> sourceMulBinding, ProcessorSupport processorSupport)
     {
-        String type = ((GenericTypeOperation) operation)._type().getName();
-        if ("Subset".equals(type) || "Equal".equals(type))
+        return resolveOperation((GenericTypeOperation) operation, genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
+    }
+
+    public static org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType resolveOperation(GenericTypeOperation operation, MapIterable<String, CoreInstance> genericTypeByTypeParameterNames, MapIterable<String, CoreInstance> sourceMulBinding, ProcessorSupport processorSupport)
+    {
+        if (isGenericTypeOperationSubset(operation) || isGenericTypeOperationEqual(operation))
         {
-            CoreInstance left = operation.getValueForMetaPropertyToOne("left");
-            CoreInstance right = operation.getValueForMetaPropertyToOne("right");
-            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gLeft = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) GenericType.makeTypeArgumentAsConcreteAsPossible(left, genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
-            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) GenericType.makeTypeArgumentAsConcreteAsPossible(right, genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
-            return GenericTypeOperationInstance.createPersistent(operation.getRepository(), gLeft, gRight, ((GenericTypeOperation) operation)._type());
+            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gLeft = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) makeTypeArgumentAsConcreteAsPossible(operation._left(), genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
+            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) makeTypeArgumentAsConcreteAsPossible(operation._right(), genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
+            return GenericTypeOperationInstance.createPersistent(operation.getRepository(), gLeft, gRight, operation._type());
+        }
+
+        org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType left = operation._left();
+        if (isGenericTypeOperation(left, processorSupport))
+        {
+            left = resolveOperation((GenericTypeOperation) left, genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
+            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) makeTypeArgumentAsConcreteAsPossible(operation._right(), genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
+            return (isGenericTypeConcrete(left) && isGenericTypeConcrete(gRight)) ?
+                   merge(operation, processorSupport, left, gRight) :
+                   GenericTypeOperationInstance.createPersistent(operation.getRepository(), left, gRight, operation._type());
         }
         else
         {
-            CoreInstance left = operation.getValueForMetaPropertyToOne("left");
-            if (processorSupport.instance_instanceOf(left, M3Paths.GenericTypeOperation))
-            {
-                left = resolveOperation(left, genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
-                CoreInstance right = operation.getValueForMetaPropertyToOne("right");
-                org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) GenericType.makeTypeArgumentAsConcreteAsPossible(right, genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
-                if (GenericType.isGenericTypeConcrete(left) && GenericType.isGenericTypeConcrete(gRight))
-                {
-                    return merge(operation, processorSupport, left, gRight);
-                }
-                else
-                {
-                    return GenericTypeOperationInstance.createPersistent(operation.getRepository(), (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) left, gRight, ((GenericTypeOperation) operation)._type());
-                }
-            }
-            else
-            {
-                CoreInstance right = operation.getValueForMetaPropertyToOne("right");
-                CoreInstance gLeft = genericTypeByTypeParameterNames.getIfAbsentValue(getTypeParameterName(left, processorSupport), left);
-                org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) GenericType.makeTypeArgumentAsConcreteAsPossible(right, genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
-                if (GenericType.isGenericTypeConcrete(gLeft) && GenericType.isGenericTypeConcrete(gRight))
-                {
-                    return merge(operation, processorSupport, gLeft, gRight);
-                }
-                else
-                {
-                    return GenericTypeOperationInstance.createPersistent(operation.getRepository(), (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) gLeft, gRight, ((GenericTypeOperation) operation)._type());
-                }
-            }
+            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gLeft = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) genericTypeByTypeParameterNames.getIfAbsentValue(getTypeParameterName(left, processorSupport), left);
+            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) makeTypeArgumentAsConcreteAsPossible(operation._right(), genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
+            return (isGenericTypeConcrete(gLeft) && isGenericTypeConcrete(gRight)) ?
+                   merge(operation, processorSupport, gLeft, gRight) :
+                   GenericTypeOperationInstance.createPersistent(operation.getRepository(), gLeft, gRight, operation._type());
         }
     }
 
-    private static CoreInstance merge(CoreInstance operation, ProcessorSupport processorSupport, CoreInstance gLeft, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight)
+    private static org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType merge(GenericTypeOperation operation, ProcessorSupport processorSupport, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gLeft, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight)
     {
-        org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType newGenericType = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) processorSupport.newGenericType(null, operation, true);
-
         // Union or Difference columns
-        MutableList<CoreInstance> newColumnSet = Lists.mutable.empty();
-        newColumnSet.addAll(gLeft.getValueForMetaPropertyToOne("rawType").getValueForMetaPropertyToMany("columns").toList());
-        if (operation.getValueForMetaPropertyToOne("type").getName().equals("Union"))
+        MutableList<Column<?, ?>> newColumnSet = Lists.mutable.withAll(((RelationType<?>) gLeft._rawType())._columns());
+        if (isGenericTypeOperationUnion(operation))
         {
-            newColumnSet.addAll(gRight.getValueForMetaPropertyToOne("rawType").getValueForMetaPropertyToMany("columns").toList());
+            // Union
+            newColumnSet.addAllIterable(((RelationType<?>) gRight._rawType())._columns());
         }
         else
         {
-            MutableSet<String> names = Sets.mutable.withAll(gRight.getValueForMetaPropertyToOne("rawType").getValueForMetaPropertyToMany("columns").collect(c -> c.getValueForMetaPropertyToOne("name").getName()));
-            newColumnSet = newColumnSet.select(c -> !names.contains(c.getValueForMetaPropertyToOne("name").getName()));
+            // Difference
+            MutableSet<String> names = ((RelationType<?>) gRight._rawType())._columns().collect(Column::_name, Sets.mutable.empty());
+            newColumnSet.removeIf(c -> names.contains(c._name()));
         }
 
         // Set RelationType on Generic
-        newGenericType._rawType(_RelationType.build(newColumnSet, gLeft.getValueForMetaPropertyToOne("rawType").getSourceInformation(), processorSupport));
-        return newGenericType;
+        return ((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) processorSupport.newGenericType(null, operation, true))
+                ._rawType(_RelationType.build(newColumnSet, gLeft._rawType().getSourceInformation(), processorSupport));
     }
 
     @Deprecated
@@ -406,8 +418,7 @@ public class GenericType
             return true;
         }
 
-        boolean oneIsRelation = processorSupport.instance_instanceOf(rawType, M3Paths.RelationType);
-        if (oneIsRelation)
+        if (_RelationType.isRelationType(rawType, processorSupport))
         {
             return _RelationType.isCompatibleWith(rawType, otherRawType, processorSupport);
         }
@@ -601,9 +612,9 @@ public class GenericType
         {
             return false;
         }
-        if (processorSupport.instance_instanceOf(rawType, M3Paths.RelationType))
+        if (_RelationType.isRelationType(rawType, processorSupport))
         {
-            return ((RelationType<?>) rawType)._columns().injectInto(true, (a, c) -> a && isGenericTypeConcrete(_Column.getColumnType(c)));
+            return ((RelationType<?>) rawType)._columns().allSatisfy(c -> isGenericTypeConcrete(_Column.getColumnType(c)));
         }
         return hasConcreteMultiplicityArguments(genericType, processorSupport) && hasFullyConcreteTypeArguments(genericType, checkFunctionTypes, processorSupport);
     }
@@ -659,10 +670,10 @@ public class GenericType
             return true;
         }
 
-        // Operartion
-        if (GenericType.isGenericTypeOperation((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) genericType1, processorSupport))
+        // Operation
+        if (GenericType.isGenericTypeOperation(genericType1, processorSupport))
         {
-            return GenericType.isGenericTypeOperation((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) genericType2, processorSupport) &&
+            return GenericType.isGenericTypeOperation(genericType2, processorSupport) &&
                     ((GenericTypeOperation) genericType1)._type().getName().equals(((GenericTypeOperation) genericType2)._type().getName()) &&
                     GenericType.genericTypesEqual(((GenericTypeOperation) genericType1)._left(), ((GenericTypeOperation) genericType2)._left(), processorSupport) &&
                     GenericType.genericTypesEqual(((GenericTypeOperation) genericType1)._right(), ((GenericTypeOperation) genericType2)._right(), processorSupport);
@@ -680,8 +691,7 @@ public class GenericType
             return false;
         }
 
-        boolean oneIsRelation = processorSupport.instance_instanceOf(rawType1, M3Paths.RelationType);
-        if (oneIsRelation)
+        if (_RelationType.isRelationType(rawType1, processorSupport))
         {
             return _RelationType.equalRelationType(rawType1, rawType2, processorSupport);
         }
@@ -855,34 +865,31 @@ public class GenericType
         {
             appendable.append("NULL");
         }
+        else if (isGenericTypeOperation(genericType, processorSupport))
+        {
+            String type = genericType.getValueForMetaPropertyToOne("type").getName();
+            print(appendable, genericType.getValueForMetaPropertyToOne("left"), fullPaths, markImportStubs, processorSupport);
+            appendable.append("Union".equals(type) ? "+" : "Subset".equals(type) ? "⊆" : "Equal".equals(type) ? "=" : "-");
+            print(appendable, genericType.getValueForMetaPropertyToOne("right"), fullPaths, markImportStubs, processorSupport);
+        }
         else
         {
-            if (processorSupport.instance_instanceOf(genericType, M3Paths.GenericTypeOperation))
+            CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
+            ListIterable<? extends CoreInstance> typeArguments = genericType.getValueForMetaPropertyToMany(M3Properties.typeArguments);
+            ListIterable<? extends CoreInstance> multiplicityArguments = Instance.getValueForMetaPropertyToManyResolved(genericType, M3Properties.multiplicityArguments, processorSupport);
+            if (rawType == null)
             {
-                String type = genericType.getValueForMetaPropertyToOne("type").getName();
-                print(appendable, genericType.getValueForMetaPropertyToOne("left"), fullPaths, markImportStubs, processorSupport);
-                appendable.append(type.equals("Union") ? "+" : type.equals("Subset") ? "⊆" : type.equals("Equal") ? "=" : "-");
-                print(appendable, genericType.getValueForMetaPropertyToOne("right"), fullPaths, markImportStubs, processorSupport);
+                String typeParameterName = getTypeParameterName(genericType, processorSupport);
+                appendable.append((typeParameterName == null) ? "NULL" : typeParameterName);
+                printTypeAndMultiplicityArguments(appendable, typeArguments, multiplicityArguments, fullPaths, markImportStubs, processorSupport);
             }
             else
             {
-                CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
-                ListIterable<? extends CoreInstance> typeArguments = genericType.getValueForMetaPropertyToMany(M3Properties.typeArguments);
-                ListIterable<? extends CoreInstance> multiplicityArguments = Instance.getValueForMetaPropertyToManyResolved(genericType, M3Properties.multiplicityArguments, processorSupport);
-                if (rawType == null)
+                if (markImportStubs && processorSupport.instance_instanceOf(genericType.getValueForMetaPropertyToOne(M3Properties.rawType), M3Paths.ImportStub))
                 {
-                    String typeParameterName = getTypeParameterName(genericType, processorSupport);
-                    appendable.append((typeParameterName == null) ? "NULL" : typeParameterName);
-                    printTypeAndMultiplicityArguments(appendable, typeArguments, multiplicityArguments, fullPaths, markImportStubs, processorSupport);
+                    appendable.append('~');
                 }
-                else
-                {
-                    if (markImportStubs && processorSupport.instance_instanceOf(genericType.getValueForMetaPropertyToOne(M3Properties.rawType), M3Paths.ImportStub))
-                    {
-                        appendable.append('~');
-                    }
-                    print(appendable, rawType, typeArguments, multiplicityArguments, fullPaths, markImportStubs, processorSupport);
-                }
+                print(appendable, rawType, typeArguments, multiplicityArguments, fullPaths, markImportStubs, processorSupport);
             }
         }
     }
@@ -893,9 +900,9 @@ public class GenericType
         {
             org.finos.legend.pure.m3.navigation.function.FunctionType.print(appendable, rawType, fullPaths, markImportStubs, processorSupport);
         }
-        else if (processorSupport.instance_instanceOf(rawType, M3Paths.RelationType))
+        else if (_RelationType.isRelationType(rawType, processorSupport))
         {
-            appendable.append(_RelationType.print(rawType, processorSupport));
+            _RelationType.print(appendable, rawType, processorSupport);
         }
         else if (fullPaths)
         {
@@ -1128,7 +1135,7 @@ public class GenericType
             }
             return functionType;
         }
-        else if (processorSupport.instance_instanceOf(type, M3Paths.RelationType))
+        else if (_RelationType.isRelationType(type, processorSupport))
         {
             RelationType<?> src = (RelationType<?>) type;
             return _RelationType.build(
@@ -1231,8 +1238,8 @@ public class GenericType
         else
         {
             return covariant ?
-                    Support.getBestGenericTypeUsingCovariance(genericTypeSet, knownMostGeneralGenericTypeBound, replaceSourceInfo, newSourceInfo, processorSupport) :
-                    Support.getBestGenericTypeUsingContravariance(genericTypeSet, replaceSourceInfo, newSourceInfo, processorSupport);
+                   Support.getBestGenericTypeUsingCovariance(genericTypeSet, knownMostGeneralGenericTypeBound, replaceSourceInfo, newSourceInfo, processorSupport) :
+                   Support.getBestGenericTypeUsingContravariance(genericTypeSet, replaceSourceInfo, newSourceInfo, processorSupport);
         }
     }
 
@@ -1255,19 +1262,57 @@ public class GenericType
         }
     }
 
+    @Deprecated
     public static boolean isGenericTypeOperationEqual(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType, ProcessorSupport processorSupport)
     {
-        return isGenericTypeOperation(genericType, processorSupport) && ((GenericTypeOperation) genericType)._type().getName().equals("Equal");
+        return isGenericTypeOperationEqual(genericType);
     }
 
+    public static boolean isGenericTypeOperationEqual(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType)
+    {
+        return (genericType instanceof GenericTypeOperation) && isGenericTypeOperationEqual((GenericTypeOperation) genericType);
+    }
+
+    public static boolean isGenericTypeOperationEqual(GenericTypeOperation genericTypeOperation)
+    {
+        return isGenericTypeOperationOfType(genericTypeOperation, "Equal");
+    }
+
+    @Deprecated
     public static boolean isGenericTypeOperationSubset(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType, ProcessorSupport processorSupport)
     {
-        return isGenericTypeOperation(genericType, processorSupport) && ((GenericTypeOperation) genericType)._type().getName().equals("Subset");
+        return isGenericTypeOperationSubset(genericType);
     }
 
-    public static boolean isGenericTypeOperation(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType, ProcessorSupport processorSupport)
+    public static boolean isGenericTypeOperationSubset(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType)
     {
-        return processorSupport.instance_instanceOf(genericType, M3Paths.GenericTypeOperation);
+        return (genericType instanceof GenericTypeOperation) && isGenericTypeOperationSubset((GenericTypeOperation) genericType);
     }
 
+    public static boolean isGenericTypeOperationSubset(GenericTypeOperation genericTypeOperation)
+    {
+        return isGenericTypeOperationOfType(genericTypeOperation, "Subset");
+    }
+
+    public static boolean isGenericTypeOperationUnion(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType)
+    {
+        return (genericType instanceof GenericTypeOperation) && isGenericTypeOperationUnion((GenericTypeOperation) genericType);
+    }
+
+    public static boolean isGenericTypeOperationUnion(GenericTypeOperation genericTypeOperation)
+    {
+        return isGenericTypeOperationOfType(genericTypeOperation, "Union");
+    }
+
+    private static boolean isGenericTypeOperationOfType(GenericTypeOperation genericTypeOperation, String typeName)
+    {
+        return typeName.equals(genericTypeOperation._type().getName());
+    }
+
+    public static boolean isGenericTypeOperation(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        return (instance != null) &&
+                ((instance instanceof GenericTypeOperation) ||
+                        (!(instance instanceof Any) && processorSupport.instance_instanceOf(instance, M3Paths.GenericTypeOperation)));
+    }
 }

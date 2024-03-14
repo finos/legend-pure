@@ -20,7 +20,13 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.validation.Validator;
 import org.finos.legend.pure.m3.compiler.validation.ValidatorState;
-import org.finos.legend.pure.m3.compiler.validation.functionExpression.*;
+import org.finos.legend.pure.m3.compiler.validation.functionExpression.CopyValidator;
+import org.finos.legend.pure.m3.compiler.validation.functionExpression.EnumValidator;
+import org.finos.legend.pure.m3.compiler.validation.functionExpression.GetAllValidator;
+import org.finos.legend.pure.m3.compiler.validation.functionExpression.GetAllVersionsInRangeValidator;
+import org.finos.legend.pure.m3.compiler.validation.functionExpression.GetAllVersionsValidator;
+import org.finos.legend.pure.m3.compiler.validation.functionExpression.NewValidator;
+import org.finos.legend.pure.m3.compiler.validation.functionExpression.SubTypeValidator;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
@@ -53,12 +59,18 @@ public class FunctionExpressionValidator implements MatchRunner<FunctionExpressi
     @Override
     public void run(FunctionExpression instance, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
-        validateFunctionExpression(matcher, (ValidatorState) state, instance, modelRepository, state.getProcessorSupport());
+        validateFunctionExpression(matcher, (ValidatorState) state, instance, state.getProcessorSupport());
     }
 
+    @Deprecated
     public static void validateFunctionExpression(Matcher matcher, ValidatorState validatorState, FunctionExpression instance, ModelRepository repository, ProcessorSupport processorSupport) throws PureCompilationException
     {
-        Function function = (Function) ImportStub.withImportStubByPass(instance._funcCoreInstance(), processorSupport);
+        validateFunctionExpression(matcher, validatorState, instance, processorSupport);
+    }
+
+    public static void validateFunctionExpression(Matcher matcher, ValidatorState validatorState, FunctionExpression instance, ProcessorSupport processorSupport) throws PureCompilationException
+    {
+        Function<?> function = (Function<?>) ImportStub.withImportStubByPass(instance._funcCoreInstance(), processorSupport);
         if (function == null)
         {
             throw new RuntimeException("No function found to the expression:\n" + instance.print(""));
@@ -92,7 +104,7 @@ public class FunctionExpressionValidator implements MatchRunner<FunctionExpressi
             GetAllVersionsInRangeValidator.validate(instance, processorSupport);
         }
 
-        MilestoningFunctionExpressionValidator.validateFunctionExpression(instance, function, repository, processorSupport);
+        MilestoningFunctionExpressionValidator.validateFunctionExpression(instance, function, processorSupport);
 
         FunctionType functionType = (FunctionType) processorSupport.function_getFunctionType(ImportStub.withImportStubByPass(instance._funcCoreInstance(), processorSupport));
         ListIterable<? extends VariableExpression> parameters = (ListIterable<? extends VariableExpression>) functionType._parameters();
@@ -108,8 +120,8 @@ public class FunctionExpressionValidator implements MatchRunner<FunctionExpressi
             {
                 ListIterable<? extends GenericType> funcP = (ListIterable<? extends GenericType>) parameters.get(i)._genericType()._typeArguments();
                 GenericType givenInstanceGenericType;
-                if (!funcP.isEmpty() && org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(parameters.get(i)._genericType(), processorSupport) &&
-                        org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(inst._genericType(), processorSupport))
+                if (!funcP.isEmpty() && org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(parameters.get(i)._genericType()) &&
+                        org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(inst._genericType()))
                 {
                     // This line should actually return a Pair (including the resolved multiplicities)
                     GenericTypeWithXArguments homogenizedTypeArgs = org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveClassTypeParameterUsingInheritance(inst._genericType(), parameters.get(i)._genericType(), processorSupport);
@@ -124,9 +136,11 @@ public class FunctionExpressionValidator implements MatchRunner<FunctionExpressi
 
                 if (funcP.size() > bound.size())
                 {
-                    throw new RuntimeException("Type Arguments mismatch of a function parameter. Function:'" + ImportStub.withImportStubByPass(instance._funcCoreInstance(), processorSupport).getName() + "'" +
-                            " / Param:'" + parameters.get(i)._name() + ":" + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(parameters.get(i)._genericType(), processorSupport)
-                            + "' / Given Instance Type:'" + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(inst._genericType(), processorSupport) + "'");
+                    StringBuilder builder = new StringBuilder("Type Arguments mismatch of a function parameter. Function:'").append(ImportStub.withImportStubByPass(instance._funcCoreInstance(), processorSupport).getName());
+                    builder.append("' / Param:'").append(parameters.get(i)._name()).append(":");
+                    org.finos.legend.pure.m3.navigation.generictype.GenericType.print(builder, parameters.get(i)._genericType(), processorSupport);
+                    org.finos.legend.pure.m3.navigation.generictype.GenericType.print(builder.append("' / Given Instance Type:'"), inst._genericType(), processorSupport).append("'");
+                    throw new RuntimeException(builder.toString());
                 }
                 for (int k = 0; k < funcP.size(); k++)
                 {
@@ -137,14 +151,16 @@ public class FunctionExpressionValidator implements MatchRunner<FunctionExpressi
                         {
                             if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericCompatibleWith(inst._genericType(), parameters.get(i)._genericType(), processorSupport))
                             {
-                                throw new PureCompilationException(instance.getSourceInformation(), "typeArgument mismatch! Expected:" + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(parameters.get(i)._genericType(), processorSupport)
-                                        + " Found:" + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(inst._genericType(), processorSupport));
+                                StringBuilder builder = new StringBuilder("typeArgument mismatch! Expected: ");
+                                org.finos.legend.pure.m3.navigation.generictype.GenericType.print(builder, parameters.get(i)._genericType(), processorSupport);
+                                org.finos.legend.pure.m3.navigation.generictype.GenericType.print(builder.append(" Found: "), inst._genericType(), processorSupport);
+                                throw new PureCompilationException(instance.getSourceInformation(), builder.toString());
                             }
                         }
                         else
                         {
                             Type type = (Type) ImportStub.withImportStubByPass(givenInstanceGenericType._rawTypeCoreInstance(), processorSupport);
-                            ListIterable<? extends TypeParameter> typeParameters = type instanceof Class ? (ListIterable<? extends TypeParameter>) ((Class) type)._typeParameters() : Lists.fixedSize.<TypeParameter>empty();
+                            ListIterable<? extends TypeParameter> typeParameters = type instanceof Class ? (ListIterable<? extends TypeParameter>) ((Class) type)._typeParameters() : Lists.fixedSize.empty();
                             boolean covariant = org.finos.legend.pure.m3.navigation.typeparameter.TypeParameter.isCovariant(typeParameters.get(k));
                             Type typeArgument2 = (Type) ImportStub.withImportStubByPass(bound.get(k)._rawTypeCoreInstance(), processorSupport);
 
@@ -153,11 +169,13 @@ public class FunctionExpressionValidator implements MatchRunner<FunctionExpressi
                                 if
                                 (
                                         !("Any".equals(typeArgument1.getName()) && "FunctionType".equals(typeArgument2.getClassifier().getName())) &&
-                                                !(processorSupport.instance_instanceOf(typeArgument1, M3Paths.RelationType)) && _RelationType.equalRelationType(typeArgument1, typeArgument2, processorSupport)
+                                                !_RelationType.isRelationType(typeArgument1, processorSupport) && _RelationType.equalRelationType(typeArgument1, typeArgument2, processorSupport)
                                 )
                                 {
-                                    throw new PureCompilationException(instance.getSourceInformation(), function.getName() + " " + " / typeArgument mismatch! Expected:" + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(parameters.get(i)._genericType(), processorSupport)
-                                            + " Found:" + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(inst._genericType(), processorSupport));
+                                    StringBuilder builder = new StringBuilder(function.getName()).append(" / typeArgument mismatch! Expected: ");
+                                    org.finos.legend.pure.m3.navigation.generictype.GenericType.print(builder, parameters.get(i)._genericType(), processorSupport);
+                                    org.finos.legend.pure.m3.navigation.generictype.GenericType.print(builder.append(" Found: "), inst._genericType(), processorSupport);
+                                    throw new PureCompilationException(instance.getSourceInformation(), builder.toString());
                                 }
                             }
                         }

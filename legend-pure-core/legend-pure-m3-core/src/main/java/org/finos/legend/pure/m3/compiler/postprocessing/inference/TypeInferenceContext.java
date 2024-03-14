@@ -31,18 +31,16 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
-import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionType;
 import org.finos.legend.pure.m3.navigation.generictype.GenericTypeWithXArguments;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
-import org.finos.legend.pure.m3.navigation.relation._Column;
 import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.navigation.typeparameter.TypeParameter;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 import java.util.Iterator;
@@ -338,25 +336,28 @@ public class TypeInferenceContext
         {
             GenericType genericTypeCopy = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(genericType, true, this.processorSupport);
 
-            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationEqual(genericTypeCopy, processorSupport))
+            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationEqual(genericTypeCopy))
             {
                 if (targetGenericsContext.getParent() != null)
                 {
-                    getParent().register((GenericType) genericTypeCopy.getValueForMetaPropertyToOne("left"), (GenericType) genericTypeCopy.getValueForMetaPropertyToOne("right"), targetGenericsContext.getParent(), merge, observer);
+                    GenericTypeOperation gto = (GenericTypeOperation) genericTypeCopy;
+                    getParent().register(gto._left(), gto._right(), targetGenericsContext.getParent(), merge, observer);
                 }
             }
 
-            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationEqual(templateGenType, processorSupport))
+            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationEqual(templateGenType))
             {
-                register((GenericType) templateGenType.getValueForMetaPropertyToOne("left"), genericTypeCopy, targetGenericsContext, merge, observer);
+                register(((GenericTypeOperation) templateGenType)._left(), genericTypeCopy, targetGenericsContext, merge, observer);
             }
 
-            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperation(templateGenType, processorSupport) && org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperation(genericTypeCopy, processorSupport))
+            if ((templateGenType instanceof GenericTypeOperation) && (genericTypeCopy instanceof GenericTypeOperation))
             {
-                if (((GenericTypeOperation) templateGenType)._type().getName().equals(((GenericTypeOperation) genericTypeCopy)._type().getName()))
+                GenericTypeOperation templateGenTypeOperation = (GenericTypeOperation) templateGenType;
+                GenericTypeOperation genericTypeOperationCopy = (GenericTypeOperation) genericTypeCopy;
+                if (templateGenTypeOperation._type().getName().equals(genericTypeOperationCopy._type().getName()))
                 {
-                    register((GenericType) templateGenType.getValueForMetaPropertyToOne("left"), (GenericType) genericTypeCopy.getValueForMetaPropertyToOne("left"), targetGenericsContext, merge, observer);
-                    register((GenericType) templateGenType.getValueForMetaPropertyToOne("right"), (GenericType) genericTypeCopy.getValueForMetaPropertyToOne("right"), targetGenericsContext, merge, observer);
+                    register(templateGenTypeOperation._left(), genericTypeOperationCopy._left(), targetGenericsContext, merge, observer);
+                    register(templateGenTypeOperation._right(), genericTypeOperationCopy._right(), targetGenericsContext, merge, observer);
                 }
             }
 
@@ -376,17 +377,17 @@ public class TypeInferenceContext
                 {
                     GenericType existingGenericType = (GenericType) existing.getParameterValue();
                     boolean isCovariant = TypeParameter.isCovariant(templateGenType);
-                    if (processorSupport.instance_instanceOf(existingGenericType.getValueForMetaPropertyToOne("rawType"), M3Paths.RelationType) &&
-                            processorSupport.instance_instanceOf(genericTypeCopy.getValueForMetaPropertyToOne("rawType"), M3Paths.RelationType))
+                    if (_RelationType.isRelationType(existingGenericType.getValueForMetaPropertyToOne(M3Properties.rawType), this.processorSupport) &&
+                            _RelationType.isRelationType(genericTypeCopy.getValueForMetaPropertyToOne(M3Properties.rawType), this.processorSupport))
                     {
                         GenericType res;
-                        if (_RelationType.canConcatenate(existingGenericType, genericTypeCopy, processorSupport))
+                        if (_RelationType.canConcatenate(existingGenericType, genericTypeCopy, this.processorSupport))
                         {
-                            res = _RelationType.merge(existingGenericType, genericTypeCopy, isCovariant, processorSupport);
+                            res = _RelationType.merge(existingGenericType, genericTypeCopy, isCovariant, this.processorSupport);
                         }
                         else
                         {
-                            res = (GenericType) processorSupport.type_wrapGenericType(processorSupport.type_TopType());
+                            res = (GenericType) this.processorSupport.type_wrapGenericType(this.processorSupport.type_TopType());
                         }
                         this.states.getLast().putTypeParameterValue(name, res, targetGenericsContext, false);
                     }
@@ -477,11 +478,11 @@ public class TypeInferenceContext
                     ListIterable<? extends CoreInstance> typeTemplates;
                     ListIterable<? extends CoreInstance> mulTemplates;
 
-                    if (processorSupport.instance_instanceOf(templateGenType._rawType(), M3Paths.RelationType) && processorSupport.instance_instanceOf(genericTypeCopy._rawType(), M3Paths.RelationType))
+                    if (_RelationType.isRelationType(templateGenType._rawType(), this.processorSupport) && _RelationType.isRelationType(genericTypeCopy._rawType(), this.processorSupport))
                     {
                         RichIterable<? extends Column<?, ?>> valColumns = ((RelationType<?>) genericTypeCopy._rawType())._columns();
                         RichIterable<? extends Column<?, ?>> templateColumns = ((RelationType<?>) templateGenType._rawType())._columns();
-                        Pair<ListIterable<? extends Column<?, ?>>, ListIterable<? extends Column<?, ?>>> res = _RelationType.alignColumnSets(valColumns, templateColumns, processorSupport);
+                        Pair<ListIterable<? extends Column<?, ?>>, ListIterable<? extends Column<?, ?>>> res = _RelationType.alignColumnSets(valColumns, templateColumns, this.processorSupport);
                         res.getTwo().zip(res.getOne()).forEach(c ->
                                 register(c.getOne()._classifierGenericType()._typeArguments().toList().get(1), c.getTwo()._classifierGenericType()._typeArguments().toList().get(1), targetGenericsContext, merge, observer)
                         );
@@ -655,7 +656,7 @@ public class TypeInferenceContext
         TypeInferenceContextState state = this.states.getLast();
         for (String t : state.getTypeParameters())
         {
-            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.genericTypesEqual(state.getTypeParameterValueWithFlag(t).getParameterValue(), actualTemplateToInferColumnType, processorSupport))
+            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.genericTypesEqual(state.getTypeParameterValueWithFlag(t).getParameterValue(), actualTemplateToInferColumnType, this.processorSupport))
             {
                 return state.getTypeParameterValueWithFlag(t).getTargetGenericsContext().findParentForOperation(actualTemplateToInferColumnType);
             }
@@ -668,7 +669,7 @@ public class TypeInferenceContext
         TypeInferenceContextState state = this.states.getLast();
         for (String t : state.getTypeParameters())
         {
-            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.genericTypesEqual(state.getTypeParameterValueWithFlag(t).getParameterValue(), actualTemplateToInferColumnType, processorSupport))
+            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.genericTypesEqual(state.getTypeParameterValueWithFlag(t).getParameterValue(), actualTemplateToInferColumnType, this.processorSupport))
             {
                 TypeInferenceContext trace = state.getTypeParameterValueWithFlag(t).getTargetGenericsContext();
                 state.putTypeParameterValue(t, instanceGenericType, this, true);
