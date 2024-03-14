@@ -15,9 +15,11 @@
 package org.finos.legend.pure.m3.navigation.function;
 
 import org.eclipse.collections.api.list.ListIterable;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
@@ -28,7 +30,8 @@ public class FunctionType
 {
     public static boolean isFunctionType(CoreInstance instance, ProcessorSupport processorSupport)
     {
-        return processorSupport.instance_instanceOf(instance, M3Paths.FunctionType);
+        return (instance instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType) ||
+                (!(instance instanceof Any) && processorSupport.instance_instanceOf(instance, M3Paths.FunctionType));
     }
 
     public static boolean functionTypesEqual(CoreInstance functionType1, CoreInstance functionType2, ProcessorSupport processorSupport)
@@ -227,23 +230,23 @@ public class FunctionType
         SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
         ListIterable<? extends CoreInstance> typeParameters = functionType.getValueForMetaPropertyToMany(M3Properties.typeParameters);
         ListIterable<? extends CoreInstance> multiplicityParameters = functionType.getValueForMetaPropertyToMany(M3Properties.multiplicityParameters);
-        safeAppendable.append(typeParameters.isEmpty() ? "" : "<" + typeParameters.collect(c -> c.getValueForMetaPropertyToOne("name").getName()).makeString(",") + (multiplicityParameters == null || multiplicityParameters.isEmpty() ? "" : "|" + multiplicityParameters.flatCollect(c -> c.getValueForMetaPropertyToMany("values").collect(CoreInstance::getName)).makeString(", ")) + "> ");
-        safeAppendable.append('{');
-        ListIterable<? extends CoreInstance> params = functionType.getValueForMetaPropertyToMany(M3Properties.parameters);
-        int size = params.size();
-        if (size > 0)
+        if (typeParameters.notEmpty() || multiplicityParameters.notEmpty())
         {
-            CoreInstance param = params.get(0);
-            GenericType.print(safeAppendable, param.getValueForMetaPropertyToOne(M3Properties.genericType), fullPaths, markImportStubs, processorSupport);
-            Multiplicity.print(safeAppendable, Instance.getValueForMetaPropertyToOneResolved(param, M3Properties.multiplicity, processorSupport), true);
-            for (int i = 1; i < size; i++)
+            safeAppendable.append('<');
+            typeParameters.forEachWithIndex((tp, i) -> ((i == 0) ? safeAppendable : safeAppendable.append(',')).append(PrimitiveUtilities.getStringValue(tp.getValueForMetaPropertyToOne(M3Properties.name))));
+            multiplicityParameters.forEachWithIndex((mp, i) -> ((i == 0) ? safeAppendable.append('|') : safeAppendable.append(',')).append(PrimitiveUtilities.getStringValue(mp.getValueForMetaPropertyToOne(M3Properties.values))));
+            safeAppendable.append("> ");
+        }
+        safeAppendable.append('{');
+        functionType.getValueForMetaPropertyToMany(M3Properties.parameters).forEachWithIndex((param, i) ->
+        {
+            if (i > 0)
             {
                 safeAppendable.append(", ");
-                param = params.get(i);
-                GenericType.print(safeAppendable, param.getValueForMetaPropertyToOne(M3Properties.genericType), fullPaths, markImportStubs, processorSupport);
-                Multiplicity.print(safeAppendable, Instance.getValueForMetaPropertyToOneResolved(param, M3Properties.multiplicity, processorSupport), true);
             }
-        }
+            GenericType.print(safeAppendable, param.getValueForMetaPropertyToOne(M3Properties.genericType), fullPaths, markImportStubs, processorSupport);
+            Multiplicity.print(safeAppendable, Instance.getValueForMetaPropertyToOneResolved(param, M3Properties.multiplicity, processorSupport), true);
+        });
         safeAppendable.append("->");
         GenericType.print(safeAppendable, functionType.getValueForMetaPropertyToOne(M3Properties.returnType), fullPaths, markImportStubs, processorSupport);
         Multiplicity.print(safeAppendable, Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, processorSupport), true);
