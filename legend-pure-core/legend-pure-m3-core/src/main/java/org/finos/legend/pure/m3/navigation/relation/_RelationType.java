@@ -29,6 +29,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Functi
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
@@ -40,12 +41,29 @@ import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class _RelationType
 {
-    public static String print(CoreInstance rawType, ProcessorSupport processorSupport)
+    public static boolean isRelationType(CoreInstance type, ProcessorSupport processorSupport)
     {
-        return "(" + rawType.getValueForMetaPropertyToMany("columns").collect(c -> _Column.print(c, processorSupport)).makeString(", ") + ")";
+        return (type != null) &&
+                ((type instanceof RelationType) ||
+                        (!(type instanceof Any) && processorSupport.instance_instanceOf(type, M3Paths.RelationType)));
+    }
+
+    public static String print(CoreInstance relationType, ProcessorSupport processorSupport)
+    {
+        return print(new StringBuilder(), relationType, processorSupport).toString();
+    }
+
+    public static <T extends Appendable> T print(T appendable, CoreInstance relationType, ProcessorSupport processorSupport)
+    {
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+        safeAppendable.append('(');
+        relationType.getValueForMetaPropertyToMany("columns").forEachWithIndex((c, i) -> _Column.print(((i == 0) ? safeAppendable : safeAppendable.append(", ")), c, processorSupport));
+        safeAppendable.append(')');
+        return appendable;
     }
 
     public static Function<?> findColumn(RelationType<?> type, String name, SourceInformation sourceInformation, ProcessorSupport processorSupport)
@@ -115,7 +133,7 @@ public class _RelationType
 
     public static boolean isCompatibleWith(CoreInstance one, CoreInstance two, ProcessorSupport processorSupport)
     {
-        if (!(processorSupport.instance_instanceOf(one, M3Paths.RelationType) && processorSupport.instance_instanceOf(two, M3Paths.RelationType)))
+        if (!(isRelationType(one, processorSupport) && isRelationType(two, processorSupport)))
         {
             return false;
         }
@@ -136,7 +154,7 @@ public class _RelationType
 
     public static boolean equalRelationType(CoreInstance one, CoreInstance two, ProcessorSupport processorSupport)
     {
-        if (!processorSupport.instance_instanceOf(two, M3Paths.RelationType))
+        if (!isRelationType(two, processorSupport))
         {
             return false;
         }
