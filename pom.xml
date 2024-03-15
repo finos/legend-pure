@@ -30,13 +30,13 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>legend-pure-test-reports</module>
         <module>legend-pure-core</module>
         <module>legend-pure-dsl</module>
         <module>legend-pure-functions</module>
         <module>legend-pure-maven</module>
         <module>legend-pure-runtime</module>
         <module>legend-pure-store</module>
-        <module>legend-pure-test-reports</module>
     </modules>
 
     <properties>
