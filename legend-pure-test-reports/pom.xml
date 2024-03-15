@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure</artifactId>
-        <version>5.1.4-SNAPSHOT</version>
+        <version>5.2.0</version>
     </parent>
 
     <artifactId>legend-pure-test-reports</artifactId>
