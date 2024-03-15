@@ -1,0 +1,7 @@
+{
+  "name": "platform_dsl_store",
+  "pattern": "(meta::external::store::model|meta::pure::metamodel::valuespecification|meta::pure::store|meta::pure::runtime|meta::core::runtime)(::.*)?",
+  "dependencies": [
+    "platform"
+  ]
+}
