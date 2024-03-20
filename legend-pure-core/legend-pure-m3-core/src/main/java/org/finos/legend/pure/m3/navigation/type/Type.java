@@ -19,6 +19,8 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.impl.factory.Sets;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -54,17 +56,21 @@ public class Type
      * type is an instance of the class PrimitiveType.
      *
      * @param type Pure type
+     * @param processorSupport processor support
      * @return whether type is an instance of PrimitiveType
      */
     public static boolean isPrimitiveType(CoreInstance type, ProcessorSupport processorSupport)
     {
-        return (type != null) && processorSupport.type_subTypeOf(type.getClassifier(), processorSupport.package_getByUserPath(M3Paths.PrimitiveType));
+        return (type != null) &&
+                ((type instanceof PrimitiveType) ||
+                        (!(type instanceof Any) && processorSupport.type_subTypeOf(type.getClassifier(), processorSupport.package_getByUserPath(M3Paths.PrimitiveType))));
     }
 
     /**
      * Return whether type is the bottom type (i.e., Nil).
      *
      * @param type Pure type
+     * @param processorSupport processor support
      * @return whether type is the bottom type
      */
     public static boolean isBottomType(CoreInstance type, ProcessorSupport processorSupport)
@@ -76,6 +82,7 @@ public class Type
      * Return whether type is the top type (i.e., Any).
      *
      * @param type Pure type
+     * @param processorSupport processor support
      * @return whether type is the top type
      */
     public static boolean isTopType(CoreInstance type, ProcessorSupport processorSupport)

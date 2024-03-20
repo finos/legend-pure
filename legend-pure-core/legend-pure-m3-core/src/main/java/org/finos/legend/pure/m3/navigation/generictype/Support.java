@@ -16,11 +16,18 @@ package org.finos.legend.pure.m3.navigation.generictype;
 
 import org.eclipse.collections.api.block.HashingStrategy;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
-import org.eclipse.collections.impl.set.strategy.mutable.UnifiedSetWithHashingStrategy;
-import org.finos.legend.pure.m3.navigation.*;
+import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.impl.factory.HashingStrategySets;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.relation._RelationType;
@@ -37,7 +44,7 @@ public class Support
     {
         CoreInstance currentRawType = Instance.getValueForMetaPropertyToOneResolved(current.getGenericType(), M3Properties.rawType, processorSupport);
         CoreInstance rawTypeToFind = Instance.getValueForMetaPropertyToOneResolved(genericTypeToFind, M3Properties.rawType, processorSupport);
-        if (currentRawType == rawTypeToFind || (processorSupport.instance_instanceOf(currentRawType, M3Paths.RelationType) && processorSupport.instance_instanceOf(rawTypeToFind, M3Paths.RelationType)))
+        if (currentRawType == rawTypeToFind || (_RelationType.isRelationType(currentRawType, processorSupport) && _RelationType.isRelationType(rawTypeToFind, processorSupport)))
         {
             results.add(current);
         }
@@ -54,7 +61,7 @@ public class Support
     static void resolveMultiplicityArgumentsForGenericTypeToFindUsingInheritanceTree(GenericTypeWithXArguments current, CoreInstance rawTypeToFind, MutableList<GenericTypeWithXArguments> results, ProcessorSupport processorSupport)
     {
         CoreInstance currentRawType = Instance.getValueForMetaPropertyToOneResolved(current.getGenericType(), M3Properties.rawType, processorSupport);
-        if (currentRawType == rawTypeToFind || (processorSupport.instance_instanceOf(currentRawType, M3Paths.RelationType) && processorSupport.instance_instanceOf(rawTypeToFind, M3Paths.RelationType)))
+        if (currentRawType == rawTypeToFind || (_RelationType.isRelationType(currentRawType, processorSupport) && _RelationType.isRelationType(rawTypeToFind, processorSupport)))
         {
             results.add(current);
         }
@@ -200,7 +207,7 @@ public class Support
         return true;
     }
 
-    static CoreInstance getBestGenericTypeUsingContravariance(ListIterable<CoreInstance> genericTypeSet, boolean replaceSourceInfo, SourceInformation newSourceInfo, ProcessorSupport processorSupport)
+    static CoreInstance getBestGenericTypeUsingContravariance(ListIterable<? extends CoreInstance> genericTypeSet, boolean replaceSourceInfo, SourceInformation newSourceInfo, ProcessorSupport processorSupport)
     {
         int genericTypeCount = genericTypeSet.size();
         if (genericTypeCount == 0)
@@ -214,32 +221,75 @@ public class Support
             return GenericType.copyGenericType(genericTypeSet.get(0), replaceSourceInfo, newSourceInfo, processorSupport);
         }
 
+        CoreInstance topType = processorSupport.type_TopType();
         CoreInstance bottomType = processorSupport.type_BottomType();
-
-        MutableList<CoreInstance> rawTypes = Lists.mutable.ofInitialCapacity(genericTypeCount);
+        MutableList<CoreInstance> nonTopConcreteGenericTypeList = Lists.mutable.ofInitialCapacity(Math.min(genericTypeCount, 16));
+        MutableList<CoreInstance> nonTopRawTypes = Lists.mutable.ofInitialCapacity(Math.min(genericTypeCount, 16));
+        MutableSet<CoreInstance> nonTopConcreteGenericTypeSet = HashingStrategySets.mutable.ofInitialCapacity(new GenericTypeHashingStrategy(processorSupport), Math.min(genericTypeCount, 16));
+        MutableMap<String, CoreInstance> nonConcreteGenericTypes = Maps.mutable.empty();
         for (CoreInstance genericType : genericTypeSet)
         {
             CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
             if (rawType == bottomType)
             {
                 // Nil is present, so that's going to be the result
-                return Type.wrapGenericType(rawType, processorSupport);
+                return Type.wrapGenericType(rawType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
             }
-            rawTypes.add(rawType);
+
+            if (rawType == null)
+            {
+                // Non-concrete type
+                nonConcreteGenericTypes.getIfAbsentPut(GenericType.getTypeParameterName(genericType), genericType);
+            }
+            else if ((rawType != topType) && nonTopConcreteGenericTypeSet.add(genericType))
+            {
+                // Concrete non-top type
+                nonTopConcreteGenericTypeList.add(genericType);
+                nonTopRawTypes.add(rawType);
+            }
+        }
+
+        if (nonTopConcreteGenericTypeList.isEmpty())
+        {
+            // All types are Any or non-concrete
+            switch (nonConcreteGenericTypes.size())
+            {
+                case 0:
+                {
+                    // No non-concrete types: all types are Any
+                    return Type.wrapGenericType(topType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
+                }
+                case 1:
+                {
+                    // Single type parameter
+                    return GenericType.copyGenericType(nonConcreteGenericTypes.valuesView().getAny(), replaceSourceInfo, newSourceInfo, processorSupport);
+                }
+                default:
+                {
+                    // Multiple type parameters: return Nil
+                    return Type.wrapGenericType(bottomType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
+                }
+            }
+        }
+
+        if (nonTopConcreteGenericTypeList.size() == 1)
+        {
+            // Only one concrete non-top type, so we return a copy of it
+            return GenericType.copyGenericType(nonTopConcreteGenericTypeList.get(0), replaceSourceInfo, newSourceInfo, processorSupport);
         }
 
         // If one type is a subtype of all types, return that
-        int subTypeOfAllIndex = rawTypes.detectIndex(type -> (type != null) && rawTypes.allSatisfy(other -> (other == null) || (other == type) || processorSupport.type_subTypeOf(type, other)));
+        int subTypeOfAllIndex = nonTopRawTypes.detectIndex(type -> nonTopRawTypes.allSatisfy(other -> (type == other) || processorSupport.type_subTypeOf(type, other)));
         if (subTypeOfAllIndex != -1)
         {
-            return GenericType.copyGenericType(genericTypeSet.get(subTypeOfAllIndex), replaceSourceInfo, newSourceInfo, processorSupport);
+            return GenericType.copyGenericType(nonTopConcreteGenericTypeList.get(subTypeOfAllIndex), replaceSourceInfo, newSourceInfo, processorSupport);
         }
 
         // Cannot find a common type, so we return Nil
         return Type.wrapGenericType(bottomType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
     }
 
-    static CoreInstance getBestGenericTypeUsingCovariance(ListIterable<CoreInstance> genericTypeSet, CoreInstance knownMostGeneralGenericTypeBound, boolean replaceSourceInfo, SourceInformation newSourceInfo, ProcessorSupport processorSupport)
+    static CoreInstance getBestGenericTypeUsingCovariance(ListIterable<? extends CoreInstance> genericTypeSet, CoreInstance knownMostGeneralGenericTypeBound, boolean replaceSourceInfo, SourceInformation newSourceInfo, ProcessorSupport processorSupport)
     {
         int genericTypeCount = genericTypeSet.size();
         if (genericTypeCount == 0)
@@ -253,11 +303,11 @@ public class Support
             return GenericType.copyGenericType(genericTypeSet.get(0), replaceSourceInfo, newSourceInfo, processorSupport);
         }
 
-        boolean hasNonBottomGenericType = false;
         CoreInstance topType = processorSupport.type_TopType();
         CoreInstance bottomType = processorSupport.type_BottomType();
         MutableList<CoreInstance> nonBottomConcreteGenericTypeList = Lists.mutable.ofInitialCapacity(Math.min(genericTypeCount, 16));
-        AlmostGenericTypeMutableSet nonBottomConcreteGenericTypeSet = new AlmostGenericTypeMutableSet(processorSupport, Math.min(genericTypeCount, 16));
+        MutableSet<CoreInstance> nonBottomConcreteGenericTypeSet = HashingStrategySets.mutable.ofInitialCapacity(new GenericTypeHashingStrategy(processorSupport), Math.min(genericTypeCount, 16));
+        MutableMap<String, CoreInstance> nonConcreteGenericTypes = Maps.mutable.empty();
         for (CoreInstance genericType : genericTypeSet)
         {
             CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
@@ -266,46 +316,45 @@ public class Support
                 // Any is present, so that's going to be the result
                 return Type.wrapGenericType(rawType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
             }
-            if (knownMostGeneralGenericTypeBound != null && GenericType.genericTypesEqual(genericType, knownMostGeneralGenericTypeBound, processorSupport))
+            if ((knownMostGeneralGenericTypeBound != null) && GenericType.genericTypesEqual(genericType, knownMostGeneralGenericTypeBound, processorSupport))
             {
                 return GenericType.copyGenericType(genericType, replaceSourceInfo, newSourceInfo, processorSupport);
             }
-            if (rawType != bottomType)
+
+            if (rawType == null)
+            {
+                // Non-concrete type
+                nonConcreteGenericTypes.getIfAbsentPut(GenericType.getTypeParameterName(genericType), genericType);
+            }
+            else if ((rawType != bottomType) && nonBottomConcreteGenericTypeSet.add(genericType))
             {
                 // Non-Nil (possibly null) raw type
-                hasNonBottomGenericType = true;
-                if ((rawType != null) && nonBottomConcreteGenericTypeSet.add(genericType))
-                {
-                    nonBottomConcreteGenericTypeList.add(genericType);
-                }
+                nonBottomConcreteGenericTypeList.add(genericType);
             }
         }
-        if (!hasNonBottomGenericType)
+        if (nonBottomConcreteGenericTypeList.isEmpty())
         {
-            // All types are Nil, so we return Nil
-            return Type.wrapGenericType(bottomType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
+            // All types are Nil or non-concrete
+            switch (nonConcreteGenericTypes.size())
+            {
+                case 0:
+                {
+                    // No non-concrete types: all types are Nil
+                    return Type.wrapGenericType(bottomType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
+                }
+                case 1:
+                {
+                    // Single type parameter
+                    return GenericType.copyGenericType(nonConcreteGenericTypes.valuesView().getAny(), replaceSourceInfo, newSourceInfo, processorSupport);
+                }
+                default:
+                {
+                    // Multiple type parameters: return Any
+                    return Type.wrapGenericType(topType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
+                }
+            }
         }
         int nonBottomConcreteGenericTypesCount = nonBottomConcreteGenericTypeList.size();
-        if (nonBottomConcreteGenericTypesCount == 0)
-        {
-            // All types are non-concrete (or Nil)
-            // Check if they are the same
-            String current = null;
-            for (CoreInstance g : genericTypeSet)
-            {
-                String tp = GenericType.getTypeParameterName(g);
-                if (tp != null)
-                {
-                    if ((current != null) && !tp.equals(current))
-                    {
-                        // No so we return Any
-                        return Type.wrapGenericType(topType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
-                    }
-                    current = tp;
-                }
-            }
-            return GenericType.copyGenericType(genericTypeSet.get(0), processorSupport);
-        }
         if (nonBottomConcreteGenericTypesCount == 1)
         {
             // Only one concrete type, so we return a copy of it
@@ -356,7 +405,7 @@ public class Support
                 for (CoreInstance general : genls)
                 {
                     if (rawType == Instance.getValueForMetaPropertyToOneResolved(general, M3Properties.rawType, processorSupport) ||
-                            (processorSupport.instance_instanceOf(rawType, M3Paths.RelationType) && _RelationType.equalRelationType(rawType, Instance.getValueForMetaPropertyToOneResolved(general, M3Properties.rawType, processorSupport), processorSupport)))
+                            (_RelationType.isRelationType(rawType, processorSupport) && _RelationType.equalRelationType(rawType, Instance.getValueForMetaPropertyToOneResolved(general, M3Properties.rawType, processorSupport), processorSupport)))
                     {
                         genericTypesAtSameLevel.add(general);
                         present = true;
@@ -449,34 +498,11 @@ public class Support
         return size;
     }
 
-    /**
-     * This set may contain multiple equal instances of generic types when the raw types
-     * are function types.  The costs associated with properly hashing for function types
-     * outweigh the benefits.
-     */
-    private static class AlmostGenericTypeMutableSet extends UnifiedSetWithHashingStrategy<CoreInstance>
-    {
-        public AlmostGenericTypeMutableSet()
-        {
-        }
-
-        private AlmostGenericTypeMutableSet(ProcessorSupport processorSupport, int size)
-        {
-            super(new AlmostGenericTypeHashingStrategy(processorSupport), size);
-        }
-    }
-
-    /**
-     * This is almost a valid generic type hashing strategy.  The caveat is that this may return
-     * different hash codes for equal generic types when they have raw types that are function
-     * types.  However, the costs associated with determining if the raw type is a function type
-     * outweigh the benefits.
-     */
-    private static class AlmostGenericTypeHashingStrategy implements HashingStrategy<CoreInstance>
+    private static class GenericTypeHashingStrategy implements HashingStrategy<CoreInstance>
     {
         private final ProcessorSupport processorSupport;
 
-        private AlmostGenericTypeHashingStrategy(ProcessorSupport processorSupport)
+        private GenericTypeHashingStrategy(ProcessorSupport processorSupport)
         {
             this.processorSupport = processorSupport;
         }
@@ -485,7 +511,38 @@ public class Support
         public int computeHashCode(CoreInstance genericType)
         {
             CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, this.processorSupport);
-            return (rawType == null) ? Objects.hashCode(GenericType.getTypeParameterName(genericType)) : rawType.hashCode();
+            if (rawType == null)
+            {
+                return 11 + Objects.hashCode(GenericType.getTypeParameterName(genericType));
+            }
+            if (FunctionType.isFunctionType(rawType, this.processorSupport))
+            {
+                int hashCode = 17;
+                for (CoreInstance parameter : rawType.getValueForMetaPropertyToMany(M3Properties.parameters))
+                {
+                    hashCode *= 31;
+                    if (parameter != null)
+                    {
+                        CoreInstance parameterGT = parameter.getValueForMetaPropertyToOne(M3Properties.genericType);
+                        if (parameterGT != null)
+                        {
+                            hashCode += computeHashCode(parameterGT);
+                        }
+                    }
+                }
+                hashCode *= 31;
+                CoreInstance returnType = rawType.getValueForMetaPropertyToOne(M3Properties.returnType);
+                if (returnType != null)
+                {
+                    CoreInstance returnGT = returnType.getValueForMetaPropertyToOne(M3Properties.genericType);
+                    if (returnGT != null)
+                    {
+                        hashCode += computeHashCode(returnGT);
+                    }
+                }
+                return hashCode;
+            }
+            return 19 + rawType.hashCode();
         }
 
         @Override

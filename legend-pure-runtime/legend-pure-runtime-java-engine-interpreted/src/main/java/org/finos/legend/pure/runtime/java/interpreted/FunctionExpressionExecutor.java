@@ -14,13 +14,10 @@
 
 package org.finos.legend.pure.runtime.java.interpreted;
 
-import org.eclipse.collections.api.block.procedure.Procedure2;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionCoreInstanceWrapper;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
@@ -55,8 +52,8 @@ class FunctionExpressionExecutor implements Executor
         ListIterable<? extends CoreInstance> params = (ListIterable<? extends CoreInstance>) functionExpression._parametersValues();
         Function function = FunctionCoreInstanceWrapper.toFunction(functionExpression._funcCoreInstance());
 
-        MutableMap<String, CoreInstance> localResolvedTypeParameters = UnifiedMap.newMap();
-        MutableMap<String, CoreInstance> localResolvedMultiplicityParameters = UnifiedMap.newMap();
+        MutableMap<String, CoreInstance> localResolvedTypeParameters = Maps.mutable.empty();
+        MutableMap<String, CoreInstance> localResolvedMultiplicityParameters = Maps.mutable.empty();
         this.resolveLocalTypeAndMultiplicityParams(functionExpression, instance, processorSupport, params, function, localResolvedTypeParameters, localResolvedMultiplicityParameters);
         boolean deferExecution = Instance.instanceOf(function, M3Paths.NativeFunction, processorSupport) && functionExecutionInterpreted.getNativeFunction(function.getName()) != null && functionExecutionInterpreted.getNativeFunction(function.getName()).deferParameterExecution();
 
@@ -67,13 +64,11 @@ class FunctionExpressionExecutor implements Executor
         }
         else
         {
-            MutableList<CoreInstance> newParams = FastList.newList(params.size());
-            for (CoreInstance instance1 : params)
+            parameters = params.collect(p ->
             {
-                Executor executor = FunctionExecutionInterpreted.findValueSpecificationExecutor(instance1, instance, processorSupport, functionExecutionInterpreted);
-                newParams.add(executor.execute(instance1, resolvedTypeParameters, resolvedMultiplicityParameters, instance, variableContext, profiler, instantiationContext, executionSupport, functionExecutionInterpreted, processorSupport));
-            }
-            parameters = newParams;
+                Executor executor = FunctionExecutionInterpreted.findValueSpecificationExecutor(p, instance, processorSupport, functionExecutionInterpreted);
+                return executor.execute(p, resolvedTypeParameters, resolvedMultiplicityParameters, instance, variableContext, profiler, instantiationContext, executionSupport, functionExecutionInterpreted, processorSupport);
+            });
         }
 
         resolvedTypeParameters.push(this.resolveTypeParamsFromParent(resolvedTypeParameters, resolvedMultiplicityParameters, localResolvedTypeParameters, functionExpressionToUseInStack, processorSupport));
@@ -86,15 +81,15 @@ class FunctionExpressionExecutor implements Executor
         return result;
     }
 
-    private void resolveLocalTypeAndMultiplicityParams(FunctionExpression functionExpression, CoreInstance functionExpressionToUseInStack, ProcessorSupport processorSupport, ListIterable<? extends CoreInstance> params, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function function, MutableMap<String, CoreInstance> localResolvedTypeParameters, MutableMap<String, CoreInstance> localResolvedMultiplicityParameters)
+    private void resolveLocalTypeAndMultiplicityParams(FunctionExpression functionExpression, CoreInstance functionExpressionToUseInStack, ProcessorSupport processorSupport, ListIterable<? extends CoreInstance> params, Function<?> function, MutableMap<String, CoreInstance> localResolvedTypeParameters, MutableMap<String, CoreInstance> localResolvedMultiplicityParameters)
     {
         CoreInstance functionType = processorSupport.function_getFunctionType(function);
 
         if (Instance.instanceOf(function, M3Paths.QualifiedProperty, processorSupport) || "copy_T_1__String_1__KeyExpression_MANY__T_1_".equals(function.getName()) || "new_Class_1__String_1__KeyExpression_MANY__T_1_".equals(function.getName()) || "new_Class_1__String_1__T_1_".equals(function.getName()))
         {
             CoreInstance genericType = Instance.instanceOf(function, M3Paths.QualifiedProperty, processorSupport) || "copy_T_1__String_1__KeyExpression_MANY__T_1_".equals(function.getName()) ?
-                    Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.genericType, processorSupport) :
-                    Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.genericType, M3Properties.typeArguments, processorSupport);
+                                       Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.genericType, processorSupport) :
+                                       Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.genericType, M3Properties.typeArguments, processorSupport);
             CoreInstance classifier = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
             ListIterable<? extends CoreInstance> new_TypeParameters = Instance.getValueForMetaPropertyToManyResolved(classifier, M3Properties.typeParameters, processorSupport);
             ListIterable<? extends CoreInstance> new_MultiplicityParameters = Instance.getValueForMetaPropertyToManyResolved(classifier, M3Properties.multiplicityParameters, processorSupport);
@@ -148,7 +143,7 @@ class FunctionExpressionExecutor implements Executor
             return typeParameters;
         }
 
-        MutableMap<String, CoreInstance> result = UnifiedMap.newMap(typeParameters.size());
+        MutableMap<String, CoreInstance> result = Maps.mutable.ofInitialCapacity(typeParameters.size());
         for (String key : typeParameters.keysView())
         {
             CoreInstance ci = typeParameters.get(key);
@@ -159,7 +154,7 @@ class FunctionExpressionExecutor implements Executor
                 ci = GenericType.makeTypeArgumentAsConcreteAsPossible(GenericType.copyGenericType(typeParameters.get(key), false, processorSupport), stackType.get(size).asUnmodifiable(), stackMul.get(size).asUnmodifiable(), processorSupport);
                 size--;
             }
-            if (!GenericType.isGenericTypeOperation((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) ci, processorSupport) && !GenericType.isGenericTypeFullyConcrete(ci, processorSupport))
+            if (!GenericType.isGenericTypeOperation(ci, processorSupport) && !GenericType.isGenericTypeFullyConcrete(ci, processorSupport))
             {
                 throw new PureExecutionException((functionExpressionToUseInStack == null) ? null : functionExpressionToUseInStack.getSourceInformation(), "Can't resolve some type parameters in: " + GenericType.print(ci, processorSupport));
             }
@@ -168,32 +163,28 @@ class FunctionExpressionExecutor implements Executor
         return result;
     }
 
-    private MutableMap<String, CoreInstance> resolveMultiplicityParametersFromParent(final Stack<MutableMap<String, CoreInstance>> stack, MutableMap<String, CoreInstance> multiplicityParameters, final CoreInstance functionExpressionToUseInStack)
+    private MutableMap<String, CoreInstance> resolveMultiplicityParametersFromParent(Stack<MutableMap<String, CoreInstance>> stack, MutableMap<String, CoreInstance> multiplicityParameters, final CoreInstance functionExpressionToUseInStack)
     {
         if (multiplicityParameters.isEmpty() || stack.isEmpty())
         {
             return multiplicityParameters;
         }
 
-        final MutableMap<String, CoreInstance> result = UnifiedMap.newMap(multiplicityParameters.size());
-        multiplicityParameters.forEachKeyValue(new Procedure2<String, CoreInstance>()
+        MutableMap<String, CoreInstance> result = Maps.mutable.ofInitialCapacity(multiplicityParameters.size());
+        multiplicityParameters.forEachKeyValue((parameter, multiplicity) ->
         {
-            @Override
-            public void value(String parameter, CoreInstance multiplicity)
+            if (Multiplicity.isMultiplicityConcrete(multiplicity))
             {
-                if (Multiplicity.isMultiplicityConcrete(multiplicity))
+                result.put(parameter, multiplicity);
+            }
+            else
+            {
+                CoreInstance resolvedMultiplicity = resolveMultiplicityParameter(Multiplicity.getMultiplicityParameter(multiplicity), stack);
+                if (resolvedMultiplicity == null)
                 {
-                    result.put(parameter, multiplicity);
+                    throw new PureExecutionException((functionExpressionToUseInStack == null) ? null : functionExpressionToUseInStack.getSourceInformation(), "Cannot resolve multiplicity parameter: " + Multiplicity.getMultiplicityParameter(multiplicity));
                 }
-                else
-                {
-                    CoreInstance resolvedMultiplicity = resolveMultiplicityParameter(Multiplicity.getMultiplicityParameter(multiplicity), stack);
-                    if (resolvedMultiplicity == null)
-                    {
-                        throw new PureExecutionException((functionExpressionToUseInStack == null) ? null : functionExpressionToUseInStack.getSourceInformation(), "Cannot resolve multiplicity parameter: " + Multiplicity.getMultiplicityParameter(multiplicity));
-                    }
-                    result.put(parameter, resolvedMultiplicity);
-                }
+                result.put(parameter, resolvedMultiplicity);
             }
         });
         return result;

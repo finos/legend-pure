@@ -14,18 +14,18 @@
 
 package org.finos.legend.pure.m3.navigation.relation;
 
-import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
+import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-
-import java.util.List;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class _Column
 {
@@ -45,7 +45,7 @@ public class _Column
         columnGenericType._rawType((Type) _Package.getByUserPath(M3Paths.Column, processorSupport));
         columnGenericType._typeArguments(Lists.mutable.with(sourceType, targetType));
         columnGenericType._multiplicityArgumentsAdd((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport));
-        columnInstance.setKeyValues(Lists.mutable.with("classifierGenericType"), Lists.mutable.with(columnGenericType));
+        columnInstance.setKeyValues(M3PropertyPaths.classifierGenericType, Lists.mutable.with(columnGenericType));
         return columnInstance;
     }
 
@@ -57,25 +57,29 @@ public class _Column
 
     public static Column<?, ?> updateSource(Column<?, ?> col, GenericType sourceType)
     {
-        List<? extends GenericType> _typeArguments = col._classifierGenericType()._typeArguments().toList();
-        col._classifierGenericType()._typeArguments(Lists.mutable.with(sourceType, _typeArguments.get(1)));
+        col._classifierGenericType()._typeArguments(Lists.mutable.with(sourceType, getColumnType(col)));
         return col;
     }
 
     public static GenericType getColumnType(Column<?, ?> column)
     {
-        return column._classifierGenericType()._typeArguments().toList().get(1);
+        return ListHelper.wrapListIterable(column._classifierGenericType()._typeArguments()).get(1);
     }
 
     public static GenericType getColumnSourceType(Column<?, ?> column)
     {
-        return column._classifierGenericType()._typeArguments().toList().get(0);
+        return ListHelper.wrapListIterable(column._classifierGenericType()._typeArguments()).get(0);
     }
 
-
-    public static String print(CoreInstance c, ProcessorSupport processorSupport)
+    public static String print(CoreInstance column, ProcessorSupport processorSupport)
     {
-        Column<?, ?> col = (Column<?, ?>) c;
-        return (col._nameWildCard() ? "?" : col._name()) + ":" + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(getColumnType(col), processorSupport);
+        return print(new StringBuilder(), column, processorSupport).toString();
+    }
+
+    public static <T extends Appendable> T print(T appendable, CoreInstance col, ProcessorSupport processorSupport)
+    {
+        Column<?, ?> column = (Column<?, ?>) col;
+        org.finos.legend.pure.m3.navigation.generictype.GenericType.print(SafeAppendable.wrap(appendable).append(column._nameWildCard() ? "?" : column._name()).append(':'), getColumnType(column), processorSupport);
+        return appendable;
     }
 }

@@ -23,7 +23,6 @@ import org.eclipse.collections.api.tuple.Pair;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionType;
@@ -220,9 +219,7 @@ abstract class TypeMatch implements Comparable<TypeMatch>
             }
 
             RelationTypeMatch otherMatch = (RelationTypeMatch) other;
-            int comparison;
-
-            comparison = GenericTypeMatch.compareMatchLists(this.columnsTypeMatches, otherMatch.columnsTypeMatches);
+            int comparison = GenericTypeMatch.compareMatchLists(this.columnsTypeMatches, otherMatch.columnsTypeMatches);
             if (comparison != 0)
             {
                 return comparison;
@@ -389,7 +386,7 @@ abstract class TypeMatch implements Comparable<TypeMatch>
         CoreInstance superType = covariant ? targetType : valueType;
         CoreInstance subType = covariant ? valueType : targetType;
 
-        if (processorSupport.instance_instanceOf(superType, M3Paths.RelationType) && processorSupport.instance_instanceOf(subType, M3Paths.RelationType))
+        if (_RelationType.isRelationType(superType, processorSupport) && _RelationType.isRelationType(subType, processorSupport))
         {
             return newRelationTypeMatch((RelationType<?>) subType, (RelationType<?>) superType, covariant, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior, processorSupport);
         }
@@ -436,73 +433,58 @@ abstract class TypeMatch implements Comparable<TypeMatch>
         }
     }
 
-    private static TypeMatch newRelationTypeMatch(RelationType candidate, RelationType signature, boolean covariant, NullMatchBehavior valueNullMatchBehavior, ParameterMatchBehavior targetParameterMatchBehavior, ParameterMatchBehavior valueParameterMatchBehavior, ProcessorSupport processorSupport)
+    private static TypeMatch newRelationTypeMatch(RelationType<?> candidate, RelationType<?> signature, boolean covariant, NullMatchBehavior valueNullMatchBehavior, ParameterMatchBehavior targetParameterMatchBehavior, ParameterMatchBehavior valueParameterMatchBehavior, ProcessorSupport processorSupport)
     {
-
         if (_RelationType.equalRelationType(candidate, signature, processorSupport))
         {
             return newExactTypeMatch();
         }
-        else
+
+        RichIterable<? extends Column<?, ?>> candidateColumns = candidate._columns();
+        RichIterable<? extends Column<?, ?>> signatureColumns = signature._columns();
+
+        if (candidateColumns.size() < signatureColumns.size())
         {
-            // Check Any
-            if (signature == processorSupport.type_TopType())
-            {
-                return new SimpleTypeMatch(1);
-            }
-
-            // Check other has the right type
-            if (!processorSupport.instance_instanceOf(signature, M3Paths.RelationType))
-            {
-                return null;
-            }
-
-            RichIterable<? extends Column<?, ?>> candidateColumns = candidate._columns();
-            RichIterable<? extends Column<?, ?>> signatureColumns = signature._columns();
-
-            if (candidateColumns.size() < signatureColumns.size())
-            {
-                return null;
-            }
-
-            Pair<ListIterable<? extends Column<?, ?>>, ListIterable<? extends Column<?, ?>>> res = _RelationType.alignColumnSets(candidateColumns, signatureColumns, processorSupport);
-            ListIterable<? extends Column<?, ?>> sortedCandidateSub = res.getOne();
-            ListIterable<? extends Column<?, ?>> sortedSignatures = res.getTwo();
-
-            if (sortedSignatures.size() != sortedCandidateSub.size())
-            {
-                return null;
-            }
-
-            int count = sortedSignatures.size();
-            MutableList<GenericTypeMatch> columnsTypeMatches = Lists.mutable.ofInitialCapacity(count);
-            MutableList<MultiplicityMatch> columnsMultMatches = Lists.mutable.ofInitialCapacity(count);
-            for (int i = 0; i < count; i++)
-            {
-                CoreInstance candidateColumn = sortedCandidateSub.get(i);
-                CoreInstance signatureColumn = sortedSignatures.get(i);
-
-                CoreInstance candidateColumnType = candidateColumn.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToMany(M3Properties.typeArguments).toList().get(1);
-                CoreInstance signatureColumnType = signatureColumn.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToMany(M3Properties.typeArguments).toList().get(1);
-
-                GenericTypeMatch paramTypeMatch = GenericTypeMatch.newGenericTypeMatch(signatureColumnType, candidateColumnType, covariant, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior, processorSupport);
-                if (paramTypeMatch == null)
-                {
-                    return null;
-                }
-                columnsTypeMatches.add(paramTypeMatch);
-
-                CoreInstance paramParamMult = Instance.getValueForMetaPropertyToOneResolved(candidateColumn, M3Properties.classifierGenericType, processorSupport).getValueForMetaPropertyToMany(M3Properties.multiplicityArguments).getFirst();
-                CoreInstance valueParamMult = Instance.getValueForMetaPropertyToOneResolved(signatureColumn, M3Properties.classifierGenericType, processorSupport).getValueForMetaPropertyToMany(M3Properties.multiplicityArguments).getFirst();
-                MultiplicityMatch paramMultMatch = MultiplicityMatch.newMultiplicityMatch(paramParamMult, valueParamMult, covariant, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
-                if (paramMultMatch == null)
-                {
-                    return null;
-                }
-                columnsMultMatches.add(paramMultMatch);
-            }
-            return new RelationTypeMatch(columnsTypeMatches, columnsMultMatches);
+            return null;
         }
+
+        Pair<ListIterable<? extends Column<?, ?>>, ListIterable<? extends Column<?, ?>>> res = _RelationType.alignColumnSets(candidateColumns, signatureColumns, processorSupport);
+        ListIterable<? extends Column<?, ?>> sortedCandidateSub = res.getOne();
+        ListIterable<? extends Column<?, ?>> sortedSignatures = res.getTwo();
+
+        int count = sortedSignatures.size();
+        if (count != sortedCandidateSub.size())
+        {
+            return null;
+        }
+
+        MutableList<GenericTypeMatch> columnsTypeMatches = Lists.mutable.ofInitialCapacity(count);
+        MutableList<MultiplicityMatch> columnsMultMatches = Lists.mutable.ofInitialCapacity(count);
+        for (int i = 0; i < count; i++)
+        {
+            CoreInstance candidateColumn = sortedCandidateSub.get(i);
+            CoreInstance signatureColumn = sortedSignatures.get(i);
+
+            CoreInstance candidateColumnType = candidateColumn.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToMany(M3Properties.typeArguments).get(1);
+            CoreInstance signatureColumnType = signatureColumn.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToMany(M3Properties.typeArguments).get(1);
+
+            GenericTypeMatch paramTypeMatch = GenericTypeMatch.newGenericTypeMatch(signatureColumnType, candidateColumnType, covariant, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior, processorSupport);
+            if (paramTypeMatch == null)
+            {
+                return null;
+            }
+            columnsTypeMatches.add(paramTypeMatch);
+
+            CoreInstance paramParamMult = Instance.getValueForMetaPropertyToOneResolved(candidateColumn, M3Properties.classifierGenericType, processorSupport).getValueForMetaPropertyToMany(M3Properties.multiplicityArguments).getFirst();
+            CoreInstance valueParamMult = Instance.getValueForMetaPropertyToOneResolved(signatureColumn, M3Properties.classifierGenericType, processorSupport).getValueForMetaPropertyToMany(M3Properties.multiplicityArguments).getFirst();
+            MultiplicityMatch paramMultMatch = MultiplicityMatch.newMultiplicityMatch(paramParamMult, valueParamMult, covariant, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
+            if (paramMultMatch == null)
+            {
+                return null;
+            }
+            columnsMultMatches.add(paramMultMatch);
+        }
+        return new RelationTypeMatch(columnsTypeMatches, columnsMultMatches);
     }
 
     private static TypeMatch newFunctionTypeMatch(CoreInstance targetType, CoreInstance valueType, boolean covariant, NullMatchBehavior valueNullMatchBehavior, ParameterMatchBehavior targetParameterMatchBehavior, ParameterMatchBehavior valueParameterMatchBehavior, ProcessorSupport processorSupport)

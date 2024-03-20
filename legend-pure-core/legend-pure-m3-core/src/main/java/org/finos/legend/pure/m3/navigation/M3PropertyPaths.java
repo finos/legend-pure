@@ -14,11 +14,10 @@
 
 package org.finos.legend.pure.m3.navigation;
 
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.ImmutableSet;
-import org.eclipse.collections.impl.factory.Sets;
 import org.finos.legend.pure.m3.navigation._package._Package;
 
 /**
@@ -32,6 +31,7 @@ public class M3PropertyPaths
 
     public static final ImmutableList<String> applications = makePropertyPath(M3Paths.Function, M3Properties.applications);
     public static final ImmutableList<String> children = makePropertyPath(M3Paths.Package, M3Properties.children);
+    public static final ImmutableList<String> classifierGenericType = makePropertyPath(M3Paths.Any, M3Properties.classifierGenericType);
     public static final ImmutableList<String> func = makePropertyPath(M3Paths.FunctionExpression, M3Properties.func);
     public static final ImmutableList<String> function = makePropertyPath(M3Paths.FunctionType, M3Properties.function);
     public static final ImmutableList<String> functionName_Function = makePropertyPath(M3Paths.Function, M3Properties.functionName);
@@ -62,6 +62,7 @@ public class M3PropertyPaths
     public static final ImmutableList<String> stereotypes = makePropertyPath(M3Paths.Class, M3Properties.stereotypes);
     public static final ImmutableList<String> taggedValues = makePropertyPath(M3Paths.Class, M3Properties.taggedValues);
 
+    @SuppressWarnings("unchecked")
     public static final ImmutableSet<ImmutableList<String>> BACK_REFERENCE_PROPERTY_PATHS = Sets.immutable.with(
             applications,
             modelElements,
@@ -80,9 +81,6 @@ public class M3PropertyPaths
 
     private static ListIterable<String> getM4PropertyPath(String typePath, String propertyName)
     {
-        MutableList<String> path = _Package.convertM3PathToM4(typePath);
-        path.add(M3Properties.properties);
-        path.add(propertyName);
-        return path;
+        return _Package.convertM3PathToM4(typePath).with(M3Properties.properties).with(propertyName);
     }
 }

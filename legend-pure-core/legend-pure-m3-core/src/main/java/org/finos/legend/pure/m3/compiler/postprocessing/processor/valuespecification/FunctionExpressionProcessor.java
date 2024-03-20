@@ -48,7 +48,11 @@ import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.*;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
@@ -60,10 +64,21 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassProje
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.*;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.KeyValueValueSpecificationContext;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ParameterValueSpecificationContext;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.SimpleFunctionExpression;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
-import org.finos.legend.pure.m3.navigation.*;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.relation._Column;
@@ -79,9 +94,6 @@ import org.finos.legend.pure.m4.exception.PureCompilationException;
 import java.util.Objects;
 import java.util.Optional;
 
-import static org.finos.legend.pure.m3.navigation.generictype.GenericType.getLeftFromSubset;
-import static org.finos.legend.pure.m3.navigation.generictype.GenericType.getSetFromSubset;
-
 public class FunctionExpressionProcessor extends Processor<FunctionExpression>
 {
     @Override
@@ -89,7 +101,6 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
     {
         return M3Paths.FunctionExpression;
     }
-
 
     private static class FunctionMatchResult
     {
@@ -284,7 +295,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                 {
                     reprocessEnumValueInExtractEnumValue(functionExpression, propertyName, state, repository, processorSupport);
                 }
-                else if (processorSupport.instance_instanceOf(sourceGenericType._rawType(), M3Paths.RelationType))
+                else if (_RelationType.isRelationType(sourceGenericType._rawType(), processorSupport))
                 {
                     String name = functionExpression._propertyName()._valuesCoreInstance().getAny().getName();
                     foundFunctions.add(_RelationType.findColumn((RelationType<?>) sourceGenericType._rawType(), name, functionExpression.getSourceInformation(), processorSupport));
@@ -370,7 +381,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             {
                 Type relationType = ((ValueSpecification) v)._genericType()._typeArguments().toList().getLast()._rawType();
                 return relationType == null ? null : ((RelationType<?>) relationType)._columns().getFirst();
-            }).toList();
+            }, Lists.mutable.empty());
             if (found.contains(null))
             {
                 columnTypeInferenceSuccess = false;
@@ -427,7 +438,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             {
                 Type relationType = ((ValueSpecification) v)._genericType()._typeArguments().toList().getLast()._rawType();
                 return relationType == null ? null : ((RelationType<?>) relationType)._columns().getFirst();
-            }).toList();
+            }, Lists.mutable.empty());
             if (found.contains(null))
             {
                 columnTypeInferenceSuccess = false;
@@ -483,10 +494,10 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             TypeInference.storeInferredTypeParametersInFunctionExpression(functionExpression, state, processorSupport, foundFunction, observer);
 
             // Get the return type information
-            GenericType returnGenericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(foundFunctionType._returnType(), state.getTypeInferenceContext().getTypeParameterToGenericType().reject((s, coreInstance) -> org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationEqual((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) coreInstance, processorSupport)), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity(), processorSupport);
+            GenericType returnGenericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(foundFunctionType._returnType(), state.getTypeInferenceContext().getTypeParameterToGenericType().reject((s, gt) -> org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationEqual((GenericType) gt)), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity(), processorSupport);
             Multiplicity returnMultiplicity = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.makeMultiplicityAsConcreteAsPossible(foundFunctionType._returnMultiplicity(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity());
 
-            if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(returnGenericType, processorSupport) && !state.getTypeInferenceContext().isTop(org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(returnGenericType)))
+            if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(returnGenericType) && !state.getTypeInferenceContext().isTop(org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(returnGenericType)))
             {
                 CoreInstance func = functionExpression.getValueForMetaPropertyToOne(M3Properties.func);
                 String funcType = (func instanceof Property) ? "property" : ((func instanceof QualifiedProperty) ? "qualified property" : "function");
@@ -635,7 +646,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
         {
             GenericType _typeToAnalyze = (GenericType) actualTemplateToInferColumnType;
             GenericType equalLeft = null;
-            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationEqual(_typeToAnalyze, processorSupport))
+            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationEqual(_typeToAnalyze))
             {
                 equalLeft = (GenericType) _typeToAnalyze.getValueForMetaPropertyToOne("left");
                 _typeToAnalyze = (GenericType) _typeToAnalyze.getValueForMetaPropertyToOne("right");
@@ -643,20 +654,20 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             TypeInferenceContext foundParentToUpdate = state.getTypeInferenceContext().findParentForOperation(actualTemplateToInferColumnType);
 
             GenericType instanceGenericType = instance._genericType();
-            final GenericType typeToAnalyze = _typeToAnalyze;
+            GenericType typeToAnalyze = _typeToAnalyze;
             ((RelationType<?>) instanceGenericType._rawType())._columns().forEach(currentColumn ->
             {
                 String colName = currentColumn._name();
                 GenericType potentialEmptyType = _Column.getColumnType(currentColumn);
                 if (potentialEmptyType._rawType() == null)
                 {
-                    if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationSubset(typeToAnalyze, processorSupport))
+                    if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperationSubset(typeToAnalyze))
                     {
                         // Search the reference type (right of contains) for the missing type column
-                        RelationType<?> referenceRelation = (RelationType<?>) ((GenericType) getSetFromSubset(typeToAnalyze, processorSupport))._rawType();
+                        RelationType<?> referenceRelation = (RelationType<?>) ((GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.getSetFromSubset(typeToAnalyze))._rawType();
                         if (referenceRelation != null)
                         {
-                            Column<?, ?> foundColumn = referenceRelation._columns().select(e -> e._name().equals(colName)).getFirst();
+                            Column<?, ?> foundColumn = referenceRelation._columns().detect(e -> e._name().equals(colName));
                             if (foundColumn == null)
                             {
                                 throw new PureCompilationException("The column '" + colName + "' can't be found in the relation " + _RelationType.print(referenceRelation, processorSupport));
@@ -666,9 +677,9 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                             // Fill the type
                             potentialEmptyType._rawType(foundColumnType);
 
-                            CoreInstance left = getLeftFromSubset(typeToAnalyze, processorSupport);
+                            CoreInstance left = org.finos.legend.pure.m3.navigation.generictype.GenericType.getLeftFromSubset(typeToAnalyze);
                             // Check if left is an EQUAL operation
-                            if (processorSupport.instance_instanceOf(left, M3Paths.GenericTypeOperation))
+                            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeOperation(left, processorSupport))
                             {
                                 // Set the Type Param to the INSTANCE genericType
                                 CoreInstance param = left.getValueForMetaPropertyToOne("left");
@@ -692,7 +703,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             // Set the type parameter of the missing Column Type to the found type
             if (equalLeft != null)
             {
-                foundParentToUpdate.register((GenericType) equalLeft, instanceGenericType, foundParentToUpdate, observer);
+                foundParentToUpdate.register(equalLeft, instanceGenericType, foundParentToUpdate, observer);
             }
         }
         else
@@ -1114,7 +1125,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
 
         String functionName = getFunctionName(functionExpression);
         SetIterable<CoreInstance> possibleFunctions = processorSupport.function_getFunctionsForName(functionName);
-        if ((0 < possibleFunctions.size()) && (possibleFunctions.size() < 20))
+        if (possibleFunctions.notEmpty() && (possibleFunctions.size() < 20))
         {
             ImportGroup functionExpressionImportGroup = functionExpression._importGroup();
             SetIterable<String> alreadyImportedPackages = functionExpressionImportGroup._imports().collect(ImportAccessor::_path, Sets.mutable.empty());

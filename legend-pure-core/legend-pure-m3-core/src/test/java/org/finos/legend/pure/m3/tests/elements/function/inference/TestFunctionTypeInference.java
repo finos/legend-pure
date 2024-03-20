@@ -15,6 +15,12 @@
 package org.finos.legend.pure.m3.tests.elements.function.inference;
 
 import org.eclipse.collections.api.list.ListIterable;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.SimpleFunctionExpression;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -23,12 +29,15 @@ import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.Optional;
 
 public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledPlatform
 {
@@ -668,6 +677,74 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                         "{\n" +
                         "   $f->map($func);\n" +
                         "}\n");
+    }
+
+    @Test
+    public void testIfWithFuncTypes()
+    {
+        compileInferenceTest(
+                "function testFn<|m>(col:Integer[m], func:Function<{Integer[1]->Number[1]}>[0..1]):Number[m]\n" +
+                        "{\n" +
+                        "  let toStringFunc = if($func->isEmpty(), |{x:Number[1] | 5}, |$func->toOne());\n" +
+                        "  $col->map(x | $toStringFunc->eval($x));\n" +
+                        "}\n");
+        ConcreteFunctionDefinition<?> function = (ConcreteFunctionDefinition<?>) runtime.getFunction("testFn_Integer_m__Function_$0_1$__Number_m_");
+        Assert.assertNotNull(function);
+
+        FunctionType functionType = (FunctionType) function._classifierGenericType()._typeArguments().getOnly()._rawType();
+        assertGenericTypeEquals("meta::pure::metamodel::function::Function<{Integer[1]->Number[1]}>", functionType._parameters().getLast()._genericType());
+
+        ListIterable<? extends ValueSpecification> expressionSequence = function._expressionSequence().toList();
+        SimpleFunctionExpression letExpr = (SimpleFunctionExpression) expressionSequence.get(0);
+        SimpleFunctionExpression ifExpr = (SimpleFunctionExpression) letExpr._parametersValues().toList().getLast();
+        ListIterable<? extends ValueSpecification> ifParams = ifExpr._parametersValues().toList();
+        LambdaFunction<?> ifTrue = (LambdaFunction<?>) ((InstanceValue) ifParams.get(1))._values().getOnly();
+        LambdaFunction<?> ifFalse = (LambdaFunction<?>) ((InstanceValue) ifParams.get(2))._values().getOnly();
+        assertGenericTypeEquals("meta::pure::metamodel::function::LambdaFunction<{->meta::pure::metamodel::function::LambdaFunction<{Number[1]->Integer[1]}>[1]}>", ifTrue._classifierGenericType());
+        assertGenericTypeEquals("meta::pure::metamodel::function::LambdaFunction<{->meta::pure::metamodel::function::Function<{Integer[1]->Number[1]}>[1]}>", ifFalse._classifierGenericType());
+        assertGenericTypeEquals("meta::pure::metamodel::function::Function<{Integer[1]->Number[1]}>", ifExpr._genericType());
+        assertGenericTypeEquals("meta::pure::metamodel::function::Function<{Integer[1]->Number[1]}>", letExpr._genericType());
+
+        SimpleFunctionExpression mapExpr = (SimpleFunctionExpression) expressionSequence.get(1);
+        LambdaFunction<?> mapFn = (LambdaFunction<?>) ((InstanceValue) mapExpr._parametersValues().toList().getLast())._values().getOnly();
+        assertGenericTypeEquals("meta::pure::metamodel::function::LambdaFunction<{Integer[1]->Number[1]}>", mapFn._classifierGenericType());
+    }
+
+    @Test
+    public void testIfWithFuncTypesAndTypeParams()
+    {
+        compileInferenceTest(
+                "function testFn<T|m>(col:T[m], func:Function<{T[1]->String[1]}>[0..1]):String[m]\n" +
+                        "{\n" +
+                        "  let toStringFunc = if($func->isEmpty(), |{x:T[1] | $x->toString()}, |$func->toOne());\n" +
+                        "  $col->map(x | $toStringFunc->eval($x));\n" +
+                        "}\n");
+        ConcreteFunctionDefinition<?> function = (ConcreteFunctionDefinition<?>) runtime.getFunction("testFn_T_m__Function_$0_1$__String_m_");
+        Assert.assertNotNull(function);
+
+        FunctionType functionType = (FunctionType) function._classifierGenericType()._typeArguments().getOnly()._rawType();
+        assertGenericTypeEquals("meta::pure::metamodel::function::Function<{T[1]->String[1]}>", functionType._parameters().getLast()._genericType());
+
+        ListIterable<? extends ValueSpecification> expressionSequence = function._expressionSequence().toList();
+        SimpleFunctionExpression letExpr = (SimpleFunctionExpression) expressionSequence.get(0);
+        SimpleFunctionExpression ifExpr = (SimpleFunctionExpression) letExpr._parametersValues().toList().getLast();
+        ListIterable<? extends ValueSpecification> ifParams = ifExpr._parametersValues().toList();
+        LambdaFunction<?> ifTrue = (LambdaFunction<?>) ((InstanceValue) ifParams.get(1))._values().getOnly();
+        LambdaFunction<?> ifFalse = (LambdaFunction<?>) ((InstanceValue) ifParams.get(2))._values().getOnly();
+        assertGenericTypeEquals("meta::pure::metamodel::function::LambdaFunction<{->meta::pure::metamodel::function::LambdaFunction<{T[1]->String[1]}>[1]}>", ifTrue._classifierGenericType());
+        assertGenericTypeEquals("meta::pure::metamodel::function::LambdaFunction<{->meta::pure::metamodel::function::Function<{T[1]->String[1]}>[1]}>", ifFalse._classifierGenericType());
+        assertGenericTypeEquals("meta::pure::metamodel::function::Function<{T[1]->String[1]}>", ifExpr._genericType());
+        assertGenericTypeEquals("meta::pure::metamodel::function::Function<{T[1]->String[1]}>", letExpr._genericType());
+
+        SimpleFunctionExpression mapExpr = (SimpleFunctionExpression) expressionSequence.get(1);
+        LambdaFunction<?> mapFn = (LambdaFunction<?>) ((InstanceValue) mapExpr._parametersValues().toList().getLast())._values().getOnly();
+        assertGenericTypeEquals("meta::pure::metamodel::function::LambdaFunction<{T[1]->String[1]}>", mapFn._classifierGenericType());
+    }
+
+    private void assertGenericTypeEquals(String expected, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType)
+    {
+        String actual = GenericType.print(genericType, true, processorSupport);
+        Assert.assertEquals(Optional.ofNullable(genericType.getSourceInformation()).map(SourceInformation::getMessage).orElse(null), expected, actual);
     }
 
     @Test
