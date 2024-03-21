@@ -27,7 +27,7 @@ public class TestStrictTimeParsing extends AbstractPrimitiveParsingTest
         assertParsesTo("17:04", "%17:04");
 
         assertFailsToParse("Parser error at (resource:fromString line:18 column:31), token recognition error at: '%b'","%b:09");
-        assertFailsToParse("java.lang.IllegalArgumentException: Invalid Pure StrictTime: '44:09'","%44:09");
+        assertFailsToParse("Parser error at (resource:fromString line:18 column:31), Invalid Pure StrictTime: '44:09'","%44:09");
     }
 
     @Test
@@ -38,7 +38,7 @@ public class TestStrictTimeParsing extends AbstractPrimitiveParsingTest
         assertParsesTo("07:03", "%7:0000003");
 
         assertFailsToParse("%07:b");
-        assertFailsToParse("java.lang.IllegalArgumentException: Invalid Pure StrictTime: '07:95'","%07:95");
+        assertFailsToParse("Parser error at (resource:fromString line:18 column:31), Invalid Pure StrictTime: '07:95'","%07:95");
     }
 
     @Test
@@ -49,7 +49,7 @@ public class TestStrictTimeParsing extends AbstractPrimitiveParsingTest
         assertParsesTo("07:03:01", "%7:3:000000001");
 
         assertFailsToParse("Parser error at (resource:fromString line:18 column:37), expected: one of {',', '}'} found: ':'","%07:03:b");
-        assertFailsToParse("java.lang.IllegalArgumentException: Invalid Pure StrictTime: '07:03:95'", "%07:03:95");
+        assertFailsToParse("Parser error at (resource:fromString line:18 column:31), Invalid Pure StrictTime: '07:03:95'", "%07:03:95");
     }
 
     @Test

@@ -14,47 +14,33 @@
 
 package org.finos.legend.pure.m4.serialization.grammar;
 
+import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.atn.PredictionMode;
 import org.eclipse.collections.api.list.MutableList;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrDescriptiveErrorListener;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureAntlrErrorStrategy;
 import org.finos.legend.pure.m4.statelistener.M4StateListener;
-import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.atn.PredictionMode;
 
 public class M4Parser
 {
     public MutableList<CoreInstance> parse(String pureCode, ModelRepository repository, M4StateListener stateListener)
     {
-        try
-        {
-            stateListener.startParsingM4(pureCode);
-            MutableList<CoreInstance> results = parseDefinition(true, pureCode, "fromString", repository, false);
-            stateListener.finishedParsingM4(pureCode);
-            return results;
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        stateListener.startParsingM4(pureCode);
+        MutableList<CoreInstance> results = parseDefinition(true, pureCode, "fromString", repository, false);
+        stateListener.finishedParsingM4(pureCode);
+        return results;
     }
 
     public MutableList<CoreInstance> parse(String expression, String fileName, ModelRepository repository, M4StateListener stateListener)
     {
-        try
-        {
-            stateListener.startParsingM4(fileName);
-            MutableList<CoreInstance> results = parseDefinition(true, expression, fileName, repository, true);
-            stateListener.finishedParsingM4(fileName);
-            return results;
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        stateListener.startParsingM4(fileName);
+        MutableList<CoreInstance> results = parseDefinition(true, expression, fileName, repository, true);
+        stateListener.finishedParsingM4(fileName);
+        return results;
     }
 
     private MutableList<CoreInstance> parseDefinition(boolean useFastParser, String code, String sourceName, ModelRepository repository, boolean addLines)

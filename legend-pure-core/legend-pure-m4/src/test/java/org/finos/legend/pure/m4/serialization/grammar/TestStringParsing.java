@@ -77,10 +77,8 @@ public class TestStringParsing extends AbstractPrimitiveParsingTest
     }
 
     @Test
-    @Ignore
     public void testStringWithEscapedSlashAndUnescapedQuote()
     {
-        // TODO fix this
         assertFailsToParse("'\\\\''");
     }
 

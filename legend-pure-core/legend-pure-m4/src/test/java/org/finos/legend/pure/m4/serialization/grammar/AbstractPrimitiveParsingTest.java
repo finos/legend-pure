@@ -17,6 +17,7 @@ package org.finos.legend.pure.m4.serialization.grammar;
 import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.m4.statelistener.M4StateListener;
 import org.finos.legend.pure.m4.statelistener.VoidM4StateListener;
 import org.junit.Assert;
@@ -28,52 +29,36 @@ abstract class AbstractPrimitiveParsingTest
     protected void assertParsesTo(String expectedName, String string)
     {
         CoreInstance value = parsePrimitiveValue(string);
-        Assert.assertNotNull(value);
-        Assert.assertNotNull(value.getClassifier());
-        Assert.assertEquals(getPrimitiveTypeName(), value.getClassifier().getName());
-        Assert.assertEquals(expectedName, value.getName());
+        Assert.assertNotNull(string, value);
+        Assert.assertNotNull(string, value.getClassifier());
+        Assert.assertEquals(string, getPrimitiveTypeName(), value.getClassifier().getName());
+        Assert.assertEquals(string, expectedName, value.getName());
     }
 
-    protected void assertFailsToParse(String dateString)
+    protected void assertFailsToParse(String string)
     {
-        assertFailsToParse(null, null, dateString);
+        assertFailsToParse(null, null, string);
     }
 
-    protected void assertFailsToParse(String expectedMessage, String dateString)
+    protected void assertFailsToParse(String expectedMessage, String string)
     {
-        assertFailsToParse(expectedMessage, null, dateString);
+        assertFailsToParse(expectedMessage, null, string);
     }
 
-    protected void assertFailsToParse(Class<? extends Throwable> expectedExceptionClass, String dateString)
+    protected void assertFailsToParse(Class<? extends PureException> expectedExceptionClass, String dateString)
     {
         assertFailsToParse(null, expectedExceptionClass, dateString);
     }
 
-    protected void assertFailsToParse(String expectedMessage, Class<? extends Throwable> expectedExceptionClass, String string)
+    protected void assertFailsToParse(String expectedMessage, Class<? extends PureException> expectedExceptionClass, String string)
     {
-        boolean exception = true;
-        try
+        PureException e = (expectedExceptionClass == null) ?
+                      Assert.assertThrows(PureException.class, () -> parsePrimitiveValue(string)) :
+                      Assert.assertThrows(expectedExceptionClass, () -> parsePrimitiveValue(string));
+//        e.printStackTrace();
+        if (expectedMessage != null)
         {
-            parsePrimitiveValue(string);
-            exception = false;
-        }
-        catch (Throwable t)
-        {
-            if (expectedExceptionClass != null)
-            {
-                if (!expectedExceptionClass.isInstance(t))
-                {
-                    Assert.fail("Expected an exception of class: " + expectedExceptionClass.getSimpleName() + ", got: " + t.getClass().getSimpleName());
-                }
-            }
-            if (expectedMessage != null)
-            {
-                Assert.assertEquals(expectedMessage, t.getMessage());
-            }
-        }
-        if (!exception)
-        {
-            Assert.fail("Expected exception parsing: \"" + string + "\"");
+            Assert.assertEquals(expectedMessage, e.getMessage());
         }
     }
 

@@ -27,7 +27,7 @@ public class TestDateParsing extends AbstractPrimitiveParsingTest
         assertParsesTo("0", "%0");
         assertParsesTo("0", "%-0");
 
-        assertFailsToParse("%abc");
+        assertFailsToParse("Parser error at (resource:fromString line:18 column:31), token recognition error at: '%a'", "%abc");
     }
 
     @Test
@@ -37,9 +37,9 @@ public class TestDateParsing extends AbstractPrimitiveParsingTest
         assertParsesTo("2014-02", "%2014-2");
         assertParsesTo("0-01", "%0000-01");
 
-        assertFailsToParse("%2014-b");
-        assertFailsToParse("%2014-34");
-        assertFailsToParse("%2014-00");
+        assertFailsToParse("Parser error at (resource:fromString line:18 column:31), Invalid Pure Date: '2014-34'", "%2014-34");
+        assertFailsToParse("Parser error at (resource:fromString line:18 column:31), Invalid Pure Date: '2014-00'", "%2014-00");
+        assertFailsToParse("Parser error at (resource:fromString line:18 column:36), token recognition error at: '-b'", "%2014-b");
     }
 
     @Override
