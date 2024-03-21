@@ -15,7 +15,6 @@
 package org.finos.legend.pure.m4.serialization.grammar;
 
 import org.finos.legend.pure.m4.ModelRepository;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class TestStringParsing extends AbstractPrimitiveParsingTest
@@ -63,11 +62,9 @@ public class TestStringParsing extends AbstractPrimitiveParsingTest
     }
 
     @Test
-    @Ignore
     public void testStringWithOnlyEscapedSlash()
     {
-        // TODO fix this
-        assertParsesTo("\\", "'\\'");
+        assertParsesTo("\\", "'\\\\'");
     }
 
     @Test

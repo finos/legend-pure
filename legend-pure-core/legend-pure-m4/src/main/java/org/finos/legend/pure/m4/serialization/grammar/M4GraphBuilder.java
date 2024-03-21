@@ -16,7 +16,6 @@ package org.finos.legend.pure.m4.serialization.grammar;
 
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.utility.Iterate;
@@ -142,7 +141,7 @@ public class M4GraphBuilder extends M4AntlrParserBaseVisitor<MutableList<CoreIns
         {
             return visitLiteralWithErrorHandling(ctx.STRING(), text ->
             {
-                String withQuote = StringEscapeUtils.unescapeJava(text);
+                String withQuote = StringEscape.unescape(text);
                 return this.repository.newStringCoreInstance_cached(withQuote.substring(1, withQuote.length() - 1));
             });
         }
