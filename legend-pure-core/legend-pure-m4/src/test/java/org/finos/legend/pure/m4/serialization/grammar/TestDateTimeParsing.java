@@ -48,8 +48,8 @@ public class TestDateTimeParsing extends AbstractPrimitiveParsingTest
         assertParsesTo("2014-02-07T07:03:01+0000", "%2014-2-7T7:3:1");
         assertParsesTo("2014-02-07T07:03:01+0000", "%2014-2-7T7:3:000000001");
 
+        assertFailsToParse("Parser error at (resource:fromString line:18 column:31), Invalid Pure Date: '2014-02-07T07:03:95'", "%2014-02-07T07:03:95");
         assertFailsToParse("%2014-02-07T07:03:b");
-        assertFailsToParse("%2014-02-07T07:03:95");
     }
 
     @Test

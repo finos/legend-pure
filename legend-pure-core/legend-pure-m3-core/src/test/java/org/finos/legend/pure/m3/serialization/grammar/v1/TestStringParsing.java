@@ -70,7 +70,6 @@ public class TestStringParsing extends AbstractPrimitiveParsingTest
     @Test
     public void testStringWithOnlyEscapedSlash()
     {
-        // TODO also fix corresponding tests in M4
         assertParsesTo("\\", "'\\\\'");
     }
 
@@ -83,7 +82,6 @@ public class TestStringParsing extends AbstractPrimitiveParsingTest
     @Test
     public void testStringWithEscapedSlashAndUnescapedQuote()
     {
-        // TODO also fix corresponding tests in M4
         assertFailsToParse("'\\\\''");
     }
 

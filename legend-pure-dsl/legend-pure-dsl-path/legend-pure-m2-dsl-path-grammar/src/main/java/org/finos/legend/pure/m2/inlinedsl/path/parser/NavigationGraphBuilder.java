@@ -15,12 +15,20 @@
 package org.finos.legend.pure.m2.inlinedsl.path.parser;
 
 import org.antlr.v4.runtime.Token;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.utility.ListIterate;
 import org.finos.legend.pure.m2.inlinedsl.path.M2PathPaths;
+import org.finos.legend.pure.m2.inlinedsl.path.serialization.grammar.NavigationParser.AtomicContext;
+import org.finos.legend.pure.m2.inlinedsl.path.serialization.grammar.NavigationParser.CollectionContext;
+import org.finos.legend.pure.m2.inlinedsl.path.serialization.grammar.NavigationParser.DefinitionContext;
+import org.finos.legend.pure.m2.inlinedsl.path.serialization.grammar.NavigationParser.EnumStubContext;
+import org.finos.legend.pure.m2.inlinedsl.path.serialization.grammar.NavigationParser.GenericTypeContext;
+import org.finos.legend.pure.m2.inlinedsl.path.serialization.grammar.NavigationParser.ParameterContext;
+import org.finos.legend.pure.m2.inlinedsl.path.serialization.grammar.NavigationParser.PropertyWithParametersContext;
+import org.finos.legend.pure.m2.inlinedsl.path.serialization.grammar.NavigationParser.ScalarContext;
+import org.finos.legend.pure.m2.inlinedsl.path.serialization.grammar.NavigationParserBaseVisitor;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.EnumStubInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
@@ -36,20 +44,12 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.G
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericTypeInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValueInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m2.inlinedsl.path.serialization.grammar.NavigationParser.AtomicContext;
-import org.finos.legend.pure.m2.inlinedsl.path.serialization.grammar.NavigationParser.CollectionContext;
-import org.finos.legend.pure.m2.inlinedsl.path.serialization.grammar.NavigationParser.DefinitionContext;
-import org.finos.legend.pure.m2.inlinedsl.path.serialization.grammar.NavigationParser.EnumStubContext;
-import org.finos.legend.pure.m2.inlinedsl.path.serialization.grammar.NavigationParser.GenericTypeContext;
-import org.finos.legend.pure.m2.inlinedsl.path.serialization.grammar.NavigationParser.ParameterContext;
-import org.finos.legend.pure.m2.inlinedsl.path.serialization.grammar.NavigationParser.PropertyWithParametersContext;
-import org.finos.legend.pure.m2.inlinedsl.path.serialization.grammar.NavigationParser.ScalarContext;
-import org.finos.legend.pure.m2.inlinedsl.path.serialization.grammar.NavigationParserBaseVisitor;
 import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.serialization.grammar.StringEscape;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
@@ -160,7 +160,7 @@ public class NavigationGraphBuilder extends NavigationParserBaseVisitor<CoreInst
         }
         if (ctx.STRING() != null)
         {
-            String withQuote = StringEscapeUtils.unescapeJava(ctx.STRING().getText());
+            String withQuote = StringEscape.unescape(ctx.STRING().getText());
             return this.repository.newStringCoreInstance_cached(withQuote.substring(1, withQuote.length() - 1));
         }
         if (ctx.LATEST_DATE() != null)

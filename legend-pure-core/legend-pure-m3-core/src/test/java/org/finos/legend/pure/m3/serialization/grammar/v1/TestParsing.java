@@ -46,19 +46,13 @@ public class TestParsing extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void parsingEOFError()
     {
-        try
-        {
-            compileTestSource("fromString.pure",
-                    "function myAdd(a:String[1], b:String[1]):String[1]\n" +
-                            "{\n" +
-                            "   'aa';\n" +
-                            "} helloeoe");
-            Assert.fail("Expected compilation exception");
-        }
-        catch (RuntimeException e)
-        {
-            assertPureException(PureParserException.class, "expected: one of {<EOF>, '^', 'native', 'function', 'Class', 'Association', 'Profile', 'Enum', 'Measure'} found: 'helloeoe'", "fromString.pure", 4, 3, e);
-        }
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource(
+                "fromString.pure",
+                "function myAdd(a:String[1], b:String[1]):String[1]\n" +
+                        "{\n" +
+                        "   'aa';\n" +
+                        "} helloeoe"));
+        assertPureException(PureParserException.class, "expected: one of {<EOF>, '^', 'native', 'function', 'Class', 'Association', 'Profile', 'Enum', 'Measure'} found: 'helloeoe'", "fromString.pure", 4, 3, e);
     }
 
     @Test
@@ -90,22 +84,17 @@ public class TestParsing extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testPackageIntegrity()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "Class test::TestClass\n" +
-                    "{\n" +
-                    "   prop:String[1];\n" +
-                    "}\n" +
-                    "\n" +
-                    "function test::TestClass::func(a:String[1], b:String[1]):String[1]\n" +
-                    "{\n" +
-                    "   $a + $b\n" +
-                    "}");
-            Assert.fail("Expected a compilation exception");
-        }
-        catch (RuntimeException e)
-        {
-            assertPureException(PureParserException.class, "('test::TestClass' is a Class, should be a Package) in\n'test::TestClass'", 6, 14, e);
-        }
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource(
+                "fromString.pure",
+                "Class test::TestClass\n" +
+                        "{\n" +
+                        "   prop:String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "function test::TestClass::func(a:String[1], b:String[1]):String[1]\n" +
+                        "{\n" +
+                        "   $a + $b\n" +
+                        "}"));
+        assertPureException(PureParserException.class, "('test::TestClass' is a Class, should be a Package) in\n'test::TestClass'", 6, 14, e);
     }
 }

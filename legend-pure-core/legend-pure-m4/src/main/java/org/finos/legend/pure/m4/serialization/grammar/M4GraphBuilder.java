@@ -14,17 +14,20 @@
 
 package org.finos.legend.pure.m4.serialization.grammar;
 
+import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.simple.SimpleCoreInstance;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
-import org.antlr.v4.runtime.Token;
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 import java.util.List;
+import java.util.function.Function;
 
 public class M4GraphBuilder extends M4AntlrParserBaseVisitor<MutableList<CoreInstance>>
 {
@@ -42,14 +45,10 @@ public class M4GraphBuilder extends M4AntlrParserBaseVisitor<MutableList<CoreIns
     @Override
     public MutableList<CoreInstance> visitDefinition(M4AntlrParser.DefinitionContext ctx)
     {
-        MutableList<CoreInstance> results = FastList.newList();
+        MutableList<CoreInstance> results = Lists.mutable.empty();
         if (ctx.metaClass() != null)
         {
-            for (M4AntlrParser.MetaClassContext mcc : ctx.metaClass())
-            {
-                CoreInstance coreInstance = visitMetaClassBlock(mcc, null, null, false);
-                results.add(coreInstance);
-            }
+            Iterate.collect(ctx.metaClass(), mcc -> visitMetaClassBlock(mcc, null, null, false), results);
         }
         return results;
     }
@@ -58,14 +57,8 @@ public class M4GraphBuilder extends M4AntlrParserBaseVisitor<MutableList<CoreIns
     {
         CoreInstance instanceClassifierOwner = this.visitInstanceBlock(ctx.instance());
         SourceInformation sourceInfo = visitSourceInfoBlock(ctx.sourceInfo());
-        NameSpace possibleNamespace = namespace;
-        if (ctx.nameSpace() != null)
-        {
-            possibleNamespace = visitNameSpaceBlock(ctx.nameSpace());
-        }
-
+        NameSpace possibleNamespace = (ctx.nameSpace() == null) ? namespace : visitNameSpaceBlock(ctx.nameSpace());
         CoreInstance classifier = this.repository.instantiate(instanceClassifierOwner, ctx.newTypeStr() == null ? null : ctx.newTypeStr().VALID_STRING().getText(), sourceInfo, ownerClassifier, possibleNamespace, deep);
-
 
         visitPropertiesBlock(ctx.properties(), classifier);
         if (this.addLines)
@@ -76,7 +69,7 @@ public class M4GraphBuilder extends M4AntlrParserBaseVisitor<MutableList<CoreIns
             }
             Token main = ctx.newTypeStr() == null ? ctx.CARET().getSymbol() : ctx.newTypeStr().VALID_STRING().getSymbol();
             Token end = ctx.CURLY_BRACKET_CLOSE() == null ? main : ctx.CURLY_BRACKET_CLOSE().getSymbol();
-            sourceInfo = new AntlrSourceInformation(0,0, this.sourceName).getPureSourceInformation(ctx.CARET().getSymbol(), main, end);
+            sourceInfo = new AntlrSourceInformation(0, 0, this.sourceName).getPureSourceInformation(ctx.CARET().getSymbol(), main, end);
             classifier.setSourceInformation(sourceInfo);
         }
 
@@ -104,7 +97,7 @@ public class M4GraphBuilder extends M4AntlrParserBaseVisitor<MutableList<CoreIns
         {
             for (M4AntlrParser.ClassifierOwnerContext coc : ctx.classifierOwner())
             {
-                classifierOwner = ((SimpleCoreInstance)classifierOwner).getOrCreateUnknownTypeNode(coc.key().VALID_STRING().getText(), coc.keyInArray() != null ? coc.keyInArray().VALID_STRING().getText() : null, this.repository);
+                classifierOwner = ((SimpleCoreInstance) classifierOwner).getOrCreateUnknownTypeNode(coc.key().VALID_STRING().getText(), coc.keyInArray() != null ? coc.keyInArray().VALID_STRING().getText() : null, this.repository);
             }
         }
         return classifierOwner;
@@ -112,14 +105,10 @@ public class M4GraphBuilder extends M4AntlrParserBaseVisitor<MutableList<CoreIns
 
     private MutableList<CoreInstance> visitRightSideBlock(M4AntlrParser.RightSideContext ctx, CoreInstance classifier, NameSpace nameSpace)
     {
-        MutableList<CoreInstance> elements = FastList.newList();
+        MutableList<CoreInstance> elements = Lists.mutable.empty();
         if (ctx.element() != null)
         {
-            for (M4AntlrParser.ElementContext ec : ctx.element())
-            {
-                CoreInstance coreInstance = visitElementBlock(ec, classifier, nameSpace);
-                elements.add(coreInstance);
-            }
+            Iterate.collect(ctx.element(), ec -> visitElementBlock(ec, classifier, nameSpace), elements);
         }
         return elements;
     }
@@ -150,30 +139,55 @@ public class M4GraphBuilder extends M4AntlrParserBaseVisitor<MutableList<CoreIns
     {
         if (ctx.STRING() != null)
         {
-            String withQuote = StringEscapeUtils.unescapeJava(ctx.STRING().getText());
-            return this.repository.newStringCoreInstance_cached(withQuote.substring(1, withQuote.length() - 1));
+            return visitLiteralWithErrorHandling(ctx.STRING(), text ->
+            {
+                String withQuote = StringEscape.unescape(text);
+                return this.repository.newStringCoreInstance_cached(withQuote.substring(1, withQuote.length() - 1));
+            });
         }
         if (ctx.INTEGER() != null)
         {
-            return this.repository.newIntegerCoreInstance(ctx.INTEGER().getText());
+            return visitLiteralWithErrorHandling(ctx.INTEGER(), this.repository::newIntegerCoreInstance);
         }
         if (ctx.FLOAT() != null)
         {
-            return this.repository.newFloatCoreInstance(ctx.FLOAT().getText());
-        }
-        if (ctx.DATE() != null)
-        {
-            return this.repository.newDateCoreInstance(ctx.DATE().getText().substring(1));
-        }
-        if (ctx.STRICTTIME() != null)
-        {
-            return this.repository.newStrictTimeCoreInstance(ctx.STRICTTIME().getText().substring(1));
+            return visitLiteralWithErrorHandling(ctx.FLOAT(), this.repository::newFloatCoreInstance);
         }
         if (ctx.BOOLEAN() != null)
         {
-            return this.repository.newBooleanCoreInstance(ctx.BOOLEAN().getText());
+            return visitLiteralWithErrorHandling(ctx.BOOLEAN(), this.repository::newBooleanCoreInstance);
+        }
+        if (ctx.DATE() != null)
+        {
+            return visitLiteralWithErrorHandling(ctx.DATE(), text -> this.repository.newDateCoreInstance(text.substring(1)));
+        }
+        if (ctx.STRICTTIME() != null)
+        {
+            return visitLiteralWithErrorHandling(ctx.STRICTTIME(), text -> this.repository.newStrictTimeCoreInstance(text.substring(1)));
         }
         return null;
+    }
+
+    private CoreInstance visitLiteralWithErrorHandling(TerminalNode node, Function<? super String, ? extends CoreInstance> function)
+    {
+        String text = node.getText();
+        try
+        {
+            return function.apply(text);
+        }
+        catch (PureParserException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            Token token = node.getSymbol();
+            int line = token.getLine();
+            int start = token.getCharPositionInLine() + 1;
+            SourceInformation sourceInfo = new SourceInformation(this.sourceName, line, start, line, start + text.length());
+            String message = e.getMessage();
+            throw new PureParserException(sourceInfo, (message == null) ? ("Exception parsing: " + text) : message, e);
+        }
     }
 
     private SourceInformation visitSourceInfoBlock(M4AntlrParser.SourceInfoContext ctx)
@@ -197,7 +211,7 @@ public class M4GraphBuilder extends M4AntlrParserBaseVisitor<MutableList<CoreIns
                 key = coc.key().VALID_STRING().getText();
                 if (coc.keyInArray() != null)
                 {
-                    classifierOwner = ((SimpleCoreInstance)classifierOwner).getOrCreateUnknownTypeNode(key, coc.keyInArray().VALID_STRING().getText(), this.repository);
+                    classifierOwner = ((SimpleCoreInstance) classifierOwner).getOrCreateUnknownTypeNode(key, coc.keyInArray().VALID_STRING().getText(), this.repository);
                 }
             }
         }
@@ -206,8 +220,7 @@ public class M4GraphBuilder extends M4AntlrParserBaseVisitor<MutableList<CoreIns
 
     private MutableList<String> visitPathBlock(M4AntlrParser.PathContext ctx)
     {
-        MutableList<String> pathResult = FastList.newList();
-
+        MutableList<String> pathResult = Lists.mutable.empty();
         pathResult.add(ctx.name().VALID_STRING().getText());
         if (ctx.classifierOwner() != null)
         {
@@ -222,5 +235,4 @@ public class M4GraphBuilder extends M4AntlrParserBaseVisitor<MutableList<CoreIns
         }
         return pathResult;
     }
-
 }

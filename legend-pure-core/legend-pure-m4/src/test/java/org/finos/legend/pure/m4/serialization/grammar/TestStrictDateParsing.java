@@ -26,10 +26,10 @@ public class TestStrictDateParsing extends AbstractPrimitiveParsingTest
         assertParsesTo("2014-02-07", "%2014-2-7");
         assertParsesTo("0-01-01", "%0000-01-01");
 
-        assertFailsToParse("%2014-02-b");
-        assertFailsToParse("%2014-02-53");
-        assertFailsToParse("%2014-02-29");
-        assertFailsToParse("%2014-01-00");
+        assertFailsToParse("Parser error at (resource:fromString line:18 column:31), Invalid Pure Date: '2014-02-53'", "%2014-02-53");
+        assertFailsToParse("Parser error at (resource:fromString line:18 column:31), Invalid Pure Date: '2014-02-29'", "%2014-02-29");
+        assertFailsToParse("Parser error at (resource:fromString line:18 column:31), Invalid Pure Date: '2014-01-00'", "%2014-01-00");
+        assertFailsToParse("Parser error at (resource:fromString line:18 column:39), token recognition error at: '-b'", "%2014-02-b");
     }
 
     @Override
