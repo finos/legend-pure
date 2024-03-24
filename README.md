@@ -12,10 +12,6 @@ Underlying language for Legend
 
 This application uses Maven 3.6+ and JDK 11. Simply run `mvn install` to compile.
 
-> Pure IDE has a web application component which requires Node 14.17.1+ and Yarn 1.22.10.
-> Make sure you have these set up in your development environment, otherwise, you would
-> need to exclude the build step for this web application in `legend-pure-ide-light` module.
-
 ## Roadmap
 
 Visit our [roadmap](https://github.com/finos/legend#roadmap) to know more about the upcoming features.
