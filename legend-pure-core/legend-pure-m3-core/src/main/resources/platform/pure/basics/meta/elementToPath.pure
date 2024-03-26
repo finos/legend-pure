@@ -109,6 +109,20 @@ function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testEn
     assertEquals('Root&meta&pure&functions&meta&tests&model', elementToPath(CC_GeographicEntityType->cast(@PackageableElement).package->at(0), '&', true));
 }
 
+function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testNamedEphemeralPackageableElement():Boolean[1]
+{
+    assertEquals('pkg::MyElement', ^PackageableElement(name='MyElement', package=^Package(name='pkg', package=^Package(name='Root')))->elementToPath());
+    assertEquals('Root::pkg::MyElement', ^PackageableElement(name='MyElement', package=^Package(name='pkg', package=^Package(name='Root')))->elementToPath(true));
+    assertEquals('pkg::MyElement', ^PackageableElement(name='MyElement', package=^Package(name='pkg', package=^Package(name='Other')))->elementToPath());
+    assertEquals('Other::pkg::MyElement', ^PackageableElement(name='MyElement', package=^Package(name='pkg', package=^Package(name='Other')))->elementToPath(true));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testUnnamedEphemeralPackageableElement():Any[*]
+{
+    assertEquals('', ^PackageableElement()->elementToPath());
+    assertEquals('', ^PackageableElement()->elementToPath(true));
+}
+
 function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testTopLevelElementPath():Boolean[1]
 {
     assertEquals([Package], elementPath(Package));

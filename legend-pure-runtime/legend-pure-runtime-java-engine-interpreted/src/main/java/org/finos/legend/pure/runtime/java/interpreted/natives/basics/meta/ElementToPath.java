@@ -50,18 +50,49 @@ public class ElementToPath extends NativeFunction
         CoreInstance element = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
         String separator = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport));
         boolean includeRoot = PrimitiveUtilities.getBooleanValue(Instance.getValueForMetaPropertyToOneResolved(params.get(2), M3Properties.values, processorSupport));
-        String path = getPath(element, separator, includeRoot);
+        String path = includeRoot ? getPathWithRoot(element, separator) : getPathWithoutRoot(element, separator);
         return ValueSpecificationBootstrap.newStringLiteral(this.repository, path, processorSupport);
     }
 
-    private String getPath(CoreInstance element, String separator, boolean includeRoot)
+    private String getPathWithRoot(CoreInstance element, String separator)
     {
-        if (includeRoot)
+        CoreInstance pkg = element.getValueForMetaPropertyToOne(M3Properties._package);
+        String name = getName(element);
+        if (pkg == null)
         {
-            return PackageableElement.getSystemPathForPackageableElement(element, separator);
+            return name;
         }
 
-        String path = PackageableElement.getUserPathForPackageableElement(element, separator);
+        StringBuilder builder = new StringBuilder(64);
+        PackageableElement.forEachPackagePathElement(pkg, p -> builder.append(getName(p)).append(separator));
+        return builder.append(name).toString();
+    }
+
+    private String getPathWithoutRoot(CoreInstance element, String separator)
+    {
+        String name = getName(element);
+        CoreInstance pkg = element.getValueForMetaPropertyToOne(M3Properties._package);
+        String path;
+        if (pkg == null)
+        {
+            path = name;
+        }
+        else
+        {
+            StringBuilder builder = new StringBuilder(64);
+            PackageableElement.forEachPackagePathElement(pkg,
+                    p ->
+                    {
+                        // Do nothing for root package
+                    },
+                    p -> builder.append(getName(p)).append(separator));
+            path = builder.append(name).toString();
+        }
         return M3Paths.Root.equals(path) ? "" : path;
+    }
+
+    private String getName(CoreInstance element)
+    {
+        return PrimitiveUtilities.getStringValue(element.getValueForMetaPropertyToOne(M3Properties.name), "");
     }
 }
