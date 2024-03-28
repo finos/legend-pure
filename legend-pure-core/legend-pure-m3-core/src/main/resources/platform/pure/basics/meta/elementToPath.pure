@@ -109,21 +109,18 @@ function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testEn
     assertEquals('Root&meta&pure&functions&meta&tests&model', elementToPath(CC_GeographicEntityType->cast(@PackageableElement).package->at(0), '&', true));
 }
 
-function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testNamedEphemeralPackageableElement():Boolean[1]
+function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testEphemeralPackageableElements():Boolean[1]
 {
     assertEquals('pkg::MyElement', ^PackageableElement(name='MyElement', package=^Package(name='pkg', package=^Package(name='Root')))->elementToPath());
     assertEquals('Root::pkg::MyElement', ^PackageableElement(name='MyElement', package=^Package(name='pkg', package=^Package(name='Root')))->elementToPath(true));
     assertEquals('pkg::MyElement', ^PackageableElement(name='MyElement', package=^Package(name='pkg', package=^Package(name='Other')))->elementToPath());
     assertEquals('Other::pkg::MyElement', ^PackageableElement(name='MyElement', package=^Package(name='pkg', package=^Package(name='Other')))->elementToPath(true));
-}
 
-function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testUnnamedEphemeralPackageableElement():Any[*]
-{
     assertEquals('', ^PackageableElement()->elementToPath());
     assertEquals('', ^PackageableElement()->elementToPath(true));
 }
 
-function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testTopLevelElementPath():Boolean[1]
+function <<test.Test>> meta::pure::functions::meta::tests::elementPath::testTopLevelElementPath():Boolean[1]
 {
     assertEquals([Package], elementPath(Package));
     assertEquals([Number], elementPath(Number));
@@ -134,12 +131,12 @@ function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testTo
     assertEquals([String], elementPath(String));
 }
 
-function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testRootElementPath():Boolean[1]
+function <<test.Test>> meta::pure::functions::meta::tests::elementPath::testRootElementPath():Boolean[1]
 {
     assertEquals([::], elementPath(::));
 }
 
-function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testElementPath():Boolean[1]
+function <<test.Test>> meta::pure::functions::meta::tests::elementPath::testElementPath():Boolean[1]
 {
     assertEquals(
         [
@@ -179,4 +176,21 @@ function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testEl
          meta
         ],
         elementPath(meta));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::elementPath::testEphemeralPackageableElement():Boolean[1]
+{
+    let rootPkg = ^Package(name='Root');
+    let pkgPkg = ^Package(name='pkg', package=$rootPkg);
+    let element = ^PackageableElement(name='MyElement', package=$pkgPkg);
+    assertEquals([$rootPkg], $rootPkg->elementPath());
+    assertEquals([$rootPkg, $pkgPkg], $pkgPkg->elementPath());
+    assertEquals([$rootPkg, $pkgPkg, $element], $element->elementPath());
+
+    let otherRootPkg = ^Package(name='Other');
+    let otherPkgPkg = ^Package(name='pkg', package=$otherRootPkg);
+    let otherElement = ^PackageableElement(name='MyElement', package=$otherPkgPkg);
+    assertEquals([$otherRootPkg], $otherRootPkg->elementPath());
+    assertEquals([$otherRootPkg, $otherPkgPkg], $otherPkgPkg->elementPath());
+    assertEquals([$otherRootPkg, $otherPkgPkg, $otherElement], $otherElement->elementPath());
 }
