@@ -14,10 +14,13 @@
 
 package org.finos.legend.pure.m3.tests.elements._enum;
 
-import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
@@ -49,7 +52,7 @@ public abstract class AbstractTestEnumeration extends AbstractPureTestWithCoreCo
                 "    assertEquals('TRUE', BooleanEnum.TRUE->id());\n" +
                 "    assertEquals('FALSE', BooleanEnum.FALSE->id());\n" +
                 "}\n");
-        this.execute("testAssert():Boolean[1]");
+        execute("testAssert():Boolean[1]");
     }
 
     @Test
@@ -67,7 +70,7 @@ public abstract class AbstractTestEnumeration extends AbstractPureTestWithCoreCo
                 "{\n" +
                 "   assertEquals('TRUE', $b->id());\n" +
                 "}\n");
-        this.execute("testCall():Boolean[1]");
+        execute("testCall():Boolean[1]");
     }
 
     @Test
@@ -82,7 +85,7 @@ public abstract class AbstractTestEnumeration extends AbstractPureTestWithCoreCo
                 "    let a = BooleanEnum.TRUE;\n" +
                 "    assertEquals('BooleanEnum.TRUE', $a->genericType().rawType->at(0)->id()+'.'+$a->id());\n" +
                 "}");
-        this.execute("test():Boolean[1]");
+        execute("test():Boolean[1]");
     }
 
     @Test
@@ -105,22 +108,20 @@ public abstract class AbstractTestEnumeration extends AbstractPureTestWithCoreCo
                 "    assertEquals('TRUE', $test.prop->id());\n" +
                 "    assertEquals('FALSE',$test.prop2->at(0)->id());\n" +
                 "}\n");
-        this.execute("test():Boolean[1]");
+        execute("test():Boolean[1]");
     }
 
     @Test
     public void testInvalidEnumReference()
     {
         compileTestSource("enumDefinition.pure", "Enum test::TestEnum {VAL1, VAL2}");
-        try
-        {
-            compileTestSource("enumReference.pure", "function test::test():test::TestEnum[1] { test::TestEnum.VAL3 }");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "The enum value 'VAL3' can't be found in the enumeration test::TestEnum", "enumReference.pure", 1, 58, 1, 58, 1, 61, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "enumReference.pure",
+                "function test::test():test::TestEnum[1]\n" +
+                        "{\n" +
+                        "  test::TestEnum.VAL3\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "The enum value 'VAL3' can't be found in the enumeration test::TestEnum", "enumReference.pure", 3, 18, 3, 18, 3, 21, e);
     }
 
     @Test
@@ -171,13 +172,11 @@ public abstract class AbstractTestEnumeration extends AbstractPureTestWithCoreCo
         execute("test::testFn():Any[*]");
     }
 
-    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
+    protected static MutableRepositoryCodeStorage getCodeStorage()
     {
-        MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
-        CodeRepository system = GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform");
-        CodeRepository test = GenericCodeRepository.build("test", "test(::.*)?", "platform", "system");
-        repositories.add(system);
-        repositories.add(test);
-        return repositories;
+        MutableList<CodeRepository> repositories = Lists.mutable.<CodeRepository>withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories())
+                .with(GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform"))
+                .with(GenericCodeRepository.build("test", "test(::.*)?", "platform", "system"));
+        return new CompositeCodeStorage(new ClassLoaderCodeStorage(repositories));
     }
 }
