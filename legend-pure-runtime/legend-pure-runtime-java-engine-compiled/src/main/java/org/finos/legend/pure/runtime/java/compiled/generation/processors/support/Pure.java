@@ -55,7 +55,6 @@ import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
-import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
@@ -1093,19 +1092,26 @@ public class Pure
         return Reactivator.canReactivateWithoutJavaCompilation(valueSpecification, es, lambdaOpenVariablesMap, bridge);
     }
 
-    public static org.finos.legend.pure.m3.coreinstance.Package buildPackageIfNonExistent(org.finos.legend.pure.m3.coreinstance.Package pack, ListIterable<String> path, SourceInformation si, Function<String, Package> packageBuilder)
+    public static Package buildPackageIfNonExistent(Package pack, ListIterable<String> path, SourceInformation si, Function<String, Package> packageBuilder)
     {
-        if (path.size() >= 1)
+        return path.injectInto(pack, (pkg, name) ->
         {
-            org.finos.legend.pure.m3.coreinstance.Package child = (org.finos.legend.pure.m3.coreinstance.Package) pack._children().detect(c -> c._name().equals(path.get(0)));
+            PackageableElement child = pkg._children().detect(c -> name.equals(c._name()));
             if (child == null)
             {
-                child = packageBuilder.apply(path.get(0))._name(path.get(0))._package(pack);
-                pack._childrenAdd(child);
+                Package newPkg =  packageBuilder.apply(name)._name(name)._package(pkg);
+                pkg._childrenAdd(newPkg);
+                return newPkg;
             }
-            return buildPackageIfNonExistent(child, ListHelper.subList(path, 1, path.size()), si, packageBuilder);
-        }
-        return pack;
+            if (!(child instanceof Package))
+            {
+                StringBuilder builder = new StringBuilder("Package '");
+                org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.writeUserPathForPackageableElement(builder, pkg);
+                builder.append("' already has a child named '").append(name).append("' which is not a package");
+                throw new PureExecutionException(si, builder.toString());
+            }
+            return (Package) child;
+        });
     }
 
     public static Class<?> fromJsonResolveType(JSONObject jsonObject, String pureType, Class<?> typeFromClassMetaData, MetadataAccessor md, String typeKey, ClassLoader classLoader)
