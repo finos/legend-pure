@@ -27,9 +27,7 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.eclipse.collections.impl.utility.StringIterate;
 import org.finos.legend.pure.m3.tools.JavaTools;
 import org.finos.legend.pure.m4.ModelRepository;
@@ -342,7 +340,6 @@ public class M3ToJavaGenerator
                         "{\n" +
                         createClassFactory(className, getUserObjectPathForPackageableElement(instance, false).makeString("::")) +
                         "\n" +
-                        "    // TODO: These should be static\n" +
                         properties.collect(property ->
                         {
                             String propertyName = property.getName();
@@ -353,9 +350,9 @@ public class M3ToJavaGenerator
                                             "    public static final ListIterable<String> " + createPropertyKeyName(propertyName) + " = Lists.immutable.of(" + propertyOwnerPath.makeString("\"", "\",\"children\",\"", "\"") + ",\"properties\",\"" + propertyName + "\");\n" : "");
                         }).makeString("") +
                         "\n" +
+                        "    private static final SetIterable<String> KEYS = Sets.immutable.with(" + properties.collect(CoreInstance::getName, Lists.mutable.empty()).sortThis().makeString("\"", "\",\"", "\"") + ");\n" +
                         "\n" +
                         "    private _State state;\n" +
-                        "    private static final SetIterable<String> keys = Sets.immutable.with(" + properties.collect(CoreInstance::getName, FastList.newList()).sortThis().makeString("\"", "\",\"", "\"") + ");\n" +
                         "\n" +
                         createClassConstructors(className) +
                         "\n" +
@@ -741,7 +738,6 @@ public class M3ToJavaGenerator
                         "    @Override\n" +
                         "    public ListIterable<String> getRealKeyByName(String name)\n" +
                         "    {\n" +
-                        "        ListIterable<String> realKeys = null;\n" +
                         (properties.isEmpty() ? "" :
                                 "        switch (name)\n" +
                                         "        {\n" +
@@ -750,21 +746,20 @@ public class M3ToJavaGenerator
                                             String propertyName = property.getName();
                                             CoreInstance propertyOwner = propertyOwners.get(propertyName);
                                             return "            case \"" + propertyName + "\":\n" +
-                                                    "                realKeys = " + createPropertyKeyNameReference(propertyName, propertyOwner, instance) + ";\n" +
-                                                    "                break;\n";
+                                                    "            {\n" +
+                                                    "                return " + createPropertyKeyNameReference(propertyName, propertyOwner, instance) + ";\n" +
+                                                    "            }\n";
                                         }).makeString("") +
-                                        "\n" +
                                         "            default:\n" +
+                                        "            {\n" +
                                         "                throw new RuntimeException(\"Unsupported key: \" + name);\n" +
+                                        "            }\n" +
                                         "        }\n") +
-                        "        return realKeys;\n" +
                         "    }\n" +
                         "\n" +
                         "    @Override\n" +
                         "    public CoreInstance getKeyByName(String name)\n" +
                         "    {\n" +
-                        "        CoreInstance key = null;\n" +
-                        "\n" +
                         (properties.isEmpty() ? "" :
                                 "        switch (name)\n" +
                                         "        {\n" +
@@ -772,25 +767,26 @@ public class M3ToJavaGenerator
                                         {
                                             String propertyName = property.getName();
                                             return "            case \"" + propertyName + "\":\n" +
+                                                    "            {\n" +
                                                     "                if (this." + propertyName + "Key == null)\n" +
                                                     "                {\n" +
                                                     "                    this." + propertyName + "Key = this.getRepository().resolve(" + createPropertyKeyNameReference(propertyName, propertyOwners.get(propertyName), instance) + ");\n" +
                                                     "                }\n" +
-                                                    "                key = this." + propertyName + "Key;\n" +
-                                                    "                break;\n";
+                                                    "                return this." + propertyName + "Key;\n" +
+                                                    "            }\n";
                                         }).makeString("") +
                                         "            default:\n" +
+                                        "            {\n" +
                                         "                throw new RuntimeException(\"Unsupported key: \" + name);\n" +
-                                        "        }\n" +
-                                        "\n") +
-                        "        return key;\n" +
+                                        "            }\n" +
+                                        "        }\n") +
                         "    }\n" +
                         "\n" +
                         "    @Override\n" +
                         "    public RichIterable<String> getKeys()\n" +
                         "    {\n" +
                         "        MutableList<String> result = Lists.mutable.of();\n" +
-                        "        for (String key: this.keys)\n" +
+                        "        for (String key: KEYS)\n" +
                         "        {\n" +
                         "            if (isValueDefinedForKey(key))\n" +
                         "            {\n" +
@@ -870,7 +866,7 @@ public class M3ToJavaGenerator
                         "        {\n" +
                         "            synchronized (this)\n" +
                         "            {\n" +
-                        "                final _State copy = new _State();\n" +
+                        "                _State copy = new _State();\n" +
                         toOneProperties.collect(property ->
                         {
                             String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
@@ -941,7 +937,7 @@ public class M3ToJavaGenerator
                         "        CoreInstance child = repository.getTopLevel(path.get(0));\n" +
                         "        for (String childName : path.asLazy().drop(1))\n" +
                         "        {\n" +
-                        "            child = ((PackageInstance)child).getValueInValueForMetaPropertyToManyByIndex(\"children\", org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecifications.getCoreInstanceNameIndexSpec(), childName).getFirst();\n" +
+                        "            child = child.getValueInValueForMetaPropertyToManyByIndex(\"children\", org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecifications.getCoreInstanceNameIndexSpec(), childName).getFirst();\n" +
                         "        }\n" +
                         "        return child;\n" +
                         "    }\n" +
@@ -2774,7 +2770,7 @@ public class M3ToJavaGenerator
 
         void addImports(String... imports)
         {
-            ArrayIterate.forEach(imports, this::addImport);
+            addImports(ArrayAdapter.adapt(imports));
         }
 
         void addImport(String classFullName)
