@@ -15,22 +15,22 @@
 package org.finos.legend.pure.m4.coreinstance.primitive;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.factory.Lists;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstance;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
-import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecification;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
+import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
+import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -343,27 +343,21 @@ public abstract class PrimitiveCoreInstance<T> extends AbstractCoreInstance
 
     private void print(Appendable appendable, String tab, boolean full)
     {
-        try
-        {
-            appendable.append(tab);
-            appendable.append(getName());
-            if (full)
-            {
-                appendable.append('_');
-                appendable.append(Integer.toString(this.internalSyntheticId));
-            }
+        print(SafeAppendable.wrap(appendable), tab, full);
+    }
 
-            appendable.append(" instance ");
-            appendable.append(this.classifier.getName());
-            if (full)
-            {
-                appendable.append('_');
-                appendable.append(Integer.toString(this.classifier.getSyntheticId()));
-            }
-        }
-        catch (IOException e)
+    private void print(SafeAppendable appendable, String tab, boolean full)
+    {
+        appendable.append(tab).append(getName());
+        if (full)
         {
-            throw new RuntimeException(e);
+            appendable.append('_').append(this.internalSyntheticId);
+        }
+
+        appendable.append(" instance ").append(this.classifier.getName());
+        if (full)
+        {
+            appendable.append('_').append(this.classifier.getSyntheticId());
         }
     }
 

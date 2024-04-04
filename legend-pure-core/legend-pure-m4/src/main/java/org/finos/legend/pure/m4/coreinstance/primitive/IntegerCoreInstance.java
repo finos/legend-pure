@@ -14,20 +14,14 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive;
 
-import java.math.BigInteger;
-
 import org.eclipse.collections.api.block.function.Function;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
+import java.math.BigInteger;
+
 public final class IntegerCoreInstance extends PrimitiveCoreInstance<Number>
 {
-    public static final Function<CoreInstance, Number> FROM_CORE_INSTANCE_FN = new Function<CoreInstance, Number>()
-    {
-        public Number valueOf(CoreInstance coreInstance)
-        {
-            return coreInstance == null ? null : ((IntegerCoreInstance)coreInstance).getValue();
-        }
-    };
+    public static final Function<CoreInstance, Number> FROM_CORE_INSTANCE_FN = IntegerCoreInstance::fromCoreInstance;
 
     private String name = null;
 
@@ -38,17 +32,17 @@ public final class IntegerCoreInstance extends PrimitiveCoreInstance<Number>
 
     IntegerCoreInstance(Integer value, CoreInstance classifier, int internalSyntheticId)
     {
-        this((Number)value, classifier, internalSyntheticId);
+        this((Number) value, classifier, internalSyntheticId);
     }
 
     IntegerCoreInstance(Long value, CoreInstance classifier, int internalSyntheticId)
     {
-        this((Number)value, classifier, internalSyntheticId);
+        this((Number) value, classifier, internalSyntheticId);
     }
 
     IntegerCoreInstance(BigInteger value, CoreInstance classifier, int internalSyntheticId)
     {
-        this((Number)value, classifier, internalSyntheticId);
+        this((Number) value, classifier, internalSyntheticId);
     }
 
     @Override
@@ -64,6 +58,11 @@ public final class IntegerCoreInstance extends PrimitiveCoreInstance<Number>
     @Override
     public CoreInstance copy()
     {
-        return new IntegerCoreInstance(this.getValue(), this.getClassifier(), this.getSyntheticId());
+        return new IntegerCoreInstance(getValue(), getClassifier(), getSyntheticId());
+    }
+
+    public static Number fromCoreInstance(CoreInstance instance)
+    {
+        return (instance == null) ? null : ((IntegerCoreInstance) instance).getValue();
     }
 }
