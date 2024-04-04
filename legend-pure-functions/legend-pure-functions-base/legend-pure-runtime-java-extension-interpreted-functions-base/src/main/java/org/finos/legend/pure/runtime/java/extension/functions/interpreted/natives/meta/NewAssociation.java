@@ -30,7 +30,6 @@ import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
-import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
@@ -61,7 +60,7 @@ public class NewAssociation extends NativeFunction
             throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Cannot create a new Association: '" + fullPathString + "'");
         }
         String name = fullPath.getLast();
-        CoreInstance pack = _Package.findOrCreatePackageFromUserPath(ListHelper.subList(fullPath, 0, fullPath.size() - 1), this.repository, processorSupport);
+        CoreInstance pack = _Package.findOrCreatePackageFromUserPath(fullPath.subList(0, fullPath.size() - 1), this.repository, processorSupport);
 
         CoreInstance newAssociation = this.repository.newCoreInstance(name, processorSupport.package_getByUserPath(M3Paths.Association), null);
         Instance.addValueToProperty(newAssociation, M3Properties.name, this.repository.newCoreInstance(name, this.repository.getTopLevel(M3Paths.String), null), processorSupport);

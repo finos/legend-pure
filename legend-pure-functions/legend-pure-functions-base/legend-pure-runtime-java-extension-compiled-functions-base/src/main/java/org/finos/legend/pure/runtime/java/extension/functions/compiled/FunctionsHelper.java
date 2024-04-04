@@ -50,7 +50,6 @@ import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
 import org.finos.legend.pure.m3.navigation.function.InvalidFunctionDescriptorException;
 import org.finos.legend.pure.m3.serialization.runtime.SourceRegistry;
-import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m3.tools.StatisticsUtil;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -801,7 +800,7 @@ public class FunctionsHelper
         int end = (int) number;
         if (list instanceof ListIterable)
         {
-            return ListHelper.subList((ListIterable<T>) list, 0, end);
+            return ((ListIterable<T>) list).subList(0, end);
         }
 
         MutableList<T> result = Lists.mutable.ofInitialCapacity(end);
@@ -837,7 +836,7 @@ public class FunctionsHelper
         int toDrop = (int) number;
         if (list instanceof ListIterable)
         {
-            return ListHelper.subList((ListIterable<T>) list, toDrop, size);
+            return ((ListIterable<T>) list).subList(toDrop, size);
         }
 
         MutableList<T> result = Lists.mutable.ofInitialCapacity(size - toDrop);
@@ -943,7 +942,7 @@ public class FunctionsHelper
 
         if (collection instanceof ListIterable)
         {
-            return ListHelper.subList((ListIterable<T>) collection, start, end);
+            return ((ListIterable<T>) collection).subList(start, end);
         }
 
         MutableList<T> result = Lists.mutable.ofInitialCapacity(end - start);

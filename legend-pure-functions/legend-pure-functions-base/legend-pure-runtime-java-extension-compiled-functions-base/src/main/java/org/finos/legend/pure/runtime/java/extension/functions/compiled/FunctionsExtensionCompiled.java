@@ -162,7 +162,6 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                         "import org.finos.legend.pure.m3.exception.PureExecutionException;\n" +
                         "import org.finos.legend.pure.m3.execution.ExecutionSupport;\n" +
                         "import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;\n" +
-                        "import org.finos.legend.pure.m3.tools.ListHelper;\n" +
                         "import org.finos.legend.pure.m4.coreinstance.SourceInformation;\n" +
                         "import org.finos.legend.pure.runtime.java.compiled.delta.CodeBlockDeltaCompiler;\n" +
                         "import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;\n" +
@@ -318,7 +317,7 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                         "            throw new PureExecutionException(null, \"Cannot create a new Class: '\" + fullPathString + \"'\");\n" +
                         "        }\n" +
                         "        String name = fullPath.getLast();\n" +
-                        "        org.finos.legend.pure.m3.coreinstance.Package _package = Pure.buildPackageIfNonExistent(new Package_Impl(\"Root\")._name(\"Root\"), ListHelper.subList(fullPath, 0, fullPath.size() - 1), si, new DefendedFunction<String, Package>()\n" +
+                        "        org.finos.legend.pure.m3.coreinstance.Package _package = Pure.buildPackageIfNonExistent(new Package_Impl(\"Root\")._name(\"Root\"), fullPath.subList(0, fullPath.size() - 1), si, new DefendedFunction<String, Package>()\n" +
                         "        {\n" +
                         "            @Override\n" +
                         "            public Package valueOf(String s)\n" +
@@ -345,7 +344,7 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                         "            throw new PureExecutionException(null, \"Cannot create a new Association: '\" + fullPathString + \"'\");\n" +
                         "        }\n" +
                         "        String name = fullPath.getLast();\n" +
-                        "        org.finos.legend.pure.m3.coreinstance.Package _package = Pure.buildPackageIfNonExistent(new Package_Impl(\"Root\")._name(\"Root\"), ListHelper.subList(fullPath, 0, fullPath.size() - 1), si, new DefendedFunction<String, Package>()\n" +
+                        "        org.finos.legend.pure.m3.coreinstance.Package _package = Pure.buildPackageIfNonExistent(new Package_Impl(\"Root\")._name(\"Root\"), fullPath.subList(0, fullPath.size() - 1), si, new DefendedFunction<String, Package>()\n" +
                         "        {\n" +
                         "            @Override\n" +
                         "            public Package valueOf(String s)\n" +
@@ -367,8 +366,8 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                         "            throw new PureExecutionException(null, \"Cannot create a new Enumeration: '\" + fullPathString + \"'\");\n" +
                         "        }\n" +
                         "        String name = fullPath.getLast();\n" +
-                        "        String packageName = ListHelper.subList(fullPath, 0, fullPath.size() - 1).makeString(\"::\");\n" +
-                        "        org.finos.legend.pure.m3.coreinstance.Package _package = Pure.buildPackageIfNonExistent(new Package_Impl(\"Root\")._name(\"Root\"), ListHelper.subList(fullPath, 0, fullPath.size() - 1), si, new DefendedFunction<String, Package>()\n" +
+                        "        String packageName = fullPath.subList(0, fullPath.size() - 1).makeString(\"::\");\n" +
+                        "        org.finos.legend.pure.m3.coreinstance.Package _package = Pure.buildPackageIfNonExistent(new Package_Impl(\"Root\")._name(\"Root\"), fullPath.subList(0, fullPath.size() - 1), si, new DefendedFunction<String, Package>()\n" +
                         "        {\n" +
                         "            @Override\n" +
                         "            public Package valueOf(String s)\n" +
