@@ -370,7 +370,8 @@ public class Pure
     @SuppressWarnings("unchecked")
     public static SharedPureFunction<?> findSharedPureFunction(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge bridge, ExecutionSupport es)
     {
-        MutableList<PureFunction1<Object, Object>> extra = ((CompiledExecutionSupport) es).getCompiledExtensions().asLazy().collect(x -> x.getExtraFunctionEvaluation(func, bridge, es)).select(Objects::nonNull, Lists.mutable.empty());
+        CompiledExecutionSupport ces = (CompiledExecutionSupport) es;
+        MutableList<PureFunction1<Object, Object>> extra = ces.getCompiledExtensions().asLazy().collect(x -> x.getExtraFunctionEvaluation(func, bridge, es)).select(Objects::nonNull, Lists.mutable.empty());
         if (extra.size() == 1)
         {
             return extra.get(0);
@@ -381,8 +382,7 @@ public class Pure
         }
         if (func instanceof Property)
         {
-            Type srcType = func._classifierGenericType()._typeArguments().getFirst()._rawType();
-            return ((CompiledExecutionSupport) es).getFunctionCache().getIfAbsentPutFunctionForClassProperty(srcType, func, ((CompiledExecutionSupport) es).getClassLoader());
+            return ces.getFunctionCache().getIfAbsentPutFunctionForClassProperty((Property<?, ?>) func, ces.getClassLoader());
         }
         if (func instanceof LambdaCompiledExtended)
         {
@@ -406,7 +406,7 @@ public class Pure
         {
             if (func.getSourceInformation() != null)
             {
-                return ((CompiledExecutionSupport) es).getFunctionCache().getIfAbsentPutJavaFunctionForPureFunction(func, () ->
+                return ces.getFunctionCache().getIfAbsentPutJavaFunctionForPureFunction(func, () ->
                         {
                             try
                             {
@@ -415,23 +415,17 @@ public class Pure
                                 int index = 0;
                                 for (VariableExpression o : params)
                                 {
-                                    paramClasses[index] = pureTypeToJavaClassForExecution(o, bridge, es);
-                                    index++;
+                                    paramClasses[index++] = pureTypeToJavaClassForExecution(o, bridge, es);
                                 }
                                 paramClasses[params.size()] = ExecutionSupport.class;
-                                Method method = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation())).getMethod(FunctionProcessor.functionNameToJava(func), paramClasses);
+                                Method method = ces.getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation())).getMethod(FunctionProcessor.functionNameToJava(func), paramClasses);
                                 return new JavaMethodWithParamsSharedPureFunction<>(method, paramClasses, func.getSourceInformation());
                             }
-                            catch (RuntimeException e)
-                            {
-                                throw e;
-                            }
-                            catch (Exception e)
+                            catch (ReflectiveOperationException e)
                             {
                                 throw new RuntimeException(e);
                             }
-                        }
-                );
+                        });
             }
             else
             {
@@ -446,14 +440,10 @@ public class Pure
         MutableMap<String, SharedPureFunction<?>> functions;
         try
         {
-            Class<?> myClass = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation()));
+            Class<?> myClass = ces.getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation()));
             functions = (MutableMap<String, SharedPureFunction<?>>) myClass.getDeclaredField("__functions").get(null);
         }
-        catch (RuntimeException e)
-        {
-            throw e;
-        }
-        catch (Exception e)
+        catch (ReflectiveOperationException e)
         {
             throw new RuntimeException(e);
         }
@@ -622,19 +612,16 @@ public class Pure
     @SuppressWarnings("unchecked")
     private static SharedPureFunction<?> getNativeOrLambdaFunction(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func)
     {
-        return ((CompiledExecutionSupport) es).getFunctionCache().getIfAbsentPutJavaFunctionForPureFunction(func, () ->
+        CompiledExecutionSupport ces = (CompiledExecutionSupport) es;
+        return ces.getFunctionCache().getIfAbsentPutJavaFunctionForPureFunction(func, () ->
         {
             try
             {
-                Class<?> myClass = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation()));
+                Class<?> myClass = ces.getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation()));
                 MutableMap<String, SharedPureFunction<?>> functions = (MutableMap<String, SharedPureFunction<?>>) myClass.getDeclaredField("__functions").get(null);
                 return functions.get(func.getName());
             }
-            catch (RuntimeException e)
-            {
-                throw e;
-            }
-            catch (Exception e)
+            catch (ReflectiveOperationException e)
             {
                 throw new RuntimeException(e);
             }

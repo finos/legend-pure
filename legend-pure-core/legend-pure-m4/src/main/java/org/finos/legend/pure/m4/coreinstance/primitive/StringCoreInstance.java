@@ -19,13 +19,7 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public final class StringCoreInstance extends PrimitiveCoreInstance<String>
 {
-    public static final Function<CoreInstance, String> FROM_CORE_INSTANCE_FN = new Function<CoreInstance, String>()
-    {
-        public String valueOf(CoreInstance coreInstance)
-        {
-            return coreInstance == null ? null : ((StringCoreInstance)coreInstance).getValue();
-        }
-    };
+    public static final Function<CoreInstance, String> FROM_CORE_INSTANCE_FN = StringCoreInstance::fromCoreInstance;
 
     StringCoreInstance(String value, CoreInstance classifier, int internalSyntheticId)
     {
@@ -41,6 +35,11 @@ public final class StringCoreInstance extends PrimitiveCoreInstance<String>
     @Override
     public CoreInstance copy()
     {
-        return new StringCoreInstance(this.getValue(), this.getClassifier(), this.getSyntheticId());
+        return new StringCoreInstance(getValue(), getClassifier(), getSyntheticId());
+    }
+
+    public static String fromCoreInstance(CoreInstance instance)
+    {
+        return (instance == null) ? null : ((StringCoreInstance) instance).getValue();
     }
 }

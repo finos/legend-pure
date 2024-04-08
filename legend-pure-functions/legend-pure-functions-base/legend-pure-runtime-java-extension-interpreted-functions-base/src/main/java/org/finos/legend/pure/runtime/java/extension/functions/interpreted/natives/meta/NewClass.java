@@ -16,20 +16,19 @@ package org.finos.legend.pure.runtime.java.extension.functions.interpreted.nativ
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.navigation.type.Type;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.tools.ListHelper;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
@@ -59,7 +58,7 @@ public class NewClass extends NativeFunction
         }
         String name = fullPath.getLast();
 
-        CoreInstance pack = _Package.findOrCreateEphemeralPackageFromUserPath(ListHelper.subList(fullPath, 0, fullPath.size() - 1), this.repository, processorSupport);
+        CoreInstance pack = _Package.findOrCreateEphemeralPackageFromUserPath(fullPath.subList(0, fullPath.size() - 1), this.repository, processorSupport);
         CoreInstance newClass = this.repository.newEphemeralCoreInstance(name, processorSupport.package_getByUserPath(M3Paths.Class), null);
 
         //classifierGenericType

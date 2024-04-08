@@ -1832,11 +1832,12 @@ public class CompiledSupport
 
     public static Object executeFunction(String uniqueFunctionId, ConcreteFunctionDefinition<?> functionDefinition, Class<?>[] paramClasses, Object[] params, ExecutionSupport es)
     {
-        SharedPureFunction<?> spf = ((CompiledExecutionSupport) es).getFunctionCache().getIfAbsentPutJavaFunctionForPureFunction(functionDefinition, () ->
+        CompiledExecutionSupport ces = (CompiledExecutionSupport) es;
+        SharedPureFunction<?> spf = ces.getFunctionCache().getIfAbsentPutJavaFunctionForPureFunction(functionDefinition, () ->
         {
             try
             {
-                Class<?> clazz = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + '.' + uniqueFunctionId);
+                Class<?> clazz = ces.getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + '.' + uniqueFunctionId);
                 String functionName = FunctionProcessor.functionNameToJava(functionDefinition);
                 Method method = getFunctionMethod(clazz, functionName, functionDefinition, paramClasses, params, es);
                 return new JavaMethodWithParamsSharedPureFunction<>(method, paramClasses, functionDefinition.getSourceInformation());

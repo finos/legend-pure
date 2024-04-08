@@ -14,20 +14,14 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive;
 
-import java.math.BigDecimal;
-
 import org.eclipse.collections.api.block.function.Function;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
+import java.math.BigDecimal;
+
 public final class FloatCoreInstance extends PrimitiveCoreInstance<BigDecimal>
 {
-    public static final Function<CoreInstance, BigDecimal> FROM_CORE_INSTANCE_FN = new Function<CoreInstance, BigDecimal>()
-    {
-        public BigDecimal valueOf(CoreInstance coreInstance)
-        {
-            return coreInstance == null ? null : ((FloatCoreInstance)coreInstance).getValue();
-        }
-    };
+    public static final Function<CoreInstance, BigDecimal> FROM_CORE_INSTANCE_FN = FloatCoreInstance::fromCoreInstance;
 
     private String name = null;
 
@@ -49,6 +43,11 @@ public final class FloatCoreInstance extends PrimitiveCoreInstance<BigDecimal>
     @Override
     public CoreInstance copy()
     {
-        return new FloatCoreInstance(this.getValue(), this.getClassifier(), this.getSyntheticId());
+        return new FloatCoreInstance(getValue(), getClassifier(), getSyntheticId());
+    }
+
+    public static BigDecimal fromCoreInstance(CoreInstance instance)
+    {
+        return (instance == null) ? null : ((FloatCoreInstance) instance).getValue();
     }
 }

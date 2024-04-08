@@ -16,81 +16,63 @@ package org.finos.legend.pure.m3.tools;
 
 import org.eclipse.collections.api.LongIterable;
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.iterator.LongIterator;
-import org.eclipse.collections.api.list.ImmutableList;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.collection.mutable.CollectionAdapter;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.utility.LazyIterate;
 
 import java.util.Collection;
-import java.util.ListIterator;
 
 public class ListHelper
 {
     public static <T> RichIterable<T> tail(RichIterable<T> source)
     {
-        return source.isEmpty() ? source : LazyIterate.drop(source, 1);
+        if (source.isEmpty())
+        {
+            return source;
+        }
+        if (source instanceof ListIterable)
+        {
+            int size = source.size();
+            return (size == 1) ? Lists.immutable.empty() : ((ListIterable<T>) source).subList(1, size);
+        }
+        return LazyIterate.drop(source, 1);
     }
 
     public static <T> RichIterable<T> init(RichIterable<T> source)
     {
         int size = source.size();
-        return (size == 0) ? source : LazyIterate.take(source, size - 1);
+        switch (size)
+        {
+            case 0:
+            {
+                return source;
+            }
+            case 1:
+            {
+                return Lists.immutable.empty();
+            }
+            default:
+            {
+                return (source instanceof ListIterable) ? ((ListIterable<T>) source).subList(0, size - 1) : LazyIterate.take(source, size - 1);
+            }
+        }
     }
 
+    @Deprecated
     public static <T> ListIterable<T> subList(ListIterable<T> list, int start, int end)
     {
-        int size = list.size();
-        if (start < 0)
-        {
-            throw new IndexOutOfBoundsException("start = " + start);
-        }
-        if (end > size)
-        {
-            throw new IndexOutOfBoundsException("end (" + end + ") > size (" + size + ")");
-        }
-        if (start > end)
-        {
-            throw new IllegalArgumentException("start (" + start + ") > end (" + end + ')');
-        }
-
-        if ((start == 0) && (end == size))
-        {
-            return list;
-        }
-
-        if (list instanceof MutableList)
-        {
-            return ((MutableList<T>)list).subList(start, end);
-        }
-        if (list instanceof ImmutableList)
-        {
-            return ((ImmutableList<T>)list).subList(start, end);
-        }
-
-        MutableList<T> subList = FastList.newList(end - start);
-        ListIterator<T> iterator = list.listIterator(start);
-        while (iterator.nextIndex() < end)
-        {
-            subList.add(iterator.next());
-        }
-        return subList;
+        return list.subList(start, end);
     }
 
     public static <T extends Collection<Long>> T boxLongIterable(LongIterable longs, T targetCollection)
     {
-        LongIterator iterator = longs.longIterator();
-        while (iterator.hasNext())
-        {
-            targetCollection.add(iterator.next());
-        }
+        longs.forEach(targetCollection::add);
         return targetCollection;
     }
 
     public static <T> ListIterable<T> wrapListIterable(Iterable<T> iterable)
     {
-        return (iterable instanceof ListIterable) ? (ListIterable<T>)iterable : CollectionAdapter.wrapList(iterable);
+        return (iterable instanceof ListIterable) ? (ListIterable<T>) iterable : CollectionAdapter.wrapList(iterable);
     }
 }
