@@ -53,7 +53,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::sort::
                 #->sort(ascending(~id));
             };
 
-  let res =  $f->eval($expr)->cast(@Relation<(id:Integer, name:String)>)->toOne();
+  let res =  $f->eval($expr);
 
   assertEquals( '#TDS\n'+
                 '   id,name\n'+
@@ -79,7 +79,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::sort::
                 #->sort([ascending(~id), ascending(~name)]);
             };
 
-  let res2 =  $f->eval($expr2)->cast(@Relation<(id:Integer, name:String)>)->toOne();
+  let res2 =  $f->eval($expr2);
 
   assertEquals( '#TDS\n'+
                 '   id,name\n'+
@@ -105,7 +105,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::sort::
                 #->sort([descending(~id), ascending(~name)]);
             };
 
-  let res3 =  $f->eval($expr3)->cast(@Relation<(id:Integer, name:String)>)->toOne();
+  let res3 =  $f->eval($expr3);
 
   assertEquals( '#TDS\n'+
                 '   id,name\n'+

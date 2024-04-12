@@ -29,7 +29,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::compos
                  ->filter(x|$x.newCol == 'qw4');
               };
 
-    let res =  $f->eval($expr)->cast(@Relation<(val:Integer, str:String, newCol:String)>)->toOne();
+    let res =  $f->eval($expr);
 
     assertEquals( '#TDS\n'+
                   '   val,str,newCol\n'+

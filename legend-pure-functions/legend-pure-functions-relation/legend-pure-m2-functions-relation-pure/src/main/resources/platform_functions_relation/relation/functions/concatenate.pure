@@ -35,7 +35,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::concat
                   #);
               };
 
-    let res =  $f->eval($expr)->cast(@Relation<(val:Integer, str:String)>)->toOne();
+    let res =  $f->eval($expr);
 
     assertEquals( '#TDS\n'+
                   '   val,str\n'+

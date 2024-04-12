@@ -99,7 +99,7 @@ public class Support
                 Instance.addValueToProperty(newParameter, M3Properties.name, parameter.getValueForMetaPropertyToOne(M3Properties.name), processorSupport);
                 Instance.addValueToProperty(newFunctionType, M3Properties.parameters, newParameter, processorSupport);
             }
-            else if (GenericType.isGenericTypeConcrete(genericType) && Multiplicity.isMultiplicityConcrete(multiplicity))
+            else if (GenericType.isGenericTypeFullyConcrete(genericType, processorSupport) && Multiplicity.isMultiplicityConcrete(multiplicity))
             {
                 Instance.addValueToProperty(newFunctionType, M3Properties.parameters, parameter, processorSupport);
             }
@@ -357,8 +357,15 @@ public class Support
         int nonBottomConcreteGenericTypesCount = nonBottomConcreteGenericTypeList.size();
         if (nonBottomConcreteGenericTypesCount == 1)
         {
-            // Only one concrete type, so we return a copy of it
-            return GenericType.copyGenericType(nonBottomConcreteGenericTypeList.get(0), replaceSourceInfo, newSourceInfo, processorSupport);
+            if (!nonConcreteGenericTypes.isEmpty())
+            {
+                return Type.wrapGenericType(topType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
+            }
+            else
+            {
+                // Only one concrete type, so we return a copy of it
+                return GenericType.copyGenericType(nonBottomConcreteGenericTypeList.get(0), replaceSourceInfo, newSourceInfo, processorSupport);
+            }
         }
 
         // General case
