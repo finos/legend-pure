@@ -585,7 +585,7 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     public void testConflictingParameterTypes()
     {
         compileInferenceTest(
-                        "function funcT<T>(c:T[*], f:Function<{T[1]->Boolean[1]}>[1]):Pair<List<T>,List<T>>[1]\n" +
+                "function funcT<T>(c:T[*], f:Function<{T[1]->Boolean[1]}>[1]):Pair<List<T>,List<T>>[1]\n" +
                         "{\n" +
                         "   $c->fold({i,a|if($f->eval($i),\n" +
                         "                    |let l = $a.first; ^$a(first=^$l(values+=$i));,\n" +
@@ -607,6 +607,40 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
         CoreInstance listTypeParameter = Instance.getValueForMetaPropertyToOneResolved(listTA, M3Properties.typeParameter, processorSupport);
         Assert.assertNotNull(listTypeParameter);
         Assert.assertEquals("T", listTypeParameter.getValueForMetaPropertyToOne(M3Properties.name).getName());
+    }
+
+    @Test
+    public void testIfReturningFunctions()
+    {
+        compileInferenceTest(
+                "Class meta::core::runtime::Runtime\n" +
+                        "{}" +
+                        "Class meta::pure::mapping::Mapping\n" +
+                        "{}" +
+                        "function <<functionType.NotImplementedFunction>> meta::pure::mapping::from<T|m>(t:T[m], runtime:meta::core::runtime::Runtime[1]):T[m]\n" +
+                        "{\n" +
+                        "    $t\n" +
+                        "}\n" +
+                        "\n" +
+                        "function <<functionType.NotImplementedFunction>> meta::pure::mapping::from<T|m>(t:T[m], m:meta::pure::mapping::Mapping[1], runtime:meta::core::runtime::Runtime[1]):T[m]\n" +
+                        "{\n" +
+                        "    $t\n" +
+                        "}" +
+                        "function <<functionType.NotImplementedFunction>> meta::pure::mapping::from<T|m>(t:T[m], m:meta::pure::mapping::Mapping[1]):T[m]\n" +
+                        "{\n" +
+                        "    $t\n" +
+                        "}" +
+                        "function x():Function<Any>[1]" +
+                        "{" +
+                        "  if(true,|meta::pure::mapping::from_T_m__Runtime_1__T_m_,|meta::pure::mapping::from_T_m__Mapping_1__Runtime_1__T_m_)" +
+                        "}" +
+                        "function z():Function<{Nil[*], Nil[1]->Any[*]}>[1]" +
+                        "{" +
+                        "  if(true,|meta::pure::mapping::from_T_m__Runtime_1__T_m_,|meta::pure::mapping::from_T_m__Mapping_1__T_m_)" +
+                        "}"
+        );
+
+
     }
 
     @Test
@@ -644,7 +678,7 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     public void ensureReturnTypeIsCorrectlyInferredForComplexNew()
     {
         compileInferenceTest(
-                        "Class Container { values : Any[*]; }\n" +
+                "Class Container { values : Any[*]; }\n" +
                         "\n" +
                         "function test<T>(value:T[1], func:Function<{T[1]->Any[*]}>[1]):List<Container>[*]\n" +
                         "{\n" +
@@ -677,6 +711,17 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                         "{\n" +
                         "   $f->map($func);\n" +
                         "}\n");
+    }
+
+    @Test
+    public void testEvalWithFuncAsAPram()
+    {
+        compileInferenceTest(
+                "native function meta::pure::functions::math::acos(number:Number[1]):Float[1];" +
+                        "function test<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "   assertEqWithinTolerance(1.570796326794, $f->eval(|acos(0)), 0.000000000001);\n" +
+                        "}");
     }
 
     @Test
