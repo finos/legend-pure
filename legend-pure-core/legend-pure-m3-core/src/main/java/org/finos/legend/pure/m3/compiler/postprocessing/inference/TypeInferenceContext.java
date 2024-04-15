@@ -569,13 +569,17 @@ public class TypeInferenceContext
         ListIterable<? extends VariableExpression> firstParams = ListHelper.wrapListIterable(firstFuncType._parameters());
         ListIterable<? extends VariableExpression> secondParams = ListHelper.wrapListIterable(secondFuncType._parameters());
 
-        for (int i = 0; i < firstParams.size(); i++)
+        if (firstParams.size() == secondParams.size())
         {
-            register(firstParams.get(i)._genericType(), secondParams.get(i)._genericType(), targetGenericsContext, merge, observer);
-            registerMul(firstParams.get(i)._multiplicity(), secondParams.get(i)._multiplicity(), targetGenericsContext, observer);
+            for (int i = 0; i < firstParams.size(); i++)
+            {
+                register(firstParams.get(i)._genericType(), secondParams.get(i)._genericType(), targetGenericsContext, merge, observer);
+                registerMul(firstParams.get(i)._multiplicity(), secondParams.get(i)._multiplicity(), targetGenericsContext, observer);
+            }
+            register(firstFuncType._returnType(), secondFuncType._returnType(), targetGenericsContext, merge, observer);
+            registerMul(firstFuncType._returnMultiplicity(), secondFuncType._returnMultiplicity(), targetGenericsContext, observer);
         }
-        register(firstFuncType._returnType(), secondFuncType._returnType(), targetGenericsContext, merge, observer);
-        registerMul(firstFuncType._returnMultiplicity(), secondFuncType._returnMultiplicity(), targetGenericsContext, observer);
+
         observer.unShiftTab();
     }
 
