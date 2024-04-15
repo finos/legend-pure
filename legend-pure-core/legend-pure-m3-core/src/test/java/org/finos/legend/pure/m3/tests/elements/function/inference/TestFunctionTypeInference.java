@@ -637,6 +637,10 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                         "function z():Function<{Nil[*], Nil[1]->Any[*]}>[1]" +
                         "{" +
                         "  if(true,|meta::pure::mapping::from_T_m__Runtime_1__T_m_,|meta::pure::mapping::from_T_m__Mapping_1__T_m_)" +
+                        "}" +
+                        "function z2():Function<Any>[1]" +
+                        "{" +
+                        "  if(true,|getAllVersionsInRange_Class_1__Date_1__Date_1__T_MANY_,|getAll_Class_1__T_MANY_)" +
                         "}"
         );
 
