@@ -21,13 +21,13 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionTy
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.SimpleFunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
@@ -614,9 +614,9 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     {
         compileInferenceTest(
                 "Class meta::core::runtime::Runtime\n" +
-                        "{}" +
+                        "{}\n" +
                         "Class meta::pure::mapping::Mapping\n" +
-                        "{}" +
+                        "{}\n" +
                         "function <<functionType.NotImplementedFunction>> meta::pure::mapping::from<T|m>(t:T[m], runtime:meta::core::runtime::Runtime[1]):T[m]\n" +
                         "{\n" +
                         "    $t\n" +
@@ -625,26 +625,24 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                         "function <<functionType.NotImplementedFunction>> meta::pure::mapping::from<T|m>(t:T[m], m:meta::pure::mapping::Mapping[1], runtime:meta::core::runtime::Runtime[1]):T[m]\n" +
                         "{\n" +
                         "    $t\n" +
-                        "}" +
+                        "}\n" +
                         "function <<functionType.NotImplementedFunction>> meta::pure::mapping::from<T|m>(t:T[m], m:meta::pure::mapping::Mapping[1]):T[m]\n" +
                         "{\n" +
                         "    $t\n" +
-                        "}" +
-                        "function x():Function<Any>[1]" +
-                        "{" +
-                        "  if(true,|meta::pure::mapping::from_T_m__Runtime_1__T_m_,|meta::pure::mapping::from_T_m__Mapping_1__Runtime_1__T_m_)" +
-                        "}" +
-                        "function z():Function<{Nil[*], Nil[1]->Any[*]}>[1]" +
-                        "{" +
-                        "  if(true,|meta::pure::mapping::from_T_m__Runtime_1__T_m_,|meta::pure::mapping::from_T_m__Mapping_1__T_m_)" +
-                        "}" +
-                        "function z2():Function<Any>[1]" +
-                        "{" +
-                        "  if(true,|getAllVersionsInRange_Class_1__Date_1__Date_1__T_MANY_,|getAll_Class_1__T_MANY_)" +
-                        "}"
+                        "}\n" +
+                        "function x():Function<Any>[1]\n" +
+                        "{\n" +
+                        "  if(true,|meta::pure::mapping::from_T_m__Runtime_1__T_m_,|meta::pure::mapping::from_T_m__Mapping_1__Runtime_1__T_m_)\n" +
+                        "}\n" +
+                        "function z():Function<{Nil[*], Nil[1]->Any[*]}>[1]\n" +
+                        "{\n" +
+                        "  if(true,|meta::pure::mapping::from_T_m__Runtime_1__T_m_,|meta::pure::mapping::from_T_m__Mapping_1__T_m_)\n" +
+                        "}\n" +
+                        "function z2():Function<Any>[1]\n" +
+                        "{\n" +
+                        "  if(true,|getAllVersionsInRange_Class_1__Date_1__Date_1__T_MANY_,|getAll_Class_1__T_MANY_)\n" +
+                        "}\n"
         );
-
-
     }
 
     @Test
