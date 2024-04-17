@@ -67,7 +67,7 @@ public class TestTypeResolutionForIf extends AbstractPureTestWithCoreCompiledPla
     {
         // Current bug, but expected by some platform code... Need to eventually fix... return should be Any
         compileTestSource("fromString.pure",
-                "function a<K>(x:K[*]):Any[1]" +
+                "function a<K>(x:K[*]):K[1]" +
                         "{" +
                         "   if (true, |$x->at(0), |true);" +
                         "}");
@@ -78,10 +78,9 @@ public class TestTypeResolutionForIf extends AbstractPureTestWithCoreCompiledPla
     {
         // Current bug, but expected by some platform code... Need to eventually fix... return should be Any
         compileTestSource("fromString.pure",
-                "function a<K>(x:K[*]):Any[1]" +
+                "function a<K>(x:K[*]):K[1]" +
                         "{" +
                         "   if (true, |true, |$x->at(0));" +
                         "}");
     }
 }
-
