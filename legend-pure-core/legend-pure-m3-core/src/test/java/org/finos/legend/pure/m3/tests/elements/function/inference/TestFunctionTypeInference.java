@@ -718,6 +718,33 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
+    public void testNativeFuncWithTypeParams()
+    {
+        compileInferenceTest(
+                "function orElse<T>(val:T[0..1], dft:T[1]):T[1]\n" +
+                        "{\n" +
+                        "  if($val->isEmpty(), |$dft, |$val->toOne())\n" +
+                        "}\n" +
+                        "\n" +
+                        "native function meta::pure::functions::collection::newMapNative<U,V>(pairs:Pair<U,V>[*]):Map<U,V>[1];\n" +
+                        "\n" +
+                        "function meta::pure::functions::collection::newMapNonNative<U,V>(pairs:Pair<U,V>[*]):Map<U,V>[1]\n" +
+                        "{\n" +
+                        "  ^Map<U,V>()\n" +
+                        "}\n" +
+                        "\n" +
+                        "function orElseEmptyMapWithNonNative(maybeMap:Map<String,String>[0..1]):Map<String,String>[1]\n" +
+                        "{\n" +
+                        "  $maybeMap->orElse([]->newMapNonNative())\n" +
+                        "}\n" +
+                        "\n" +
+                        "function orElseEmptyMapWithNative(maybeMap:Map<String,String>[0..1]):Map<String,String>[1]\n" +
+                        "{\n" +
+                        "  $maybeMap->orElse([]->newMapNative())\n" +
+                        "}\n");
+    }
+
+    @Test
     @Ignore
     @ToFix
     public void testEvalWithFuncAsAParam()
@@ -939,10 +966,24 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
+    public void testShortChainWithParameterizedReturn()
+    {
+        compileInferenceTest(
+                "function test<X, Y, Z>(list:X[*], funcXY:Function<{X[1]->Y[1]}>[1], predY:Function<{Y[1]->Boolean[1]}>[1], funcYZ:Function<{Y[1]->Z[0..1]}>[1], predZ:Function<{Z[1]->Boolean[1]}>[1]):Z[*]\n" +
+                        "{\n" +
+                        "  $list\n" +
+                        "   ->map(c | $funcXY->eval($c))\n" +
+                        "   ->filter(y | $predY->eval($y))\n" +
+                        "   ->map(y | $funcYZ->eval($y))\n" +
+                        "   ->filter(z | $predZ->eval($z))\n" +
+                        "}");
+    }
+
+    @Test
     public void testChainWithParameterizedReturn()
     {
         compileInferenceTest(
-                "function test<X, Y, Z>(classes:Class<X>[m], funcXY:Function<{Class<X>[1]->Y[1]}>[1], predY:Function<{Y[1]->Boolean[1]}>[1], funcYZ:Function<{Y[1]->Z[0..1]}>[1], predZ:Function<{Z[1]->Boolean[1]}>[1]):Z[*]\n" +
+                "function test<X, Y, Z>(classes:Class<X>[*], funcXY:Function<{Class<X>[1]->Y[1]}>[1], predY:Function<{Y[1]->Boolean[1]}>[1], funcYZ:Function<{Y[1]->Z[0..1]}>[1], predZ:Function<{Z[1]->Boolean[1]}>[1]):Z[*]\n" +
                         "{\n" +
                         "  $classes\n" +
                         "   ->filter(c | $c.properties->size() > 1)\n" +
