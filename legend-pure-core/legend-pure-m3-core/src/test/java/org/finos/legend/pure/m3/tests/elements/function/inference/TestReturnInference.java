@@ -37,44 +37,39 @@ public class TestReturnInference extends AbstractPureTestWithCoreCompiledPlatfor
     public void clearRuntime()
     {
         runtime.delete("fromString.pure");
+        runtime.compile();
     }
 
     @Test
     public void testReturnInferenceFail()
     {
-        try
-        {
-            runtime.createInMemorySource("fromString.pure", "function test(s:String[1]):Any[*]\n" +
-                    "{\n" +
-                    "   let r = '10';\n" +
-                    "   ex(w:String[1]|$w+$s+$r);\n" +
-                    "}\n" +
-                    "\n" +
-                    "function ex(f:Function<Any>[1]):Any[*]\n" +
-                    "{\n" +
-                    "   print($f->eval('ee'));\n" +
-                    "}\n" +
-                    "\n" +
-                    "function go():Any[*]\n" +
-                    "{\n" +
-                    "   print(test('www'),5);\n" +
-                    "}");
-            this.runtime.compile();
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "eval(_:Function<Any>[1],_:String[1])\n" +
-                    PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_IMPORTED_MESSAGE +
-                    PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE +
-                    "\tmeta::pure::functions::lang::eval(Function<{->V[m]}>[1]):V[m]\n" +
-                    "\tmeta::pure::functions::lang::eval(Function<{S[n], T[o], U[p], W[q], X[r], Y[s], Z[t]->V[m]}>[1], S[n], T[o], U[p], W[q], X[r], Y[s], Z[t]):V[m]\n" +
-                    "\tmeta::pure::functions::lang::eval(Function<{T[n], U[p], W[q], X[r], Y[s], Z[t]->V[m]}>[1], T[n], U[p], W[q], X[r], Y[s], Z[t]):V[m]\n" +
-                    "\tmeta::pure::functions::lang::eval(Function<{T[n], U[p], W[q], X[r], Y[s]->V[m]}>[1], T[n], U[p], W[q], X[r], Y[s]):V[m]\n" +
-                    "\tmeta::pure::functions::lang::eval(Function<{T[n], U[p], W[q], X[r]->V[m]}>[1], T[n], U[p], W[q], X[r]):V[m]\n" +
-                    "\tmeta::pure::functions::lang::eval(Function<{T[n], U[p], W[q]->V[m]}>[1], T[n], U[p], W[q]):V[m]\n" +
-                    "\tmeta::pure::functions::lang::eval(Function<{T[n], U[p]->V[m]}>[1], T[n], U[p]):V[m]\n" +
-                    "\tmeta::pure::functions::lang::eval(Function<{T[n]->V[m]}>[1], T[n]):V[m]\n", "fromString.pure", 9, 14, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "function test(s:String[1]):Any[*]\n" +
+                        "{\n" +
+                        "   let r = '10';\n" +
+                        "   ex(w:String[1]|$w+$s+$r);\n" +
+                        "}\n" +
+                        "\n" +
+                        "function ex(f:Function<Any>[1]):Any[*]\n" +
+                        "{\n" +
+                        "   print($f->eval('ee'));\n" +
+                        "}\n" +
+                        "\n" +
+                        "function go():Any[*]\n" +
+                        "{\n" +
+                        "   print(test('www'),5);\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "eval(_:Function<Any>[1],_:String[1])\n" +
+                PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_IMPORTED_MESSAGE +
+                PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE +
+                "\tmeta::pure::functions::lang::eval(Function<{->V[m]}>[1]):V[m]\n" +
+                "\tmeta::pure::functions::lang::eval(Function<{S[n], T[o], U[p], W[q], X[r], Y[s], Z[t]->V[m]}>[1], S[n], T[o], U[p], W[q], X[r], Y[s], Z[t]):V[m]\n" +
+                "\tmeta::pure::functions::lang::eval(Function<{T[n], U[p], W[q], X[r], Y[s], Z[t]->V[m]}>[1], T[n], U[p], W[q], X[r], Y[s], Z[t]):V[m]\n" +
+                "\tmeta::pure::functions::lang::eval(Function<{T[n], U[p], W[q], X[r], Y[s]->V[m]}>[1], T[n], U[p], W[q], X[r], Y[s]):V[m]\n" +
+                "\tmeta::pure::functions::lang::eval(Function<{T[n], U[p], W[q], X[r]->V[m]}>[1], T[n], U[p], W[q], X[r]):V[m]\n" +
+                "\tmeta::pure::functions::lang::eval(Function<{T[n], U[p], W[q]->V[m]}>[1], T[n], U[p], W[q]):V[m]\n" +
+                "\tmeta::pure::functions::lang::eval(Function<{T[n], U[p]->V[m]}>[1], T[n], U[p]):V[m]\n" +
+                "\tmeta::pure::functions::lang::eval(Function<{T[n]->V[m]}>[1], T[n]):V[m]\n", "fromString.pure", 9, 14, e);
     }
 }
