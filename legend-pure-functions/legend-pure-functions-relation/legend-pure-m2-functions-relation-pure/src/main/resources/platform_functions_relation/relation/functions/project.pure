@@ -56,7 +56,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::projec
                        ])
             };
 
-  let res = $f->eval($expr);
+  let res = $f->eval($expr)->cast(@Relation<(one:String, two:String, three:Integer)>)->toOne();
 
   assertEquals( '#TDS\n'+
                 '   one,two,three\n'+
@@ -107,7 +107,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::projec
                               ])
              };
 
-  let res = $f->eval($expr);
+  let res = $f->eval($expr)->cast(@Relation<(one:String, two:String, three:Integer)>)->toOne();
 
   assertEquals( '#TDS\n'+
                 '   one,two,three\n'+
@@ -143,7 +143,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::projec
                             ])
               };
 
-  let res = $f->eval($expr);
+  let res = $f->eval($expr)->cast(@Relation<(one:String, two:String, three:Integer)>)->toOne();
 
   assertEquals( '#TDS\n'+
                 '   one,two,three\n'+
@@ -151,6 +151,3 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::projec
                 '   ok,other,null\n'+
                 '#', $res->toString());
 }
-
-
-

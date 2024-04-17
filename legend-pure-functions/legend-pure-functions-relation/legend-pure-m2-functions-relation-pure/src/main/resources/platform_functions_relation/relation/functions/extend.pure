@@ -32,7 +32,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::extend
                 #->extend(~name:c|$c.str->toOne() + $c.val->toOne()->toString())
               };
 
-    let res =  $f->eval($expr);
+    let res =  $f->eval($expr)->cast(@Relation<(val:Integer, str:String, name:String)>)->toOne();
 
     assertEquals( '#TDS\n'+
                   '   val,str,name\n'+
@@ -57,7 +57,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::extend
                 #->extend(~name:c|$c.val->toOne() + 1)
                };
 
-    let res =  $f->eval($expr);
+    let res =  $f->eval($expr)->cast(@Relation<(val:Integer, str:String, name:Integer)>)->toOne();
 
     assertEquals( '#TDS\n'+
                   '   val,str,name\n'+
@@ -82,7 +82,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::extend
                  #->extend(~name:c|$c.doub->toOne() + 1.0)
               };
 
-    let res =  $f->eval($expr);
+    let res =  $f->eval($expr)->cast(@Relation<(val:Integer, doub:Float, name:Float)>)->toOne();
 
     assertEquals( '#TDS\n'+
                   '   val,doub,name\n'+
@@ -107,7 +107,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::extend
                 #->extend(~[name:c|$c.val->toOne() + 1, other:x|$x.str->toOne()+'_ext'])
                };
 
-    let res =  $f->eval($expr);
+    let res =  $f->eval($expr)->cast(@Relation<(val:Integer, str:String, name:Integer, other:String)>)->toOne();
 
     assertEquals( '#TDS\n'+
                   '   val,str,name,other\n'+

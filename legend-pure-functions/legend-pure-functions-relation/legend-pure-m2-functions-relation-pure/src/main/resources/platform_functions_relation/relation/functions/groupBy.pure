@@ -40,7 +40,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::groupB
                 #->groupBy(~grp, ~newCol : x | $x.name : y | $y->joinStrings(''))
                };
 
-    let res =  $f->eval($expr);
+    let res =  $f->eval($expr)->cast(@Relation<(grp:Integer, newCol:String)>)->toOne();
 
     assertEquals( '#TDS\n'+
                   '   grp,newCol\n'+
@@ -72,7 +72,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::groupB
                 #->groupBy(~[grp], ~newCol : x | $x.name : y | $y->joinStrings(''))
                };
 
-    let res =  $f->eval($expr);
+    let res =  $f->eval($expr)->cast(@Relation<(grp:Integer, newCol:String)>)->toOne();
 
     assertEquals( '#TDS\n'+
                   '   grp,newCol\n'+
@@ -103,7 +103,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::groupB
                 #->groupBy(~grp, ~[newCol : x | $x.name : y | $y->joinStrings(''), YoCol : x | $x.id : y | $y->plus()])
                };
 
-    let res =  $f->eval($expr);
+    let res =  $f->eval($expr)->cast(@Relation<(grp:Integer, newCol:String, YoCol:Integer)>)->toOne();
 
     assertEquals( '#TDS\n'+
                   '   grp,newCol,YoCol\n'+
@@ -134,7 +134,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::groupB
                 #->groupBy(~[grp], ~[newCol : x | $x.name : y | $y->joinStrings(''), YoCol : x | $x.id : y | $y->plus()])
                };
 
-    let res =  $f->eval($expr);
+    let res =  $f->eval($expr)->cast(@Relation<(grp:Integer, newCol:String, YoCol:Integer)>)->toOne();
 
     assertEquals( '#TDS\n'+
                   '   grp,newCol,YoCol\n'+
@@ -146,5 +146,3 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::groupB
                   '   5,I,9\n'+
                   '#', $res->toString());
 }
-
-

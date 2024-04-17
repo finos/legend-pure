@@ -29,7 +29,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::slice:
                 #->slice(1,3);
               };
 
-    let res =  $f->eval($expr);
+    let res =  $f->eval($expr)->cast(@Relation<(val:Integer, str:String)>)->toOne();
 
     assertEquals( '#TDS\n'+
                   '   val,str\n'+

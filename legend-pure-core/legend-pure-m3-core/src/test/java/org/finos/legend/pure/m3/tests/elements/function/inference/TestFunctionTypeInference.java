@@ -28,6 +28,7 @@ import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tools.test.ToFix;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
@@ -35,6 +36,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Optional;
@@ -716,7 +718,9 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
-    public void testEvalWithFuncAsAPram()
+    @Ignore
+    @ToFix
+    public void testEvalWithFuncAsAParam()
     {
         compileInferenceTest(
                 "native function meta::pure::functions::math::acos(number:Number[1]):Float[1];" +

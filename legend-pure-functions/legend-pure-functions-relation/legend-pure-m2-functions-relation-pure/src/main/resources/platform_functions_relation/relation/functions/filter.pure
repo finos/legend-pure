@@ -16,6 +16,12 @@ import meta::pure::metamodel::relation::*;
 
 native function meta::pure::functions::relation::filter<T>(rel:Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1];
 
+
+function <<test.Test>> meta::pure::functions::relation::tests::filter::testSimpleFilter():Boolean[1]
+{
+  meta::pure::functions::relation::tests::filter::testSimpleFilterShared(meta::pure::functions::relation::testTDSMemoryRun_Function_1__Any_MANY_);
+}
+
 function <<RelationProfile.test>> meta::pure::functions::relation::tests::filter::testSimpleFilterShared<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
 {
     let expr = {
@@ -27,7 +33,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::filter
                   #->filter(x|$x.val > 1)
                };
 
-    let res =  $f->eval($expr);
+    let res =  $f->eval($expr)->cast(@Relation<(val:Integer)>)->toOne();
 
     assertEquals( '#TDS\n'+
                   '   val\n'+
