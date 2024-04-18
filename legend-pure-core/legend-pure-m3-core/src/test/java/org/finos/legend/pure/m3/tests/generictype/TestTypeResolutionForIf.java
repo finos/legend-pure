@@ -15,6 +15,7 @@
 package org.finos.legend.pure.m3.tests.generictype;
 
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -32,6 +33,7 @@ public class TestTypeResolutionForIf extends AbstractPureTestWithCoreCompiledPla
     public void clearRuntime()
     {
         runtime.delete("fromString.pure");
+        runtime.compile();
     }
 
     @Test
@@ -47,19 +49,13 @@ public class TestTypeResolutionForIf extends AbstractPureTestWithCoreCompiledPla
     @Test
     public void testIfWithError()
     {
-        try
-        {
-            compileTestSource("fromString.pure",
-                    "function a():Integer[1]" +
-                            "{" +
-                            "   if (true, |1, |'String');" +
-                            "}");
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:fromString.pure line:1 column:28), \"Return type error in function 'a'; found: meta::pure::metamodel::type::Any; expected: Integer\"", e.getMessage());
-        }
-
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "function a():Integer[1]" +
+                        "{" +
+                        "   if (true, |1, |'String');" +
+                        "}"));
+        Assert.assertEquals("Compilation error at (resource:fromString.pure line:1 column:28), \"Return type error in function 'a'; found: meta::pure::metamodel::type::Any; expected: Integer\"", e.getMessage());
     }
 
     @Test
@@ -67,7 +63,7 @@ public class TestTypeResolutionForIf extends AbstractPureTestWithCoreCompiledPla
     {
         // Current bug, but expected by some platform code... Need to eventually fix... return should be Any
         compileTestSource("fromString.pure",
-                "function a<K>(x:K[*]):Any[1]" +
+                "function a<K>(x:K[*]):K[1]" +
                         "{" +
                         "   if (true, |$x->at(0), |true);" +
                         "}");
@@ -78,10 +74,9 @@ public class TestTypeResolutionForIf extends AbstractPureTestWithCoreCompiledPla
     {
         // Current bug, but expected by some platform code... Need to eventually fix... return should be Any
         compileTestSource("fromString.pure",
-                "function a<K>(x:K[*]):Any[1]" +
+                "function a<K>(x:K[*]):K[1]" +
                         "{" +
                         "   if (true, |true, |$x->at(0));" +
                         "}");
     }
 }
-

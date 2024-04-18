@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-function meta::pure::functions::relation::testTDSMemoryRun<T>(f:Function<{->Any[1]}>[1]):Any[1]
+function meta::pure::functions::relation::testTDSMemoryRun(f:Function<{->Any[*]}>[1]):Any[*]
 {
   $f->eval();
 }
@@ -24,10 +24,10 @@ Profile meta::pure::functions::relation::RelationProfile
 
 function <<test.Test>> meta::pure::functions::relation::tests::executeInMemoryTests():Boolean[1]
 {
-    meta::pure::functions::relation::tests::executeTests(meta::pure::functions::relation::testTDSMemoryRun_Function_1__Any_1_);
+    meta::pure::functions::relation::tests::executeTests(meta::pure::functions::relation::testTDSMemoryRun_Function_1__Any_MANY_);
 }
 
-function meta::pure::functions::relation::tests::executeTests(f:Function<{Function<{->Any[1]}>[1]->Any[1]}>[1]):Boolean[1]
+function meta::pure::functions::relation::tests::executeTests(f:Function<{Function<{->Any[*]}>[1]->Any[*]}>[1]):Boolean[1]
 {
     meta::pure::functions::relation::tests::findFunctions(meta::pure::functions::relation)
       ->fold(
