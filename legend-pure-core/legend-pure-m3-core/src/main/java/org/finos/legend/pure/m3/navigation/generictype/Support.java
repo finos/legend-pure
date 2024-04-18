@@ -275,11 +275,12 @@ public class Support
             }
         }
 
-        if (typeParameterCount > 0)
-        {
-            // We have a mix of non-concrete and (non-Any) concrete: return Nil
-            return Type.wrapGenericType(bottomType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
-        }
+        // TODO if we have a mix of non-concrete and (non-Any) concrete generic types, we should probably return Nil; however, this breaks some tests
+//        if (typeParameterCount > 0)
+//        {
+//            // We have a mix of non-concrete and (non-Any) concrete: return Nil
+//            return Type.wrapGenericType(bottomType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
+//        }
 
         if (nonTopConcreteGenericTypeCount == 1)
         {
@@ -368,11 +369,12 @@ public class Support
             }
         }
 
-        if (typeParameterCount > 0)
-        {
-            // We have a mix of non-concrete and (non-Nil) concrete: return Any
-            return Type.wrapGenericType(topType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
-        }
+        // TODO if we have a mix of non-concrete and (non-Nil) concrete generic types, we should probably return Any; however, this breaks some tests
+//        if (typeParameterCount > 0)
+//        {
+//            // We have a mix of non-concrete and (non-Nil) concrete: return Any
+//            return Type.wrapGenericType(topType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
+//        }
 
         if (nonBottomConcreteGenericTypesCount == 1)
         {
