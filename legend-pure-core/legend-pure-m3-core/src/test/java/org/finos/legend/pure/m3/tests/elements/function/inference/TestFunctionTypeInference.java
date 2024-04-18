@@ -936,6 +936,93 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
+    public void testShortChainedMapsWithConcreteTypes()
+    {
+        compileInferenceTest(
+                "function test(strings:String[*]):Integer[*]\n" +
+                        "{\n" +
+                        "  $strings->map(s | $s->length())\n" +
+                        "          ->map(i | $i * 3.5)\n" +
+                        "          ->map(f | $f > 256)\n" +
+                        "          ->map(b | $b->toString())\n" +
+                        "          ->map(s | $s->length())\n" +
+                        "}\n"
+        );
+    }
+
+    @Test
+    public void testChainedMapsWithConcreteTypes()
+    {
+        compileInferenceTest(
+                "function test(strings:String[*]):Integer[*]\n" +
+                        "{\n" +
+                        "  $strings->map(s | $s->length())\n" +
+                        "          ->map(i | $i * 3.5)\n" +
+                        "          ->map(f | $f > 256)\n" +
+                        "          ->map(b | $b->toString())\n" +
+                        "          ->map(s | $s->length())\n" +
+                        "          ->map(i | $i * 32)\n" +
+                        "          ->map(i | $i > 128)\n" +
+                        "          ->map(b | if($b, |1, |0))\n" +
+                        "          ->map(i | $i / 2.0)\n" +
+                        "          ->map(f | $f->toString())\n" +
+                        "          ->map(s | $s->length())\n" +
+                        "}\n"
+        );
+    }
+
+    @Test
+    public void testShortChainedMapsWithTypeParams()
+    {
+        compileInferenceTest(
+                "function test<A,B,C,D>(list:A[*], funcAB:Function<{A[1]->B[0..1]}>[1], funcBC:Function<{B[1]->C[1]}>[1], funcCD:Function<{C[1]->D[0..1]}>[1]):D[*]\n" +
+                        "{\n" +
+                        "  $list->map(a | $funcAB->eval($a))\n" +
+                        "       ->map(b | $funcBC->eval($b))\n" +
+                        "       ->map(c | $funcCD->eval($c))\n" +
+                        "}\n"
+        );
+    }
+
+    @Test
+    public void testChainedMapsWithTypeParams()
+    {
+        compileInferenceTest(
+                "function test<A,B,C,D,E,F,G,H,I,J,K,L,M,N>(" +
+                        "            list:A[*],\n" +
+                        "            funcAB:Function<{A[1]->B[0..1]}>[1],\n" +
+                        "            funcBC:Function<{B[1]->C[1]}>[1],\n" +
+                        "            funcCD:Function<{C[1]->D[0..1]}>[1],\n" +
+                        "            funcDE:Function<{D[1]->E[1]}>[1],\n" +
+                        "            funcEF:Function<{E[1]->F[0..1]}>[1],\n" +
+                        "            funcFG:Function<{F[1]->G[1]}>[1],\n" +
+                        "            funcGH:Function<{G[1]->H[0..1]}>[1],\n" +
+                        "            funcHI:Function<{H[1]->I[1]}>[1],\n" +
+                        "            funcIJ:Function<{I[1]->J[0..1]}>[1],\n" +
+                        "            funcJK:Function<{J[1]->K[0..1]}>[1],\n" +
+                        "            funcKL:Function<{K[1]->L[1]}>[1],\n" +
+                        "            funcLM:Function<{L[1]->M[0..1]}>[1],\n" +
+                        "            funcMN:Function<{M[1]->N[1]}>[1]\n" +
+                        "            ):N[*]\n" +
+                        "{\n" +
+                        "  $list->map(a | $funcAB->eval($a))\n" +
+                        "       ->map(b | $funcBC->eval($b))\n" +
+                        "       ->map(c | $funcCD->eval($c))\n" +
+                        "       ->map(d | $funcDE->eval($d))\n" +
+                        "       ->map(e | $funcEF->eval($e))\n" +
+                        "       ->map(f | $funcFG->eval($f))\n" +
+                        "       ->map(g | $funcGH->eval($g))\n" +
+                        "       ->map(h | $funcHI->eval($h))\n" +
+                        "       ->map(i | $funcIJ->eval($i))\n" +
+                        "       ->map(j | $funcJK->eval($j))\n" +
+                        "       ->map(k | $funcKL->eval($k))\n" +
+                        "       ->map(l | $funcLM->eval($l))\n" +
+                        "       ->map(m | $funcMN->eval($m))\n" +
+                        "}\n"
+        );
+    }
+
+    @Test
     public void testMixedChain()
     {
         compileInferenceTest(
