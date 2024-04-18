@@ -40,7 +40,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::join::
             #;
 
   let expr = {|$tds->join($tds2, JoinKind.INNER, {x,y| $x.id == $y.id2})};
-  let res =  $f->eval($expr)->cast(@Relation<(id:Integer, name:String, id2:Integer, col:String, other:Integer)>)->toOne();
+  let res =  $f->eval($expr);
 
   assertEquals( '#TDS\n'+
                 '   id,name,id2,col,other\n'+
@@ -50,7 +50,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::join::
                 '#', $res->toString());
 
   let expr2 = {|$tds->join($tds2, JoinKind.LEFT, {x,y| $x.id == $y.id2})};
-  let res2 =  $f->eval($expr2)->cast(@Relation<(id:Integer, name:String, id2:Integer, col:String, other:Integer)>)->toOne();
+  let res2 =  $f->eval($expr2);
 
   assertEquals( '#TDS\n'+
                 '   id,name,id2,col,other\n'+

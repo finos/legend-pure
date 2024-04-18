@@ -31,7 +31,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::select
                   #->select(~[val, other]);
                };
 
-    let res =  $f->eval($expr)->cast(@Relation<(val:Integer, other:String)>)->toOne();
+    let res =  $f->eval($expr);
 
     assertEquals( '#TDS\n'+
                   '   val,other\n'+
@@ -56,7 +56,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::select
                   #->select(~str);
                };
 
-    let res =  $f->eval($expr)->cast(@Relation<(str:String)>)->toOne();
+    let res =  $f->eval($expr);
 
     assertEquals( '#TDS\n'+
                   '   str\n'+

@@ -99,7 +99,7 @@ public class Support
                 Instance.addValueToProperty(newParameter, M3Properties.name, parameter.getValueForMetaPropertyToOne(M3Properties.name), processorSupport);
                 Instance.addValueToProperty(newFunctionType, M3Properties.parameters, newParameter, processorSupport);
             }
-            else if (GenericType.isGenericTypeConcrete(genericType) && Multiplicity.isMultiplicityConcrete(multiplicity))
+            else if (GenericType.isGenericTypeFullyConcrete(genericType, processorSupport) && Multiplicity.isMultiplicityConcrete(multiplicity))
             {
                 Instance.addValueToProperty(newFunctionType, M3Properties.parameters, parameter, processorSupport);
             }
@@ -249,10 +249,13 @@ public class Support
             }
         }
 
-        if (nonTopConcreteGenericTypeList.isEmpty())
+        int typeParameterCount = nonConcreteGenericTypes.size();
+        int nonTopConcreteGenericTypeCount = nonTopConcreteGenericTypeList.size();
+
+        if (nonTopConcreteGenericTypeCount == 0)
         {
             // All types are Any or non-concrete
-            switch (nonConcreteGenericTypes.size())
+            switch (typeParameterCount)
             {
                 case 0:
                 {
@@ -272,7 +275,13 @@ public class Support
             }
         }
 
-        if (nonTopConcreteGenericTypeList.size() == 1)
+        if (typeParameterCount > 0)
+        {
+            // We have a mix of non-concrete and (non-Any) concrete: return Nil
+            return Type.wrapGenericType(bottomType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
+        }
+
+        if (nonTopConcreteGenericTypeCount == 1)
         {
             // Only one concrete non-top type, so we return a copy of it
             return GenericType.copyGenericType(nonTopConcreteGenericTypeList.get(0), replaceSourceInfo, newSourceInfo, processorSupport);
@@ -332,10 +341,14 @@ public class Support
                 nonBottomConcreteGenericTypeList.add(genericType);
             }
         }
-        if (nonBottomConcreteGenericTypeList.isEmpty())
+
+        int typeParameterCount = nonConcreteGenericTypes.size();
+        int nonBottomConcreteGenericTypesCount = nonBottomConcreteGenericTypeList.size();
+
+        if (nonBottomConcreteGenericTypesCount == 0)
         {
             // All types are Nil or non-concrete
-            switch (nonConcreteGenericTypes.size())
+            switch (typeParameterCount)
             {
                 case 0:
                 {
@@ -354,7 +367,13 @@ public class Support
                 }
             }
         }
-        int nonBottomConcreteGenericTypesCount = nonBottomConcreteGenericTypeList.size();
+
+        if (typeParameterCount > 0)
+        {
+            // We have a mix of non-concrete and (non-Nil) concrete: return Any
+            return Type.wrapGenericType(topType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
+        }
+
         if (nonBottomConcreteGenericTypesCount == 1)
         {
             // Only one concrete type, so we return a copy of it

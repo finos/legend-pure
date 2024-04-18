@@ -39,11 +39,12 @@ public class TestTypeResolutionForIf extends AbstractPureTestWithCoreCompiledPla
     @Test
     public void testIfWithAny()
     {
-        compileTestSource("fromString.pure",
-                "function a():Any[1]" +
-                        "{" +
-                        "   if (true, |1, |'String');" +
-                        "}");
+        compileTestSource(
+                "fromString.pure",
+                "function a():Any[1]\n" +
+                        "{\n" +
+                        "   if (true, |1, |'String');\n" +
+                        "}\n");
     }
 
     @Test
@@ -51,32 +52,56 @@ public class TestTypeResolutionForIf extends AbstractPureTestWithCoreCompiledPla
     {
         PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
                 "fromString.pure",
-                "function a():Integer[1]" +
-                        "{" +
-                        "   if (true, |1, |'String');" +
-                        "}"));
-        Assert.assertEquals("Compilation error at (resource:fromString.pure line:1 column:28), \"Return type error in function 'a'; found: meta::pure::metamodel::type::Any; expected: Integer\"", e.getMessage());
+                "function a():Integer[1]\n" +
+                        "{\n" +
+                        "   if (true, |1, |'String');\n" +
+                        "}\n"));
+        Assert.assertEquals("Compilation error at (resource:fromString.pure line:3 column:4), \"Return type error in function 'a'; found: meta::pure::metamodel::type::Any; expected: Integer\"", e.getMessage());
     }
 
     @Test
     public void testIfWithGenerics()
     {
-        // Current bug, but expected by some platform code... Need to eventually fix... return should be Any
-        compileTestSource("fromString.pure",
-                "function a<K>(x:K[*]):K[1]" +
-                        "{" +
-                        "   if (true, |$x->at(0), |true);" +
-                        "}");
+        compileTestSource(
+                "fromString.pure",
+                "function a<K>(x:K[*]):Any[1]\n" +
+                        "{\n" +
+                        "   if (true, |$x->at(0), |true);\n" +
+                        "}\n");
+    }
+
+    @Test
+    public void testIfWithGenericsError()
+    {
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "function a<K>(x:K[*]):K[1]\n" +
+                        "{\n" +
+                        "   if (true, |$x->at(0), |true);\n" +
+                        "}\n"));
+        Assert.assertEquals("Compilation error at (resource:fromString.pure line:3 column:4), \"Return type error in function 'a'; found: meta::pure::metamodel::type::Any; expected: K\"", e.getMessage());
     }
 
     @Test
     public void testIfWithGenerics2()
     {
-        // Current bug, but expected by some platform code... Need to eventually fix... return should be Any
-        compileTestSource("fromString.pure",
-                "function a<K>(x:K[*]):K[1]" +
-                        "{" +
-                        "   if (true, |true, |$x->at(0));" +
-                        "}");
+        compileTestSource(
+                "fromString.pure",
+                "function a<K>(x:K[*]):Any[1]\n" +
+                        "{\n" +
+                        "   if (true, |true, |$x->at(0));\n" +
+                        "}\n");
+    }
+
+    @Test
+    public void testIfWithGenerics2Error()
+    {
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "function a<K>(x:K[*]):K[1]\n" +
+                        "{\n" +
+                        "   if (true, |true, |$x->at(0));\n" +
+                        "}\n"));
+        Assert.assertEquals("Compilation error at (resource:fromString.pure line:3 column:4), \"Return type error in function 'a'; found: meta::pure::metamodel::type::Any; expected: K\"", e.getMessage());
     }
 }

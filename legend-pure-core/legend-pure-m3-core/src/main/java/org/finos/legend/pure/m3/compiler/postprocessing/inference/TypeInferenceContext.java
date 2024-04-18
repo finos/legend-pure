@@ -31,6 +31,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionType;
@@ -393,6 +394,24 @@ public class TypeInferenceContext
                     }
                     else
                     {
+                        if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(existingGenericType) && Type.subTypeOf(existingGenericType._rawType(), processorSupport.package_getByUserPath(M3Paths.Function), processorSupport) &&
+                                org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(genericTypeCopy) && Type.subTypeOf(genericTypeCopy._rawType(), processorSupport.package_getByUserPath(M3Paths.Function), processorSupport))
+                        {
+                            RichIterable<? extends GenericType> existingTA = ((GenericType) existing.getParameterValue())._typeArguments();
+                            RichIterable<? extends GenericType> replacementTA = genericTypeCopy._typeArguments();
+                            if (existingTA.size() == replacementTA.size())
+                            {
+                                Iterator<? extends GenericType> existingTypeArguments = existingTA.iterator();
+                                Iterator<? extends GenericType> replacementTypeArguments = replacementTA.iterator();
+                                while (existingTypeArguments.hasNext())
+                                {
+                                    GenericType existingArgument = existingTypeArguments.next();
+                                    GenericType replacementArgument = replacementTypeArguments.next();
+                                    forwards.add(new RegistrationRequest(existing.getTargetGenericsContext(), existingArgument, replacementArgument));
+                                }
+                            }
+                        }
+
                         // Merge two concrete types
                         GenericType merged = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(Lists.mutable.with(existing.getParameterValue(), genericTypeCopy), TypeParameter.isCovariant(templateGenType), false, genericType.getSourceInformation(), this.processorSupport);
                         this.states.getLast().putTypeParameterValue(name, merged, targetGenericsContext, false);
@@ -443,13 +462,15 @@ public class TypeInferenceContext
                         // We are in the right context and not in 'merge' mode, so it means we are propagating the inference UP.
                         this.states.getLast().putTypeParameterValue(name, genericTypeCopy, targetGenericsContext, false);
                     }
-//                    else
-//                    {
-                    // 'Merge' means that we are looping through function parameters after parameter inference is true. In this case finding multiple values means that we have to take the most common type!
-                    // It is the case for if<T|m>(test:Boolean[1], valid:Function<{->T[m]}>[1], invalid:Function<{->T[m]}>[1]):T[m];
-                    // When we find multiple values for T (one is a type Parameter (K) and the other one is concrete), we should return Any after a merge..
-                    // We are not currently doing it, but it should eventually be fixed here
-//                    }
+                    else
+                    {
+                        // 'Merge' means that we are looping through function parameters after parameter inference is true. In this case finding multiple values means that we have to take the most common type!
+                        // It is the case for if<T|m>(test:Boolean[1], valid:Function<{->T[m]}>[1], invalid:Function<{->T[m]}>[1]):T[m];
+                        // When we find multiple values for T (one is a type Parameter (K) and the other one is concrete), we should return Any after a merge..
+                        // We are not currently doing it, but it should eventually be fixed here
+                        GenericType res = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(Lists.mutable.with(existing.getParameterValue(), genericTypeCopy), TypeParameter.isCovariant(templateGenType), false, genericType.getSourceInformation(), this.processorSupport);
+                        this.states.getLast().putTypeParameterValue(name, res, targetGenericsContext, true);
+                    }
                 }
                 else
                 {
@@ -473,10 +494,10 @@ public class TypeInferenceContext
                         !Type.isTopType(ImportStub.withImportStubByPass(templateGenType._rawTypeCoreInstance(), this.processorSupport), this.processorSupport) &&
                         !Type.isTopType(ImportStub.withImportStubByPass(genericTypeCopy._rawTypeCoreInstance(), this.processorSupport), this.processorSupport))
                 {
-                    ListIterable<? extends CoreInstance> typeValues;
-                    ListIterable<? extends CoreInstance> mulValues;
-                    ListIterable<? extends CoreInstance> typeTemplates;
-                    ListIterable<? extends CoreInstance> mulTemplates;
+                    ListIterable<? extends CoreInstance> typeValues = null;
+                    ListIterable<? extends CoreInstance> mulValues = null;
+                    ListIterable<? extends CoreInstance> typeTemplates = null;
+                    ListIterable<? extends CoreInstance> mulTemplates = null;
 
                     if (_RelationType.isRelationType(templateGenType._rawType(), this.processorSupport) && _RelationType.isRelationType(genericTypeCopy._rawType(), this.processorSupport))
                     {
@@ -487,60 +508,79 @@ public class TypeInferenceContext
                                 register(c.getOne()._classifierGenericType()._typeArguments().toList().get(1), c.getTwo()._classifierGenericType()._typeArguments().toList().get(1), targetGenericsContext, merge, observer)
                         );
                     }
-
-                    if (Type.subTypeOf(ImportStub.withImportStubByPass(templateGenType._rawTypeCoreInstance(), this.processorSupport), ImportStub.withImportStubByPass(genericTypeCopy._rawTypeCoreInstance(), this.processorSupport), this.processorSupport))
+                    else if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(templateGenType) && templateGenType._rawTypeCoreInstance() instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType &&
+                            org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(genericTypeCopy) && genericTypeCopy._rawTypeCoreInstance() instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType)
                     {
-                        typeTemplates = extractTypes(org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveClassTypeParameterUsingInheritance(templateGenType, genericTypeCopy, this.processorSupport));
-                        mulTemplates = extractMuls(org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveClassMultiplicityParameterUsingInheritance(templateGenType, ImportStub.withImportStubByPass(genericTypeCopy._rawTypeCoreInstance(), this.processorSupport), this.processorSupport));
-                        typeValues = ListHelper.wrapListIterable(genericTypeCopy._typeArguments());
-                        mulValues = ListHelper.wrapListIterable(genericTypeCopy._multiplicityArguments());
+                        processFunctionType(targetGenericsContext, false, observer, templateGenType, genericTypeCopy);
                     }
                     else
                     {
-                        typeTemplates = ListHelper.wrapListIterable(templateGenType._typeArguments());
-                        mulTemplates = ListHelper.wrapListIterable(templateGenType._multiplicityArguments());
-                        typeValues = extractTypes(org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveClassTypeParameterUsingInheritance(genericTypeCopy, templateGenType, this.processorSupport));
-                        mulValues = extractMuls(org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveClassMultiplicityParameterUsingInheritance(genericTypeCopy, ImportStub.withImportStubByPass(templateGenType._rawTypeCoreInstance(), this.processorSupport), this.processorSupport));
-                    }
-
-                    for (int z = 0; z < mulValues.size(); z++)
-                    {
-                        registerMul((Multiplicity) mulTemplates.get(z), (Multiplicity) mulValues.get(z), targetGenericsContext, observer);
-                    }
-
-                    for (int z = 0; z < typeValues.size(); z++)
-                    {
-                        GenericType first = (GenericType) typeTemplates.get(z);
-                        GenericType second = (GenericType) typeValues.get(z);
-
-                        if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(first) && first._rawTypeCoreInstance() instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType &&
-                                org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(second) && second._rawTypeCoreInstance() instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType)
+                        if (Type.subTypeOf(ImportStub.withImportStubByPass(templateGenType._rawTypeCoreInstance(), this.processorSupport), ImportStub.withImportStubByPass(genericTypeCopy._rawTypeCoreInstance(), this.processorSupport), this.processorSupport))
                         {
-                            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType firstFuncType = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType) first._rawTypeCoreInstance();
-                            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType secondFuncType = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType) second._rawTypeCoreInstance();
-                            observer.register(first, second, this, targetGenericsContext);
-                            observer.shiftTab();
-
-                            ListIterable<? extends VariableExpression> firstParams = ListHelper.wrapListIterable(firstFuncType._parameters());
-                            ListIterable<? extends VariableExpression> secondParams = ListHelper.wrapListIterable(secondFuncType._parameters());
-
-                            for (int i = 0; i < firstParams.size(); i++)
-                            {
-                                register(firstParams.get(i)._genericType(), secondParams.get(i)._genericType(), targetGenericsContext, merge, observer);
-                                registerMul(firstParams.get(i)._multiplicity(), secondParams.get(i)._multiplicity(), targetGenericsContext, observer);
-                            }
-                            register(firstFuncType._returnType(), secondFuncType._returnType(), targetGenericsContext, merge, observer);
-                            registerMul(firstFuncType._returnMultiplicity(), secondFuncType._returnMultiplicity(), targetGenericsContext, observer);
-                            observer.unShiftTab();
+                            typeTemplates = extractTypes(org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveClassTypeParameterUsingInheritance(templateGenType, genericTypeCopy, this.processorSupport));
+                            mulTemplates = extractMuls(org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveClassMultiplicityParameterUsingInheritance(templateGenType, ImportStub.withImportStubByPass(genericTypeCopy._rawTypeCoreInstance(), this.processorSupport), this.processorSupport));
+                            typeValues = ListHelper.wrapListIterable(genericTypeCopy._typeArguments());
+                            mulValues = ListHelper.wrapListIterable(genericTypeCopy._multiplicityArguments());
                         }
-                        else
+                        else if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeFullyConcrete(genericTypeCopy, processorSupport) || !org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeFullyConcrete(templateGenType, processorSupport))
                         {
-                            register(first, second, targetGenericsContext, merge, observer);
+                            typeTemplates = ListHelper.wrapListIterable(templateGenType._typeArguments());
+                            mulTemplates = ListHelper.wrapListIterable(templateGenType._multiplicityArguments());
+                            typeValues = extractTypes(org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveClassTypeParameterUsingInheritance(genericTypeCopy, templateGenType, this.processorSupport));
+                            mulValues = extractMuls(org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveClassMultiplicityParameterUsingInheritance(genericTypeCopy, ImportStub.withImportStubByPass(templateGenType._rawTypeCoreInstance(), this.processorSupport), this.processorSupport));
+                        }
+
+                        if (mulValues != null)
+                        {
+                            for (int z = 0; z < mulValues.size(); z++)
+                            {
+                                registerMul((Multiplicity) mulTemplates.get(z), (Multiplicity) mulValues.get(z), targetGenericsContext, observer);
+                            }
+
+                            for (int z = 0; z < typeValues.size(); z++)
+                            {
+                                GenericType first = (GenericType) typeTemplates.get(z);
+                                GenericType second = (GenericType) typeValues.get(z);
+
+                                if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(first) && first._rawTypeCoreInstance() instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType &&
+                                        org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(second) && second._rawTypeCoreInstance() instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType)
+                                {
+                                    processFunctionType(targetGenericsContext, merge, observer, first, second);
+                                }
+                                else
+                                {
+                                    register(first, second, targetGenericsContext, merge, observer);
+                                }
+                            }
                         }
                     }
                 }
             }
         }
+    }
+
+    private void processFunctionType(TypeInferenceContext targetGenericsContext, boolean merge, TypeInferenceObserver observer, GenericType first, GenericType second)
+    {
+        org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType firstFuncType = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType) first._rawTypeCoreInstance();
+        org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType secondFuncType = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType) second._rawTypeCoreInstance();
+        observer.register(first, second, this, targetGenericsContext);
+        observer.shiftTab();
+
+        ListIterable<? extends VariableExpression> firstParams = ListHelper.wrapListIterable(firstFuncType._parameters());
+        ListIterable<? extends VariableExpression> secondParams = ListHelper.wrapListIterable(secondFuncType._parameters());
+
+        if (firstParams.size() == secondParams.size())
+        {
+            for (int i = 0; i < firstParams.size(); i++)
+            {
+                register(firstParams.get(i)._genericType(), secondParams.get(i)._genericType(), targetGenericsContext, merge, observer);
+                registerMul(firstParams.get(i)._multiplicity(), secondParams.get(i)._multiplicity(), targetGenericsContext, observer);
+            }
+            register(firstFuncType._returnType(), secondFuncType._returnType(), targetGenericsContext, merge, observer);
+            registerMul(firstFuncType._returnMultiplicity(), secondFuncType._returnMultiplicity(), targetGenericsContext, observer);
+        }
+
+        observer.unShiftTab();
     }
 
     public CoreInstance resolve(CoreInstance genericType)
