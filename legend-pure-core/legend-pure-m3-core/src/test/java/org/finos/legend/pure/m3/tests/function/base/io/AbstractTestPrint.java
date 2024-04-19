@@ -15,11 +15,19 @@
 package org.finos.legend.pure.m3.tests.function.base.io;
 
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
 public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
 {
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+        runtime.compile();
+    }
+
     @Test
     public void testPrint()
     {
@@ -28,7 +36,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
                 "    print('Hello World', 1);\n" +
                 "}\n");
         this.execute("testPrint():Nil[0]");
-        Assert.assertEquals("'Hello World'", this.functionExecution.getConsole().getLine(0));
+        Assert.assertEquals("'Hello World'", functionExecution.getConsole().getLine(0));
     }
 
     @Test
@@ -39,7 +47,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
                 "    'a'->print(1);\n" +
                 "}\n");
         this.execute("testArrowWithFunctionNoParameters():Nil[0]");
-        Assert.assertEquals("'a'", this.functionExecution.getConsole().getLine(0));
+        Assert.assertEquals("'a'", functionExecution.getConsole().getLine(0));
     }
 
     @Test
@@ -50,7 +58,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
                 "    print(123, 1);\n" +
                 "}\n");
         this.execute("testPrintInteger():Nil[0]");
-        Assert.assertEquals("123", this.functionExecution.getConsole().getLine(0));
+        Assert.assertEquals("123", functionExecution.getConsole().getLine(0));
     }
 
     @Test
@@ -61,7 +69,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
                 "    print(123.456, 1);\n" +
                 "}\n");
         this.execute("testPrintFloat():Nil[0]");
-        Assert.assertEquals("123.456", this.functionExecution.getConsole().getLine(0));
+        Assert.assertEquals("123.456", functionExecution.getConsole().getLine(0));
     }
 
     @Test
@@ -72,7 +80,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
                 "    print(%2016-07-08, 1);\n" +
                 "}\n");
         this.execute("testPrintDate():Nil[0]");
-        Assert.assertEquals("2016-07-08", this.functionExecution.getConsole().getLine(0));
+        Assert.assertEquals("2016-07-08", functionExecution.getConsole().getLine(0));
     }
 
     @Test
@@ -83,7 +91,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
                 "    print(true, 1);\n" +
                 "}\n");
         this.execute("testPrintBoolean():Nil[0]");
-        Assert.assertEquals("true", this.functionExecution.getConsole().getLine(0));
+        Assert.assertEquals("true", functionExecution.getConsole().getLine(0));
     }
 
     @Test
@@ -98,7 +106,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
                 "   1\n" +
                 "   2\n" +
                 "   3\n" +
-                "]", this.functionExecution.getConsole().getLine(0));
+                "]", functionExecution.getConsole().getLine(0));
     }
 
     @Test
@@ -113,7 +121,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
                 "   1.0\n" +
                 "   2.5\n" +
                 "   3.0\n" +
-                "]", this.functionExecution.getConsole().getLine(0));
+                "]", functionExecution.getConsole().getLine(0));
     }
 
     @Test
@@ -127,7 +135,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
         Assert.assertEquals("[\n" +
                 "   1973-11-13T23:09:11+0000\n" +
                 "   2016-07-08\n" +
-                "]", this.functionExecution.getConsole().getLine(0));
+                "]", functionExecution.getConsole().getLine(0));
     }
 
     @Test
@@ -135,14 +143,14 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
     {
         compileTestSource("fromString.pure","function testPrintStringCollection():Nil[0]\n" +
                 "{\n" +
-                "    print([\'testString\', \'2.5\', \'%2016-07-08\'], 1);\n" +
+                "    print(['testString', '2.5', '%2016-07-08'], 1);\n" +
                 "}\n");
         this.execute("testPrintStringCollection():Nil[0]");
         Assert.assertEquals("[\n" +
-                "   \'testString\'\n" +
-                "   \'2.5\'\n" +
-                "   \'%2016-07-08\'\n" +
-                "]", this.functionExecution.getConsole().getLine(0));
+                "   'testString'\n" +
+                "   '2.5'\n" +
+                "   '%2016-07-08'\n" +
+                "]", functionExecution.getConsole().getLine(0));
     }
 
     @Test
@@ -150,7 +158,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
     {
         compileTestSource("fromString.pure","function testPrintMixedCollection():Nil[0]\n" +
                 "{\n" +
-                "    print([1, 2.5, \'testString\', %2016-07-08], 1);\n" +
+                "    print([1, 2.5, 'testString', %2016-07-08], 1);\n" +
                 "}\n");
         this.execute("testPrintMixedCollection():Nil[0]");
         Assert.assertEquals("[\n" +
@@ -158,7 +166,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
                             "   2.5\n" +
                             "   'testString'\n" +
                             "   2016-07-08\n" +
-                            "]", this.functionExecution.getConsole().getLine(0));
+                            "]", functionExecution.getConsole().getLine(0));
     }
 
     @Test
@@ -277,7 +285,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
                 "                    values(Property):\n" +
                 "                        [~>] tst__String_1_ instance ConcreteFunctionDefinition\n" +
                 "            propertyName(Property):\n" +
-                "                values instance String", this.functionExecution.getConsole().getLine(0));
+                "                values instance String", functionExecution.getConsole().getLine(0));
     }
 
     @Test
@@ -309,6 +317,6 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
                 "    referenceUsages(Property):\n" +
                 "        [>0] Anonymous_StripedId instance ReferenceUsage\n" +
                 "        [>0] Anonymous_StripedId instance ReferenceUsage\n" +
-                "        [>0] Anonymous_StripedId instance ReferenceUsage", this.functionExecution.getConsole().getLine(0));
+                "        [>0] Anonymous_StripedId instance ReferenceUsage", functionExecution.getConsole().getLine(0));
     }
 }

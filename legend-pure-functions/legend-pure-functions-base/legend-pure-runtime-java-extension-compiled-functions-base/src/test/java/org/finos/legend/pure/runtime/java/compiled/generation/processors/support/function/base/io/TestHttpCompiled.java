@@ -15,7 +15,6 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.base.io;
 
 import org.finos.legend.pure.m3.execution.FunctionExecution;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.function.base.io.AbstractTestHttp;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
@@ -26,7 +25,7 @@ public class TestHttpCompiled extends AbstractTestHttp
     @BeforeClass
     public static void setUp()
     {
-        AbstractPureTestWithCoreCompiled.setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
+        setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
     }
 
     public static FunctionExecution getFunctionExecution()
