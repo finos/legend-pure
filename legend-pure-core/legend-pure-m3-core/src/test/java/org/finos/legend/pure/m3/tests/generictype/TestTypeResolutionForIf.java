@@ -15,12 +15,10 @@
 package org.finos.legend.pure.m3.tests.generictype;
 
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.tools.test.ToFix;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class TestTypeResolutionForIf extends AbstractPureTestWithCoreCompiledPlatform
@@ -66,10 +64,10 @@ public class TestTypeResolutionForIf extends AbstractPureTestWithCoreCompiledPla
     {
         // Current bug, but expected by some platform code... Need to eventually fix... return should be Any
         compileTestSource("fromString.pure",
-                "function a<K>(x:K[*]):K[1]" +
-                        "{" +
-                        "   if (true, |$x->at(0), |true);" +
-                        "}");
+                "function a<K>(x:K[*]):K[1]\n" +
+                        "{\n" +
+                        "   if (true, |$x->at(0), |true);\n" +
+                        "}\n");
     }
 
     @Test
@@ -77,9 +75,9 @@ public class TestTypeResolutionForIf extends AbstractPureTestWithCoreCompiledPla
     {
         // Current bug, but expected by some platform code... Need to eventually fix... return should be Any
         compileTestSource("fromString.pure",
-                "function a<K>(x:K[*]):K[1]" +
-                        "{" +
-                        "   if (true, |true, |$x->at(0));" +
-                        "}");
+                "function a<K>(x:K[*]):K[1]\n" +
+                        "{\n" +
+                        "   if (true, |true, |$x->at(0));\n" +
+                        "}\n");
     }
 }
