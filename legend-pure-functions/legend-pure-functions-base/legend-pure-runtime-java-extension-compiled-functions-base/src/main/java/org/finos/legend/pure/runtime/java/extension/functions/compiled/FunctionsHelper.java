@@ -49,6 +49,7 @@ import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
 import org.finos.legend.pure.m3.navigation.function.InvalidFunctionDescriptorException;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.SourceRegistry;
 import org.finos.legend.pure.m3.tools.StatisticsUtil;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -1500,9 +1501,15 @@ public class FunctionsHelper
 
 
     // IO -----------------------------------------------------------------------
-    public static String readFile(String path, ExecutionSupport es)
+    public static String readFile(String path, String lineSeparator, ExecutionSupport es)
     {
-        return ((CompiledExecutionSupport) es).getCodeStorage().exists(path) ? ((CompiledExecutionSupport) es).getCodeStorage().getContentAsText(path) : null;
+        RepositoryCodeStorage codeStorage = ((CompiledExecutionSupport) es).getCodeStorage();
+        if (!codeStorage.exists(path))
+        {
+            return null;
+        }
+        String content = codeStorage.getContentAsText(path);
+        return (lineSeparator == null) ? content : content.replaceAll("\\R", lineSeparator);
     }
     // IO -----------------------------------------------------------------------
 

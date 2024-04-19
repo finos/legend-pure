@@ -21,6 +21,6 @@ public class ReadFile extends AbstractNativeFunctionGeneric
 {
     public ReadFile()
     {
-        super("FunctionsGen.readFile", new Class[]{String.class, ExecutionSupport.class}, false, true, false, "readFile_String_1__String_$0_1$_");
+        super("FunctionsGen.readFile", new Class[]{String.class, String.class, ExecutionSupport.class}, false, true, false, "readFile_String_1__String_$0_1$__String_$0_1$_");
     }
 }
