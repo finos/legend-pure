@@ -39,6 +39,8 @@ import org.junit.Test;
 
 import java.util.Optional;
 
+import static org.junit.Assert.fail;
+
 public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledPlatform
 {
     private static final boolean shouldSetTypeInferenceObserver = false;
@@ -641,8 +643,27 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                         "function z2():Function<Any>[1]\n" +
                         "{\n" +
                         "  if(true,|getAllVersionsInRange_Class_1__Date_1__Date_1__T_MANY_,|getAll_Class_1__T_MANY_)\n" +
-                        "}\n"
+                        "}"
         );
+    }
+
+    @Test
+    public void testIfError()
+    {
+        try
+        {
+            compileInferenceTest(
+                    "Class TDSNull{}\n" +
+                            "function z::x<Z>(va:Function<{->Z[1]}>[1]):TDSNull[1]" +
+                            "{" +
+                            "  if(true,|^TDSNull(),|$va->eval());" +
+                            "}");
+            fail();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 
     @Test

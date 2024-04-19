@@ -343,7 +343,7 @@ public class CompiledSupport
     {
         if (object instanceof RichIterable)
         {
-            return ((RichIterable<?>) object).getAny();
+            return ((RichIterable<?>) object).getFirst();
         }
         return object;
     }
