@@ -468,8 +468,8 @@ public class TypeInferenceContext
                         // It is the case for if<T|m>(test:Boolean[1], valid:Function<{->T[m]}>[1], invalid:Function<{->T[m]}>[1]):T[m];
                         // When we find multiple values for T (one is a type Parameter (K) and the other one is concrete), we should return Any after a merge..
                         // We are not currently doing it, but it should eventually be fixed here
-                        GenericType res = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(Lists.mutable.with(existing.getParameterValue(), genericTypeCopy), TypeParameter.isCovariant(templateGenType), false, genericType.getSourceInformation(), this.processorSupport);
-                        this.states.getLast().putTypeParameterValue(name, res, targetGenericsContext, true);
+//                        GenericType res = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(Lists.mutable.with(existing.getParameterValue(), genericTypeCopy), TypeParameter.isCovariant(templateGenType), false, genericType.getSourceInformation(), this.processorSupport);
+//                        this.states.getLast().putTypeParameterValue(name, res, targetGenericsContext, true);
                     }
                 }
                 else

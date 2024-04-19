@@ -64,50 +64,22 @@ public class TestTypeResolutionForIf extends AbstractPureTestWithCoreCompiledPla
     @Test
     public void testIfWithGenerics()
     {
-        compileTestSource(
-                "fromString.pure",
-                "function a<K>(x:K[*]):Any[1]\n" +
-                        "{\n" +
-                        "   if (true, |$x->at(0), |true);\n" +
-                        "}\n");
-    }
-
-    @Test
-    @Ignore
-    @ToFix
-    public void testIfWithGenericsError()
-    {
-        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
-                "fromString.pure",
-                "function a<K>(x:K[*]):K[1]\n" +
-                        "{\n" +
-                        "   if (true, |$x->at(0), |true);\n" +
-                        "}\n"));
-        Assert.assertEquals("Compilation error at (resource:fromString.pure line:3 column:4), \"Return type error in function 'a'; found: meta::pure::metamodel::type::Any; expected: K\"", e.getMessage());
+        // Current bug, but expected by some platform code... Need to eventually fix... return should be Any
+        compileTestSource("fromString.pure",
+                "function a<K>(x:K[*]):K[1]" +
+                        "{" +
+                        "   if (true, |$x->at(0), |true);" +
+                        "}");
     }
 
     @Test
     public void testIfWithGenerics2()
     {
-        compileTestSource(
-                "fromString.pure",
-                "function a<K>(x:K[*]):Any[1]\n" +
-                        "{\n" +
-                        "   if (true, |true, |$x->at(0));\n" +
-                        "}\n");
-    }
-
-    @Test
-    @Ignore
-    @ToFix
-    public void testIfWithGenerics2Error()
-    {
-        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
-                "fromString.pure",
-                "function a<K>(x:K[*]):K[1]\n" +
-                        "{\n" +
-                        "   if (true, |true, |$x->at(0));\n" +
-                        "}\n"));
-        Assert.assertEquals("Compilation error at (resource:fromString.pure line:3 column:4), \"Return type error in function 'a'; found: meta::pure::metamodel::type::Any; expected: K\"", e.getMessage());
+        // Current bug, but expected by some platform code... Need to eventually fix... return should be Any
+        compileTestSource("fromString.pure",
+                "function a<K>(x:K[*]):K[1]" +
+                        "{" +
+                        "   if (true, |true, |$x->at(0));" +
+                        "}");
     }
 }
