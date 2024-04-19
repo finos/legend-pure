@@ -83,6 +83,8 @@ public class TestGetFunctionType extends AbstractPureTestWithCoreCompiledPlatfor
                 "                                typeArguments instance String\n" +
                 "                    typeParameter(Property):\n" +
                 "                        Anonymous_StripedId instance TypeParameter\n" +
+                "                            contravariant(Property):\n" +
+                "                                true instance Boolean\n" +
                 "                            name(Property):\n" +
                 "                                T instance String\n" +
                 "                Anonymous_StripedId instance GenericType\n" +
