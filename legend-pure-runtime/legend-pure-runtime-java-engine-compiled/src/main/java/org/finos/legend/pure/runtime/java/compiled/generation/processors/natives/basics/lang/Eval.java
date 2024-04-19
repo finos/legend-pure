@@ -47,7 +47,7 @@ public class Eval extends AbstractNative
         parameters = transformedParams.size() == 2 && "null".equals(transformedParams.get(1)) ? transformedParams.get(0) + ", new Object[]{null}" : parameters;
 
         String eval = "CoreGen.evaluate(es, (" + FullJavaPaths.Function + "<?>)" + parameters + ")";
-        return "((" + type + ")(Object)" + (Multiplicity.isToOne(multiplicity, false) ? eval : "CompiledSupport.toPureCollection(" + eval + ")") + ")";
+        return "((" + type + ")(Object)" + (Multiplicity.isToOne(multiplicity, false) ? "CompiledSupport.makeOne(" + eval + ")" : "CompiledSupport.toPureCollection(" + eval + ")") + ")";
     }
 
     @Override

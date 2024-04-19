@@ -24,6 +24,7 @@ import org.eclipse.collections.impl.block.factory.Predicates;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.execution.ExecutionPlatformRegistry;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.execution.test.pct.PCTTools;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -402,6 +403,10 @@ public class TestCollection
                     {
                         this.subCollections.add(pureTestCollectionGenerator.apply(child));
                     }
+                }
+                if (PCTTools.isPCT(child, processorSupport))
+                {
+                    this.testFunctions.add(child);
                 }
             }
             else if (Instance.instanceOf(child, M3Paths.Package, processorSupport))

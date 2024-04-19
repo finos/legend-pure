@@ -307,7 +307,7 @@ atomicExpression:
                  | unitInstance
                  | variable
                  | columnBuilders
-                 | (AT type)
+                 | (AT (type | multiplicity))
                  | lambdaPipe
                  | lambdaFunction
                  | instanceReference

@@ -12,19 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
+
 native function meta::pure::functions::collection::forAll<T>(value:T[*], func:Function<{T[1]->Boolean[1]}>[1]):Boolean[1];
 
-function <<test.Test>> meta::pure::functions::collection::tests::forall::testforAllOnEmptySet():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::forall::testforAllOnEmptySet<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-  assert([]->forAll(e | $e == 0));
+  assert($f->eval(|[]->forAll(e | $e == 0)));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::forall::testforAllOnNonEmptySetIsTrue():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::forall::testforAllOnNonEmptySetIsTrue<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-  assert([1, 2, 3]->forAll(e | $e > 0));
+  assert($f->eval(|[1, 2, 3]->forAll(e | $e > 0)));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::forall::testforAllOnNonEmptySetIsFalse():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::forall::testforAllOnNonEmptySetIsFalse<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-  assertFalse([1, 2, 3]->forAll(e | $e > 1));
+  assertFalse($f->eval(|[1, 2, 3]->forAll(e | $e > 1)));
 }

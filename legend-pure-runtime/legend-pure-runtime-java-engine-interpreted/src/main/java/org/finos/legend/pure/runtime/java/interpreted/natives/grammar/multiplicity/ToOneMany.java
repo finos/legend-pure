@@ -14,20 +14,24 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.natives.grammar.multiplicity;
 
+import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
-public class ToOneMany extends ToMultiplicity
+import java.util.Stack;
+
+public class ToOneMany extends CommonToMultiplicity
 {
     public ToOneMany(ModelRepository repository)
     {
-        super(repository);
+        super(repository, true);
     }
 
     @Override
-    protected CoreInstance getReturnMultiplicity(ProcessorSupport processorSupport)
+    protected CoreInstance getReturnMultiplicity(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, ProcessorSupport processorSupport)
     {
         return Multiplicity.newUnboundedMultiplicity(1, processorSupport);
     }

@@ -33,9 +33,12 @@ import org.finos.legend.pure.m3.execution.Console;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
+import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureException;
+
+import static org.finos.legend.pure.m3.execution.test.pct.PCTTools.isPCT;
 
 public class TestRunner implements Runnable
 {
@@ -217,6 +220,19 @@ public class TestRunner implements Runnable
     private void executeTestFunc(CoreInstance testFunc, Object testFunctionParam, CoreInstance testFunctionParamCustomizer)
     {
         ListIterable<? extends CoreInstance> args = Lists.mutable.empty();
+
+        if (isPCT(testFunc, functionExecution.getProcessorSupport()))
+        {
+//            String adapterLocation = "meta::relational::tests::pct::testAdapterForRelationalWithH2Execution_Function_1__Any_1_";
+            String adapterLocation = "meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_";
+//            String adapterLocation = "meta::pure::executionPlan::platformBinding::legendJava::pct::testAdapterForJavaBindingExecution_Function_1__Any_1_";
+            testFunctionParam = _Package.getByUserPath(adapterLocation, functionExecution.getProcessorSupport());
+            if (testFunctionParam == null)
+            {
+                throw new RuntimeException("The adapter " + adapterLocation + " can't be found in the graph");
+            }
+        }
+
         if (testFunctionParam != null)
         {
             ProcessorSupport processorSupport = this.functionExecution.getProcessorSupport();

@@ -12,59 +12,61 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
+
 native function meta::pure::functions::collection::take<T>(set:T[*], count:Integer[1]):T[*];
 
-function <<test.Test>> meta::pure::functions::collection::tests::take::testTakeNegativeOnEmptyList():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::take::testTakeNegativeOnEmptyList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-  assertEmpty([]->take(-1));
+  assertEmpty($f->eval(|[]->take(-1)));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::take::testTakeNegativeOnNonEmptyList():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::take::testTakeNegativeOnNonEmptyList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-  assertEmpty([1, 2, 3]->take(-1));
+  assertEmpty($f->eval(|[1, 2, 3]->take(-1)));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::take::testTakeZeroOnEmptyList():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::take::testTakeZeroOnEmptyList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-  assertEmpty([]->take(0));
+  assertEmpty($f->eval(|[]->take(0)));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::take::testTakeZeroOnNonEmptyList():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::take::testTakeZeroOnNonEmptyList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-  assertEmpty([1, 2, 3]->take(0));
+  assertEmpty($f->eval(|[1, 2, 3]->take(0)));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::take::testTakeOneOnEmptyList():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::take::testTakeOneOnEmptyList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-  assertEmpty([]->take(1));
+  assertEmpty($f->eval(|[]->take(1)));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::take::testTakeOneOnNonEmptyList():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::take::testTakeOneOnNonEmptyList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-  assertEquals([1], [1, 2, 3]->take(1));
+  assertEquals([1], $f->eval(|[1, 2, 3]->take(1)));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::take::testTakeManyOnEmptyList():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::take::testTakeManyOnEmptyList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-  assertEmpty([]->take(2));
+  assertEmpty($f->eval(|[]->take(2)));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::take::testTakeManyOnNonEmptyList():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::take::testTakeManyOnNonEmptyList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-  assertEquals([1, 2], [1, 2, 3]->take(2));
+  assertEquals([1, 2], $f->eval(|[1, 2, 3]->take(2)));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::take::testTakeExceedsSizeOnEmptyList():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::take::testTakeExceedsSizeOnEmptyList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-  assertEmpty([]->take(5));
+  assertEmpty($f->eval(|[]->take(5)));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::take::testTakeExceedsSizeOnNonEmptyList():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::take::testTakeExceedsSizeOnNonEmptyList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-  assertEquals([1, 2, 3], [1, 2, 3]->take(5));
+  assertEquals([1, 2, 3], $f->eval(|[1, 2, 3]->take(5)));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::take::testTakeInList():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::take::testTakeInList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-  assertEquals(list([1, 2]), list([1, 2, 3]->take(2)));
+  assertEquals(list([1, 2]), $f->eval(|list([1, 2, 3]->take(2))));
 }

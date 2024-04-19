@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
+
 native function meta::pure::functions::collection::reverse<T|m>(set:T[m]):T[m];
 
-function <<test.Test>> meta::pure::functions::collection::tests::reverse::testReverse():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::reverse::testReverse<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals(['c', 'b', 'a'], ['a', 'b', 'c']->reverse());
+    assertEquals(['c', 'b', 'a'], $f->eval(|['a', 'b', 'c']->reverse()));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::reverse::testReverseEmpty():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::reverse::testReverseEmpty<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEmpty([]->reverse());
+    assertEmpty($f->eval(|[]->reverse()));
 }

@@ -12,39 +12,46 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
+
 native function meta::pure::functions::boolean::and(first:Boolean[1], second:Boolean[1]):Boolean[1];
 
-function <<test.Test>> meta::pure::functions::boolean::tests::and::testBinaryTruthTable():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::and::testBinaryTruthTable<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     //Dummy commit to test if we can commit on invalid review
-    assert(true && true);
-    assertFalse(true && false);
-    assertFalse(false && true);
-    assertFalse(false && false);
+    assert($f->eval(|true && true));
+    assertFalse($f->eval(|true && false));
+    assertFalse($f->eval(|false && true));
+    assertFalse($f->eval(|false && false));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::and::testBinaryExpressions():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::and::testBinaryExpressions<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert((1 == 1) && (2 != 3));
-    assertFalse((1 == 2) && (2 != 3));
+    assert($f->eval(|(1 == 1) && (2 != 3)));
+    assertFalse($f->eval(|(1 == 2) && (2 != 3)));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::and::testTernaryTruthTable():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::and::testTernaryTruthTable<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert(true && true && true);
-    assertFalse(true && true && false);
-    assertFalse(true && false && true);
-    assertFalse(true && false && false);
-    assertFalse(false && true && true);
-    assertFalse(false && true && false);
-    assertFalse(false && false && true);
-    assertFalse(false && false && false);
+    assert($f->eval(|true && true && true));
+    assertFalse($f->eval(|true && true && false));
+    assertFalse($f->eval(|true && false && true));
+    assertFalse($f->eval(|true && false && false));
+    assertFalse($f->eval(|false && true && true));
+    assertFalse($f->eval(|false && true && false));
+    assertFalse($f->eval(|false && false && true));
+    assertFalse($f->eval(|false && false && false));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::and::testTernaryExpressions():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::and::testTernaryExpressions<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert((1 == 1) && (2 != 3) && true);
-    assertFalse((1 == 2) && (2 != 3) && false);
+    assert($f->eval(|(1 == 1) && (2 != 3) && true));
+    assertFalse($f->eval(|(1 == 2) && (2 != 3) && false));
+}
+
+function <<PCT.test>> meta::pure::functions::boolean::tests::and::testShortCircuitSimple<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertFalse($f->eval(|false && (12/0 > 0)));
 }
 
 function <<test.Test>> meta::pure::functions::boolean::tests::and::testShortCircuit():Boolean[1]

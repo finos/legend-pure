@@ -1,4 +1,4 @@
-// Copyright 2020 Goldman Sachs
+// Copyright 2024 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,65 +16,47 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.grammar.multiplic
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
-import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
-import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
-import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
-import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
 import java.util.Stack;
 
-abstract class ToMultiplicity extends NativeFunction
+public class ToMultiplicity extends CommonToMultiplicity
 {
-    protected final ModelRepository repository;
-
-    protected ToMultiplicity(ModelRepository repository)
+    public ToMultiplicity(ModelRepository repository)
     {
-        this.repository = repository;
+        super(repository, false);
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
+    protected CoreInstance getReturnMultiplicity(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, ProcessorSupport processorSupport)
     {
-        CoreInstance returnMultiplicity = getReturnMultiplicity(processorSupport);
-
-        CoreInstance param = params.get(0);
-        if (Multiplicity.multiplicitiesEqual(returnMultiplicity, Instance.getValueForMetaPropertyToOneResolved(param, M3Properties.multiplicity, processorSupport)))
-        {
-            return param;
-        }
-
-        ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(param, M3Properties.values, processorSupport);
-        if (!Multiplicity.isValid(returnMultiplicity, values.size()))
-        {
-            String errorMessage = null;
-            if (params.size() >= 2)
-            {
-                errorMessage = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport).getName();
-            }
-            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), errorMessage != null ? errorMessage : "Cannot cast a collection of size " + values.size() + " to multiplicity " + Multiplicity.print(returnMultiplicity));
-        }
-
-        CoreInstance result = this.repository.newAnonymousCoreInstance(param.getSourceInformation(), processorSupport.getClassifier(param));
-        Instance.addValueToProperty(result, M3Properties.genericType, Instance.getValueForMetaPropertyToOneResolved(param, M3Properties.genericType, processorSupport), processorSupport);
-        Instance.setValuesForProperty(result, M3Properties.values, values, processorSupport);
-        Instance.addValueToProperty(result, M3Properties.multiplicity, returnMultiplicity, processorSupport);
-
-        return result;
+        CoreInstance targetMultiplicity = params.get(1).getValueForMetaPropertyToOne(M3Properties.multiplicity);
+        return makeMultiplicityAsConcreteAsPossible(targetMultiplicity, resolvedMultiplicityParameters);
     }
 
-    /**
-     * Get the multiplicity that should be returned.
-     *
-     * @return return multiplicity
-     */
-    protected abstract CoreInstance getReturnMultiplicity(ProcessorSupport processorSupport);
+    private CoreInstance makeMultiplicityAsConcreteAsPossible(CoreInstance multiplicity, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParametersStack)
+    {
+        if (Multiplicity.isMultiplicityConcrete(multiplicity))
+        {
+            return multiplicity;
+        }
+        CoreInstance result = multiplicity;
+        for (int i = resolvedMultiplicityParametersStack.size() - 2; i >= 0; i--)
+        {
+            MutableMap<String, CoreInstance> resolvedMultiplicityParameters = resolvedMultiplicityParametersStack.elementAt(i);
+            if (resolvedMultiplicityParameters.notEmpty())
+            {
+                result = Multiplicity.makeMultiplicityAsConcreteAsPossible(result, resolvedMultiplicityParameters);
+                if (Multiplicity.isMultiplicityConcrete(result))
+                {
+                    return result;
+                }
+            }
+        }
+        return result;
+    }
 }

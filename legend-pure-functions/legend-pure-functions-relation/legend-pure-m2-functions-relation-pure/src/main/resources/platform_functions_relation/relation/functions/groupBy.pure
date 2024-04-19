@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
 import meta::pure::metamodel::relation::*;
 
 native function meta::pure::functions::relation::groupBy<T,Z,K,V,R>(r:Relation<T>[1], cols:ColSpecArray<Z⊆T>[1], agg:meta::pure::metamodel::relation::AggColSpec<{T[1]->K[0..1]},{K[*]->V[1]}, R>[1]):Relation<Z+R>[1];
@@ -22,7 +23,7 @@ native function meta::pure::functions::relation::groupBy<T,Z,K,V,R>(r:Relation<T
 
 native function meta::pure::functions::relation::groupBy<T,Z,K,V,R>(r:Relation<T>[1], cols:ColSpec<Z⊆T>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{T[1]->K[0..1]},{K[*]->V[1]}, R>[1]):Relation<Z+R>[1];
 
-function <<RelationProfile.test>> meta::pure::functions::relation::tests::groupBy::testSimpleGroupBySingleSingle<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::relation::tests::groupBy::testSimpleGroupBySingleSingle<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
 {
     let expr = {
                 |#TDS
@@ -54,7 +55,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::groupB
 }
 
 
-function <<RelationProfile.test>> meta::pure::functions::relation::tests::groupBy::testSimpleGroupByMultipleSingle<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::relation::tests::groupBy::testSimpleGroupByMultipleSingle<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
 {
     let expr = {
                 |#TDS
@@ -85,7 +86,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::groupB
                   '#', $res->toString());
 }
 
-function <<RelationProfile.test>> meta::pure::functions::relation::tests::groupBy::testSimpleGroupBySingleMultiple<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::relation::tests::groupBy::testSimpleGroupBySingleMultiple<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
 {
     let expr = {
                 |#TDS
@@ -116,7 +117,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::groupB
                   '#', $res->toString());
 }
 
-function <<RelationProfile.test>> meta::pure::functions::relation::tests::groupBy::testSimpleGroupByMultipleMultiple<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::relation::tests::groupBy::testSimpleGroupByMultipleMultiple<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
 {
     let expr = {
                 |#TDS

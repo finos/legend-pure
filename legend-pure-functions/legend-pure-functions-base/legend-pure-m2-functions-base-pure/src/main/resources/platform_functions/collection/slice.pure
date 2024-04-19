@@ -12,36 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
 
 native function meta::pure::functions::collection::slice<T>(set:T[*], start:Integer[1], end:Integer[1]):T[*];
 
 
-function <<test.Test>> meta::pure::functions::collection::tests::slice::testSliceOnEmpty():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::slice::testSliceOnEmpty<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-  assertEmpty([]->slice(2,3));
+  assertEmpty($f->eval(|[]->slice(2,3)));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::slice::testSlice():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::slice::testSlice<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-  assertEquals([2, 3, 4], [1, 2, 3, 4, 5, 6]->slice(1,4));
+  assertEquals([2, 3, 4], $f->eval(|[1, 2, 3, 4, 5, 6]->slice(1,4)));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::slice::testSliceOutOfBounds():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::slice::testSliceOutOfBounds<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-  assertEquals([2, 3, 4, 5], [2, 3, 4, 5]->slice(-1, 10));
+  assertEquals([2, 3, 4, 5], $f->eval(|[2, 3, 4, 5]->slice(-1, 10)));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::slice::testSliceOnBounds():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::slice::testSliceOnBounds<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-  assertEquals([2, 3, 4, 5], [2, 3, 4, 5]->slice(0, 4));
+  assertEquals([2, 3, 4, 5], $f->eval(|[2, 3, 4, 5]->slice(0, 4)));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::slice::testSliceEqualBounds():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::slice::testSliceEqualBounds<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-  assertEmpty([2, 3, 4, 5]->slice(2, 2));
+  assertEmpty($f->eval(|[2, 3, 4, 5]->slice(2, 2)));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::slice::testSliceInList():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::slice::testSliceInList<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-  assertEquals(list([2, 3]), list([1, 2, 3, 4]->slice(1, 3)));
+  assertEquals(list([2, 3]), $f->eval(|list([1, 2, 3, 4]->slice(1, 3))));
 }

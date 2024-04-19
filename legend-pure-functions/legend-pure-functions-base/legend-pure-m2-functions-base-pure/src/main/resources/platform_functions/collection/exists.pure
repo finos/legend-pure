@@ -12,24 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
+
 import meta::pure::functions::collection::tests::model::*;
 
 native function meta::pure::functions::collection::exists<T>(value:T[*], func:Function<{T[1]->Boolean[1]}>[1]):Boolean[1];
 
-function <<test.Test>> meta::pure::functions::collection::tests::exists::testExists():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::exists::testExists<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let s = [^CO_Firm(legalName='f', employees=[^CO_Person(firstName='p1', lastName='p1'), ^CO_Person(firstName='p2', lastName='p2')]), ^CO_Firm(legalName='f2', employees=[^CO_Person(firstName='p3', lastName='p3'), ^CO_Person(firstName='p4', lastName='p4')])];
-    assert($s->exists(f | $f.legalName == 'f'));
-    assert($s->exists(f | $f.legalName == 'f2'));
-    assertFalse($s->exists(f | $f.legalName == 'f4'));
+    assert($f->eval(|$s->exists(f | $f.legalName == 'f')));
+    assert($f->eval(|$s->exists(f | $f.legalName == 'f2')));
+    assertFalse($f->eval(|$s->exists(f | $f.legalName == 'f4')));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::exists::testExistsInSelect():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::exists::testExistsInSelect<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let s = [^CO_Firm(legalName='f', employees=[^CO_Person(firstName='p1', lastName='p1'), ^CO_Person(firstName='p2', lastName='p2')]), ^CO_Firm(legalName='f2', employees=[^CO_Person(firstName='p3', lastName='p3'), ^CO_Person(firstName='p3', lastName='p4')])];
-    assertEquals('f', $s->filter(f|$f.employees->exists(e|$e.lastName == 'p1')).legalName);
-    assertEquals('f', $s->filter(f|$f.employees->exists(e|$e.lastName == 'p2')).legalName);
-    assertEquals('f2', $s->filter(f|$f.employees->exists(e|$e.lastName == 'p3')).legalName);
-    assertEquals('f2', $s->filter(f|$f.employees->exists(e|$e.lastName == 'p4')).legalName);
-    assertEmpty($s->filter(f|$f.employees->exists(e|$e.lastName == 'p32')));
+    assertEquals('f', $f->eval(|$s->filter(f|$f.employees->exists(e|$e.lastName == 'p1')).legalName));
+    assertEquals('f', $f->eval(|$s->filter(f|$f.employees->exists(e|$e.lastName == 'p2')).legalName));
+    assertEquals('f2', $f->eval(|$s->filter(f|$f.employees->exists(e|$e.lastName == 'p3')).legalName));
+    assertEquals('f2', $f->eval(|$s->filter(f|$f.employees->exists(e|$e.lastName == 'p4')).legalName));
+    assertEmpty($f->eval(|$s->filter(f|$f.employees->exists(e|$e.lastName == 'p32'))));
 }

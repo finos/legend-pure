@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
 import meta::pure::metamodel::relation::*;
 
 function meta::pure::functions::relation::toString<T>(rel:Relation<T>[1]):String[1]

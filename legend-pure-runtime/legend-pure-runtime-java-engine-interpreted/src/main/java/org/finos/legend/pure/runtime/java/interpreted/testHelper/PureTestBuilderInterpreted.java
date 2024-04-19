@@ -19,8 +19,11 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.utility.ArrayIterate;
+import org.finos.legend.pure.m3.compiler.postprocessing.processor.valuespecification.InstanceValueProcessor;
 import org.finos.legend.pure.m3.execution.test.PureTestBuilder;
 import org.finos.legend.pure.m3.execution.test.TestCollection;
+import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
+import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
@@ -35,6 +38,8 @@ import org.finos.legend.pure.m3.serialization.runtime.binary.SimplePureRepositor
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+
+import static org.finos.legend.pure.m3.execution.test.pct.PCTTools.isPCT;
 
 public class PureTestBuilderInterpreted
 {
@@ -53,7 +58,23 @@ public class PureTestBuilderInterpreted
         loader.loadAll(message);
         ExecutionSupport executionSupport = new ExecutionSupport();
 
-        PureTestBuilder.F2<CoreInstance, MutableList<Object>, Object> p = (a, b) -> functionExecution.start(a, Lists.mutable.empty());
+        PureTestBuilder.F2<CoreInstance, MutableList<Object>, Object> p = (a, b) ->
+        {
+            MutableList<CoreInstance> params = Lists.mutable.empty();
+            if (isPCT(a, functionExecution.getProcessorSupport()))
+            {
+//                String adapterLocation = "meta::relational::tests::pct::testAdapterForRelationalWithH2Execution_Function_1__Any_1_";
+                String adapterLocation = "meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_";
+//                String adapterLocation = "meta::pure::executionPlan::platformBinding::legendJava::pct::testAdapterForJavaBindingExecution_Function_1__Any_1_";
+                CoreInstance adapter = _Package.getByUserPath(adapterLocation, functionExecution.getProcessorSupport());
+                if (adapter == null)
+                {
+                    throw new RuntimeException("The adapter " + adapterLocation + " can't be found in the graph");
+                }
+                params.add(ValueSpecificationBootstrap.wrapValueSpecification(adapter, true, functionExecution.getProcessorSupport()));
+            }
+            return functionExecution.start(a, params);
+        };
         TestSuite suite = new TestSuite();
         ArrayIterate.forEach(all, (path) ->
                 {

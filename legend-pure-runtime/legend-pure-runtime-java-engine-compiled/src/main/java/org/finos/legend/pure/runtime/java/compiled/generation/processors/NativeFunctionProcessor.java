@@ -90,6 +90,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.math.Minus;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.math.Plus;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.math.Times;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.mulitplicity.ToMultiplicity;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.mulitplicity.ToOne;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.mulitplicity.ToOneMany;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.mulitplicity.ToOneManyWithMessage;
@@ -253,6 +254,7 @@ public class NativeFunctionProcessor
         registerNative(map, new ToOneWithMessage());
         registerNative(map, new ToOneMany());
         registerNative(map, new ToOneManyWithMessage());
+        registerNative(map, new ToMultiplicity());
 
         //String
         registerNative(map, new JoinStrings());

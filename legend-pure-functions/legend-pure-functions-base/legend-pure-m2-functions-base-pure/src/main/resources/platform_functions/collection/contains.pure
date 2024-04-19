@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
+
 import meta::pure::functions::collection::tests::contains::*;
 import meta::pure::functions::collection::tests::model::*;
 
@@ -25,35 +27,35 @@ function meta::pure::functions::collection::contains<Z>(collection:Z[*], value:Z
     $collection->exists(x | $comparator->eval($value, $x))
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::contains::testContainsPrimitive():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::contains::testContainsPrimitive<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let col = [1, 2, 5, 2, 'a', true, %2014-02-01, 'c'];
-    assert($col->contains(1));
-    assert($col->contains(2));
-    assert($col->contains(5));
-    assert($col->contains('a'));
-    assert($col->contains(true));
-    assert($col->contains(%2014-02-01));
-    assert($col->contains('c'));
+    assert($f->eval(|$col->contains(1)));
+    assert($f->eval(|$col->contains(2)));
+    assert($f->eval(|$col->contains(5)));
+    assert($f->eval(|$col->contains('a')));
+    assert($f->eval(|$col->contains(true)));
+    assert($f->eval(|$col->contains(%2014-02-01)));
+    assert($f->eval(|$col->contains('c')));
 
-    assertFalse($col->contains(-5));
-    assertFalse($col->contains(%2014-02-02));
-    assertFalse($col->contains('the quick brown fox'));
-    assertFalse($col->contains(false));
+    assertFalse($f->eval(|$col->contains(-5)));
+    assertFalse($f->eval(|$col->contains(%2014-02-02)));
+    assertFalse($f->eval(|$col->contains('the quick brown fox')));
+    assertFalse($f->eval(|$col->contains(false)));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::contains::testContainsNonPrimitive():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::contains::testContainsNonPrimitive<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let f1 = ^CO_Firm(legalName='f1');
     let f2 = ^CO_Firm(legalName='f2');
     let col = [$f1, $f2];
-    assert($col->contains($f1));
-    assert($col->contains(^CO_Firm(legalName='f1')));
-    assert($col->contains($f2));
-    assert($col->contains(^CO_Firm(legalName='f2')));
+    assert($f->eval(|$col->contains($f1)));
+    assert($f->eval(|$col->contains(^CO_Firm(legalName='f1'))));
+    assert($f->eval(|$col->contains($f2)));
+    assert($f->eval(|$col->contains(^CO_Firm(legalName='f2'))));
 
-    assertFalse($col->contains(3));
-    assertFalse($col->contains(^CO_Firm(legalName='f3')));
+    assertFalse($f->eval(|$col->contains(3)));
+    assertFalse($f->eval(|$col->contains(^CO_Firm(legalName='f3'))));
 }
 
 Class meta::pure::functions::collection::tests::contains::ClassWithoutEquality
@@ -67,17 +69,17 @@ function meta::pure::functions::collection::tests::contains::comparator(a:ClassW
 }
 
 
-function <<test.Test>> meta::pure::functions::collection::tests::contains::testContainsWithFunction():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::contains::testContainsWithFunction<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let f1 = ^ClassWithoutEquality(name='f1');
     let f2 = ^ClassWithoutEquality(name='f2');
     let f1Prime = ^ClassWithoutEquality(name='f1');
 
     let col = [$f1, $f2];
-    assert($col->contains($f1Prime, comparator_ClassWithoutEquality_1__ClassWithoutEquality_1__Boolean_1_));
-    assert($col->contains(^ClassWithoutEquality(name='f1'), comparator_ClassWithoutEquality_1__ClassWithoutEquality_1__Boolean_1_));
-    assert($col->contains($f2, comparator_ClassWithoutEquality_1__ClassWithoutEquality_1__Boolean_1_));
-    assert($col->contains(^ClassWithoutEquality(name='f2'), comparator_ClassWithoutEquality_1__ClassWithoutEquality_1__Boolean_1_));
+    assert($f->eval(|$col->contains($f1Prime, comparator_ClassWithoutEquality_1__ClassWithoutEquality_1__Boolean_1_)));
+    assert($f->eval(|$col->contains(^ClassWithoutEquality(name='f1'), comparator_ClassWithoutEquality_1__ClassWithoutEquality_1__Boolean_1_)));
+    assert($f->eval(|$col->contains($f2, comparator_ClassWithoutEquality_1__ClassWithoutEquality_1__Boolean_1_)));
+    assert($f->eval(|$col->contains(^ClassWithoutEquality(name='f2'), comparator_ClassWithoutEquality_1__ClassWithoutEquality_1__Boolean_1_)));
 
-    assertFalse($col->contains(^ClassWithoutEquality(name='f3'), comparator_ClassWithoutEquality_1__ClassWithoutEquality_1__Boolean_1_));
+    assertFalse($f->eval(|$col->contains(^ClassWithoutEquality(name='f3'), comparator_ClassWithoutEquality_1__ClassWithoutEquality_1__Boolean_1_)));
 }

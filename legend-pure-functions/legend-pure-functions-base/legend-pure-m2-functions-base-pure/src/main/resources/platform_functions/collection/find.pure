@@ -12,35 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
+
 import meta::pure::functions::collection::tests::model::*;
 
 native function meta::pure::functions::collection::find<T>(value:T[*], func:Function<{T[1]->Boolean[1]}>[1]):T[0..1];
 
-function <<test.Test>> meta::pure::functions::collection::tests::find::testFindLiteral():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::find::testFindLiteral<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('Doe', ['Smith', 'Doe', 'Oth', 'Branche']->find(s | eq($s->length(), 3)));
-    assertEquals('Branche', ['Smith', 'Branche', 'Doe']->find(s | $s != 'Smith'));
+    assertEquals('Doe', $f->eval(|['Smith', 'Doe', 'Oth', 'Branche']->find(s | eq($s->length(), 3))));
+    assertEquals('Branche', $f->eval(|['Smith', 'Branche', 'Doe']->find(s | $s != 'Smith')));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::find::testFindLiteralFromVar():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::find::testFindLiteralFromVar<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let set = ['Smith', 'Branche', 'Doe'];
-    assertEquals('Smith', $set->find(s | $s->length() < 6));
+    assertEquals('Smith', $f->eval(|$set->find(s | $s->length() < 6)));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::find::testFindInstance():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::find::testFindInstance<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let smith = ^CO_Person(firstName='Fabrice', lastName='Smith');
     let doe = ^CO_Person(firstName='Pierre', lastName='Doe');
     let branche = ^CO_Person(firstName='Justin', lastName='Branche');
-    assertEquals($smith, [$smith, $branche, $doe]->find(p | !$p.lastName->isEmpty() && ($p.lastName->toOne()->length() < 6)));
+    assertEquals($smith, $f->eval(|[$smith, $branche, $doe]->find(p | !$p.lastName->isEmpty() && ($p.lastName->toOne()->length() < 6))));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::find::testFindUsingVarForFunction():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::find::testFindUsingVarForFunction<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let smith = ^CO_Person(firstName='Fabrice', lastName='Smith');
     let doe = ^CO_Person(firstName='Pierre', lastName='Doe');
     let branche = ^CO_Person(firstName='Justin', lastName='Branche');
-    let f = {p:CO_Person[1] | !$p.lastName->isEmpty() && ($p.lastName->toOne()->length() < 6)};
-    assertEquals($smith, [$smith, $branche, $doe]->find($f));
+    let func = {p:CO_Person[1] | !$p.lastName->isEmpty() && ($p.lastName->toOne()->length() < 6)};
+    assertEquals($smith, $f->eval(|[$smith, $branche, $doe]->find($func)));
 }

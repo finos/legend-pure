@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
 import meta::pure::metamodel::relation::*;
 
 native function meta::pure::functions::relation::rename<T,Z,K,V>(r:Relation<T>[1], old:ColSpec<Z=(?:K)⊆T>[1], new:ColSpec<V=(?:K)>[1]):Relation<T-Z+V>[1];
 
-function <<RelationProfile.test>> meta::pure::functions::relation::tests::rename::testSimpleRenameShared<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::relation::tests::rename::testSimpleRenameShared<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let expr = {
                 | #TDS

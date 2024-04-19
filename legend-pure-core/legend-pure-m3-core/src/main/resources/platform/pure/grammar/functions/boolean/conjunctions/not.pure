@@ -12,40 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
+
 native function meta::pure::functions::boolean::not(bool:Boolean[1]):Boolean[1];
 
-function <<test.Test>> meta::pure::functions::boolean::tests::not::testNotTrue():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::not::testNotTrue<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertFalse(true->not());
-    assertFalse(!true);
+    assertFalse($f->eval(|true->not()));
+    assertFalse($f->eval(|!true));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::not::testNotFalse():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::not::testNotFalse<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert(false->not());
-    assert(!false);
+    assert($f->eval(|false->not()));
+    assert($f->eval(|!false));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::not::testNotFalseExpression():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::not::testNotFalseExpression<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert(not(1 == 3));
-    assert(!(1 == 3));
+    assert($f->eval(|not(1 == 3)));
+    assert($f->eval(|!(1 == 3)));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::not::testNotTrueExpression():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::not::testNotTrueExpression<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertFalse(not(3 == 3));
-    assertFalse(!(3 == 3));
+    assertFalse($f->eval(|not(3 == 3)));
+    assertFalse($f->eval(|!(3 == 3)));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::not::testOperatorScope():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::not::testOperatorScope<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert(!false && true);
-    assertFalse(!true && false);
-    assert(!(true && false));
+    assert($f->eval(|!false && true));
+    assertFalse($f->eval(|!true && false));
+    assert($f->eval(|!(true && false)));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::not::testNotInCollection():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::not::testNotInCollection<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert([false, !false]->at(1));
+    assert($f->eval(|[false, !false]->at(1)));
 }

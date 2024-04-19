@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
 import meta::pure::metamodel::relation::*;
 
 native function meta::pure::functions::relation::extend<T,Z>(r:Relation<T>[1], f:FuncColSpec<{T[1]->Any[0..1]},Z>[1]):Relation<T+Z>[1];
@@ -19,7 +20,7 @@ native function meta::pure::functions::relation::extend<T,Z>(r:Relation<T>[1], f
 native function meta::pure::functions::relation::extend<T,Z>(r:Relation<T>[1], fs:FuncColSpecArray<{T[1]->Any[*]},Z>[1]):Relation<T+Z>[1];
 
 
-function <<RelationProfile.test>> meta::pure::functions::relation::tests::extend::testSimpleExtendStrShared<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::relation::tests::extend::testSimpleExtendStrShared<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
 {
     let expr = {
                 |#TDS
@@ -44,7 +45,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::extend
                   '#', $res->toString());
 }
 
-function <<RelationProfile.test>> meta::pure::functions::relation::tests::extend::testSimpleExtendInt<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::relation::tests::extend::testSimpleExtendInt<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
 {
     let expr = {
                 | #TDS
@@ -69,7 +70,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::extend
                   '#', $res->toString());
 }
 
-function <<RelationProfile.test>> meta::pure::functions::relation::tests::extend::testSimpleExtendFloat<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::relation::tests::extend::testSimpleExtendFloat<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
 {
     let expr = {
                | #TDS
@@ -94,7 +95,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::extend
                   '#', $res->toString());
 }
 
-function <<RelationProfile.test>> meta::pure::functions::relation::tests::extend::testSimpleMultipleColumns<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::relation::tests::extend::testSimpleMultipleColumns<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
 {
     let expr = {
                 | #TDS
