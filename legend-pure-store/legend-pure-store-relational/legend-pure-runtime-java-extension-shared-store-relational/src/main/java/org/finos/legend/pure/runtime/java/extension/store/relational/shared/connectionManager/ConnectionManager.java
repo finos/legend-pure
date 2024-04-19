@@ -21,6 +21,7 @@ import org.eclipse.collections.api.map.ConcurrentMutableMap;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.list.mutable.SynchronizedMutableList;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.shared.identity.IdentityManager;
@@ -69,6 +70,7 @@ public class ConnectionManager
 
     private static final String TestDatabaseConnection = "meta::external::store::relational::runtime::TestDatabaseConnection";
     private static final TestDatabaseConnect testDatabaseConnect = new TestDatabaseConnect();
+    private static final TestDatabaseConnectDuckDB testDatabaseConnectDuckDB = new TestDatabaseConnectDuckDB();
 
     private ConnectionManager()
     {
@@ -78,7 +80,16 @@ public class ConnectionManager
     {
         if (processorSupport.instance_instanceOf(connectionInformation, TestDatabaseConnection))
         {
-            return testDatabaseConnect.getConnectionWithDataSourceInfo(IdentityManager.getAuthenticatedUserId());
+            CoreInstance dbType = Instance.getValueForMetaPropertyToOneResolved(connectionInformation, "type", processorSupport);
+            String dbTypeStr = dbType.getName();
+            if (dbTypeStr.equals("DuckDB"))
+            {
+                return testDatabaseConnectDuckDB.getConnectionWithDataSourceInfo(IdentityManager.getAuthenticatedUserId());
+            }
+            else    // default to H2
+            {
+                return testDatabaseConnect.getConnectionWithDataSourceInfo(IdentityManager.getAuthenticatedUserId());
+            }
         }
 
         throw new RuntimeException(connectionInformation + " is not supported for execution!!");

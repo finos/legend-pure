@@ -100,4 +100,66 @@ public abstract class AbstractTestPureDBFunction extends AbstractPureTestWithCor
         assertPureException(PureExecutionException.class, Pattern.compile("Error executing sql query; SQL reason: Table \"TT\" not found \\(this database is empty\\); SQL statement:\n" +
                 "select \\* from tt \\[42104-\\d++]; SQL error code: 42104; SQL state: 42S04"), 8, 4, e);
     }
+
+    @Test
+    public void testExecuteInDb_H2()
+    {
+        compileTestSource(
+                TEST_SOURCE_ID,
+                "import meta::external::store::relational::runtime::*;\n" +
+                        "import meta::relational::metamodel::*;\n" +
+                        "import meta::relational::metamodel::execute::*;\n" +
+                        "import meta::relational::functions::toDDL::*;\n" +
+                        "function test():Any[0..1]\n" +
+                        "{\n" +
+                        "   let dbConnection = ^TestDatabaseConnection(type = meta::relational::runtime::DatabaseType.H2);\n" +
+                        "   let res  = executeInDb('select H2VERSION();', $dbConnection, 0, 1000);\n" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database mydb()\n"
+        );
+        compileAndExecute("test():Any[0..1]");
+    }
+
+    @Test
+    public void testExecuteInb_DuckDB()
+    {
+        compileTestSource(
+                TEST_SOURCE_ID,
+                "import meta::external::store::relational::runtime::*;\n" +
+                        "import meta::relational::metamodel::*;\n" +
+                        "import meta::relational::metamodel::execute::*;\n" +
+                        "import meta::relational::functions::toDDL::*;\n" +
+                        "function test():Any[0..1]\n" +
+                        "{\n" +
+                        "   let dbConnection = ^TestDatabaseConnection(type = meta::relational::runtime::DatabaseType.DuckDB);\n" +
+                        "   let res  = executeInDb('select * from duckdb_settings();', $dbConnection, 0, 1000);\n" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database mydb()\n"
+        );
+       compileAndExecute("test():Any[0..1]");
+    }
+
+    // Duck db implicitly converts result of int sum to hugeint >> test to ensure we can read duckdb specific hugeint into pure (as int)
+    @Test
+    public void testExecuteInb_DuckDB_HugeInt()
+    {
+        compileTestSource(
+                TEST_SOURCE_ID,
+                "import meta::external::store::relational::runtime::*;\n" +
+                        "import meta::relational::metamodel::*;\n" +
+                        "import meta::relational::metamodel::execute::*;\n" +
+                        "import meta::relational::functions::toDDL::*;\n" +
+                        "function test():Any[0..1]\n" +
+                        "{\n" +
+                        "   let dbConnection = ^TestDatabaseConnection(type = meta::relational::runtime::DatabaseType.DuckDB);\n" +
+                        "   let res  = executeInDb('select 1+1;', $dbConnection, 0, 1000);\n" +
+                        "   assertEquals(2, $res.rows->at(0).values->at(0));\n" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database mydb()\n"
+        );
+        compileAndExecute("test():Any[0..1]");
+    }
 }
