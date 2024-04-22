@@ -28,6 +28,8 @@ import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tools.ListHelper;
+import org.finos.legend.pure.m3.tools.test.ToFix;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
@@ -610,55 +612,6 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
-    public void testIfReturningFunctions()
-    {
-        compileInferenceTest(
-                "Class meta::core::runtime::Runtime\n" +
-                        "{}\n" +
-                        "Class meta::pure::mapping::Mapping\n" +
-                        "{}\n" +
-                        "function <<functionType.NotImplementedFunction>> meta::pure::mapping::from<T|m>(t:T[m], runtime:meta::core::runtime::Runtime[1]):T[m]\n" +
-                        "{\n" +
-                        "    $t\n" +
-                        "}\n" +
-                        "\n" +
-                        "function <<functionType.NotImplementedFunction>> meta::pure::mapping::from<T|m>(t:T[m], m:meta::pure::mapping::Mapping[1], runtime:meta::core::runtime::Runtime[1]):T[m]\n" +
-                        "{\n" +
-                        "    $t\n" +
-                        "}\n" +
-                        "function <<functionType.NotImplementedFunction>> meta::pure::mapping::from<T|m>(t:T[m], m:meta::pure::mapping::Mapping[1]):T[m]\n" +
-                        "{\n" +
-                        "    $t\n" +
-                        "}\n" +
-                        "function x():Function<Any>[1]\n" +
-                        "{\n" +
-                        "  if(true,|meta::pure::mapping::from_T_m__Runtime_1__T_m_,|meta::pure::mapping::from_T_m__Mapping_1__Runtime_1__T_m_)\n" +
-                        "}\n" +
-                        "function z():Function<{Nil[*], Nil[1]->Any[*]}>[1]\n" +
-                        "{\n" +
-                        "  if(true,|meta::pure::mapping::from_T_m__Runtime_1__T_m_,|meta::pure::mapping::from_T_m__Mapping_1__T_m_)\n" +
-                        "}\n" +
-                        "function z2():Function<Any>[1]\n" +
-                        "{\n" +
-                        "  if(true,|getAllVersionsInRange_Class_1__Date_1__Date_1__T_MANY_,|getAll_Class_1__T_MANY_)\n" +
-                        "}"
-        );
-    }
-
-    @Test
-    public void testIfError()
-    {
-        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
-                "Class TDSNull{}\n" +
-                        "function z::x<Z>(va:Function<{->Z[1]}>[1]):TDSNull[1]\n" +
-                        "{\n" +
-                        "  if(true,|^TDSNull(),|$va->eval());\n" +
-                        "}\n"));
-        // Current bug, but expected by some platform code... Need to eventually fix... found type should be Any, not Z
-        Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:4 column:3), \"Return type error in function 'x'; found: Z; expected: TDSNull\"", e.getMessage());
-    }
-
-    @Test
     public void testLambdasInferForDecide()
     {
         compileInferenceTest(
@@ -767,6 +720,175 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
+    public void testIfReturningFunctions()
+    {
+        compileInferenceTest(
+                "Class meta::core::runtime::Runtime\n" +
+                        "{}\n" +
+                        "Class meta::pure::mapping::Mapping\n" +
+                        "{}\n" +
+                        "function <<functionType.NotImplementedFunction>> meta::pure::mapping::from<T|m>(t:T[m], runtime:meta::core::runtime::Runtime[1]):T[m]\n" +
+                        "{\n" +
+                        "    $t\n" +
+                        "}\n" +
+                        "\n" +
+                        "function <<functionType.NotImplementedFunction>> meta::pure::mapping::from<T|m>(t:T[m], m:meta::pure::mapping::Mapping[1], runtime:meta::core::runtime::Runtime[1]):T[m]\n" +
+                        "{\n" +
+                        "    $t\n" +
+                        "}\n" +
+                        "function <<functionType.NotImplementedFunction>> meta::pure::mapping::from<T|m>(t:T[m], m:meta::pure::mapping::Mapping[1]):T[m]\n" +
+                        "{\n" +
+                        "    $t\n" +
+                        "}\n" +
+                        "function x():Function<Any>[1]\n" +
+                        "{\n" +
+                        "  if(true,|meta::pure::mapping::from_T_m__Runtime_1__T_m_,|meta::pure::mapping::from_T_m__Mapping_1__Runtime_1__T_m_)\n" +
+                        "}\n" +
+                        "function z():Function<{Nil[*], Nil[1]->Any[*]}>[1]\n" +
+                        "{\n" +
+                        "  if(true,|meta::pure::mapping::from_T_m__Runtime_1__T_m_,|meta::pure::mapping::from_T_m__Mapping_1__T_m_)\n" +
+                        "}\n" +
+                        "function z2():Function<Any>[1]\n" +
+                        "{\n" +
+                        "  if(true,|getAllVersionsInRange_Class_1__Date_1__Date_1__T_MANY_,|getAll_Class_1__T_MANY_)\n" +
+                        "}"
+        );
+    }
+
+    @Test
+    public void testIfError()
+    {
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "Class TDSNull{}\n" +
+                        "function z::x<Z>(va:Function<{->Z[1]}>[1]):TDSNull[1]\n" +
+                        "{\n" +
+                        "  if(true,|^TDSNull(),|$va->eval());\n" +
+                        "}\n"));
+        // Current bug, but expected by some platform code... Need to eventually fix... found type should be Any, not Z
+        Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:4 column:3), \"Return type error in function 'x'; found: Z; expected: TDSNull\"", e.getMessage());
+    }
+
+    @Test
+    public void testIfWithDifferentConcreteTypes()
+    {
+        compileInferenceTest(
+                "Class TestClass\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class TestSubClass1 extends TestClass\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class TestSubClass2 extends TestClass\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "function testFn(b:Boolean[1]):Any[*]\n" +
+                        "{\n" +
+                        "  let intOrString = if($b, |1, |'string');\n" +
+                        "  let stringOrInt = if($b, |'string', |-1);\n" +
+                        "  let intOrFloat = if($b, |5, |6.0);\n" +
+                        "  let floatOrInt = if($b, |5.0, |6);\n" +
+                        "  let classOrNil = if($b, |^TestClass(), |[]);\n" +
+                        "  let nilOrClass = if($b, |[], |^TestClass());\n" +
+                        "  let classOrBoolean = if($b, |^TestClass(), |true);\n" +
+                        "  let booleanOrClass = if($b, |false, |^TestClass());\n" +
+                        "  let classOrSubClass1 = if($b, |^TestClass(), |^TestSubClass1());\n" +
+                        "  let subClass1OrClass = if($b, |^TestSubClass1(), |^TestClass());\n" +
+                        "  let subClass1OrSubClass2 = if($b, |^TestSubClass1(), |^TestSubClass2());\n" +
+                        "  let subClass2OrSubClass1 = if($b, |^TestSubClass2(), |^TestSubClass1());\n" +
+                        "}\n");
+        ConcreteFunctionDefinition<?> function = (ConcreteFunctionDefinition<?>) runtime.getFunction("testFn_Boolean_1__Any_MANY_");
+        Assert.assertNotNull(function);
+
+        ListIterable<? extends ValueSpecification> expressions = ListHelper.wrapListIterable(function._expressionSequence());
+        // if($b, |1, |'string')
+        assertGenericTypeEquals(M3Paths.Any, expressions.get(0)._genericType());
+        // if($b, |'string', |-1)
+        assertGenericTypeEquals(M3Paths.Any, expressions.get(1)._genericType());
+        // if($b, |5, |6.0)
+        assertGenericTypeEquals(M3Paths.Number, expressions.get(2)._genericType());
+        // if($b, |5.0, |6)
+        assertGenericTypeEquals(M3Paths.Number, expressions.get(3)._genericType());
+        // if($b, |^TestClass(), |[]])
+        assertGenericTypeEquals("TestClass", expressions.get(4)._genericType());
+        // if($b, |[], |^TestClass())
+        assertGenericTypeEquals("TestClass", expressions.get(5)._genericType());
+        // if($b, |^TestClass(), |true)
+        assertGenericTypeEquals(M3Paths.Any, expressions.get(6)._genericType());
+        // if($b, |false, |^TestClass())
+        assertGenericTypeEquals(M3Paths.Any, expressions.get(7)._genericType());
+        // if($b, |^TestClass(), |^TestSubClass1())
+        assertGenericTypeEquals("TestClass", expressions.get(8)._genericType());
+        // if($b, |^TestSubClass1(), |^TestClass())
+        assertGenericTypeEquals("TestClass", expressions.get(9)._genericType());
+        // if($b, |^TestSubClass1(), |^TestSubClass2())
+        assertGenericTypeEquals("TestClass", expressions.get(10)._genericType());
+        // if($b, |^TestSubClass2(), |^TestSubClass1())
+        assertGenericTypeEquals("TestClass", expressions.get(11)._genericType());
+    }
+
+    @Test
+    @ToFix
+    public void testIfWithConcreteAndNonConcreteTypes()
+    {
+        compileInferenceTest(
+                "Class TestClass\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "function testFn<Z>(b:Boolean[1], z:Z[1], f:Function<{->Z[1]}>[1]):Any[*]\n" +
+                        "{\n" +
+                        "  let intOrZ = if($b, |0, |$z);\n" +
+                        "  let zOrInt = if($b, |$z, |-10);\n" +
+                        "  let classOrEvalToZ = if($b, |^TestClass(), |$f->eval());\n" +
+                        "  let evalToZOrClass = if($b, |$f->eval(), |^TestClass());\n" +
+                        "  let zOrNil = if($b, |$z, |[]);\n" +
+                        "  let nilOrZ = if($b, |[], |$z);\n" +
+                        "  let nilOrEvalToZ = if($b, |[], |$f->eval());\n" +
+                        "  let evalToZOrNil = if($b, |$f->eval(), |[]);\n" +
+                        "  let booleanOrZ = if($b, |true, |$z);\n" +
+                        "  let zOrBoolean = if($b, |$z, |false);\n" +
+                        "}\n");
+        ConcreteFunctionDefinition<?> function = (ConcreteFunctionDefinition<?>) runtime.getFunction("testFn_Boolean_1__Z_1__Function_1__Any_MANY_");
+        Assert.assertNotNull(function);
+
+        ListIterable<? extends ValueSpecification> expressions = ListHelper.wrapListIterable(function._expressionSequence());
+        // TODO Current bug: should be Any
+//        assertGenericTypeEquals(M3Paths.Any, expressions.get(0)._genericType());
+        assertGenericTypeEquals("Z", expressions.get(0)._genericType());
+        // if($b, |$z, |-10)
+        // TODO Current bug: should be Any
+//        assertGenericTypeEquals(M3Paths.Any, expressions.get(1)._genericType());
+        assertGenericTypeEquals("Z", expressions.get(1)._genericType());
+        // if($b, |^TestClass(), |$f->eval())
+        // TODO Current bug: should be Any
+//        assertGenericTypeEquals(M3Paths.Any, expressions.get(2)._genericType());
+        assertGenericTypeEquals("Z", expressions.get(2)._genericType());
+        // if($b, |$f->eval(), |^TestClass())
+        // TODO Current bug: should be Any
+//        assertGenericTypeEquals(M3Paths.Any, expressions.get(3)._genericType());
+        assertGenericTypeEquals("Z", expressions.get(3)._genericType());
+        // if($b, |$z, |[])
+        assertGenericTypeEquals("Z", expressions.get(4)._genericType());
+        // if($b, |[], |$z)
+        assertGenericTypeEquals("Z", expressions.get(5)._genericType());
+        // if($b, |[], |$f->eval())
+        assertGenericTypeEquals("Z", expressions.get(6)._genericType());
+        // if($b, |$f->eval(), |[])
+        assertGenericTypeEquals("Z", expressions.get(7)._genericType());
+        // if($b, |true, |$z)
+        // TODO Current bug: should be Any
+//        assertGenericTypeEquals(M3Paths.Any, expressions.get(8)._genericType());
+        assertGenericTypeEquals("Z", expressions.get(8)._genericType());
+        // if($b, |$z, |false)
+        // TODO Current bug: should be Any
+//        assertGenericTypeEquals(M3Paths.Any, expressions.get(9)._genericType());
+        assertGenericTypeEquals("Z", expressions.get(9)._genericType());
+    }
+
+    @Test
     public void testIfWithFuncTypes()
     {
         compileInferenceTest(
@@ -826,12 +948,6 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
         SimpleFunctionExpression mapExpr = (SimpleFunctionExpression) expressionSequence.get(1);
         LambdaFunction<?> mapFn = (LambdaFunction<?>) ((InstanceValue) mapExpr._parametersValues().toList().getLast())._values().getOnly();
         assertGenericTypeEquals("meta::pure::metamodel::function::LambdaFunction<{T[1]->String[1]}>", mapFn._classifierGenericType());
-    }
-
-    private void assertGenericTypeEquals(String expected, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType)
-    {
-        String actual = GenericType.print(genericType, true, processorSupport);
-        Assert.assertEquals(Optional.ofNullable(genericType.getSourceInformation()).map(SourceInformation::getMessage).orElse(null), expected, actual);
     }
 
     @Test
@@ -1126,5 +1242,11 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     {
         runtime.delete(inferenceTestFileName);
         runtime.compile();
+    }
+
+    private void assertGenericTypeEquals(String expected, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType)
+    {
+        String actual = GenericType.print(genericType, true, processorSupport);
+        Assert.assertEquals(Optional.ofNullable(genericType.getSourceInformation()).map(SourceInformation::getMessage).orElse(null), expected, actual);
     }
 }
