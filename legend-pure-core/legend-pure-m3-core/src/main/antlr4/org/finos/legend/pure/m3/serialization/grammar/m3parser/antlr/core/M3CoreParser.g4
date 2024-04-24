@@ -148,6 +148,15 @@ functionDefinition: FUNCTION stereotypes? taggedValues? qualifiedName typeAndMul
 functionDescriptor: qualifiedName GROUP_OPEN (functionTypePureType (COMMA functionTypePureType)*)? GROUP_CLOSE COLON functionTypePureType
 ;
 
+graphPath: graphPathStartNode (DOT graphPathEdge)*
+;
+
+graphPathStartNode: (PATH_SEPARATOR | qualifiedName | unitName)
+;
+
+graphPathEdge: propertyName (BRACKET_OPEN (INTEGER | ((propertyName EQUAL)? STRING)) BRACKET_CLOSE)?
+;
+
 expression:
     (
         (

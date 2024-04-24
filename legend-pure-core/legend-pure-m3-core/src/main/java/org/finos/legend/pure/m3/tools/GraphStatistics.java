@@ -34,9 +34,11 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.navigation.graph.GraphPath;
 import org.finos.legend.pure.m3.navigation.graph.GraphPathIterable;
+import org.finos.legend.pure.m3.navigation.graph.ResolvedGraphPath;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
+import org.finos.legend.pure.m4.tools.GraphWalkFilterResult;
 
 import java.util.Formatter;
 import java.util.Set;
@@ -191,10 +193,24 @@ public class GraphStatistics
 
     private static LazyIterable<GraphPath> allPathsBetween(Iterable<String> startNodePaths, Predicate<? super CoreInstance> isEndNode, int maxPathLength, ProcessorSupport processorSupport)
     {
-        return GraphPathIterable.newGraphPathIterable(startNodePaths, isEndNode, maxPathLength, processorSupport)
-                .asResolvedGraphPathIterable()
+        return GraphPathIterable.builder(processorSupport)
+                .withStartNodePaths(startNodePaths)
+                .withPathFilter(rgp ->
+                {
+                    int len = rgp.getGraphPath().getEdgeCount();
+                    if (len > maxPathLength)
+                    {
+                        return GraphWalkFilterResult.REJECT_AND_STOP;
+                    }
+                    if ((len == maxPathLength) || isEndNode.test(rgp.getLastResolvedNode()))
+                    {
+                        return GraphWalkFilterResult.ACCEPT_AND_STOP;
+                    }
+                    return GraphWalkFilterResult.ACCEPT_AND_CONTINUE;
+                })
+                .build()
                 .select(path -> isEndNode.test(path.getLastResolvedNode()))
-                .collect(GraphPathIterable.ResolvedGraphPath::getGraphPath);
+                .collect(ResolvedGraphPath::getGraphPath);
     }
 
     public static LazyIterable<String> allTopLevelAndPackagedElementPaths(ProcessorSupport processorSupport)

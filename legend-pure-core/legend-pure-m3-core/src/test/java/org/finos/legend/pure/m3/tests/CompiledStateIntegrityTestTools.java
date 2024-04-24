@@ -31,15 +31,18 @@ import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.graph.GraphPath;
 import org.finos.legend.pure.m3.navigation.graph.GraphPathIterable;
+import org.finos.legend.pure.m3.navigation.graph.ResolvedGraphPath;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m3.tools.GraphStatistics;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.tools.GraphWalkFilterResult;
 import org.junit.Assert;
 
 import java.util.Formatter;
 import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -184,17 +187,24 @@ public class CompiledStateIntegrityTestTools
             if (findPaths)
             {
                 MutableMap<T, GraphPath> graphPaths = Maps.mutable.withInitialCapacity(noSourceInfo.size());
-                GraphPathIterable.SearchFilter searchFilter = GraphPathIterable.getExcludePropertiesFilter(M3Properties.applications, M3Properties.referenceUsages, M3Properties._package)
-                        .join(GraphPathIterable.getStopAtPackagedOrTopLevelNodeFilter());
-                if (noSourceInfo.size() == 1)
+                BiPredicate<ResolvedGraphPath, String> propertyFilter = (resolvedGraphPath, prop) -> !M3Properties.applications.equals(prop) && !M3Properties.referenceUsages.equals(prop) && !M3Properties._package.equals(prop);
+                Function<? super ResolvedGraphPath, ? extends GraphWalkFilterResult> pathFilter = resolvedGraphPath ->
                 {
-                    T instance = noSourceInfo.getAny();
-                    searchFilter = searchFilter.join(GraphPathIterable.getStopAtNodeFilter(instance::equals));
-                }
+                    CoreInstance endNode = resolvedGraphPath.getLastResolvedNode();
+                    if ((noSourceInfo.size() == 1) && noSourceInfo.contains(endNode))
+                    {
+                        return GraphWalkFilterResult.ACCEPT_AND_STOP;
+                    }
+                    if ((endNode instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) && (((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) endNode)._package() != null))
+                    {
+                        return GraphWalkFilterResult.ACCEPT_AND_STOP;
+                    }
+                    return GraphWalkFilterResult.ACCEPT_AND_CONTINUE;
+                };
                 // We resolve the set of starts to a list up front to conserve memory during the graph path searches
                 for (String start : GraphStatistics.allTopLevelAndPackagedElementPaths(processorSupport).toList())
                 {
-                    for (GraphPathIterable.ResolvedGraphPath resolvedGraphPath : GraphPathIterable.newGraphPathIterable(Sets.immutable.with(start), searchFilter, processorSupport).asResolvedGraphPathIterable())
+                    for (ResolvedGraphPath resolvedGraphPath : GraphPathIterable.build(start, pathFilter, propertyFilter, processorSupport))
                     {
                         CoreInstance node = resolvedGraphPath.getLastResolvedNode();
                         if (noSourceInfo.remove(node))
@@ -203,11 +213,6 @@ public class CompiledStateIntegrityTestTools
                             if (noSourceInfo.isEmpty())
                             {
                                 break;
-                            }
-                            if (noSourceInfo.size() == 1)
-                            {
-                                T instance = noSourceInfo.getAny();
-                                searchFilter = searchFilter.join(GraphPathIterable.getStopAtNodeFilter(instance::equals));
                             }
                         }
                     }
