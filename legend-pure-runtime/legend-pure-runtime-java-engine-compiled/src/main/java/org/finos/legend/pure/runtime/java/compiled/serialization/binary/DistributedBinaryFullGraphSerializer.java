@@ -21,7 +21,7 @@ import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
-import org.finos.legend.pure.m4.tools.GraphNodeIterable.NodeFilterResult;
+import org.finos.legend.pure.m4.tools.GraphWalkFilterResult;
 
 class DistributedBinaryFullGraphSerializer extends DistributedBinaryGraphSerializer
 {
@@ -40,13 +40,13 @@ class DistributedBinaryFullGraphSerializer extends DistributedBinaryGraphSeriali
             CoreInstance classifier = instance.getClassifier();
             if (stubClassifiers.contains(classifier))
             {
-                return NodeFilterResult.REJECT_AND_CONTINUE;
+                return GraphWalkFilterResult.REJECT_AND_CONTINUE;
             }
             if (primitiveTypes.contains(classifier))
             {
-                return NodeFilterResult.REJECT_AND_STOP;
+                return GraphWalkFilterResult.REJECT_AND_STOP;
             }
-            return NodeFilterResult.ACCEPT_AND_CONTINUE;
+            return GraphWalkFilterResult.ACCEPT_AND_CONTINUE;
         }).forEach(serializationCollector::collectInstanceForSerialization);
     }
 }

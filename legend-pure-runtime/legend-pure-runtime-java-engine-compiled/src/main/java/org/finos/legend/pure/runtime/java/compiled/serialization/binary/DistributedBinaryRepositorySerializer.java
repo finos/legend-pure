@@ -47,7 +47,7 @@ import org.finos.legend.pure.m3.tools.PackageTreeIterable;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
-import org.finos.legend.pure.m4.tools.GraphNodeIterable.NodeFilterResult;
+import org.finos.legend.pure.m4.tools.GraphWalkFilterResult;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.EnumRef;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.ObjRef;
@@ -75,27 +75,30 @@ class DistributedBinaryRepositorySerializer extends DistributedBinaryGraphSerial
         MutableSet<CoreInstance> primitiveTypes = PrimitiveUtilities.getPrimitiveTypes(this.processorSupport).toSet();
         this.runtime.getSourceRegistry().getSources().asLazy()
                 .select(this::isInRepository)
-                .flatCollect(source -> GraphNodeIterable.fromNodes(getSourceElements(source), instance ->
-                {
-                    CoreInstance classifier = instance.getClassifier();
-                    if (packageClassifier == classifier)
-                    {
-                        return isFromSource(instance, source) ? NodeFilterResult.ACCEPT_AND_CONTINUE : NodeFilterResult.REJECT_AND_STOP;
-                    }
-                    if (refUsageClassifier == classifier)
-                    {
-                        return NodeFilterResult.ACCEPT_AND_CONTINUE;
-                    }
-                    if (stubClassifiers.contains(classifier))
-                    {
-                        return NodeFilterResult.REJECT_AND_CONTINUE;
-                    }
-                    if (primitiveTypes.contains(classifier) || isFromDifferentSource(instance, source))
-                    {
-                        return NodeFilterResult.REJECT_AND_STOP;
-                    }
-                    return NodeFilterResult.ACCEPT_AND_CONTINUE;
-                }))
+                .flatCollect(source -> GraphNodeIterable.builder()
+                        .withStartingNodes(getSourceElements(source))
+                        .withNodeFilter(instance ->
+                        {
+                            CoreInstance classifier = instance.getClassifier();
+                            if (packageClassifier == classifier)
+                            {
+                                return isFromSource(instance, source) ? GraphWalkFilterResult.ACCEPT_AND_CONTINUE : GraphWalkFilterResult.REJECT_AND_STOP;
+                            }
+                            if (refUsageClassifier == classifier)
+                            {
+                                return GraphWalkFilterResult.ACCEPT_AND_CONTINUE;
+                            }
+                            if (stubClassifiers.contains(classifier))
+                            {
+                                return GraphWalkFilterResult.REJECT_AND_CONTINUE;
+                            }
+                            if (primitiveTypes.contains(classifier) || isFromDifferentSource(instance, source))
+                            {
+                                return GraphWalkFilterResult.REJECT_AND_STOP;
+                            }
+                            return GraphWalkFilterResult.ACCEPT_AND_CONTINUE;
+                        })
+                        .build())
                 .forEach(serializationCollector::collectInstanceForSerialization);
         collectPackageUpdates(serializationCollector);
 
@@ -328,7 +331,7 @@ class DistributedBinaryRepositorySerializer extends DistributedBinaryGraphSerial
         protected PackageableElementUpdate(E instance)
         {
             super(instance);
-            ((PackageableElement)instance)._referenceUsages().asLazy()
+            ((PackageableElement) instance)._referenceUsages().asLazy()
                     .select(r -> isInRepository(AnyStubHelper.fromStub(r._ownerCoreInstance())))
                     .forEach(this.refUsages::add);
         }
