@@ -1,4 +1,4 @@
-// Copyright 2020 Goldman Sachs
+// Copyright 2024 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,24 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.base.io;
+package org.finos.legend.pure.runtime.java.interpreted.function.base.io;
 
 import org.finos.legend.pure.m3.execution.FunctionExecution;
-import org.finos.legend.pure.m3.tests.function.base.io.AbstractTestHttp;
-import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
-import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
+import org.finos.legend.pure.m3.tests.function.base.io.AbstractTestReadFile;
+import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.BeforeClass;
 
-public class TestHttpCompiled extends AbstractTestHttp
+public class TestReadFile extends AbstractTestReadFile
 {
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
+        setUpRuntime(getFunctionExecution(), getCodeStorage());
     }
 
-    public static FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
-        return new FunctionExecutionCompiledBuilder().build();
+        return new FunctionExecutionInterpreted();
     }
 }

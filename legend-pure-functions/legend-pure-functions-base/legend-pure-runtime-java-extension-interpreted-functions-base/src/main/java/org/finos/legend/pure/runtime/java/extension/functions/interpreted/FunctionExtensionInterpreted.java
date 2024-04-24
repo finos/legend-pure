@@ -210,7 +210,7 @@ public class FunctionExtensionInterpreted extends BaseInterpretedExtension
 
                 //IO
                 Tuples.pair("executeHTTPRaw_URL_1__HTTPMethod_1__String_$0_1$__String_$0_1$__HTTPResponse_1_", Http::new),
-                Tuples.pair("readFile_String_1__String_$0_1$_", ReadFile::new),
+                Tuples.pair("readFile_String_1__String_$0_1$__String_$0_1$_", ReadFile::new),
 
                 //Lang
                 Tuples.pair("match_Any_MANY__Function_$1_MANY$__P_o__T_m_", Match::new),

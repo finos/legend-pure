@@ -14,9 +14,13 @@
 
 package org.finos.legend.pure.m3.tests.function.base.io;
 
-import com.sun.net.httpserver.*;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpServer;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -34,7 +38,7 @@ public abstract class AbstractTestHttp extends AbstractPureTestWithCoreCompiled
     }
 
     @AfterClass
-    public static void stopHttp() throws Exception
+    public static void stopHttp()
     {
         httpServer.stop(0);
     }
@@ -49,6 +53,7 @@ public abstract class AbstractTestHttp extends AbstractPureTestWithCoreCompiled
     public void cleanRuntime()
     {
         runtime.delete("testHttp.pure");
+        runtime.compile();
     }
 
     @Test

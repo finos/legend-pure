@@ -14,13 +14,13 @@
 
 package org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.io;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
@@ -49,11 +49,14 @@ public class ReadFile extends NativeFunction
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
-        String filePath = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport).getName();
-        return this.codeStorage != null && this.codeStorage.exists(filePath) ?
-                ValueSpecificationBootstrap.newStringLiteral(this.repository, this.codeStorage.getContentAsText(filePath), processorSupport)
-                :
-                ValueSpecificationBootstrap.wrapValueSpecification(FastList.<CoreInstance>newList(), true, processorSupport);
-    }
+        String filePath = PrimitiveUtilities.getStringValue(params.get(0).getValueForMetaPropertyToOne(M3Properties.values));
+        if ((this.codeStorage == null) || !this.codeStorage.exists(filePath))
+        {
+            return ValueSpecificationBootstrap.wrapValueSpecification(Lists.immutable.empty(), true, processorSupport);
+        }
 
+        String lineSep = PrimitiveUtilities.getStringValue(params.get(1).getValueForMetaPropertyToOne(M3Properties.values), null);
+        String content = this.codeStorage.getContentAsText(filePath);
+        return ValueSpecificationBootstrap.newStringLiteral(this.repository, (lineSep == null) ? content : content.replaceAll("\\R", lineSep), processorSupport);
+    }
 }
