@@ -29,7 +29,6 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.nio.file.Path;
 
 public class TestVisibility extends AbstractPureMappingTestWithCoreCompiled
 {

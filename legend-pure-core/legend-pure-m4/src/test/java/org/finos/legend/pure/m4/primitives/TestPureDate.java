@@ -14,9 +14,6 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
-import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate;
 import org.junit.Assert;
 import org.junit.Test;
 

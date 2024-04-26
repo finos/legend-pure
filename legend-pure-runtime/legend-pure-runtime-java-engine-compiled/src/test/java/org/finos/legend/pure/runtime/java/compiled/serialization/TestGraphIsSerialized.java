@@ -38,7 +38,6 @@ import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.nio.file.Path;
 import java.util.Formatter;
 
 public class TestGraphIsSerialized

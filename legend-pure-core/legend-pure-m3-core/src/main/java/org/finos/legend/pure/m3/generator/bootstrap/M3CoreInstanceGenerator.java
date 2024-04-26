@@ -40,7 +40,6 @@ import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
-import java.nio.file.Paths;
 
 public class M3CoreInstanceGenerator
 {

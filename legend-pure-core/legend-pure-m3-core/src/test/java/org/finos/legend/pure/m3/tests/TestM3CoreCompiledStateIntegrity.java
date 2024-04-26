@@ -20,7 +20,6 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.Mutable
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.junit.BeforeClass;
 
-import java.nio.file.Path;
 
 public class TestM3CoreCompiledStateIntegrity extends AbstractCompiledStateIntegrityTest
 {

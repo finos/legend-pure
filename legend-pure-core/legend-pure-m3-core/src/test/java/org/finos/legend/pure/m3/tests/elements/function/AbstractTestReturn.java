@@ -15,7 +15,6 @@
 package org.finos.legend.pure.m3.tests.elements.function;
 
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
-import org.junit.Assert;
 import org.junit.Test;
 
 public abstract class AbstractTestReturn extends AbstractPureTestWithCoreCompiled

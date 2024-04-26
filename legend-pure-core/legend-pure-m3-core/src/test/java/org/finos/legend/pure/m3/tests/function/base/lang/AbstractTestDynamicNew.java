@@ -27,7 +27,6 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.After;
 import org.junit.Test;
 
-import java.nio.file.Path;
 
 public abstract class AbstractTestDynamicNew extends AbstractPureTestWithCoreCompiled
 {

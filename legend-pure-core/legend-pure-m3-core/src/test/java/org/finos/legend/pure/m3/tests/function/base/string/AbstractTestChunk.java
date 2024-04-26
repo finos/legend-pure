@@ -30,7 +30,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.nio.file.Path;
 
 public abstract class AbstractTestChunk extends AbstractPureTestWithCoreCompiled
 {

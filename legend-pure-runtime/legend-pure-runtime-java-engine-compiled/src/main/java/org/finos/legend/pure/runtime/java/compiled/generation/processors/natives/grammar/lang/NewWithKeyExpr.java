@@ -24,7 +24,6 @@ import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImpo
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.SourceInfoProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.InstantiationHelpers;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 

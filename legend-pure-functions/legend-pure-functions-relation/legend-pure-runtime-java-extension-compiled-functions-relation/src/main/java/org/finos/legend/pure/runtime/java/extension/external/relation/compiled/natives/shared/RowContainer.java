@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.extension.external.relation.compiled.natives.shared;
 
-import org.finos.legend.pure.runtime.java.extension.external.relation.compiled.natives.shared.TestTDSCompiled;
 
 import java.util.function.Function;
 

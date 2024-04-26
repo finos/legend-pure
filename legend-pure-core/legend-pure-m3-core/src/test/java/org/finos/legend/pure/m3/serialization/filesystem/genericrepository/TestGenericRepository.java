@@ -25,7 +25,6 @@ import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeR
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.File;
 
 public class TestGenericRepository
 {
