@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.extension.external.relation.compiled.natives.shared;
 
-
 import java.util.function.Function;
 
 public class RowContainer implements Function<String, Object>
