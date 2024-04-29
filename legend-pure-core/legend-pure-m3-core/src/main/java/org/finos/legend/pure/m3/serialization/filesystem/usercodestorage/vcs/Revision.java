@@ -16,7 +16,6 @@ package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.function.primitive.LongFunction;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.impl.block.factory.Comparators;
 

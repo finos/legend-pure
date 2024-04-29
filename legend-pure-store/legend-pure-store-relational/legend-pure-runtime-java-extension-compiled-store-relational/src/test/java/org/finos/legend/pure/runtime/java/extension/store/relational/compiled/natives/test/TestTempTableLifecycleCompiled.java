@@ -16,7 +16,6 @@ package org.finos.legend.pure.runtime.java.extension.store.relational.compiled.n
 
 import org.finos.legend.pure.m2.relational.AbstractTestTempTableLifecycle;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
-import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
 import org.junit.Before;
 
 public class TestTempTableLifecycleCompiled extends AbstractTestTempTableLifecycle

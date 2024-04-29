@@ -16,9 +16,7 @@ package org.finos.legend.pure.runtime.java.interpreted.function.base.string;
 
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.string.AbstractTestSubstring;
-import org.finos.legend.pure.m3.tests.function.base.string.AbstractTestToString;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.junit.After;
 import org.junit.BeforeClass;
 
 public class TestSubstringInterpreted extends AbstractTestSubstring

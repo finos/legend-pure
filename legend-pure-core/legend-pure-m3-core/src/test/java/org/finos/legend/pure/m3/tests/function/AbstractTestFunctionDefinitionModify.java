@@ -27,7 +27,6 @@ import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.nio.file.Path;
 
 public abstract class AbstractTestFunctionDefinitionModify extends AbstractPureTestWithCoreCompiled
 {

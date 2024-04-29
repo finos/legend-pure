@@ -14,13 +14,11 @@
 
 package org.finos.legend.pure.m3.serialization.runtime;
 
-import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.test.Verify;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.List;
 import java.util.regex.Pattern;
 
 public class TestSourceFind

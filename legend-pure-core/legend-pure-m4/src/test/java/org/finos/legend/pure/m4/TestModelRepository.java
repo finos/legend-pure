@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m4;
 
-import org.finos.legend.pure.m4.ModelRepository;
 import org.junit.Assert;
 import org.junit.Test;
 

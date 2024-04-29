@@ -18,7 +18,6 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m2.relational.M2RelationalPaths;
 import org.finos.legend.pure.m2.relational.M2RelationalProperties;
-import org.finos.legend.pure.m2.relational.serialization.grammar.v1.processor.DatabaseProcessor;
 import org.finos.legend.pure.m3.compiler.ReferenceUsage;
 import org.finos.legend.pure.m3.compiler.postprocessing.PostProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;

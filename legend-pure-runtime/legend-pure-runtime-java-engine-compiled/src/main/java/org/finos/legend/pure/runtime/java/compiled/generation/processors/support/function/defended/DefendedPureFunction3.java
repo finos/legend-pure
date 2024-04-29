@@ -16,7 +16,6 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.suppor
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureFunction2;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureFunction3;
 
 public abstract class DefendedPureFunction3<T1, T2, T3, R> implements PureFunction3<T1, T2, T3, R>

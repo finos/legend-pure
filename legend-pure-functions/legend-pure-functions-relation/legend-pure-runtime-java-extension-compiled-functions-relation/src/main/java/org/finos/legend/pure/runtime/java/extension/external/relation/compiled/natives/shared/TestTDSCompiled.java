@@ -29,8 +29,6 @@ import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.extension.external.relation.shared.TestTDS;
 
-import java.math.BigDecimal;
-import java.util.Arrays;
 
 public class TestTDSCompiled extends TestTDS
 {

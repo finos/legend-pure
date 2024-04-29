@@ -15,7 +15,6 @@
 package org.finos.legend.pure.m2.dsl.diagram.serialization.grammar.walker;
 
 import org.finos.legend.pure.m2.dsl.diagram.M2DiagramPaths;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.unload.walk.WalkerState;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.diagram.PropertyView;

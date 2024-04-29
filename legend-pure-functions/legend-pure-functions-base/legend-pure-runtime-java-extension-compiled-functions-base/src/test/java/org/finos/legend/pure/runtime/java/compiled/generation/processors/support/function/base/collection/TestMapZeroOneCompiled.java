@@ -14,8 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.base.collection;
 
-import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.function.base.collection.AbstractTestMapZeroOne;

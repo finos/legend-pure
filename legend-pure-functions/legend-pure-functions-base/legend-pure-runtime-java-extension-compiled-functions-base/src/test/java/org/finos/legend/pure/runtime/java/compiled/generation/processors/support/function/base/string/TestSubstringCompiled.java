@@ -15,12 +15,9 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.base.string;
 
 import org.finos.legend.pure.m3.execution.FunctionExecution;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.function.base.string.AbstractTestSubstring;
-import org.finos.legend.pure.m3.tests.function.base.string.AbstractTestToString;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
-import org.junit.After;
 import org.junit.BeforeClass;
 
 public class TestSubstringCompiled extends AbstractTestSubstring

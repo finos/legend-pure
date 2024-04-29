@@ -30,7 +30,6 @@ import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.nio.file.Path;
 
 public class TestMultipleRepoIncrementalCompilation extends AbstractPureTestWithCoreCompiledPlatform
 {
