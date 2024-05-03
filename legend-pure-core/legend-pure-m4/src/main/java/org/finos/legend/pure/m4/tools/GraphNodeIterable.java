@@ -14,105 +14,178 @@
 
 package org.finos.legend.pure.m4.tools;
 
-import org.eclipse.collections.api.block.procedure.Procedure;
+import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ImmutableList;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.lazy.AbstractLazyIterable;
+import org.eclipse.collections.impl.set.mutable.SynchronizedMutableSet;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Deque;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Spliterator;
-import java.util.Spliterators;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
  * An iterable that iterates through the nodes of a graph, starting from a given set of nodes and traversing to
  * connected nodes. The traversal of the graph can be controlled by providing a
- * {@link java.util.function.Function function} from nodes to {@link NodeFilterResult NodeFilterResults}.
+ * {@link java.util.function.Function function} from nodes to {@link GraphWalkFilterResult GraphWalkFilterResults}.
  */
-public class GraphNodeIterable extends AbstractLazyIterable<CoreInstance>
+public class GraphNodeIterable extends AbstractLazySpliterable<CoreInstance>
 {
     private final ImmutableList<CoreInstance> startingNodes;
-    private final Function<? super CoreInstance, NodeFilterResult> filter;
+    private final BiPredicate<? super CoreInstance, ? super String> keyFilter;
+    private final Function<? super CoreInstance, ? extends GraphWalkFilterResult> nodeFilter;
 
-    private GraphNodeIterable(Iterable<? extends CoreInstance> startingNodes, Function<? super CoreInstance, NodeFilterResult> filter)
+    private GraphNodeIterable(ImmutableList<CoreInstance> startingNodes, BiPredicate<? super CoreInstance, ? super String> keyFilter, Function<? super CoreInstance, ? extends GraphWalkFilterResult> nodeFilter)
     {
         this.startingNodes = Lists.immutable.withAll(startingNodes);
-        this.filter = filter;
+        this.keyFilter = (keyFilter == null) ? (n, k) -> true : keyFilter;
+        this.nodeFilter = nodeFilter;
     }
 
     @Override
-    public Iterator<CoreInstance> iterator()
+    public int size()
     {
-        return new GraphNodeIterator(this.startingNodes, this.filter);
+        return computeClosure().size();
+    }
+
+    @Override
+    public boolean isEmpty()
+    {
+        return this.startingNodes.isEmpty() || ((this.nodeFilter != null) && !stream().findAny().isPresent());
+    }
+    
+    @Override
+    public CoreInstance getAny()
+    {
+        if (this.startingNodes.isEmpty())
+        {
+            return null;
+        }
+        if (this.nodeFilter == null)
+        {
+            return this.startingNodes.getAny();
+        }
+        return super.getAny();
+    }
+
+    @Override
+    public CoreInstance getFirst()
+    {
+        if (this.startingNodes.isEmpty())
+        {
+            return null;
+        }
+        if (this.nodeFilter == null)
+        {
+            return this.startingNodes.getFirst();
+        }
+        return super.getFirst();
+    }
+
+    @Override
+    public boolean contains(Object object)
+    {
+        return (object instanceof CoreInstance) && super.contains(object);
+    }
+
+    @Override
+    public LazyIterable<CoreInstance> distinct()
+    {
+        return this;
+    }
+
+    @Override
+    public MutableList<CoreInstance> toList()
+    {
+        return Lists.mutable.withAll(computeClosure());
+    }
+
+    @Override
+    public MutableSet<CoreInstance> toSet()
+    {
+        return computeClosure();
+    }
+
+    @Override
+    public Object[] toArray()
+    {
+        return computeClosure().toArray();
+    }
+
+    @Override
+    public <E> E[] toArray(E[] array)
+    {
+        return computeClosure().toArray(array);
     }
 
     @Override
     public Spliterator<CoreInstance> spliterator()
     {
-        return Spliterators.spliteratorUnknownSize(iterator(), Spliterator.DISTINCT | Spliterator.NONNULL);
+        return new GraphNodeSpliterator(this.startingNodes, this.keyFilter, this.nodeFilter);
     }
 
-    @Override
-    public void each(Procedure<? super CoreInstance> procedure)
+    private MutableSet<CoreInstance> computeClosure()
     {
-        for (CoreInstance node : this)
-        {
-            procedure.value(node);
-        }
+        return computeClosure(this.startingNodes, this.keyFilter, this.nodeFilter);
     }
 
-    @Override
-    public void forEach(Consumer<? super CoreInstance> consumer)
-    {
-        for (CoreInstance node : this)
-        {
-            consumer.accept(node);
-        }
-    }
-
+    @Deprecated
     public static GraphNodeIterable fromNode(CoreInstance startingNode)
     {
-        return fromNodes(startingNode, null);
+        return builder().withStartingNode(startingNode).build();
     }
 
-    public static GraphNodeIterable fromNode(CoreInstance startingNode, Function<? super CoreInstance, NodeFilterResult> filter)
+    @Deprecated
+    public static GraphNodeIterable fromNode(CoreInstance startingNode, Function<? super CoreInstance, ? extends GraphWalkFilterResult> filter)
     {
-        return fromNodes(Lists.immutable.with(startingNode), filter);
+        return builder().withStartingNode(startingNode).withNodeFilter(filter).build();
     }
 
+    @Deprecated
     public static GraphNodeIterable fromNodes(CoreInstance... startingNodes)
     {
-        return fromNodes(Lists.immutable.with(startingNodes));
+        return builder().withStartingNodes(startingNodes).build();
     }
 
+    @Deprecated
     public static GraphNodeIterable fromNodes(Iterable<? extends CoreInstance> startingNodes)
     {
-        return fromNodes(startingNodes, null);
+        return builder().withStartingNodes(startingNodes).build();
     }
 
-    public static GraphNodeIterable fromNodes(Iterable<? extends CoreInstance> startingNodes, Function<? super CoreInstance, NodeFilterResult> filter)
+    @Deprecated
+    public static GraphNodeIterable fromNodes(Iterable<? extends CoreInstance> startingNodes, Function<? super CoreInstance, ? extends GraphWalkFilterResult> filter)
     {
-        return new GraphNodeIterable(Objects.requireNonNull(startingNodes, "Starting nodes may not be null"), filter);
+        return builder().withStartingNodes(startingNodes).withNodeFilter(filter).build();
     }
 
     public static GraphNodeIterable fromModelRepository(ModelRepository repository)
     {
-        return fromModelRepository(repository, null);
+        return fromModelRepository(repository, null, null);
     }
 
-    public static GraphNodeIterable fromModelRepository(ModelRepository repository, Function<? super CoreInstance, NodeFilterResult> filter)
+    public static GraphNodeIterable fromModelRepository(ModelRepository repository, Function<? super CoreInstance, ? extends GraphWalkFilterResult> nodeFilter)
     {
-        return fromNodes(repository.getTopLevels(), filter);
+        return fromModelRepository(repository, null, nodeFilter);
+    }
+
+    public static GraphNodeIterable fromModelRepository(ModelRepository repository, BiPredicate<? super CoreInstance, ? super String> keyFilter, Function<? super CoreInstance, ? extends GraphWalkFilterResult> nodeFilter)
+    {
+        return builder()
+                .withStartingNodes(repository.getTopLevels())
+                .withKeyFilter(keyFilter)
+                .withNodeFilter(nodeFilter)
+                .build();
     }
 
     public static MutableSet<CoreInstance> allInstancesFromRepository(ModelRepository repository)
@@ -122,126 +195,190 @@ public class GraphNodeIterable extends AbstractLazyIterable<CoreInstance>
 
     public static MutableSet<CoreInstance> allConnectedInstances(Iterable<? extends CoreInstance> startingNodes)
     {
-        return allConnectedInstances(startingNodes, null);
+        return allConnectedInstances(startingNodes, null, null);
     }
 
-    public static MutableSet<CoreInstance> allConnectedInstances(Iterable<? extends CoreInstance> startingNodes, Function<? super CoreInstance, NodeFilterResult> filter)
+    public static MutableSet<CoreInstance> allConnectedInstances(Iterable<? extends CoreInstance> startingNodes, BiPredicate<? super CoreInstance, ? super String> keyFilter)
     {
-        GraphNodeIterator iterator = new GraphNodeIterator(startingNodes, filter);
-        while (iterator.hasNext())
-        {
-            iterator.next();
-        }
-        return iterator.visited;
+        return allConnectedInstances(startingNodes, keyFilter, null);
     }
 
-    private static class GraphNodeIterator implements Iterator<CoreInstance>
+    public static MutableSet<CoreInstance> allConnectedInstances(Iterable<? extends CoreInstance> startingNodes, Function<? super CoreInstance, ? extends GraphWalkFilterResult> nodeFilter)
+    {
+        return allConnectedInstances(startingNodes, null, nodeFilter);
+    }
+
+    public static MutableSet<CoreInstance> allConnectedInstances(Iterable<? extends CoreInstance> startingNodes, BiPredicate<? super CoreInstance, ? super String> keyFilter, Function<? super CoreInstance, ? extends GraphWalkFilterResult> nodeFilter)
+    {
+        return computeClosure(startingNodes, keyFilter, nodeFilter);
+    }
+
+    private static MutableSet<CoreInstance> computeClosure(Iterable<? extends CoreInstance> startingNodes, BiPredicate<? super CoreInstance, ? super String> keyFilter, Function<? super CoreInstance, ? extends GraphWalkFilterResult> nodeFilter)
+    {
+        GraphNodeSpliterator spliterator = new GraphNodeSpliterator(startingNodes, keyFilter, nodeFilter);
+        spliterator.forEachRemaining(n ->
+        {
+            // Do nothing: collect instances by side effect
+        });
+        return spliterator.visited;
+    }
+
+    private static class GraphNodeSpliterator implements Spliterator<CoreInstance>
     {
         private final Deque<CoreInstance> deque;
-        private final MutableSet<CoreInstance> visited;
-        private final Function<? super CoreInstance, NodeFilterResult> filter;
-        private CoreInstance next;
+        private MutableSet<CoreInstance> visited;
+        private final BiPredicate<? super CoreInstance, ? super String> keyFilter;
+        private final Function<? super CoreInstance, ? extends GraphWalkFilterResult> nodeFilter;
 
-        private GraphNodeIterator(Iterable<? extends CoreInstance> startingNodes, Function<? super CoreInstance, NodeFilterResult> filter)
+        private GraphNodeSpliterator(Deque<CoreInstance> deque, MutableSet<CoreInstance> visited, BiPredicate<? super CoreInstance, ? super String> keyFilter, Function<? super CoreInstance, ? extends GraphWalkFilterResult> nodeFilter)
         {
-            this.deque = Iterate.addAllTo(startingNodes, new ArrayDeque<>());
-            this.visited = Sets.mutable.ofInitialCapacity(Math.max(this.deque.size(), 16));
-            this.filter = filter;
-            this.next = findNextNode();
+            this.deque = deque;
+            this.visited = visited;
+            this.keyFilter = (keyFilter == null) ? (n, k) -> true : keyFilter;
+            this.nodeFilter = nodeFilter;
+        }
+
+        private GraphNodeSpliterator(Iterable<? extends CoreInstance> startingNodes, BiPredicate<? super CoreInstance, ? super String> keyFilter, Function<? super CoreInstance, ? extends GraphWalkFilterResult> nodeFilter)
+        {
+            this(Iterate.addAllTo(startingNodes, new ArrayDeque<>()), Sets.mutable.empty(), keyFilter, nodeFilter);
         }
 
         @Override
-        public boolean hasNext()
-        {
-            return this.next != null;
-        }
-
-        @Override
-        public CoreInstance next()
-        {
-            CoreInstance node = this.next;
-            if (node == null)
-            {
-                throw new NoSuchElementException();
-            }
-            this.next = findNextNode();
-            return node;
-        }
-
-        private CoreInstance findNextNode()
+        public boolean tryAdvance(Consumer<? super CoreInstance> action)
         {
             while (!this.deque.isEmpty())
             {
                 CoreInstance node = this.deque.pollFirst();
                 if (this.visited.add(node))
                 {
-                    NodeFilterResult filterResult = filter(node);
-                    if (filterResult.cont)
+                    GraphWalkFilterResult filterResult = filterNode(node);
+                    if (filterResult.shouldContinue())
                     {
-                        node.getKeys().forEach(key -> Iterate.addAllIterable(node.getValueForMetaPropertyToMany(key), this.deque));
+                        node.getKeys().forEach(key ->
+                        {
+                            if (this.keyFilter.test(node, key))
+                            {
+                                node.getValueForMetaPropertyToMany(key).forEach(v ->
+                                {
+                                    if (!this.visited.contains(v))
+                                    {
+                                        this.deque.addLast(v);
+                                    }
+                                });
+                            }
+                        });
                     }
-                    if (filterResult.accept)
+                    if (filterResult.shouldAccept())
                     {
-                        return node;
+                        action.accept(node);
+                        return true;
                     }
                 }
             }
-            return null;
+            return false;
         }
 
-        private NodeFilterResult filter(CoreInstance node)
+        @Override
+        public Spliterator<CoreInstance> trySplit()
         {
-            if (this.filter != null)
+            if (this.deque.size() < 2)
             {
-                NodeFilterResult result = this.filter.apply(node);
+                return null;
+            }
+
+            int splitSize = this.deque.size() / 2;
+            Deque<CoreInstance> newDeque = new ArrayDeque<>(splitSize);
+            for (int i = 0; i < splitSize; i++)
+            {
+                newDeque.addFirst(this.deque.pollLast());
+            }
+            // If we are going to split, we need to make sure the visited set is synchronized
+            if (!(this.visited instanceof SynchronizedMutableSet))
+            {
+                this.visited = SynchronizedMutableSet.of(this.visited, this.visited);
+            }
+            return new GraphNodeSpliterator(newDeque, this.visited, this.keyFilter, this.nodeFilter);
+        }
+
+        @Override
+        public long estimateSize()
+        {
+            return this.deque.isEmpty() ? 0L : Long.MAX_VALUE;
+        }
+
+        @Override
+        public long getExactSizeIfKnown()
+        {
+            return this.deque.isEmpty() ? 0L : -1L;
+        }
+
+        @Override
+        public int characteristics()
+        {
+            return NONNULL | DISTINCT;
+        }
+
+        private GraphWalkFilterResult filterNode(CoreInstance node)
+        {
+            if (this.nodeFilter != null)
+            {
+                GraphWalkFilterResult result = this.nodeFilter.apply(node);
                 if (result != null)
                 {
                     return result;
                 }
             }
-            return NodeFilterResult.ACCEPT_AND_CONTINUE;
+            return GraphWalkFilterResult.ACCEPT_AND_CONTINUE;
         }
     }
 
-    /**
-     * Node filter result, which controls which nodes are returned during iteration and how graph traversal proceeds.
-     * The default behavior is {@link #ACCEPT_AND_CONTINUE}.
-     */
-    public enum NodeFilterResult
+    public static Builder builder()
     {
-        /**
-         * Accept the node for iteration, and continue on to connected nodes.
-         */
-        ACCEPT_AND_CONTINUE(true, true),
+        return new Builder();
+    }
 
-        /**
-         * Accept the node for iteration, but do not continue on to connected nodes. Note that connected nodes may still
-         * be reached by other paths.
-         */
-        ACCEPT_AND_STOP(true, false),
+    public static class Builder
+    {
+        private final MutableList<CoreInstance> startNodes = Lists.mutable.empty();
+        private BiPredicate<? super CoreInstance, ? super String> keyFilter;
+        private Function<? super CoreInstance, ? extends GraphWalkFilterResult> nodeFilter;
 
-        /**
-         * Reject the node for iteration, but continue on to connected nodes. This means that the node will not be
-         * returned as part of iteration. Note that the rejection is persistent, even if the node is reached by other
-         * paths.
-         */
-        REJECT_AND_CONTINUE(false, true),
-
-        /**
-         * Reject the node for iteration, and do not continue on to connected nodes. This means both that the node will
-         * not be returned as part of iteration and that graph traversal will not continue on to connected nodes (though
-         * they may still be reached by other paths). Note that the rejection is persistent, even if the node is reached
-         * by other paths.
-         */
-        REJECT_AND_STOP(false, false);
-
-        private final boolean accept;
-        private final boolean cont;
-
-        NodeFilterResult(boolean accept, boolean cont)
+        private Builder()
         {
-            this.accept = accept;
-            this.cont = cont;
+        }
+
+        public Builder withKeyFilter(BiPredicate<? super CoreInstance, ? super String> keyFilter)
+        {
+            this.keyFilter = keyFilter;
+            return this;
+        }
+
+        public Builder withNodeFilter(Function<? super CoreInstance, ? extends GraphWalkFilterResult> nodeFilter)
+        {
+            this.nodeFilter = nodeFilter;
+            return this;
+        }
+
+        public Builder withStartingNode(CoreInstance node)
+        {
+            this.startNodes.add(Objects.requireNonNull(node));
+            return this;
+        }
+
+        public Builder withStartingNodes(Iterable<? extends CoreInstance> nodes)
+        {
+            nodes.forEach(this::withStartingNode);
+            return this;
+        }
+
+        public Builder withStartingNodes(CoreInstance... startingNodes)
+        {
+            return withStartingNodes(Arrays.asList(startingNodes));
+        }
+
+        public GraphNodeIterable build()
+        {
+            return new GraphNodeIterable(this.startNodes.toImmutable(), this.keyFilter, this.nodeFilter);
         }
     }
 }

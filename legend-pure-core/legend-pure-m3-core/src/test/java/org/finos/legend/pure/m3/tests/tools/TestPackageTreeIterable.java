@@ -84,16 +84,13 @@ public class TestPackageTreeIterable extends AbstractPureTestWithCoreCompiledPla
     {
         PackageTreeIterable breadthFirst = PackageTreeIterable.newRootPackageTreeIterable(repository, false);
         Iterator<Package> it = breadthFirst.iterator();
-        Package previous = it.next();
-        String previousPath = PackageableElement.getUserPathForPackageableElement(previous);
+        String previousPath = PackageableElement.getUserPathForPackageableElement(it.next());
         ListIterable<String> previousSplitPath = PackageableElement.splitUserPath(previousPath);
         while (it.hasNext())
         {
-            Package current = it.next();
-            String currentPath = PackageableElement.getUserPathForPackageableElement(current);
+            String currentPath = PackageableElement.getUserPathForPackageableElement(it.next());
             ListIterable<String> currentSplitPath = PackageableElement.splitUserPath(currentPath);
             Assert.assertTrue("Package " + previousPath + " should not precede " + currentPath + " in a breadth first search", previousSplitPath.size() <= currentSplitPath.size());
-            previous = current;
             previousPath = currentPath;
             previousSplitPath = currentSplitPath;
         }

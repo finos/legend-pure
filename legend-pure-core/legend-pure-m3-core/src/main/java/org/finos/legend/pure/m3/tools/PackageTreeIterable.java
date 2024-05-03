@@ -14,64 +14,58 @@
 
 package org.finos.legend.pure.m3.tools;
 
-import org.eclipse.collections.api.block.procedure.Procedure;
-import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.set.ImmutableSet;
-import org.eclipse.collections.impl.lazy.AbstractLazyIterable;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.tools.AbstractLazySpliterable;
+import org.finos.legend.pure.m4.tools.GraphWalkFilterResult;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
-public class PackageTreeIterable extends AbstractLazyIterable<Package>
+public class PackageTreeIterable extends AbstractLazySpliterable<Package>
 {
     private final ImmutableSet<Package> startingPackages;
+    private final Function<? super Package, ? extends GraphWalkFilterResult> filter;
     private final boolean depthFirst;
 
-    private PackageTreeIterable(Iterable<? extends Package> startingPackages, boolean depthFirst)
+    private PackageTreeIterable(Iterable<? extends Package> startingPackages, Function<? super Package, ? extends GraphWalkFilterResult> filter, boolean depthFirst)
     {
         this.startingPackages = Sets.immutable.withAll(startingPackages);
+        this.filter = filter;
         this.depthFirst = depthFirst;
-    }
-
-    @Override
-    public Iterator<Package> iterator()
-    {
-        return new PackageTreeIterator(this.startingPackages, this.depthFirst);
     }
 
     @Override
     public Spliterator<Package> spliterator()
     {
-        return Spliterators.spliteratorUnknownSize(iterator(), Spliterator.DISTINCT | Spliterator.NONNULL);
+        return new PackageTreeSpliterator(this.startingPackages, this.filter, this.depthFirst);
     }
 
     @Override
-    public void each(Procedure<? super Package> procedure)
+    public boolean isEmpty()
     {
-        for (Package pkg : this)
-        {
-            procedure.value(pkg);
-        }
+        return this.startingPackages.isEmpty() || ((this.filter != null) && super.isEmpty());
     }
 
     @Override
-    public void forEach(Consumer<? super Package> consumer)
+    public boolean contains(Object object)
     {
-        for (Package pkg : this)
-        {
-            consumer.accept(pkg);
-        }
+        return (object instanceof Package) && super.contains(object);
+    }
+
+    @Override
+    public LazyIterable<Package> distinct()
+    {
+        return this;
     }
 
     public boolean isDepthFirst()
@@ -79,9 +73,14 @@ public class PackageTreeIterable extends AbstractLazyIterable<Package>
         return this.depthFirst;
     }
 
+    public static PackageTreeIterable newPackageTreeIterable(Iterable<? extends Package> startingPackages, Function<? super Package, ? extends GraphWalkFilterResult> filter, boolean depthFirst)
+    {
+        return new PackageTreeIterable(startingPackages, filter, depthFirst);
+    }
+
     public static PackageTreeIterable newPackageTreeIterable(Iterable<? extends Package> startingPackages, boolean depthFirst)
     {
-        return new PackageTreeIterable(startingPackages, depthFirst);
+        return newPackageTreeIterable(startingPackages, null, depthFirst);
     }
 
     public static PackageTreeIterable newPackageTreeIterable(Iterable<? extends Package> startingPackages)
@@ -89,9 +88,14 @@ public class PackageTreeIterable extends AbstractLazyIterable<Package>
         return newPackageTreeIterable(startingPackages, true);
     }
 
+    public static PackageTreeIterable newPackageTreeIterable(Package startingPackage, Function<? super Package, ? extends GraphWalkFilterResult> filter, boolean depthFirst)
+    {
+        return newPackageTreeIterable(Sets.immutable.with(startingPackage), filter, depthFirst);
+    }
+
     public static PackageTreeIterable newPackageTreeIterable(Package startingPackage, boolean depthFirst)
     {
-        return newPackageTreeIterable(Lists.immutable.with(startingPackage), depthFirst);
+        return newPackageTreeIterable(startingPackage, null, depthFirst);
     }
 
     public static PackageTreeIterable newPackageTreeIterable(Package startingPackage)
@@ -99,9 +103,14 @@ public class PackageTreeIterable extends AbstractLazyIterable<Package>
         return newPackageTreeIterable(startingPackage, true);
     }
 
+    public static PackageTreeIterable newRootPackageTreeIterable(ModelRepository repository, Function<? super Package, ? extends GraphWalkFilterResult> filter, boolean depthFirst)
+    {
+        return newPackageTreeIterable((Package) repository.getTopLevel(M3Paths.Root), filter, depthFirst);
+    }
+
     public static PackageTreeIterable newRootPackageTreeIterable(ModelRepository repository, boolean depthFirst)
     {
-        return newPackageTreeIterable((Package) repository.getTopLevel(M3Paths.Root), depthFirst);
+        return newRootPackageTreeIterable(repository, null, depthFirst);
     }
 
     public static PackageTreeIterable newRootPackageTreeIterable(ModelRepository repository)
@@ -109,9 +118,14 @@ public class PackageTreeIterable extends AbstractLazyIterable<Package>
         return newRootPackageTreeIterable(repository, true);
     }
 
+    public static PackageTreeIterable newRootPackageTreeIterable(ProcessorSupport processorSupport, Function<? super Package, ? extends GraphWalkFilterResult> filter, boolean depthFirst)
+    {
+        return newPackageTreeIterable((Package) processorSupport.repository_getTopLevel(M3Paths.Root), filter, depthFirst);
+    }
+
     public static PackageTreeIterable newRootPackageTreeIterable(ProcessorSupport processorSupport, boolean depthFirst)
     {
-        return newPackageTreeIterable((Package) processorSupport.repository_getTopLevel(M3Paths.Root), depthFirst);
+        return newRootPackageTreeIterable(processorSupport, null, depthFirst);
     }
 
     public static PackageTreeIterable newRootPackageTreeIterable(ProcessorSupport processorSupport)
@@ -119,33 +133,90 @@ public class PackageTreeIterable extends AbstractLazyIterable<Package>
         return newRootPackageTreeIterable(processorSupport, true);
     }
 
-    private static class PackageTreeIterator implements Iterator<Package>
+    private static class PackageTreeSpliterator implements Spliterator<Package>
     {
         private final Deque<Package> deque;
+        private final Function<? super Package, ? extends GraphWalkFilterResult> filter;
         private final boolean depthFirst;
 
-        private PackageTreeIterator(ImmutableSet<Package> startingNodes, boolean depthFirst)
+        private PackageTreeSpliterator(Deque<Package> deque, Function<? super Package, ? extends GraphWalkFilterResult> filter, boolean depthFirst)
         {
-            this.deque = new ArrayDeque<>(startingNodes.castToSet());
+            this.deque = deque;
+            this.filter = filter;
             this.depthFirst = depthFirst;
         }
 
-        @Override
-        public boolean hasNext()
+        private PackageTreeSpliterator(ImmutableSet<Package> startingNodes, Function<? super Package, ? extends GraphWalkFilterResult> filter, boolean depthFirst)
         {
-            return !this.deque.isEmpty();
+            this(new ArrayDeque<>(startingNodes.castToSet()), filter, depthFirst);
         }
 
         @Override
-        public Package next()
+        public boolean tryAdvance(Consumer<? super Package> action)
         {
-            Package pkg = this.deque.pollFirst();
-            if (pkg == null)
+            while (!this.deque.isEmpty())
             {
-                throw new NoSuchElementException();
+                Package pkg = this.deque.pollFirst();
+                GraphWalkFilterResult filterResult = filter(pkg);
+                if (filterResult.shouldContinue())
+                {
+                    pkg._children().forEach(this::possiblyAddChild);
+                }
+                if (filterResult.shouldAccept())
+                {
+                    action.accept(pkg);
+                    return true;
+                }
             }
-            pkg._children().forEach(this::possiblyAddChild);
-            return pkg;
+            return false;
+        }
+
+        @Override
+        public Spliterator<Package> trySplit()
+        {
+            if (this.deque.size() < 2)
+            {
+                return null;
+            }
+
+            int splitSize = this.deque.size() / 2;
+            Deque<Package> newDeque = new ArrayDeque<>(splitSize);
+            for (int i = 0; i < splitSize; i++)
+            {
+                newDeque.addFirst(this.deque.pollLast());
+            }
+            return new PackageTreeSpliterator(newDeque, this.filter, this.depthFirst);
+        }
+
+        @Override
+        public long estimateSize()
+        {
+            return this.deque.isEmpty() ? 0L : Long.MAX_VALUE;
+        }
+
+        @Override
+        public long getExactSizeIfKnown()
+        {
+            return this.deque.isEmpty() ? 0L : -1L;
+        }
+
+        @Override
+        public int characteristics()
+        {
+            return NONNULL | DISTINCT;
+        }
+
+        private GraphWalkFilterResult filter(Package pkg)
+        {
+            if (this.filter != null)
+            {
+                GraphWalkFilterResult result = this.filter.apply(pkg);
+                if (result != null)
+                {
+                    return result;
+                }
+            }
+            return GraphWalkFilterResult.ACCEPT_AND_CONTINUE;
         }
 
         private void possiblyAddChild(CoreInstance child)
