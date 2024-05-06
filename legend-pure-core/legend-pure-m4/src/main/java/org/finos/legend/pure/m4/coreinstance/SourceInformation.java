@@ -114,14 +114,14 @@ public class SourceInformation implements Comparable<SourceInformation>
         safeAppendable.append(this.sourceId).append(':');
         if (this.startLine == this.endLine)
         {
-            safeAppendable.append(this.startLine).append('c');
+            safeAppendable.append(this.startLine);
             if (this.startColumn == this.endColumn)
             {
-                safeAppendable.append(this.startColumn);
+                safeAppendable.append('c').append(this.startColumn);
             }
             else
             {
-                safeAppendable.append('c').append(this.startColumn).append('-').append(this.endColumn);
+                safeAppendable.append("cc").append(this.startColumn).append('-').append(this.endColumn);
             }
         }
         else
@@ -202,31 +202,21 @@ public class SourceInformation implements Comparable<SourceInformation>
         }
 
         // Compare main line and column
-        if (this.line != other.line)
+        int mainCmp = comparePositions(this.line, this.column, other.line, other.column);
+        if (mainCmp != 0)
         {
-            return Integer.compare(this.line, other.line);
-        }
-        if (this.column != other.column)
-        {
-            return Integer.compare(this.column, other.column);
+            return mainCmp;
         }
 
         // Compare start line and column
-        if (this.startLine != other.startLine)
+        int startCmp = comparePositions(this.startLine, this.column, other.startLine, other.startColumn);
+        if (startCmp != 0)
         {
-            return Integer.compare(this.startLine, other.startLine);
-        }
-        if (this.startColumn != other.startColumn)
-        {
-            return Integer.compare(this.startColumn, other.startColumn);
+            return startCmp;
         }
 
         // Compare end line and column
-        if (this.endLine != other.endLine)
-        {
-            return Integer.compare(this.endLine, other.endLine);
-        }
-        return Integer.compare(this.endColumn, other.endColumn);
+        return comparePositions(this.endLine, this.endColumn, other.endLine, other.endColumn);
     }
 
     /**
@@ -252,8 +242,39 @@ public class SourceInformation implements Comparable<SourceInformation>
     {
         return (other != null) &&
                 this.sourceId.equals(other.sourceId) &&
-                ((this.startLine < other.startLine) || ((this.startLine == other.startLine) && (this.startColumn <= other.startColumn))) &&
-                ((this.endLine > other.endLine) || ((this.endLine == other.endLine) && (this.endColumn >= other.endColumn)));
+                isNotAfter(this.startLine, this.startColumn, other.startLine, other.startColumn) &&
+                isNotBefore(this.endLine, this.endColumn, other.endLine, other.endColumn);
+    }
+
+    /**
+     * Check whether this source information intersects other. This is true if the source ids are equals, and the start
+     * and end boundaries of this overlap the start and end boundaries of other.
+     *
+     * @param other other source information
+     * @return whether this intersects other
+     */
+    public boolean intersects(SourceInformation other)
+    {
+        return (other != null) &&
+                this.sourceId.equals(other.sourceId) &&
+                isNotAfter(this.startLine, this.startColumn, other.endLine, other.endColumn) &&
+                isNotBefore(this.endLine, this.endColumn, other.startLine, other.startColumn);
+    }
+
+    /**
+     * Return whether this source information is valid. That is true if the source id is non-null and the start, main,
+     * and end positions define a valid interval (i.e., start is not after main, and main is not after end). If this is
+     * not valid, then the behavior of methods such as {@link #subsumes} and {@link #intersects} is undefined.
+     *
+     * @return whether this source information is valid
+     */
+    public boolean isValid()
+    {
+        return (this.sourceId != null) &&
+                (this.startLine >= 1) &&
+                (this.startColumn >= 1) &&
+                isNotBefore(this.line, this.column, this.startLine, this.startColumn) &&
+                isNotBefore(this.endLine, this.endColumn, this.line, this.column);
     }
 
     @Override
@@ -296,5 +317,79 @@ public class SourceInformation implements Comparable<SourceInformation>
                 .append(endLine).append(',')
                 .append(endColumn).append("]?");
         return appendable;
+    }
+
+    /**
+     * Compare two positions (assumed to be in the same source). Returns 0 if the two positions are equal. Returns a
+     * negative value if the first position is before the second. Returns a positive value if the first position is
+     * after the second.
+     *
+     * @param line1 first position line number
+     * @param col1  first position column number
+     * @param line2 second position line number
+     * @param col2  second position column number
+     * @return 0 if the two positions are equal; a negative value if the first position is before the second; a positive value otherwise
+     */
+    public static int comparePositions(int line1, int col1, int line2, int col2)
+    {
+        return (line1 < line2) ? -1 : ((line1 > line2) ? 1 : Integer.compare(col1, col2));
+    }
+
+    /**
+     * Return whether one position is strictly before another position (assumed to be in the same source).
+     *
+     * @param line1 first position line number
+     * @param col1  first position column number
+     * @param line2 second position line number
+     * @param col2  second position column number
+     * @return whether the first position is strictly before the second
+     */
+    public static boolean isBefore(int line1, int col1, int line2, int col2)
+    {
+        return (line1 < line2) || ((line1 == line2) && (col1 < col2));
+    }
+
+    /**
+     * Return whether one position is strictly after another position (assumed to be in the same source).
+     *
+     * @param line1 first position line number
+     * @param col1  first position column number
+     * @param line2 second position line number
+     * @param col2  second position column number
+     * @return whether the first position is strictly after the second
+     */
+    public static boolean isAfter(int line1, int col1, int line2, int col2)
+    {
+        return (line1 > line2) || ((line1 == line2) && (col1 > col2));
+    }
+
+    /**
+     * Return whether one position is not before another position (assumed to be in the same source). This is true if
+     * the first position is equal to or after the second position.
+     *
+     * @param line1 first position line number
+     * @param col1  first position column number
+     * @param line2 second position line number
+     * @param col2  second position column number
+     * @return whether the first position is not before the second
+     */
+    public static boolean isNotBefore(int line1, int col1, int line2, int col2)
+    {
+        return (line1 > line2) || ((line1 == line2) && (col1 >= col2));
+    }
+
+    /**
+     * Return whether one position is not after another position (assumed to be in the same source). This is true if
+     * the first position is equal to or before the second position.
+     *
+     * @param line1 first position line number
+     * @param col1  first position column number
+     * @param line2 second position line number
+     * @param col2  second position column number
+     * @return whether the first position is not after the second
+     */
+    public static boolean isNotAfter(int line1, int col1, int line2, int col2)
+    {
+        return (line1 < line2) || ((line1 == line2) && (col1 <= col2));
     }
 }
