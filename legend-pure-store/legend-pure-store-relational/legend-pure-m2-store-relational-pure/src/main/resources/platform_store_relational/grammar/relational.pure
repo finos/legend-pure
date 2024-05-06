@@ -294,9 +294,10 @@ Class meta::relational::metamodel::operation::VariableArithmeticOperation extend
 
 Class meta::relational::metamodel::operation::SemiStructuredObjectNavigation extends Operation
 {
-   operand     : RelationalOperationElement[1];
-   contentType : String[0..1];
-   returnType  : Type[0..1];
+   operand              : RelationalOperationElement[1];
+   contentType          : String[0..1];
+   returnType           : Type[0..1];
+   avoidCastIfPrimitive : Boolean[0..1];
 }
 
 Class meta::relational::metamodel::operation::SemiStructuredPropertyAccess extends SemiStructuredObjectNavigation
