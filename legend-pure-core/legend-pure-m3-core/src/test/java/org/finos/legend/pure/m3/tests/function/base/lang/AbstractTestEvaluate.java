@@ -272,7 +272,6 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
         }
         catch (RuntimeException e)
         {
-            e.printStackTrace();
             this.assertExceptionInformation(e, "Failed", 3, 5, this.checkLineNumbers());
         }
     }

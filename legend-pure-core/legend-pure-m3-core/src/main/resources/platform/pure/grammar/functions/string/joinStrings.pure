@@ -12,5 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
 
-native function meta::pure::functions::string::joinStrings(strings:String[*], prefix:String[1], separator:String[1], suffix:String[1]):String[1];
+native function
+    <<PCT.function>>
+    {
+        doc.doc='Concatenate several string with a prefix, a suffix and a separator',
+        PCT.grammarDoc='joinStrings is used by plus(String[*])'
+    }
+    meta::pure::functions::string::joinStrings(strings:String[*], prefix:String[1], separator:String[1], suffix:String[1]):String[1];

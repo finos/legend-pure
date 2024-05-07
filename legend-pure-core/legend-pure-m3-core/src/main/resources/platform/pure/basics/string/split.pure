@@ -12,7 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::string::split(str:String[1], token:String[1]):String[*];
+import meta::pure::test::pct::*;
+
+native function
+    <<PCT.function>>
+    {
+        doc.doc=''
+    }
+    meta::pure::functions::string::split(str:String[1], token:String[1]):String[*];
 
 function <<test.Test>> meta::pure::functions::string::tests::split::testSplit():Boolean[1]
 {

@@ -12,10 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
 import meta::pure::functions::lang::tests::letFn::*;
 import meta::pure::functions::lang::tests::model::*;
 
-native function meta::pure::functions::lang::letFunction<T|m>(left:String[1], right:T[m]):T[m];
+native function
+    <<PCT.function>>
+    {
+        doc.doc='Assign an value to an immutable variable',
+        PCT.grammarDoc='let x = 3'
+    }
+    meta::pure::functions::lang::letFunction<T|m>(left:String[1], right:T[m]):T[m];
 
 function <<test.Test>> meta::pure::functions::lang::tests::letFn::testAssignLiteralToVariable():Boolean[1]
 {

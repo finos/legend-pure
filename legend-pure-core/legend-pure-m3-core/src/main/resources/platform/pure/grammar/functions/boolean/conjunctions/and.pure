@@ -14,9 +14,16 @@
 
 import meta::pure::test::pct::*;
 
-native function meta::pure::functions::boolean::and(first:Boolean[1], second:Boolean[1]):Boolean[1];
+native function
+    <<PCT.function>>
+    {
+        doc.doc='Returns true if both parameters are true, otherwise false',
+        PCT.grammarDoc='$first && $second'
+    }
+    meta::pure::functions::boolean::and(first:Boolean[1], second:Boolean[1]):Boolean[1];
 
-function <<PCT.test>> meta::pure::functions::boolean::tests::and::testBinaryTruthTable<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+
+function <<PCT.test>> meta::pure::functions::boolean::tests::conjunctions::and::testBinaryTruthTable<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     //Dummy commit to test if we can commit on invalid review
     assert($f->eval(|true && true));
@@ -25,13 +32,13 @@ function <<PCT.test>> meta::pure::functions::boolean::tests::and::testBinaryTrut
     assertFalse($f->eval(|false && false));
 }
 
-function <<PCT.test>> meta::pure::functions::boolean::tests::and::testBinaryExpressions<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::conjunctions::and::testBinaryExpressions<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assert($f->eval(|(1 == 1) && (2 != 3)));
     assertFalse($f->eval(|(1 == 2) && (2 != 3)));
 }
 
-function <<PCT.test>> meta::pure::functions::boolean::tests::and::testTernaryTruthTable<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::conjunctions::and::testTernaryTruthTable<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assert($f->eval(|true && true && true));
     assertFalse($f->eval(|true && true && false));
@@ -43,18 +50,18 @@ function <<PCT.test>> meta::pure::functions::boolean::tests::and::testTernaryTru
     assertFalse($f->eval(|false && false && false));
 }
 
-function <<PCT.test>> meta::pure::functions::boolean::tests::and::testTernaryExpressions<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::conjunctions::and::testTernaryExpressions<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assert($f->eval(|(1 == 1) && (2 != 3) && true));
     assertFalse($f->eval(|(1 == 2) && (2 != 3) && false));
 }
 
-function <<PCT.test>> meta::pure::functions::boolean::tests::and::testShortCircuitSimple<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::conjunctions::and::testShortCircuitSimple<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertFalse($f->eval(|false && (12/0 > 0)));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::and::testShortCircuit():Boolean[1]
+function <<test.Test>> meta::pure::functions::boolean::tests::conjunctions::and::testShortCircuit():Boolean[1]
 {
     let val1 = ^List<String>(values=['Claudius', 'Ptolemy']);
     let val2 = 'Claudius Ptolemy';
@@ -62,7 +69,7 @@ function <<test.Test>> meta::pure::functions::boolean::tests::and::testShortCirc
     assertFalse($val2->instanceOf(List) && ($val2->cast(@List<String>).values == ['Claudius', 'Ptolemy']));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::and::testShortCircuitInDynamicEvaluation():Boolean[1]
+function <<test.Test>> meta::pure::functions::boolean::tests::conjunctions::and::testShortCircuitInDynamicEvaluation():Boolean[1]
 {
     let fn1 = {|let val1 = ^List<String>(values=['Claudius', 'Ptolemy']);
                 $val1->instanceOf(List) && ($val1->cast(@List<String>).values == ['Claudius', 'Ptolemy']);};

@@ -12,7 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::string::startsWith(source:String[1], val:String[1]):Boolean[1];
+import meta::pure::test::pct::*;
+
+native function
+    <<PCT.function>>
+    {
+        doc.doc=''
+    }
+    meta::pure::functions::string::startsWith(source:String[1], val:String[1]):Boolean[1];
 
 function <<test.Test>> meta::pure::functions::string::tests::startswith::testTrueStartsWith():Boolean[1]
 {

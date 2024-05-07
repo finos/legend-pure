@@ -15,7 +15,7 @@
 import meta::pure::test::pct::*;
 import meta::pure::metamodel::relation::*;
 
-native function meta::pure::functions::relation::map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];
+native function <<PCT.function>> meta::pure::functions::relation::map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];
 
 function <<test.Test>> meta::pure::functions::relation::tests::map::testSimpleMap():Boolean[1]
 {

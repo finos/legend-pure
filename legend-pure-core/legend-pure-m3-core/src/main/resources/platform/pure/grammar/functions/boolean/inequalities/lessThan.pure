@@ -12,126 +12,135 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::boolean::lessThan(left:Number[1], right:Number[1]):Boolean[1];
+import meta::pure::test::pct::*;
 
-function meta::pure::functions::boolean::lessThan(left:Number[0..1], right:Number[0..1]):Boolean[1]
+native function
+    <<PCT.function>>
+    {
+        doc.doc='Returns true if, according to the type order, $left precedes $right',
+        PCT.grammarDoc='$first < $second'
+    }
+    meta::pure::functions::boolean::lessThan(left:Number[1], right:Number[1]):Boolean[1];
+
+
+function <<PCT.function>> meta::pure::functions::boolean::lessThan(left:Number[0..1], right:Number[0..1]):Boolean[1]
 {
     $left->isNotEmpty() && $right->isNotEmpty() && lessThan($left->toOne(), $right->toOne())
 }
 
-function meta::pure::functions::boolean::lessThan(left:Number[1], right:Number[0..1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::lessThan(left:Number[1], right:Number[0..1]):Boolean[1]
 {
     $right->isNotEmpty() && lessThan($left, $right->toOne())
 }
 
-function meta::pure::functions::boolean::lessThan(left:Number[0..1], right:Number[1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::lessThan(left:Number[0..1], right:Number[1]):Boolean[1]
 {
     $left->isNotEmpty() && lessThan($left->toOne(), $right)
 }
 
-function meta::pure::functions::boolean::lessThan(left:Date[0..1], right:Date[0..1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::lessThan(left:Date[0..1], right:Date[0..1]):Boolean[1]
 {
     $left->isNotEmpty() && $right->isNotEmpty() && lessThan($left->toOne(), $right->toOne())
 }
 
-function meta::pure::functions::boolean::lessThan(left:Date[1], right:Date[0..1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::lessThan(left:Date[1], right:Date[0..1]):Boolean[1]
 {
     $right->isNotEmpty() && lessThan($left, $right->toOne())
 }
 
-function meta::pure::functions::boolean::lessThan(left:Date[0..1], right:Date[1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::lessThan(left:Date[0..1], right:Date[1]):Boolean[1]
 {
     $left->isNotEmpty() && lessThan($left->toOne(), $right)
 }
 
-function meta::pure::functions::boolean::lessThan(left:String[0..1], right:String[0..1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::lessThan(left:String[0..1], right:String[0..1]):Boolean[1]
 {
     $left->isNotEmpty() && $right->isNotEmpty() && lessThan($left->toOne(), $right->toOne())
 }
 
-function meta::pure::functions::boolean::lessThan(left:String[1], right:String[0..1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::lessThan(left:String[1], right:String[0..1]):Boolean[1]
 {
     $right->isNotEmpty() && lessThan($left, $right->toOne())
 }
 
-function meta::pure::functions::boolean::lessThan(left:String[0..1], right:String[1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::lessThan(left:String[0..1], right:String[1]):Boolean[1]
 {
     $left->isNotEmpty() && lessThan($left->toOne(), $right)
 }
 
-function meta::pure::functions::boolean::lessThan(left:Boolean[0..1], right:Boolean[0..1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::lessThan(left:Boolean[0..1], right:Boolean[0..1]):Boolean[1]
 {
     $left->isNotEmpty() && $right->isNotEmpty() && lessThan($left->toOne(), $right->toOne())
 }
 
-function meta::pure::functions::boolean::lessThan(left:Boolean[1], right:Boolean[0..1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::lessThan(left:Boolean[1], right:Boolean[0..1]):Boolean[1]
 {
     $right->isNotEmpty() && lessThan($left, $right->toOne())
 }
 
-function meta::pure::functions::boolean::lessThan(left:Boolean[0..1], right:Boolean[1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::lessThan(left:Boolean[0..1], right:Boolean[1]):Boolean[1]
 {
     $left->isNotEmpty() && lessThan($left->toOne(), $right)
 }
 
-function meta::pure::functions::boolean::lessThan(left:Date[1], right:Date[1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::lessThan(left:Date[1], right:Date[1]):Boolean[1]
 {
     compare($left, $right) < 0
 }
 
-function meta::pure::functions::boolean::lessThan(left:String[1], right:String[1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::lessThan(left:String[1], right:String[1]):Boolean[1]
 {
     compare($left, $right) < 0
 }
 
-function meta::pure::functions::boolean::lessThan(left:Boolean[1], right:Boolean[1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::lessThan(left:Boolean[1], right:Boolean[1]):Boolean[1]
 {
     !$left && $right
 }
 
 
-function <<test.Test>> meta::pure::functions::boolean::tests::lessThan::testLessThan_Number():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::inequalities::lessThan::testLessThan_Number<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert(3 < 4);
-    assert(lessThan(3, 4));
+    assert($f->eval(|3 < 4));
+    assert($f->eval(|lessThan(3, 4)));
 
-    assertFalse(4 < 3);
-    assertFalse(lessThan(4, 3));
-    assertFalse(3 < 3);
-    assertFalse(lessThan(3, 3));
+    assertFalse($f->eval(|4 < 3));
+    assertFalse($f->eval(|lessThan(4, 3)));
+    assertFalse($f->eval(|3 < 3));
+    assertFalse($f->eval(|lessThan(3, 3)));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::lessThan::testLessThan_Date():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::inequalities::lessThan::testLessThan_Date<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-   assert(%2012-10-01 < %2012-10-02);
-   assert(lessThan(%2012-10-01, %2012-10-02));
+   assert($f->eval(|%2012-10-01 < %2012-10-02));
+   assert($f->eval(|lessThan(%2012-10-01, %2012-10-02)));
 
-   assertFalse(%2012-10-03 < %2012-10-02);
-   assertFalse(lessThan(%2012-10-03, %2012-10-02));
-   assertFalse(%2012-10-02 < %2012-10-02);
-   assertFalse(lessThan(%2012-10-02, %2012-10-02));
+   assertFalse($f->eval(|%2012-10-03 < %2012-10-02));
+   assertFalse($f->eval(|lessThan(%2012-10-03, %2012-10-02)));
+   assertFalse($f->eval(|%2012-10-02 < %2012-10-02));
+   assertFalse($f->eval(|lessThan(%2012-10-02, %2012-10-02)));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::lessThan::testLessThan_String():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::inequalities::lessThan::testLessThan_String<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert('a' < 'b');
-    assert(lessThan('a', 'b'));
+    assert($f->eval(|'a' < 'b'));
+    assert($f->eval(|lessThan('a', 'b')));
 
-    assertFalse('b' < 'a');
-    assertFalse(lessThan('b', 'a'));
-    assertFalse('a' < 'a');
-    assertFalse(lessThan('a', 'a'));
+    assertFalse($f->eval(|'b' < 'a'));
+    assertFalse($f->eval(|lessThan('b', 'a')));
+    assertFalse($f->eval(|'a' < 'a'));
+    assertFalse($f->eval(|lessThan('a', 'a')));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::lessThan::testLessThan_Boolean():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::inequalities::lessThan::testLessThan_Boolean<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert(false < true);
-    assert(lessThan(false, true));
+    assert($f->eval(|false < true));
+    assert($f->eval(|lessThan(false, true)));
 
-    assertFalse(true < true);
-    assertFalse(lessThan(true, true));
-    assertFalse(true < false);
-    assertFalse(lessThan(true, false));
-    assertFalse(false < false);
-    assertFalse(lessThan(false, false));
+    assertFalse($f->eval(|true < true));
+    assertFalse($f->eval(|lessThan(true, true)));
+    assertFalse($f->eval(|true < false));
+    assertFalse($f->eval(|lessThan(true, false)));
+    assertFalse($f->eval(|false < false));
+    assertFalse($f->eval(|lessThan(false, false)));
 }

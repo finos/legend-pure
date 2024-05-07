@@ -210,6 +210,11 @@
                     <artifactId>nexus-staging-maven-plugin</artifactId>
                     <version>${nexus-staging.maven.plugin.version}</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.finos.legend.pure</groupId>
+                    <artifactId>legend-pure-maven-generation-pct</artifactId>
+                    <version>${project.version}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -341,37 +346,6 @@
                         <exclude>org/finos/legend/pure/generated/**/*</exclude>
                     </excludes>
                 </configuration>
-            </plugin>
-            <plugin>
-                <!-- Used to copy test results into test reports module -->
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>default</id>
-                        <configuration>
-                            <trimStackTrace>false</trimStackTrace>
-                            <useSystemClassLoader>true</useSystemClassLoader>
-                            <useManifestOnlyJar>false</useManifestOnlyJar>
-                            <trimStackTrace>false</trimStackTrace>
-                            <reportsDirectory>
-                                ${project.parent.basedir}/legend-pure-test-reports/surefire-reports-aggregate
-                            </reportsDirectory>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>PCT</id>
-                        <configuration>
-                            <test>*PCT</test>
-                            <trimStackTrace>false</trimStackTrace>
-                            <useSystemClassLoader>true</useSystemClassLoader>
-                            <useManifestOnlyJar>false</useManifestOnlyJar>
-                            <reportsDirectory>
-                                target/surefire-PCT-reports
-                            </reportsDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>

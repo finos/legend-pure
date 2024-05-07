@@ -110,6 +110,7 @@ import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.m
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.meta.Stereotype;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.meta.SubTypeOf;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.meta.Tag;
+import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.multiplicity.ToMultiplicity;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.runtime.CurrentUserId;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.runtime.Guid;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.runtime.IsOptionSet;
@@ -528,6 +529,9 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                 new Stereotype(),
                 new SubTypeOf(),
                 new Tag(),
+
+                //Multiplicity
+                new ToMultiplicity(),
 
                 //Runtime
                 new CurrentUserId(),

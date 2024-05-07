@@ -227,7 +227,7 @@ public class GenericType
         {
             org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gLeft = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) makeTypeArgumentAsConcreteAsPossible(operation._left(), genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
             org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) makeTypeArgumentAsConcreteAsPossible(operation._right(), genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
-            return GenericTypeOperationInstance.createPersistent(operation.getRepository(), gLeft, gRight, operation._type());
+            return ((GenericTypeOperation) processorSupport.newAnonymousCoreInstance(null, M3Paths.GenericTypeOperation))._left(gLeft)._right(gRight)._type(operation._type());
         }
 
         org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType left = operation._left();
@@ -237,7 +237,7 @@ public class GenericType
             org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) makeTypeArgumentAsConcreteAsPossible(operation._right(), genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
             return (isGenericTypeConcrete(left) && isGenericTypeConcrete(gRight)) ?
                     merge(operation, processorSupport, left, gRight) :
-                    GenericTypeOperationInstance.createPersistent(operation.getRepository(), left, gRight, operation._type());
+                    ((GenericTypeOperation) processorSupport.newAnonymousCoreInstance(null, M3Paths.GenericTypeOperation))._left(left)._right(gRight)._type(operation._type());
         }
         else
         {
@@ -245,7 +245,7 @@ public class GenericType
             org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) makeTypeArgumentAsConcreteAsPossible(operation._right(), genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
             return (isGenericTypeConcrete(gLeft) && isGenericTypeConcrete(gRight)) ?
                     merge(operation, processorSupport, gLeft, gRight) :
-                    GenericTypeOperationInstance.createPersistent(operation.getRepository(), gLeft, gRight, operation._type());
+                    ((GenericTypeOperation) processorSupport.newAnonymousCoreInstance(null, M3Paths.GenericTypeOperation))._left(gLeft)._right(gRight)._type(operation._type());
         }
     }
 

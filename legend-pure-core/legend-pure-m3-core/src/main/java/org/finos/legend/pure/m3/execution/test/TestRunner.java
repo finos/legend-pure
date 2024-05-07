@@ -38,7 +38,7 @@ import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureException;
 
-import static org.finos.legend.pure.m3.execution.test.pct.PCTTools.isPCT;
+import static org.finos.legend.pure.m3.pct.PCTTools.isPCTTest;
 
 public class TestRunner implements Runnable
 {
@@ -221,7 +221,7 @@ public class TestRunner implements Runnable
     {
         ListIterable<? extends CoreInstance> args = Lists.mutable.empty();
 
-        if (isPCT(testFunc, functionExecution.getProcessorSupport()))
+        if (isPCTTest(testFunc, functionExecution.getProcessorSupport()))
         {
 //            String adapterLocation = "meta::relational::tests::pct::testAdapterForRelationalWithH2Execution_Function_1__Any_1_";
             String adapterLocation = "meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_";

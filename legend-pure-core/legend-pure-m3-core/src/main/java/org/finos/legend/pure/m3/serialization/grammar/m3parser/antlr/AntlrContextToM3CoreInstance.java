@@ -3176,6 +3176,8 @@ public class AntlrContextToM3CoreInstance
         {
             this.typeParametersAndMultiplicityParameters(ctx.typeAndMultiplicityParameters(), typeParametersNames, multiplicityParametersNames);
         }
+
+        ListIterable<TaggedValue> tags = (ctx.taggedValues() == null) ? null : taggedValues(ctx.taggedValues(), importId);
         ListIterable<CoreInstance> stereotypes = (ctx.stereotypes() == null) ? null : stereotypes(ctx.stereotypes(), importId);
         FunctionType signature = functionTypeSignature(ctx.functionTypeSignature(), function, typeParametersNames, multiplicityParametersNames, importId, spacePlusTabs(space, 1));
 
@@ -3184,6 +3186,7 @@ public class AntlrContextToM3CoreInstance
 
         function._package(packageInstance);
         function._stereotypesCoreInstance(stereotypes);
+        function._taggedValues(tags);
         packageInstance._childrenAdd(function);
         GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
         Type type = (Type) this.processorSupport.package_getByUserPath(M3Paths.NativeFunction);
@@ -3510,7 +3513,7 @@ public class AntlrContextToM3CoreInstance
     private TaggedValue taggedValue(ImportGroup importId, TaggedValueContext ctx)
     {
         ImportStubInstance importStubInstance = ImportStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().getStart(), ctx.identifier().getStart(), ctx.identifier().getStop()), this.getQualifiedNameString(ctx.qualifiedName()) + "%" + ctx.identifier().getText(), importId);
-        return TaggedValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.STRING().getSymbol(), ctx.STRING().getSymbol()), importStubInstance, this.removeQuotes(ctx.STRING()));
+        return TaggedValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.STRING().get(0).getSymbol(), ctx.STRING().get(ctx.STRING().size() - 1).getSymbol()), importStubInstance, Lists.mutable.withAll(ctx.STRING()).collect(this::removeQuotes).makeString());
     }
 
     private DefaultValue defaultValue(DefaultValueContext ctx, ImportStub isOwner, ImportGroup importId, String propertyName)

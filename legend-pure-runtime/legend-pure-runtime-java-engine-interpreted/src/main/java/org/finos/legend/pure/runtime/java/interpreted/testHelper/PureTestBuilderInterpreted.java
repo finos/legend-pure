@@ -17,11 +17,17 @@ package org.finos.legend.pure.runtime.java.interpreted.testHelper;
 import junit.framework.TestSuite;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.utility.ArrayIterate;
-import org.finos.legend.pure.m3.compiler.postprocessing.processor.valuespecification.InstanceValueProcessor;
 import org.finos.legend.pure.m3.execution.test.PureTestBuilder;
 import org.finos.legend.pure.m3.execution.test.TestCollection;
+import org.finos.legend.pure.m3.pct.PCTTools;
+import org.finos.legend.pure.m3.pct.config.PCTReport;
+import org.finos.legend.pure.m3.pct.config.exclusion.ExclusionSpecification;
+import org.finos.legend.pure.m3.pct.model.ReportScope;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
@@ -39,11 +45,90 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 
-import static org.finos.legend.pure.m3.execution.test.pct.PCTTools.isPCT;
+import static org.finos.legend.pure.m3.pct.PCTTools.isPCTTest;
 
 public class PureTestBuilderInterpreted
 {
     public static TestSuite buildSuite(String... all)
+    {
+        FunctionExecutionInterpreted functionExecution = getFunctionExecutionInterpreted();
+
+        PureTestBuilder.F2<CoreInstance, MutableList<Object>, Object> testExecutor = getTestExecutor(functionExecution, Maps.mutable.empty(), "meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_");
+
+        TestSuite suite = new TestSuite();
+        ArrayIterate.forEach(all, (path) ->
+                {
+                    TestCollection col = TestCollection.collectTests(path, functionExecution.getProcessorSupport(), ci -> PureTestBuilder.satisfiesConditionsInterpreted(ci, functionExecution.getProcessorSupport()));
+                    suite.addTest(PureTestBuilder.buildSuite(col, testExecutor, new ExecutionSupport()));
+                }
+        );
+        return suite;
+    }
+
+    public static TestSuite buildPCTTestSuite(ReportScope reportScope, MutableList<ExclusionSpecification> expectedFailures, String adapter)
+    {
+        FunctionExecutionInterpreted functionExecutionInterpreted = PureTestBuilderInterpreted.getFunctionExecutionInterpreted();
+        MutableMap<String, String> explodedExpectedFailures = PCTReport.explodeExpectedFailures(expectedFailures, functionExecutionInterpreted.getProcessorSupport());
+        return PureTestBuilderInterpreted.buildPCTTestSuite(
+                TestCollection.buildPCTTestCollection(reportScope._package, reportScope._package, functionExecutionInterpreted.getProcessorSupport()),
+                explodedExpectedFailures,
+                adapter,
+                functionExecutionInterpreted
+        );
+    }
+
+    public static TestSuite buildPCTTestSuite(TestCollection testCollection, MutableMap<String, String> expectedFailures, String adapter, FunctionExecutionInterpreted functionExecution)
+    {
+        TestCollection.validateExclusions(testCollection, expectedFailures);
+        PureTestBuilder.F2<CoreInstance, MutableList<Object>, Object> testExecutor = getTestExecutor(functionExecution, expectedFailures, adapter);
+        TestSuite suite = new TestSuite();
+        suite.addTest(PureTestBuilder.buildSuite(testCollection, testExecutor, new ExecutionSupport()));
+        return suite;
+    }
+
+    private static PureTestBuilder.F2<CoreInstance, MutableList<Object>, Object> getTestExecutor(FunctionExecutionInterpreted functionExecution, MutableMap<String, String> expectedFailures, String PCTExecutor)
+    {
+        PureTestBuilder.F2<CoreInstance, MutableList<Object>, Object> testExecutor = (a, b) ->
+        {
+            MutableList<CoreInstance> params = Lists.mutable.empty();
+            if (isPCTTest(a, functionExecution.getProcessorSupport()))
+            {
+                CoreInstance adapter = _Package.getByUserPath(PCTExecutor, functionExecution.getProcessorSupport());
+                if (adapter == null)
+                {
+                    throw new RuntimeException("The adapter " + PCTExecutor + " can't be found in the graph");
+                }
+                params.add(ValueSpecificationBootstrap.wrapValueSpecification(adapter, true, functionExecution.getProcessorSupport()));
+            }
+            try
+            {
+                String message = expectedFailures.get(PackageableElement.getUserPathForPackageableElement(a, "::"));
+                if (message != null)
+                {
+                    throw new RuntimeException("The PCT test runner expected the following error: " + message);
+                }
+                Object ret = functionExecution.start(a, params);
+                return ret;
+            }
+            catch (Exception e)
+            {
+                // Check if the error was expected
+                String message = expectedFailures.get(PackageableElement.getUserPathForPackageableElement(a, "::"));
+                if (message != null && e.getCause().getMessage().contains(message))
+                {
+                    return null;
+                }
+                else
+                {
+                    PCTTools.displayErrorMessage(a, PCTExecutor, e.getCause());
+                    throw e.getCause();
+                }
+            }
+        };
+        return testExecutor;
+    }
+
+    public static FunctionExecutionInterpreted getFunctionExecutionInterpreted()
     {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         CodeRepositorySet.Builder builder = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true));
@@ -56,32 +141,7 @@ public class PureTestBuilderInterpreted
         PureRepositoryJarLibrary jarLibrary = SimplePureRepositoryJarLibrary.newLibrary(GraphLoader.findJars(Lists.mutable.withAll(codeRepositories.select(c -> c.getName() != null && (c.getName().startsWith("platform") || c.getName().startsWith("core"))).collect(CodeRepository::getName)), Thread.currentThread().getContextClassLoader(), message));
         GraphLoader loader = new GraphLoader(runtime.getModelRepository(), runtime.getContext(), runtime.getIncrementalCompiler().getParserLibrary(), runtime.getIncrementalCompiler().getDslLibrary(), runtime.getSourceRegistry(), runtime.getURLPatternLibrary(), jarLibrary);
         loader.loadAll(message);
-        ExecutionSupport executionSupport = new ExecutionSupport();
-
-        PureTestBuilder.F2<CoreInstance, MutableList<Object>, Object> p = (a, b) ->
-        {
-            MutableList<CoreInstance> params = Lists.mutable.empty();
-            if (isPCT(a, functionExecution.getProcessorSupport()))
-            {
-//                String adapterLocation = "meta::relational::tests::pct::testAdapterForRelationalWithH2Execution_Function_1__Any_1_";
-                String adapterLocation = "meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_";
-//                String adapterLocation = "meta::pure::executionPlan::platformBinding::legendJava::pct::testAdapterForJavaBindingExecution_Function_1__Any_1_";
-                CoreInstance adapter = _Package.getByUserPath(adapterLocation, functionExecution.getProcessorSupport());
-                if (adapter == null)
-                {
-                    throw new RuntimeException("The adapter " + adapterLocation + " can't be found in the graph");
-                }
-                params.add(ValueSpecificationBootstrap.wrapValueSpecification(adapter, true, functionExecution.getProcessorSupport()));
-            }
-            return functionExecution.start(a, params);
-        };
-        TestSuite suite = new TestSuite();
-        ArrayIterate.forEach(all, (path) ->
-                {
-                    TestCollection col = TestCollection.collectTests(path, functionExecution.getProcessorSupport(), ci -> PureTestBuilder.satisfiesConditionsInterpreted(ci, functionExecution.getProcessorSupport()));
-                    suite.addTest(PureTestBuilder.buildSuite(col, p, executionSupport));
-                }
-        );
-        return suite;
+        return functionExecution;
     }
+
 }

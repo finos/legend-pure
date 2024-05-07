@@ -12,9 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
 import meta::pure::metamodel::relation::*;
 
-function <<functionType.NormalizeRequiredFunction>> meta::pure::functions::relation::aggColSpecArray<U,V,K,T,P>(map:AggColSpec<{U[1]->V[0..1]}, {V[*]->K[1]}, T>[*], cl:P[1]):AggColSpecArray<{U[1]->Any[0..1]},{Nil[*]->Any[1]},P>[1]
+function
+    <<functionType.NormalizeRequiredFunction,
+    PCT.function>>
+    {
+        doc.doc='Create a Relation typed column array, each containing a name, a map function and a reduce function',
+        PCT.grammarDoc='~[propName : x|$x.val : y|$y->sum(), other : x|$x.otherP : y|$y->avg()]'
+    }
+    meta::pure::functions::relation::aggColSpecArray<U,V,K,T,P>(map:AggColSpec<{U[1]->V[0..1]}, {V[*]->K[1]}, T>[*], cl:P[1]):AggColSpecArray<{U[1]->Any[0..1]},{Nil[*]->Any[1]},P>[1]
 {
   ^AggColSpecArray<{U[1]->Any[0..1]},{Nil[*]->Any[1]},P>
   (

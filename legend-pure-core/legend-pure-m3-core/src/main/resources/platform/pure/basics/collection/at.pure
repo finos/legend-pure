@@ -12,7 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::collection::at<T>(set:T[*], key:Integer[1]):T[1];
+import meta::pure::test::pct::*;
+
+native function
+    <<PCT.function>>
+    {
+        doc.doc=''
+    }
+    meta::pure::functions::collection::at<T>(set:T[*], key:Integer[1]):T[1];
 
 function <<test.Test>> meta::pure::functions::collection::tests::at::testAt():Boolean[1]
 {

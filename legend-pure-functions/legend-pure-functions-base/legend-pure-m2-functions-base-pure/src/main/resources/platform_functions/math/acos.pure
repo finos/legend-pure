@@ -14,7 +14,7 @@
 
 import meta::pure::test::pct::*;
 
-native function meta::pure::functions::math::acos(number:Number[1]):Float[1];
+native function <<PCT.function>> meta::pure::functions::math::acos(number:Number[1]):Float[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testArcCosine<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {

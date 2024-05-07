@@ -14,11 +14,31 @@
 
 package org.finos.legend.pure.m3.navigation.profile;
 
+import org.eclipse.collections.api.list.ListIterable;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotatedElement;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TaggedValue;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public class Profile
 {
+
+    public static boolean hasStereotype(CoreInstance annotatedElement, String profile, String stereotype, ProcessorSupport processorSupport)
+    {
+        CoreInstance testStereotype = Profile.findStereotype(processorSupport.package_getByUserPath(profile), stereotype);
+        ListIterable<? extends CoreInstance> stereotypes = Instance.getValueForMetaPropertyToManyResolved(annotatedElement, M3Properties.stereotypes, processorSupport);
+        return stereotypes.detect(x -> x == testStereotype) != null;
+    }
+
+    public static String getTaggedValue(CoreInstance annotatedElement, String profile, String tag, ProcessorSupport processorSupport)
+    {
+        CoreInstance foundTag = Profile.findTag(processorSupport.package_getByUserPath(profile), tag);
+        TaggedValue found = ((AnnotatedElement)annotatedElement)._taggedValues().detect(x -> x._tag() == foundTag);
+        return found == null ? null : found._value();
+    }
+
     public static CoreInstance findStereotype(CoreInstance profile, String value)
     {
         return findAnnotation(profile, M3Properties.p_stereotypes, value);

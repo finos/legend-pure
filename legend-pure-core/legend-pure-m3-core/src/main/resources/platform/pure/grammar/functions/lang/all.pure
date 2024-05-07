@@ -12,6 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function <<functionType.SideEffectFunction>> meta::pure::functions::collection::getAll<T>(type:Class<T>[1]):T[*];
-native function <<functionType.SideEffectFunction>> meta::pure::functions::collection::getAllVersions<T>(type:Class<T>[1]):T[*];
+import meta::pure::test::pct::*;
+
+native function
+    <<functionType.SideEffectFunction,
+    PCT.function>>
+    {
+        doc.doc='Returns all instances of a Class',
+        PCT.grammarDoc='AClass.all()'
+    }
+    meta::pure::functions::collection::getAll<T>(type:Class<T>[1]):T[*];
+
 

@@ -69,7 +69,6 @@ public class TestProperty extends AbstractPureTestWithCoreCompiledPlatform
         }
         catch (Exception e)
         {
-            e.printStackTrace();
             assertPureException(PureCompilationException.class, "The property 'firstname' can't be found in the type 'A' or in its hierarchy.", 4, 8, e);
         }
     }

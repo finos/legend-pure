@@ -12,7 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-function meta::pure::functions::string::joinStrings(strings:String[*], separator:String[1]):String[1]
+import meta::pure::test::pct::*;
+
+function
+    <<PCT.function>>
+    {
+        doc.doc=''
+    }
+    meta::pure::functions::string::joinStrings(strings:String[*], separator:String[1]):String[1]
 {
     $strings->joinStrings('', $separator, '')
 }

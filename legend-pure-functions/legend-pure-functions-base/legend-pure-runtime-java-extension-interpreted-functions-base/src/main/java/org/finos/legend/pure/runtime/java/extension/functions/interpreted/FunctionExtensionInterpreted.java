@@ -119,6 +119,7 @@ import org.finos.legend.pure.runtime.java.extension.functions.interpreted.native
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.Stereotype;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.SubTypeOf;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.meta.Tag;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.multiplicity.ToMultiplicity;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.runtime.CurrentUserId;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.runtime.Guid;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.runtime.IsOptionSet;
@@ -270,6 +271,7 @@ public class FunctionExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("subTypeOf_Type_1__Type_1__Boolean_1_", SubTypeOf::new),
                 Tuples.pair("tag_Profile_1__String_1__Tag_1_", Tag::new),
 
+                Tuples.pair("toMultiplicity_T_MANY__Any_z__T_z_", ToMultiplicity::new),
 
                 //Runtime
                 Tuples.pair("currentUserId__String_1_", CurrentUserId::new),

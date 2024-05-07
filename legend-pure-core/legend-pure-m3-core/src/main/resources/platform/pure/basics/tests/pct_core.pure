@@ -16,8 +16,8 @@ import meta::pure::test::pct::*;
 
 Profile meta::pure::test::pct::PCT
 {
-    stereotypes : [test, adapter];
-    tags: [category, type];
+    stereotypes : [test, adapter, function];
+    tags: [grammarDoc];
 }
 
 function <<PCT.adapter>> meta::pure::test::pct::testAdapterForInMemoryExecution<X|o>(f:Function<{->X[o]}>[1]):X[o]

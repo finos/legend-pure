@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.incremental.function;
 
+import org.apache.commons.io.output.NullPrintStream;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
@@ -22,6 +23,8 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.io.PrintStream;
 
 public class TestPureRuntimeFunction_AsPointer extends AbstractPureTestWithCoreCompiled
 {

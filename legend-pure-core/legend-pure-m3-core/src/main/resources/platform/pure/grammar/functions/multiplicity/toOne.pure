@@ -12,9 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Support function for inequalities definition
-native function meta::pure::functions::multiplicity::toOne<T>(values:T[*]):T[1];
-native function meta::pure::functions::multiplicity::toOne<T>(values:T[*], message: String[1]): T[1];
+import meta::pure::test::pct::*;
+
+// For Milestoning generated properties & Support function for inequalities definition
+native function
+    <<PCT.function>>
+    {
+        doc.doc='Cast the result of a function to [1]',
+        PCT.grammarDoc='toOne is leveraged in milestoning generated derived properties'
+    }
+    meta::pure::functions::multiplicity::toOne<T>(values:T[*]):T[1];
+
+native function <<PCT.function>> meta::pure::functions::multiplicity::toOne<T>(values:T[*], message: String[1]): T[1];
 
 function <<test.Test>> meta::pure::functions::multiplicity::tests::toOne::testToOneMultiplicity():Boolean[1]
 {

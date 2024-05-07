@@ -12,9 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Used by Pair
-native function meta::pure::functions::string::format(format:String[1], args:Any[*]):String[1];
+import meta::pure::test::pct::*;
 
+// Used by Pair
+native function
+    <<PCT.function>>
+    {
+        doc.doc=''
+    }
+    meta::pure::functions::string::format(format:String[1], args:Any[*]):String[1];
 
 function <<test.Test>> meta::pure::functions::string::tests::format::testFormatString():Boolean[1]
 {

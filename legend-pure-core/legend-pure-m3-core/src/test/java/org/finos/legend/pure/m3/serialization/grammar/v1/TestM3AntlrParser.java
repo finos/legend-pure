@@ -18,10 +18,12 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunctionInstance;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
+import org.finos.legend.pure.m3.statelistener.M3M4StateListener;
 import org.finos.legend.pure.m3.statelistener.StatsStateListener;
 import org.finos.legend.pure.m3.statelistener.VoidM3M4StateListener;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.statelistener.VoidM4StateListener;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -30,7 +32,7 @@ import org.junit.Test;
 public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
 {
     MutableList<CoreInstance> newInstances = Lists.fixedSize.empty();
-    StatsStateListener stateListener = new StatsStateListener();
+    M3M4StateListener stateListener = VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER;//new StatsStateListener();
 
     @BeforeClass
     public static void setUp()
@@ -42,7 +44,6 @@ public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
     public void setup()
     {
         this.newInstances = Lists.mutable.empty();
-        stateListener = new StatsStateListener();
     }
 
 

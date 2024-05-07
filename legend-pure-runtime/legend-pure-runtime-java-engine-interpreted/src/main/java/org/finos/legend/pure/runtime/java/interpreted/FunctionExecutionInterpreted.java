@@ -258,7 +258,6 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.nativeFunctions.put("toOne_T_MANY__String_1__T_1_", new ToOne(repository));
         this.nativeFunctions.put("toOneMany_T_MANY__T_$1_MANY$_", new ToOneMany(repository));
         this.nativeFunctions.put("toOneMany_T_MANY__String_1__T_$1_MANY$_", new ToOneMany(repository));
-        this.nativeFunctions.put("toMultiplicity_T_MANY__Any_z__T_z_", new ToMultiplicity(repository));
 
         // String
         this.nativeFunctions.put("joinStrings_String_MANY__String_1__String_1__String_1__String_1_", new JoinStrings(repository));

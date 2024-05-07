@@ -12,81 +12,88 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::math::plus(ints:Integer[*]):Integer[1];
-native function meta::pure::functions::math::plus(float:Float[*]):Float[1];
-native function meta::pure::functions::math::plus(decimal:Decimal[*]):Decimal[1];
-native function meta::pure::functions::math::plus(numbers:Number[*]):Number[1];
+import meta::pure::test::pct::*;
+
+native function
+    <<PCT.function>>
+    {
+        doc.doc='Adds all the provided values',
+        PCT.grammarDoc='4 + 1'
+    }
+    meta::pure::functions::math::plus(ints:Integer[*]):Integer[1];
+
+native function <<PCT.function>> meta::pure::functions::math::plus(float:Float[*]):Float[1];
+
+native function <<PCT.function>> meta::pure::functions::math::plus(decimal:Decimal[*]):Decimal[1];
+
+native function <<PCT.function>> meta::pure::functions::math::plus(numbers:Number[*]):Number[1];
 
 
-function <<test.Test>> meta::pure::functions::math::tests::plus::testSimplePlus():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::plus::testSimplePlus<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(3, 1 + 2);
+    assertEq(3, $f->eval(|1 + 2));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::plus::testComplexPlus():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::plus::testComplexPlus<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(19, 3 + (4 + 5) + 7);
+    assertEq(19, $f->eval(|3 + (4 + 5) + 7));
 }
 
-function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::math::tests::plus::testLargePlus():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::plus::testNegativePlus<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(9223372036854775826, 9223372036854775807 + 3 + (4 + 5) + 7);
-    assertEq(18446744073709551621, 4 + 9223372036854775807 + 9223372036854775807 + 3);
+    assertEq(-1, $f->eval(|1 + -2));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::plus::testNegativePlus():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::plus::testPlusMany<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(-1, 1 + -2);
+    assertEq(19, $f->eval(|3 + 4 + 5 + 7));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::plus::testPlusMany():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::plus::testSinglePlus<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(19, 3 + 4 + 5 + 7);
+    assertEq(1, $f->eval(|+1));
+    assertEq(1, $f->eval(|++1));
+    assertEq(1, $f->eval(|+++1));
 }
 
-function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::math::tests::plus::testLargePlusMany():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::plus::testSinglePlusType<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(9223372036854775826, 9223372036854775807 + 3 + 4 + 5 + 7);
+    assertIs(Integer, $f->eval(|type(+1)->toOne()));
+    assertIs(Float, $f->eval(|type(+1.0)->toOne()));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::plus::testSinglePlus():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::plus::testFloatPlus<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(1, +1);
-    assertEq(1, ++1);
-    assertEq(1, +++1);
+    assertEqWithinTolerance(1.7, $f->eval(|0.9 + 0.8), 0.01);
+    assertEqWithinTolerance(1.7, $f->eval(|1 + 0.7), 0.01);
+    assertEqWithinTolerance(1.7, $f->eval(|2 + -0.3), 0.01);
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::plus::testSinglePlusType():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::plus::testPlusInteger<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertIs(Integer, type(+1)->toOne());
-    assertIs(Float, type(+1.0)->toOne());
+    assertEq(32, $f->eval(|[15,13,2,1,1]->plus()));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::plus::testFloatPlus():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::plus::testPlusFloat<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEqWithinTolerance(1.7, 0.9 + 0.8, 0.01);
-    assertEqWithinTolerance(1.7, 1 + 0.7, 0.01);
-    assertEqWithinTolerance(1.7, 2 + -0.3, 0.01);
+    assertEq(32.0, $f->eval(|[12.5,13.5,4.0,1.5,0.5]->plus()));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::plus::testPlusInteger():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::plus::testPlusNumber<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(32, [15,13,2,1,1]->plus());
+    assertEq(32.0, $f->eval(|[15,13,2.0,1,1.0]->plus()));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::plus::testPlusFloat():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::plus::testDecimalPlus<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(32.0, [12.5,13.5,4.0,1.5,0.5]->plus());
+    assertEq(6.0d, $f->eval(|[1.0d, 2.0d, 3.0d]->plus()));
+    assertEq(6.0d, $f->eval(|[1.0d, 2.0, 3]->plus()));
+    assertEq(-1.0d, $f->eval(|-4.0d+2.0d+1));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::plus::testPlusNumber():Boolean[1]
+function <<PCT.test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::math::tests::plus::testLargePlus<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(32.0, [15,13,2.0,1,1.0]->plus());
-}
-
-function <<test.Test>> meta::pure::functions::math::tests::plus::testDecimalPlus():Boolean[1]
-{
-    assertEq(6.0d, [1.0d, 2.0d, 3.0d]->plus());
-    assertEq(6.0d, [1.0d, 2.0, 3]->plus());
-    assertEq(-1.0d, -4.0d+2.0d+1);
+    assertEq(9223372036854775826, $f->eval(|9223372036854775807 + 3 + (4 + 5) + 7));
+    assertEq(18446744073709551621, $f->eval(|4 + 9223372036854775807 + 9223372036854775807 + 3));
+    assertEq(9223372036854775826, $f->eval(|9223372036854775807 + 3 + 4 + 5 + 7));
 }

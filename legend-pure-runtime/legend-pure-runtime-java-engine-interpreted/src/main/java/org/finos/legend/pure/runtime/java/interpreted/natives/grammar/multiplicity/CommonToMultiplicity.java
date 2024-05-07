@@ -32,7 +32,7 @@ import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
 import java.util.Stack;
 
-abstract class CommonToMultiplicity extends NativeFunction
+public abstract class CommonToMultiplicity extends NativeFunction
 {
     protected final ModelRepository repository;
 

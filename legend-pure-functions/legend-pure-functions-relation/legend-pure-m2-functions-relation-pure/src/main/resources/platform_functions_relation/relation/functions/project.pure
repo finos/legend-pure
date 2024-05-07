@@ -16,7 +16,7 @@ import meta::pure::test::pct::*;
 import meta::pure::metamodel::relation::*;
 import meta::pure::functions::relation::tests::project::*;
 
-native function meta::pure::functions::relation::project<C,T>(cl:C[*], x:FuncColSpecArray<{C[1]->Any[*]},T>[1]):Relation<T>[1];
+native function <<PCT.function>> meta::pure::functions::relation::project<C,T>(cl:C[*], x:FuncColSpecArray<{C[1]->Any[*]},T>[1]):Relation<T>[1];
 
 Class meta::pure::functions::relation::tests::project::Address
 {

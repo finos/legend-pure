@@ -12,9 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
 import meta::pure::functions::lang::tests::match::*;
 
-native function meta::pure::functions::lang::match<T|m,n>(var:Any[*], functions:Function<{Nil[n]->T[m]}>[1..*]):T[m];
+native function
+    <<PCT.function>>
+    {
+        doc.doc=''
+    }
+    meta::pure::functions::lang::match<T|m,n>(var:Any[*], functions:Function<{Nil[n]->T[m]}>[1..*]):T[m];
 
 function <<test.Test>> meta::pure::functions::lang::tests::match::testMatchOneWithZeroOne():Boolean[1]
 {

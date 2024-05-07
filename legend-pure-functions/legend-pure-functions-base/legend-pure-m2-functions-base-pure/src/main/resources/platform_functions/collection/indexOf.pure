@@ -14,7 +14,7 @@
 
 import meta::pure::test::pct::*;
 
-native function meta::pure::functions::collection::indexOf<T>(set:T[*], value:T[1]):Integer[1];
+native function <<PCT.function>> meta::pure::functions::collection::indexOf<T>(set:T[*], value:T[1]):Integer[1];
 
 function <<PCT.test>> meta::pure::functions::collection::tests::indexof::testIndexOf<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {

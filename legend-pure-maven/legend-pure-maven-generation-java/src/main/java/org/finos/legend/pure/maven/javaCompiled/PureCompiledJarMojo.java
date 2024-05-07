@@ -130,7 +130,7 @@ public class PureCompiledJarMojo extends AbstractMojo
 
 
 
-    private ClassLoader buildClassLoader(MavenProject project, ClassLoader parent, Log log) throws DependencyResolutionRequiredException
+    public ClassLoader buildClassLoader(MavenProject project, ClassLoader parent, Log log) throws DependencyResolutionRequiredException
     {
         // Add the project output to the plugin classloader
         URL[] urlsForClassLoader = ListIterate.collect(project.getCompileClasspathElements(), mavenCompilePath ->

@@ -34,7 +34,6 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>default</id>
                         <configuration>
                             <reportsDirectory>../../legend-pure-test-reports/surefire-reports-aggregate</reportsDirectory>
                         </configuration>

@@ -12,10 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
 import meta::pure::functions::string::tests::toString::*;
 
 // Used by List
-native function meta::pure::functions::string::toString(any:Any[1]):String[1];
+native function
+    <<PCT.function>>
+    {
+        doc.doc=''
+    }
+    meta::pure::functions::string::toString(any:Any[1]):String[1];
 
 function <<test.Test>> meta::pure::functions::string::tests::toString::testIntegerToString():Boolean[1]
 {
