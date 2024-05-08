@@ -1464,9 +1464,17 @@ public class FunctionsHelper
         return new JaroWinklerSimilarity().apply(str1, str2);
     }
 
-    public static Integer levenshteinDistance(String str1, String str2)
+    public static Long levenshteinDistance(String str1, String str2)
     {
-        return new LevenshteinDistance().apply(str1, str2);
+        Integer integerValue = new LevenshteinDistance().apply(str1, str2);
+        if (integerValue != null)
+        {
+            return integerValue.longValue();
+        }
+        else
+        {
+            return 0L;
+        }
     }
 
     // STRING -------------------------------------------------------------------
