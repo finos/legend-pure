@@ -15,9 +15,15 @@
 package org.finos.legend.pure.m3.navigation.graph;
 
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.graph.GraphPath.EdgeConsumer;
+import org.finos.legend.pure.m3.navigation.graph.GraphPath.EdgeVisitor;
+import org.finos.legend.pure.m3.navigation.graph.GraphPath.ToManyPropertyAtIndexEdge;
+import org.finos.legend.pure.m3.navigation.graph.GraphPath.ToManyPropertyWithStringKeyEdge;
+import org.finos.legend.pure.m3.navigation.graph.GraphPath.ToOnePropertyEdge;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
@@ -84,10 +90,10 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                 "test::domain::ClassA.properties['prop2'].genericType.rawType",
                 GraphPath.newPathBuilder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().getDescription());
         Assert.assertEquals(
-                "test::domain::ClassA.properties[name='prop2'].genericType.rawType",
+                "test::domain::ClassA.properties['prop2'].genericType.rawType",
                 GraphPath.newPathBuilder("test::domain::ClassA").addToManyPropertyValueWithKey("properties", "name", "prop2").addToOneProperties("genericType", "rawType").build().getDescription());
         Assert.assertEquals(
-                "test::domain::ClassA.properties[name='name with escaped text, \\'\\n\\b\\\\, and other unusual characters, \"#$%^.'].genericType.rawType",
+                "test::domain::ClassA.properties['name with escaped text, \\'\\n\\b\\\\, and other unusual characters, \"#$%^.'].genericType.rawType",
                 GraphPath.newPathBuilder("test::domain::ClassA").addToManyPropertyValueWithKey("properties", "name", "name with escaped text, '\n\b\\, and other unusual characters, \"#$%^.").addToOneProperties("genericType", "rawType").build().getDescription());
 
         Assert.assertEquals(
@@ -162,36 +168,36 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                 "test::domain::ClassA.properties->at(0).genericType.rawType",
                 GraphPath.newPathBuilder("test::domain::ClassA").addToManyPropertyValueAtIndex("properties", 0).addToOneProperties("genericType", "rawType").build().getPureExpression());
         Assert.assertEquals(
-                "test::domain::ClassA.properties->get('prop2')->toOne().genericType.rawType",
+                "test::domain::ClassA.properties->find(x | $x.name == 'prop2')->toOne().genericType.rawType",
                 GraphPath.newPathBuilder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().getPureExpression());
         Assert.assertEquals(
-                "test::domain::ClassA.properties->filter(x | $x.name == 'prop2')->toOne().genericType.rawType",
+                "test::domain::ClassA.properties->find(x | $x.name == 'prop2')->toOne().genericType.rawType",
                 GraphPath.newPathBuilder("test::domain::ClassA").addToManyPropertyValueWithKey("properties", "name", "prop2").addToOneProperties("genericType", "rawType").build().getPureExpression());
 
         Assert.assertEquals(
                 "::",
                 GraphPath.buildPath("::").getPureExpression());
         Assert.assertEquals(
-                "::.children->get('test')->toOne()",
+                "::.children->find(x | $x.name == 'test')->toOne()",
                 GraphPath.newPathBuilder("::").addToManyPropertyValueWithName("children", "test").build().getPureExpression());
         Assert.assertEquals(
-                "::.children->get('test')->toOne().children->get('domain')->toOne()",
+                "::.children->find(x | $x.name == 'test')->toOne().children->find(x | $x.name == 'domain')->toOne()",
                 GraphPath.newPathBuilder("::").addToManyPropertyValueWithName("children", "test").addToManyPropertyValueWithName("children", "domain").build().getPureExpression());
         Assert.assertEquals(
-                "::.children->get('test')->toOne().children->get('domain')->toOne().children->get('ClassA')->toOne()",
+                "::.children->find(x | $x.name == 'test')->toOne().children->find(x | $x.name == 'domain')->toOne().children->find(x | $x.name == 'ClassA')->toOne()",
                 GraphPath.newPathBuilder("::").addToManyPropertyValueWithName("children", "test").addToManyPropertyValueWithName("children", "domain").addToManyPropertyValueWithName("children", "ClassA").build().getPureExpression());
 
         Assert.assertEquals(
                 "Root",
                 GraphPath.buildPath("Root").getPureExpression());
         Assert.assertEquals(
-                "Root.children->get('test')->toOne()",
+                "Root.children->find(x | $x.name == 'test')->toOne()",
                 GraphPath.newPathBuilder("Root").addToManyPropertyValueWithName("children", "test").build().getPureExpression());
         Assert.assertEquals(
-                "Root.children->get('test')->toOne().children->get('domain')->toOne()",
+                "Root.children->find(x | $x.name == 'test')->toOne().children->find(x | $x.name == 'domain')->toOne()",
                 GraphPath.newPathBuilder("Root").addToManyPropertyValueWithName("children", "test").addToManyPropertyValueWithName("children", "domain").build().getPureExpression());
         Assert.assertEquals(
-                "Root.children->get('test')->toOne().children->get('domain')->toOne().children->get('ClassA')->toOne()",
+                "Root.children->find(x | $x.name == 'test')->toOne().children->find(x | $x.name == 'domain')->toOne().children->find(x | $x.name == 'ClassA')->toOne()",
                 GraphPath.newPathBuilder("Root").addToManyPropertyValueWithName("children", "test").addToManyPropertyValueWithName("children", "domain").addToManyPropertyValueWithName("children", "ClassA").build().getPureExpression());
 
         Assert.assertEquals(
@@ -220,7 +226,7 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                 "test::domain::RomanLength~Cubitum.measure.canonicalUnit.measure",
                 GraphPath.buildPath("test::domain::RomanLength~Cubitum", "measure", "canonicalUnit", "measure").getPureExpression());
         Assert.assertEquals(
-                "test::domain::RomanLength~Cubitum.measure.canonicalUnit.measure.nonCanonicalUnits->get('RomanLength~Actus')->toOne()",
+                "test::domain::RomanLength~Cubitum.measure.canonicalUnit.measure.nonCanonicalUnits->find(x | $x.name == 'RomanLength~Actus')->toOne()",
                 GraphPath.newPathBuilder("test::domain::RomanLength~Cubitum").addToOneProperties("measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "RomanLength~Actus").build().getPureExpression());
     }
 
@@ -750,8 +756,7 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                         "test::domain::ClassB",
                         "test::domain::ClassA.properties[0].genericType.rawType",
                         "test::domain::ClassA.properties['prop2'].genericType.rawType",
-                        "test::domain::ClassA.properties[name='prop2'].genericType.rawType",
-                        "test::domain::ClassA.properties[name='name with escaped text, \\'\\n\\b\\\\, and other unusual characters, \"#$%^.'].genericType.rawType",
+                        "test::domain::ClassA.properties['name with escaped text, \\'\\n\\b\\\\, and other unusual characters, \"#$%^.'].genericType.rawType",
                         "::",
                         "::.children['test']",
                         "::.children['test'].children['domain']",
@@ -770,5 +775,88 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                         "test::domain::RomanLength~Cubitum.measure.canonicalUnit.measure",
                         "test::domain::RomanLength~Cubitum.measure.canonicalUnit.measure.nonCanonicalUnits['RomanLength~Actus']")
                 .forEach(s -> Assert.assertEquals(s, GraphPath.parse(s).getDescription()));
+    }
+
+    @Test
+    public void testEdgeVisitor()
+    {
+        EdgeVisitor<String> visitor = new EdgeVisitor<String>()
+        {
+            @Override
+            public String visit(ToOnePropertyEdge edge)
+            {
+                return edge.getProperty();
+            }
+
+            @Override
+            public String visit(ToManyPropertyAtIndexEdge edge)
+            {
+                return edge.getProperty() + " / " + edge.getIndex();
+            }
+
+            @Override
+            public String visit(ToManyPropertyWithStringKeyEdge edge)
+            {
+                return edge.getProperty() + " / " + edge.getKeyProperty() + " / " + edge.getKey();
+            }
+        };
+        Assert.assertEquals(
+                Lists.mutable.with("properties / 0", "genericType", "rawType"),
+                GraphPath.parse("test::domain::ClassA.properties[0].genericType.rawType").getEdges().collect(e -> e.visit(visitor)));
+        Assert.assertEquals(
+                Lists.mutable.with("properties / name / prop2", "genericType", "rawType"),
+                GraphPath.parse("test::domain::ClassA.properties['prop2'].genericType.rawType").getEdges().collect(e -> e.visit(visitor)));
+        Assert.assertEquals(
+                Lists.mutable.with("measure", "canonicalUnit", "measure", "nonCanonicalUnits / name / RomanLength~Actus"),
+                GraphPath.parse("test::domain::RomanLength~Cubitum.measure.canonicalUnit.measure.nonCanonicalUnits['RomanLength~Actus']").getEdges().collect(e -> e.visit(visitor)));
+    }
+
+    @Test
+    public void testEdgeConsumer()
+    {
+        MutableList<ToOnePropertyEdge> toOneEdges = Lists.mutable.empty();
+        MutableList<ToManyPropertyAtIndexEdge> toManyIndexEdges = Lists.mutable.empty();
+        MutableList<ToManyPropertyWithStringKeyEdge> toManyKeyEdges = Lists.mutable.empty();
+        EdgeConsumer consumer = new EdgeConsumer()
+        {
+            @Override
+            protected void accept(ToOnePropertyEdge edge)
+            {
+                toOneEdges.add(edge);
+            }
+
+            @Override
+            protected void accept(ToManyPropertyAtIndexEdge edge)
+            {
+                toManyIndexEdges.add(edge);
+            }
+
+            @Override
+            protected void accept(ToManyPropertyWithStringKeyEdge edge)
+            {
+                toManyKeyEdges.add(edge);
+            }
+        };
+
+        GraphPath.parse("test::domain::ClassA.properties[0].genericType.rawType").forEachEdge(consumer);
+        Assert.assertEquals(Lists.mutable.with(new ToOnePropertyEdge("genericType"), new ToOnePropertyEdge("rawType")), toOneEdges);
+        Assert.assertEquals(Lists.mutable.with(new ToManyPropertyAtIndexEdge("properties", 0)), toManyIndexEdges);
+        Assert.assertEquals(Lists.mutable.empty(), toManyKeyEdges);
+
+        toOneEdges.clear();
+        toManyIndexEdges.clear();
+        toManyKeyEdges.clear();
+        GraphPath.parse("test::domain::ClassA.properties['prop2'].genericType.rawType").forEachEdge(consumer);
+        Assert.assertEquals(Lists.mutable.with(new ToOnePropertyEdge("genericType"), new ToOnePropertyEdge("rawType")), toOneEdges);
+        Assert.assertEquals(Lists.mutable.empty(), toManyIndexEdges);
+        Assert.assertEquals(Lists.mutable.with(new ToManyPropertyWithStringKeyEdge("properties", "name", "prop2")), toManyKeyEdges);
+
+        toOneEdges.clear();
+        toManyIndexEdges.clear();
+        toManyKeyEdges.clear();
+        GraphPath.parse("test::domain::RomanLength~Cubitum.measure.canonicalUnit.measure.nonCanonicalUnits['RomanLength~Actus']").forEachEdge(consumer);
+        Assert.assertEquals(Lists.mutable.with(new ToOnePropertyEdge("measure"), new ToOnePropertyEdge("canonicalUnit"), new ToOnePropertyEdge("measure")), toOneEdges);
+        Assert.assertEquals(Lists.mutable.empty(), toManyIndexEdges);
+        Assert.assertEquals(Lists.mutable.with(new ToManyPropertyWithStringKeyEdge("nonCanonicalUnits", "name", "RomanLength~Actus")), toManyKeyEdges);
     }
 }
