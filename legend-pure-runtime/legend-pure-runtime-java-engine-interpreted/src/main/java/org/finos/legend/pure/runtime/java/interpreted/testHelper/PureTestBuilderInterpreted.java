@@ -120,7 +120,7 @@ public class PureTestBuilderInterpreted
                 }
                 else
                 {
-                    PCTTools.displayErrorMessage(a, PCTExecutor, e.getCause());
+                    PCTTools.displayErrorMessage(a, PCTExecutor, functionExecution.getProcessorSupport(), e.getCause());
                     throw e.getCause();
                 }
             }

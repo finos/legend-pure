@@ -156,7 +156,7 @@ public class PureTestBuilderCompiled extends TestSuite
             }
             else
             {
-                PCTTools.displayErrorMessage(coreInstance, PCTExecutor, e.getCause());
+                PCTTools.displayErrorMessage(coreInstance, PCTExecutor, ((CompiledExecutionSupport) executionSupport).getProcessorSupport(), e.getCause());
                 throw e.getCause();
             }
         }

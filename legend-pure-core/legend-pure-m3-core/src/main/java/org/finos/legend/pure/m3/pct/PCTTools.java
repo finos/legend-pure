@@ -49,9 +49,12 @@ public class PCTTools
         return Profile.getTaggedValue(node, PCT_PROFILE, "grammarDoc", processorSupport);
     }
 
-    public static void displayErrorMessage(CoreInstance testFunction, String pctExecutor, Throwable e)
+    public static void displayErrorMessage(CoreInstance testFunction, String pctExecutor, ProcessorSupport ps, Throwable e)
     {
-        System.out.println("\nDebug at:\n   " + PackageableElement.getUserPathForPackageableElement(((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) testFunction)._package(), "::") + "::" + testFunction.getValueForMetaPropertyToOne("functionName").getName() + "(" + pctExecutor + ");");
-        System.out.println("Or add to expected failure:\n   one(\"" + PackageableElement.getUserPathForPackageableElement(testFunction, "::") + "\", \"" + e.getMessage().replace("\"", "\\\"").replace("\n", "\\n") + "\")");
+        if (PCTTools.isPCTTest(testFunction, ps))
+        {
+            System.out.println("\nDebug at:\n   " + PackageableElement.getUserPathForPackageableElement(((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) testFunction)._package(), "::") + "::" + testFunction.getValueForMetaPropertyToOne("functionName").getName() + "(" + pctExecutor + ");");
+            System.out.println("Or add to expected failure:\n   one(\"" + PackageableElement.getUserPathForPackageableElement(testFunction, "::") + "\", \"" + e.getMessage().replace("\"", "\\\"").replace("\n", "\\n") + "\")");
+        }
     }
 }
