@@ -31,6 +31,7 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpa
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.serialization.grammar.StringEscape;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -751,6 +752,42 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                         .build(),
                 GraphPath.parse("test::domain::ClassA.properties[name='name with escaped text, \\'\\n\\b\\\\, and other unusual characters, \"#$%^.'].genericType.rawType"));
 
+        // with excess whitespace
+        Assert.assertEquals(
+                GraphPath.newPathBuilder("test::domain::ClassA")
+                        .addToManyPropertyValueAtIndex("properties", 0)
+                        .addToOneProperties("genericType", "rawType")
+                        .build(),
+                GraphPath.parse(" \t  test::domain::ClassA.properties[0].genericType.rawType"));
+        Assert.assertEquals(
+                GraphPath.newPathBuilder("test::domain::ClassA")
+                        .addToManyPropertyValueAtIndex("properties", 0)
+                        .addToOneProperties("genericType", "rawType")
+                        .build(),
+                GraphPath.parse("test::domain::ClassA.properties[0].genericType.rawType   \n"));
+        Assert.assertEquals(
+                GraphPath.newPathBuilder("test::domain::ClassA")
+                        .addToManyPropertyValueAtIndex("properties", 0)
+                        .addToOneProperties("genericType", "rawType")
+                        .build(),
+                GraphPath.parse("\ttest::domain::ClassA.properties[0].genericType.rawType\n"));
+        Assert.assertEquals(
+                GraphPath.newPathBuilder("test::domain::ClassA")
+                        .addToManyPropertyValueAtIndex("properties", 0)
+                        .addToOneProperties("genericType", "rawType")
+                        .build(),
+                GraphPath.parse("test::domain::ClassA\n\t.properties[0]\n\t.genericType.\n\trawType"));
+        Assert.assertEquals(
+                GraphPath.newPathBuilder("test::domain::ClassA")
+                        .addToManyPropertyValueAtIndex("properties", 0)
+                        .addToOneProperties("genericType", "rawType")
+                        .build(),
+                GraphPath.parse("test::domain::ClassA\r\n\t.properties[0]\r\n\t.genericType.\r\n\trawType"));
+    }
+
+    @Test
+    public void testParseDescriptionRoundTrip()
+    {
         ArrayAdapter.adapt(
                         "test::domain::ClassA",
                         "test::domain::ClassB",
@@ -775,6 +812,41 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                         "test::domain::RomanLength~Cubitum.measure.canonicalUnit.measure",
                         "test::domain::RomanLength~Cubitum.measure.canonicalUnit.measure.nonCanonicalUnits['RomanLength~Actus']")
                 .forEach(s -> Assert.assertEquals(s, GraphPath.parse(s).getDescription()));
+
+        // excess whitespace is not present when generating the description
+        Assert.assertEquals("test::domain::ClassA", GraphPath.parse("\t\ttest::domain::ClassA\n\n").getDescription());
+        Assert.assertEquals("test::domain::RomanLength~Cubitum.measure.canonicalUnit.measure.nonCanonicalUnits['RomanLength~Actus']", GraphPath.parse("test::domain::RomanLength~Cubitum\n\t.measure\n\t.canonicalUnit\n\t.measure.nonCanonicalUnits[    'RomanLength~Actus'    ]\n").getDescription());
+    }
+
+    @Test
+    public void testDoesNotParse()
+    {
+        ArrayAdapter.adapt(
+                        "",
+                        "        ",
+                        "\t\n",
+                        "the quick brown fox jumped over the lazy dog",
+                        "@#$%!@#$%",
+                        ",",
+                        "test::domain::ClassA!",
+                        "#test::domain::ClassA",
+                        "test::domain::ClassA.properties/0/",
+                        "test::domain::ClassA.properties(0)",
+                        "test::domain.model::ClassA",
+                        "test::domain::model::ClassA::",
+                        "Integer.generalizations.general.rawType.",
+                        "!Integer.generalizations.general.rawType",
+                        "Integer.generalizations.general.rawType   etc...")
+                .forEach(s ->
+                {
+                    IllegalArgumentException e = Assert.assertThrows("'" + StringEscape.escape(s) + "'", IllegalArgumentException.class, () -> GraphPath.parse(s));
+                    String expectedPrefix = "Invalid GraphPath description '" + StringEscape.escape(s) + "'";
+                    String message = e.getMessage();
+                    if (!message.startsWith(expectedPrefix))
+                    {
+                        Assert.assertEquals(expectedPrefix, e.getMessage());
+                    }
+                });
     }
 
     @Test

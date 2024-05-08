@@ -428,6 +428,7 @@ public class GraphPath
 
         public Builder fromDescription(String description)
         {
+            // parse
             initParser(description);
             M3Parser.GraphPathContext context;
             try
@@ -438,6 +439,19 @@ public class GraphPath
             {
                 throw new IllegalArgumentException("Invalid GraphPath description '" + StringEscape.escape(description) + "'", (e instanceof ParseCancellationException) ? e.getCause() : e);
             }
+
+            // check that there's nothing more in the string (except possibly whitespace)
+            for (int i = context.getStop().getStopIndex() + 1, len = description.length(); i < len;)
+            {
+                int codePoint = description.codePointAt(i);
+                if (!Character.isWhitespace(codePoint))
+                {
+                    throw new IllegalArgumentException("Invalid GraphPath description '" + StringEscape.escape(description) + "': error at index " + i);
+                }
+                i += Character.charCount(codePoint);
+            }
+
+            // build graph path
             MutableList<Edge> edges = Lists.mutable.empty();
             List<M3Parser.GraphPathEdgeContext> edgeContexts = context.graphPathEdge();
             if (edgeContexts != null)
