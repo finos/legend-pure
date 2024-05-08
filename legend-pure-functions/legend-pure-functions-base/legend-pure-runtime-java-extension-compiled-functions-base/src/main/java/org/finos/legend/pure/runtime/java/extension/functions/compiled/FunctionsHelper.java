@@ -19,6 +19,8 @@ import io.opentracing.Span;
 import io.opentracing.util.GlobalTracer;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.similarity.JaroWinklerSimilarity;
+import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.HashingStrategy;
@@ -1455,6 +1457,16 @@ public class FunctionsHelper
     public static BigDecimal parseDecimal(String str)
     {
         return new BigDecimal(str.endsWith("D") || str.endsWith("d") ? str.substring(0, str.length() - 1) : str);
+    }
+
+    public static Double jaroWinklerSimilarity(String str1, String str2)
+    {
+        return new JaroWinklerSimilarity().apply(str1, str2);
+    }
+
+    public static Integer levenshteinDistance(String str1, String str2)
+    {
+        return new LevenshteinDistance().apply(str1, str2);
     }
 
     // STRING -------------------------------------------------------------------
