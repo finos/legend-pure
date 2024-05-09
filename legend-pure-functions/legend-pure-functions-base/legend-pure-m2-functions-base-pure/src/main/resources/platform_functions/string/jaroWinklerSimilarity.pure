@@ -14,7 +14,7 @@
 
 native function meta::pure::functions::string::jaroWinklerSimilarity(str1:String[1], str2:String[1]):Float[1];
 
-function <<test.Test>> meta::pure::functions::string::tests::trim::testJaroWinklerSimilarity():Boolean[1]
+function <<test.Test>> meta::pure::functions::string::tests::jaroWinklerSimilarity::testSimple():Boolean[1]
 {
     assertEquals(0.88, jaroWinklerSimilarity('John Smith', 'Jane Smith'));
     assertEquals(1.0, jaroWinklerSimilarity('John Smith', 'John Smith'));
