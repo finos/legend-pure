@@ -428,6 +428,7 @@ public class GraphPath
 
         public Builder fromDescription(String description)
         {
+            // parse
             initParser(description);
             M3Parser.GraphPathContext context;
             try
@@ -438,6 +439,19 @@ public class GraphPath
             {
                 throw new IllegalArgumentException("Invalid GraphPath description '" + StringEscape.escape(description) + "'", (e instanceof ParseCancellationException) ? e.getCause() : e);
             }
+
+            // check that there's nothing more in the string (except possibly whitespace)
+            for (int i = context.getStop().getStopIndex() + 1, len = description.length(); i < len;)
+            {
+                int codePoint = description.codePointAt(i);
+                if (!Character.isWhitespace(codePoint))
+                {
+                    throw new IllegalArgumentException("Invalid GraphPath description '" + StringEscape.escape(description) + "': error at index " + i);
+                }
+                i += Character.charCount(codePoint);
+            }
+
+            // build graph path
             MutableList<Edge> edges = Lists.mutable.empty();
             List<M3Parser.GraphPathEdgeContext> edgeContexts = context.graphPathEdge();
             if (edgeContexts != null)
@@ -463,15 +477,8 @@ public class GraphPath
                     {
                         String withQuote = StringEscape.unescape(edgeContext.STRING().getText());
                         String key = withQuote.substring(1, withQuote.length() - 1);
-                        if (propertyNameContexts.size() == 1)
-                        {
-                            edges.add(new ToManyPropertyWithNameEdge(property, key));
-                        }
-                        else
-                        {
-                            String keyProperty = propertyNameContexts.get(1).getText();
-                            edges.add(new ToManyPropertyWithStringKeyEdge(property, keyProperty, key));
-                        }
+                        String keyProperty = (propertyNameContexts.size() == 1) ? M3Properties.name : propertyNameContexts.get(1).getText();
+                        edges.add(new ToManyPropertyWithStringKeyEdge(property, keyProperty, key));
                     }
                     else
                     {
@@ -520,7 +527,7 @@ public class GraphPath
 
         public Builder addToManyPropertyValueWithName(String property, String valueName)
         {
-            return addEdge(new ToManyPropertyWithNameEdge(validateProperty(property), validateValueName(valueName)));
+            return addToManyPropertyValueWithKey(property, M3Properties.name, valueName);
         }
 
         public Builder addToManyPropertyValueWithKey(String property, String keyProperty, String key)
@@ -558,15 +565,6 @@ public class GraphPath
                 throw new IllegalArgumentException("Index must be non-negative: " + index);
             }
             return index;
-        }
-
-        private String validateValueName(String valueName)
-        {
-            if (valueName == null)
-            {
-                throw new IllegalArgumentException("Value name may not be null");
-            }
-            return valueName;
         }
 
         private String validateKeyProperty(String keyProperty)
@@ -635,6 +633,8 @@ public class GraphPath
             return this.property;
         }
 
+        public abstract <T> T visit(EdgeVisitor<T> visitor);
+
         @Override
         public String toString()
         {
@@ -660,9 +660,9 @@ public class GraphPath
         }
     }
 
-    private static class ToOnePropertyEdge extends Edge
+    public static class ToOnePropertyEdge extends Edge
     {
-        private ToOnePropertyEdge(String property)
+        ToOnePropertyEdge(String property)
         {
             super(property);
         }
@@ -680,13 +680,19 @@ public class GraphPath
         }
 
         @Override
+        public <T> T visit(EdgeVisitor<T> visitor)
+        {
+            return visitor.visit(this);
+        }
+
+        @Override
         CoreInstance apply(CoreInstance node)
         {
             return node.getValueForMetaPropertyToOne(this.property);
         }
     }
 
-    private abstract static class ToManyPropertyEdge extends Edge
+    public abstract static class ToManyPropertyEdge extends Edge
     {
         ToManyPropertyEdge(String property)
         {
@@ -710,14 +716,19 @@ public class GraphPath
         abstract SafeAppendable writePureSelectExpression(SafeAppendable appendable);
     }
 
-    private static class ToManyPropertyAtIndexEdge extends ToManyPropertyEdge
+    public static class ToManyPropertyAtIndexEdge extends ToManyPropertyEdge
     {
         private final int index;
 
-        private ToManyPropertyAtIndexEdge(String property, int index)
+        ToManyPropertyAtIndexEdge(String property, int index)
         {
             super(property);
             this.index = index;
+        }
+
+        public int getIndex()
+        {
+            return this.index;
         }
 
         @Override
@@ -738,7 +749,13 @@ public class GraphPath
         @Override
         public int hashCode()
         {
-            return (41 * this.property.hashCode()) + this.index;
+            return this.property.hashCode() + 31 * this.index;
+        }
+
+        @Override
+        public <T> T visit(EdgeVisitor<T> visitor)
+        {
+            return visitor.visit(this);
         }
 
         @Override
@@ -761,66 +778,26 @@ public class GraphPath
         }
     }
 
-    private static class ToManyPropertyWithNameEdge extends ToManyPropertyEdge
-    {
-        private final String valueName;
-
-        private ToManyPropertyWithNameEdge(String property, String valueName)
-        {
-            super(property);
-            this.valueName = valueName;
-        }
-
-        @Override
-        public boolean equals(Object other)
-        {
-            if (this == other)
-            {
-                return true;
-            }
-            if (!(other instanceof ToManyPropertyWithNameEdge))
-            {
-                return false;
-            }
-            ToManyPropertyWithNameEdge that = (ToManyPropertyWithNameEdge) other;
-            return this.property.equals(that.property) && this.valueName.equals(that.valueName);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return (37 * this.property.hashCode()) + this.valueName.hashCode();
-        }
-
-        @Override
-        CoreInstance apply(CoreInstance node)
-        {
-            return node.getValueInValueForMetaPropertyToMany(this.property, this.valueName);
-        }
-
-        @Override
-        SafeAppendable writeToManySelectMessage(SafeAppendable appendable)
-        {
-            return StringEscape.escape(appendable.append('\''), this.valueName).append('\'');
-        }
-
-        @Override
-        SafeAppendable writePureSelectExpression(SafeAppendable appendable)
-        {
-            return StringEscape.escape(appendable.append("->get('"), this.valueName).append("')->toOne()");
-        }
-    }
-
-    private static class ToManyPropertyWithStringKeyEdge extends ToManyPropertyEdge
+    public static class ToManyPropertyWithStringKeyEdge extends ToManyPropertyEdge
     {
         private final String keyProperty;
         private final String key;
 
-        private ToManyPropertyWithStringKeyEdge(String property, String keyProperty, String key)
+        ToManyPropertyWithStringKeyEdge(String property, String keyProperty, String key)
         {
             super(property);
             this.keyProperty = keyProperty;
             this.key = key;
+        }
+
+        public String getKeyProperty()
+        {
+            return this.keyProperty;
+        }
+
+        public String getKey()
+        {
+            return this.key;
         }
 
         @Override
@@ -841,7 +818,13 @@ public class GraphPath
         @Override
         public int hashCode()
         {
-            return (13 * (13 * this.property.hashCode()) + this.keyProperty.hashCode()) + this.key.hashCode();
+            return this.property.hashCode() + 31 * (this.keyProperty.hashCode() + 31 * this.key.hashCode());
+        }
+
+        @Override
+        public <T> T visit(EdgeVisitor<T> visitor)
+        {
+            return visitor.visit(this);
         }
 
         @Override
@@ -853,13 +836,80 @@ public class GraphPath
         @Override
         SafeAppendable writeToManySelectMessage(SafeAppendable appendable)
         {
-            return StringEscape.escape(appendable.append(this.keyProperty).append("='"), this.key).append('\'');
+            if (!M3Properties.name.equals(this.keyProperty))
+            {
+                appendable.append(this.keyProperty).append('=');
+            }
+            return StringEscape.escape(appendable.append('\''), this.key).append('\'');
         }
 
         @Override
         SafeAppendable writePureSelectExpression(SafeAppendable appendable)
         {
-            return StringEscape.escape(appendable.append("->filter(x | $x.").append(this.keyProperty).append(" == '"), this.key).append("')->toOne()");
+            return StringEscape.escape(appendable.append("->find(x | $x.").append(this.keyProperty).append(" == '"), this.key).append("')->toOne()");
+        }
+    }
+
+    public interface EdgeVisitor<T>
+    {
+        default T visit(ToOnePropertyEdge edge)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        default T visit(ToManyPropertyAtIndexEdge edge)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        default T visit(ToManyPropertyWithStringKeyEdge edge)
+        {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    public abstract static class EdgeConsumer implements EdgeVisitor<Void>, Consumer<Edge>
+    {
+        @Override
+        public final void accept(Edge edge)
+        {
+            edge.visit(this);
+        }
+
+        @Override
+        public final Void visit(ToOnePropertyEdge edge)
+        {
+            accept(edge);
+            return null;
+        }
+
+        @Override
+        public final Void visit(ToManyPropertyAtIndexEdge edge)
+        {
+            accept(edge);
+            return null;
+        }
+
+        @Override
+        public final Void visit(ToManyPropertyWithStringKeyEdge edge)
+        {
+            accept(edge);
+            return null;
+        }
+
+        protected void accept(ToOnePropertyEdge edge)
+        {
+            // do nothing by default
+        }
+
+        protected void accept(ToManyPropertyAtIndexEdge edge)
+        {
+            // do nothing by default
+        }
+
+        protected void accept(ToManyPropertyWithStringKeyEdge edge)
+        {
+            // do nothing by default
         }
     }
 
