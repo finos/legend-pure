@@ -14,7 +14,7 @@
 
 native function meta::pure::functions::string::levenshteinDistance(str1:String[1], str2:String[1]):Integer[1];
 
-function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::string::tests::levenshteinDistance::testSimple():Boolean[1]
+function <<test.Test>> meta::pure::functions::string::tests::levenshteinDistance::testSimple():Boolean[1]
 {
     assertEquals(3, levenshteinDistance('John Smith', 'Jane Smith'));
     assertEquals(0, levenshteinDistance('John Smith', 'John Smith'));
