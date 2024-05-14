@@ -273,6 +273,8 @@ public class SourceInformation implements Comparable<SourceInformation>
         return (this.sourceId != null) &&
                 (this.startLine >= 1) &&
                 (this.startColumn >= 1) &&
+                (this.column >= 1) &&
+                (this.endColumn >= 1) &&
                 isNotBefore(this.line, this.column, this.startLine, this.startColumn) &&
                 isNotBefore(this.endLine, this.endColumn, this.line, this.column);
     }

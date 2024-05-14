@@ -321,6 +321,10 @@ public class TestSourceInformation
         Assert.assertFalse(new SourceInformation(sourceId, 5, 1, 5, 3, 5, 2).isValid());
         Assert.assertFalse(new SourceInformation(sourceId, 5, 3, 5, 2, 5, 8).isValid());
         Assert.assertFalse(new SourceInformation(sourceId, 5, 3, 5, 5, 4, 8).isValid());
+
+        Assert.assertTrue(new SourceInformation(sourceId, 5, 3, 6, 1, 7, 8).isValid());
+        Assert.assertFalse(new SourceInformation(sourceId, 5, 3, 6, 0, 7, 8).isValid());
+        Assert.assertFalse(new SourceInformation(sourceId, 5, 3, 6, 1, 7, 0).isValid());
     }
 
     private void assertSubsumes(SourceInformation sourceInfo1, SourceInformation sourceInfo2)
