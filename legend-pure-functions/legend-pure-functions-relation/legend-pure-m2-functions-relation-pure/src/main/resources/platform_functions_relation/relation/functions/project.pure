@@ -67,7 +67,7 @@ function <<PCT.test>> meta::pure::functions::relation::tests::project::testSimpl
                 '   ok,other,1\n'+
                 '   ok,other,2\n'+
                 '   ok,other,3\n'+
-                '#', $res->toString());
+                '#', $res->sort([~one->ascending(),~two->ascending(),~three->ascending()])->toString());
 }
 
 
@@ -121,7 +121,7 @@ function <<PCT.test>> meta::pure::functions::relation::tests::project::testSimpl
                 '   ok3,no,1\n'+
                 '   ok3,no,2\n'+
                 '   ok3,no,3\n'+
-                '#', $res->toString());
+                '#', $res->sort([~one->ascending(), ~two->ascending(), ~three->ascending()])->toString());
 }
 
 function <<PCT.test>> meta::pure::functions::relation::tests::project::testSimpleProjectWithEmpty<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]

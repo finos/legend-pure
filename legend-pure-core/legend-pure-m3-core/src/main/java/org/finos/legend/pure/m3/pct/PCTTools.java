@@ -14,15 +14,12 @@
 
 package org.finos.legend.pure.m3.pct;
 
-import org.eclipse.collections.api.list.ListIterable;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotatedElement;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TaggedValue;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.profile.Profile;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+
+import static org.junit.Assert.fail;
 
 public class PCTTools
 {
@@ -49,12 +46,24 @@ public class PCTTools
         return Profile.getTaggedValue(node, PCT_PROFILE, "grammarDoc", processorSupport);
     }
 
-    public static void displayErrorMessage(CoreInstance testFunction, String pctExecutor, ProcessorSupport ps, Throwable e)
+    public static void displayErrorMessage(String message, CoreInstance testFunction, String pctExecutor, ProcessorSupport ps, Throwable e)
     {
         if (PCTTools.isPCTTest(testFunction, ps))
         {
-            System.out.println("\nDebug at:\n   " + PackageableElement.getUserPathForPackageableElement(((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) testFunction)._package(), "::") + "::" + testFunction.getValueForMetaPropertyToOne("functionName").getName() + "(" + pctExecutor + ");");
-            System.out.println("Or add to expected failure:\n   one(\"" + PackageableElement.getUserPathForPackageableElement(testFunction, "::") + "\", \"" + e.getMessage().replace("\"", "\\\"").replace("\n", "\\n") + "\")");
+            if (message == null)
+            {
+                System.out.println("\nDebug at:\n   " + PackageableElement.getUserPathForPackageableElement(((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) testFunction)._package(), "::") + "::" + testFunction.getValueForMetaPropertyToOne("functionName").getName() + "(" + pctExecutor + ");");
+                System.out.println("Or add to expected failure:\n   one(\"" + PackageableElement.getUserPathForPackageableElement(testFunction, "::") + "\", \"" + e.getMessage().replace("\"", "\\\"").replace("\n", "\\n") + "\")");
+            }
+            else
+            {
+                fail("The PCT test runner expected an error containing: \"" + message + "\" but the the error was: \"" + e.getMessage().replace("\"", "\\\"").replace("\n", "\\n") + "\"");
+            }
         }
+    }
+
+    public static void displayExpectedErrorFailMessage(String message)
+    {
+        fail("The PCT test runner expected an error containing: \"" + message + "\" but the test succeeded!");
     }
 }

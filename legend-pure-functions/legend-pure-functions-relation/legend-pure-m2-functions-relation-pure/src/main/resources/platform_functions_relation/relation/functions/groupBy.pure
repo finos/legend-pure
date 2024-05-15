@@ -51,7 +51,7 @@ function <<PCT.test>> meta::pure::functions::relation::tests::groupBy::testSimpl
                   '   3,CG\n'+
                   '   4,D\n'+
                   '   5,I\n'+
-                  '#', $res->toString());
+                  '#', $res->sort(~grp->ascending())->toString());
 }
 
 
@@ -83,7 +83,7 @@ function <<PCT.test>> meta::pure::functions::relation::tests::groupBy::testSimpl
                   '   3,CG\n'+
                   '   4,D\n'+
                   '   5,I\n'+
-                  '#', $res->toString());
+                  '#', $res->sort(~grp->ascending())->toString());
 }
 
 function <<PCT.test>> meta::pure::functions::relation::tests::groupBy::testSimpleGroupBySingleMultiple<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
@@ -114,7 +114,7 @@ function <<PCT.test>> meta::pure::functions::relation::tests::groupBy::testSimpl
                   '   3,CG,10\n'+
                   '   4,D,4\n'+
                   '   5,I,9\n'+
-                  '#', $res->toString());
+                  '#', $res->sort(~grp->ascending())->toString());
 }
 
 function <<PCT.test>> meta::pure::functions::relation::tests::groupBy::testSimpleGroupByMultipleMultiple<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
@@ -145,5 +145,5 @@ function <<PCT.test>> meta::pure::functions::relation::tests::groupBy::testSimpl
                   '   3,CG,10\n'+
                   '   4,D,4\n'+
                   '   5,I,9\n'+
-                  '#', $res->toString());
+                  '#', $res->sort(~grp->ascending())->toString());
 }

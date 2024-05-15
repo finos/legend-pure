@@ -105,7 +105,7 @@ public class PureTestBuilderInterpreted
                 String message = expectedFailures.get(PackageableElement.getUserPathForPackageableElement(a, "::"));
                 if (message != null)
                 {
-                    throw new RuntimeException("The PCT test runner expected the following error: " + message);
+                    PCTTools.displayExpectedErrorFailMessage(message);
                 }
                 Object ret = functionExecution.start(a, params);
                 return ret;
@@ -120,7 +120,7 @@ public class PureTestBuilderInterpreted
                 }
                 else
                 {
-                    PCTTools.displayErrorMessage(a, PCTExecutor, functionExecution.getProcessorSupport(), e.getCause());
+                    PCTTools.displayErrorMessage(message, a, PCTExecutor, functionExecution.getProcessorSupport(), e.getCause());
                     throw e.getCause();
                 }
             }

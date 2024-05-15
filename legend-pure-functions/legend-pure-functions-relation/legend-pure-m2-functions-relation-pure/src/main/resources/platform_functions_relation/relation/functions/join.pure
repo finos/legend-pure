@@ -48,7 +48,7 @@ function <<PCT.test>> meta::pure::functions::relation::tests::join::testSimpleJo
                 '   1,George,1,More George 1,1\n'+
                 '   1,George,1,More George 2,2\n'+
                 '   4,David,4,More David,1\n'+
-                '#', $res->toString());
+                '#', $res->sort([~id->ascending(),~col->ascending()])->toString());
 
   let expr2 = {|$tds->join($tds2, JoinKind.LEFT, {x,y| $x.id == $y.id2})};
   let res2 =  $f->eval($expr2);
@@ -60,5 +60,5 @@ function <<PCT.test>> meta::pure::functions::relation::tests::join::testSimpleJo
                 '   2,Pierre,null,null,null\n'+
                 '   3,Sachin,null,null,null\n'+
                 '   4,David,4,More David,1\n'+
-                '#', $res2->sort(~id->ascending())->toString());
+                '#', $res2->sort([~id->ascending(),~col->ascending()])->toString());
 }

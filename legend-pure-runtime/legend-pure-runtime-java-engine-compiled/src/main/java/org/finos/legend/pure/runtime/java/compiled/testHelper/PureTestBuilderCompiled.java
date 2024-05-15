@@ -58,6 +58,7 @@ import java.lang.reflect.Method;
 import java.util.Objects;
 
 import static org.finos.legend.pure.m3.pct.PCTTools.isPCTTest;
+import static org.junit.Assert.fail;
 
 public class PureTestBuilderCompiled extends TestSuite
 {
@@ -142,7 +143,7 @@ public class PureTestBuilderCompiled extends TestSuite
             String message = exclusions.get(PackageableElement.getUserPathForPackageableElement(coreInstance, "::"));
             if (message != null)
             {
-                throw new RuntimeException("The PCT test runner expected the following error: " + message);
+                PCTTools.displayExpectedErrorFailMessage(message);
             }
             return res;
         }
@@ -156,7 +157,7 @@ public class PureTestBuilderCompiled extends TestSuite
             }
             else
             {
-                PCTTools.displayErrorMessage(coreInstance, PCTExecutor, ((CompiledExecutionSupport) executionSupport).getProcessorSupport(), e.getCause());
+                PCTTools.displayErrorMessage(message, coreInstance, PCTExecutor, ((CompiledExecutionSupport) executionSupport).getProcessorSupport(), e.getCause());
                 throw e.getCause();
             }
         }
