@@ -88,6 +88,7 @@ public class ClassLazyImplProcessor
                 (ClassProcessor.isPlatformClass(_class) ? buildFactory(className) : "") +
                 "\n" +
                 ClassImplProcessor.buildGetKeys(_class, processorSupport) +
+                ClassImplProcessor.buildGetRealGetKeyByName(_class, processorSupport) +
                 (instanceOfGetterOverride ? lazyGetterOverride(interfaceNamePlusTypeParams) : "") +
                 ClassImplProcessor.buildGetValueForMetaPropertyToOne(classGenericType, processorSupport) +
                 ClassImplProcessor.buildGetValueForMetaPropertyToMany(classGenericType, processorSupport) +

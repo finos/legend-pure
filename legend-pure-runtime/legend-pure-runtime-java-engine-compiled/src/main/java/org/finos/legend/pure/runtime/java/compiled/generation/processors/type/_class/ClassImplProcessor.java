@@ -19,6 +19,7 @@ import org.eclipse.collections.api.block.predicate.Predicate2;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.impl.Counter;
@@ -113,11 +114,12 @@ public class ClassImplProcessor
                 (addJavaSerializationSupport ? buildDefaultConstructor(className) : "") +
                 buildSimpleConstructor(_class, className, processorSupport, useJavaInheritance) +
                 (addJavaSerializationSupport ? buildSerializationMethods(_class, processorSupport, classGenericType, pureExternalPackage) : "") +
+                (ClassProcessor.isPlatformClass(_class) ? buildFactory(className) : buildFactoryConstructor(className)) +
+                (isGetterOverride ? getterOverrides(interfaceNamePlusTypeParams) : "") +
                 buildGetClassifier() +
                 "\n" +
                 buildGetKeys(_class, processorSupport) +
-                (ClassProcessor.isPlatformClass(_class) ? buildFactory(className) : buildFactoryConstructor(className)) +
-                (isGetterOverride ? getterOverrides(interfaceNamePlusTypeParams) : "") +
+                buildGetRealGetKeyByName(_class, processorSupport) +
                 buildGetValueForMetaPropertyToOne(classGenericType, processorSupport) +
                 buildGetValueForMetaPropertyToMany(classGenericType, processorSupport) +
 
@@ -287,9 +289,49 @@ public class ClassImplProcessor
         return "    @Override\n" +
                 "    public RichIterable<String> getKeys()\n" +
                 "    {\n" +
-                "        return Lists.immutable." + (simplePropertiesByName.isEmpty() ? "empty()" : simplePropertiesByName.keysView().toSortedList().makeString("with(\"", "\", \"", "\")")) + ";\n" +
+                "        return " + (simplePropertiesByName.isEmpty() ? "Lists.immutable.empty()" : simplePropertiesByName.keysView().toSortedList().makeString("Lists.mutable.with(\"", "\", \"", "\")")) + ";\n" +
                 "    }\n" +
                 "\n";
+    }
+
+    static String buildGetRealGetKeyByName(CoreInstance cls, ProcessorSupport processorSupport)
+    {
+        MapIterable<String, CoreInstance> simplePropertiesByName = processorSupport.class_getSimplePropertiesByName(cls);
+        StringBuilder builder = new StringBuilder("    @Override\n");
+        builder.append("    public ListIterable<String> getRealKeyByName(String name)\n");
+        builder.append("    {\n");
+        if (simplePropertiesByName.isEmpty())
+        {
+            builder.append("        throw new RuntimeException(\"Unsupported key: \" + name);\n");
+        }
+        else
+        {
+            builder.append("        switch (name)\n");
+            builder.append("        {\n");
+            simplePropertiesByName.keysView().toSortedList().forEach(name ->
+            {
+                builder.append("            case \"").append(name).append("\":\n");
+                builder.append("            {\n");
+                CoreInstance property = simplePropertiesByName.get(name);
+                ListIterable<String> propertyPath = Property.calculatePropertyPath(property, processorSupport);
+                if (propertyPath.isEmpty())
+                {
+                    builder.append("                return Lists.immutable.empty();\n");
+                }
+                else
+                {
+                    propertyPath.appendString(builder, "                return Lists.mutable.with(\"", "\", \"", "\");\n");
+                }
+                builder.append("            }\n");
+            });
+            builder.append("            default:\n");
+            builder.append("            {\n");
+            builder.append("                throw new RuntimeException(\"Unsupported key: \" + name);\n");
+            builder.append("            }\n");
+            builder.append("        }\n");
+        }
+        builder.append("    }\n");
+        return builder.append("\n").toString();
     }
 
     static String buildFactoryConstructor(String className)
@@ -306,7 +348,7 @@ public class ClassImplProcessor
     public static String buildGetValueForMetaPropertyToOne(CoreInstance classGenericType, ProcessorSupport processorSupport)
     {
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
-        RichIterable<CoreInstance> toOneProperties = processorSupport.class_getSimpleProperties(_class).select(p -> isToOne(p, processorSupport));
+        MutableList<CoreInstance> toOneProperties = processorSupport.class_getSimpleProperties(_class).select(p -> isToOne(p, processorSupport), Lists.mutable.empty()).sortThisBy(CoreInstance::getName);
         return "    @Override\n" +
                 "    public CoreInstance getValueForMetaPropertyToOne(String keyName)\n" +
                 "    {\n" +
@@ -329,7 +371,7 @@ public class ClassImplProcessor
     public static String buildGetValueForMetaPropertyToMany(CoreInstance classGenericType, ProcessorSupport processorSupport)
     {
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
-        RichIterable<CoreInstance> toManyProperties = processorSupport.class_getSimpleProperties(_class).reject(p -> isToOne(p, processorSupport));
+        MutableList<CoreInstance> toManyProperties = processorSupport.class_getSimpleProperties(_class).reject(p -> isToOne(p, processorSupport), Lists.mutable.empty()).sortThisBy(CoreInstance::getName);
         return "    @Override\n" +
                 "    public ListIterable<CoreInstance> getValueForMetaPropertyToMany(String keyName)\n" +
                 "    {\n" +
