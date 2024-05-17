@@ -126,8 +126,9 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
         initializeFromRuntimeState();
 
         this.extraSupportedTypes = runtime.getIncrementalCompiler().getParserLibrary().getParsers()
+                .asLazy()
                 .flatCollect(CoreInstanceFactoriesRegistry::getCoreInstanceFactoriesRegistry)
-                .flatCollect(CoreInstanceFactoryRegistry::allManagedTypes, Sets.mutable.empty());
+                .flatCollect(CoreInstanceFactoryRegistry::getAllPaths, Sets.mutable.empty());
 
         CodeRepositorySet codeRepositorySet = CodeRepositorySet.newBuilder()
                 .withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(Thread.currentThread().getContextClassLoader(), true))

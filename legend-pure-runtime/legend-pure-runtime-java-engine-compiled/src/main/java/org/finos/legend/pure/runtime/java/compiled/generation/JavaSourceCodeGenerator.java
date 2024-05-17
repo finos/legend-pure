@@ -23,7 +23,9 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.partition.PartitionIterable;
 import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.set.strategy.mutable.UnifiedSetWithHashingStrategy;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
 import org.finos.legend.pure.m3.compiler.visibility.AccessLevel;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -691,35 +693,29 @@ public final class JavaSourceCodeGenerator
                 "}\n";
     }
 
-    private static String toFactoryRegistryEntry(CoreInstance _class, ProcessorSupport processorSupport)
+    private String toFactoryRegistryEntry(String path, CoreInstance _class)
     {
-        String path = PackageableElement.getUserPathForPackageableElement(_class);
-        String factory = ClassProcessor.requiresCompilationImpl(processorSupport, _class) ? JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class, ClassImplIncrementalCompilationProcessor.CLASS_IMPL_SUFFIX) :
-                M3ToJavaGenerator.getFullyQualifiedM3ImplForCompiledModel(_class);
+        String factory = ClassProcessor.requiresCompilationImpl(this.processorSupport, _class) ?
+                         JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class, ClassImplIncrementalCompilationProcessor.CLASS_IMPL_SUFFIX) :
+                         M3ToJavaGenerator.getFullyQualifiedM3ImplForCompiledModel(_class);
         String factoryInterface = M3ToJavaGenerator.getFullyQualifiedM3InterfaceForCompiledModel(_class);
-        return "\t\tinterfaceByPath.put(\"" + path + "\", " + factoryInterface + ".class);\n" +
-                "\t\ttypeFactoriesByPath.put(\"" + path + "\", " + factory + ".FACTORY);\n";
+        return "            .withType(\"" + path + "\", " + factory + ".FACTORY, " + factoryInterface + ".class)\n";
     }
 
-    private static String toEnumFactoryRegistryEntry(CoreInstance _enum)
+    private String toEnumFactoryRegistryEntry(String path)
     {
-        String path = PackageableElement.getUserPathForPackageableElement(_enum);
-        return "\t\tinterfaceByPath.put(\"" + path + "\", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum.class);\n" +
-                "\t\ttypeFactoriesByPath.put(\"" + path + "\", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.EnumInstance.FACTORY);\n";
+        return "            .withType(\"" + path + "\", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.EnumInstance.FACTORY, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum.class)\n";
     }
 
-    private static String toMeasureFactoryRegistryEntry(CoreInstance measure)
+    private String toMeasureFactoryRegistryEntry(String path)
     {
-        String path = PackageableElement.getUserPathForPackageableElement(measure);
-        return "\t\tinterfaceByPath.put(\"" + path + "\", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure.class);\n" +
-                "\t\ttypeFactoriesByPath.put(\"" + path + "\", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.MeasureInstance.FACTORY);\n";
+        return "            .withType(\"" + path + "\", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.MeasureInstance.FACTORY, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure.class)\n";
     }
 
-    private static String toUnitFactoryRegistryEntry(CoreInstance unit)
+    private String toUnitFactoryRegistryEntry(String path)
     {
-        String path = PackageableElement.getUserPathForPackageableElement(unit);
-        return "\t\tinterfaceByPath.put(\"" + path + "\", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit.class);\n" +
-                "\t\ttypeFactoriesByPath.put(\"" + path + "\",org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.UnitInstance.FACTORY);\n"; // TODO: org.finos.legend.pure.generated.Root_meta_pure_metamodel_type_Unit_Impl
+        // TODO: org.finos.legend.pure.generated.Root_meta_pure_metamodel_type_Unit_Impl
+        return "            .withType(\"" + path + "\", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.UnitInstance.FACTORY, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit.class)\n";
     }
 
     private String getFactoryRegistryName()
@@ -730,33 +726,35 @@ public final class JavaSourceCodeGenerator
     private String buildFactoryRegistry()
     {
         String className = getFactoryRegistryName();
-        RichIterable<CoreInstance> platformClasses = this.processedClasses.select(ClassProcessor.IS_PLATFORM_CLASS);
-        RichIterable<CoreInstance> processedMeasures = this.processedMeasures;
-        RichIterable<CoreInstance> processedUnits = this.processedUnits;
+        MutableList<Pair<String, CoreInstance>> platformClasses = this.processedClasses.collectIf(
+                ClassProcessor.IS_PLATFORM_CLASS,
+                c -> Tuples.pair(PackageableElement.getUserPathForPackageableElement(c), c),
+                Lists.mutable.empty()).sortThisBy(Pair::getOne);
+        MutableList<String> m3PlatformEnums = this.platformEnumerations.collectIf(
+                each -> "/platform/pure/grammar/m3.pure".equals(each.getSourceInformation().getSourceId()),
+                PackageableElement::getUserPathForPackageableElement,
+                Lists.mutable.empty()).sortThis();
+        MutableList<String> measures = this.processedMeasures.collect(PackageableElement::getUserPathForPackageableElement, Lists.mutable.empty()).sortThis();
+        MutableList<String> units = this.processedUnits.collect(PackageableElement::getUserPathForPackageableElement, Lists.mutable.empty()).sortThis();
 
-        RichIterable<CoreInstance> m3PlatformEnums = this.platformEnumerations.select(each -> "/platform/pure/grammar/m3.pure".equals(each.getSourceInformation().getSourceId()));
+        int count = platformClasses.size() + m3PlatformEnums.size() + measures.size() + units.size();
 
-        int count = platformClasses.size() + m3PlatformEnums.size();
-
-        return "import org.eclipse.collections.api.map.MutableMap;\n" +
-                "import org.eclipse.collections.impl.factory.primitive.IntObjectMaps;\n" +
-                "import org.eclipse.collections.impl.map.mutable.UnifiedMap;\n" +
+        return "\n" +
                 "import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;\n" +
-                "import org.finos.legend.pure.m4.coreinstance.factory.CoreInstanceFactory;\n" +
                 "\n" +
                 "public class " + className + " implements org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistry\n" +
                 "{\n" +
-                "    public static final CoreInstanceFactoryRegistry REGISTRY;\n" +
+                "    public static final CoreInstanceFactoryRegistry REGISTRY = CoreInstanceFactoryRegistry.builder(" + count + ")\n" +
+                platformClasses.asLazy().collect(pair -> toFactoryRegistryEntry(pair.getOne(), pair.getTwo())).makeString("") +
+                m3PlatformEnums.asLazy().collect(this::toEnumFactoryRegistryEntry).makeString("") +
+                measures.asLazy().collect(this::toMeasureFactoryRegistryEntry).makeString("") +
+                units.asLazy().collect(this::toUnitFactoryRegistryEntry).makeString("") + // TODO: TO_FACTORY_REGISTRY_ENTRY
+                "            .build();\n" +
                 "\n" +
-                "    static\n" +
+                "    @Override\n" +
+                "    public CoreInstanceFactoryRegistry getRegistry()\n" +
                 "    {\n" +
-                "        MutableMap<String, java.lang.Class> interfaceByPath = UnifiedMap.newMap(" + count + ");\n" +
-                "        MutableMap<String, CoreInstanceFactory> typeFactoriesByPath = UnifiedMap.newMap(" + count + ");\n" +
-                platformClasses.collectWith(JavaSourceCodeGenerator::toFactoryRegistryEntry, this.processorSupport).makeString("") +
-                m3PlatformEnums.collect(JavaSourceCodeGenerator::toEnumFactoryRegistryEntry).makeString("") +
-                processedMeasures.collect(JavaSourceCodeGenerator::toMeasureFactoryRegistryEntry).makeString("") +
-                processedUnits.collect(JavaSourceCodeGenerator::toUnitFactoryRegistryEntry).makeString("") + // TODO: TO_FACTORY_REGISTRY_ENTRY
-                "        REGISTRY = new CoreInstanceFactoryRegistry(IntObjectMaps.immutable.<CoreInstanceFactory>empty(), typeFactoriesByPath.toImmutable(), interfaceByPath.toImmutable());\n" +
+                "        return REGISTRY;\n" +
                 "    }\n" +
                 "}\n";
     }

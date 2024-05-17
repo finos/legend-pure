@@ -34,6 +34,7 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -219,7 +220,7 @@ public class M3ToJavaGenerator
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
 
         return javaPackage;
@@ -311,14 +312,13 @@ public class M3ToJavaGenerator
                         "\n" +
                         "import org.eclipse.collections.api.RichIterable;\n" +
                         "import org.eclipse.collections.api.block.predicate.Predicate;\n" +
+                        "import org.eclipse.collections.api.factory.Lists;\n" +
+                        "import org.eclipse.collections.api.factory.Sets;\n" +
                         "import org.eclipse.collections.api.list.ListIterable;\n" +
                         "import org.eclipse.collections.api.list.MutableList;\n" +
                         "import org.eclipse.collections.api.map.MapIterable;\n" +
                         "import org.eclipse.collections.api.set.SetIterable;\n" +
                         "import org.eclipse.collections.impl.block.factory.Functions;\n" +
-                        "import org.eclipse.collections.impl.factory.Lists;\n" +
-                        "import org.eclipse.collections.impl.factory.Sets;\n" +
-                        "import org.eclipse.collections.impl.map.mutable.UnifiedMap;\n" +
                         "import org.finos.legend.pure.m3.coreinstance.BaseCoreInstance;\n" +
                         "import org.finos.legend.pure.m3.coreinstance.BaseM3CoreInstanceFactory;\n" +
                         "import org.finos.legend.pure.m4.exception.PureCompilationException;\n" +
@@ -785,8 +785,8 @@ public class M3ToJavaGenerator
                         "    @Override\n" +
                         "    public RichIterable<String> getKeys()\n" +
                         "    {\n" +
-                        "        MutableList<String> result = Lists.mutable.of();\n" +
-                        "        for (String key: KEYS)\n" +
+                        "        MutableList<String> result = Lists.mutable.ofInitialCapacity(KEYS.size());\n" +
+                        "        for (String key : KEYS)\n" +
                         "        {\n" +
                         "            if (isValueDefinedForKey(key))\n" +
                         "            {\n" +
@@ -2182,61 +2182,42 @@ public class M3ToJavaGenerator
     private void createFactory(MapIterable<String, CoreInstance> packageToCoreInstance, SetIterable<CoreInstance> m3Enumerations)
     {
         String factoryName = this.factoryNamePrefix + "CoreInstanceFactoryRegistry";
-        RichIterable<CoreInstance> allInstances = m3Enumerations.toList().withAll(packageToCoreInstance.valuesView());
+        MutableSet<String> imports = Sets.mutable.with("org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum", "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.EnumInstance");
+        packageToCoreInstance.keysView().forEach(p -> imports.with(p).with(p.substring(0, p.lastIndexOf("Instance"))));
+        MutableList<Pair<CoreInstance, String>> allInstancesWithPaths = Lists.mutable.ofInitialCapacity(packageToCoreInstance.size() + m3Enumerations.size());
+        m3Enumerations.collect(e -> Tuples.pair(e, getUserObjectPathForPackageableElement(e, false).makeString("::")), allInstancesWithPaths);
+        packageToCoreInstance.valuesView().collect(i -> Tuples.pair(i, getUserObjectPathForPackageableElement(i, false).makeString("::")), allInstancesWithPaths);
+        allInstancesWithPaths.sortThisBy(Pair::getTwo);
         String result =
                 "package org.finos.legend.pure.m3.coreinstance;\n" +
                         "\n" +
-                        "import org.eclipse.collections.api.map.MutableMap;\n" +
-                        "import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;\n" +
-                        "import org.eclipse.collections.impl.map.mutable.UnifiedMap;\n" +
-                        "import org.eclipse.collections.impl.map.mutable.primitive.IntObjectHashMap;\n" +
+                        "import org.eclipse.collections.api.factory.Sets;\n" +
                         "import org.eclipse.collections.api.set.SetIterable;\n" +
-                        "import org.eclipse.collections.impl.factory.Sets;\n" +
-                        packageToCoreInstance.keysView().collect(_package -> "import " + _package + ";").makeString("\n") +
-                        packageToCoreInstance.keysView().collect(_package -> "import " + _package.substring(0, _package.lastIndexOf("Instance")) + ";").makeString("\n") +
-                        "\n" +
+                        imports.toSortedList().makeString("import ", ";\nimport ", ";\n") +
                         "import org.finos.legend.pure.m4.coreinstance.CoreInstance;\n" +
-                        "import org.finos.legend.pure.m4.coreinstance.factory.CoreInstanceFactory;\n" +
-                        "\n" +
                         "\n" +
                         "public class " + factoryName + "\n" +
                         "{\n" +
-                        "    public static final CoreInstanceFactoryRegistry REGISTRY;\n" +
-                        "    public static final SetIterable<String> ALL_PATHS = Sets.mutable.of" +
-                        allInstances.collect(object -> "\"" + getUserObjectPathForPackageableElement(object, false).makeString("::") + "\"").makeString("(", ",", ")") +
-                        ";\n\n" +
-                        "    static\n" +
-                        "    {\n" +
-                        "        MutableMap<String, java.lang.Class> interfaceByPath = UnifiedMap.newMap(" + packageToCoreInstance.size() + ");\n" +
-                        allInstances.collect(object ->
+                        "    public static final CoreInstanceFactoryRegistry REGISTRY = CoreInstanceFactoryRegistry.builder(" + allInstancesWithPaths.size() + ")\n" +
+                        allInstancesWithPaths.collect(pair ->
                         {
-                            String classString = isEnum(object) ? "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum" : Objects.requireNonNull(object).getName();
-                            return "        interfaceByPath.put(\"" + getUserObjectPathForPackageableElement(object, false).makeString("::") + "\", " + classString + ".class);";
-                        }).makeString("\n") + "\n";
-
-        if (this.generateTypeFactoriesById)
-        {
-            result += "        MutableIntObjectMap<CoreInstanceFactory> typeFactoriesById = IntObjectHashMap.newMap();\n" +
-                    allInstances.collect(object ->
-                    {
-                        String classString = isEnum(object) ? "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum" : Objects.requireNonNull(object).getName();
-                        return "        typeFactoriesById.put(" + object.getSyntheticId() + ", " + classString + "Instance.FACTORY);";
-                    }).makeString("", "\n", "\n");
-        }
-
-        result += "        MutableMap<String, CoreInstanceFactory> typeFactoriesByPath = UnifiedMap.newMap(" + packageToCoreInstance.size() + ");\n" +
-                allInstances.collect(object ->
-                {
-                    String classString = isEnum(object) ? "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum" : Objects.requireNonNull(object).getName();
-                    return "        typeFactoriesByPath.put(" + getUserObjectPathForPackageableElement(object, false).makeString("\"", "::", "\"") + ", " + classString + "Instance.FACTORY);";
-                }).makeString("", "\n", "\n") +
-                "        REGISTRY = new CoreInstanceFactoryRegistry(" + (this.generateTypeFactoriesById ? "typeFactoriesById.toImmutable()" : "new IntObjectHashMap<CoreInstanceFactory>().toImmutable()") + ", typeFactoriesByPath.toImmutable(), interfaceByPath.toImmutable());\n" +
-                "    }\n" +
-                "    public static java.lang.Class getClassForPath(String path)\n" +
-                "    {\n" +
-                "        return REGISTRY.getClassForPath(path);\n" +
-                "    }\n" +
-                "}\n";
+                            CoreInstance instance = pair.getOne();
+                            String classString = isEnum(instance) ? "Enum" : Objects.requireNonNull(instance).getName();
+                            StringBuilder builder = new StringBuilder("            .withType(\"").append(pair.getTwo()).append("\", ");
+                            if (this.generateTypeFactoriesById)
+                            {
+                                builder.append(instance.getSyntheticId()).append(", ");
+                            }
+                            return builder.append(classString).append("Instance.FACTORY, ").append(classString).append(".class)").toString();
+                        }).makeString("", "\n", "\n") +
+                        "            .build();\n" +
+                        "    public static final SetIterable<String> ALL_PATHS = Sets.immutable.withAll(REGISTRY.getAllPaths());\n" +
+                        "\n" +
+                        "    public static java.lang.Class<? extends CoreInstance> getClassForPath(String path)\n" +
+                        "    {\n" +
+                        "        return REGISTRY.getClassForPath(path);\n" +
+                        "    }\n" +
+                        "}\n";
 
         try
         {
@@ -2246,9 +2227,8 @@ public class M3ToJavaGenerator
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
-
     }
 
     private static void collectGeneralizationProperties(ListIterable<? extends CoreInstance> generalizations, MutableSet<CoreInstance> properties, MutableMap<String, CoreInstance> propertyOwners)
@@ -2265,7 +2245,6 @@ public class M3ToJavaGenerator
                 if (!properties.contains(prop))
                 {
                     properties.add(prop);
-
                     if (!propertyOwners.containsKey(prop.getName()))
                     {
                         propertyOwners.put(prop.getName(), general);
@@ -2274,9 +2253,7 @@ public class M3ToJavaGenerator
             }
 
             collectGeneralizationProperties(general == null ? Lists.mutable.empty() : general.getValueForMetaPropertyToMany("generalizations"), properties, propertyOwners);
-
         }
-
     }
 
     private static void collectGeneralizationXProperties(ListIterable<? extends CoreInstance> generalizations, String propertyType, MutableSet<CoreInstance> result)
@@ -2295,7 +2272,6 @@ public class M3ToJavaGenerator
             }
             collectGeneralizationXProperties(general == null ? Lists.mutable.empty() : general.getValueForMetaPropertyToMany("generalizations"), propertyType, result);
         }
-
     }
 
     private static boolean isMandatoryProperty(CoreInstance property)
