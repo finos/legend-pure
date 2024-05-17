@@ -785,8 +785,8 @@ public class M3ToJavaGenerator
                         "    @Override\n" +
                         "    public RichIterable<String> getKeys()\n" +
                         "    {\n" +
-                        "        MutableList<String> result = Lists.mutable.of();\n" +
-                        "        for (String key: KEYS)\n" +
+                        "        MutableList<String> result = Lists.mutable.ofInitialCapacity(KEYS.size());\n" +
+                        "        for (String key : KEYS)\n" +
                         "        {\n" +
                         "            if (isValueDefinedForKey(key))\n" +
                         "            {\n" +
