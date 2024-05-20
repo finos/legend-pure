@@ -478,4 +478,34 @@ public class TestDatabase extends AbstractPureRelationalTestWithCoreCompiled
         }
     }
 
+    @Test
+    public void testDatabaseStereotype() throws Exception
+    {
+        String relationalDB = "###Pure\n" +
+                "Profile meta::pure::profiles::storeType\n" +
+                "{\n" +
+                "    stereotypes: [type1, type2];\n" +
+                "}\n" +
+                "\n" +
+                "Class <<meta::pure::profiles::storeType.type2>> test::Address\n" +
+                "{\n" +
+                "  country: String[1];\n" +
+                "}\n" +
+                "\n" +
+                "###Relational\n" +
+                "Database <<meta::pure::profiles::storeType.type2>> test::TestDB\n" +
+                "(\n" +
+                "  Table Product\n" +
+                "  (\n" +
+                "    ProductID VARCHAR(30) PRIMARY KEY\n" +
+                "  )\n" +
+                ")";
+        runtime.createInMemorySource("sourceId.pure", relationalDB);
+        runtime.compile();
+        int size = runtime.getModelRepository().serialize().length;
+
+        CoreInstance db = processorSupport.package_getByUserPath("test::TestDB");
+        Assert.assertEquals(1, db.getValueForMetaPropertyToMany("schemas").size());
+        Assert.assertEquals(size, runtime.getModelRepository().serialize().length);
+    }
 }
