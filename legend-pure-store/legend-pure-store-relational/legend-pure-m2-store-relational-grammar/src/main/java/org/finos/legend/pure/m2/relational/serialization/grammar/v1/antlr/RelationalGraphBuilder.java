@@ -89,6 +89,7 @@ import org.finos.legend.pure.m2.relational.serialization.grammar.v1.processor.Co
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.processor.ColumnDataTypeFactory.ColumnDataTypeException;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.AntlrContextToM3CoreInstance;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.ParsingUtils;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
@@ -473,6 +474,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
         String tables = visitTablesBlock(ctx.table());
         String filters = visitFiltersBlock(ctx.filter());
         String joins = visitJoinsBlock(ctx.join());
+        String stereotypes = visitStereotypesBlock(ctx.stereotypes());
         String multiGrainFilter = visitMultiGrainFiltersBlock(ctx.multiGrainFilter());
         String views = visitViewsBlock(ctx.view(), new ScopeInfo(dbImport, null, null, null, true));
         if (!tables.isEmpty())
@@ -482,7 +484,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
         }
         return "^meta::relational::metamodel::Database " + ctx.qualifiedName().identifier().getText() + sourceInformation.getPureSourceInformation(ctx.DATABASE().getSymbol(), ctx.qualifiedName().identifier().getStart(), ctx.GROUP_CLOSE().getSymbol()).toM4String() +
                 (ctx.qualifiedName().packagePath() != null ? "@" + ctx.qualifiedName().packagePath().getText().substring(0, ctx.qualifiedName().packagePath().getText().length() - 2) : "") + "(name='" + ctx.qualifiedName().identifier().getText() +
-                "', package=" + (ctx.qualifiedName().packagePath() == null ? "::" : ctx.qualifiedName().packagePath().getText().substring(0, ctx.qualifiedName().packagePath().getText().length() - 2)) + ", includes = [" + includes + "], schemas=[" + schemas + "],joins=[" + joins + "],filters=[" + (filters.isEmpty() ? multiGrainFilter : !multiGrainFilter.isEmpty() ? filters + ", " + multiGrainFilter : filters) + "])";
+                "', package=" + (ctx.qualifiedName().packagePath() == null ? "::" : ctx.qualifiedName().packagePath().getText().substring(0, ctx.qualifiedName().packagePath().getText().length() - 2)) + ", includes = [" + includes + "], schemas=[" + schemas + "], stereotypes=[" + stereotypes + "], joins=[" + joins + "], filters=[" + (filters.isEmpty() ? multiGrainFilter : !multiGrainFilter.isEmpty() ? filters + ", " + multiGrainFilter : filters) + "])";
     }
 
     private String visitMultiGrainFiltersBlock(List<MultiGrainFilterContext> multiGrainFilters)
@@ -543,6 +545,26 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
             ParsingUtils.removeLastCommaCharacterIfPresent(sb);
         }
         return sb.toString();
+    }
+
+    private String visitStereotypesBlock(RelationalParser.StereotypesContext stereotypes)
+    {
+        StringBuilder sb = new StringBuilder();
+        if (stereotypes != null)
+        {
+            for (RelationalParser.StereotypeContext sc : stereotypes.stereotype())
+            {
+                sb.append(visitStereotypeNew(sc));
+                sb.append(",");
+            }
+            ParsingUtils.removeLastCommaCharacterIfPresent(sb);
+        }
+        return sb.toString();
+    }
+
+    private String visitStereotypeNew(RelationalParser.StereotypeContext ctx)
+    {
+        return "^meta::pure::metamodel::import::ImportStub " + sourceInformation.getPureSourceInformation(ctx.qualifiedName().identifier().getStart()).toM4String() + " (importGroup=system::imports::" + importId + ", idOrPath='" + ctx.qualifiedName().getText() + "@" + ctx.identifier().getText() + "')";
     }
 
     private String visitSchemasBlock(List<SchemaContext> schemas)

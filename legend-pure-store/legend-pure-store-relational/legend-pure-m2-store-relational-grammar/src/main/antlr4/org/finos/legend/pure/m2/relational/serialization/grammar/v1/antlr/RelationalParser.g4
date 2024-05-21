@@ -7,7 +7,7 @@ options
     tokenVocab = RelationalLexer;
 }
 
-definition: DATABASE qualifiedName
+definition: DATABASE stereotypes? qualifiedName
             GROUP_OPEN
               include*
               (schema | table | join |filter | multiGrainFilter | view)*
@@ -15,6 +15,12 @@ definition: DATABASE qualifiedName
 ;
 
 include: INCLUDE qualifiedName
+;
+
+stereotypes: LESSTHAN LESSTHAN stereotype (COMMA stereotype)* GREATERTHAN GREATERTHAN
+;
+
+stereotype: qualifiedName DOT identifier
 ;
 
 schema:
