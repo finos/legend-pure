@@ -20,6 +20,7 @@ import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.PlatformCodeRepositoryProvider;
 import org.finos.legend.pure.m3.pct.reports.config.PCTReportConfiguration;
 import org.finos.legend.pure.m3.pct.reports.config.exclusion.ExclusionSpecification;
+import org.finos.legend.pure.m3.pct.reports.model.Adapter;
 import org.finos.legend.pure.m3.pct.shared.model.ReportScope;
 import org.finos.legend.pure.runtime.java.compiled.testHelper.PureTestBuilderCompiled;
 
@@ -28,7 +29,7 @@ import static org.finos.legend.pure.runtime.java.compiled.testHelper.PureTestBui
 public class Test_Compiled_GrammarFunctions_PCT extends PCTReportConfiguration
 {
     private static final ReportScope reportScope = PlatformCodeRepositoryProvider.grammarFunctions;
-    private static final String adapter = "meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_";
+    private static final Adapter adapter = PlatformCodeRepositoryProvider.nativeAdapter;
     private static final String platform = "compiled";
     private static final MutableList<ExclusionSpecification> expectedFailures = Lists.mutable.with(
             one("meta::pure::functions::math::tests::minus::testLargeMinus_Function_1__Boolean_1_", "Assert failure"),
@@ -54,7 +55,7 @@ public class Test_Compiled_GrammarFunctions_PCT extends PCTReportConfiguration
     }
 
     @Override
-    public String getAdapter()
+    public Adapter getAdapter()
     {
         return adapter;
     }

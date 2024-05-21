@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3;
 
+import org.finos.legend.pure.m3.pct.reports.model.Adapter;
 import org.finos.legend.pure.m3.pct.shared.model.ReportScope;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProvider;
@@ -21,6 +22,11 @@ import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeR
 
 public class PlatformCodeRepositoryProvider implements CodeRepositoryProvider
 {
+    public static final Adapter nativeAdapter = new Adapter(
+            "Native",
+            "meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_"
+    );
+
     public static final ReportScope basicFunctions = new ReportScope(
             "basic",
             "meta::pure::functions",

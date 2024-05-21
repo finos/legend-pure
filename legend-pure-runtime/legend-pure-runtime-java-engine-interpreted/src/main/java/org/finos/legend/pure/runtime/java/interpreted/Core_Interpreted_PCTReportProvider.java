@@ -36,11 +36,11 @@ public class Core_Interpreted_PCTReportProvider implements PCTReportProvider
         {
             return Lists.mutable.with(
                     JsonMapper.builder().build().readValue(
-                            Core_Interpreted_PCTReportProvider.class.getResourceAsStream("/pct-reports/basic_interpreted_testAdapterForInMemoryExecution_Function_1__X_o_.json"),
+                            Core_Interpreted_PCTReportProvider.class.getResourceAsStream("/pct-reports/ADAPTER_basic_interpreted_Native.json"),
                             AdapterReport.class
                     ),
                     JsonMapper.builder().build().readValue(
-                            Core_Interpreted_PCTReportProvider.class.getResourceAsStream("/pct-reports/grammar_interpreted_testAdapterForInMemoryExecution_Function_1__X_o_.json"),
+                            Core_Interpreted_PCTReportProvider.class.getResourceAsStream("/pct-reports/ADAPTER_grammar_interpreted_Native.json"),
                             AdapterReport.class
                     )
             );

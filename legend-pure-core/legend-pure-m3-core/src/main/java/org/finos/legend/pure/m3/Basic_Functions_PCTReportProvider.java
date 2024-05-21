@@ -30,7 +30,7 @@ public class Basic_Functions_PCTReportProvider implements PCTReportProvider
         {
             return org.eclipse.collections.api.factory.Lists.mutable.with(
                     JsonMapper.builder().build().readValue(
-                            Basic_Functions_PCTReportProvider.class.getResourceAsStream("/pct-reports/basic_functions.json"),
+                            Basic_Functions_PCTReportProvider.class.getResourceAsStream("/pct-reports/FUNCTIONS_basic.json"),
                             Functions.class
                     )
             );

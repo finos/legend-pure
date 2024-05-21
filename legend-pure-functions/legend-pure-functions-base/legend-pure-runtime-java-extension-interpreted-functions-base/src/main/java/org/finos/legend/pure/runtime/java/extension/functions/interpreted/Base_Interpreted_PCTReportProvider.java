@@ -36,7 +36,7 @@ public class Base_Interpreted_PCTReportProvider implements PCTReportProvider
         {
             return Lists.mutable.with(
                     JsonMapper.builder().build().readValue(
-                            Base_Interpreted_PCTReportProvider.class.getResourceAsStream("/pct-reports/base_interpreted_testAdapterForInMemoryExecution_Function_1__X_o_.json"),
+                            Base_Interpreted_PCTReportProvider.class.getResourceAsStream("/pct-reports/ADAPTER_base_interpreted_Native.json"),
                             AdapterReport.class
                     )
             );

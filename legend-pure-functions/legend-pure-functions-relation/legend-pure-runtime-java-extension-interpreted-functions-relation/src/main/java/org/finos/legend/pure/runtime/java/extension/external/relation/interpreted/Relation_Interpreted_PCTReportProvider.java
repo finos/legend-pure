@@ -36,7 +36,7 @@ public class Relation_Interpreted_PCTReportProvider implements PCTReportProvider
         {
             return Lists.mutable.with(
                     JsonMapper.builder().build().readValue(
-                            Relation_Interpreted_PCTReportProvider.class.getResourceAsStream("/pct-reports/relation_interpreted_testAdapterForInMemoryExecution_Function_1__X_o_.json"),
+                            Relation_Interpreted_PCTReportProvider.class.getResourceAsStream("/pct-reports/ADAPTER_relation_interpreted_Native.json"),
                             AdapterReport.class
                     )
             );

@@ -19,6 +19,7 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m3.pct.reports.config.exclusion.ExclusionOneTest;
 import org.finos.legend.pure.m3.pct.reports.config.exclusion.ExclusionPackageTests;
 import org.finos.legend.pure.m3.pct.reports.config.exclusion.ExclusionSpecification;
+import org.finos.legend.pure.m3.pct.reports.model.Adapter;
 import org.finos.legend.pure.m3.pct.shared.model.ReportScope;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 
@@ -28,7 +29,7 @@ public abstract class PCTReportConfiguration
 
     public abstract MutableList<ExclusionSpecification> expectedFailures();
 
-    public abstract String getAdapter();
+    public abstract Adapter getAdapter();
 
     public abstract String getPlatform();
 

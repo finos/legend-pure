@@ -30,7 +30,7 @@ public class Relation_Functions_PCTReportProvider implements PCTReportProvider
         {
             return org.eclipse.collections.api.factory.Lists.mutable.with(
                     JsonMapper.builder().build().readValue(
-                            Relation_Functions_PCTReportProvider.class.getResourceAsStream("/pct-reports/relation_functions.json"),
+                            Relation_Functions_PCTReportProvider.class.getResourceAsStream("/pct-reports/FUNCTIONS_relation.json"),
                             Functions.class
                     )
             );

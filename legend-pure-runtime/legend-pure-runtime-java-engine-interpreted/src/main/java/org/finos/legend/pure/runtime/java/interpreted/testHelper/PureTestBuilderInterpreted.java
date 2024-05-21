@@ -24,6 +24,7 @@ import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
 import org.finos.legend.pure.m3.execution.test.PureTestBuilder;
 import org.finos.legend.pure.m3.execution.test.TestCollection;
+import org.finos.legend.pure.m3.pct.reports.model.Adapter;
 import org.finos.legend.pure.m3.pct.shared.PCTTools;
 import org.finos.legend.pure.m3.pct.reports.config.PCTReportConfiguration;
 import org.finos.legend.pure.m3.pct.reports.config.exclusion.ExclusionSpecification;
@@ -67,14 +68,14 @@ public class PureTestBuilderInterpreted
         return suite;
     }
 
-    public static TestSuite buildPCTTestSuite(ReportScope reportScope, MutableList<ExclusionSpecification> expectedFailures, String adapter)
+    public static TestSuite buildPCTTestSuite(ReportScope reportScope, MutableList<ExclusionSpecification> expectedFailures, Adapter adapter)
     {
         FunctionExecutionInterpreted functionExecutionInterpreted = PureTestBuilderInterpreted.getFunctionExecutionInterpreted();
         MutableMap<String, String> explodedExpectedFailures = PCTReportConfiguration.explodeExpectedFailures(expectedFailures, functionExecutionInterpreted.getProcessorSupport());
         return PureTestBuilderInterpreted.buildPCTTestSuite(
                 TestCollection.buildPCTTestCollection(reportScope._package, reportScope._package, functionExecutionInterpreted.getProcessorSupport()),
                 explodedExpectedFailures,
-                adapter,
+                adapter.function,
                 functionExecutionInterpreted
         );
     }

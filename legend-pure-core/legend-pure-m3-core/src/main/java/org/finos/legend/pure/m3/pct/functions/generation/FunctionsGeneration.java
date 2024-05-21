@@ -63,7 +63,7 @@ public class FunctionsGeneration
         try
         {
             String reportStr = JsonMapper.builder().build().setSerializationInclusion(JsonInclude.Include.NON_NULL).writerWithDefaultPrettyPrinter().writeValueAsString(functions);
-            Shared.writeStringToTarget(targetDir, functions.reportScope.module + "_functions.json", reportStr);
+            Shared.writeStringToTarget(targetDir, "FUNCTIONS_" + functions.reportScope.module + ".json", reportStr);
         }
         catch (Exception e)
         {

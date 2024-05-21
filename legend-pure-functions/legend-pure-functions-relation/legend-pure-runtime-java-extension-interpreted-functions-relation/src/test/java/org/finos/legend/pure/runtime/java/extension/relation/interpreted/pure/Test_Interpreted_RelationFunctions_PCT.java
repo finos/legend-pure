@@ -18,15 +18,17 @@ import junit.framework.Test;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.code.core.RelationCodeRepositoryProvider;
+import org.finos.legend.pure.m3.PlatformCodeRepositoryProvider;
 import org.finos.legend.pure.m3.pct.reports.config.PCTReportConfiguration;
 import org.finos.legend.pure.m3.pct.reports.config.exclusion.ExclusionSpecification;
+import org.finos.legend.pure.m3.pct.reports.model.Adapter;
 import org.finos.legend.pure.m3.pct.shared.model.ReportScope;
 import org.finos.legend.pure.runtime.java.interpreted.testHelper.PureTestBuilderInterpreted;
 
 public class Test_Interpreted_RelationFunctions_PCT extends PCTReportConfiguration
 {
     private static final ReportScope reportScope = RelationCodeRepositoryProvider.relationFunctions;
-    private static final String adapter = "meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_";
+    private static final Adapter adapter = PlatformCodeRepositoryProvider.nativeAdapter;
     private static final String platform = "interpreted";
     private static final MutableList<ExclusionSpecification> expectedFailures = Lists.mutable.empty();
 
@@ -48,7 +50,7 @@ public class Test_Interpreted_RelationFunctions_PCT extends PCTReportConfigurati
     }
 
     @Override
-    public String getAdapter()
+    public Adapter getAdapter()
     {
         return adapter;
     }

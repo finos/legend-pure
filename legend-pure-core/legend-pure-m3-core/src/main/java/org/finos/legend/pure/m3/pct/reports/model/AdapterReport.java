@@ -22,8 +22,7 @@ import java.util.List;
 public class AdapterReport
 {
     public ReportScope reportScope;
-    public String adapter;
-    public String platform;
+    public AdapterKey adapterKey;
     public List<FunctionTestResults> functionTests;
 
     public AdapterReport()
@@ -31,11 +30,10 @@ public class AdapterReport
 
     }
 
-    public AdapterReport(ReportScope reportScope, String adapter, String platform, MutableList<FunctionTestResults> functionTests)
+    public AdapterReport(ReportScope reportScope, AdapterKey adapterKey, MutableList<FunctionTestResults> functionTests)
     {
         this.reportScope = reportScope;
-        this.adapter = adapter;
-        this.platform = platform;
+        this.adapterKey = adapterKey;
         this.functionTests = functionTests;
     }
 }

@@ -12,18 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.runtime.java.compiled;
+package org.finos.legend.pure.m3.pct.aggregate.model;
 
-import org.finos.legend.pure.m3.pct.shared.provider.PCTReportProviderLoader;
-import org.junit.Assert;
-import org.junit.Test;
+import org.eclipse.collections.api.factory.Maps;
+import org.finos.legend.pure.m3.pct.functions.model.FunctionDefinition;
+import org.finos.legend.pure.m3.pct.reports.model.AdapterKey;
+import org.finos.legend.pure.m3.pct.reports.model.FunctionTestResults;
 
-public class TestPCRReport
+import java.util.Map;
+
+public class FunctionDocumentation
 {
-    @Test
-    public void canFindPCTReport()
-    {
-        Assert.assertEquals("Native", PCTReportProviderLoader.gatherReports().collect(c -> c.adapterKey.adapter.name).distinct().sortThis().makeString(", "));
-        Assert.assertEquals(2, PCTReportProviderLoader.gatherReports().size());
-    }
+    public String module;
+
+    public FunctionDefinition functionDefinition;
+    public Map<AdapterKey, FunctionTestResults> functionTestResults = Maps.mutable.empty();
 }

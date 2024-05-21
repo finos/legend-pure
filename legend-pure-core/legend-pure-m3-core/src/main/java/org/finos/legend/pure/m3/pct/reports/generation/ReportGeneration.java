@@ -25,6 +25,7 @@ import org.finos.legend.pure.m3.execution.test.TestCollection;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.pct.reports.config.PCTReportConfiguration;
+import org.finos.legend.pure.m3.pct.reports.model.AdapterKey;
 import org.finos.legend.pure.m3.pct.reports.model.AdapterReport;
 import org.finos.legend.pure.m3.pct.reports.model.FunctionTestResults;
 import org.finos.legend.pure.m3.pct.reports.model.TestInfo;
@@ -67,8 +68,7 @@ public class ReportGeneration
 
         return new AdapterReport(
                 reportManager.getReportScope(),
-                reportManager.getAdapter(),
-                reportManager.getPlatform(),
+                new AdapterKey(reportManager.getAdapter(), reportManager.getPlatform()),
                 testResults.valuesView().toList()
         );
 
@@ -93,6 +93,6 @@ public class ReportGeneration
 
     public static String getReportName(AdapterReport adapterReport)
     {
-        return adapterReport.reportScope.module + "_" + adapterReport.platform + "_" + adapterReport.adapter.substring(adapterReport.adapter.lastIndexOf(':') + 1);
+        return "ADAPTER_" + adapterReport.reportScope.module + "_" + adapterReport.adapterKey.platform + "_" + adapterReport.adapterKey.adapter.name;
     }
 }

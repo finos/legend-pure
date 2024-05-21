@@ -30,7 +30,7 @@ public class Grammar_Functions_PCTReportProvider implements PCTReportProvider
         {
             return org.eclipse.collections.api.factory.Lists.mutable.with(
                     JsonMapper.builder().build().readValue(
-                            Grammar_Functions_PCTReportProvider.class.getResourceAsStream("/pct-reports/grammar_functions.json"),
+                            Grammar_Functions_PCTReportProvider.class.getResourceAsStream("/pct-reports/FUNCTIONS_grammar.json"),
                             Functions.class
                     )
             );
