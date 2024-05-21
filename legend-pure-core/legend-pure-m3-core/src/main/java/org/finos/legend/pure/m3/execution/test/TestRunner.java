@@ -38,7 +38,7 @@ import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureException;
 
-import static org.finos.legend.pure.m3.pct.PCTTools.isPCTTest;
+import static org.finos.legend.pure.m3.pct.shared.PCTTools.isPCTTest;
 
 public class TestRunner implements Runnable
 {

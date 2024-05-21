@@ -21,12 +21,13 @@ import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.utility.ArrayIterate;
+import org.finos.legend.pure.m3.exception.PureAssertFailException;
 import org.finos.legend.pure.m3.execution.test.PureTestBuilder;
 import org.finos.legend.pure.m3.execution.test.TestCollection;
-import org.finos.legend.pure.m3.pct.PCTTools;
-import org.finos.legend.pure.m3.pct.config.PCTReport;
-import org.finos.legend.pure.m3.pct.config.exclusion.ExclusionSpecification;
-import org.finos.legend.pure.m3.pct.model.ReportScope;
+import org.finos.legend.pure.m3.pct.shared.PCTTools;
+import org.finos.legend.pure.m3.pct.reports.config.PCTReportConfiguration;
+import org.finos.legend.pure.m3.pct.reports.config.exclusion.ExclusionSpecification;
+import org.finos.legend.pure.m3.pct.shared.model.ReportScope;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation._package._Package;
@@ -45,7 +46,8 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 
-import static org.finos.legend.pure.m3.pct.PCTTools.isPCTTest;
+import static org.finos.legend.pure.m3.pct.shared.PCTTools.isPCTTest;
+import static org.junit.Assert.fail;
 
 public class PureTestBuilderInterpreted
 {
@@ -68,7 +70,7 @@ public class PureTestBuilderInterpreted
     public static TestSuite buildPCTTestSuite(ReportScope reportScope, MutableList<ExclusionSpecification> expectedFailures, String adapter)
     {
         FunctionExecutionInterpreted functionExecutionInterpreted = PureTestBuilderInterpreted.getFunctionExecutionInterpreted();
-        MutableMap<String, String> explodedExpectedFailures = PCTReport.explodeExpectedFailures(expectedFailures, functionExecutionInterpreted.getProcessorSupport());
+        MutableMap<String, String> explodedExpectedFailures = PCTReportConfiguration.explodeExpectedFailures(expectedFailures, functionExecutionInterpreted.getProcessorSupport());
         return PureTestBuilderInterpreted.buildPCTTestSuite(
                 TestCollection.buildPCTTestCollection(reportScope._package, reportScope._package, functionExecutionInterpreted.getProcessorSupport()),
                 explodedExpectedFailures,
@@ -105,7 +107,7 @@ public class PureTestBuilderInterpreted
                 String message = expectedFailures.get(PackageableElement.getUserPathForPackageableElement(a, "::"));
                 if (message != null)
                 {
-                    PCTTools.displayExpectedErrorFailMessage(message);
+                    PCTTools.displayExpectedErrorFailMessage(message, a, PCTExecutor);
                 }
                 Object ret = functionExecution.start(a, params);
                 return ret;
@@ -121,6 +123,10 @@ public class PureTestBuilderInterpreted
                 else
                 {
                     PCTTools.displayErrorMessage(message, a, PCTExecutor, functionExecution.getProcessorSupport(), e.getCause());
+                    if (e.getCause() instanceof PureAssertFailException)
+                    {
+                        fail(e.getCause().getMessage());
+                    }
                     throw e.getCause();
                 }
             }

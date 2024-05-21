@@ -17,20 +17,27 @@ package org.finos.legend.pure.runtime.java.extension.external.relation.interpret
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
-import org.finos.legend.pure.m3.pct.PCTReportProvider;
-import org.finos.legend.pure.m3.pct.model.Report;
+import org.finos.legend.pure.m3.pct.shared.provider.PCTReportProvider;
+import org.finos.legend.pure.m3.pct.reports.model.AdapterReport;
+import org.finos.legend.pure.m3.pct.functions.model.Functions;
 
 public class Relation_Interpreted_PCTReportProvider implements PCTReportProvider
 {
     @Override
-    public MutableList<Report> getReports()
+    public MutableList<Functions> getFunctions()
+    {
+        return Lists.mutable.empty();
+    }
+
+    @Override
+    public MutableList<AdapterReport> getAdapterReports()
     {
         try
         {
             return Lists.mutable.with(
                     JsonMapper.builder().build().readValue(
                             Relation_Interpreted_PCTReportProvider.class.getResourceAsStream("/pct-reports/relation_interpreted_testAdapterForInMemoryExecution_Function_1__X_o_.json"),
-                            Report.class
+                            AdapterReport.class
                     )
             );
         }

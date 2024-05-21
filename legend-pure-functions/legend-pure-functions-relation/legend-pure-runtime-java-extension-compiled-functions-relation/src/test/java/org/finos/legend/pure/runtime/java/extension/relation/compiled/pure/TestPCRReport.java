@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.extension.relation.compiled.pure;
 
-import org.finos.legend.pure.m3.pct.config.PCTReport;
+import org.finos.legend.pure.m3.pct.shared.provider.PCTReportProviderLoader;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -23,6 +23,7 @@ public class TestPCRReport
     @Test
     public void canFindPCTReport()
     {
-        Assert.assertEquals(4, PCTReport.gatherReports().size());
+        Assert.assertEquals("meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_", PCTReportProviderLoader.gatherReports().collect(c -> c.adapter).distinct().sortThis().makeString(", "));
+        Assert.assertEquals(4, PCTReportProviderLoader.gatherReports().size());
     }
 }

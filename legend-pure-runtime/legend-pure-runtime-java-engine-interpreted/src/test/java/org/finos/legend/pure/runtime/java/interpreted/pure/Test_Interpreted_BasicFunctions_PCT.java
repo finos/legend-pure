@@ -16,16 +16,14 @@ package org.finos.legend.pure.runtime.java.interpreted.pure;
 
 import junit.framework.Test;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
 import org.finos.legend.pure.m3.PlatformCodeRepositoryProvider;
-import org.finos.legend.pure.m3.pct.config.PCTReport;
-import org.finos.legend.pure.m3.pct.config.exclusion.ExclusionSpecification;
-import org.finos.legend.pure.m3.pct.model.ReportScope;
+import org.finos.legend.pure.m3.pct.reports.config.PCTReportConfiguration;
+import org.finos.legend.pure.m3.pct.reports.config.exclusion.ExclusionSpecification;
+import org.finos.legend.pure.m3.pct.shared.model.ReportScope;
 import org.finos.legend.pure.runtime.java.interpreted.testHelper.PureTestBuilderInterpreted;
 
-public class Test_Interpreted_BasicFunctions_PCT extends PCTReport
+public class Test_Interpreted_BasicFunctions_PCT extends PCTReportConfiguration
 {
     private static final ReportScope reportScope = PlatformCodeRepositoryProvider.basicFunctions;
     private static final String adapter = "meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_";

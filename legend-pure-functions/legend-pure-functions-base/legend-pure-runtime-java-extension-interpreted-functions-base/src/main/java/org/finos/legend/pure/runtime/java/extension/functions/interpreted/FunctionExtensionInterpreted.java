@@ -88,6 +88,7 @@ import org.finos.legend.pure.runtime.java.extension.functions.interpreted.native
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Log10;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Mod;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Power;
+import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Random;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Rem;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.Round;
 import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.math.RoundWithScale;
@@ -246,7 +247,7 @@ public class FunctionExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("tan_Number_1__Float_1_", Tangent::new),
                 Tuples.pair("toDecimal_Number_1__Decimal_1_", ToDecimal::new),
                 Tuples.pair("toFloat_Number_1__Float_1_", ToFloat::new),
-
+                Tuples.pair("random__Float_1_", Random::new),
 
                 //Meta
                 Tuples.pair("canReactivateDynamically_ValueSpecification_1__Boolean_1_", CanReactivateDynamically::new),

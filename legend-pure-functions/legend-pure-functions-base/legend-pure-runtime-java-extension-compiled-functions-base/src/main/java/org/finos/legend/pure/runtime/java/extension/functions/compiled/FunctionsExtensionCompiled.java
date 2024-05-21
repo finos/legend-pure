@@ -79,6 +79,7 @@ import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.m
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Log10;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Mod;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Pow;
+import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Random;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Rem;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.Round;
 import org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.math.RoundWithScale;
@@ -416,6 +417,10 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                         "        return FunctionsGen.traceSpan(es, function, operationName, funcToGetTags, tagsCritical, CoreGen.bridge);\n" +
                         "    }\n" +
                         "\n" +
+                        "    public static Double random()\n" +
+                        "    {\n" +
+                        "        return Math.random();\n" +
+                        "    }" +
                         "\n" +
                         "}"));
     }
@@ -506,6 +511,7 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                 new Tangent(),
                 new ToDecimal(),
                 new ToFloat(),
+                new Random(),
 
                 // Meta
                 new CanReactivateDynamically(),
