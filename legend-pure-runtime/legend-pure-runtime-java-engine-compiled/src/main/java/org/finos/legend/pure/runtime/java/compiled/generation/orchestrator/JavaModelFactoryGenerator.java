@@ -25,8 +25,7 @@ import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeReposito
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
-import org.finos.legend.pure.m3.serialization.grammar.Parser;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
+import org.finos.legend.pure.m3.serialization.grammar.CoreInstanceFactoriesRegistry;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
 import org.finos.legend.pure.m3.serialization.runtime.cache.CacheState;
@@ -58,16 +57,9 @@ public class JavaModelFactoryGenerator
             try
             {
                 Object parser = Class.forName(p.trim()).getConstructor().newInstance();
-                if (parser instanceof Parser)
-                {
-                    allTypes.addAll(((Parser) parser).getCoreInstanceFactoriesRegistry().flatCollect(CoreInstanceFactoryRegistry::allManagedTypes).toSet());
-                }
-                else
-                {
-                    allTypes.addAll(((InlineDSL) parser).getCoreInstanceFactoriesRegistry().flatCollect(CoreInstanceFactoryRegistry::allManagedTypes).toSet());
-                }
+                ((CoreInstanceFactoriesRegistry) parser).getCoreInstanceFactoriesRegistry().flatCollect(CoreInstanceFactoryRegistry::getAllPaths, allTypes);
             }
-            catch (Exception e)
+            catch (ReflectiveOperationException e)
             {
                 throw new RuntimeException(e);
             }

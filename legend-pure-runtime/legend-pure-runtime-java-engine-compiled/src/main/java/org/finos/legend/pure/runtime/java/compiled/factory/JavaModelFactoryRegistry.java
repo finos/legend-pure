@@ -14,6 +14,9 @@
 
 package org.finos.legend.pure.runtime.java.compiled.factory;
 
+import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
+
 public interface JavaModelFactoryRegistry
 {
+    CoreInstanceFactoryRegistry getRegistry();
 }

@@ -14,8 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.compiled.factory;
 
-import org.eclipse.collections.api.factory.Maps;
-import org.eclipse.collections.impl.factory.primitive.IntObjectMaps;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 
 import java.util.ServiceLoader;
@@ -24,23 +22,13 @@ public class JavaModelFactoryRegistryLoader
 {
     public static void main(String... args)
     {
-        System.out.println(loader().allManagedTypes().toSortedList().makeString("\n"));
+        System.out.println(loader().getAllPaths().toSortedList().makeString("\n"));
     }
 
     public static CoreInstanceFactoryRegistry loader()
     {
-        CoreInstanceFactoryRegistry result = new CoreInstanceFactoryRegistry(IntObjectMaps.immutable.empty(), Maps.immutable.empty(), Maps.immutable.empty());
-        for (JavaModelFactoryRegistry l : ServiceLoader.load(JavaModelFactoryRegistry.class))
-        {
-            try
-            {
-                result = result.combine((CoreInstanceFactoryRegistry) l.getClass().getDeclaredField("REGISTRY").get(null));
-            }
-            catch (Throwable ignore)
-            {
-                // Catch and do nothing (during build time)
-            }
-        }
-        return result;
+        CoreInstanceFactoryRegistry.Builder builder = CoreInstanceFactoryRegistry.builder();
+        ServiceLoader.load(JavaModelFactoryRegistry.class).forEach(reg -> builder.withRegistry(reg.getRegistry()));
+        return builder.build();
     }
 }

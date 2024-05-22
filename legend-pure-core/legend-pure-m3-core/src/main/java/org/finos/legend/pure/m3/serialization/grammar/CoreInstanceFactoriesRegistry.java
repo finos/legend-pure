@@ -20,14 +20,8 @@ import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 
 public interface CoreInstanceFactoriesRegistry
 {
-    Function<CoreInstanceFactoriesRegistry, RichIterable<CoreInstanceFactoryRegistry>> CORE_INSTANCE_FACTORY_GETTOR = new Function<CoreInstanceFactoriesRegistry, RichIterable<CoreInstanceFactoryRegistry>>()
-    {
-        @Override
-        public RichIterable<CoreInstanceFactoryRegistry> valueOf(CoreInstanceFactoriesRegistry registry)
-        {
-            return registry.getCoreInstanceFactoriesRegistry();
-        }
-    };
+    @Deprecated
+    Function<CoreInstanceFactoriesRegistry, RichIterable<CoreInstanceFactoryRegistry>> CORE_INSTANCE_FACTORY_GETTOR = CoreInstanceFactoriesRegistry::getCoreInstanceFactoriesRegistry;
 
     RichIterable<CoreInstanceFactoryRegistry> getCoreInstanceFactoriesRegistry();
 }

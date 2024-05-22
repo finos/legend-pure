@@ -17,14 +17,12 @@ package org.finos.legend.pure.m3.serialization.runtime;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.multimap.Multimap;
 import org.eclipse.collections.api.multimap.list.ListMultimap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.primitive.IntObjectMaps;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.eclipse.collections.impl.map.sorted.mutable.TreeSortedMap;
 import org.finos.legend.pure.m3.SourceMutation;
@@ -112,15 +110,12 @@ public abstract class IncrementalCompiler implements SourceEventHandler
         this.dslLibrary = new InlineDSLLibrary(inlineDSLs);
 
         RichIterable<? extends Parser> allParsers = Lists.mutable.withAll(parsers);
-        RichIterable<CoreInstanceFactoryRegistry> registries =
-                factoryRegistryOverride != null ?
-                        Lists.fixedSize.of(factoryRegistryOverride) :
-                        allParsers.asLazy().flatCollect(CoreInstanceFactoriesRegistry::getCoreInstanceFactoriesRegistry).concatenate(inlineDSLs.flatCollect(CoreInstanceFactoriesRegistry::getCoreInstanceFactoriesRegistry));
-
-        CoreInstanceFactoryRegistry registry = registries.injectInto(
-                new CoreInstanceFactoryRegistry(IntObjectMaps.immutable.empty(), Maps.immutable.empty(), Maps.immutable.empty()),
-                CoreInstanceFactoryRegistry::combine
-        );
+        CoreInstanceFactoryRegistry registry = (factoryRegistryOverride != null) ?
+                                               factoryRegistryOverride :
+                                               CoreInstanceFactoryRegistry.builder()
+                                                       .withRegistries(allParsers.asLazy().flatCollect(CoreInstanceFactoriesRegistry::getCoreInstanceFactoriesRegistry))
+                                                       .withRegistries(inlineDSLs.asLazy().flatCollect(CoreInstanceFactoriesRegistry::getCoreInstanceFactoriesRegistry))
+                                                       .build();
 
         this.modelRepository = new ModelRepository(new CompositeCoreInstanceFactory(registry));
         this.processorSupport = new M3ProcessorSupport(this.context, this.modelRepository);
