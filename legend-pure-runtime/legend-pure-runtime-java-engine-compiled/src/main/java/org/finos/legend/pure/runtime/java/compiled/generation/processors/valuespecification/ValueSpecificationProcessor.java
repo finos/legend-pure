@@ -328,14 +328,17 @@ public class ValueSpecificationProcessor
 
         String funcSignature = params.collect(p -> "final " + TypeProcessor.typeToJavaObjectWithMul(p.getValueForMetaPropertyToOne(M3Properties.genericType), p.getValueForMetaPropertyToOne(M3Properties.multiplicity), processorContext.getSupport()) + " _" + p.getValueForMetaPropertyToOne(M3Properties.name).getName()).makeString(",");
 
-        String openVarsInitializer = "";
-
-        if (!notOpenVariables)
+        String openVarsInitializer;
+        if (notOpenVariables)
+        {
+            openVarsInitializer = "";
+        }
+        else
         {
             ListIterable<? extends CoreInstance> vars = function.getValueForMetaPropertyToMany(M3Properties.openVariables);
             if (vars.size() < 4)
             {
-                openVarsInitializer = "private MutableMap<String, Object> __vars = Maps.fixedSize.<String, Object>of(" + vars.collect(openVar ->
+                openVarsInitializer = vars.asLazy().collect(openVar ->
                 {
                     String varName = openVar.getName();
                     String value;
@@ -347,12 +350,13 @@ public class ValueSpecificationProcessor
                     {
                         value = "_" + varName;
                     }
-                    return "\"" + varName + "\"," + value;
-                }).makeString(",") + ");\n";
+                    return "\"" + varName + "\", " + value;
+                }).makeString("private final MutableMap<String, Object> __vars = Maps.fixedSize.<String, Object>of(", ",", ");\n");
             }
             else
             {
-                openVarsInitializer = "private MutableMap<String, Object> __vars = UnifiedMap.newMap(" + vars.size() + ");\n {" + vars.collect(var -> "__vars.put(\"" + var.getName() + "\"," + ("this".equals(var.getName()) ? JavaPackageAndImportBuilder.buildImplClassNameFromType(topLevelElement) + ".this" : "_" + var.getName()) + ")").makeString(";\n") + ";\n}";
+                openVarsInitializer = vars.asLazy().collect(var -> "        .withKeyValue(\"" + var.getName() + "\", " + ("this".equals(var.getName()) ? JavaPackageAndImportBuilder.buildImplClassNameFromType(topLevelElement) + ".this" : "_" + var.getName()) + ")")
+                        .makeString("private final MutableMap<String, Object> __vars = Maps.mutable.<String, Object>ofInitialCapacity(" + vars.size() + ")\n", "\n", ";\n");
             }
         }
 

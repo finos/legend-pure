@@ -14,12 +14,14 @@
 
 package org.finos.legend.pure.m3.tests.packageablelement;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation._package._Package;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -108,8 +110,7 @@ public class TestPackageableElement extends AbstractPureTestWithCoreCompiled
     @Test
     public void testGetSystemPathForPackageableElement()
     {
-        assertUserPath("Root", "::");
-        assertUserPath("Root", "Root");
+        assertSystemPath("Root", "Root");
         _Package.SPECIAL_TYPES.forEach(path -> assertSystemPath(path, path));
         Lists.immutable.with(
                 M3Paths.PureZero, M3Paths.ZeroOne, M3Paths.ZeroMany, M3Paths.PureOne, M3Paths.OneMany,
@@ -121,6 +122,24 @@ public class TestPackageableElement extends AbstractPureTestWithCoreCompiled
     private void assertSystemPath(String expectedPath, String lookupPath)
     {
         Assert.assertEquals(expectedPath, PackageableElement.getSystemPathForPackageableElement(lookUpInstance(lookupPath)));
+    }
+
+    @Test
+    public void testForEachSystemPathElement()
+    {
+        assertForEachSystemPathElement(M3Paths.Root, M3Paths.Root);
+        _Package.SPECIAL_TYPES.forEach(path -> assertForEachSystemPathElement(path, path));
+
+        assertForEachSystemPathElement("Root::meta", "Root", "meta");
+        assertForEachSystemPathElement("Root::meta::pure::metamodel::type::Class", "Root", "meta", "pure", "metamodel", "type", "Class");
+        assertForEachSystemPathElement("Root::meta::pure::metamodel::function::property::Property", "Root", "meta", "pure", "metamodel", "function", "property", "Property");
+    }
+
+    private void assertForEachSystemPathElement(String systemPath, String... expected)
+    {
+        MutableList<String> actual = Lists.mutable.empty();
+        PackageableElement.forEachSystemPathElement(systemPath, actual::add);
+        Assert.assertEquals(systemPath, ArrayAdapter.adapt(expected), actual);
     }
 
     @Test

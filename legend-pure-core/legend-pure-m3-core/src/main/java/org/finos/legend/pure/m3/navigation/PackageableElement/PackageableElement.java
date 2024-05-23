@@ -228,6 +228,11 @@ public class PackageableElement
         return writeSystemPathForPackageableElement(new StringBuilder(64), packageableElement, sep).toString();
     }
 
+    public static <T extends Appendable> T writeSystemPathForPackageableElement(T appendable, CoreInstance packageableElement)
+    {
+        return writeSystemPathForPackageableElement(appendable, packageableElement, DEFAULT_PATH_SEPARATOR);
+    }
+
     public static <T extends Appendable> T writeSystemPathForPackageableElement(T appendable, CoreInstance packageableElement, String sep)
     {
         SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
@@ -236,6 +241,26 @@ public class PackageableElement
                 e -> safeAppendable.append(e.getName()),
                 e -> safeAppendable.append(separator).append(e.getName()));
         return appendable;
+    }
+
+    public static void forEachSystemPathElement(String systemPath, Consumer<? super String> consumer)
+    {
+        forEachSystemPathElement(systemPath, DEFAULT_PATH_SEPARATOR, consumer);
+    }
+
+    public static void forEachSystemPathElement(String systemPath, String separator, Consumer<? super String> consumer)
+    {
+        int start = 0;
+        int sepLen = separator.length();
+        int end = systemPath.indexOf(separator);
+
+        while (end != -1)
+        {
+            consumer.accept(systemPath.substring(start, end));
+            start = end + sepLen;
+            end = systemPath.indexOf(separator, start);
+        }
+        consumer.accept(systemPath.substring(start));
     }
 
     public static CoreInstance findPackageableElement(String path, ModelRepository repository)
