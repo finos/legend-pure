@@ -31,6 +31,7 @@ Class meta::relational::metamodel::Database extends meta::pure::store::set::SetB
     schemas : Schema[*];
     joins : Join[*];
     filters : Filter[*];
+    stereotypes: Stereotype[*];
 }
 
 Class meta::relational::metamodel::Schema extends meta::pure::store::set::Namespace
