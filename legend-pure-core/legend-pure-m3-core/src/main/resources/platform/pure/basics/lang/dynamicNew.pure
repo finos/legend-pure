@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import meta::pure::functions::lang::tests::dynamicNew::*;
+import meta::pure::test::pct::*;
 
 Class meta::pure::functions::lang::KeyValue
 {
@@ -20,12 +21,12 @@ Class meta::pure::functions::lang::KeyValue
     value : Any[*];
 }
 
-native function meta::pure::functions::lang::dynamicNew(class:Class<Any>[1], keyExpressions:KeyValue[*]):Any[1];
-native function meta::pure::functions::lang::dynamicNew(genericType:GenericType[1], keyExpressions:KeyValue[*]):Any[1];
-native function meta::pure::functions::lang::dynamicNew(class:Class<Any>[1], keyExpressions:KeyValue[*], getterOverrideToOne:Function<{Any[1],Property<Nil,Any|0..1>[1]->Any[0..1]}>[0..1], getterOverrideToMany : Function<{Any[1],Property<Nil,Any|*>[1]->Any[*]}>[0..1], hiddenPayload:Any[0..1],constraintsManager:Function<{Any[1]->Any[1]}>[0..1]):Any[1];
-native function meta::pure::functions::lang::dynamicNew(genericType:GenericType[1], keyExpressions:KeyValue[*], getterOverrideToOne:Function<{Any[1],Property<Nil,Any|0..1>[1]->Any[0..1]}>[0..1], getterOverrideToMany : Function<{Any[1],Property<Nil,Any|*>[1]->Any[*]}>[0..1], hiddenPayload:Any[0..1],constraintsManager:Function<{Any[1]->Any[1]}>[0..1]):Any[1];
-native function meta::pure::functions::lang::dynamicNew(class:Class<Any>[1], keyExpressions:KeyValue[*], getterOverrideToOne:Function<{Any[1],Property<Nil,Any|0..1>[1]->Any[0..1]}>[0..1], getterOverrideToMany : Function<{Any[1],Property<Nil,Any|*>[1]->Any[*]}>[0..1], hiddenPayload:Any[0..1]):Any[1];
-native function meta::pure::functions::lang::dynamicNew(genericType:GenericType[1], keyExpressions:KeyValue[*], getterOverrideToOne:Function<{Any[1],Property<Nil,Any|0..1>[1]->Any[0..1]}>[0..1], getterOverrideToMany : Function<{Any[1],Property<Nil,Any|*>[1]->Any[*]}>[0..1], hiddenPayload:Any[0..1]):Any[1];
+native function <<PCT.platformOnly>> meta::pure::functions::lang::dynamicNew(class:Class<Any>[1], keyExpressions:KeyValue[*]):Any[1];
+native function <<PCT.platformOnly>> meta::pure::functions::lang::dynamicNew(genericType:GenericType[1], keyExpressions:KeyValue[*]):Any[1];
+native function <<PCT.platformOnly>> meta::pure::functions::lang::dynamicNew(class:Class<Any>[1], keyExpressions:KeyValue[*], getterOverrideToOne:Function<{Any[1],Property<Nil,Any|0..1>[1]->Any[0..1]}>[0..1], getterOverrideToMany : Function<{Any[1],Property<Nil,Any|*>[1]->Any[*]}>[0..1], hiddenPayload:Any[0..1],constraintsManager:Function<{Any[1]->Any[1]}>[0..1]):Any[1];
+native function <<PCT.platformOnly>> meta::pure::functions::lang::dynamicNew(genericType:GenericType[1], keyExpressions:KeyValue[*], getterOverrideToOne:Function<{Any[1],Property<Nil,Any|0..1>[1]->Any[0..1]}>[0..1], getterOverrideToMany : Function<{Any[1],Property<Nil,Any|*>[1]->Any[*]}>[0..1], hiddenPayload:Any[0..1],constraintsManager:Function<{Any[1]->Any[1]}>[0..1]):Any[1];
+native function <<PCT.platformOnly>> meta::pure::functions::lang::dynamicNew(class:Class<Any>[1], keyExpressions:KeyValue[*], getterOverrideToOne:Function<{Any[1],Property<Nil,Any|0..1>[1]->Any[0..1]}>[0..1], getterOverrideToMany : Function<{Any[1],Property<Nil,Any|*>[1]->Any[*]}>[0..1], hiddenPayload:Any[0..1]):Any[1];
+native function <<PCT.platformOnly>> meta::pure::functions::lang::dynamicNew(genericType:GenericType[1], keyExpressions:KeyValue[*], getterOverrideToOne:Function<{Any[1],Property<Nil,Any|0..1>[1]->Any[0..1]}>[0..1], getterOverrideToMany : Function<{Any[1],Property<Nil,Any|*>[1]->Any[*]}>[0..1], hiddenPayload:Any[0..1]):Any[1];
 
 
 Enum meta::pure::functions::lang::tests::dynamicNew::myEnumX{A,B}

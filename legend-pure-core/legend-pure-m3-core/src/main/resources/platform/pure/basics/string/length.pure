@@ -21,12 +21,12 @@ native function
     }
     meta::pure::functions::string::length(str:String[1]):Integer[1];
 
-function <<test.Test>> meta::pure::functions::string::tests::length::testLength():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::length::testLength<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals(43, length('the quick brown fox jumps over the lazy dog'));
+    assertEquals(43, $f->eval(|length('the quick brown fox jumps over the lazy dog')));
 }
 
-function <<test.Test>> meta::pure::functions::string::tests::length::testEmptyLength():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::length::testEmptyLength<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals(0, length(''));
+    assertEquals(0, $f->eval(|length('')));
 }

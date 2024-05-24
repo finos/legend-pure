@@ -18,7 +18,8 @@ function
     <<PCT.function>>
     {
         doc.doc='Returns true if, according to the type order, $left succeeds or is equal to $right',
-        PCT.grammarDoc='$first >= $second'
+        PCT.grammarDoc='$first >= $second',
+        PCT.grammarCharacters='>='
     }
     meta::pure::functions::boolean::greaterThanEqual(left:Number[0..1], right:Number[0..1]):Boolean[1]
 {

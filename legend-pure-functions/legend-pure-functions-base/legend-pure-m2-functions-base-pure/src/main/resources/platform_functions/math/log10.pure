@@ -14,13 +14,15 @@
 
 import meta::pure::test::pct::*;
 
-Profile meta::pure::test::pct::PCT
+native function <<PCT.function>> meta::pure::functions::math::log10(value:Number[1]):Float[1];
+
+function <<PCT.test>> meta::pure::functions::math::tests::log10::testNumberLog10<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    stereotypes : [test, adapter, function, platformOnly];
-    tags: [grammarDoc, grammarCharacters];
+    let z = {a:Number[1] | log10($a)};
+    assertEqWithinTolerance(1.0, $f->eval(|$z->eval(10)), 0.000000000000001);
 }
 
-function <<PCT.adapter>> meta::pure::test::pct::testAdapterForInMemoryExecution<X|o>(f:Function<{->X[o]}>[1]):X[o]
+function <<PCT.test>> meta::pure::functions::math::tests::log10::testSimpleLog10<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-  $f->eval();
+    assertEqWithinTolerance($f->eval(|log10(10)), 1.0, 0.000000000000001);
 }

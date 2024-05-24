@@ -24,26 +24,26 @@ function
     $strings->joinStrings('', $separator, '')
 }
 
-function <<test.Test>> meta::pure::functions::string::tests::joinStrings::testJoinStrings():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::joinStrings::testJoinStrings<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq('a,b,c', joinStrings(['a', 'b', 'c'], ','));
-    assertEq('[a,b,c]', joinStrings(['a', 'b', 'c'], '[', ',', ']'));
+    assertEq('a,b,c', $f->eval(|joinStrings(['a', 'b', 'c'], ',')));
+    assertEq('[a,b,c]', $f->eval(|joinStrings(['a', 'b', 'c'], '[', ',', ']')));
 }
 
-function <<test.Test>> meta::pure::functions::string::tests::joinStrings::testJoinStringsUsingGenericArrow():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::joinStrings::testJoinStringsUsingGenericArrow<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq('a,b,c', ['a', 'b', 'c']->joinStrings(','));
-    assertEq('[a,b,c]', ['a', 'b', 'c']->joinStrings('[', ',', ']'));
+    assertEq('a,b,c', $f->eval(|['a', 'b', 'c']->joinStrings(',')));
+    assertEq('[a,b,c]', $f->eval(|['a', 'b', 'c']->joinStrings('[', ',', ']')));
 }
 
-function <<test.Test>> meta::pure::functions::string::tests::joinStrings::testJoinStringsSingleString():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::joinStrings::testJoinStringsSingleString<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq('a', joinStrings(['a'], ','));
-    assertEq('[a]', joinStrings(['a'], '[', ',', ']'));
+    assertEq('a', $f->eval(|joinStrings(['a'], ',')));
+    assertEq('[a]', $f->eval(|joinStrings(['a'], '[', ',', ']')));
 }
 
-function <<test.Test>> meta::pure::functions::string::tests::joinStrings::testJoinStringsNoStrings():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::joinStrings::testJoinStringsNoStrings<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq('', joinStrings(['a']->tail(), ','));
-    assertEq('[]', joinStrings(['a']->tail(), '[', ',', ']'));
+    assertEq('', $f->eval(|joinStrings(['a']->tail(), ',')));
+    assertEq('[]', $f->eval(|joinStrings(['a']->tail(), '[', ',', ']')));
 }

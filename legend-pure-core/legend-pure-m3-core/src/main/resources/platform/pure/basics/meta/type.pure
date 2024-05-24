@@ -13,9 +13,9 @@
 // limitations under the License.
 
 import meta::pure::functions::meta::tests::model::*;
+import meta::pure::test::pct::*;
 
-
-function meta::pure::functions::meta::type(any:Any[*]):Type[1]
+function <<PCT.platformOnly>> meta::pure::functions::meta::type(any:Any[*]):Type[1]
 {
     $any->genericType().rawType->toOne()
 }

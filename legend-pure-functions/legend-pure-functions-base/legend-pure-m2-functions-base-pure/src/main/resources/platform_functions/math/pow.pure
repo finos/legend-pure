@@ -12,25 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::math::pow(base:Number[1], exponent:Number[1]):Number[1];
+import meta::pure::test::pct::*;
 
-function <<test.Test>> meta::pure::functions::math::tests::pow::testSimplePow():Boolean[1]
+native function <<PCT.function>> meta::pure::functions::math::pow(base:Number[1], exponent:Number[1]):Number[1];
+
+function <<PCT.test>> meta::pure::functions::math::tests::pow::testSimplePow<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(4.0, pow(2,2));
-    assertEq(4.0, 2->pow(2));
-    assertEq(16.0, 2->pow(2)->pow(2));
-    assertEq(16.0, 4.0->pow(2.0));
+    assertEq(4.0, $f->eval(|pow(2,2)));
+    assertEq(4.0, $f->eval(|2->pow(2)));
+    assertEq(16.0, $f->eval(|2->pow(2)->pow(2)));
+    assertEq(16.0, $f->eval(|4.0->pow(2.0)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::pow::testComplexPow():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::pow::testComplexPow<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(16.0, 2->pow(pow(2,2)));
-    assertEq(182.88729271224377725957310758531093597412109375, pow(3.33,4.33));
+    assertEq(16.0, $f->eval(|2->pow(pow(2,2))));
+    assertEq(182.88729271224377725957310758531093597412109375, $f->eval(|pow(3.33,4.33)));
 }
 
 
-function <<test.Test>> meta::pure::functions::math::tests::pow::testNumberPow():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::pow::testNumberPow<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    let f = {a:Number[1], b:Number[1] | pow($a,$b)};
-    assertEq(9.0, $f->eval(3.0, 2));
+    let z = {a:Number[1], b:Number[1] | pow($a,$b)};
+    assertEq(9.0, $f->eval(|$z->eval(3.0, 2)));
 }

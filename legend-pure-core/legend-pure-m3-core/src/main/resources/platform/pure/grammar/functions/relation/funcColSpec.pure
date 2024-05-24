@@ -20,7 +20,8 @@ function
     PCT.function>>
     {
         doc.doc='Create a Relation typed column containing a name and a function',
-        PCT.grammarDoc='~col : x|$x.val+3'
+        PCT.grammarDoc='~col : x|$x.val+3',
+        PCT.grammarCharacters='~:'
     }
     meta::pure::functions::relation::funcColSpec<U,T>(f:Function<{U[1]->Any[*]}>[1], s:String[1], cl:T[1]):FuncColSpec<{U[1]->Any[1]}, T>[1]
 {

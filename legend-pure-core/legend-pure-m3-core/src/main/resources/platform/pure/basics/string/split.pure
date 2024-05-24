@@ -21,12 +21,12 @@ native function
     }
     meta::pure::functions::string::split(str:String[1], token:String[1]):String[*];
 
-function <<test.Test>> meta::pure::functions::string::tests::split::testSplit():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::split::testSplit<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals(['Hello', 'World'], 'Hello World'->split(' '));
+    assertEquals(['Hello', 'World'], $f->eval(|'Hello World'->split(' ')));
 }
 
-function <<test.Test>> meta::pure::functions::string::tests::split::testSplitWithNoSplit():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::split::testSplitWithNoSplit<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals(['Hello World'], 'Hello World'->split(';'));
+    assertEquals(['Hello World'], $f->eval(|'Hello World'->split(';')));
 }

@@ -18,7 +18,8 @@ native function
     <<PCT.function>>
     {
         doc.doc='Multiplies all the provided values',
-        PCT.grammarDoc='5 * 2'
+        PCT.grammarDoc='5 * 2',
+        PCT.grammarCharacters='*'
     }
     meta::pure::functions::math::times(ints:Integer[*]):Integer[1];
 

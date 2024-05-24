@@ -19,7 +19,8 @@ native function
     PCT.function>>
     {
         doc.doc='Returns all instances of a Class',
-        PCT.grammarDoc='AClass.all()'
+        PCT.grammarDoc='AClass.all()',
+        PCT.grammarCharacters='.all()'
     }
     meta::pure::functions::collection::getAll<T>(type:Class<T>[1]):T[*];
 

@@ -19,6 +19,7 @@ native function
     PCT.function>>
     {
         doc.doc='Returns all instances and all versions of a milestoned Class',
-        PCT.grammarDoc='AClass.allVersions()'
+        PCT.grammarDoc='AClass.allVersions()',
+        PCT.grammarCharacters='.allVersions()'
     }
     meta::pure::functions::collection::getAllVersions<T>(type:Class<T>[1]):T[*];

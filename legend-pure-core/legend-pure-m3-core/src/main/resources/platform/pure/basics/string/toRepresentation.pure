@@ -13,8 +13,9 @@
 // limitations under the License.
 
 import meta::pure::functions::string::tests::toRepresentation::*;
+import meta::pure::test::pct::*;
 
-function meta::pure::functions::string::toRepresentation(any:Any[1]):String[1]
+function <<PCT.platformOnly>> meta::pure::functions::string::toRepresentation(any:Any[1]):String[1]
 {
     $any->match([
                  s:String[1] | '\'' + $s->replace('\'', '\\\'') + '\'',

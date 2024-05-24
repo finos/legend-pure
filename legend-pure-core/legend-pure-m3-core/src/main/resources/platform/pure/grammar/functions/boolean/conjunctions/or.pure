@@ -18,7 +18,8 @@ native function
     <<PCT.function>>
     {
         doc.doc='Returns true if any one of the parameters is true, otherwise false',
-        PCT.grammarDoc='$first || $second'
+        PCT.grammarDoc='$first || $second',
+        PCT.grammarCharacters='||'
     }
     meta::pure::functions::boolean::or(first:Boolean[1], second:Boolean[1]):Boolean[1];
 

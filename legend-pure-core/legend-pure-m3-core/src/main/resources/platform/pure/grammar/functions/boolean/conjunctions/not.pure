@@ -18,7 +18,8 @@ native function
     <<PCT.function>>
     {
         doc.doc='Returns true when the parameter is false, otherwise false',
-        PCT.grammarDoc='!$first'
+        PCT.grammarDoc='!$first',
+        PCT.grammarCharacters='!'
     }
     meta::pure::functions::boolean::not(first:Boolean[1]):Boolean[1];
 

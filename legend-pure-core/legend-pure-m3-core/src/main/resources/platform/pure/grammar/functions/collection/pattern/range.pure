@@ -19,7 +19,8 @@ native function
     {
         doc.doc='Returns a collection of numbers, starting with the value of the first parameter, then adding the third parameter value (step) ' +
                 'until the new number is strictly greater than the value of the second parameter.',
-        PCT.grammarDoc='[$start:$stop:$step]'
+        PCT.grammarDoc='[$start:$stop:$step]',
+        PCT.grammarCharacters='[::]'
     }
     meta::pure::functions::collection::range(start:Integer[1], stop:Integer[1], step:Integer[1]):Integer[*];
 

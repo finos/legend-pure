@@ -12,12 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::math::sin(number:Number[1]):Float[1];
+import meta::pure::test::pct::*;
 
-function <<test.Test>> meta::pure::functions::math::tests::trigonometry::testSine():Boolean[1]
+native function <<PCT.function>> meta::pure::functions::math::sin(number:Number[1]):Float[1];
+
+function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testSine<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-   assertEq(0.0, sin(0));
-   assertEqWithinTolerance(0.841470984807, sin(1), 0.000000000001);
-   assertEqWithinTolerance(0.997494986604, sin(1.5), 0.000000000001);
-   assertEqWithinTolerance(0.841470984807, sin_Number_1__Float_1_->eval(1), 0.000000000001);
+   assertEq(0.0, $f->eval(|sin(0)));
+   assertEqWithinTolerance(0.841470984807, $f->eval(|sin(1)), 0.000000000001);
+   assertEqWithinTolerance(0.997494986604, $f->eval(|sin(1.5)), 0.000000000001);
 }
+
+function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testSineEval<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+   assertEqWithinTolerance(0.841470984807, $f->eval(|sin_Number_1__Float_1_->eval(1)), 0.000000000001);
+}
+

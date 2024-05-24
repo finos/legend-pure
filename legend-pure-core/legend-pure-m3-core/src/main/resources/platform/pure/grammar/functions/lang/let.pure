@@ -20,7 +20,8 @@ native function
     <<PCT.function>>
     {
         doc.doc='Assign an value to an immutable variable',
-        PCT.grammarDoc='let x = 3'
+        PCT.grammarDoc='let x = 3',
+        PCT.grammarCharacters='let'
     }
     meta::pure::functions::lang::letFunction<T|m>(left:String[1], right:T[m]):T[m];
 

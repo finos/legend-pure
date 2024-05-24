@@ -37,6 +37,11 @@ public class PCTTools
         return Profile.hasStereotype(node, PCT_PROFILE, "function", processorSupport);
     }
 
+    public static boolean isPlatformOnly(CoreInstance node, ProcessorSupport processorSupport)
+    {
+        return Profile.hasStereotype(node, PCT_PROFILE, "platformOnly", processorSupport);
+    }
+
     public static String getDoc(CoreInstance node, ProcessorSupport processorSupport)
     {
         return Profile.getTaggedValue(node, DOC_PROFILE, "doc", processorSupport);
@@ -45,6 +50,11 @@ public class PCTTools
     public static String getGrammarDoc(CoreInstance node, ProcessorSupport processorSupport)
     {
         return Profile.getTaggedValue(node, PCT_PROFILE, "grammarDoc", processorSupport);
+    }
+
+    public static String getGrammarCharacters(CoreInstance node, ProcessorSupport processorSupport)
+    {
+        return Profile.getTaggedValue(node, PCT_PROFILE, "grammarCharacters", processorSupport);
     }
 
     public static void displayErrorMessage(String message, CoreInstance testFunction, String pctExecutor, ProcessorSupport ps, Throwable e)
@@ -73,8 +83,15 @@ public class PCTTools
         }
         else
         {
-            System.out.println("Or " + (replace ? "replace" : "add to") + " expected failure:\n   one(\"" + PackageableElement.getUserPathForPackageableElement(testFunction, "::") + "\", \"" + e.getMessage().replace("\"", "\\\"").replace("\n", "\\n") + "\")");
+            System.out.println("Or " + (replace ? "replace" : "add to") + " expected failure:\n   one(\"" + PackageableElement.getUserPathForPackageableElement(testFunction, "::") + "\", \"" + cleanMessage(e.getMessage()) + "\"),");
         }
+    }
+
+    private static String cleanMessage(String message)
+    {
+        boolean shouldCut = message.contains("Execution error at ") || message.contains("Assert failure at ");
+        message = shouldCut ? message.substring(message.indexOf("\"")) : message;
+        return message.replace("\"", "\\\"").replace("\n", "\\n");
     }
 
     public static void displayExpectedErrorFailMessage(String message, CoreInstance testFunction, String pctExecutor)

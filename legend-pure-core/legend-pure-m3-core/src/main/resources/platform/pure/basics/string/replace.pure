@@ -21,7 +21,7 @@ native function
     }
     meta::pure::functions::string::replace(source:String[1], toReplace:String[1], replacement:String[1]):String[1];
 
-function <<test.Test>> meta::pure::functions::string::tests::replace::testReplace():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::replace::testReplace<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('fgcde', 'abcde'->replace('ab', 'fg'));
+    assertEquals('fgcde', $f->eval(|'abcde'->replace('ab', 'fg')));
 }

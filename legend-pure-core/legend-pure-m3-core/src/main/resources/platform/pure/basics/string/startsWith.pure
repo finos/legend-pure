@@ -21,13 +21,13 @@ native function
     }
     meta::pure::functions::string::startsWith(source:String[1], val:String[1]):Boolean[1];
 
-function <<test.Test>> meta::pure::functions::string::tests::startswith::testTrueStartsWith():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::startswith::testTrueStartsWith<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert(startsWith('the quick brown fox jumps over the lazy dog', 'the'));
-    assert(startsWith('the quick brown fox jumps over the lazy dog', 'the quick brown fox'));
+    assert($f->eval(|startsWith('the quick brown fox jumps over the lazy dog', 'the')));
+    assert($f->eval(|startsWith('the quick brown fox jumps over the lazy dog', 'the quick brown fox')));
 }
 
-function <<test.Test>> meta::pure::functions::string::tests::startswith::testFalseStartsWith():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::startswith::testFalseStartsWith<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertFalse(startsWith('the quick brown fox jumps over the lazy dog', 'the lazy dog'));
+    assertFalse($f->eval(|startsWith('the quick brown fox jumps over the lazy dog', 'the lazy dog')));
 }

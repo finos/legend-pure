@@ -12,5 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Returns the current time to a system dependent precision.
-native function <<functionType.SideEffectFunction>> meta::pure::functions::math::random():Float[1];
+import meta::pure::test::pct::*;
+
+native function <<functionType.SideEffectFunction, PCT.function>> meta::pure::functions::math::random():Float[1];

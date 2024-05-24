@@ -15,11 +15,10 @@
 import meta::pure::test::pct::*;
 import meta::pure::functions::boolean::tests::equalitymodel::*;
 
-// Identity (i.e., pointer equality)
 native function
-    <<PCT.function>>
+    <<PCT.function, PCT.platformOnly>>
     {
-        doc.doc=''
+        doc.doc='Identity (i.e., pointer equality)'
     }
     meta::pure::functions::boolean::is(left:Any[1], right:Any[1]):Boolean[1];
 

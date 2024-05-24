@@ -14,6 +14,8 @@
 
 package org.finos.legend.pure.m3.pct.reports.model;
 
+import java.util.Objects;
+
 public class Adapter
 {
     public String name;
@@ -27,5 +29,26 @@ public class Adapter
     {
         this.name = name;
         this.function = function;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o)
+        {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
+        Adapter adapter = (Adapter) o;
+        return Objects.equals(name, adapter.name) && Objects.equals(function, adapter.function);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(name, function);
     }
 }

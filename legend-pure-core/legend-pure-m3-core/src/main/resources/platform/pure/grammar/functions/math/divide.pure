@@ -18,7 +18,8 @@ native function
     <<PCT.function>>
     {
         doc.doc='Divides the first parameter by the second one.',
-        PCT.grammarDoc='$left / $right'
+        PCT.grammarDoc='$left / $right',
+        PCT.grammarCharacters='/'
     }
     meta::pure::functions::math::divide(left:Number[1], right:Number[1]):Float[1];
 

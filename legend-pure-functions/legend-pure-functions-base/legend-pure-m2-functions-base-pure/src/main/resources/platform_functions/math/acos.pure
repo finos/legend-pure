@@ -23,7 +23,7 @@ function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testArcC
    assertEqWithinTolerance(1.047197551196, $f->eval(|acos(0.5)), 0.000000000001);
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::trigonometry::testArcCosineEval():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testArcCosineEval<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-   assertEqWithinTolerance(1.047197551196, acos_Number_1__Float_1_->eval(0.5), 0.000000000001);
+   assertEqWithinTolerance(1.047197551196, $f->eval(|acos_Number_1__Float_1_->eval(0.5)), 0.000000000001);
 }

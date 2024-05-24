@@ -14,6 +14,8 @@
 
 package org.finos.legend.pure.m3.pct.reports.model;
 
+import java.util.Objects;
+
 public class AdapterKey
 {
     public Adapter adapter;
@@ -27,5 +29,26 @@ public class AdapterKey
     {
         this.adapter = adapter;
         this.platform = platform;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o)
+        {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
+        AdapterKey that = (AdapterKey) o;
+        return Objects.equals(adapter, that.adapter) && Objects.equals(platform, that.platform);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(adapter, platform);
     }
 }

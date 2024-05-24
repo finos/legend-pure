@@ -16,10 +16,11 @@ import meta::pure::test::pct::*;
 import meta::pure::functions::lang::tests::model::*;
 
 native function
-    <<PCT.function>>
+    <<PCT.function, PCT.platformOnly>>
     {
         doc.doc='Extract a value from the Enumeration',
-        PCT.grammarDoc='Enum.value'
+        PCT.grammarDoc='Enum.value',
+        PCT.grammarCharacters='.'
     }
     meta::pure::functions::lang::extractEnumValue<T>(enum:Enumeration<T>[1], value:String[1]):T[1];
 

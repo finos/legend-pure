@@ -134,7 +134,7 @@ public class FunctionsGeneration
         }
         functionInfo._package = funcPackage;
         // Signatures
-        functionInfo.signatures.add(new Signature(PackageableElement.getUserPathForPackageableElement(_function), FunctionDescriptor.getFunctionDescriptor(_function, ps), PCTTools.getDoc(_function, ps), PCTTools.getGrammarDoc(_function, ps)));
+        functionInfo.signatures.add(new Signature(PackageableElement.getUserPathForPackageableElement(_function), FunctionDescriptor.getFunctionDescriptor(_function, ps), PCTTools.isPlatformOnly(_function, ps), PCTTools.getDoc(_function, ps), PCTTools.getGrammarDoc(_function, ps), PCTTools.getGrammarCharacters(_function, ps)));
     }
 
 

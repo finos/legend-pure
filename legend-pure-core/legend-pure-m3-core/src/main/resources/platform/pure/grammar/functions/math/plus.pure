@@ -18,7 +18,8 @@ native function
     <<PCT.function>>
     {
         doc.doc='Adds all the provided values',
-        PCT.grammarDoc='4 + 1'
+        PCT.grammarDoc='4 + 1',
+        PCT.grammarCharacters='+'
     }
     meta::pure::functions::math::plus(ints:Integer[*]):Integer[1];
 

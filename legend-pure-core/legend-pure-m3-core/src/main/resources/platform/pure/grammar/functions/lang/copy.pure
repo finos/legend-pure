@@ -16,10 +16,11 @@ import meta::pure::test::pct::*;
 import meta::pure::functions::lang::tests::model::*;
 
 native function
-    <<PCT.function>>
+    <<PCT.function, PCT.platformOnly>>
     {
         doc.doc='Build a copy of an instance, potentially modifying property values.',
-        PCT.grammarDoc='^$object()'
+        PCT.grammarDoc='^$object()',
+        PCT.grammarCharacters='^$'
     }
     meta::pure::functions::lang::copy<T>(object:T[1], id:String[1], keyExpressions:KeyExpression[*]):T[1];
 

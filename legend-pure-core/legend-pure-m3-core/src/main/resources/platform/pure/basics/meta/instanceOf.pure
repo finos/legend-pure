@@ -13,9 +13,10 @@
 // limitations under the License.
 
 import meta::pure::functions::meta::tests::model::*;
+import meta::pure::test::pct::*;
 
 
-native function meta::pure::functions::meta::instanceOf(instance:Any[1], type:Type[1]):Boolean[1];
+native function <<PCT.platformOnly>> meta::pure::functions::meta::instanceOf(instance:Any[1], type:Type[1]):Boolean[1];
 
 
 function <<test.Test>> meta::pure::functions::meta::tests::instanceOf::testInstanceOfPrimitive():Boolean[1]

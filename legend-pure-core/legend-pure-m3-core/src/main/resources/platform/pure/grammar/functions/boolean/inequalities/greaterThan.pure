@@ -18,7 +18,8 @@ function
     <<PCT.function>>
     {
         doc.doc='Returns true if, according to the type order, $left succeeds $right',
-        PCT.grammarDoc='$first > $second'
+        PCT.grammarDoc='$first > $second',
+        PCT.grammarCharacters='>'
     }
     meta::pure::functions::boolean::greaterThan(left:Number[1], right:Number[1]):Boolean[1]
 {

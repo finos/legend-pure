@@ -18,7 +18,8 @@ native function
     <<PCT.function>>
     {
         doc.doc='Subtracts all the provided values',
-        PCT.grammarDoc='1 - 2'
+        PCT.grammarDoc='1 - 2',
+        PCT.grammarCharacters='-'
     }
     meta::pure::functions::math::minus(ints:Integer[*]):Integer[1];
 

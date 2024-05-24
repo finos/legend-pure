@@ -19,7 +19,8 @@ function
     <<PCT.function>>
     {
         doc.doc='Concatenate two strings',
-        PCT.grammarDoc='\'str\'+\'other\''
+        PCT.grammarDoc='\'str\'+\'other\'',
+        PCT.grammarCharacters='+'
     }
     meta::pure::functions::string::plus(strings:String[*]):String[1]
 {

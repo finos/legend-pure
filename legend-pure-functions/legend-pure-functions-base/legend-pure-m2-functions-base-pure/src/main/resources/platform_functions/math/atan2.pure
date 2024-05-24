@@ -12,13 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::math::atan2(number1:Number[1], number2:Number[1]):Float[1];
+import meta::pure::test::pct::*;
 
+native function <<PCT.function>> meta::pure::functions::math::atan2(number1:Number[1], number2:Number[1]):Float[1];
 
-function <<test.Test>> meta::pure::functions::math::tests::trigonometry::testArcTangent2():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testArcTangent2<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-   assertEq(0.0, atan2(0, 1));
-   assertEqWithinTolerance(1.570796326794, atan2(1, 0), 0.000000000001);
-   assertEqWithinTolerance(0.141897054604, atan2(0.5, 3.5), 0.000000000001);
-   assertEqWithinTolerance(1.570796326794, atan2_Number_1__Number_1__Float_1_->eval(1,0), 0.000000000001);
+   assertEq(0.0, $f->eval(|atan2(0, 1)));
+   assertEqWithinTolerance(1.570796326794, $f->eval(|atan2(1, 0)), 0.000000000001);
+   assertEqWithinTolerance(0.141897054604, $f->eval(|atan2(0.5, 3.5)), 0.000000000001);
+}
+
+function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testArcTangent2Eval<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+   assertEqWithinTolerance(1.570796326794, $f->eval(|atan2_Number_1__Number_1__Float_1_->eval(1,0)), 0.000000000001);
 }

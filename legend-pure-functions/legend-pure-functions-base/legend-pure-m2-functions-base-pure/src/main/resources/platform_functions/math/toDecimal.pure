@@ -12,19 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::math::toDecimal(number: Number[1]): Decimal[1];
+import meta::pure::test::pct::*;
 
-function <<test.Test>> meta::pure::functions::math::tests::toDecimal::testDoubleToDecimal():Boolean[1]
+native function <<PCT.function>> meta::pure::functions::math::toDecimal(number: Number[1]): Decimal[1];
+
+function <<PCT.test>> meta::pure::functions::math::tests::toDecimal::testDoubleToDecimal<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(3.8D, toDecimal(3.8));
+    assertEq(3.8D, $f->eval(|toDecimal(3.8)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::toDecimal::testDecimalToDecimal():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::toDecimal::testDecimalToDecimal<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(3.8D, toDecimal(3.8D));
+    assertEq(3.8D, $f->eval(|toDecimal(3.8D)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::toDecimal::testIntToDecimal():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::toDecimal::testIntToDecimal<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(8D, toDecimal(8));
+    assertEq(8D, $f->eval(|toDecimal(8)));
 }

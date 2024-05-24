@@ -19,17 +19,21 @@ public class Signature
     public String simple;
     public String id;
     public String documentation;
-    public String grammar;
+    public String grammarDoc;
+    public String grammarCharacter;
+    public boolean platformOnly;
 
     public Signature()
     {
     }
 
-    public Signature(String id, String simple, String documentation, String grammar)
+    public Signature(String id, String simple, boolean platformOnly, String documentation, String grammarDoc, String grammarCharacter)
     {
         this.simple = simple;
         this.id = id;
         this.documentation = documentation;
-        this.grammar = grammar;
+        this.grammarDoc = grammarDoc;
+        this.grammarCharacter = grammarCharacter;
+        this.platformOnly = platformOnly;
     }
 }

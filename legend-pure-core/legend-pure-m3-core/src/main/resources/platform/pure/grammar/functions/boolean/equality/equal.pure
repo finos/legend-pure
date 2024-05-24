@@ -22,7 +22,8 @@ native function
                 'For model-defined equality, the properties used to define equality should be given the ' +
                 'meta::pure::profiles::equality.Key stereotype. Then two instances are equal if all of the ' +
                 'properties with this stereotype have equal values.',
-        PCT.grammarDoc='$first == $second'
+        PCT.grammarDoc='$first == $second',
+        PCT.grammarCharacters='=='
     }
     meta::pure::functions::boolean::equal(left:Any[*], right:Any[*]):Boolean[1];
 
