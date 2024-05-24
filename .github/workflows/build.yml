@@ -78,7 +78,7 @@ jobs:
           git config --global author.name "${GITHUB_ACTOR}"
 
       - name: Download deps and plugins
-        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -DargLine="-Xmx2g"
+        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -DargLine="-Xmx5g"
 
       - name: Collect Workflow Telemetry
         uses: runforesight/workflow-telemetry-action@v1
@@ -87,13 +87,13 @@ jobs:
 
       - name: Build + Test
         if: (github.repository != 'finos/legend-pure') || (github.ref != 'refs/heads/master')
-        run: mvn -B -e install javadoc:javadoc -DargLine="-Xmx2g"
+        run: mvn -T3 -B -e install javadoc:javadoc -DargLine="-Xmx5g"
         env:
           MAVEN_OPTS: -Xmx4g
 
       - name: Build + Test + Sonar + Maven Deploy
         if: (github.repository == 'finos/legend-pure') && (github.ref == 'refs/heads/master')
-        run: mvn -B -e deploy javadoc:javadoc -Psonar -DargLine="-Xmx2g"
+        run: mvn -T3 -B -e deploy javadoc:javadoc -Psonar -DargLine="-Xmx5g"
         env:
           MAVEN_OPTS: -Xmx4g
 
