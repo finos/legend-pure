@@ -17,7 +17,7 @@ package org.finos.legend.pure.m3.compiler.postprocessing;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.api.set.SetIterable;
 import org.finos.legend.pure.m3.SourceMutation;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.observer.PostProcessorObserver;
@@ -58,10 +58,9 @@ public class PostProcessor
     {
         CoreInstance concreteFunctionDefinition = processorSupport.package_getByUserPath(M3Paths.ConcreteFunctionDefinition);
         CoreInstance nativeFunction = processorSupport.package_getByUserPath(M3Paths.NativeFunction);
-        MutableSet<CoreInstance> set = Sets.mutable.with(concreteFunctionDefinition, nativeFunction);
 
         validatePackages(newInstancesConsolidated, processorSupport);
-        renameFunctions(newInstancesConsolidated, modelRepository, set, context, processorSupport);
+        renameFunctions(newInstancesConsolidated, modelRepository, Sets.immutable.with(concreteFunctionDefinition, nativeFunction), context, processorSupport);
 
         populateSpecializations(newInstancesConsolidated, processorSupport);
 
@@ -149,11 +148,11 @@ public class PostProcessor
         });
     }
 
-    private static void renameFunctions(Iterable<? extends CoreInstance> newInstancesConsolidated, ModelRepository modelRepository, MutableSet<CoreInstance> functionTypesButProperty, Context context, ProcessorSupport processorSupport) throws PureCompilationException
+    private static void renameFunctions(Iterable<? extends CoreInstance> newInstancesConsolidated, ModelRepository modelRepository, SetIterable<CoreInstance> functionDefinitionClassifiers, Context context, ProcessorSupport processorSupport) throws PureCompilationException
     {
         newInstancesConsolidated.forEach(coreInstance ->
         {
-            if (functionTypesButProperty.contains(coreInstance.getClassifier()))
+            if (functionDefinitionClassifiers.contains(coreInstance.getClassifier()))
             {
                 ConcreteFunctionDefinitionNameProcessor.process((PackageableFunction<?>) coreInstance, modelRepository, processorSupport);
                 context.update(coreInstance);

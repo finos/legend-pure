@@ -14,10 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.extension.store.relational.interpreted;
 
-import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.finos.legend.pure.runtime.java.interpreted.extension.BaseInterpretedExtension;
-import org.finos.legend.pure.runtime.java.interpreted.extension.InterpretedExtension;
 import org.finos.legend.pure.runtime.java.extension.store.relational.interpreted.natives.CreateTempTable;
 import org.finos.legend.pure.runtime.java.extension.store.relational.interpreted.natives.DropTempTable;
 import org.finos.legend.pure.runtime.java.extension.store.relational.interpreted.natives.ExecuteInDb;
@@ -30,13 +27,14 @@ import org.finos.legend.pure.runtime.java.extension.store.relational.interpreted
 import org.finos.legend.pure.runtime.java.extension.store.relational.interpreted.natives.LoadValuesToDbTable;
 import org.finos.legend.pure.runtime.java.extension.store.relational.interpreted.natives.LoadValuesToDbTableNew;
 import org.finos.legend.pure.runtime.java.extension.store.relational.interpreted.natives.LogActivities;
+import org.finos.legend.pure.runtime.java.interpreted.extension.BaseInterpretedExtension;
+import org.finos.legend.pure.runtime.java.interpreted.extension.InterpretedExtension;
 
 public class RelationalExtensionInterpreted extends BaseInterpretedExtension
 {
     public RelationalExtensionInterpreted()
     {
-        super(Lists.mutable.with(
-                Tuples.pair("loadCsvToDbTable_String_1__Table_1__DatabaseConnection_1__Integer_$0_1$__Nil_0_", (e, r) -> new LoadCsvToDbTable(e.getStorage(), r, e.getMessage())),
+        super(Tuples.pair("loadCsvToDbTable_String_1__Table_1__DatabaseConnection_1__Integer_$0_1$__Nil_0_", (e, r) -> new LoadCsvToDbTable(e.getStorage(), r, e.getMessage())),
                 Tuples.pair("loadValuesToDbTable_List_MANY__Table_1__DatabaseConnection_1__Nil_0_", (e, r) -> new LoadValuesToDbTable(r, e.getMessage())),
                 Tuples.pair("loadValuesToDbTable_List_1__Table_1__DatabaseConnection_1__Nil_0_", (e, r) -> new LoadValuesToDbTableNew(r, e.getMessage())),
                 Tuples.pair("createTempTable_String_1__Column_MANY__Function_1__DatabaseConnection_1__Nil_0_", (e, r) -> new CreateTempTable(r, e, e.getMessage())),
@@ -49,7 +47,7 @@ public class RelationalExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("fetchDbPrimaryKeysMetaData_DatabaseConnection_1__String_$0_1$__String_1__ResultSet_1_", (e, r) -> new FetchDbPrimaryKeysMetaData(r, e.getMessage(), e.getMaxSQLRows())),
                 Tuples.pair("fetchDbImportedKeysMetaData_DatabaseConnection_1__String_$0_1$__String_1__ResultSet_1_", (e, r) -> new FetchDbImportedKeysMetaData(r, e.getMessage(), e.getMaxSQLRows())),
                 Tuples.pair("logActivities_Activity_MANY__Nil_0_", (e, r) -> new LogActivities(e.getExecutionActivityListener()))
-        ));
+        );
     }
 
     public static InterpretedExtension extension()

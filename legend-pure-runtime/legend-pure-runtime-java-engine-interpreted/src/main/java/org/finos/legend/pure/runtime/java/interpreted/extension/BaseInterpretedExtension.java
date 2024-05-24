@@ -14,42 +14,42 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.extension;
 
-import org.eclipse.collections.api.block.function.Function2;
-import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.tuple.Pair;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
-import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
-import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
-import java.util.Stack;
+import java.util.function.BiFunction;
 
-public class BaseInterpretedExtension implements InterpretedExtension
+public abstract class BaseInterpretedExtension implements InterpretedExtension
 {
-    private final MutableList<Pair<String, Function2<FunctionExecutionInterpreted, ModelRepository, NativeFunction>>> extraNatives;
+    private final Iterable<? extends Pair<String, ? extends BiFunction<? super FunctionExecutionInterpreted, ? super ModelRepository, ? extends NativeFunction>>> extraNatives;
 
-    public BaseInterpretedExtension(MutableList<Pair<String, Function2<FunctionExecutionInterpreted, ModelRepository, NativeFunction>>> extraNatives)
+    protected BaseInterpretedExtension(Iterable<? extends Pair<String, ? extends BiFunction<? super FunctionExecutionInterpreted, ? super ModelRepository, ? extends NativeFunction>>> extraNatives)
     {
         this.extraNatives = extraNatives;
     }
 
-    @Override
-    public MutableList<Pair<String, Function2<FunctionExecutionInterpreted, ModelRepository, NativeFunction>>> getExtraNatives()
+    protected BaseInterpretedExtension(Pair<String, ? extends BiFunction<? super FunctionExecutionInterpreted, ? super ModelRepository, ? extends NativeFunction>>... extraNatives)
     {
-        return this.extraNatives;
+        this(Lists.immutable.with(extraNatives));
+    }
+
+    protected BaseInterpretedExtension(String extraNativeFunctionId, BiFunction<? super FunctionExecutionInterpreted, ? super ModelRepository, ? extends NativeFunction> extraNativeFunctionGenerator)
+    {
+        this(Lists.immutable.with(Tuples.pair(extraNativeFunctionId, extraNativeFunctionGenerator)));
+    }
+
+    protected BaseInterpretedExtension()
+    {
+        this(Lists.immutable.empty());
     }
 
     @Override
-    public CoreInstance getExtraFunctionExecution(Function<CoreInstance> function, ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, ProcessorSupport processorSupport, FunctionExecutionInterpreted interpreted)
+    public Iterable<? extends Pair<String, ? extends BiFunction<? super FunctionExecutionInterpreted, ? super ModelRepository, ? extends NativeFunction>>> getExtraNatives()
     {
-        return null;
+        return this.extraNatives;
     }
 }

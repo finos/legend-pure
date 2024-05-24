@@ -19,7 +19,6 @@ import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
@@ -47,7 +46,7 @@ public class FunctionExpression
         CoreInstance returnMultiplicity;
 
         CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, processorSupport);
-        if (Instance.instanceOf(function, M3Paths.Property, processorSupport))
+        if (Property.isProperty(function, processorSupport))
         {
             // We need to handle properties different as they may have typeParameters & multiplicityParameters from the owning Class
             ListIterable<? extends CoreInstance> parametersValues = Instance.getValueForMetaPropertyToManyResolved(functionExpression, M3Properties.parametersValues, processorSupport);

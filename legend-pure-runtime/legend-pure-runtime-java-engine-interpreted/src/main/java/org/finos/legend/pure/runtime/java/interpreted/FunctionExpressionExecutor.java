@@ -30,6 +30,7 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionType;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
@@ -85,9 +86,9 @@ class FunctionExpressionExecutor implements Executor
     {
         CoreInstance functionType = processorSupport.function_getFunctionType(function);
 
-        if (Instance.instanceOf(function, M3Paths.QualifiedProperty, processorSupport) || "copy_T_1__String_1__KeyExpression_MANY__T_1_".equals(function.getName()) || "new_Class_1__String_1__KeyExpression_MANY__T_1_".equals(function.getName()) || "new_Class_1__String_1__T_1_".equals(function.getName()))
+        if (Property.isQualifiedProperty(function, processorSupport) || "copy_T_1__String_1__KeyExpression_MANY__T_1_".equals(function.getName()) || "new_Class_1__String_1__KeyExpression_MANY__T_1_".equals(function.getName()) || "new_Class_1__String_1__T_1_".equals(function.getName()))
         {
-            CoreInstance genericType = Instance.instanceOf(function, M3Paths.QualifiedProperty, processorSupport) || "copy_T_1__String_1__KeyExpression_MANY__T_1_".equals(function.getName()) ?
+            CoreInstance genericType = Property.isQualifiedProperty(function, processorSupport) || "copy_T_1__String_1__KeyExpression_MANY__T_1_".equals(function.getName()) ?
                                        Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.genericType, processorSupport) :
                                        Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.genericType, M3Properties.typeArguments, processorSupport);
             CoreInstance classifier = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);

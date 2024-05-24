@@ -23,6 +23,7 @@ import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.tools.JavaTools;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -49,7 +50,7 @@ public class FunctionExpressionProcessor
             String functionCall = processorContext.getNativeFunctionProcessor().processNativeFunction(topLevelElement, functionExpression, processorContext);
             return new ExecWrapper(processorContext, functionCall, functionExpression).possiblyGeneratePureStackTrace();
         }
-        if (support.instance_instanceOf(function, M3Paths.FunctionDefinition) && !support.instance_instanceOf(function, M3Paths.QualifiedProperty))
+        if (support.instance_instanceOf(function, M3Paths.FunctionDefinition) && !Property.isQualifiedProperty(function, support))
         {
             CoreInstance functionType = support.function_getFunctionType(function);
             // May want to be a little bit more specific (when a parameter has a type which is a functionType that has type parameters leveraged in the returnType)
@@ -84,7 +85,7 @@ public class FunctionExpressionProcessor
             }
             return (shouldCast ? "((" + castType + ")" : "") + (addCastToOne ? "CompiledSupport.makeOne(" : "") + possiblyWrappedFunctionCall + (addCastToOne ? ")" : "") + (shouldCast ? ")" : "");
         }
-        if (support.instance_instanceOf(function, M3Paths.Property))
+        if (Property.isProperty(function, support))
         {
             CoreInstance firstParam = Instance.getValueForMetaPropertyToManyResolved(functionExpression, M3Properties.parametersValues, processorContext.getSupport()).getFirst();
             String processedOwnerInstance = ValueSpecificationProcessor.processValueSpecification(topLevelElement, firstParam, processorContext);
@@ -105,7 +106,7 @@ public class FunctionExpressionProcessor
             varName = varName.isEmpty() ? varName : varName + ".";
             return varName + "_" + Instance.getValueForMetaPropertyToOneResolved(function, M3Properties.name, support).getName() + "()" + (addCastToOne ? ".getFirst()" : "");
         }
-        if (support.instance_instanceOf(function, M3Paths.QualifiedProperty))
+        if (Property.isQualifiedProperty(function, support))
         {
             CoreInstance firstParam = Instance.getValueForMetaPropertyToManyResolved(functionExpression, M3Properties.parametersValues, processorContext.getSupport()).getFirst();
             String processedOwnerInstance = ValueSpecificationProcessor.processValueSpecification(topLevelElement, firstParam, processorContext);

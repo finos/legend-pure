@@ -14,19 +14,19 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.natives.grammar.collection;
 
-import org.eclipse.collections.api.list.FixedSizeList;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.factory.Lists;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionCoreInstanceWrapper;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionCoreInstanceWrapper;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
@@ -53,23 +53,19 @@ public class Map extends NativeFunction
         boolean isExecutable = ValueSpecification.isExecutable(params.get(0), processorSupport);
         if (collection.isEmpty())
         {
-            return ValueSpecificationBootstrap.wrapValueSpecification(Lists.immutable.<CoreInstance>with(), isExecutable, processorSupport);
+            return ValueSpecificationBootstrap.wrapValueSpecification(Lists.immutable.empty(), isExecutable, processorSupport);
         }
-        else
+
+        CoreInstance collectFunction = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
+        Function<?> function = FunctionCoreInstanceWrapper.toFunction(collectFunction);
+        VariableContext evalVarContext = getParentOrEmptyVariableContextForLambda(variableContext, collectFunction);
+        MutableList<CoreInstance> results = Lists.mutable.with();
+        collection.forEach(instance ->
         {
-            CoreInstance collectFunction = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
-            VariableContext evalVarContext = this.getParentOrEmptyVariableContextForLambda(variableContext, collectFunction);
-            FixedSizeList<CoreInstance> parameters = Lists.fixedSize.with((CoreInstance)null);
-            MutableList<CoreInstance> results = Lists.mutable.with();
-            for (CoreInstance instance : collection)
-            {
-                parameters.set(0, ValueSpecificationBootstrap.wrapValueSpecification(instance, isExecutable, processorSupport));
-                CoreInstance subResult = this.functionExecution.executeFunction(false, LambdaFunctionCoreInstanceWrapper.toLambdaFunction(collectFunction), parameters,
-                        resolvedTypeParameters, resolvedMultiplicityParameters, evalVarContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
-                results.addAllIterable(Instance.getValueForMetaPropertyToManyResolved(subResult, M3Properties.values, processorSupport));
-            }
-            return ValueSpecificationBootstrap.wrapValueSpecification_ForFunctionReturnValue(Instance.getValueForMetaPropertyToOneResolved(functionExpressionToUseInStack, M3Properties.genericType, processorSupport),
-                    results, isExecutable, processorSupport);
-        }
+            ListIterable<CoreInstance> parameters = Lists.immutable.with(ValueSpecificationBootstrap.wrapValueSpecification(instance, isExecutable, processorSupport));
+            CoreInstance subResult = this.functionExecution.executeFunction(false, function, parameters, resolvedTypeParameters, resolvedMultiplicityParameters, evalVarContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+            results.addAllIterable(Instance.getValueForMetaPropertyToManyResolved(subResult, M3Properties.values, processorSupport));
+        });
+        return ValueSpecificationBootstrap.wrapValueSpecification_ForFunctionReturnValue(Instance.getValueForMetaPropertyToOneResolved(functionExpressionToUseInStack, M3Properties.genericType, processorSupport), results, isExecutable, processorSupport);
     }
 }

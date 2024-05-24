@@ -23,9 +23,9 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.map.strategy.mutable.UnifiedMapWithHashingStrategy;
 import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m3.tools.SpacePrinter;
 import org.finos.legend.pure.m3.tools.TimePrinter;
 import org.finos.legend.pure.m3.tools.TimeTracker;
@@ -70,7 +70,7 @@ public class ActiveProfiler implements Profiler
         MethodStat stat = this.treeNodeCache.get(instance);
         if (stat == null)
         {
-            stat = new MethodStat(Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.func, M3Properties.name, this.processorSupport).getName() + (Instance.instanceOf(Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.func, processorSupport), M3Paths.Property, this.processorSupport) ? "(P)" : ""), this.showTime);
+            stat = new MethodStat(Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.func, M3Properties.name, this.processorSupport).getName() + (Property.isProperty(Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.func, processorSupport), this.processorSupport) ? "(P)" : ""), this.showTime);
             this.treeNodeCache.put(instance, stat);
             MethodStat parentStat = this.treeNodeCache.get(parent);
             parentStat.addChild(stat);

@@ -16,12 +16,28 @@ package org.finos.legend.pure.runtime.java.extension.external.relation.interpret
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
-import org.finos.legend.pure.m3.navigation.*;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.*;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Columns;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Concatenate;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Distinct;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Drop;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Extend;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Filter;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.GroupBy;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Join;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Limit;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Map;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Project;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Rename;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Select;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Size;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Slice;
+import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Sort;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.shared.TDSWithCursorCoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
@@ -37,8 +53,7 @@ public class RelationExtensionInterpreted extends BaseInterpretedExtension
 {
     public RelationExtensionInterpreted()
     {
-        super(Lists.mutable.with(
-                Tuples.pair("concatenate_Relation_1__Relation_1__Relation_1_", Concatenate::new),
+        super(Tuples.pair("concatenate_Relation_1__Relation_1__Relation_1_", Concatenate::new),
                 Tuples.pair("drop_Relation_1__Integer_1__Relation_1_", Drop::new),
                 Tuples.pair("extend_Relation_1__FuncColSpec_1__Relation_1_", Extend::new),
                 Tuples.pair("extend_Relation_1__FuncColSpecArray_1__Relation_1_", Extend::new),
@@ -59,7 +74,7 @@ public class RelationExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("columns_Relation_1__Column_MANY_", Columns::new),
                 Tuples.pair("select_Relation_1__ColSpec_1__Relation_1_", Select::new),
                 Tuples.pair("select_Relation_1__ColSpecArray_1__Relation_1_", Select::new)
-        ));
+        );
     }
 
     public static InterpretedExtension extension()
@@ -68,7 +83,7 @@ public class RelationExtensionInterpreted extends BaseInterpretedExtension
     }
 
     @Override
-    public CoreInstance getExtraFunctionExecution(Function<CoreInstance> function, ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, ProcessorSupport processorSupport, FunctionExecutionInterpreted interpreted)
+    public CoreInstance getExtraFunctionExecution(Function<?> function, ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, ProcessorSupport processorSupport, FunctionExecutionInterpreted interpreted)
     {
         if (Instance.instanceOf(function, M3Paths.Column, processorSupport))
         {

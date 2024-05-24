@@ -35,6 +35,7 @@ public class TestPureRuntimeClass_AsPointer extends AbstractPureTestWithCoreComp
     {
         runtime.delete("sourceId.pure");
         runtime.delete("userId.pure");
+        runtime.compile();
     }
 
     @Test

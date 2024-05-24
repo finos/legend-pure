@@ -34,10 +34,11 @@ public class TestPureRuntimeClass_InCast extends AbstractPureTestWithCoreCompile
     {
         runtime.delete("sourceId.pure");
         runtime.delete("userId.pure");
+        runtime.compile();
     }
 
     @Test
-    public void testPureRuntimeClassUsedInCast() throws Exception
+    public void testPureRuntimeClassUsedInCast()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{name:String[1];} Class B extends A{}")
                         .createInMemorySource("userId.pure", "function test():String[1]{let b = ^B(name='OMG!')->cast(@A);'ok';}")
@@ -52,7 +53,7 @@ public class TestPureRuntimeClass_InCast extends AbstractPureTestWithCoreCompile
     }
 
     @Test
-    public void testPureRuntimeClassUsedInCastError() throws Exception
+    public void testPureRuntimeClassUsedInCastError()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{name:String[1];} Class B extends A{}")
                         .createInMemorySource("userId.pure", "function test():String[1]{let b = ^B(name='OMG!')->cast(@A);'ok';}")

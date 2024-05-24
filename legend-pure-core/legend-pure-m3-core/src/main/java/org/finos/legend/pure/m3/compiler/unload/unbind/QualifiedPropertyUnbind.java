@@ -1,4 +1,4 @@
-// Copyright 2020 Goldman Sachs
+// Copyright 2024 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 package org.finos.legend.pure.m3.compiler.unload.unbind;
 
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
@@ -23,17 +23,17 @@ import org.finos.legend.pure.m3.tools.matcher.MatcherState;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class FunctionDefinitionUnbind implements MatchRunner<FunctionDefinition<?>>
+public class QualifiedPropertyUnbind implements MatchRunner<QualifiedProperty<?>>
 {
     @Override
     public String getClassName()
     {
-        return M3Paths.FunctionDefinition;
+        return M3Paths.QualifiedProperty;
     }
 
     @Override
-    public void run(FunctionDefinition<?> functionDefinition, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
+    public void run(QualifiedProperty<?> instance, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
-        functionDefinition._expressionSequence().forEach(vs -> matcher.fullMatch(vs, state));
+        instance._idRemove();
     }
 }

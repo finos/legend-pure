@@ -14,9 +14,11 @@
 
 package org.finos.legend.pure.m3.navigation.property;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -28,11 +30,46 @@ import org.finos.legend.pure.m3.navigation.function.Function;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.generictype.GenericTypeWithXArguments;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
-import org.finos.legend.pure.m3.tools.ListHelper;
+import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstanceWrapper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
 
 public class Property
 {
+    public static boolean isProperty(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        if (instance == null)
+        {
+            return false;
+        }
+        if (instance instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property)
+        {
+            return true;
+        }
+        if ((instance instanceof PrimitiveCoreInstance) || ((instance instanceof Any) && !(instance instanceof AbstractCoreInstanceWrapper)))
+        {
+            return false;
+        }
+        return processorSupport.instance_instanceOf(instance, M3Paths.Property);
+    }
+
+    public static boolean isQualifiedProperty(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        if (instance == null)
+        {
+            return false;
+        }
+        if (instance instanceof QualifiedProperty)
+        {
+            return true;
+        }
+        if ((instance instanceof PrimitiveCoreInstance) || ((instance instanceof Any) && !(instance instanceof AbstractCoreInstanceWrapper)))
+        {
+            return false;
+        }
+        return processorSupport.instance_instanceOf(instance, M3Paths.QualifiedProperty);
+    }
+
     /**
      * Get the property id of the property.
      * For Simple properties it is just the name.
@@ -43,26 +80,33 @@ public class Property
      * @param processorSupport processor support
      * @return property name
      */
-    public static String getPropertyId(CoreInstance property, final ProcessorSupport processorSupport)
+    public static String getPropertyId(CoreInstance property, ProcessorSupport processorSupport)
     {
-        String name;
-        if (Instance.instanceOf(property, M3Paths.QualifiedProperty, processorSupport))
+        return isQualifiedProperty(property, processorSupport) ? getQualifiedPropertyId(property, processorSupport) : getPropertyName(property);
+    }
+
+    public static String getQualifiedPropertyId(CoreInstance qualifiedProperty, ProcessorSupport processorSupport)
+    {
+        String id = PrimitiveUtilities.getStringValue(qualifiedProperty.getValueForMetaPropertyToOne(M3Properties.id), null);
+        return (id != null) ? id : computeQualifiedPropertyId(qualifiedProperty, processorSupport);
+    }
+
+    public static String computeQualifiedPropertyId(CoreInstance qualifiedProperty, ProcessorSupport processorSupport)
+    {
+        String name = getPropertyName(qualifiedProperty);
+        ListIterable<? extends CoreInstance> parameters = processorSupport.function_getFunctionType(qualifiedProperty).getValueForMetaPropertyToMany(M3Properties.parameters);
+        if (parameters.size() <= 1)
         {
-            CoreInstance functionType = processorSupport.function_getFunctionType(property);
-            name = getPropertyName(property) + "(" + ListHelper.tail(functionType.getValueForMetaPropertyToMany(M3Properties.parameters)).collect(new org.eclipse.collections.api.block.function.Function<CoreInstance, String>()
-            {
-                @Override
-                public String valueOf(CoreInstance coreInstance)
-                {
-                    return GenericType.print(Instance.getValueForMetaPropertyToOneResolved(coreInstance, M3Properties.genericType, processorSupport), processorSupport);
-                }
-            }).makeString(",") + ")";
+            return name + "()";
         }
-        else
+
+        StringBuilder builder = new StringBuilder(name.length() + parameters.size() * 8).append(name).append('(');
+        parameters.forEachWithIndex(1, parameters.size() - 1, (param, i) ->
         {
-            name = getPropertyName(property);
-        }
-        return name;
+            GenericType.print((i > 1) ? builder.append(',') : builder, Instance.getValueForMetaPropertyToOneResolved(param, M3Properties.genericType, processorSupport), processorSupport);
+            Multiplicity.print(builder, Instance.getValueForMetaPropertyToOneResolved(param, M3Properties.multiplicity, processorSupport), true);
+        });
+        return builder.append(')').toString();
     }
 
     public static String getPropertyName(CoreInstance property)
@@ -92,14 +136,7 @@ public class Property
 
     private static String getPropertiesProperty(CoreInstance sourceType, CoreInstance property)
     {
-        for (String propertiesProperty : _Class.SIMPLE_PROPERTIES_PROPERTIES)
-        {
-            if (sourceType.getValueForMetaPropertyToMany(propertiesProperty).contains(property))
-            {
-                return propertiesProperty;
-            }
-        }
-        return null;
+        return _Class.SIMPLE_PROPERTIES_PROPERTIES.detect(propertiesProperty -> sourceType.getValueForMetaPropertyToMany(propertiesProperty).contains(property));
     }
 
     public static CoreInstance resolveInstancePropertyReturnMultiplicity(CoreInstance instance, CoreInstance property, ProcessorSupport processorSupport)
@@ -129,26 +166,18 @@ public class Property
 
     public static CoreInstance getDefaultValueExpression(CoreInstance defaultValue)
     {
-        if (defaultValue != null)
-        {
-            return defaultValue.getValueForMetaPropertyToOne(M3Properties.functionDefinition).getValueForMetaPropertyToOne(M3Properties.expressionSequence);
-        }
-        return null;
+        return (defaultValue == null) ? null : defaultValue.getValueForMetaPropertyToOne(M3Properties.functionDefinition).getValueForMetaPropertyToOne(M3Properties.expressionSequence);
     }
 
     public static ListIterable<? extends CoreInstance> getDefaultValue(CoreInstance defaultValue)
     {
-        if (defaultValue != null)
+        if (defaultValue == null)
         {
-            CoreInstance expressionSequence = defaultValue.getValueForMetaPropertyToOne(M3Properties.functionDefinition).getValueForMetaPropertyToOne(M3Properties.expressionSequence);
-            ListIterable<? extends CoreInstance> values = expressionSequence.getValueForMetaPropertyToMany(M3Properties.values);
-            if (values.isEmpty())
-            {
-                values = Lists.immutable.with(expressionSequence);
-            }
-
-            return values;
+            return Lists.immutable.empty();
         }
-        return Lists.immutable.empty();
+
+        CoreInstance expressionSequence = defaultValue.getValueForMetaPropertyToOne(M3Properties.functionDefinition).getValueForMetaPropertyToOne(M3Properties.expressionSequence);
+        ListIterable<? extends CoreInstance> values = expressionSequence.getValueForMetaPropertyToMany(M3Properties.values);
+        return values.isEmpty() ? Lists.immutable.with(expressionSequence) : values;
     }
 }
