@@ -21,14 +21,14 @@ import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.set.mutable.UnifiedSet;
 import org.finos.legend.pure.m2.dsl.store.M2StorePaths;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.store.Store;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class StoreValidator implements MatchRunner<Store>

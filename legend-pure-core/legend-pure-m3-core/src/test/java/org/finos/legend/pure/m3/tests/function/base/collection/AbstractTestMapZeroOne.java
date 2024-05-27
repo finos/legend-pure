@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m3.tests.function.base.collection;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.eclipse.collections.impl.list.mutable.FastList;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.Test;
 

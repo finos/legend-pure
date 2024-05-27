@@ -14,10 +14,10 @@
 
 package org.finos.legend.pure.m4.coreinstance.simple;
 
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.coreinstance.factory.MultipassCoreInstanceFactory;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.coreinstance.factory.MultipassCoreInstanceFactory;
 
 public class SimpleCoreInstanceFactory implements MultipassCoreInstanceFactory
 {

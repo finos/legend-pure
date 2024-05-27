@@ -15,8 +15,8 @@
 package org.finos.legend.pure.m3.tools.matcher;
 
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public interface MatchRunner<T extends CoreInstance>

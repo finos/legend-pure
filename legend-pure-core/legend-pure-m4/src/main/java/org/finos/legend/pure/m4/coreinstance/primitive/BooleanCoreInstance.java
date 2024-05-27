@@ -15,8 +15,8 @@
 package org.finos.legend.pure.m4.coreinstance.primitive;
 
 import org.eclipse.collections.api.block.function.Function;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public final class BooleanCoreInstance extends PrimitiveCoreInstance<Boolean>
 {

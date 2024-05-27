@@ -14,12 +14,12 @@
 
 package org.finos.legend.pure.m3.tools.locks;
 
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.map.ConcurrentMutableMap;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
+
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * A concurrent manager for read-write locking based on a key.

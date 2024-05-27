@@ -16,12 +16,12 @@ package org.finos.legend.pure.m3.pct.reports.config;
 
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.pct.reports.config.exclusion.ExclusionOneTest;
 import org.finos.legend.pure.m3.pct.reports.config.exclusion.ExclusionPackageTests;
 import org.finos.legend.pure.m3.pct.reports.config.exclusion.ExclusionSpecification;
 import org.finos.legend.pure.m3.pct.reports.model.Adapter;
 import org.finos.legend.pure.m3.pct.shared.model.ReportScope;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 
 public abstract class PCTReportConfiguration
 {

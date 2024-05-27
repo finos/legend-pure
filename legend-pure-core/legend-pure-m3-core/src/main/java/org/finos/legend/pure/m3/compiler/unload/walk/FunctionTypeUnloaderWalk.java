@@ -14,10 +14,10 @@
 
 package org.finos.legend.pure.m3.compiler.unload.walk;
 
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.ReferenceUsage;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.ReferenceUsage;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;

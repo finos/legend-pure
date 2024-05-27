@@ -15,12 +15,7 @@
 package org.finos.legend.pure.m3.compiler.validation.validator;
 
 import org.eclipse.collections.api.list.ListIterable;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.compiler.visibility.AccessLevel;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.ElementWithStereotypes;
@@ -35,15 +30,20 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionTy
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecifications;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class AccessLevelValidator implements MatchRunner
 {

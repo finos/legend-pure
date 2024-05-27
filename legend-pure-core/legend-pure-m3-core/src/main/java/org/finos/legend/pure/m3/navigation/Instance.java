@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m3.navigation;
 
-import java.util.Collections;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
@@ -23,6 +22,8 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+
+import java.util.Collections;
 
 public class Instance
 {

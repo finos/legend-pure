@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.path;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.Assert;
 import org.junit.BeforeClass;

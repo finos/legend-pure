@@ -15,8 +15,8 @@
 package org.finos.legend.pure.m3.pct.shared.provider;
 
 import org.eclipse.collections.api.list.MutableList;
-import org.finos.legend.pure.m3.pct.reports.model.AdapterReport;
 import org.finos.legend.pure.m3.pct.functions.model.Functions;
+import org.finos.legend.pure.m3.pct.reports.model.AdapterReport;
 
 public interface PCTReportProvider
 {

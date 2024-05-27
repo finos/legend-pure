@@ -16,7 +16,6 @@ package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.unloader;
 
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.compiler.unload.unbind.Shared;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.InstanceSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.SetImplementation;
@@ -26,6 +25,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.aggregationAware.
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.aggregationAware.GroupByFunctionSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;

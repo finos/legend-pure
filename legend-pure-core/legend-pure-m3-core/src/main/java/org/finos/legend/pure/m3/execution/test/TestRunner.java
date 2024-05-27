@@ -14,29 +14,29 @@
 
 package org.finos.legend.pure.m3.execution.test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.util.Collections;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.set.mutable.UnifiedSet;
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
+import org.finos.legend.pure.m3.execution.Console;
+import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.execution.Console;
-import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureException;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.Collections;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.finos.legend.pure.m3.pct.shared.PCTTools.isPCTTest;
 

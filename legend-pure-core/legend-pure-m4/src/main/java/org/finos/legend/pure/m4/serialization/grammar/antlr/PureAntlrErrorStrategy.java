@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m4.serialization.grammar.antlr;
 
-import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.antlr.v4.runtime.DefaultErrorStrategy;
 import org.antlr.v4.runtime.InputMismatchException;
 import org.antlr.v4.runtime.NoViableAltException;
@@ -22,6 +21,7 @@ import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.IntervalSet;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 
 public class PureAntlrErrorStrategy extends DefaultErrorStrategy

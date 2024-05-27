@@ -26,7 +26,6 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.GenericTypeOperation;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.GenericTypeOperationInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;

@@ -14,10 +14,10 @@
 
 package org.finos.legend.pure.m4;
 
-import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
-import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
+import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
+import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
 import org.junit.Assert;
 import org.junit.Test;
 

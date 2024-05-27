@@ -14,12 +14,12 @@
 
 package org.finos.legend.pure.m3.compiler.unload.walk;
 
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotatedElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Tag;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;

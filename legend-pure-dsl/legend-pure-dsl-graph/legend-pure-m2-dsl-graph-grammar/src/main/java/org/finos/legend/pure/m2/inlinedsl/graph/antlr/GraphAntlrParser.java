@@ -14,21 +14,21 @@
 
 package org.finos.legend.pure.m2.inlinedsl.graph.antlr;
 
+import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.atn.PredictionMode;
 import org.finos.legend.pure.m2.inlinedsl.graph.serialization.grammar.GraphLexer;
 import org.finos.legend.pure.m2.inlinedsl.graph.serialization.grammar.GraphParser;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrDescriptiveErrorListener;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureAntlrErrorStrategy;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
-import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.RecognitionException;
-import org.antlr.v4.runtime.atn.PredictionMode;
 
 public class GraphAntlrParser
 {

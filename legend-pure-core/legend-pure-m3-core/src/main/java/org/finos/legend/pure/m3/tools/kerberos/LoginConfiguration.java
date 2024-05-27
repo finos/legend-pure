@@ -14,11 +14,10 @@
 
 package org.finos.legend.pure.m3.tools.kerberos;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
+import java.util.HashMap;
+import java.util.Map;
 
 public class LoginConfiguration extends Configuration
 {

@@ -14,11 +14,11 @@
 
 package org.finos.legend.pure.m3.tests.multiplicity;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.generictype.match.NullMatchBehavior;
 import org.finos.legend.pure.m3.navigation.generictype.match.ParameterMatchBehavior;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.multiplicity.MultiplicityMatch;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.Assert;
 import org.junit.BeforeClass;

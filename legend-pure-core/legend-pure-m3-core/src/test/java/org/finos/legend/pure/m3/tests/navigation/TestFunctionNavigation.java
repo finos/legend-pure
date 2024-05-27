@@ -14,9 +14,9 @@
 
 package org.finos.legend.pure.m3.tests.navigation;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.function.Function;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

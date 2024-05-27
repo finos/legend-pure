@@ -16,6 +16,8 @@ package org.finos.legend.pure.m2.inlinedsl.path.processor;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
+import org.finos.legend.pure.m2.inlinedsl.path.M2PathPaths;
+import org.finos.legend.pure.m2.inlinedsl.path.PathMilestoningDatesVarNamesExtractor;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.GenericTypeTraceability;
 import org.finos.legend.pure.m3.compiler.postprocessing.PostProcessor;
@@ -37,8 +39,6 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionTy
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m2.inlinedsl.path.M2PathPaths;
-import org.finos.legend.pure.m2.inlinedsl.path.PathMilestoningDatesVarNamesExtractor;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;

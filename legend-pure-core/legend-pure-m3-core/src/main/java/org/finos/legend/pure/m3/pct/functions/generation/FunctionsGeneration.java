@@ -29,12 +29,12 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
+import org.finos.legend.pure.m3.pct.functions.model.FunctionDefinition;
+import org.finos.legend.pure.m3.pct.functions.model.Functions;
+import org.finos.legend.pure.m3.pct.functions.model.Signature;
 import org.finos.legend.pure.m3.pct.shared.PCTTools;
 import org.finos.legend.pure.m3.pct.shared.generation.Shared;
 import org.finos.legend.pure.m3.pct.shared.model.ReportScope;
-import org.finos.legend.pure.m3.pct.functions.model.Signature;
-import org.finos.legend.pure.m3.pct.functions.model.FunctionDefinition;
-import org.finos.legend.pure.m3.pct.functions.model.Functions;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;

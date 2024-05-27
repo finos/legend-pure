@@ -14,12 +14,12 @@
 
 package org.finos.legend.pure.m3.compiler.postprocessing.processor.projection;
 
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.validation.Validator;
 import org.finos.legend.pure.m3.compiler.validation.ValidatorState;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.RootRouteNode;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassProjection;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;

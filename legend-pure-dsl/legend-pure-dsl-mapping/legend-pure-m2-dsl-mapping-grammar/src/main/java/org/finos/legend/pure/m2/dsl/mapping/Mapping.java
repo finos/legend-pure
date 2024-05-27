@@ -21,19 +21,19 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.factory.Sets;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.coreinstance.meta.external.store.model.PureInstanceSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.EmbeddedSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.EnumerationMapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.MappingInclude;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.PropertyMapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.SetImplementation;
-import org.finos.legend.pure.m3.coreinstance.meta.external.store.model.PureInstanceSetImplementation;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class Mapping
 {

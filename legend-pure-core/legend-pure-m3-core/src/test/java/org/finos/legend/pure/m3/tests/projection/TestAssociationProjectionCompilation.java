@@ -16,9 +16,9 @@ package org.finos.legend.pure.m3.tests.projection;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.impl.test.Verify;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;

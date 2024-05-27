@@ -15,6 +15,7 @@
 package org.finos.legend.pure.m4.coreinstance.primitive.strictTime;
 
 import org.eclipse.collections.impl.block.factory.Comparators;
+
 import java.io.IOException;
 import java.io.Serializable;
 

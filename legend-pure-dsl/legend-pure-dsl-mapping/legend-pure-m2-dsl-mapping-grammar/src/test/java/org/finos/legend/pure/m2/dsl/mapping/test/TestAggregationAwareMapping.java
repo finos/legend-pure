@@ -14,10 +14,10 @@
 
 package org.finos.legend.pure.m2.dsl.mapping.test;
 
+import org.finos.legend.pure.m3.coreinstance.meta.external.store.model.PureInstanceSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.InstanceSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.SetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.aggregationAware.AggregationAwareSetImplementation;
-import org.finos.legend.pure.m3.coreinstance.meta.external.store.model.PureInstanceSetImplementation;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;

@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m4.transaction;
 
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.eclipse.collections.api.RichIterable;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 import java.io.PrintStream;
 

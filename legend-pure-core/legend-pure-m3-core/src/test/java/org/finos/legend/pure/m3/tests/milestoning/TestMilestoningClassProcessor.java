@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m3.tests.milestoning;
 
-import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningFunctions;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;

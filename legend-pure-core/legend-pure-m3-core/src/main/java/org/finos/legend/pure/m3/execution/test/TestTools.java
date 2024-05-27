@@ -15,8 +15,8 @@
 package org.finos.legend.pure.m3.execution.test;
 
 import org.eclipse.collections.api.list.ListIterable;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 

@@ -14,10 +14,12 @@
 
 package org.finos.legend.pure.m3.tests.function.base.tracing;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
-import org.finos.legend.pure.m3.exception.PureAssertFailException;
 import io.opentracing.util.GlobalTracer;
-import org.junit.*;
+import org.finos.legend.pure.m3.exception.PureAssertFailException;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.lang.reflect.Field;
 import java.util.Map;
