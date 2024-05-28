@@ -41,6 +41,7 @@ public class TestPureRuntimeTreePath extends AbstractPureTestWithCoreCompiledPla
         runtime.delete("profile.pure");
         runtime.delete("treeSourceId.pure");
         runtime.delete("enumSourceId.pure");
+        runtime.compile();
     }
 
     @Test
@@ -346,7 +347,7 @@ public class TestPureRuntimeTreePath extends AbstractPureTestWithCoreCompiledPla
                         "{\n" +
                         "   stereotypes : [ Root, NewProp, ExistingProp ];\n" +
                         "   tags : [ Id, Name, Description ];\n" +
-                        "}" +
+                        "}\n" +
                         "Class EntityWithLocations\n" +
                         "{\n" +
                         "    name : String[1];\n" +
@@ -383,11 +384,10 @@ public class TestPureRuntimeTreePath extends AbstractPureTestWithCoreCompiledPla
                 new RuntimeTestScriptBuilder()
                         .deleteSource(enumSourceId)
                         .createInMemorySource(invalidEnumSourceId, enumSourceChange)
-                        .compileWithExpectedCompileFailure("GeographicEntityType has not been defined!", sourceId, 16, 12)
+                        .compileWithExpectedCompileFailure("GeographicEntityType has not been defined!", sourceId, 17, 12)
                         .deleteSource(invalidEnumSourceId)
                         .createInMemorySource(enumSourceId, enumSource)
                         .compile(),
                 runtime, functionExecution, Lists.fixedSize.of());
     }
 }
-

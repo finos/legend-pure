@@ -41,7 +41,7 @@ public class PathExtensionInterpreted extends BaseInterpretedExtension
 {
     public PathExtensionInterpreted()
     {
-        super(Lists.mutable.empty());
+        super();
     }
 
     public static InterpretedExtension extension()
@@ -50,7 +50,7 @@ public class PathExtensionInterpreted extends BaseInterpretedExtension
     }
 
     @Override
-    public CoreInstance getExtraFunctionExecution(Function<CoreInstance> function, ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, ProcessorSupport processorSupport, FunctionExecutionInterpreted interpreted)
+    public CoreInstance getExtraFunctionExecution(Function<?> function, ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, ProcessorSupport processorSupport, FunctionExecutionInterpreted interpreted)
     {
         if (Instance.instanceOf(function, M2PathPaths.Path, processorSupport))
         {

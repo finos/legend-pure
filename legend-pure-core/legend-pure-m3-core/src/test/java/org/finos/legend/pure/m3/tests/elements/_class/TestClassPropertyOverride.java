@@ -38,6 +38,7 @@ public class TestClassPropertyOverride extends AbstractPureTestWithCoreCompiledP
     {
         runtime.delete("file.pure");
         runtime.delete("fromString.pure");
+        runtime.compile();
     }
 
     @Test
@@ -342,14 +343,7 @@ public class TestClassPropertyOverride extends AbstractPureTestWithCoreCompiledP
 
     private void assertCompilationException(String code, String expectedMessage, Integer expectedLine, Integer expectedColumn)
     {
-        try
-        {
-            compileTestSource("fromString.pure", code);
-            Assert.fail("Expected compilation error from:\n" + code);
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, expectedMessage, "fromString.pure", expectedLine, expectedColumn, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure", code));
+        assertPureException(PureCompilationException.class, expectedMessage, "fromString.pure", expectedLine, expectedColumn, e);
     }
 }

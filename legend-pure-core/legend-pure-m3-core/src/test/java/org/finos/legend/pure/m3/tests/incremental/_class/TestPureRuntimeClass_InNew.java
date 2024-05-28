@@ -35,10 +35,11 @@ public class TestPureRuntimeClass_InNew extends AbstractPureTestWithCoreCompiled
         runtime.delete("sourceId.pure");
         runtime.delete("userId.pure");
         runtime.delete("other.pure");
+        runtime.compile();
     }
 
     @Test
-    public void testPureRuntimeClassUsedInNew() throws Exception
+    public void testPureRuntimeClassUsedInNew()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class a::b::c::A{name:String[1];}")
                         .createInMemorySource("userId.pure", "function test():String[1]{^a::b::c::A(name='OMG!');'ok';}")
@@ -52,7 +53,7 @@ public class TestPureRuntimeClass_InNew extends AbstractPureTestWithCoreCompiled
     }
 
     @Test
-    public void testPureRuntimeClassUsedInNewWithWrongProperty() throws Exception
+    public void testPureRuntimeClassUsedInNewWithWrongProperty()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class a::b::c::A{name:String[1];}")
                         .createInMemorySource("userId.pure", "function test():String[1]{^a::b::c::A(name='OMG!');'ok';}")
@@ -69,7 +70,7 @@ public class TestPureRuntimeClass_InNew extends AbstractPureTestWithCoreCompiled
 
 
     @Test
-    public void testPureRuntimeClassUsedInNewInLambda() throws Exception
+    public void testPureRuntimeClassUsedInNewInLambda()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class a::b::c::A{name:String[1];}")
                         .createInMemorySource("userId.pure", "function test():String[1]{if(true,|^a::b::c::A(name='OMG!'),|^a::b::c::A(name='!GMO'));'ok';}")
@@ -83,7 +84,7 @@ public class TestPureRuntimeClass_InNew extends AbstractPureTestWithCoreCompiled
     }
 
     @Test
-    public void testPureRuntimeClassUsedInNewInLambdaNestedWithVariable() throws Exception
+    public void testPureRuntimeClassUsedInNewInLambdaNestedWithVariable()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class B{c:B[0..1];}")
                         .createInMemorySource("userId.pure", "Class A{name:String[1];b:B[1];} function test():String[1]{let b = ^B();if(true,|^A(name='OMG!',b=^B(c=$b));,|[]);'ok';}")
@@ -98,7 +99,7 @@ public class TestPureRuntimeClass_InNew extends AbstractPureTestWithCoreCompiled
 
 
     @Test
-    public void testPureRuntimeClassUsedInNewWithGeneric() throws Exception
+    public void testPureRuntimeClassUsedInNewWithGeneric()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class a::b::c::Cont<T>{c:T[1];}")
                         .createInMemorySource("userId.pure", "function test():String[1]{^a::b::c::Cont<String>(c='ok').c}")

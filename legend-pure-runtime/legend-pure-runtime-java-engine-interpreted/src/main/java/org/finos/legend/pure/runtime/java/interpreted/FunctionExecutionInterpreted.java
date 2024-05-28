@@ -15,14 +15,17 @@
 package org.finos.legend.pure.runtime.java.interpreted;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function2;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.*;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionCoreInstanceWrapper;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinitionCoreInstanceWrapper;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionCoreInstanceWrapper;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunctionCoreInstanceWrapper;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.PropertyCoreInstanceWrapper;
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
@@ -31,7 +34,14 @@ import org.finos.legend.pure.m3.execution.Console;
 import org.finos.legend.pure.m3.execution.ExecutionPlatform;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.execution.OutputWriter;
-import org.finos.legend.pure.m3.navigation.*;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation.function.Function;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
@@ -48,12 +58,40 @@ import org.finos.legend.pure.runtime.java.interpreted.extension.InterpretedExten
 import org.finos.legend.pure.runtime.java.interpreted.extension.InterpretedExtensionLoader;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
-import org.finos.legend.pure.runtime.java.interpreted.natives.basics.collection.*;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.collection.Add;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.collection.At;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.collection.Concatenate;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.collection.Fold;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.collection.Init;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.collection.RemoveDuplicates;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.collection.Sort;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.collection.Tail;
 import org.finos.legend.pure.runtime.java.interpreted.natives.basics.io.Print;
-import org.finos.legend.pure.runtime.java.interpreted.natives.basics.lang.*;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.lang.Cast;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.lang.DynamicNew;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.lang.DynamicNewGenericType;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.lang.Evaluate;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.lang.EvaluateAny;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.lang.If;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.lang.Match;
 import org.finos.legend.pure.runtime.java.interpreted.natives.basics.math.Abs;
-import org.finos.legend.pure.runtime.java.interpreted.natives.basics.meta.*;
-import org.finos.legend.pure.runtime.java.interpreted.natives.basics.string.*;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.meta.ElementPath;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.meta.ElementToPath;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.meta.EvaluateAndDeactivate;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.meta.GenericType;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.meta.GenericTypeClass;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.meta.GetUnitValue;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.meta.Id;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.meta.InstanceOf;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.meta.NewUnit;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.meta.PathToElement;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.string.Format;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.string.Length;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.string.Replace;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.string.Split;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.string.StartsWith;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.string.SubString;
+import org.finos.legend.pure.runtime.java.interpreted.natives.basics.string.ToString;
 import org.finos.legend.pure.runtime.java.interpreted.natives.basics.tests.Assert;
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar._boolean.conjunctions.And;
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar._boolean.conjunctions.Not;
@@ -63,9 +101,23 @@ import org.finos.legend.pure.runtime.java.interpreted.natives.grammar._boolean.e
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar._boolean.equality.Is;
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar._boolean.inequalities.LessThan;
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar._boolean.inequalities.LessThanOrEqualTo;
-import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.collection.*;
-import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.lang.*;
-import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.math.*;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.collection.Filter;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.collection.First;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.collection.IsEmpty;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.collection.Map;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.collection.Range;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.collection.Size;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.lang.Compare;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.lang.Copy;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.lang.ExtractEnumValue;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.lang.GetAll;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.lang.Let;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.lang.New;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.math.Divide;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.math.DivideDecimal;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.math.Minus;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.math.Plus;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.math.Times;
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.multiplicity.ToOne;
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.multiplicity.ToOneMany;
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.string.JoinStrings;
@@ -74,7 +126,9 @@ import org.finos.legend.pure.runtime.java.interpreted.profiler.VoidProfiler;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -87,7 +141,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
     private final ExecutionActivityListener executionActivityListener;
     private PureRuntime runtime;
 
-    private Console console = new ConsoleInterpreted();
+    private final Console console = new ConsoleInterpreted();
 
     private ProcessorSupport processorSupport;
 
@@ -96,7 +150,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
 
     private MutableMap<String, NativeFunction> nativeFunctions;
     private final int maxSQLRows;
-    private MutableList<InterpretedExtension> extensions;
+    private final MutableList<InterpretedExtension> extensions;
 
     public FunctionExecutionInterpreted()
     {
@@ -110,7 +164,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
 
     public FunctionExecutionInterpreted(int maxSQLRows, ExecutionActivityListener executionActivityListener)
     {
-        this.maxSQLRows = maxSQLRows < 0 ? 0 : maxSQLRows;
+        this.maxSQLRows = Math.max(maxSQLRows, 0);
         this.executionActivityListener = executionActivityListener == null ? VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER : executionActivityListener;
         this.extensions = InterpretedExtensionLoader.extensions();
     }
@@ -128,7 +182,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
 
         this.processorSupport = new M3ProcessorSupport(this.runtime.getContext(), this.runtime.getModelRepository());
 
-        this.nativeFunctions = UnifiedMap.newMap();
+        this.nativeFunctions = Maps.mutable.empty();
 
         ModelRepository repository = runtime.getModelRepository();
         this.storage = runtime.getCodeStorage();
@@ -139,10 +193,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         registerBasicNatives(repository);
 
 
-        for (Pair<String, Function2<FunctionExecutionInterpreted, ModelRepository, NativeFunction>> extraNative : extensions.flatCollect(e -> e.getExtraNatives()))
-        {
-            this.nativeFunctions.put(extraNative.getOne(), extraNative.getTwo().value(this, repository));
-        }
+        this.extensions.asLazy().flatCollect(InterpretedExtension::getExtraNatives).forEach(extraNative -> this.nativeFunctions.put(extraNative.getOne(), extraNative.getTwo().apply(this, repository)));
     }
 
     private void registerGrammarNatives(ModelRepository repository)
@@ -319,7 +370,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         ExecutionSupport executionSupport = new ExecutionSupport();
         try
         {
-            CoreInstance result = this.executeFunction(false, FunctionCoreInstanceWrapper.toFunction(function), arguments, new Stack<MutableMap<String, CoreInstance>>(), new Stack<MutableMap<String, CoreInstance>>(), VariableContext.newVariableContext(), null, VoidProfiler.VOID_PROFILER, new InstantiationContext(), executionSupport);
+            CoreInstance result = this.executeFunction(false, FunctionCoreInstanceWrapper.toFunction(function), arguments, new Stack<>(), new Stack<>(), VariableContext.newVariableContext(), null, VoidProfiler.VOID_PROFILER, new InstantiationContext(), executionSupport);
             return result;
         }
         catch (Exception ex)
@@ -345,7 +396,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Failed to write to output stream", e);
+            throw new UncheckedIOException("Failed to write to output stream", e);
         }
     }
 
@@ -365,27 +416,26 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         return this.nativeFunctions.get(functionName);
     }
 
-    public String printStack(Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, final ProcessorSupport processorSupport)
+    public String printStack(Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, ProcessorSupport processorSupport)
     {
         int size = resolvedTypeParameters.size();
-        String result = "";
+        StringBuilder builder = new StringBuilder();
         for (int i = 0; i < size; i++)
         {
-            MutableMap<String, CoreInstance> map = resolvedTypeParameters.get(i);
-            result += i + " :" + map.keyValuesView().collect(new org.eclipse.collections.api.block.function.Function<Pair<String, CoreInstance>, String>()
+            builder.append(i).append(" :");
+            int startLen = builder.length();
+            resolvedTypeParameters.get(i).forEachKeyValue((key, value) ->
             {
-                @Override
-                public String valueOf(Pair<String, CoreInstance> stringCoreInstancePair)
-                {
-                    return stringCoreInstancePair.getOne() + "=" + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(stringCoreInstancePair.getTwo(), processorSupport);
-                }
-            }).makeString() + "\n";
+                ((builder.length() > startLen) ? builder.append(", ") : builder).append(key).append('=');
+                org.finos.legend.pure.m3.navigation.generictype.GenericType.print(builder, value, processorSupport);
+            });
+            builder.append('\n');
         }
-        return result;
+        return builder.toString();
     }
 
 
-    public CoreInstance executeLambda(LambdaFunction function, ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext context, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport)
+    public CoreInstance executeLambda(LambdaFunction<?> function, ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext context, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport)
     {
         if (function instanceof LambdaWithContext)
         {
@@ -413,12 +463,12 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.cancelExecution.set(true);
     }
 
-    public CoreInstance executeFunctionExecuteParams(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function function, ListIterable<? extends CoreInstance> params, final Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, final Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, final VariableContext context, final CoreInstance functionExpressionToUseInStack, final Profiler profiler, final InstantiationContext instantiationContext, final ExecutionSupport executionSupport)
+    public CoreInstance executeFunctionExecuteParams(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> function, ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext context, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport)
     {
-        if (!params.isEmpty())
+        if (params.notEmpty())
         {
             ProcessorSupport processorSupport = this.getProcessorSupport();
-            MutableList<CoreInstance> parameters = FastList.newList(params.size());
+            MutableList<CoreInstance> parameters = Lists.mutable.ofInitialCapacity(params.size());
             for (CoreInstance instance : params)
             {
                 Executor executor = findValueSpecificationExecutor(instance, functionExpressionToUseInStack, processorSupport, this);
@@ -429,7 +479,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         return this.executeFunction(false, function, params, resolvedTypeParameters, resolvedMultiplicityParameters, context, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
     }
 
-    public CoreInstance executeFunction(boolean limitScope, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<CoreInstance> function, ListIterable<? extends CoreInstance> params, final Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, final Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, final VariableContext varContext, final CoreInstance functionExpressionToUseInStack, final Profiler profiler, final InstantiationContext instantiationContext, final ExecutionSupport executionSupport)
+    public CoreInstance executeFunction(boolean limitScope, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> function, ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext varContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport)
     {
         try
         {
@@ -438,24 +488,17 @@ public class FunctionExecutionInterpreted implements FunctionExecution
                 throw new PureExecutionException("Cancelled!");
             }
 
-            final ProcessorSupport processorSupport = this.runtime.getProcessorSupport();
+            ProcessorSupport processorSupport = this.runtime.getProcessorSupport();
             ListIterable<? extends CoreInstance> signatureVars = Instance.getValueForMetaPropertyToManyResolved(processorSupport.function_getFunctionType(function), M3Properties.parameters, processorSupport);
             if (signatureVars.size() != params.size())
             {
                 StringBuilder builder = new StringBuilder();
                 Function.print(builder, function, processorSupport);
-                String message = "Error executing the function:" + builder + ". Mismatch between the number of function parameters (" + signatureVars.size() + ") and the number of supplied arguments (" + params.size() + ")\n" + params.collect(new org.eclipse.collections.api.block.function.Function<CoreInstance, String>()
-                {
-                    @Override
-                    public String valueOf(CoreInstance coreInstance)
-                    {
-                        return coreInstance.printWithoutDebug("", 3);
-                    }
-                }).makeString("\n");
+                String message = "Error executing the function:" + builder + ". Mismatch between the number of function parameters (" + signatureVars.size() + ") and the number of supplied arguments (" + params.size() + ")\n" + params.collect(i -> i.printWithoutDebug("", 3)).makeString("\n");
                 throw new PureExecutionException(functionExpressionToUseInStack == null ? null : functionExpressionToUseInStack.getSourceInformation(), message);
             }
 
-            final VariableContext variableContext = this.moveParametersIntoVariableContext(varContext, signatureVars, params, functionExpressionToUseInStack);
+            VariableContext variableContext = this.moveParametersIntoVariableContext(varContext, signatureVars, params, functionExpressionToUseInStack);
             if (limitScope)
             {
                 variableContext.markVariableScopeBoundary();
@@ -463,12 +506,12 @@ public class FunctionExecutionInterpreted implements FunctionExecution
 
             if (function instanceof PackageableFunction)
             {
-                for (CoreInstance constraint : ((PackageableFunction<CoreInstance>) function)._preConstraints())
+                for (CoreInstance constraint : ((PackageableFunction<?>) function)._preConstraints())
                 {
                     CoreInstance definition = Instance.getValueForMetaPropertyToOneResolved(Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.functionDefinition, processorSupport), M3Properties.expressionSequence, processorSupport);
                     String ruleId = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.name, processorSupport).getName();
-                    CoreInstance evaluatedConstraint = this.executeValueSpecification(definition, new Stack<MutableMap<String, CoreInstance>>(), new Stack<MutableMap<String, CoreInstance>>(), null, variableContext, VoidProfiler.VOID_PROFILER, instantiationContext, executionSupport);
-                    if ("false".equals(evaluatedConstraint.getValueForMetaPropertyToOne(M3Properties.values).getName()))
+                    CoreInstance evaluatedConstraint = this.executeValueSpecification(definition, new Stack<>(), new Stack<>(), null, variableContext, VoidProfiler.VOID_PROFILER, instantiationContext, executionSupport);
+                    if (!PrimitiveUtilities.getBooleanValue(evaluatedConstraint.getValueForMetaPropertyToOne(M3Properties.values)))
                     {
                         throw new PureExecutionException(functionExpressionToUseInStack == null ? null : functionExpressionToUseInStack.getSourceInformation(), "Constraint (PRE):[" + ruleId + "] violated. (Function:" + function.getName() + ")");
                     }
@@ -479,7 +522,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
             CoreInstance result = null;
             if (Instance.instanceOf(function, M3Paths.NativeFunction, processorSupport))
             {
-                org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunction function1 = NativeFunctionCoreInstanceWrapper.toNativeFunction(function);
+                org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunction<?> function1 = NativeFunctionCoreInstanceWrapper.toNativeFunction(function);
                 NativeFunction nativeFunction = this.nativeFunctions.get(function1.getName());
                 if (nativeFunction == null)
                 {
@@ -487,7 +530,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
                 }
                 result = nativeFunction.execute(params, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport, this.runtime.getContext(), this.runtime.getProcessorSupport());
             }
-            else if (Instance.instanceOf(function, M3Paths.Property, processorSupport))
+            else if (org.finos.legend.pure.m3.navigation.property.Property.isProperty(function, processorSupport))
             {
                 result = this.executeProperty(PropertyCoreInstanceWrapper.toProperty(function), true, resolvedTypeParameters, resolvedMultiplicityParameters, varContext, profiler, params, functionExpressionToUseInStack, instantiationContext, executionSupport);
             }
@@ -504,7 +547,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
                 }
                 result = returnVal;
             }
-            List<CoreInstance> instances = this.extensions.collect(x -> x.getExtraFunctionExecution(function, params, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport, processorSupport, this)).select(x -> x != null);
+            List<CoreInstance> instances = this.extensions.collect(x -> x.getExtraFunctionExecution(function, params, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport, processorSupport, this)).select(Objects::nonNull);
 
             if (instances.size() == 1)
             {
@@ -512,12 +555,12 @@ public class FunctionExecutionInterpreted implements FunctionExecution
             }
             else if (result == null)
             {
-                throw new PureExecutionException("Unsupported function for execution " + function.getName());
+                throw new PureExecutionException("Unsupported function for execution " + function.getName() + " of type " + PackageableElement.getUserPathForPackageableElement(function.getClassifier()) + " (class " + function.getClass().getName() + ")");
             }
 
             if (function instanceof PackageableFunction)
             {
-                if (((PackageableFunction<CoreInstance>) function)._postConstraints().notEmpty())
+                if (((PackageableFunction<?>) function)._postConstraints().notEmpty())
                 {
                     try
                     {
@@ -527,14 +570,14 @@ public class FunctionExecutionInterpreted implements FunctionExecution
                     {
                         throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), e.getMessage(), e);
                     }
-                    for (CoreInstance constraint : ((PackageableFunction<CoreInstance>) function)._postConstraints())
+                    for (CoreInstance constraint : ((PackageableFunction<?>) function)._postConstraints())
                     {
 
                         CoreInstance definition = Instance.getValueForMetaPropertyToOneResolved(Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.functionDefinition, processorSupport), M3Properties.expressionSequence, processorSupport);
                         String ruleId = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.name, processorSupport).getName();
-                        CoreInstance evaluatedConstraint = this.executeValueSpecification(definition, new Stack<MutableMap<String, CoreInstance>>(), new Stack<MutableMap<String, CoreInstance>>(), null, variableContext, VoidProfiler.VOID_PROFILER, instantiationContext, executionSupport);
+                        CoreInstance evaluatedConstraint = this.executeValueSpecification(definition, new Stack<>(), new Stack<>(), null, variableContext, VoidProfiler.VOID_PROFILER, instantiationContext, executionSupport);
 
-                        if ("false".equals(evaluatedConstraint.getValueForMetaPropertyToOne(M3Properties.values).getName()))
+                        if (!PrimitiveUtilities.getBooleanValue(evaluatedConstraint.getValueForMetaPropertyToOne(M3Properties.values)))
                         {
                             throw new PureExecutionException(functionExpressionToUseInStack == null ? null : functionExpressionToUseInStack.getSourceInformation(), "Constraint (POST):[" + ruleId + "] violated. (Function:" + function.getName() + ")");
                         }
@@ -614,7 +657,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         }
     }
 
-    public CoreInstance executeProperty(Property property, boolean route, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, Profiler profiler, ListIterable<? extends CoreInstance> parameters, CoreInstance functionExpressionToUseInStack, InstantiationContext instantiationContext, ExecutionSupport executionSupport) throws PureExecutionException
+    public CoreInstance executeProperty(Property<?, ?> property, boolean route, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, Profiler profiler, ListIterable<? extends CoreInstance> parameters, CoreInstance functionExpressionToUseInStack, InstantiationContext instantiationContext, ExecutionSupport executionSupport) throws PureExecutionException
     {
         ProcessorSupport processorSupport = this.runtime.getProcessorSupport();
 
@@ -634,7 +677,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
             CoreInstance funcToOne = overrides != null ? Instance.getValueForMetaPropertyToOneResolved(overrides, M3Properties.getterOverrideToOne, processorSupport) : null;
             if (route && funcToOne != null && !M3Properties.elementOverride.equals(property._name()) && !M3Properties.hiddenPayload.equals(property._name()) && !Instance.instanceOf(Instance.getValueForMetaPropertyToOneResolved(property._classifierGenericType().getValueForMetaPropertyToMany(M3Properties.typeArguments).get(1), M3Properties.rawType, processorSupport), M3Paths.DataType, processorSupport))
             {
-                return this.executeFunction(true, FunctionCoreInstanceWrapper.toFunction(funcToOne), FastList.newListWith(ValueSpecificationBootstrap.wrapValueSpecification(evaluatedSource, executable, processorSupport), ValueSpecificationBootstrap.wrapValueSpecification(property, executable, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+                return this.executeFunction(true, FunctionCoreInstanceWrapper.toFunction(funcToOne), Lists.mutable.with(ValueSpecificationBootstrap.wrapValueSpecification(evaluatedSource, executable, processorSupport), ValueSpecificationBootstrap.wrapValueSpecification(property, executable, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
             }
             else
             {
@@ -647,7 +690,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
             CoreInstance funcToMany = overrides != null ? Instance.getValueForMetaPropertyToOneResolved(overrides, M3Properties.getterOverrideToMany, processorSupport) : null;
             if (route && funcToMany != null && !M3Properties.hiddenPayload.equals(property._name()) && !Instance.instanceOf(Instance.getValueForMetaPropertyToOneResolved(property._classifierGenericType().getValueForMetaPropertyToMany(M3Properties.typeArguments).get(1), M3Properties.rawType, processorSupport), M3Paths.DataType, processorSupport))
             {
-                return this.executeFunction(true, FunctionCoreInstanceWrapper.toFunction(funcToMany), FastList.newListWith(ValueSpecificationBootstrap.wrapValueSpecification(evaluatedSource, executable, processorSupport), ValueSpecificationBootstrap.wrapValueSpecification(property, executable, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+                return this.executeFunction(true, FunctionCoreInstanceWrapper.toFunction(funcToMany), Lists.mutable.with(ValueSpecificationBootstrap.wrapValueSpecification(evaluatedSource, executable, processorSupport), ValueSpecificationBootstrap.wrapValueSpecification(property, executable, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
             }
             else
             {

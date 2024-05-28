@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.extension.external.json.interpreted;
 
-import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.runtime.java.extension.external.json.interpreted.natives.Escape;
 import org.finos.legend.pure.runtime.java.extension.external.json.interpreted.natives.FromJson;
@@ -29,14 +28,13 @@ public class JsonExtensionInterpreted extends BaseInterpretedExtension
 {
     public JsonExtensionInterpreted()
     {
-        super(Lists.mutable.with(
-                Tuples.pair("escape_String_1__String_1_",Escape::new),
+        super(Tuples.pair("escape_String_1__String_1_", Escape::new),
                 Tuples.pair("parseJSON_String_1__JSONElement_1_", ParseJSON::new),
                 Tuples.pair("equalJsonStrings_String_1__String_1__Boolean_1_", JsonStringsEqual::new),
                 Tuples.pair("fromJson_String_1__Class_1__JSONDeserializationConfig_1__T_1_", FromJson::new),
                 Tuples.pair("fromJsonDeprecated_String_1__Class_1__JSONDeserializationConfig_1__T_1_", FromJsonDeprecated::new),
                 Tuples.pair("toJsonBeta_Any_MANY__JSONSerializationConfig_1__String_1_", ToJson::new)
-        ));
+        );
     }
 
     public static InterpretedExtension extension()

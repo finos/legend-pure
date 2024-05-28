@@ -38,6 +38,7 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
         runtime.delete("sourceId.pure");
         runtime.delete("userId.pure");
         runtime.delete("other.pure");
+        runtime.compile();
     }
 
     @Test
@@ -53,7 +54,6 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
                         .createInMemorySource("sourceId.pure", "Class B{}")
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
-
     }
 
     @Test

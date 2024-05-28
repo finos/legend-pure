@@ -37,8 +37,8 @@ public class TestProperty extends AbstractPureTestWithCoreCompiledPlatform
     public void cleanRuntime()
     {
         runtime.delete("fromString.pure");
+        runtime.compile();
     }
-
 
     @Test
     public void testGetPath()

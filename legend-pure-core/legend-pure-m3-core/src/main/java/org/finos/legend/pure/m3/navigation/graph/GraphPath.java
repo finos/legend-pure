@@ -32,6 +32,7 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Lexer;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.StringEscape;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 
@@ -290,7 +291,13 @@ public class GraphPath
         }
         catch (Exception e)
         {
-            StringBuilder message = writeMessageUpTo(new StringBuilder("Error accessing "), index).append(" (final node: ").append(previousNode).append(')');
+            StringBuilder message = writeMessageUpTo(new StringBuilder("Error accessing "), index).append(" (final node: ").append(previousNode);
+            SourceInformation finalNodeSourceInfo = previousNode.getSourceInformation();
+            if (finalNodeSourceInfo != null)
+            {
+                finalNodeSourceInfo.appendMessage(message.append(" at "));
+            }
+            message.append(')');
             String errorMessage = e.getMessage();
             if (errorMessage != null)
             {

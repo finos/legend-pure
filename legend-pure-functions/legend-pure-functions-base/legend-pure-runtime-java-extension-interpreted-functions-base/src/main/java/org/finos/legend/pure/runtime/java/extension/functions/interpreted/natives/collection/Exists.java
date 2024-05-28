@@ -14,18 +14,20 @@
 
 package org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.collection;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.factory.Lists;
-import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionCoreInstanceWrapper;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
@@ -48,16 +50,23 @@ public class Exists extends NativePredicate
     @Override
     protected boolean executeBoolean(Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, ListIterable<? extends CoreInstance> params, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, ProcessorSupport processorSupport) throws PureExecutionException
     {
-        CoreInstance predicate = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
-        boolean executable = ValueSpecification.isExecutable(params.get(0), processorSupport);
-        for (CoreInstance element : Instance.getValueForMetaPropertyToManyResolved(params.get(0), M3Properties.values, processorSupport))
+        ListIterable<? extends CoreInstance> elements = Instance.getValueForMetaPropertyToManyResolved(params.get(0), M3Properties.values, processorSupport);
+        if (elements.isEmpty())
         {
-            CoreInstance result = this.functionExecution.executeLambdaFromNative(predicate, Lists.mutable.with(ValueSpecificationBootstrap.wrapValueSpecification(element, executable, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
-            if (PrimitiveUtilities.getBooleanValue(Instance.getValueForMetaPropertyToOneResolved(result, M3Properties.values, processorSupport)))
-            {
-                return true;
-            }
+            return false;
         }
-        return false;
+
+        CoreInstance predicate = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
+        VariableContext evalVariableContext = getParentOrEmptyVariableContextForLambda(variableContext, predicate);
+        Function<?> function = FunctionCoreInstanceWrapper.toFunction(predicate);
+        boolean executable = ValueSpecification.isExecutable(params.get(0), processorSupport);
+        return elements.anySatisfy(i -> accept(function, i, executable, resolvedTypeParameters, resolvedMultiplicityParameters, evalVariableContext, functionExpressionToUseInStack, profiler, processorSupport, instantiationContext, executionSupport));
+    }
+
+    private boolean accept(Function<?> predicate, CoreInstance instance, boolean isExecutable, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, ProcessorSupport processorSupport, InstantiationContext instantiationContext, ExecutionSupport executionSupport) throws PureExecutionException
+    {
+        ListIterable<CoreInstance> args = Lists.immutable.with(ValueSpecificationBootstrap.wrapValueSpecification(instance, isExecutable, processorSupport));
+        CoreInstance result = this.functionExecution.executeFunction(false, predicate, args, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+        return PrimitiveUtilities.getBooleanValue(Instance.getValueForMetaPropertyToOneResolved(result, M3Properties.values, processorSupport));
     }
 }

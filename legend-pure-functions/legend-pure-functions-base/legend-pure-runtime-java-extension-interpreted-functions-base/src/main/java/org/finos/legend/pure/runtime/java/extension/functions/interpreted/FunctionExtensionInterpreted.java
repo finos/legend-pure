@@ -153,8 +153,7 @@ public class FunctionExtensionInterpreted extends BaseInterpretedExtension
 {
     public FunctionExtensionInterpreted()
     {
-        super(Lists.mutable.with(
-                //Cipher
+        super(//Cipher
                 Tuples.pair("encrypt_String_1__String_1__String_1_", Cipher::new),
                 Tuples.pair("encrypt_Number_1__String_1__String_1_", Cipher::new),
                 Tuples.pair("encrypt_Boolean_1__String_1__String_1_", Cipher::new),
@@ -331,8 +330,7 @@ public class FunctionExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("values_Map_1__V_MANY_", Values::new),
 
                 Tuples.pair("replaceTreeNode_TreeNode_1__TreeNode_1__TreeNode_1__TreeNode_1_", ReplaceTreeNode::new)
-
-        ));
+        );
     }
 
     public static FunctionExtensionInterpreted extension()

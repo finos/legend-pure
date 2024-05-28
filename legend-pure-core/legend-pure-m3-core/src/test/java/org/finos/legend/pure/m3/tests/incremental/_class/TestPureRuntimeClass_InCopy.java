@@ -34,6 +34,7 @@ public class TestPureRuntimeClass_InCopy extends AbstractPureTestWithCoreCompile
     {
         runtime.delete("sourceId.pure");
         runtime.delete("userId.pure");
+        runtime.compile();
     }
 
     @Test

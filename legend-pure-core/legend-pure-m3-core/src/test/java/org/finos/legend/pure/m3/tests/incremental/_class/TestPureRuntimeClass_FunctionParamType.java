@@ -14,14 +14,14 @@
 
 package org.finos.legend.pure.m3.tests.incremental._class;
 
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.ImmutableMap;
-import org.eclipse.collections.impl.factory.Maps;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation._class._Class;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
@@ -44,6 +44,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
         runtime.delete("sourceId2.pure");
         runtime.delete("userId.pure");
         runtime.delete("other.pure");
+        runtime.compile();
     }
 
     @Test
@@ -226,28 +227,21 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
         int size = repository.serialize().length;
         CoreInstance classA = processorSupport.package_getByUserPath("A");
         CoreInstance classB = processorSupport.package_getByUserPath("B");
-        CoreInstance prop = _Class.getQualifiedPropertiesByName(classB, processorSupport).get("prop(A)");
+        CoreInstance prop = _Class.getQualifiedPropertiesByName(classB, processorSupport).get("prop(A[1])");
         Assert.assertSame(classA, Instance.getValueForMetaPropertyToOneResolved(Instance.getValueForMetaPropertyToManyResolved(processorSupport.function_getFunctionType(prop), M3Properties.parameters, processorSupport).get(1), M3Properties.genericType, M3Properties.rawType, processorSupport));
 
         for (int i = 0; i < 10; i++)
         {
             runtime.delete("sourceId.pure");
-            try
-            {
-                runtime.compile();
-                Assert.fail("Expected a compile exception");
-            }
-            catch (Exception e)
-            {
-                assertPureException(PureCompilationException.class, "A has not been defined!", "sourceId2.pure", e);
-            }
+            PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+            assertPureException(PureCompilationException.class, "A has not been defined!", "sourceId2.pure", e);
 
             runtime.createInMemorySource("sourceId.pure", sources.get("sourceId.pure"));
             runtime.compile();
 
             classA = processorSupport.package_getByUserPath("A");
             classB = processorSupport.package_getByUserPath("B");
-            prop = _Class.getQualifiedPropertiesByName(classB, processorSupport).get("prop(A)");
+            prop = _Class.getQualifiedPropertiesByName(classB, processorSupport).get("prop(A[1])");
             Assert.assertSame(classA, Instance.getValueForMetaPropertyToOneResolved(Instance.getValueForMetaPropertyToManyResolved(processorSupport.function_getFunctionType(prop), M3Properties.parameters, processorSupport).get(1), M3Properties.genericType, M3Properties.rawType, processorSupport));
 
             Assert.assertEquals(size, repository.serialize().length);

@@ -138,7 +138,7 @@ public class MilestoningFunctions
     public static boolean isEdgePointProperty(CoreInstance property, ProcessorSupport processorSupport)
     {
         return isGeneratedMilestoningProperty(property, processorSupport) &&
-                Instance.instanceOf(property, M3Paths.Property, processorSupport) &&
+                org.finos.legend.pure.m3.navigation.property.Property.isProperty(property, processorSupport) &&
                 property.getName().endsWith(EDGEPOINT_PROPERTY_NAME_SUFFIX);
     }
 
@@ -188,7 +188,7 @@ public class MilestoningFunctions
 
     public static boolean isGeneratedQualifiedProperty(CoreInstance property, ProcessorSupport processorSupport)
     {
-        return Instance.instanceOf(property, M3Paths.QualifiedProperty, processorSupport) && isGeneratedMilestoningProperty(property, processorSupport) && !isAllVersionsInRangeProperty(property, processorSupport);
+        return org.finos.legend.pure.m3.navigation.property.Property.isQualifiedProperty(property, processorSupport) && isGeneratedMilestoningProperty(property, processorSupport) && !isAllVersionsInRangeProperty(property, processorSupport);
     }
 
     public static boolean isGeneratedQualifiedPropertyWithWithAllMilestoningDatesSpecified(CoreInstance property, ProcessorSupport processorSupport)

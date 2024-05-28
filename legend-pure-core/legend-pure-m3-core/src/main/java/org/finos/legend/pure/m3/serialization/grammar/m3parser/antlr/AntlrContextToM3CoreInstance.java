@@ -3069,7 +3069,7 @@ public class AntlrContextToM3CoreInstance
         Multiplicity multiplicity = this.buildMultiplicity(ctx.propertyReturnType().multiplicity().multiplicityArgument());
 
         String propertyName = ctx.identifier().getText();
-        final String qualifiedPropertyName = propertyName + "_" + qualifiedPropertyIndex;
+        String qualifiedPropertyName = propertyName + "_" + qualifiedPropertyIndex;
 
         if (ctx.qualifiedPropertyBody() != null)
         {
@@ -3128,7 +3128,7 @@ public class AntlrContextToM3CoreInstance
         }
 
         QualifiedPropertyInstance qpi = QualifiedPropertyInstance.createPersistent(this.repository, qualifiedPropertyName,
-                this.sourceInformation.getPureSourceInformation(ctx.identifier().getStart(), ctx.identifier().getStart(), ctx.getStop()), genericType, multiplicity, null);
+                this.sourceInformation.getPureSourceInformation(ctx.identifier().getStart(), ctx.identifier().getStart(), ctx.getStop()), genericType, null, multiplicity, null);
         qpi._name(propertyName);
         qpi._functionName(propertyName);
         qpi._expressionSequence(code);
