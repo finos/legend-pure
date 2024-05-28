@@ -14,6 +14,19 @@
 
 import meta::pure::metamodel::relation::*;
 import meta::pure::functions::relation::*;
+import meta::pure::functions::relation::tests::composition::*;
+
+Class meta::pure::functions::relation::tests::composition::FirmTypeForCompositionTests
+{
+  legalName : String[1];
+  employees : PersonTypeForCompositionTests[*];
+}
+
+Class meta::pure::functions::relation::tests::composition::PersonTypeForCompositionTests
+{
+  firstName : String[1];
+  lastName  : String[1];
+}
 
 function <<RelationProfile.test>> meta::pure::functions::relation::tests::composition::testExtendFilter<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
 {
@@ -35,4 +48,44 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::compos
                   '   val,str,newCol\n'+
                   '   4,qw,qw4\n'+
                   '#', $res->toString());
+}
+
+function <<RelationProfile.test>> meta::pure::functions::relation::tests::composition::testFilterPostProject<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
+{
+    let expr = {|
+                     [
+                        ^FirmTypeForCompositionTests
+                        (
+                            legalName = 'Firm X',
+                            employees = [
+                                ^PersonTypeForCompositionTests(firstName = 'Peter', lastName = 'Smith'),
+                                ^PersonTypeForCompositionTests(firstName = 'John', lastName = 'Johnson'),
+                                ^PersonTypeForCompositionTests(firstName = 'John', lastName = 'Hill'),
+                                ^PersonTypeForCompositionTests(firstName = 'Anthony', lastName = 'Allen')
+                            ]
+                        ),
+                        ^FirmTypeForCompositionTests
+                        (
+                            legalName = 'Firm A',
+                            employees = [
+                                ^PersonTypeForCompositionTests(firstName = 'Fabrice', lastName = 'Roberts')
+                            ]
+                        )
+                     ]
+                     ->project(~[
+                        legalName : x | $x.legalName,
+                        firstName : x | $x.employees.firstName
+                     ])
+                     ->filter(x | $x.legalName == 'Firm X');
+                  };
+
+        let res =  $f->eval($expr);
+
+        assertEquals( '#TDS\n' +
+                      '   legalName,firstName\n' +
+                      '   Firm X,Peter\n' +
+                      '   Firm X,John\n' +
+                      '   Firm X,John\n' +
+                      '   Firm X,Anthony\n' +
+                      '#', $res->toString());
 }
