@@ -15,14 +15,20 @@
 package org.finos.legend.pure.m3.coreinstance.helper;
 
 import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.ImmutableSet;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.EnumStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.PropertyStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.tools.GrammarInfoStub;
 import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+
+import java.util.Collection;
+import java.util.function.Consumer;
 
 /**
  * Any Stub Helper
@@ -86,8 +92,56 @@ public class AnyStubHelper
                 (instance instanceof GrammarInfoStub);
     }
 
-    public static ImmutableSet<String> getStubClasses()
+    public static ImmutableSet<String> getStubClassPaths()
     {
         return STUB_CLASSES;
+    }
+
+    @Deprecated
+    public static ImmutableSet<String> getStubClasses()
+    {
+        return getStubClassPaths();
+    }
+
+    public static MutableList<CoreInstance> getStubClasses(ProcessorSupport processorSupport)
+    {
+        return getStubClasses(processorSupport, false);
+    }
+
+    public static MutableList<CoreInstance> getStubClasses(ProcessorSupport processorSupport, boolean errorIfNotFound)
+    {
+        return getStubClasses(processorSupport, Lists.mutable.ofInitialCapacity(STUB_CLASSES.size()), errorIfNotFound);
+    }
+
+    public static <T extends Collection<? super CoreInstance>> T getStubClasses(ProcessorSupport processorSupport, T targetCollection)
+    {
+        return getStubClasses(processorSupport, targetCollection, false);
+    }
+
+    public static <T extends Collection<? super CoreInstance>> T getStubClasses(ProcessorSupport processorSupport, T targetCollection, boolean errorIfNotFound)
+    {
+        forEachStubClass(processorSupport, targetCollection::add, errorIfNotFound);
+        return targetCollection;
+    }
+
+    public static void forEachStubClass(ProcessorSupport processorSupport, Consumer<? super CoreInstance> consumer)
+    {
+        forEachStubClass(processorSupport, consumer, false);
+    }
+
+    public static void forEachStubClass(ProcessorSupport processorSupport, Consumer<? super CoreInstance> consumer, boolean errorIfNotFound)
+    {
+        STUB_CLASSES.forEach(path ->
+        {
+            CoreInstance stubClass = processorSupport.package_getByUserPath(path);
+            if (stubClass != null)
+            {
+                consumer.accept(stubClass);
+            }
+            else if (errorIfNotFound)
+            {
+                throw new RuntimeException("Could not find: " + path);
+            }
+        });
     }
 }

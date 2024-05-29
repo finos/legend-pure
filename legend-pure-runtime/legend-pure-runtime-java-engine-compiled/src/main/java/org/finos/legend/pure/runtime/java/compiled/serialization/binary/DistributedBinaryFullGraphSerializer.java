@@ -33,7 +33,7 @@ class DistributedBinaryFullGraphSerializer extends DistributedBinaryGraphSeriali
     @Override
     protected void collectInstancesForSerialization(SerializationCollector serializationCollector)
     {
-        MutableSet<CoreInstance> stubClassifiers = AnyStubHelper.getStubClasses().collect(this.processorSupport::package_getByUserPath, Sets.mutable.empty());
+        MutableSet<CoreInstance> stubClassifiers = AnyStubHelper.getStubClasses(this.processorSupport, Sets.mutable.empty());
         MutableSet<CoreInstance> primitiveTypes = PrimitiveUtilities.getPrimitiveTypes(this.processorSupport).toSet();
         GraphNodeIterable.fromModelRepository(this.runtime.getModelRepository(), instance ->
         {

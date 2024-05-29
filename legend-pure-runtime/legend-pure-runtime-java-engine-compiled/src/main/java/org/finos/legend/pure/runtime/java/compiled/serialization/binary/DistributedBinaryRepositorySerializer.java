@@ -71,7 +71,7 @@ class DistributedBinaryRepositorySerializer extends DistributedBinaryGraphSerial
     {
         CoreInstance packageClassifier = this.processorSupport.package_getByUserPath(M3Paths.Package);
         CoreInstance refUsageClassifier = this.processorSupport.package_getByUserPath(M3Paths.ReferenceUsage);
-        MutableSet<CoreInstance> stubClassifiers = AnyStubHelper.getStubClasses().collect(this.processorSupport::package_getByUserPath, Sets.mutable.empty());
+        MutableSet<CoreInstance> stubClassifiers = AnyStubHelper.getStubClasses(this.processorSupport, Sets.mutable.empty());
         MutableSet<CoreInstance> primitiveTypes = PrimitiveUtilities.getPrimitiveTypes(this.processorSupport).toSet();
         this.runtime.getSourceRegistry().getSources().asLazy()
                 .select(this::isInRepository)

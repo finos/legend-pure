@@ -18,41 +18,41 @@ import java.nio.ByteBuffer;
 
 public abstract class AbstractSimpleBinaryWriter extends AbstractBinaryWriter
 {
-    private final byte[] eightBytes = new byte[8];
-    private final ByteBuffer eightByteBuffer = ByteBuffer.wrap(this.eightBytes);
+    private final byte[] bytes = new byte[Math.max(Long.BYTES, Double.BYTES)];
+    private final ByteBuffer byteBuffer = ByteBuffer.wrap(this.bytes);
 
     @Override
     public synchronized void writeShort(short s)
     {
-        this.eightByteBuffer.putShort(0, s);
-        writeBytes(this.eightBytes, 0, Short.BYTES);
+        this.byteBuffer.putShort(0, s);
+        writeBytes(this.bytes, 0, Short.BYTES);
     }
 
     @Override
     public synchronized void writeInt(int i)
     {
-        this.eightByteBuffer.putInt(0, i);
-        writeBytes(this.eightBytes, 0, Integer.BYTES);
+        this.byteBuffer.putInt(0, i);
+        writeBytes(this.bytes, 0, Integer.BYTES);
     }
 
     @Override
     public synchronized void writeLong(long l)
     {
-        this.eightByteBuffer.putLong(0, l);
-        writeBytes(this.eightBytes, 0, Long.BYTES);
+        this.byteBuffer.putLong(0, l);
+        writeBytes(this.bytes, 0, Long.BYTES);
     }
 
     @Override
     public synchronized void writeFloat(float f)
     {
-        this.eightByteBuffer.putFloat(0, f);
-        writeBytes(this.eightBytes, 0, Float.BYTES);
+        this.byteBuffer.putFloat(0, f);
+        writeBytes(this.bytes, 0, Float.BYTES);
     }
 
     @Override
     public synchronized void writeDouble(double d)
     {
-        this.eightByteBuffer.putDouble(0, d);
-        writeBytes(this.eightBytes, 0, Double.BYTES);
+        this.byteBuffer.putDouble(0, d);
+        writeBytes(this.bytes, 0, Double.BYTES);
     }
 }
