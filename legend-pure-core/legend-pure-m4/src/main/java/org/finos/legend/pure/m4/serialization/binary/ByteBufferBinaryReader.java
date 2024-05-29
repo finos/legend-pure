@@ -17,6 +17,7 @@ package org.finos.legend.pure.m4.serialization.binary;
 import java.nio.Buffer;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 class ByteBufferBinaryReader extends AbstractBinaryReader
 {
@@ -24,7 +25,7 @@ class ByteBufferBinaryReader extends AbstractBinaryReader
 
     ByteBufferBinaryReader(ByteBuffer buffer)
     {
-        this.buffer = buffer;
+        this.buffer = Objects.requireNonNull(buffer, "buffer may not be null");
     }
 
     @Override

@@ -16,18 +16,16 @@ package org.finos.legend.pure.m4.serialization.binary;
 
 import org.eclipse.collections.api.list.primitive.ByteList;
 
+import java.util.Objects;
+
 class ByteListBinaryReader extends AbstractSimpleBinaryReader
 {
-    private final ByteList bytes;
+    private final ByteList byteList;
     private int current;
 
-    ByteListBinaryReader(ByteList bytes)
+    ByteListBinaryReader(ByteList byteList)
     {
-        if (bytes == null)
-        {
-            throw new IllegalArgumentException("ByteList may not be null");
-        }
-        this.bytes = bytes;
+        this.byteList = Objects.requireNonNull(byteList, "byteList may not be null");
         this.current = 0;
     }
 
@@ -36,7 +34,7 @@ class ByteListBinaryReader extends AbstractSimpleBinaryReader
     {
         try
         {
-            return this.bytes.get(this.current++);
+            return this.byteList.get(this.current++);
         }
         catch (IndexOutOfBoundsException e)
         {
@@ -49,7 +47,7 @@ class ByteListBinaryReader extends AbstractSimpleBinaryReader
     {
         checkByteArray(bytes, offset, n);
 
-        int remaining = this.bytes.size() - this.current;
+        int remaining = this.byteList.size() - this.current;
         if (remaining < n)
         {
             throw new UnexpectedEndException(n, remaining);
@@ -57,7 +55,7 @@ class ByteListBinaryReader extends AbstractSimpleBinaryReader
 
         for (int i = 0; i < n; i++)
         {
-            bytes[offset + i] = this.bytes.get(this.current++);
+            bytes[offset + i] = this.byteList.get(this.current++);
         }
         return bytes;
     }
@@ -77,9 +75,9 @@ class ByteListBinaryReader extends AbstractSimpleBinaryReader
         }
 
         long newPosition = this.current + n;
-        if (newPosition >= this.bytes.size())
+        if (newPosition >= this.byteList.size())
         {
-            throw new UnexpectedEndException(n, (long)this.bytes.size() - this.current);
+            throw new UnexpectedEndException(n, (long)this.byteList.size() - this.current);
         }
         this.current = (int)newPosition;
     }

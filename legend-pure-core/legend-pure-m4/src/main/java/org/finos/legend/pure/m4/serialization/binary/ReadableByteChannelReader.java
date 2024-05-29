@@ -19,17 +19,18 @@ import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
+import java.util.Objects;
 
 class ReadableByteChannelReader extends AbstractBinaryReader
 {
     private static final int MAX_SKIP_BUFFER_SIZE = 8192;
 
-    private final ByteBuffer eightByteBuffer = ByteBuffer.allocate(8);
+    private final ByteBuffer byteBuffer = ByteBuffer.allocate(Math.max(Long.BYTES, Double.BYTES));
     private final ReadableByteChannel byteChannel;
 
     ReadableByteChannelReader(ReadableByteChannel byteChannel)
     {
-        this.byteChannel = byteChannel;
+        this.byteChannel = Objects.requireNonNull(byteChannel, "byteChannel may not be null");
     }
 
     @Override
@@ -48,9 +49,9 @@ class ReadableByteChannelReader extends AbstractBinaryReader
     @Override
     public synchronized byte readByte()
     {
-        this.eightByteBuffer.rewind().limit(Byte.BYTES);
-        fillBuffer(this.eightByteBuffer);
-        return this.eightByteBuffer.get(0);
+        this.byteBuffer.rewind().limit(Byte.BYTES);
+        fillBuffer(this.byteBuffer);
+        return this.byteBuffer.get(0);
     }
 
     @Override
@@ -64,41 +65,41 @@ class ReadableByteChannelReader extends AbstractBinaryReader
     @Override
     public synchronized short readShort()
     {
-        this.eightByteBuffer.rewind().limit(Short.BYTES);
-        fillBuffer(this.eightByteBuffer);
-        return this.eightByteBuffer.getShort(0);
+        this.byteBuffer.rewind().limit(Short.BYTES);
+        fillBuffer(this.byteBuffer);
+        return this.byteBuffer.getShort(0);
     }
 
     @Override
     public synchronized int readInt()
     {
-        this.eightByteBuffer.rewind().limit(Integer.BYTES);
-        fillBuffer(this.eightByteBuffer);
-        return this.eightByteBuffer.getInt(0);
+        this.byteBuffer.rewind().limit(Integer.BYTES);
+        fillBuffer(this.byteBuffer);
+        return this.byteBuffer.getInt(0);
     }
 
     @Override
     public synchronized long readLong()
     {
-        this.eightByteBuffer.rewind().limit(Long.BYTES);
-        fillBuffer(this.eightByteBuffer);
-        return this.eightByteBuffer.getLong(0);
+        this.byteBuffer.rewind().limit(Long.BYTES);
+        fillBuffer(this.byteBuffer);
+        return this.byteBuffer.getLong(0);
     }
 
     @Override
     public synchronized float readFloat()
     {
-        this.eightByteBuffer.rewind().limit(Float.BYTES);
-        fillBuffer(this.eightByteBuffer);
-        return this.eightByteBuffer.getFloat(0);
+        this.byteBuffer.rewind().limit(Float.BYTES);
+        fillBuffer(this.byteBuffer);
+        return this.byteBuffer.getFloat(0);
     }
 
     @Override
     public synchronized double readDouble()
     {
-        this.eightByteBuffer.rewind().limit(Double.BYTES);
-        fillBuffer(this.eightByteBuffer);
-        return this.eightByteBuffer.getDouble(0);
+        this.byteBuffer.rewind().limit(Double.BYTES);
+        fillBuffer(this.byteBuffer);
+        return this.byteBuffer.getDouble(0);
     }
 
     @Override
@@ -132,7 +133,7 @@ class ReadableByteChannelReader extends AbstractBinaryReader
 
         // Otherwise, fall back to the default skip method
         int size = (int) Math.min(MAX_SKIP_BUFFER_SIZE, n);
-        ByteBuffer buffer = (size <= this.eightByteBuffer.capacity()) ? this.eightByteBuffer : ByteBuffer.allocate(size);
+        ByteBuffer buffer = (size <= this.byteBuffer.capacity()) ? this.byteBuffer : ByteBuffer.allocate(size);
         long remaining = n;
         int read;
         while (remaining > 0L)

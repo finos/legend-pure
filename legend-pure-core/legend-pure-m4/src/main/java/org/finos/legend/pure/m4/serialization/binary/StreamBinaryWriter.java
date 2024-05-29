@@ -17,6 +17,7 @@ package org.finos.legend.pure.m4.serialization.binary;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.util.Objects;
 
 class StreamBinaryWriter extends AbstractSimpleBinaryWriter
 {
@@ -24,7 +25,7 @@ class StreamBinaryWriter extends AbstractSimpleBinaryWriter
 
     StreamBinaryWriter(OutputStream stream)
     {
-        this.stream = stream;
+        this.stream = Objects.requireNonNull(stream, "stream may not be null");
     }
 
     @Override

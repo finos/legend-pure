@@ -18,23 +18,24 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
+import java.util.Objects;
 
 class WritableByteChannelWriter extends AbstractBinaryWriter
 {
-    private final ByteBuffer eightByteBuffer = ByteBuffer.allocate(8);
+    private final ByteBuffer byteBuffer = ByteBuffer.allocate(Math.max(Long.BYTES, Double.BYTES));
     private final WritableByteChannel byteChannel;
 
     WritableByteChannelWriter(WritableByteChannel byteChannel)
     {
-        this.byteChannel = byteChannel;
+        this.byteChannel = Objects.requireNonNull(byteChannel, "byteChannel may not be null");
     }
 
     @Override
     public synchronized void writeByte(byte b)
     {
-        this.eightByteBuffer.rewind().limit(Byte.BYTES);
-        this.eightByteBuffer.put(b).rewind();
-        writeByteBuffer(this.eightByteBuffer);
+        this.byteBuffer.rewind().limit(Byte.BYTES);
+        this.byteBuffer.put(b).rewind();
+        writeByteBuffer(this.byteBuffer);
     }
 
     @Override
@@ -47,41 +48,41 @@ class WritableByteChannelWriter extends AbstractBinaryWriter
     @Override
     public synchronized void writeShort(short s)
     {
-        this.eightByteBuffer.rewind().limit(Short.BYTES);
-        this.eightByteBuffer.putShort(s).rewind();
-        writeByteBuffer(this.eightByteBuffer);
+        this.byteBuffer.rewind().limit(Short.BYTES);
+        this.byteBuffer.putShort(s).rewind();
+        writeByteBuffer(this.byteBuffer);
     }
 
     @Override
     public synchronized void writeInt(int i)
     {
-        this.eightByteBuffer.rewind().limit(Integer.BYTES);
-        this.eightByteBuffer.putInt(i).rewind();
-        writeByteBuffer(this.eightByteBuffer);
+        this.byteBuffer.rewind().limit(Integer.BYTES);
+        this.byteBuffer.putInt(i).rewind();
+        writeByteBuffer(this.byteBuffer);
     }
 
     @Override
     public synchronized void writeLong(long l)
     {
-        this.eightByteBuffer.rewind().limit(Long.BYTES);
-        this.eightByteBuffer.putLong(l).rewind();
-        writeByteBuffer(this.eightByteBuffer);
+        this.byteBuffer.rewind().limit(Long.BYTES);
+        this.byteBuffer.putLong(l).rewind();
+        writeByteBuffer(this.byteBuffer);
     }
 
     @Override
     public synchronized void writeFloat(float f)
     {
-        this.eightByteBuffer.rewind().limit(Float.BYTES);
-        this.eightByteBuffer.putFloat(f).rewind();
-        writeByteBuffer(this.eightByteBuffer);
+        this.byteBuffer.rewind().limit(Float.BYTES);
+        this.byteBuffer.putFloat(f).rewind();
+        writeByteBuffer(this.byteBuffer);
     }
 
     @Override
     public synchronized void writeDouble(double d)
     {
-        this.eightByteBuffer.rewind().limit(Double.BYTES);
-        this.eightByteBuffer.putDouble(d).rewind();
-        writeByteBuffer(this.eightByteBuffer);
+        this.byteBuffer.rewind().limit(Double.BYTES);
+        this.byteBuffer.putDouble(d).rewind();
+        writeByteBuffer(this.byteBuffer);
     }
 
     @Override

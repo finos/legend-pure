@@ -16,13 +16,15 @@ package org.finos.legend.pure.m4.serialization.binary;
 
 import org.eclipse.collections.api.collection.primitive.MutableByteCollection;
 
+import java.util.Objects;
+
 class ByteCollectionBinaryWriter extends AbstractSimpleBinaryWriter
 {
     private final MutableByteCollection byteCollection;
 
     ByteCollectionBinaryWriter(MutableByteCollection byteCollection)
     {
-        this.byteCollection = byteCollection;
+        this.byteCollection = Objects.requireNonNull(byteCollection, "byteCollection may not be null");
     }
 
     @Override

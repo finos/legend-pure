@@ -18,6 +18,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.Objects;
 import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipInputStream;
 
@@ -29,7 +30,7 @@ class StreamBinaryReader extends AbstractSimpleBinaryReader
 
     StreamBinaryReader(InputStream stream)
     {
-        this.stream = stream;
+        this.stream = Objects.requireNonNull(stream, "stream may not be null");
     }
 
     @Override
@@ -124,7 +125,7 @@ class StreamBinaryReader extends AbstractSimpleBinaryReader
 
         // Fall back to default skip method
         int size = (int) Math.min(MAX_SKIP_BUFFER_SIZE, n);
-        byte[] buffer = (size <= 8) ? this.eightBytes : new byte[size];
+        byte[] buffer = (size <= this.bytes.length) ? this.bytes : new byte[size];
         long remaining = n;
         while (remaining > 0L)
         {
