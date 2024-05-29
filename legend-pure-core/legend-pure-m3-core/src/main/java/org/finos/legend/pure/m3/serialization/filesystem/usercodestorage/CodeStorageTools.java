@@ -14,6 +14,11 @@
 
 package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
+
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 public class CodeStorageTools
@@ -76,6 +81,34 @@ public class CodeStorageTools
         int end = path.indexOf('/', start);
         String value = (end == -1) ? path.substring(start) : path.substring(start, end);
         return value.endsWith(".pure") ? null : value;
+    }
+
+    public static ListIterable<String> splitPath(String path)
+    {
+        MutableList<String> elements = Lists.mutable.empty();
+        forEachPathElement(path, elements::add);
+        return elements;
+    }
+
+    public static void forEachPathElement(String path, Consumer<? super String> consumer)
+    {
+        if ((path == null) || path.isEmpty() || "/".equals(path))
+        {
+            return;
+        }
+
+        int start = (path.charAt(0) == '/') ? 1 : 0;
+        int end = path.indexOf('/', start);
+        while (end != -1)
+        {
+            consumer.accept(path.substring(start, end));
+            start = end + 1;
+            end = path.indexOf('/', start);
+        }
+        if (start < path.length())
+        {
+            consumer.accept(path.substring(start));
+        }
     }
 
     public static String canonicalizePath(String path)

@@ -14,11 +14,15 @@
 
 package org.finos.legend.pure.m3.serialization.filesystem;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.welcome.WelcomeCodeStorage;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.Arrays;
 
 public class TestCodeStorageTools
 {
@@ -239,6 +243,55 @@ public class TestCodeStorageTools
         Assert.assertEquals(null, CodeStorageTools.getInitialPathElement("welcome.pure"));
         Assert.assertEquals(null, CodeStorageTools.getInitialPathElement("/welcome.pure"));
         Assert.assertEquals(null, CodeStorageTools.getInitialPathElement("/welcome.pure/"));
+    }
+
+    @Test
+    public void testForEachPathElement()
+    {
+        assertForEachPathElement(null);
+        assertForEachPathElement("");
+        assertForEachPathElement("/");
+
+        assertForEachPathElement("platform", "platform");
+        assertForEachPathElement("/platform", "platform");
+        assertForEachPathElement("platform/", "platform");
+        assertForEachPathElement("/platform/", "platform");
+
+        assertForEachPathElement("platform/pure", "platform", "pure");
+        assertForEachPathElement("/platform/pure", "platform", "pure");
+        assertForEachPathElement("platform/pure/", "platform", "pure");
+        assertForEachPathElement("/platform/pure/", "platform", "pure");
+
+        assertForEachPathElement("platform/pure/corefunctions/lang.pure", "platform", "pure", "corefunctions", "lang.pure");
+        assertForEachPathElement("/platform/pure/corefunctions/lang.pure", "platform", "pure", "corefunctions", "lang.pure");
+    }
+
+    private void assertForEachPathElement(String path, String... expectedElements)
+    {
+        MutableList<String> actual = Lists.mutable.empty();
+        CodeStorageTools.forEachPathElement(path, actual::add);
+        Assert.assertEquals(Arrays.asList(expectedElements), actual);
+    }
+
+    @Test
+    public void testSplitPath()
+    {
+        Assert.assertEquals(Lists.immutable.empty(), CodeStorageTools.splitPath(null));
+        Assert.assertEquals(Lists.immutable.empty(), CodeStorageTools.splitPath(""));
+        Assert.assertEquals(Lists.immutable.empty(), CodeStorageTools.splitPath("/"));
+
+        Assert.assertEquals(Lists.mutable.with("platform"), CodeStorageTools.splitPath("platform"));
+        Assert.assertEquals(Lists.mutable.with("platform"), CodeStorageTools.splitPath("/platform"));
+        Assert.assertEquals(Lists.mutable.with("platform"), CodeStorageTools.splitPath("platform/"));
+        Assert.assertEquals(Lists.mutable.with("platform"), CodeStorageTools.splitPath("/platform/"));
+
+        Assert.assertEquals(Lists.mutable.with("platform", "pure"), CodeStorageTools.splitPath("platform/pure"));
+        Assert.assertEquals(Lists.mutable.with("platform", "pure"), CodeStorageTools.splitPath("/platform/pure"));
+        Assert.assertEquals(Lists.mutable.with("platform", "pure"), CodeStorageTools.splitPath("platform/pure/"));
+        Assert.assertEquals(Lists.mutable.with("platform", "pure"), CodeStorageTools.splitPath("/platform/pure/"));
+
+        Assert.assertEquals(Lists.mutable.with("platform", "pure", "corefunctions", "lang.pure"), CodeStorageTools.splitPath("platform/pure/corefunctions/lang.pure"));
+        Assert.assertEquals(Lists.mutable.with("platform", "pure", "corefunctions", "lang.pure"), CodeStorageTools.splitPath("/platform/pure/corefunctions/lang.pure"));
     }
 
     @Test
