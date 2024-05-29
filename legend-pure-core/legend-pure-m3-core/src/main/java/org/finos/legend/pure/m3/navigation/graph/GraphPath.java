@@ -37,6 +37,7 @@ import org.finos.legend.pure.m4.serialization.grammar.StringEscape;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class GraphPath
@@ -322,38 +323,57 @@ public class GraphPath
         return message;
     }
 
-    public static Builder newPathBuilder()
+    public static Builder builder()
     {
         return new Builder();
     }
 
-    public static Builder newPathBuilder(String startNodePath)
+    public static Builder builder(int initEdgeCapacity)
     {
-        return newPathBuilder().withStartNodePath(startNodePath);
+        return new Builder(initEdgeCapacity);
     }
 
+    public static Builder builder(String startNodePath)
+    {
+        return builder().withStartNodePath(startNodePath);
+    }
+
+    public static Builder builder(GraphPath path)
+    {
+        return new Builder(Objects.requireNonNull(path, "path may not be null"));
+    }
+
+    @Deprecated
+    public static Builder newPathBuilder()
+    {
+        return builder();
+    }
+
+    @Deprecated
+    public static Builder newPathBuilder(String startNodePath)
+    {
+        return builder(startNodePath);
+    }
+
+    @Deprecated
     public static Builder newPathBuilder(GraphPath path)
     {
-        if (path == null)
-        {
-            throw new IllegalArgumentException("Path may not be null");
-        }
-        return new Builder(path);
+        return builder(path);
     }
 
     public static GraphPath buildPath(String startNodePath)
     {
-        return newPathBuilder().withStartNodePath(startNodePath).build();
+        return builder().withStartNodePath(startNodePath).build();
     }
 
     public static GraphPath buildPath(String startNodePath, String... toOneProperties)
     {
-        return newPathBuilder().withStartNodePath(startNodePath).addToOneProperties(toOneProperties).build();
+        return builder().withStartNodePath(startNodePath).addToOneProperties(toOneProperties).build();
     }
 
     public static GraphPath parse(String description)
     {
-        return newPathBuilder().fromDescription(description).build();
+        return builder().fromDescription(description).build();
     }
 
     private static String getDescription(String startNodePath, ListIterable<? extends Edge> edges)
@@ -364,7 +384,7 @@ public class GraphPath
     private static <T extends Appendable> T writeDescription(T appendable, String startNodePath, ListIterable<? extends Edge> edges)
     {
         SafeAppendable safeAppendable = SafeAppendable.wrap(appendable).append(startNodePath);
-        edges.forEachWith(Edge::writeMessage, safeAppendable);
+        edges.forEach(e -> e.writeMessage(safeAppendable));
         return appendable;
     }
 
@@ -385,16 +405,22 @@ public class GraphPath
         private M3Lexer lexer;
         private M3Parser parser;
         private String startNodePath;
-        private final MutableList<Edge> pathElements = Lists.mutable.empty();
+        private final MutableList<Edge> pathElements;
 
         private Builder()
         {
+            this.pathElements = Lists.mutable.empty();
+        }
+
+        private Builder(int initEdgeCapacity)
+        {
+            this.pathElements = Lists.mutable.withInitialCapacity(initEdgeCapacity);
         }
 
         private Builder(GraphPath path)
         {
             this.startNodePath = path.startNodePath;
-            this.pathElements.addAll(path.edges.castToList());
+            this.pathElements = Lists.mutable.withAll(path.edges);
         }
 
         public String getStartNodePath()
@@ -431,6 +457,11 @@ public class GraphPath
         public String getDescription()
         {
             return GraphPath.getDescription(this.startNodePath, this.pathElements);
+        }
+
+        public <T extends Appendable> T writeDescription(T appendable)
+        {
+            return GraphPath.writeDescription(appendable, this.startNodePath, this.pathElements);
         }
 
         public Builder fromDescription(String description)
@@ -550,11 +581,7 @@ public class GraphPath
 
         private String validateProperty(String property)
         {
-            if (property == null)
-            {
-                throw new IllegalArgumentException("Property may not be null");
-            }
-            initParser(property);
+            initParser(Objects.requireNonNull(property, "property may not be null"));
             try
             {
                 return this.parser.propertyName().getText();
@@ -576,11 +603,7 @@ public class GraphPath
 
         private String validateKeyProperty(String keyProperty)
         {
-            if (keyProperty == null)
-            {
-                throw new IllegalArgumentException("Key property may not be null");
-            }
-            initParser(keyProperty);
+            initParser(Objects.requireNonNull(keyProperty, "key property may not be null"));
             try
             {
                 return this.parser.propertyName().getText();
@@ -593,11 +616,7 @@ public class GraphPath
 
         private String validateKey(String key)
         {
-            if (key == null)
-            {
-                throw new IllegalArgumentException("Key name may not be null");
-            }
-            return key;
+            return Objects.requireNonNull(key, "key name may not be null");
         }
 
         private void initParser(String text)
