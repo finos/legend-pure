@@ -29,6 +29,8 @@ import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Collection;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class PrimitiveUtilities
@@ -42,7 +44,7 @@ public class PrimitiveUtilities
 
     public static boolean getBooleanValue(CoreInstance instance)
     {
-        return (instance instanceof BooleanCoreInstance) ? ((BooleanCoreInstance)instance).getValue() : ModelRepository.BOOLEAN_TRUE.equals(instance.getName());
+        return (instance instanceof BooleanCoreInstance) ? ((BooleanCoreInstance) instance).getValue() : ModelRepository.BOOLEAN_TRUE.equals(instance.getName());
     }
 
     public static boolean getBooleanValue(CoreInstance instance, boolean defaultIfNull)
@@ -52,7 +54,7 @@ public class PrimitiveUtilities
 
     public static PureDate getDateValue(CoreInstance instance)
     {
-        return (instance instanceof DateCoreInstance) ? ((DateCoreInstance)instance).getValue() : DateFunctions.parsePureDate(instance.getName());
+        return (instance instanceof DateCoreInstance) ? ((DateCoreInstance) instance).getValue() : DateFunctions.parsePureDate(instance.getName());
     }
 
     public static PureDate getDateValue(CoreInstance instance, PureDate defaultIfNull)
@@ -62,7 +64,7 @@ public class PrimitiveUtilities
 
     public static BigDecimal getFloatValue(CoreInstance instance)
     {
-        return (instance instanceof FloatCoreInstance) ? ((FloatCoreInstance)instance).getValue() : new BigDecimal(instance.getName());
+        return (instance instanceof FloatCoreInstance) ? ((FloatCoreInstance) instance).getValue() : new BigDecimal(instance.getName());
     }
 
     public static BigDecimal getFloatValue(CoreInstance instance, BigDecimal defaultIfNull)
@@ -72,7 +74,7 @@ public class PrimitiveUtilities
 
     public static BigDecimal getDecimalValue(CoreInstance instance)
     {
-        return (instance instanceof DecimalCoreInstance) ? ((DecimalCoreInstance)instance).getValue() : new BigDecimal(instance.getName());
+        return (instance instanceof DecimalCoreInstance) ? ((DecimalCoreInstance) instance).getValue() : new BigDecimal(instance.getName());
     }
 
     public static BigDecimal getDecimalValue(CoreInstance instance, BigDecimal defaultIfNull)
@@ -84,7 +86,7 @@ public class PrimitiveUtilities
     {
         if (instance instanceof IntegerCoreInstance)
         {
-            return ((IntegerCoreInstance)instance).getValue();
+            return ((IntegerCoreInstance) instance).getValue();
         }
 
         String name = instance.getName();
@@ -142,24 +144,79 @@ public class PrimitiveUtilities
 
     public static RichIterable<CoreInstance> getPrimitiveTypes(ModelRepository repository)
     {
-        return getPrimitiveTypes(repository::getTopLevel);
+        return getPrimitiveTypes(repository, true);
+    }
+
+    public static RichIterable<CoreInstance> getPrimitiveTypes(ModelRepository repository, boolean errorIfNotFound)
+    {
+        return getPrimitiveTypes(repository, Lists.mutable.ofInitialCapacity(PRIMITIVE_TYPE_NAMES.size()), errorIfNotFound);
+    }
+
+    public static <T extends Collection<? super CoreInstance>> T getPrimitiveTypes(ModelRepository repository, T targetCollection)
+    {
+        return getPrimitiveTypes(repository, targetCollection, true);
+    }
+
+    public static <T extends Collection<? super CoreInstance>> T getPrimitiveTypes(ModelRepository repository, T targetCollection, boolean errorIfNotFound)
+    {
+        forEachPrimitiveType(repository, targetCollection::add, errorIfNotFound);
+        return targetCollection;
+    }
+
+    public static void forEachPrimitiveType(ModelRepository repository, Consumer<? super CoreInstance> consumer)
+    {
+        forEachPrimitiveType(repository, consumer, true);
+    }
+
+    public static void forEachPrimitiveType(ModelRepository repository, Consumer<? super CoreInstance> consumer, boolean errorIfNotFound)
+    {
+        forEachPrimitiveType(repository::getTopLevel, consumer, errorIfNotFound);
     }
 
     public static RichIterable<CoreInstance> getPrimitiveTypes(ProcessorSupport processorSupport)
     {
-        return getPrimitiveTypes(processorSupport::repository_getTopLevel);
+        return getPrimitiveTypes(processorSupport, true);
     }
 
-    private static RichIterable<CoreInstance> getPrimitiveTypes(Function<String, CoreInstance> getTopLevel)
+    public static RichIterable<CoreInstance> getPrimitiveTypes(ProcessorSupport processorSupport, boolean errorIfNotFound)
     {
-        return PRIMITIVE_TYPE_NAMES.collect(n ->
+        return getPrimitiveTypes(processorSupport, Lists.mutable.ofInitialCapacity(PRIMITIVE_TYPE_NAMES.size()), errorIfNotFound);
+    }
+
+    public static <T extends Collection<? super CoreInstance>> T getPrimitiveTypes(ProcessorSupport processorSupport, T targetCollection)
+    {
+        return getPrimitiveTypes(processorSupport, targetCollection, true);
+    }
+
+    public static <T extends Collection<? super CoreInstance>> T getPrimitiveTypes(ProcessorSupport processorSupport, T targetCollection, boolean errorIfNotFound)
+    {
+        forEachPrimitiveType(processorSupport, targetCollection::add, errorIfNotFound);
+        return targetCollection;
+    }
+
+    public static void forEachPrimitiveType(ProcessorSupport processorSupport, Consumer<? super CoreInstance> consumer)
+    {
+        forEachPrimitiveType(processorSupport, consumer, true);
+    }
+
+    public static void forEachPrimitiveType(ProcessorSupport processorSupport, Consumer<? super CoreInstance> consumer, boolean errorIfNotFound)
+    {
+        forEachPrimitiveType(processorSupport::repository_getTopLevel, consumer, errorIfNotFound);
+    }
+
+    private static void forEachPrimitiveType(Function<String, CoreInstance> getTopLevel, Consumer<? super CoreInstance> consumer, boolean errorIfNotFound)
+    {
+        PRIMITIVE_TYPE_NAMES.forEach(name ->
         {
-            CoreInstance primitiveType = getTopLevel.apply(n);
-            if (primitiveType == null)
+            CoreInstance primitiveType = getTopLevel.apply(name);
+            if (primitiveType != null)
             {
-                throw new RuntimeException("Cannot find primitive type: " + n);
+                consumer.accept(primitiveType);
             }
-            return primitiveType;
-        }, Lists.mutable.ofInitialCapacity(PRIMITIVE_TYPE_NAMES.size()));
+            else if (errorIfNotFound)
+            {
+                throw new RuntimeException("Cannot find primitive type: " + name);
+            }
+        });
     }
 }
