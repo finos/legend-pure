@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure-functions-relation</artifactId>
-        <version>5.8.0</version>
+        <version>5.8.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>legend-pure-runtime-java-extension-interpreted-functions-relation</artifactId>
