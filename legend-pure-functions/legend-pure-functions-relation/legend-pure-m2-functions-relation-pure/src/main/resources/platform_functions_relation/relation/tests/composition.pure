@@ -51,7 +51,7 @@ function <<PCT.test>> meta::pure::functions::relation::tests::composition::testE
                   '#', $res->toString());
 }
 
-function <<RelationProfile.test>> meta::pure::functions::relation::tests::composition::testFilterPostProject<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::relation::tests::composition::testFilterPostProject<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
 {
     let expr = {|
                      [
