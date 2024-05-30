@@ -29,8 +29,8 @@ import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineD
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.MilestoningDatesVarNamesExtractor;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.VisibilityValidator;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public class GraphDSL implements InlineDSL
 {

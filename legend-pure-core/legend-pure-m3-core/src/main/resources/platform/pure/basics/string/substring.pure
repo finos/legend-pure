@@ -12,26 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::string::substring(str:String[1], start:Integer[1]):String[1];
+import meta::pure::test::pct::*;
 
-native function meta::pure::functions::string::substring(str:String[1], start:Integer[1], end:Integer[1]):String[1];
+native function
+    <<PCT.function>>
+    {
+        doc.doc=''
+    }
+    meta::pure::functions::string::substring(str:String[1], start:Integer[1]):String[1];
 
-function <<test.Test>> meta::pure::functions::string::tests::substring::testStart():Boolean[1]
+native function <<PCT.function>> meta::pure::functions::string::substring(str:String[1], start:Integer[1], end:Integer[1]):String[1];
+
+function <<PCT.test>> meta::pure::functions::string::tests::substring::testStart<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let string = 'the quick brown fox jumps over the lazy dog';
-    assertEquals('the quick brown fox jumps over the lazy dog', substring($string, 0));
-    assertEquals('he quick brown fox jumps over the lazy dog', substring($string, 1));
-    assertEquals('e quick brown fox jumps over the lazy dog', substring($string, 2));
-    assertEquals(' quick brown fox jumps over the lazy dog', substring($string, 3));
-    assertEquals('quick brown fox jumps over the lazy dog', substring($string, 4));
+    assertEquals('the quick brown fox jumps over the lazy dog', $f->eval(|substring($string, 0)));
+    assertEquals('he quick brown fox jumps over the lazy dog', $f->eval(|substring($string, 1)));
+    assertEquals('e quick brown fox jumps over the lazy dog', $f->eval(|substring($string, 2)));
+    assertEquals(' quick brown fox jumps over the lazy dog', $f->eval(|substring($string, 3)));
+    assertEquals('quick brown fox jumps over the lazy dog', $f->eval(|substring($string, 4)));
 }
 
-function <<test.Test>> meta::pure::functions::string::tests::substring::testStartEnd():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::substring::testStartEnd<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let string = 'the quick brown fox jumps over the lazy dog';
-    assertEquals('the quick brown fox jumps over the lazy dog', substring($string, 0, 43));
-    assertEquals('he quick brown fox jumps over the lazy do', substring($string, 1, 42));
-    assertEquals('e quick brown fox jumps over the lazy d', substring($string, 2, 41));
-    assertEquals(' quick brown fox jumps over the lazy ', substring($string, 3, 40));
-    assertEquals('quick brown fox jumps over the lazy', substring($string, 4, 39));
+    assertEquals('the quick brown fox jumps over the lazy dog', $f->eval(|substring($string, 0, 43)));
+    assertEquals('he quick brown fox jumps over the lazy do', $f->eval(|substring($string, 1, 42)));
+    assertEquals('e quick brown fox jumps over the lazy d', $f->eval(|substring($string, 2, 41)));
+    assertEquals(' quick brown fox jumps over the lazy ', $f->eval(|substring($string, 3, 40)));
+    assertEquals('quick brown fox jumps over the lazy', $f->eval(|substring($string, 4, 39)));
 }

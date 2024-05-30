@@ -14,28 +14,31 @@
 
 package org.finos.legend.pure.m3.execution.test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.util.Collections;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.set.mutable.UnifiedSet;
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
+import org.finos.legend.pure.m3.execution.Console;
+import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.execution.Console;
-import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
+import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureException;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.Collections;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.finos.legend.pure.m3.pct.shared.PCTTools.isPCTTest;
 
 public class TestRunner implements Runnable
 {
@@ -217,6 +220,19 @@ public class TestRunner implements Runnable
     private void executeTestFunc(CoreInstance testFunc, Object testFunctionParam, CoreInstance testFunctionParamCustomizer)
     {
         ListIterable<? extends CoreInstance> args = Lists.mutable.empty();
+
+        if (isPCTTest(testFunc, functionExecution.getProcessorSupport()))
+        {
+//            String adapterLocation = "meta::relational::tests::pct::testAdapterForRelationalWithH2Execution_Function_1__Any_1_";
+            String adapterLocation = "meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_";
+//            String adapterLocation = "meta::pure::executionPlan::platformBinding::legendJava::pct::testAdapterForJavaBindingExecution_Function_1__Any_1_";
+            testFunctionParam = _Package.getByUserPath(adapterLocation, functionExecution.getProcessorSupport());
+            if (testFunctionParam == null)
+            {
+                throw new RuntimeException("The adapter " + adapterLocation + " can't be found in the graph");
+            }
+        }
+
         if (testFunctionParam != null)
         {
             ProcessorSupport processorSupport = this.functionExecution.getProcessorSupport();

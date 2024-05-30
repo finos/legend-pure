@@ -56,6 +56,7 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
         }
     }
 
+
     @Test
     public void testNewWithUnknownType()
     {
@@ -87,6 +88,40 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
         catch (Exception e)
         {
             assertPureException(PureCompilationException.class, "Error has not been defined!", 3, 16, e);
+        }
+    }
+
+    @Test
+    public void testToMultiplicityWithUnknownMul()
+    {
+        try
+        {
+            compileTestSource("fromString.pure", "function myFunc<|o>():String[o]\n" +
+                    "{\n" +
+                    "    'a'->toMultiplicity(@[x]);\n" +
+                    "}\n");
+            Assert.fail();
+        }
+        catch (Exception e)
+        {
+            assertPureException(PureCompilationException.class, "The multiplicity parameter x is unknown!", 3, 25, e);
+        }
+    }
+
+    @Test
+    public void testToMultiplicityWithWrongMul()
+    {
+        try
+        {
+            compileTestSource("fromString.pure", "function myFunc<|o>():String[o]\n" +
+                    "{\n" +
+                    "    'a';\n" +
+                    "}\n");
+            Assert.fail();
+        }
+        catch (Exception e)
+        {
+            assertPureException(PureCompilationException.class, "Return multiplicity error in function 'myFunc'; found: [1]; expected: [o]", 3, 5, e);
         }
     }
 

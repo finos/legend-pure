@@ -1,0 +1,48 @@
+// Copyright 2023 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::test::pct::*;
+
+import meta::pure::functions::collection::tests::model::*;
+
+native function <<PCT.function>> meta::pure::functions::collection::find<T>(value:T[*], func:Function<{T[1]->Boolean[1]}>[1]):T[0..1];
+
+function <<PCT.test>> meta::pure::functions::collection::tests::find::testFindLiteral<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEquals('Doe', $f->eval(|['Smith', 'Doe', 'Oth', 'Branche']->find(s | eq($s->length(), 3))));
+    assertEquals('Branche', $f->eval(|['Smith', 'Branche', 'Doe']->find(s | $s != 'Smith')));
+}
+
+function <<PCT.test>> meta::pure::functions::collection::tests::find::testFindLiteralFromVar<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    let set = ['Smith', 'Branche', 'Doe'];
+    assertEquals('Smith', $f->eval(|$set->find(s | $s->length() < 6)));
+}
+
+function <<PCT.test>> meta::pure::functions::collection::tests::find::testFindInstance<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    let smith = ^CO_Person(firstName='Fabrice', lastName='Smith');
+    let doe = ^CO_Person(firstName='Pierre', lastName='Doe');
+    let branche = ^CO_Person(firstName='Justin', lastName='Branche');
+    assertEquals($smith, $f->eval(|[$smith, $branche, $doe]->find(p | !$p.lastName->isEmpty() && ($p.lastName->toOne()->length() < 6))));
+}
+
+function <<PCT.test>> meta::pure::functions::collection::tests::find::testFindUsingVarForFunction<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    let smith = ^CO_Person(firstName='Fabrice', lastName='Smith');
+    let doe = ^CO_Person(firstName='Pierre', lastName='Doe');
+    let branche = ^CO_Person(firstName='Justin', lastName='Branche');
+    let func = {p:CO_Person[1] | !$p.lastName->isEmpty() && ($p.lastName->toOne()->length() < 6)};
+    assertEquals($smith, $f->eval(|[$smith, $branche, $doe]->find($func)));
+}

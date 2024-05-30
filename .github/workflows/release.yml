@@ -86,7 +86,7 @@ jobs:
           theme: dark
 
       - name: Prepare release
-        run: mvn -B -DpreparationGoals=clean release:prepare -DreleaseVersion=${{ github.event.inputs.releaseVersion }} -DdevelopmentVersion=${{ env.DEVELOPMENT_VERSION }} -P release
+        run: mvn -T2 -B -DpreparationGoals=clean release:prepare -DreleaseVersion=${{ github.event.inputs.releaseVersion }} -DdevelopmentVersion=${{ env.DEVELOPMENT_VERSION }} -P release -DargLine="-Xmx5g"
 
       - name: Perform release
-        run: mvn -B release:perform -P release
+        run: mvn -T2 -DargLine="-Xmx5g" -B release:perform -P release -DargLine="-Xmx5g"

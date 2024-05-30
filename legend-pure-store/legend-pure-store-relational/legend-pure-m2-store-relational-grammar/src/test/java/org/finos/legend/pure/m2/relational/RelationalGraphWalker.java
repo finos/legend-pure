@@ -15,7 +15,7 @@
 package org.finos.legend.pure.m2.relational;
 
 import org.eclipse.collections.api.list.ListIterable;
-import org.finos.legend.pure.m2.ds.mapping.test.GraphWalker;
+import org.finos.legend.pure.m2.dsl.mapping.test.GraphWalker;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;

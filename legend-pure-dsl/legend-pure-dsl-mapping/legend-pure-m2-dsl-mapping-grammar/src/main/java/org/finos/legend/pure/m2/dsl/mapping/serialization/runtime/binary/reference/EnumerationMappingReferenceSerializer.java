@@ -18,13 +18,13 @@ import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingProperties;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.AbstractReferenceWithOwner;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ExternalReferenceDeserializationHelper;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ExternalReferenceSerializationHelper;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ExternalReferenceSerializer;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.Reference;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.UnresolvableReferenceException;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public class EnumerationMappingReferenceSerializer implements ExternalReferenceSerializer

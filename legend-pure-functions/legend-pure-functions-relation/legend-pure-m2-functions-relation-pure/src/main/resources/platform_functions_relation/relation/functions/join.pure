@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
 import meta::pure::metamodel::relation::*;
 
 Enum meta::pure::functions::relation::JoinKind
@@ -20,9 +21,9 @@ Enum meta::pure::functions::relation::JoinKind
     INNER
 }
 
-native function meta::pure::functions::relation::join<T,V>(rel1:Relation<T>[1], rel2:Relation<V>[1], joinKind:JoinKind[1], f:Function<{T[1],V[1]->Boolean[1]}>[1]):Relation<T+V>[1];
+native function <<PCT.function>> meta::pure::functions::relation::join<T,V>(rel1:Relation<T>[1], rel2:Relation<V>[1], joinKind:JoinKind[1], f:Function<{T[1],V[1]->Boolean[1]}>[1]):Relation<T+V>[1];
 
-function <<RelationProfile.test>> meta::pure::functions::relation::tests::join::testSimpleJoinShared<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::relation::tests::join::testSimpleJoinShared<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
 {
   let tds = #TDS
               id, name
@@ -47,7 +48,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::join::
                 '   1,George,1,More George 1,1\n'+
                 '   1,George,1,More George 2,2\n'+
                 '   4,David,4,More David,1\n'+
-                '#', $res->toString());
+                '#', $res->sort([~id->ascending(),~col->ascending()])->toString());
 
   let expr2 = {|$tds->join($tds2, JoinKind.LEFT, {x,y| $x.id == $y.id2})};
   let res2 =  $f->eval($expr2);
@@ -59,5 +60,5 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::join::
                 '   2,Pierre,null,null,null\n'+
                 '   3,Sachin,null,null,null\n'+
                 '   4,David,4,More David,1\n'+
-                '#', $res2->sort(~id->ascending())->toString());
+                '#', $res2->sort([~id->ascending(),~col->ascending()])->toString());
 }

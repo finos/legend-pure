@@ -17,12 +17,12 @@ package org.finos.legend.pure.m4.coreinstance;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.set.MutableSet;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
-import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecification;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
 
 public class AbstractCoreInstanceWrapper implements CoreInstance
 {

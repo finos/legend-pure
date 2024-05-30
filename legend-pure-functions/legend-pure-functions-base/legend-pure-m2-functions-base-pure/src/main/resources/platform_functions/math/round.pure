@@ -12,85 +12,88 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::math::round(number:Number[1]):Integer[1];
+import meta::pure::test::pct::*;
 
-native function meta::pure::functions::math::round(decimal:Decimal[1], scale:Integer[1]):Decimal[1];
+native function <<PCT.function>> meta::pure::functions::math::round(number:Number[1]):Integer[1];
 
-native function meta::pure::functions::math::round(float:Float[1], scale:Integer[1]):Float[1];
+native function <<PCT.function>> meta::pure::functions::math::round(decimal:Decimal[1], scale:Integer[1]):Decimal[1];
 
-function <<test.Test>> meta::pure::functions::math::tests::round::testPositiveIntegerRound():Boolean[1]
+native function <<PCT.function>> meta::pure::functions::math::round(float:Float[1], scale:Integer[1]):Float[1];
+
+
+function <<PCT.test>> meta::pure::functions::math::tests::round::testPositiveIntegerRound<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(17, round(17));
+    assertEq(17, $f->eval(|round(17)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::round::testNegativeIntegerRound():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::round::testNegativeIntegerRound<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(-17, round(-17));
+    assertEq(-17, $f->eval(|round(-17)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::round::testPositiveFloatRoundUp():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::round::testPositiveFloatRoundUp<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(18, round(17.6));
+    assertEq(18, $f->eval(|round(17.6)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::round::testPositiveFloatRoundDown():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::round::testPositiveFloatRoundDown<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(17, round(17.4));
+    assertEq(17, $f->eval(|round(17.4)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::round::testPositiveFloatRoundHalfEvenUp():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::round::testPositiveFloatRoundHalfEvenUp<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(18, round(17.5));
+    assertEq(18, $f->eval(|round(17.5)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::round::testPositiveFloatRoundHalfEvenDown():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::round::testPositiveFloatRoundHalfEvenDown<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(16, round(16.5));
+    assertEq(16, $f->eval(|round(16.5)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::round::testPositiveFloatWithZeroDecimalRound():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::round::testPositiveFloatWithZeroDecimalRound<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(17, round(17.0));
+    assertEq(17, $f->eval(|round(17.0)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::round::testNegativeFloatRoundUp():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::round::testNegativeFloatRoundUp<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(-17, round(-17.4));
+    assertEq(-17, $f->eval(|round(-17.4)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::round::testNegativeFloatRoundDown():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::round::testNegativeFloatRoundDown<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(-18, round(-17.6));
+    assertEq(-18, $f->eval(|round(-17.6)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::round::testNegativeFloatRoundHalfEvenUp():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::round::testNegativeFloatRoundHalfEvenUp<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(-16, round(-16.5));
+    assertEq(-16, $f->eval(|round(-16.5)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::round::testNegativeFloatRoundHalfEvenDown():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::round::testNegativeFloatRoundHalfEvenDown<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(-18, round(-17.5));
+    assertEq(-18, $f->eval(|round(-17.5)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::round::testNegativeFloatWithZeroDecimalRound():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::round::testNegativeFloatWithZeroDecimalRound<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(-17, round(-17.0));
+    assertEq(-17, $f->eval(|round(-17.0)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::round::testDecimalRound():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::round::testDecimalRound<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(3, round(3.14159d));
-    assertEq(-3, round(-3.14159d));
+    assertEq(3, $f->eval(|round(3.14159d)));
+    assertEq(-3, $f->eval(|round(-3.14159d)));
 
-    assertEq(3.14d, 3.14159d->round(2));
-    assertEq(3.142d, 3.14159d->round(3));
-    assertEq(-3.14d, round(-3.14159d, 2));
-    assertEq(-3.142d, round(-3.14159d, 3));
+    assertEq(3.14d, $f->eval(|3.14159d->round(2)));
+    assertEq(3.142d, $f->eval(|3.14159d->round(3)));
+    assertEq(-3.14d, $f->eval(|round(-3.14159d, 2)));
+    assertEq(-3.142d, $f->eval(|round(-3.14159d, 3)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::round::testFloatRoundWithScale():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::round::testFloatRoundWithScale<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(17.0, round(17.3, 0));
-    assertEq(-17.4, round(-17.36, 1));
+    assertEq(17.0, $f->eval(|round(17.3, 0)));
+    assertEq(-17.4, $f->eval(|round(-17.36, 1)));
 }

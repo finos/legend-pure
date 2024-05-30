@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m4.coreinstance.factory;
 
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 /**

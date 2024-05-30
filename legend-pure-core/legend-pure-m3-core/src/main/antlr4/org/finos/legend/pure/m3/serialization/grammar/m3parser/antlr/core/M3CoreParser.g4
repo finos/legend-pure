@@ -132,7 +132,7 @@ enumDefinition: ENUM stereotypes? taggedValues? qualifiedName
 enumValue: stereotypes? taggedValues? identifier
 ;
 
-nativeFunction: NATIVE FUNCTION stereotypes? qualifiedName typeAndMultiplicityParameters? functionTypeSignature END_LINE
+nativeFunction: NATIVE FUNCTION stereotypes? taggedValues? qualifiedName typeAndMultiplicityParameters? functionTypeSignature END_LINE
 ;
 
 functionTypeSignature: GROUP_OPEN (functionVariableExpression (COMMA functionVariableExpression)*)? GROUP_CLOSE COLON type multiplicity
@@ -233,7 +233,7 @@ stereotype: qualifiedName DOT identifier
 taggedValues: CURLY_BRACKET_OPEN taggedValue (COMMA taggedValue)* CURLY_BRACKET_CLOSE
 ;
 
-taggedValue: qualifiedName DOT identifier EQUAL STRING
+taggedValue: qualifiedName DOT identifier EQUAL STRING (PLUS STRING)*
 ;
 
 defaultValue: EQUAL defaultValueExpression
@@ -307,7 +307,7 @@ atomicExpression:
                  | unitInstance
                  | variable
                  | columnBuilders
-                 | (AT type)
+                 | (AT (type | multiplicity))
                  | lambdaPipe
                  | lambdaFunction
                  | instanceReference

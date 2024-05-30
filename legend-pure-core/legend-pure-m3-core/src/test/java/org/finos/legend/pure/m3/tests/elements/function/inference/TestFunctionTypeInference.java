@@ -682,6 +682,68 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
+    public void testPair()
+    {
+        // Error should be Pair<String, Property<Nil, Any|*>>[*]
+
+        compileInferenceTest(
+                "Class Person\n" +
+                        "{\n" +
+                        " age:Integer[1];\n" +
+                        "}\n" +
+                        "Class Firm" +
+                        "{" +
+                        "legalName:String[1];" +
+                        "}" +
+                        "function test<T>(f:T[1], func:Function<{T[1]->Person[*]}>[1]):Pair<String, Property<Nil, Any|*>>[*]\n" +
+                        "{\n" +
+                        "   [Person, Firm].properties->map(x|pair('a',$x));\n" +
+                        "}\n");
+    }
+
+    @Test
+    public void testProperty()
+    {
+        compileInferenceTest(
+                "Class Person\n" +
+                        "{\n" +
+                        " age:Integer[1];\n" +
+                        "}\n" +
+                        "Class Firm" +
+                        "{" +
+                        "legalName:String[1];" +
+                        "}" +
+                        "function test<T>(f:T[1], func:Function<{T[1]->Person[*]}>[1]):Pair<String, Property<Nil, Any|*>>[*]\n" +
+                        "{\n" +
+                        "   [Person, Firm].properties->map(x|pair('a',$x));\n" +
+                        "}\n");
+    }
+
+    @Test
+    public void testPropertyThroughFunction()
+    {
+        compileInferenceTest(
+                "Class Person\n" +
+                        "{\n" +
+                        " age:Integer[1];\n" +
+                        "}\n" +
+                        "Class Firm" +
+                        "{" +
+                        "legalName:String[1];" +
+                        "}" +
+                        "function process(c:Class<Any>[*]):Pair<Class<Any>, Property<Nil,Any|*>>[*]\n" +
+                        "{\n" +
+                        "    $c->map(x|$x.properties->map(w|pair($x,$w)));\n" +
+                        "}" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   [Person, Firm]->process();" +
+                        "   true;\n" +
+                        "}\n");
+
+    }
+
+    @Test
     public void testNativeFuncWithTypeParams()
     {
         compileInferenceTest(

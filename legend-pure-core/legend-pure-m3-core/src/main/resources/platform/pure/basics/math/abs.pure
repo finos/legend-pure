@@ -12,13 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::math::abs(int:Integer[1]):Integer[1];
+import meta::pure::test::pct::*;
 
-native function meta::pure::functions::math::abs(float:Float[1]):Float[1];
+native function
+    <<PCT.function>>
+    {
+        doc.doc=''
+    }
+    meta::pure::functions::math::abs(int:Integer[1]):Integer[1];
 
-native function meta::pure::functions::math::abs(number:Number[1]):Number[1];
+native function <<PCT.function>> meta::pure::functions::math::abs(float:Float[1]):Float[1];
 
-native function meta::pure::functions::math::abs(decimal:Decimal[1]):Decimal[1];
+native function <<PCT.function>> meta::pure::functions::math::abs(number:Number[1]):Number[1];
+
+native function <<PCT.function>> meta::pure::functions::math::abs(decimal:Decimal[1]):Decimal[1];
 
 
 function <<test.Test>> meta::pure::functions::math::tests::abs::testIntAbs():Boolean[1]

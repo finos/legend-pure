@@ -19,6 +19,8 @@ import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.block.factory.Predicates;
 import org.eclipse.collections.impl.tuple.Tuples;
@@ -29,8 +31,11 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.pct.shared.PCTTools;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.StringCoreInstance;
+
+import static org.finos.legend.pure.m3.pct.shared.PCTTools.isPCTTest;
 
 public class TestCollection
 {
@@ -402,6 +407,10 @@ public class TestCollection
                     {
                         this.subCollections.add(pureTestCollectionGenerator.apply(child));
                     }
+                    else if (PCTTools.isPCTTest(child, processorSupport))
+                    {
+                        this.testFunctions.add(child);
+                    }
                 }
             }
             else if (Instance.instanceOf(child, M3Paths.Package, processorSupport))
@@ -713,5 +722,25 @@ public class TestCollection
                 (System.getProperty("alloy.test.server.host") != null || System.getProperty("legend.test.server.host") != null)) ?
                 i -> !TestTools.hasExcludeAlloyTextModeStereotype(i, processorSupport) :
                 DEFAULT_FILTER_PREDICATE;
+    }
+
+    public static TestCollection buildPCTTestCollection(String path, String filePath, ProcessorSupport processorSupport)
+    {
+        return TestCollection.collectTests(
+                path,
+                processorSupport,
+                node -> node.getSourceInformation().getSourceId().startsWith(filePath) && isPCTTest(node, processorSupport)
+        );
+    }
+
+    public static void validateExclusions(TestCollection collection, MutableMap<String, String> exclusions)
+    {
+        MutableSet<String> exList = exclusions.keysView().toSet();
+        MutableSet<String> allTests = collection.getAllTestFunctions().collect(c -> PackageableElement.getUserPathForPackageableElement(c, "::")).toSet();
+        exList.removeAll(allTests);
+        if (!exList.isEmpty())
+        {
+            throw new RuntimeException("\n The excluded tests:\n" + exList.collect(x -> "     " + x).makeString("\n") + "\n are not covered by this test suite");
+        }
     }
 }

@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
 import meta::pure::metamodel::relation::*;
 
-native function meta::pure::functions::relation::concatenate<T>(rel1:Relation<T>[1], rel2:Relation<T>[1]):Relation<T>[1];
+native function <<PCT.function>> meta::pure::functions::relation::concatenate<T>(rel1:Relation<T>[1], rel2:Relation<T>[1]):Relation<T>[1];
 
-function <<RelationProfile.test>> meta::pure::functions::relation::tests::concatenate::testSimpleConcatenateShared<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::relation::tests::concatenate::testSimpleConcatenateShared<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
 {
     let expr = {
                | #TDS

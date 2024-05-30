@@ -14,9 +14,6 @@
 
 package org.finos.legend.pure.m3.execution;
 
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.list.MutableList;
@@ -26,6 +23,9 @@ import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
 import org.eclipse.collections.impl.multimap.list.FastListMultimap;
+
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 public class ExecutionPlatformRegistry
 {

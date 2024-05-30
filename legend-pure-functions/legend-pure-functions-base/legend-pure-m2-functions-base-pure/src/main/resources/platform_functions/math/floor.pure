@@ -12,44 +12,46 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::math::floor(number:Number[1]):Integer[1];
+import meta::pure::test::pct::*;
 
-function <<test.Test>> meta::pure::functions::math::tests::floor::testPositiveIntegerFloor():Boolean[1]
+native function <<PCT.function>> meta::pure::functions::math::floor(number:Number[1]):Integer[1];
+
+function <<PCT.test>> meta::pure::functions::math::tests::floor::testPositiveIntegerFloor<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(17, floor(17));
+    assertEq(17, $f->eval(|floor(17)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::floor::testNegativeIntegerFloor():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::floor::testNegativeIntegerFloor<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(-17, floor(-17));
+    assertEq(-17, $f->eval(|floor(-17)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::floor::testPositiveFloatFloor():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::floor::testPositiveFloatFloor<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(17, floor(17.9));
-    assertEq(17, floor(17.5));
-    assertEq(17, floor(17.01));
+    assertEq(17, $f->eval(|floor(17.9)));
+    assertEq(17, $f->eval(|floor(17.5)));
+    assertEq(17, $f->eval(|floor(17.01)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::floor::testPositiveFloatWithZeroDecimalFloor():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::floor::testPositiveFloatWithZeroDecimalFloor<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(17, floor(17.0));
+    assertEq(17, $f->eval(|floor(17.0)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::floor::testNegativeFloatFloor():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::floor::testNegativeFloatFloor<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(-18, floor(-17.9));
-    assertEq(-18, floor(-17.5));
-    assertEq(-18, floor(-17.01));
+    assertEq(-18, $f->eval(|floor(-17.9)));
+    assertEq(-18, $f->eval(|floor(-17.5)));
+    assertEq(-18, $f->eval(|floor(-17.01)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::floor::testNegativeFloatWithZeroDecimalFloor():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::floor::testNegativeFloatWithZeroDecimalFloor<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(-17, floor(-17.0));
+    assertEq(-17, $f->eval(|floor(-17.0)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::floor::testDecimalFloor():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::floor::testDecimalFloor<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(3, 3.14d->floor());
-    assertEq(-4, floor(-3.14d));
+    assertEq(3, $f->eval(|3.14d->floor()));
+    assertEq(-4, $f->eval(|floor(-3.14d)));
 }

@@ -32,9 +32,13 @@
                 <!-- Used to copy test results into test reports module -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <reportsDirectory>../../legend-pure-test-reports/surefire-reports-aggregate</reportsDirectory>
-                </configuration>
+                <executions>
+                    <execution>
+                        <configuration>
+                            <reportsDirectory>../../legend-pure-test-reports/surefire-reports-aggregate</reportsDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -42,5 +46,6 @@
     <modules>
         <module>legend-pure-maven-generation-java</module>
         <module>legend-pure-maven-generation-par</module>
+        <module>legend-pure-maven-generation-pct</module>
     </modules>
 </project>

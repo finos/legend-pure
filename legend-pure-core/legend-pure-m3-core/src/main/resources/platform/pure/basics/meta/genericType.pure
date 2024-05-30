@@ -13,9 +13,10 @@
 // limitations under the License.
 
 import meta::pure::functions::meta::tests::model::*;
+import meta::pure::test::pct::*;
 
 
-native function meta::pure::functions::meta::genericType(any:Any[*]):GenericType[1];
+native function <<PCT.platformOnly>> meta::pure::functions::meta::genericType(any:Any[*]):GenericType[1];
 
 
 function <<test.Test>> meta::pure::functions::meta::tests::genericType::testGenericType():Boolean[1]

@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m4.serialization.grammar.antlr;
 
-import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.antlr.v4.runtime.Token;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 public class AntlrSourceInformation
 {

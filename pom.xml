@@ -14,7 +14,8 @@
  limitations under the License.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -209,6 +210,11 @@
                     <artifactId>nexus-staging-maven-plugin</artifactId>
                     <version>${nexus-staging.maven.plugin.version}</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.finos.legend.pure</groupId>
+                    <artifactId>legend-pure-maven-generation-pct</artifactId>
+                    <version>${project.version}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -283,7 +289,7 @@
                                 <requireJavaVersion>
                                     <version>${java.version.range}</version>
                                 </requireJavaVersion>
-                                <dependencyConvergence />
+                                <dependencyConvergence/>
                                 <bannedDependencies>
                                     <excludes>
                                         <exclude>log4j</exclude>
@@ -339,19 +345,6 @@
                         <exclude>org/finos/legend/pure/m2/relational/serialization/grammar/**/*</exclude>
                         <exclude>org/finos/legend/pure/generated/**/*</exclude>
                     </excludes>
-                </configuration>
-            </plugin>
-            <plugin>
-                <!-- Used to copy test results into test reports module -->
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <trimStackTrace>false</trimStackTrace>
-                    <useSystemClassLoader>true</useSystemClassLoader>
-                    <useManifestOnlyJar>false</useManifestOnlyJar>
-                    <trimStackTrace>false</trimStackTrace>
-                    <reportsDirectory>${project.parent.basedir}/legend-pure-test-reports/surefire-reports-aggregate
-                    </reportsDirectory>
                 </configuration>
             </plugin>
             <plugin>

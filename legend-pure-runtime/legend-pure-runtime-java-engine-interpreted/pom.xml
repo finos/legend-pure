@@ -27,6 +27,37 @@
     <packaging>jar</packaging>
     <name>Legend Pure - Runtime - Engine Interpreted</name>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>GeneratePCTReport</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>
+                                org.finos.legend.pure.runtime.java.interpreted.testHelper.PCTReportGenerator
+                            </mainClass>
+                            <arguments>
+                                <argument>${project.build.directory}/classes/pct-reports/</argument>
+                                <argument>org.finos.legend.pure.runtime.java.interpreted.pure.Test_Interpreted_GrammarFunctions_PCT</argument>
+                                <argument>org.finos.legend.pure.runtime.java.interpreted.pure.Test_Interpreted_BasicFunctions_PCT</argument>
+                            </arguments>
+                            <includeProjectDependencies>true</includeProjectDependencies>
+                            <includePluginDependencies>true</includePluginDependencies>
+                            <classpathScope>test</classpathScope>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
     <dependencies>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
@@ -40,6 +71,11 @@
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-runtime-java-engine-shared</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
 
         <dependency>

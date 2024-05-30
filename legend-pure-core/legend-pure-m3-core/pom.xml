@@ -175,6 +175,34 @@
                             </arguments>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>Generate PCT Basic</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>org.finos.legend.pure.m3.pct.functions.generation.FunctionsGeneration</mainClass>
+                            <arguments>
+                                <argument>${project.build.directory}/classes/pct-reports/</argument>
+                                <argument>org.finos.legend.pure.m3.PlatformCodeRepositoryProvider.basicFunctions</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>Generate PCT Grammar</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>org.finos.legend.pure.m3.pct.functions.generation.FunctionsGeneration</mainClass>
+                            <arguments>
+                                <argument>${project.build.directory}/classes/pct-reports/</argument>
+                                <argument>org.finos.legend.pure.m3.PlatformCodeRepositoryProvider.grammarFunctions</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -253,6 +281,11 @@
             <groupId>io.prometheus</groupId>
             <artifactId>simpleclient</artifactId>
             <version>0.8.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

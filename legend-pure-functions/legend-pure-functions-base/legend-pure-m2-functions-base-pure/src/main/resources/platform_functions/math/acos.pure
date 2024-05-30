@@ -12,12 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::math::acos(number:Number[1]):Float[1];
+import meta::pure::test::pct::*;
 
-function <<test.Test>> meta::pure::functions::math::tests::trigonometry::testArcCosine():Boolean[1]
+native function <<PCT.function>> meta::pure::functions::math::acos(number:Number[1]):Float[1];
+
+function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testArcCosine<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-   assertEqWithinTolerance(1.570796326794, acos(0), 0.000000000001);
-   assertEqWithinTolerance(3.141592653589, acos(-1), 0.000000000001);
-   assertEqWithinTolerance(1.047197551196, acos(0.5), 0.000000000001);
-   assertEqWithinTolerance(1.047197551196, acos_Number_1__Float_1_->eval(0.5), 0.000000000001);
+   assertEqWithinTolerance(1.570796326794, $f->eval(|acos(0)), 0.000000000001);
+   assertEqWithinTolerance(3.141592653589, $f->eval(|acos(-1)), 0.000000000001);
+   assertEqWithinTolerance(1.047197551196, $f->eval(|acos(0.5)), 0.000000000001);
+}
+
+function <<PCT.test>> meta::pure::functions::math::tests::trigonometry::testArcCosineEval<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+   assertEqWithinTolerance(1.047197551196, $f->eval(|acos_Number_1__Float_1_->eval(0.5)), 0.000000000001);
 }

@@ -14,11 +14,11 @@
 
 package org.finos.legend.pure.m2.inlinedsl.path.validation;
 
+import org.finos.legend.pure.m2.inlinedsl.path.M2PathPaths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.validation.ValidatorState;
 import org.finos.legend.pure.m3.compiler.validation.VisibilityValidation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
-import org.finos.legend.pure.m2.inlinedsl.path.M2PathPaths;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;

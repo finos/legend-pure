@@ -12,129 +12,138 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
 
-function meta::pure::functions::boolean::greaterThanEqual(left:Number[0..1], right:Number[0..1]):Boolean[1]
+function
+    <<PCT.function>>
+    {
+        doc.doc='Returns true if, according to the type order, $left succeeds or is equal to $right',
+        PCT.grammarDoc='$first >= $second',
+        PCT.grammarCharacters='>='
+    }
+    meta::pure::functions::boolean::greaterThanEqual(left:Number[0..1], right:Number[0..1]):Boolean[1]
 {
     $left->isNotEmpty() && $right->isNotEmpty() && greaterThanEqual($left->toOne(), $right->toOne())
 }
 
-function meta::pure::functions::boolean::greaterThanEqual(left:Number[1], right:Number[0..1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Number[1], right:Number[0..1]):Boolean[1]
 {
     $right->isNotEmpty() && greaterThanEqual($left, $right->toOne())
 }
 
-function meta::pure::functions::boolean::greaterThanEqual(left:Number[0..1], right:Number[1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Number[0..1], right:Number[1]):Boolean[1]
 {
     $left->isNotEmpty() && greaterThanEqual($left->toOne(), $right)
 }
 
-function meta::pure::functions::boolean::greaterThanEqual(left:Date[0..1], right:Date[0..1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Date[0..1], right:Date[0..1]):Boolean[1]
 {
     $left->isNotEmpty() && $right->isNotEmpty() && greaterThanEqual($left->toOne(), $right->toOne())
 }
 
-function meta::pure::functions::boolean::greaterThanEqual(left:Date[1], right:Date[0..1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Date[1], right:Date[0..1]):Boolean[1]
 {
     $right->isNotEmpty() && greaterThanEqual($left, $right->toOne())
 }
 
-function meta::pure::functions::boolean::greaterThanEqual(left:Date[0..1], right:Date[1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Date[0..1], right:Date[1]):Boolean[1]
 {
     $left->isNotEmpty() && greaterThanEqual($left->toOne(), $right)
 }
 
-function meta::pure::functions::boolean::greaterThanEqual(left:String[0..1], right:String[0..1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:String[0..1], right:String[0..1]):Boolean[1]
 {
     $left->isNotEmpty() && $right->isNotEmpty() && greaterThanEqual($left->toOne(), $right->toOne())
 }
 
-function meta::pure::functions::boolean::greaterThanEqual(left:String[1], right:String[0..1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:String[1], right:String[0..1]):Boolean[1]
 {
     $right->isNotEmpty() && greaterThanEqual($left, $right->toOne())
 }
 
-function meta::pure::functions::boolean::greaterThanEqual(left:String[0..1], right:String[1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:String[0..1], right:String[1]):Boolean[1]
 {
     $left->isNotEmpty() && greaterThanEqual($left->toOne(), $right)
 }
 
-function meta::pure::functions::boolean::greaterThanEqual(left:Boolean[0..1], right:Boolean[0..1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Boolean[0..1], right:Boolean[0..1]):Boolean[1]
 {
     $left->isNotEmpty() && $right->isNotEmpty() && greaterThanEqual($left->toOne(), $right->toOne())
 }
 
-function meta::pure::functions::boolean::greaterThanEqual(left:Boolean[1], right:Boolean[0..1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Boolean[1], right:Boolean[0..1]):Boolean[1]
 {
     $right->isNotEmpty() && greaterThanEqual($left, $right->toOne())
 }
 
-function meta::pure::functions::boolean::greaterThanEqual(left:Boolean[0..1], right:Boolean[1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Boolean[0..1], right:Boolean[1]):Boolean[1]
 {
     $left->isNotEmpty() && greaterThanEqual($left->toOne(), $right)
 }
 
-function meta::pure::functions::boolean::greaterThanEqual(left:Number[1], right:Number[1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Number[1], right:Number[1]):Boolean[1]
 {
     lessThanEqual($right, $left)
 }
 
-function meta::pure::functions::boolean::greaterThanEqual(left:String[1], right:String[1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:String[1], right:String[1]):Boolean[1]
 {
     lessThanEqual($right, $left)
 }
 
-function meta::pure::functions::boolean::greaterThanEqual(left:Date[1], right:Date[1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Date[1], right:Date[1]):Boolean[1]
 {
     lessThanEqual($right, $left)
 }
 
-function meta::pure::functions::boolean::greaterThanEqual(left:Boolean[1], right:Boolean[1]):Boolean[1]
+function <<PCT.function>> meta::pure::functions::boolean::greaterThanEqual(left:Boolean[1], right:Boolean[1]):Boolean[1]
 {
     lessThanEqual($right, $left)
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::greaterThanEqual::testGreaterThanEqual_Number():Boolean[1]
-{
-    assert(4 >= 3);
-    assert(greaterThanEqual(4, 3));
-    assert(3 >= 3);
-    assert(greaterThanEqual(3, 3));
 
-    assertFalse(3 >= 4);
-    assertFalse(greaterThanEqual(3, 4));
+function <<PCT.test>> meta::pure::functions::boolean::tests::inequalities::greaterThanEqual::testGreaterThanEqual_Number<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assert($f->eval(|4 >= 3));
+    assert($f->eval(|greaterThanEqual(4, 3)));
+    assert($f->eval(|3 >= 3));
+    assert($f->eval(|greaterThanEqual(3, 3)));
+
+    assertFalse($f->eval(|3 >= 4));
+    assertFalse($f->eval(|greaterThanEqual(3, 4)));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::greaterThanEqual::testGreaterThanEqual_Date():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::inequalities::greaterThanEqual::testGreaterThanEqual_Date<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-   assert(%2012-10-02 >= %2012-10-01);
-   assert(greaterThanEqual(%2012-10-02, %2012-10-01));
-   assert(%2012-10-02 >= %2012-10-02);
-   assert(greaterThanEqual(%2012-10-02, %2012-10-02));
+   assert($f->eval(|%2012-10-02 >= %2012-10-01));
+   assert($f->eval(|greaterThanEqual(%2012-10-02, %2012-10-01)));
+   assert($f->eval(|%2012-10-02 >= %2012-10-02));
+   assert($f->eval(|greaterThanEqual(%2012-10-02, %2012-10-02)));
 
-   assertFalse(%2012-10-02 >= %2012-10-03);
-   assertFalse(greaterThanEqual(%2012-10-02, %2012-10-03));
+   assertFalse($f->eval(|%2012-10-02 >= %2012-10-03));
+   assertFalse($f->eval(|greaterThanEqual(%2012-10-02, %2012-10-03)));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::greaterThanEqual::testGreaterThanEqual_String():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::inequalities::greaterThanEqual::testGreaterThanEqual_String<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert('b' >= 'a');
-    assert(greaterThanEqual('b', 'a'));
-    assert('a' >= 'a');
-    assert(greaterThanEqual('a', 'a'));
+    assert($f->eval(|'b' >= 'a'));
+    assert($f->eval(|greaterThanEqual('b', 'a')));
+    assert($f->eval(|'a' >= 'a'));
+    assert($f->eval(|greaterThanEqual('a', 'a')));
 
-    assertFalse('a' >= 'b');
-    assertFalse(greaterThanEqual('a', 'b'));
+    assertFalse($f->eval(|'a' >= 'b'));
+    assertFalse($f->eval(|greaterThanEqual('a', 'b')));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::greaterThanEqual::testGreaterThanEqual_Boolean():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::inequalities::greaterThanEqual::testGreaterThanEqual_Boolean<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert(true >= false);
-    assert(greaterThanEqual(true, false));
-    assert(true >= true);
-    assert(greaterThanEqual(true, true));
-    assert(false >= false);
-    assert(greaterThanEqual(false, false));
+    assert($f->eval(|true >= false));
+    assert($f->eval(|greaterThanEqual(true, false)));
+    assert($f->eval(|true >= true));
+    assert($f->eval(|greaterThanEqual(true, true)));
+    assert($f->eval(|false >= false));
+    assert($f->eval(|greaterThanEqual(false, false)));
 
-    assertFalse(false >= true);
-    assertFalse(greaterThanEqual(false, true));
+    assertFalse($f->eval(|false >= true));
+    assertFalse($f->eval(|greaterThanEqual(false, true)));
 }

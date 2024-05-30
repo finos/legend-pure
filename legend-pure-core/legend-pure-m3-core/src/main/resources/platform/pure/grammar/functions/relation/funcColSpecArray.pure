@@ -12,9 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
 import meta::pure::metamodel::relation::*;
 
-function <<functionType.NormalizeRequiredFunction>> meta::pure::functions::relation::funcColSpecArray<U,T,P>(funcSpecs:FuncColSpec<{U[1]->Any[*]}, T>[*], cl:P[1]):FuncColSpecArray<{U[1]->Any[*]}, P>[1]
+function
+    <<functionType.NormalizeRequiredFunction,
+    PCT.function>>
+    {
+        doc.doc='Create a Relation typed column array, each containing a name and a function',
+        PCT.grammarDoc='~[col : x|$x.val+3, other : t|$t.ww+4]',
+        PCT.grammarCharacters='~[:,:]'
+    }
+    meta::pure::functions::relation::funcColSpecArray<U,T,P>(funcSpecs:FuncColSpec<{U[1]->Any[*]}, T>[*], cl:P[1]):FuncColSpecArray<{U[1]->Any[*]}, P>[1]
 {
     ^FuncColSpecArray<{U[1]->Any[*]}, P>
     (

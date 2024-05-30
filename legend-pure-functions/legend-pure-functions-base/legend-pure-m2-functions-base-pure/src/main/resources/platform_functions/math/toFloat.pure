@@ -12,20 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::math::toFloat(number: Number[1]): Float[1];
+import meta::pure::test::pct::*;
 
+native function <<PCT.function>> meta::pure::functions::math::toFloat(number: Number[1]): Float[1];
 
-function <<test.Test>> meta::pure::functions::math::tests::toFloat::testDoubleToFloat():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::toFloat::testDoubleToFloat<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(3.8, toFloat(3.8));
+    assertEq(3.8, $f->eval(|toFloat(3.8)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::toFloat::testIntToFloat():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::toFloat::testIntToFloat<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(8.0, toFloat(8));
+    assertEq(8.0, $f->eval(|toFloat(8)));
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::toFloat::testDecimalToFloat():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::toFloat::testDecimalToFloat<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(3.8, toFloat(3.8D));
+    assertEq(3.8, $f->eval(|toFloat(3.8D)));
 }

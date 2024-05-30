@@ -33,6 +33,21 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skipTests>true</skipTests>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>PCT</id>
+                        <configuration>
+                            <skipTests>false</skipTests>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
@@ -60,6 +75,39 @@
                     <dependency>
                         <groupId>org.finos.legend.pure</groupId>
                         <artifactId>legend-pure-m2-dsl-mapping-grammar</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-maven-generation-pct</artifactId>
+                <configuration>
+                    <mode>Compiled</mode>
+                    <targetDir>${project.build.directory}/classes/pct-reports/</targetDir>
+                    <PCTTestSuites>
+                        <PCTTestSuite>org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.pure.Test_Compiled_BaseFunctions_PCT</PCTTestSuite>
+                    </PCTTestSuites>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>PCT-Generation</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>generate-pct-report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.finos.legend.pure</groupId>
+                        <artifactId>legend-pure-runtime-java-engine-compiled</artifactId>
+                        <type>test-jar</type>
+                        <version>${project.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.finos.legend.pure</groupId>
+                        <artifactId>legend-pure-m2-functions-base-pure</artifactId>
                         <version>${project.version}</version>
                     </dependency>
                 </dependencies>
@@ -107,6 +155,11 @@
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-runtime-java-extension-shared-functions-base</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
 
         <dependency>

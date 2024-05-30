@@ -13,8 +13,9 @@
 // limitations under the License.
 
 import meta::pure::functions::meta::tests::model::*;
+import meta::pure::test::pct::*;
 
-native function meta::pure::functions::meta::id(instance:Any[1]):String[1];
+native function <<PCT.platformOnly>> meta::pure::functions::meta::id(instance:Any[1]):String[1];
 
 function <<test.Test>> meta::pure::functions::meta::tests::id::testId():Boolean[1]
 {

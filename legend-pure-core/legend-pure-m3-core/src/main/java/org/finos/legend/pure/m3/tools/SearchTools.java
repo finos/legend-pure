@@ -17,10 +17,10 @@ package org.finos.legend.pure.m3.tools;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.factory.Lists;
-import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.coreinstance.Package;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 import java.util.regex.Pattern;
 

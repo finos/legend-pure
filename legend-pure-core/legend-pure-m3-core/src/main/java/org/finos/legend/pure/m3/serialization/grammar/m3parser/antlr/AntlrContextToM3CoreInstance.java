@@ -715,9 +715,9 @@ public class AntlrContextToM3CoreInstance
         return buildImportGroupFromImport(this.sourceInformation.getSourceName(), this.count, imports, new SourceInformation(this.sourceInformation.getSourceName(), importGroupStartLine, importGroupStartColumn, importGroupEndLine, importGroupEndColumn));
     }
 
-    public CoreInstance combinedExpression(CombinedExpressionContext ctx, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
+    public CoreInstance combinedExpression(CombinedExpressionContext ctx, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
-        CoreInstance result = this.expressionOrExpressionGroup(ctx.expressionOrExpressionGroup(), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+        CoreInstance result = this.expressionOrExpressionGroup(ctx.expressionOrExpressionGroup(), exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
         CoreInstance boolResult = result;
         CoreInstance arithResult = result;
 
@@ -733,7 +733,7 @@ public class AntlrContextToM3CoreInstance
                 {
                     if (!bool.isEmpty())
                     {
-                        boolResult = this.booleanPart(bool, (ValueSpecification) arithResult, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                        boolResult = this.booleanPart(bool, (ValueSpecification) arithResult, exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
                         bool.clear();
                     }
                     arth.add(epCtx.arithmeticPart());
@@ -742,7 +742,7 @@ public class AntlrContextToM3CoreInstance
                 {
                     if (!arth.isEmpty())
                     {
-                        arithResult = this.arithmeticPart(arth, boolResult, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                        arithResult = this.arithmeticPart(arth, boolResult, exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
                         arth.clear();
                     }
                     bool.add(epCtx.booleanPart());
@@ -752,19 +752,19 @@ public class AntlrContextToM3CoreInstance
             // Invariant allows us to make the choice here - either we still have arth to process or bool to process but not both 
             if (!arth.isEmpty())
             {
-                result = this.arithmeticPart(arth, boolResult, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                result = this.arithmeticPart(arth, boolResult, exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
             }
             else if (!bool.isEmpty())
             {
-                result = this.booleanPart(bool, (ValueSpecification) arithResult, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                result = this.booleanPart(bool, (ValueSpecification) arithResult, exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
             }
         }
         return result;
     }
 
-    private CoreInstance expressionOrExpressionGroup(ExpressionOrExpressionGroupContext ctx, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
+    private CoreInstance expressionOrExpressionGroup(ExpressionOrExpressionGroupContext ctx, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
-        return this.expression(ctx.expression(), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+        return this.expression(ctx.expression(), exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
     }
 
     private enum BoolOp
@@ -777,7 +777,7 @@ public class AntlrContextToM3CoreInstance
         return "or".equals(boolOp1) && "and".equals(boolOp2);
     }
 
-    private SimpleFunctionExpression buildBoolean(BooleanPartContext ctx, BoolOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParamtersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
+    private SimpleFunctionExpression buildBoolean(BooleanPartContext ctx, BoolOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParamtersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
         TerminalNode terminalNode;
         switch (op)
@@ -798,54 +798,54 @@ public class AntlrContextToM3CoreInstance
             }
         }
 
-        CoreInstance other = this.expression(ctx.expression(), exprName, typeParamtersNames, lambdaContext, space, wrapFlag, importId, addLines);
+        CoreInstance other = this.expression(ctx.expression(), exprName, typeParamtersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
         SimpleFunctionExpression sfe = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(terminalNode.getSymbol()), null, null, importId, null);
         sfe._functionName(op.name().toLowerCase());
         sfe._parametersValues(Lists.mutable.of((ValueSpecification) initialValue, (ValueSpecification) other));
         return sfe;
     }
 
-    private SimpleFunctionExpression processBooleanOp(SimpleFunctionExpression sfe, BooleanPartContext ctx, BoolOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParamtersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
+    private SimpleFunctionExpression processBooleanOp(SimpleFunctionExpression sfe, BooleanPartContext ctx, BoolOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParamtersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
         if (sfe == null)
         {
-            return buildBoolean(ctx, op, initialValue, exprName, typeParamtersNames, lambdaContext, space, wrapFlag, importId, addLines);
+            return buildBoolean(ctx, op, initialValue, exprName, typeParamtersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
         }
 
         if (isLowerPrecedenceBoolean(sfe.getValueForMetaPropertyToOne("functionName").getName(), op.name().toLowerCase()))
         {
             ListIterable<? extends CoreInstance> params = sfe.getValueForMetaPropertyToMany("parametersValues");
-            SimpleFunctionExpression newSfe = buildBoolean(ctx, op, params.getLast(), exprName, typeParamtersNames, lambdaContext, space, wrapFlag, importId, addLines);
+            SimpleFunctionExpression newSfe = buildBoolean(ctx, op, params.getLast(), exprName, typeParamtersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
             MutableList<CoreInstance> l = Lists.mutable.withAll(params.subList(0, params.size() - 1));
             sfe._parametersValues(Lists.mutable.of((ValueSpecification) l.get(0), newSfe));
             return sfe;
         }
 
-        return buildBoolean(ctx, op, sfe, exprName, typeParamtersNames, lambdaContext, space, wrapFlag, importId, addLines);
+        return buildBoolean(ctx, op, sfe, exprName, typeParamtersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
     }
 
-    private SimpleFunctionExpression booleanPart(List<BooleanPartContext> bList, ValueSpecification input, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
+    private SimpleFunctionExpression booleanPart(List<BooleanPartContext> bList, ValueSpecification input, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
         SimpleFunctionExpression sfe = null;
         for (BooleanPartContext ctx : bList)
         {
             if (ctx.AND() != null)
             {
-                sfe = processBooleanOp(sfe, ctx, BoolOp.AND, input, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                sfe = processBooleanOp(sfe, ctx, BoolOp.AND, input, exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
             }
             else if (ctx.OR() != null)
             {
-                sfe = processBooleanOp(sfe, ctx, BoolOp.OR, input, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                sfe = processBooleanOp(sfe, ctx, BoolOp.OR, input, exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
             }
             else
             {
-                sfe = this.equalNotEqual(ctx.equalNotEqual(), sfe == null ? input : sfe, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                sfe = this.equalNotEqual(ctx.equalNotEqual(), sfe == null ? input : sfe, exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
             }
         }
         return sfe;
     }
 
-    private CoreInstance expression(ExpressionContext ctx, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
+    private CoreInstance expression(ExpressionContext ctx, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
         CoreInstance result = null;
         CoreInstance end = null;
@@ -854,26 +854,26 @@ public class AntlrContextToM3CoreInstance
         MutableList<ValueSpecification> parameters = Lists.mutable.empty();
         if (ctx.combinedExpression() != null)
         {
-            return this.combinedExpression(ctx.combinedExpression(), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+            return this.combinedExpression(ctx.combinedExpression(), exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
         }
 
         if (ctx.atomicExpression() != null)
         {
-            result = this.atomicExpression(ctx.atomicExpression(), typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+            result = this.atomicExpression(ctx.atomicExpression(), typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
         }
         else if (ctx.notExpression() != null)
         {
-            result = this.notExpression(ctx.notExpression(), exprName, typeParametersNames, lambdaContext, space, importId, addLines);
+            result = this.notExpression(ctx.notExpression(), exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, importId, addLines);
         }
         else if (ctx.signedExpression() != null)
         {
-            result = this.signedExpression(ctx.signedExpression(), exprName, typeParametersNames, lambdaContext, space, importId, addLines);
+            result = this.signedExpression(ctx.signedExpression(), exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, importId, addLines);
         }
         else if (ctx.expressionsArray() != null)
         {
             for (ExpressionContext eCtx : ctx.expressionsArray().expression())
             {
-                expressions.add(this.expression(eCtx, exprName, typeParametersNames, lambdaContext, space, false, importId, addLines));
+                expressions.add(this.expression(eCtx, exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, false, importId, addLines));
             }
             result = this.doWrap(expressions, ctx.expressionsArray().getStart().getLine(), ctx.expressionsArray().getStart().getCharPositionInLine(), ctx.getStop().getLine(), ctx.getStop().getCharPositionInLine());
         }
@@ -883,22 +883,22 @@ public class AntlrContextToM3CoreInstance
             {
                 case 1: //:end
                 {
-                    end = this.expression(ctx.sliceExpression().expression(0), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                    end = this.expression(ctx.sliceExpression().expression(0), exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
                     break;
                 }
                 case 2: //start:end
                 {
-                    result = this.expression(ctx.sliceExpression().expression(0), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                    result = this.expression(ctx.sliceExpression().expression(0), exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
                     expressions.add(result);
-                    end = this.expression(ctx.sliceExpression().expression(1), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                    end = this.expression(ctx.sliceExpression().expression(1), exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
                     break;
                 }
                 case 3: //start:end:step
                 {
-                    result = this.expression(ctx.sliceExpression().expression(0), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                    result = this.expression(ctx.sliceExpression().expression(0), exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
                     expressions.add(result);
-                    end = this.expression(ctx.sliceExpression().expression(1), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
-                    step = this.expression(ctx.sliceExpression().expression(2), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                    end = this.expression(ctx.sliceExpression().expression(1), exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
+                    step = this.expression(ctx.sliceExpression().expression(2), exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
                     break;
                 }
                 default:
@@ -928,13 +928,13 @@ public class AntlrContextToM3CoreInstance
             {
                 if (pfCtx.propertyExpression() != null)
                 {
-                    result = propertyExpression(pfCtx.propertyExpression(), result, parameters, typeParametersNames, lambdaContext, space, importId);
+                    result = propertyExpression(pfCtx.propertyExpression(), result, parameters, typeParametersNames, multiplicityParameterNames, lambdaContext, space, importId);
                 }
                 else
                 {
                     for (int i = 0; i < pfCtx.functionExpression().qualifiedName().size(); i++)
                     {
-                        parameters = this.functionExpressionParameters(pfCtx.functionExpression().functionExpressionParameters(i), typeParametersNames, importId, lambdaContext, addLines, spacePlusTabs(space, 4));
+                        parameters = this.functionExpressionParameters(pfCtx.functionExpression().functionExpressionParameters(i), typeParametersNames, multiplicityParameterNames, importId, lambdaContext, addLines, spacePlusTabs(space, 4));
                         parameters.add(0, (ValueSpecification) result);
                         result = this.functionExpression(pfCtx.functionExpression().qualifiedName(i), parameters, importId);
                     }
@@ -945,12 +945,12 @@ public class AntlrContextToM3CoreInstance
 
         if (ctx.equalNotEqual() != null)
         {
-            result = this.equalNotEqual(ctx.equalNotEqual(), (ValueSpecification) result, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+            result = this.equalNotEqual(ctx.equalNotEqual(), (ValueSpecification) result, exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
         }
         return result;
     }
 
-    private CoreInstance propertyExpression(PropertyExpressionContext ctx, CoreInstance result, MutableList<ValueSpecification> parameters, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, ImportGroup importId)
+    private CoreInstance propertyExpression(PropertyExpressionContext ctx, CoreInstance result, MutableList<ValueSpecification> parameters, MutableList<String> multiplicityParameterNames, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, ImportGroup importId)
     {
         parameters.clear();
         boolean function = false;
@@ -964,7 +964,7 @@ public class AntlrContextToM3CoreInstance
             {
                 for (CombinedExpressionContext ceCtx : fepCtx.combinedExpression())
                 {
-                    parameter = this.combinedExpression(ceCtx, "param", typeParametersNames, lambdaContext, spacePlusTabs(space, 4), true, importId, addLines);
+                    parameter = this.combinedExpression(ceCtx, "param", typeParametersNames, multiplicityParameterNames, lambdaContext, spacePlusTabs(space, 4), true, importId, addLines);
                     parameters.add((ValueSpecification) parameter);
                 }
             }
@@ -1007,20 +1007,20 @@ public class AntlrContextToM3CoreInstance
         return result;
     }
 
-    private SimpleFunctionExpression signedExpression(SignedExpressionContext ctx, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, ImportGroup importId, boolean addLines)
+    private SimpleFunctionExpression signedExpression(SignedExpressionContext ctx, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, ImportGroup importId, boolean addLines)
     {
         CoreInstance number;
         SimpleFunctionExpression result;
         if (ctx.MINUS() != null)
         {
-            number = this.expression(ctx.expression(), exprName, typeParametersNames, lambdaContext, space, true, importId, addLines);
+            number = this.expression(ctx.expression(), exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, true, importId, addLines);
             result = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.MINUS().getSymbol()), null, null, importId, null);
             result._functionName("minus");
             result._parametersValues(Lists.mutable.of((ValueSpecification) number));
         }
         else
         {
-            number = this.expression(ctx.expression(), exprName, typeParametersNames, lambdaContext, space, true, importId, addLines);
+            number = this.expression(ctx.expression(), exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, true, importId, addLines);
             result = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.PLUS().getSymbol()), null, null, importId, null);
             result._functionName("plus");
             result._parametersValues(Lists.mutable.of((ValueSpecification) number));
@@ -1029,11 +1029,11 @@ public class AntlrContextToM3CoreInstance
         return result;
     }
 
-    private SimpleFunctionExpression notExpression(NotExpressionContext ctx, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, ImportGroup importId, boolean addLines)
+    private SimpleFunctionExpression notExpression(NotExpressionContext ctx, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, ImportGroup importId, boolean addLines)
     {
         CoreInstance negated;
         SimpleFunctionExpression result;
-        negated = this.expression(ctx.expression(), exprName, typeParametersNames, lambdaContext, space, true, importId, addLines);
+        negated = this.expression(ctx.expression(), exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, true, importId, addLines);
         result = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.NOT().getSymbol()), null, null, importId, null);
         result._functionName("not");
         result._parametersValues(Lists.mutable.of((ValueSpecification) negated));
@@ -1083,12 +1083,11 @@ public class AntlrContextToM3CoreInstance
         return wrapFlag ? this.doWrap(result, ctx.getStart()) : result;
     }
 
-    private CoreInstance atomicExpression(AtomicExpressionContext ctx, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
+    private CoreInstance atomicExpression(AtomicExpressionContext ctx, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
         CoreInstance result;
         ListIterable<CoreInstance> dsl;
-        GenericType genericType;
-        VariableExpression expr;
+
         MutableList<VariableExpression> expressions = Lists.mutable.of();
         if (ctx.instanceLiteralToken() != null)
         {
@@ -1110,11 +1109,11 @@ public class AntlrContextToM3CoreInstance
                 String returnType = null;
                 if (oneColSpec.lambdaParam() != null && oneColSpec.lambdaPipe() != null)
                 {
-                    lambdas.add(processSingleParamLambda(oneColSpec.lambdaParam(), oneColSpec.lambdaPipe(), Lists.mutable.empty(), lambdaContext, space, false, importId, addLines, Lists.mutable.empty()));
+                    lambdas.add(processSingleParamLambda(oneColSpec.lambdaParam(), oneColSpec.lambdaPipe(), Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, space, false, importId, addLines, Lists.mutable.empty()));
                     if (oneColSpec.extraFunction() != null)
                     {
                         ExtraFunctionContext extraFunctionContext = oneColSpec.extraFunction();
-                        extraFunction.add(processSingleParamLambda(extraFunctionContext.lambdaParam(), extraFunctionContext.lambdaPipe(), Lists.mutable.empty(), lambdaContext, space, false, importId, addLines, Lists.mutable.empty()));
+                        extraFunction.add(processSingleParamLambda(extraFunctionContext.lambdaParam(), extraFunctionContext.lambdaPipe(), Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, space, false, importId, addLines, Lists.mutable.empty()));
                     }
                 }
                 else if (oneColSpec.type() != null)
@@ -1238,30 +1237,45 @@ public class AntlrContextToM3CoreInstance
         }
         else if (ctx.type() != null)
         {
-            genericType = this.type(ctx.type(), typeParametersNames, "", importId, addLines);
+            GenericType genericType = this.type(ctx.type(), typeParametersNames, "", importId, addLines);
             result = InstanceValueInstance.createPersistent(this.repository, genericType, this.getPureOne());
+        }
+        else if (ctx.multiplicity() != null)
+        {
+            Multiplicity multiplicity = this.buildMultiplicity(ctx.multiplicity().multiplicityArgument());
+            if (multiplicity._multiplicityParameter() != null)
+            {
+                if (!multiplicityParameterNames.contains(multiplicity._multiplicityParameter()))
+                {
+                    throw new PureCompilationException(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), "The multiplicity parameter " + multiplicity._multiplicityParameter() + " is unknown!");
+                }
+            }
+            GenericType genericType = GenericTypeInstance.createPersistent(this.repository);
+            CoreInstance type = this.repository.getTopLevel("Any");
+            genericType._rawTypeCoreInstance(type);
+            result = InstanceValueInstance.createPersistent(this.repository, genericType, multiplicity);
         }
         else if (ctx.lambdaFunction() != null)
         {
-            result = processMultiParamLambda(ctx.lambdaFunction(), typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines, expressions);
+            result = processMultiParamLambda(ctx.lambdaFunction(), typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines, expressions);
         }
         else if (ctx.lambdaParam() != null && ctx.lambdaPipe() != null)
         {
-            result = processSingleParamLambda(ctx.lambdaParam(), ctx.lambdaPipe(), typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines, expressions);
+            result = processSingleParamLambda(ctx.lambdaParam(), ctx.lambdaPipe(), typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines, expressions);
         }
         else if (ctx.instanceReference() != null)
         {
-            result = this.instanceReference(ctx.instanceReference(), typeParametersNames, lambdaContext, importId, space, addLines);
+            result = this.instanceReference(ctx.instanceReference(), typeParametersNames, multiplicityParameterNames, lambdaContext, importId, space, addLines);
         }
         else
         {
             //lambdaPipe
-            result = this.lambdaPipe(ctx.lambdaPipe(), null, expressions, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+            result = this.lambdaPipe(ctx.lambdaPipe(), null, expressions, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
         }
         return result;
     }
 
-    private CoreInstance processMultiParamLambda(LambdaFunctionContext ctx, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines, MutableList<VariableExpression> expressions)
+    private CoreInstance processMultiParamLambda(LambdaFunctionContext ctx, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines, MutableList<VariableExpression> expressions)
     {
         CoreInstance result;
         VariableExpression expr;
@@ -1276,22 +1290,22 @@ public class AntlrContextToM3CoreInstance
                 expressions.add(expr);
             }
         }
-        return this.lambdaPipe(ctx.lambdaPipe(), hasLambdaParams ? ctx.lambdaParam(0).getStart() : null, expressions, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+        return this.lambdaPipe(ctx.lambdaPipe(), hasLambdaParams ? ctx.lambdaParam(0).getStart() : null, expressions, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
     }
 
 
-    private CoreInstance processSingleParamLambda(M3Parser.LambdaParamContext lambdaCtxt, M3Parser.LambdaPipeContext pipeContext, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines, MutableList<VariableExpression> expressions)
+    private CoreInstance processSingleParamLambda(M3Parser.LambdaParamContext lambdaCtxt, M3Parser.LambdaPipeContext pipeContext, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines, MutableList<VariableExpression> expressions)
     {
         VariableExpression expr;
         CoreInstance result;
         expr = this.lambdaParam(lambdaCtxt.lambdaParamType(), lambdaCtxt.identifier(), typeParametersNames, space, importId);
         expressions.add(expr);
-        result = this.lambdaPipe(pipeContext, lambdaCtxt.getStart(), expressions, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+        result = this.lambdaPipe(pipeContext, lambdaCtxt.getStart(), expressions, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
         return result;
     }
 
 
-    private CoreInstance instanceReference(InstanceReferenceContext ctx, MutableList<String> typeParametersNames, LambdaContext lambdaContext, ImportGroup importId, String space, boolean addLines)
+    private CoreInstance instanceReference(InstanceReferenceContext ctx, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, ImportGroup importId, String space, boolean addLines)
     {
         ImportStubInstance is;
         InstanceValueInstance instanceVal;
@@ -1315,7 +1329,7 @@ public class AntlrContextToM3CoreInstance
         CoreInstance result = instanceVal;
         if (ctx.allOrFunction() != null)
         {
-            result = this.allOrFunction(ctx.allOrFunction(), Lists.mutable.of(instanceVal), ctx.qualifiedName(), typeParametersNames, lambdaContext, space, importId, addLines);
+            result = this.allOrFunction(ctx.allOrFunction(), Lists.mutable.of(instanceVal), ctx.qualifiedName(), typeParametersNames, multiplicityParameterNames, lambdaContext, space, importId, addLines);
         }
         return result;
     }
@@ -1526,10 +1540,10 @@ public class AntlrContextToM3CoreInstance
         return results.get(0).parse(code.getText(), importId, this.sourceInformation.getSourceName(), code.getColumn(), code.getLine(), this.repository, this.context);
     }
 
-    private Any lambdaPipe(LambdaPipeContext ctx, Token firstToken, ListIterable<VariableExpression> params, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
+    private Any lambdaPipe(LambdaPipeContext ctx, Token firstToken, ListIterable<VariableExpression> params, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
         Token lambdaStartToken = firstToken != null ? firstToken : ctx.PIPE().getSymbol();
-        ListIterable<ValueSpecification> block = codeBlock(ctx.codeBlock(), typeParametersNames, importId, lambdaContext, addLines, spacePlusTabs(space, 6));
+        ListIterable<ValueSpecification> block = codeBlock(ctx.codeBlock(), typeParametersNames, multiplicityParameterNames, importId, lambdaContext, addLines, spacePlusTabs(space, 6));
 
         FunctionTypeInstance signature = FunctionTypeInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(lambdaStartToken), null, null);
         if (Iterate.notEmpty(params))
@@ -1552,27 +1566,27 @@ public class AntlrContextToM3CoreInstance
         return wrapFlag ? this.doWrap(lambdaFunction, lambdaStartToken) : lambdaFunction;
     }
 
-    private ListIterable<ValueSpecification> codeBlock(CodeBlockContext ctx, MutableList<String> typeParametersNames, ImportGroup importId, LambdaContext lambdaContext, boolean addLines, String space)
+    private ListIterable<ValueSpecification> codeBlock(CodeBlockContext ctx, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, ImportGroup importId, LambdaContext lambdaContext, boolean addLines, String space)
     {
         String newSpace = space + "  ";
-        return ListIterate.collect(ctx.programLine(), plCtx -> programLine(plCtx, M3Properties.line, typeParametersNames, lambdaContext, importId, addLines, newSpace));
+        return ListIterate.collect(ctx.programLine(), plCtx -> programLine(plCtx, M3Properties.line, typeParametersNames, multiplicityParameterNames, lambdaContext, importId, addLines, newSpace));
     }
 
-    private ValueSpecification programLine(ProgramLineContext ctx, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, ImportGroup importId, boolean addLines, String space)
+    private ValueSpecification programLine(ProgramLineContext ctx, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, ImportGroup importId, boolean addLines, String space)
     {
         if (ctx.combinedExpression() != null)
         {
-            return (ValueSpecification) this.combinedExpression(ctx.combinedExpression(), exprName, typeParametersNames, lambdaContext, space, true, importId, addLines);
+            return (ValueSpecification) this.combinedExpression(ctx.combinedExpression(), exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, true, importId, addLines);
         }
         else
         {
-            return this.letExpression(ctx.letExpression(), typeParametersNames, importId, lambdaContext, addLines, space);
+            return this.letExpression(ctx.letExpression(), typeParametersNames, multiplicityParameterNames, importId, lambdaContext, addLines, space);
         }
     }
 
-    private SimpleFunctionExpression letExpression(LetExpressionContext ctx, MutableList<String> typeParametersNames, ImportGroup importId, LambdaContext lambdaContext, boolean addLines, String space)
+    private SimpleFunctionExpression letExpression(LetExpressionContext ctx, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, ImportGroup importId, LambdaContext lambdaContext, boolean addLines, String space)
     {
-        CoreInstance result = this.combinedExpression(ctx.combinedExpression(), "", typeParametersNames, lambdaContext, spacePlusTabs(space, 4), true, importId, addLines);
+        CoreInstance result = this.combinedExpression(ctx.combinedExpression(), "", typeParametersNames, multiplicityParameterNames, lambdaContext, spacePlusTabs(space, 4), true, importId, addLines);
         SourceInformation instanceValueSourceInfo = this.sourceInformation.getPureSourceInformation(ctx.identifier().getStart());
         InstanceValue iv = InstanceValueInstance.createPersistent(this.repository, instanceValueSourceInfo, null, null);
 
@@ -1600,7 +1614,7 @@ public class AntlrContextToM3CoreInstance
         return VariableExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(var.getStart()), type, multiplicity, var.getText());
     }
 
-    private SimpleFunctionExpression allOrFunction(AllOrFunctionContext ctx, MutableList<? extends ValueSpecification> params, QualifiedNameContext funcName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, ImportGroup importId, boolean addLines)
+    private SimpleFunctionExpression allOrFunction(AllOrFunctionContext ctx, MutableList<? extends ValueSpecification> params, QualifiedNameContext funcName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, ImportGroup importId, boolean addLines)
     {
         if (ctx.allFunction() != null)
         {
@@ -1632,7 +1646,7 @@ public class AntlrContextToM3CoreInstance
                     ._parametersValues(Lists.mutable.<ValueSpecification>withAll(params).withAll(milestoningParams));
         }
 
-        MutableList<ValueSpecification> parameters = this.functionExpressionParameters(ctx.functionExpressionParameters(), typeParametersNames, importId, lambdaContext, addLines, space);
+        MutableList<ValueSpecification> parameters = this.functionExpressionParameters(ctx.functionExpressionParameters(), typeParametersNames, multiplicityParameterNames, importId, lambdaContext, addLines, space);
         return this.functionExpression(funcName, parameters, importId);
     }
 
@@ -1659,12 +1673,12 @@ public class AntlrContextToM3CoreInstance
         return VariableExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.identifier().getStart()), null, null, ctx.identifier().getText());
     }
 
-    private MutableList<ValueSpecification> functionExpressionParameters(FunctionExpressionParametersContext ctx, MutableList<String> typeParametersNames, ImportGroup importId, LambdaContext lambdaContext, boolean addLines, String space)
+    private MutableList<ValueSpecification> functionExpressionParameters(FunctionExpressionParametersContext ctx, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, ImportGroup importId, LambdaContext lambdaContext, boolean addLines, String space)
     {
         MutableList<ValueSpecification> parameters = Lists.mutable.empty();
         for (CombinedExpressionContext ceCtx : ctx.combinedExpression())
         {
-            parameters.add((ValueSpecification) this.combinedExpression(ceCtx, "param", typeParametersNames, lambdaContext, spacePlusTabs(space, 4), true, importId, addLines));
+            parameters.add((ValueSpecification) this.combinedExpression(ceCtx, "param", typeParametersNames, multiplicityParameterNames, lambdaContext, spacePlusTabs(space, 4), true, importId, addLines));
         }
         return parameters;
     }
@@ -1813,7 +1827,7 @@ public class AntlrContextToM3CoreInstance
     {
         if (ctx.combinedExpression() != null)
         {
-            return this.combinedExpression(ctx.combinedExpression(), "", Lists.mutable.empty(), lambdaContext, spacePlusTabs(space, 4), true, importId, addLines);
+            return this.combinedExpression(ctx.combinedExpression(), "", Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, spacePlusTabs(space, 4), true, importId, addLines);
         }
         if (ctx.expressionInstance() != null)
         {
@@ -1827,20 +1841,20 @@ public class AntlrContextToM3CoreInstance
         return this.expressionInstanceParserAtomicRightSide(ctx.expressionInstanceAtomicRightSide(), typeParametersNames, importId, lambdaContext, addLines, space);
     }
 
-    private SimpleFunctionExpression equalNotEqual(EqualNotEqualContext ctx, ValueSpecification input, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
+    private SimpleFunctionExpression equalNotEqual(EqualNotEqualContext ctx, ValueSpecification input, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
         SimpleFunctionExpression result = null;
         CoreInstance other;
         if (ctx.TEST_EQUAL() != null)
         {
-            other = this.combinedArithmeticOnly(ctx.combinedArithmeticOnly(), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+            other = this.combinedArithmeticOnly(ctx.combinedArithmeticOnly(), exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
             result = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.TEST_EQUAL().getSymbol()), null, null, importId, null);
             result._functionName("equal");
             result._parametersValues(Lists.mutable.of(input, (ValueSpecification) other));
         }
         else if (ctx.TEST_NOT_EQUAL() != null)
         {
-            other = this.combinedArithmeticOnly(ctx.combinedArithmeticOnly(), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+            other = this.combinedArithmeticOnly(ctx.combinedArithmeticOnly(), exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
             SimpleFunctionExpressionInstance inner = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.TEST_NOT_EQUAL().getSymbol()), null, null, importId, null);
             inner._functionName("equal");
             inner._parametersValues(Lists.mutable.of(input, (ValueSpecification) other));
@@ -1852,12 +1866,12 @@ public class AntlrContextToM3CoreInstance
         return result;
     }
 
-    private CoreInstance combinedArithmeticOnly(CombinedArithmeticOnlyContext ctx, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
+    private CoreInstance combinedArithmeticOnly(CombinedArithmeticOnlyContext ctx, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
-        CoreInstance result = this.expressionOrExpressionGroup(ctx.expressionOrExpressionGroup(), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+        CoreInstance result = this.expressionOrExpressionGroup(ctx.expressionOrExpressionGroup(), exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
         if (Iterate.notEmpty(ctx.arithmeticPart()))
         {
-            return this.arithmeticPart(ctx.arithmeticPart(), result, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+            return this.arithmeticPart(ctx.arithmeticPart(), result, exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
         }
 
         return result;
@@ -1876,7 +1890,7 @@ public class AntlrContextToM3CoreInstance
     }
 
     // Build arithmetic op which can handle list of params (like lisp eg (+ u v z y z))
-    private SimpleFunctionExpression buildArithmeticWithListParam(ArithmeticPartContext ctx, ArithOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
+    private SimpleFunctionExpression buildArithmeticWithListParam(ArithmeticPartContext ctx, ArithOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
         MutableList<CoreInstance> others = Lists.mutable.empty();
 
@@ -1905,7 +1919,7 @@ public class AntlrContextToM3CoreInstance
 
         for (ExpressionContext eCtx : ctx.expression())
         {
-            others.add(this.expression(eCtx, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines));
+            others.add(this.expression(eCtx, exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines));
         }
         TerminalNode newOp = getToken.apply(getTokens.value().size() - 1);
         SimpleFunctionExpression sfe = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(newOp.getSymbol()), null, null, importId, null);
@@ -1915,13 +1929,13 @@ public class AntlrContextToM3CoreInstance
     }
 
     // Handles divide, since dive is built up in a tree: eg x / y /z is div(x, div(y,z))
-    private SimpleFunctionExpression buildArithmeticDivide(ArithmeticPartContext ctx, ArithOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
+    private SimpleFunctionExpression buildArithmeticDivide(ArithmeticPartContext ctx, ArithOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
         MutableList<CoreInstance> others = Lists.mutable.empty();
 
         for (ExpressionContext eCtx : ctx.expression())
         {
-            others.add(this.expression(eCtx, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines));
+            others.add(this.expression(eCtx, exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines));
         }
         SimpleFunctionExpression sfe = null;
         for (CoreInstance other : others)
@@ -1934,7 +1948,7 @@ public class AntlrContextToM3CoreInstance
         return sfe;
     }
 
-    private SimpleFunctionExpression buildComparisonOp(ArithmeticPartContext ctx, ArithOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
+    private SimpleFunctionExpression buildComparisonOp(ArithmeticPartContext ctx, ArithOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
         String op_str;
 
@@ -1963,7 +1977,7 @@ public class AntlrContextToM3CoreInstance
                 throw new IllegalStateException("Unexpected arithmetic operation for buildComparisonOp: " + op);
         }
 
-        CoreInstance other = this.expression(ctx.expression(0), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+        CoreInstance other = this.expression(ctx.expression(0), exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
         SimpleFunctionExpression sfe = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(getToken.value().getSymbol()), null, null, importId, null);
         sfe._functionName(op_str);
         sfe._parametersValues(Lists.mutable.of((ValueSpecification) initialValue, (ValueSpecification) other));
@@ -2006,7 +2020,7 @@ public class AntlrContextToM3CoreInstance
 
     private interface BuildArithmeticExpression
     {
-        SimpleFunctionExpression build(ArithmeticPartContext ctx, ArithOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines);
+        SimpleFunctionExpression build(ArithmeticPartContext ctx, ArithOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines);
     }
 
     // Antlr grammar as currently defined does not handle precedence for arithmetic ops
@@ -2014,13 +2028,13 @@ public class AntlrContextToM3CoreInstance
     // Intuition: if we are processing an expression and the previous expression is of lower precedence, we 'snatch' the last argument from the previous expression and make it part of the current one
     // For example: 1 + 2 * 4. The grammar will have led us to build plus(1,2). When looking at the multiplication, the expression should snatch 2, and replace it with mult(2,4), 
     // so we end up with plus(1, mult(2,4))
-    private SimpleFunctionExpression processOp(BuildArithmeticExpression builder, SimpleFunctionExpression sfe, ArithmeticPartContext ctx, ArithOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
+    private SimpleFunctionExpression processOp(BuildArithmeticExpression builder, SimpleFunctionExpression sfe, ArithmeticPartContext ctx, ArithOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameters, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
         String opStr = op.name().toLowerCase();
         // Case where we are building from scratch
         if (sfe == null)
         {
-            return builder.build(ctx, op, initialValue, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+            return builder.build(ctx, op, initialValue, exprName, typeParametersNames, multiplicityParameters, lambdaContext, space, wrapFlag, importId, addLines);
         }
         //Case where we are in the middle of an expression, and currently looking at something of higher precedence than previous expression
         //Some processing to replace the last argument of the previous expression with the current expression (where current expression
@@ -2028,7 +2042,7 @@ public class AntlrContextToM3CoreInstance
         if (isStrictlyLowerPrecendence(sfe.getValueForMetaPropertyToOne("functionName").getName(), opStr))
         {
             ListIterable<? extends CoreInstance> params = getParams(sfe);
-            SimpleFunctionExpression newSfe = builder.build(ctx, op, params.getLast(), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+            SimpleFunctionExpression newSfe = builder.build(ctx, op, params.getLast(), exprName, typeParametersNames, multiplicityParameters, lambdaContext, space, wrapFlag, importId, addLines);
             MutableList<CoreInstance> l = Lists.mutable.withAll(params.subList(0, params.size() - 1));
             // division and relational ops handle parameter values differently.
             if ("divide".equals(sfe._functionName()) || isRelationalComparison(sfe._functionName()))
@@ -2043,46 +2057,46 @@ public class AntlrContextToM3CoreInstance
         }
         // Case where are in the middle of an expression, but currently looking at something of lower or equal precedence
         // Add the previously processed expression as the initial argument to this expression 
-        return builder.build(ctx, op, sfe, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+        return builder.build(ctx, op, sfe, exprName, typeParametersNames, multiplicityParameters, lambdaContext, space, wrapFlag, importId, addLines);
     }
 
-    private SimpleFunctionExpression arithmeticPart(List<ArithmeticPartContext> aList, CoreInstance result, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
+    private SimpleFunctionExpression arithmeticPart(List<ArithmeticPartContext> aList, CoreInstance result, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
         SimpleFunctionExpression sfe = null;
         for (ArithmeticPartContext ctx : aList)
         {
             if (Iterate.notEmpty(ctx.PLUS()))
             {
-                sfe = processOp(this::buildArithmeticWithListParam, sfe, ctx, ArithOp.PLUS, result, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                sfe = processOp(this::buildArithmeticWithListParam, sfe, ctx, ArithOp.PLUS, result, exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
             }
             else if (Iterate.notEmpty(ctx.STAR()))
             {
-                sfe = processOp(this::buildArithmeticWithListParam, sfe, ctx, ArithOp.TIMES, result, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                sfe = processOp(this::buildArithmeticWithListParam, sfe, ctx, ArithOp.TIMES, result, exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
             }
             else if (Iterate.notEmpty(ctx.MINUS()))
             {
-                sfe = processOp(this::buildArithmeticWithListParam, sfe, ctx, ArithOp.MINUS, result, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                sfe = processOp(this::buildArithmeticWithListParam, sfe, ctx, ArithOp.MINUS, result, exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
             }
             else if (Iterate.notEmpty(ctx.DIVIDE()))
             {
-                sfe = processOp(this::buildArithmeticDivide, sfe, ctx, ArithOp.DIVIDE, result, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                sfe = processOp(this::buildArithmeticDivide, sfe, ctx, ArithOp.DIVIDE, result, exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
             }
             // Relational comparison ops are of the lowest precedence, so no need to see if the expression needs to 'snatch' the last argument from the previous expression
             else if (ctx.LESSTHAN() != null)
             {
-                sfe = buildComparisonOp(ctx, ArithOp.LESSTHAN, sfe == null ? result : sfe, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                sfe = buildComparisonOp(ctx, ArithOp.LESSTHAN, sfe == null ? result : sfe, exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
             }
             else if (ctx.LESSTHANEQUAL() != null)
             {
-                sfe = buildComparisonOp(ctx, ArithOp.LESSTHANEQUAL, sfe == null ? result : sfe, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                sfe = buildComparisonOp(ctx, ArithOp.LESSTHANEQUAL, sfe == null ? result : sfe, exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
             }
             else if (ctx.GREATERTHAN() != null)
             {
-                sfe = buildComparisonOp(ctx, ArithOp.GREATERTHAN, sfe == null ? result : sfe, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                sfe = buildComparisonOp(ctx, ArithOp.GREATERTHAN, sfe == null ? result : sfe, exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
             }
             else if (ctx.GREATERTHANEQUAL() != null)
             {
-                sfe = buildComparisonOp(ctx, ArithOp.GREATERTHANEQUAL, sfe == null ? result : sfe, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                sfe = buildComparisonOp(ctx, ArithOp.GREATERTHANEQUAL, sfe == null ? result : sfe, exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
             }
         }
         return sfe;
@@ -2436,7 +2450,7 @@ public class AntlrContextToM3CoreInstance
         lambdaFunctionInstance._classifierGenericType(genericTypeInstance);
         signature._functionAdd(lambdaFunctionInstance);
 
-        ListIterable<ValueSpecification> block = this.codeBlock(ctx.unitExpr().codeBlock(), typeParametersNames, importId, lambdaContext, this.addLines, tabs(6));
+        ListIterable<ValueSpecification> block = this.codeBlock(ctx.unitExpr().codeBlock(), typeParametersNames, Lists.mutable.empty(), importId, lambdaContext, this.addLines, tabs(6));
         lambdaFunctionInstance._expressionSequence(block);
 
         unitInstance._conversionFunction(lambdaFunctionInstance);
@@ -2653,7 +2667,7 @@ public class AntlrContextToM3CoreInstance
         {
             org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.SimpleConstraintContext simpleConstraintContext = ctx.simpleConstraint();
             constraintName = simpleConstraintContext.constraintId() != null ? simpleConstraintContext.constraintId().VALID_STRING().getText() : String.valueOf(position);
-            constraintFunctionDefinition = this.combinedExpression(simpleConstraintContext.combinedExpression(), "", Lists.mutable.empty(), lambdaContext, "", true, importId, addLines);
+            constraintFunctionDefinition = this.combinedExpression(simpleConstraintContext.combinedExpression(), "", Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, "", true, importId, addLines);
             constraintSourceInformation = this.sourceInformation.getPureSourceInformation(simpleConstraintContext.getStart(), simpleConstraintContext.getStart(), simpleConstraintContext.getStop());
         }
         else
@@ -2674,7 +2688,7 @@ public class AntlrContextToM3CoreInstance
                     constraintExternalId = this.removeQuotes(complexConstraintContext.constraintExternalId().STRING());
                 }
 
-                constraintFunctionDefinition = this.combinedExpression(complexConstraintContext.constraintFunction().combinedExpression(), "", Lists.mutable.empty(), lambdaContext, "", true, importId, addLines);
+                constraintFunctionDefinition = this.combinedExpression(complexConstraintContext.constraintFunction().combinedExpression(), "", Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, "", true, importId, addLines);
 
                 if (complexConstraintContext.constraintEnforcementLevel() != null)
                 {
@@ -2683,7 +2697,7 @@ public class AntlrContextToM3CoreInstance
 
                 if (complexConstraintContext.constraintMessage() != null)
                 {
-                    CoreInstance messageFunction = this.combinedExpression(complexConstraintContext.constraintMessage().combinedExpression(), "", Lists.mutable.empty(), lambdaContext, "", true, importId, addLines);
+                    CoreInstance messageFunction = this.combinedExpression(complexConstraintContext.constraintMessage().combinedExpression(), "", Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, "", true, importId, addLines);
                     SourceInformation messageSourceInformation = messageFunction.getSourceInformation();
 
                     CoreInstance messageFunctionType = this.repository.newAnonymousCoreInstance(messageSourceInformation, this.processorSupport.package_getByUserPath(M3Paths.FunctionType), true);
@@ -3080,7 +3094,7 @@ public class AntlrContextToM3CoreInstance
             if (ctx.qualifiedPropertyBody().codeBlock() != null)
             {
                 LambdaContext lambdaContext = new LambdaContext(isOwner._idOrPath().replace("::", "_") + "_" + qualifiedPropertyName);
-                code = this.codeBlock(ctx.qualifiedPropertyBody().codeBlock(), typeParameterNames, importId, lambdaContext, addLines, "");
+                code = this.codeBlock(ctx.qualifiedPropertyBody().codeBlock(), typeParameterNames, multiplicityParameterNames, importId, lambdaContext, addLines, "");
             }
         }
 
@@ -3162,6 +3176,8 @@ public class AntlrContextToM3CoreInstance
         {
             this.typeParametersAndMultiplicityParameters(ctx.typeAndMultiplicityParameters(), typeParametersNames, multiplicityParametersNames);
         }
+
+        ListIterable<TaggedValue> tags = (ctx.taggedValues() == null) ? null : taggedValues(ctx.taggedValues(), importId);
         ListIterable<CoreInstance> stereotypes = (ctx.stereotypes() == null) ? null : stereotypes(ctx.stereotypes(), importId);
         FunctionType signature = functionTypeSignature(ctx.functionTypeSignature(), function, typeParametersNames, multiplicityParametersNames, importId, spacePlusTabs(space, 1));
 
@@ -3170,6 +3186,7 @@ public class AntlrContextToM3CoreInstance
 
         function._package(packageInstance);
         function._stereotypesCoreInstance(stereotypes);
+        function._taggedValues(tags);
         packageInstance._childrenAdd(function);
         GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
         Type type = (Type) this.processorSupport.package_getByUserPath(M3Paths.NativeFunction);
@@ -3201,7 +3218,7 @@ public class AntlrContextToM3CoreInstance
         //Reset the lambda function counter - we count within the Concrete definition
         LambdaContext lambdaContext = new LambdaContext(getFunctionUniqueId(ctx.qualifiedName(), this.functionCounter, importId));
 
-        ListIterable<ValueSpecification> block = this.codeBlock(ctx.codeBlock(), typeParametersNames, importId, lambdaContext, addLines, spacePlusTabs(space, 2));
+        ListIterable<ValueSpecification> block = this.codeBlock(ctx.codeBlock(), typeParametersNames, multiplicityParameterNames, importId, lambdaContext, addLines, spacePlusTabs(space, 2));
 
         functionDefinition._stereotypesCoreInstance(stereotypes);
         functionDefinition._taggedValues(tags);
@@ -3496,7 +3513,7 @@ public class AntlrContextToM3CoreInstance
     private TaggedValue taggedValue(ImportGroup importId, TaggedValueContext ctx)
     {
         ImportStubInstance importStubInstance = ImportStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().getStart(), ctx.identifier().getStart(), ctx.identifier().getStop()), this.getQualifiedNameString(ctx.qualifiedName()) + "%" + ctx.identifier().getText(), importId);
-        return TaggedValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.STRING().getSymbol(), ctx.STRING().getSymbol()), importStubInstance, this.removeQuotes(ctx.STRING()));
+        return TaggedValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.STRING().get(0).getSymbol(), ctx.STRING().get(ctx.STRING().size() - 1).getSymbol()), importStubInstance, Lists.mutable.withAll(ctx.STRING()).collect(this::removeQuotes).makeString());
     }
 
     private DefaultValue defaultValue(DefaultValueContext ctx, ImportStub isOwner, ImportGroup importId, String propertyName)
@@ -3538,7 +3555,7 @@ public class AntlrContextToM3CoreInstance
         }
         else if (ctx.instanceReference() != null)
         {
-            result = instanceReference(ctx.instanceReference(), Lists.mutable.empty(), lambdaContext, importId, this.tabs(4), addLines);
+            result = instanceReference(ctx.instanceReference(), Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, importId, this.tabs(4), addLines);
         }
         else if (ctx.expressionInstance() != null)
         {
@@ -3556,7 +3573,7 @@ public class AntlrContextToM3CoreInstance
 
         if (ctx.propertyExpression() != null)
         {
-            result = propertyExpression(ctx.propertyExpression(), result, Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, this.tabs(4), importId);
+            result = propertyExpression(ctx.propertyExpression(), result, Lists.mutable.empty(), Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, this.tabs(4), importId);
         }
         return result;
     }
@@ -3740,7 +3757,7 @@ public class AntlrContextToM3CoreInstance
         String propertyName = ctx.alias() != null ? ctx.alias().identifier().getText() : ctx.propertyRef().identifier().getText();
         boolean includeAll = ctx.treePathClassBody() != null && ctx.treePathClassBody().simplePropertyFilter() != null && ctx.treePathClassBody().simplePropertyFilter().STAR() != null;
         NewPropertyRouteNode dpRouteNode = NewPropertyRouteNodeInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.propertyRef().getStart(), ctx.getStop()), null, String.valueOf(includeAll), propertyName, ctx.propertyRef().identifier().getText(), null, null);
-        ListIterable<ValueSpecification> codeSpecifications = this.codeBlock(ctx.codeBlock(), Lists.mutable.empty(), importId, lambdaContext, true, space);
+        ListIterable<ValueSpecification> codeSpecifications = this.codeBlock(ctx.codeBlock(), Lists.mutable.empty(), Lists.mutable.empty(), importId, lambdaContext, true, space);
         dpRouteNode._specifications(codeSpecifications);
         NewPropertyRouteNodeFunctionDefinition<?, ?> functionDefinition = NewPropertyRouteNodeFunctionDefinitionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.codeBlock().getStart()), dpRouteNode);
         functionDefinition._expressionSequence(codeSpecifications);
@@ -3870,7 +3887,7 @@ public class AntlrContextToM3CoreInstance
                 ctx.type() == null ? null : this.type(ctx.type(), Lists.mutable.empty(), "", importId, true),
                 ctx.multiplicity() == null ? null : this.buildMultiplicity(ctx.multiplicity().multiplicityArgument()),
                 ctx.qualifiedName().getText(),
-                this.combinedExpression(ctx.combinedExpression(), "", Lists.mutable.empty(), lambdaContext, "", true, importId, true),
+                this.combinedExpression(ctx.combinedExpression(), "", Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, "", true, importId, true),
                 sourceMappingId,
                 targetMappingId,
                 ctx.STAR() != null,
@@ -3886,7 +3903,7 @@ public class AntlrContextToM3CoreInstance
 
         CoreInstance filter = (ctx.combinedExpression() == null) ?
                 null :
-                combinedExpression(ctx.combinedExpression(), "", Lists.mutable.empty(), lambdaContext, "", true, importId, true);
+                combinedExpression(ctx.combinedExpression(), "", Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, "", true, importId, true);
 
         MutableList<TemporaryPurePropertyMapping> propertyMappings = ListIterate.collect(ctx.mappingLine(), mlc -> mappingLine(mlc, lambdaContext, cl, importId));
         return TemporaryPureSetImplementation.build(src, filter, propertyMappings);
@@ -3905,7 +3922,7 @@ public class AntlrContextToM3CoreInstance
         {
             for (org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.GroupByFunctionSpecificationContext groupByFunctionSpecificationContext : groupByFunctionSpecificationsContext.groupByFunctionSpecification())
             {
-                CoreInstance groupByExpression = this.combinedExpression(groupByFunctionSpecificationContext.combinedExpression(), "", Lists.mutable.empty(), lambdaContext, "", true, importId, true);
+                CoreInstance groupByExpression = this.combinedExpression(groupByFunctionSpecificationContext.combinedExpression(), "", Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, "", true, importId, true);
                 SourceInformation sourceInformation = this.sourceInformation.getPureSourceInformation(groupByFunctionSpecificationContext.getStart(), groupByFunctionSpecificationContext.getStart(), groupByFunctionSpecificationContext.getStop());
 
                 groupByFunctionSpecifications.add(TemporaryPureGroupByFunctionSpecification.build(sourceInformation, groupByExpression));
@@ -3917,8 +3934,8 @@ public class AntlrContextToM3CoreInstance
         {
             for (org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.AggregationFunctionSpecificationContext aggregationFunctionSpecificationContext : aggregationFunctionSpecificationsContext.aggregationFunctionSpecification())
             {
-                CoreInstance mapExpression = this.combinedExpression(aggregationFunctionSpecificationContext.combinedExpression(0), "", Lists.mutable.empty(), lambdaContext, "", true, importId, true);
-                CoreInstance aggregateExpression = this.combinedExpression(aggregationFunctionSpecificationContext.combinedExpression(1), "", Lists.mutable.empty(), lambdaContext, "", true, importId, true);
+                CoreInstance mapExpression = this.combinedExpression(aggregationFunctionSpecificationContext.combinedExpression(0), "", Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, "", true, importId, true);
+                CoreInstance aggregateExpression = this.combinedExpression(aggregationFunctionSpecificationContext.combinedExpression(1), "", Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, "", true, importId, true);
                 SourceInformation sourceInformation = this.sourceInformation.getPureSourceInformation(aggregationFunctionSpecificationContext.getStart(), aggregationFunctionSpecificationContext.getStart(), aggregationFunctionSpecificationContext.getStop());
 
                 aggregationFunctionSpecifications.add(TemporaryPureAggregationFunctionSpecification.build(sourceInformation, mapExpression, aggregateExpression));
@@ -3931,7 +3948,7 @@ public class AntlrContextToM3CoreInstance
 
     public TemporaryPurePropertyMapping combinedExpression(CombinedExpressionContext ctx, String property, LambdaContext lambdaContext, ImportGroup importId)
     {
-        CoreInstance expression = this.combinedExpression(ctx, "", Lists.mutable.empty(), lambdaContext, "", true, importId, true);
+        CoreInstance expression = this.combinedExpression(ctx, "", Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, "", true, importId, true);
         return TemporaryPurePropertyMapping.build(
                 this.sourceInformation.getPureSourceInformation(ctx.getStart()),
                 false,
@@ -3947,7 +3964,7 @@ public class AntlrContextToM3CoreInstance
 
     public TemporaryPureMergeOperationFunctionSpecification mergeOperationSpecification(CombinedExpressionContext ctx, LambdaContext lambdaContext, ImportGroup importId)
     {
-        CoreInstance expression = this.combinedExpression(ctx, "", Lists.mutable.empty(), lambdaContext, "", true, importId, true);
+        CoreInstance expression = this.combinedExpression(ctx, "", Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, "", true, importId, true);
         return TemporaryPureMergeOperationFunctionSpecification.build(
                 this.sourceInformation.getPureSourceInformation(ctx.getStart()),
                 expression);

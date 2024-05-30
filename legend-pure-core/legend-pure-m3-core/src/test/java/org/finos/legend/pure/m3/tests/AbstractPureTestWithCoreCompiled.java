@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.tests;
 
+import org.apache.commons.io.output.NullPrintStream;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
@@ -226,6 +227,8 @@ public abstract class AbstractPureTestWithCoreCompiled
         if (functionExecution.getConsole() != null)
         {
             functionExecution.getConsole().enableBufferLines();
+            functionExecution.getConsole().setPrintStream(NullPrintStream.NULL_PRINT_STREAM);
+            functionExecution.getConsole().setConsole(true);
         }
     }
 

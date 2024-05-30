@@ -12,29 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::math::log(value:Number[1]):Float[1];
-native function meta::pure::functions::math::log10(value:Number[1]):Float[1];
+import meta::pure::test::pct::*;
 
+native function <<PCT.function>> meta::pure::functions::math::log(value:Number[1]):Float[1];
 
-function <<test.Test>> meta::pure::functions::math::tests::log::testNumberLog():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::log::testNumberLog<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    let f = {a:Number[1] | log($a)};
-    assertEqWithinTolerance(1.0, $f->eval(2.718281828459045), 0.000000000000001);
+    let z = {a:Number[1] | log($a)};
+    assertEqWithinTolerance(1.0, $f->eval(|$z->eval(2.718281828459045)), 0.000000000000001);
 }
 
-function <<test.Test>> meta::pure::functions::math::tests::log::testSimple():Boolean[1]
+function <<PCT.test>> meta::pure::functions::math::tests::log::testSimple<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEqWithinTolerance(4.0, log(4->exp()), 0.000000000000001);
-    assertEqWithinTolerance(log(2.718281828459045), 1.0, 0.000000000000001);
-}
-
-function <<test.ToFix>> meta::pure::functions::math::tests::log::testNumberLog10():Boolean[1]
-{
-    let f = {a:Number[1] | log10($a)};
-    assertEqWithinTolerance(1.0, $f->eval(10), 0.000000000000001);
-}
-
-function <<test.ToFix>> meta::pure::functions::math::tests::log::testSimpleLog10():Boolean[1]
-{
-    assertEqWithinTolerance(log10(10), 1.0, 0.000000000000001);
+    assertEqWithinTolerance(4.0, $f->eval(|log(4->exp())), 0.000000000000001);
+    assertEqWithinTolerance($f->eval(|log(2.718281828459045)), 1.0, 0.000000000000001);
 }

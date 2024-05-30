@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::meta::evaluateAndDeactivate<T|m>(var:T[m]):T[m];
+import meta::pure::test::pct::*;
+
+native function <<PCT.platformOnly>> meta::pure::functions::meta::evaluateAndDeactivate<T|m>(var:T[m]):T[m];
 
 function <<test.Test>> meta::pure::functions::meta::tests::evaluateAndDeactivate::testEvaluateAndDeactivate():Boolean[1]
 {

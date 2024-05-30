@@ -357,6 +357,49 @@ public class CompiledSupport
         return object.getFirst();
     }
 
+    public static <T> T toMultiplicityOne(T object, int lowerBound, int upperBound, SourceInformation sourceInformation)
+    {
+        if (object == null && lowerBound > 0)
+        {
+            throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size 0 to multiplicity " + print(lowerBound, upperBound));
+        }
+        if (object instanceof RichIterable)
+        {
+            int size = ((RichIterable<?>) object).size();
+            if (size > 1)
+            {
+                throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size " + size + " to multiplicity " + print(lowerBound, upperBound));
+            }
+        }
+        return object;
+    }
+
+    public static <T> RichIterable<T> toMultiplicityMany(T object, int lowerBound, int upperBound, SourceInformation sourceInformation)
+    {
+        if (object == null && lowerBound > 0)
+        {
+            throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size 0 to multiplicity " + print(lowerBound, upperBound));
+        }
+        if (object instanceof RichIterable)
+        {
+            int size = ((RichIterable<?>) object).size();
+            if (lowerBound > size || (upperBound != -1 && size > upperBound))
+            {
+                throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size " + size + " to multiplicity " + print(lowerBound, upperBound));
+            }
+        }
+        return CompiledSupport.toPureCollection(object);
+    }
+
+    private static String print(int lowerBound, int upperBound)
+    {
+        if (lowerBound == upperBound)
+        {
+            return "[" + lowerBound + "]";
+        }
+        return "[" + lowerBound + ".." + (upperBound == -1 ? "*" : upperBound) + "]";
+    }
+
     public static <T> RichIterable<T> toOneMany(T object, SourceInformation sourceInformation)
     {
         return toOneManyWithMessage(object, null, sourceInformation);

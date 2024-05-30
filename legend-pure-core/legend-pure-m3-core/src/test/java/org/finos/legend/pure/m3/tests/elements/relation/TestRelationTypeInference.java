@@ -263,7 +263,6 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
         }
         catch (Exception e)
         {
-            e.printStackTrace();
             Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:135), \"The system can't find the column legal3 in the Relation (legal:String)\"", e.getMessage());
         }
     }

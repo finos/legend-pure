@@ -12,41 +12,56 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::boolean::or(first:Boolean[1], second:Boolean[1]):Boolean[1];
+import meta::pure::test::pct::*;
 
-function <<test.Test>> meta::pure::functions::boolean::tests::or::testBinaryTruthTable():Boolean[1]
+native function
+    <<PCT.function>>
+    {
+        doc.doc='Returns true if any one of the parameters is true, otherwise false',
+        PCT.grammarDoc='$first || $second',
+        PCT.grammarCharacters='||'
+    }
+    meta::pure::functions::boolean::or(first:Boolean[1], second:Boolean[1]):Boolean[1];
+
+
+function <<PCT.test>> meta::pure::functions::boolean::tests::conjunctions::or::testBinaryTruthTable<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert(true || true);
-    assert(true || false);
-    assert(false || true);
-    assertFalse(false || false);
+    assert($f->eval(|true || true));
+    assert($f->eval(|true || false));
+    assert($f->eval(|false || true));
+    assertFalse($f->eval(|false || false));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::or::testBinaryExpressions():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::conjunctions::or::testBinaryExpressions<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert((1 == 1) || (2 == 3));
-    assertFalse((1 == 2) || (2 == 3));
+    assert($f->eval(|(1 == 1) || (2 == 3)));
+    assertFalse($f->eval(|(1 == 2) || (2 == 3)));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::or::testTernaryTruthTable():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::conjunctions::or::testTernaryTruthTable<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert(true || true || true);
-    assert(true || true || false);
-    assert(true || false || true);
-    assert(true || false || false);
-    assert(false || true || true);
-    assert(false || true || false);
-    assert(false || false || true);
-    assertFalse(false || false || false);
+    assert($f->eval(|true || true || true));
+    assert($f->eval(|true || true || false));
+    assert($f->eval(|true || false || true));
+    assert($f->eval(|true || false || false));
+    assert($f->eval(|false || true || true));
+    assert($f->eval(|false || true || false));
+    assert($f->eval(|false || false || true));
+    assertFalse($f->eval(|false || false || false));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::or::testTernaryExpressions():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::conjunctions::or::testTernaryExpressions<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert((1 != 1) || (2 == 3) || true);
-    assertFalse((1 == 2) || (2 == 3) || false);
+    assert($f->eval(|(1 != 1) || (2 == 3) || true));
+    assertFalse($f->eval(|(1 == 2) || (2 == 3) || false));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::or::testShortCircuit():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::conjunctions::or::testShortCircuitSimple<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assert($f->eval(|true || (12/0 > 0)));
+}
+
+function <<test.Test>> meta::pure::functions::boolean::tests::conjunctions::or::testShortCircuit():Boolean[1]
 {
     let val1 = ^List<String>(values=['Claudius', 'Ptolemy']);
     let val2 = 'Claudius Ptolemy';
@@ -54,7 +69,7 @@ function <<test.Test>> meta::pure::functions::boolean::tests::or::testShortCircu
     assert(!$val2->instanceOf(List) || ($val2->cast(@List<String>).values != ['Claudius', 'Ptolemy']));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::or::testShortCircuitInDynamicEvaluation():Boolean[1]
+function <<test.Test>> meta::pure::functions::boolean::tests::conjunctions::or::testShortCircuitInDynamicEvaluation():Boolean[1]
 {
     let fn1 = {|let val1 = ^List<String>(values=['Claudius', 'Ptolemy']);
                 !$val1->instanceOf(List) || ($val1->cast(@List<String>).values != ['Claudius', 'Ptolemy']);};

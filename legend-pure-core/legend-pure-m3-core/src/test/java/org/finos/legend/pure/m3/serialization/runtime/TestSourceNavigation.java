@@ -14,10 +14,10 @@
 
 package org.finos.legend.pure.m3.serialization.runtime;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.EnumInstance;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.After;
 import org.junit.Assert;
@@ -273,12 +273,12 @@ public class TestSourceNavigation extends AbstractPureTestWithCoreCompiledPlatfo
         runtime.compile();
         CoreInstance found = source.navigate(4, 7, processorSupport);
         Assert.assertEquals("/platform/pure/basics/io/print.pure", found.getSourceInformation().getSourceId());
-        Assert.assertEquals(15, found.getSourceInformation().getLine());
-        Assert.assertEquals(44, found.getSourceInformation().getColumn());
+        Assert.assertEquals(17, found.getSourceInformation().getLine());
+        Assert.assertEquals(65, found.getSourceInformation().getColumn());
 
         found = source.navigate(6, 7, processorSupport);
         Assert.assertEquals("/platform/pure/basics/io/print.pure", found.getSourceInformation().getSourceId());
-        Assert.assertEquals(15, found.getSourceInformation().getLine());
-        Assert.assertEquals(44, found.getSourceInformation().getColumn());
+        Assert.assertEquals(17, found.getSourceInformation().getLine());
+        Assert.assertEquals(65, found.getSourceInformation().getColumn());
     }
 }

@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m3.exception;
 
-import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.exception.PureException;
 
 /**
  * An exception raised when something goes wrong during Pure execution.

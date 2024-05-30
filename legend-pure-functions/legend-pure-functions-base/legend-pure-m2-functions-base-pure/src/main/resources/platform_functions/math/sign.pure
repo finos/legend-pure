@@ -12,15 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::math::sign(number:Number[1]):Integer[1];
+import meta::pure::test::pct::*;
 
-function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::math::tests::sign::testSign():Boolean[1]
+native function <<PCT.function>> meta::pure::functions::math::sign(number:Number[1]):Integer[1];
+
+function <<PCT.test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::math::tests::sign::testSign<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals(-1, sign(-10));
-    assertEquals(0, sign(0));
-    assertEquals(1, sign(10));
+    assertEquals(-1, $f->eval(|sign(-10)));
+    assertEquals(0, $f->eval(|sign(0)));
+    assertEquals(1, $f->eval(|sign(10)));
 
-    assertEquals(-1, sign(-10.5));
-    assertEquals(1, sign(0.5));
-    assertEquals(1, sign(10.5));
+    assertEquals(-1, $f->eval(|sign(-10.5)));
+    assertEquals(1, $f->eval(|sign(0.5)));
+    assertEquals(1, $f->eval(|sign(10.5)));
 }

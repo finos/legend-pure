@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::io::print(param:Any[*], max:Integer[1]):Nil[0];
+import meta::pure::test::pct::*;
+
+native function <<PCT.platformOnly>> meta::pure::functions::io::print(param:Any[*], max:Integer[1]):Nil[0];

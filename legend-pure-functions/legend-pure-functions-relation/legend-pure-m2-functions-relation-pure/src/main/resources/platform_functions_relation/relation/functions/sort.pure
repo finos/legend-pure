@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
 import meta::pure::metamodel::relation::*;
 
 Enum meta::pure::functions::relation::SortType
@@ -35,10 +36,10 @@ function <<functionType.NormalizeRequiredFunction>> meta::pure::functions::relat
    ^SortInfo<T>(column=$column, direction=SortType.ASC)
 }
 
-native function meta::pure::functions::relation::sort<X,T>(rel:Relation<T>[1], sortInfo:SortInfo<X⊆T>[*]):Relation<T>[1];
+native function <<PCT.function>> meta::pure::functions::relation::sort<X,T>(rel:Relation<T>[1], sortInfo:SortInfo<X⊆T>[*]):Relation<T>[1];
 
 
-function <<RelationProfile.test>> meta::pure::functions::relation::tests::sort::testSimpleSortShared<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::relation::tests::sort::testSimpleSortShared<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
 {
   let expr = {
               | #TDS
@@ -55,16 +56,7 @@ function <<RelationProfile.test>> meta::pure::functions::relation::tests::sort::
 
   let res =  $f->eval($expr);
 
-  assertEquals( '#TDS\n'+
-                '   id,name\n'+
-                '   1,Sachin\n'+
-                '   1,Neema\n'+
-                '   2,George\n'+
-                '   2,Thierry\n'+
-                '   3,Pierre\n'+
-                '   4,Alex\n'+
-                '   5,David\n'+
-                '#', $res->toString());
+  assertEquals([1,1,2,2,3,4,5], $res->map(x|$x.id));
 
   let expr2 = {
               | #TDS

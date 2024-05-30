@@ -114,7 +114,7 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
     @Test
     public void testReadFiles()
     {
-        testReadFiles("platform/pure/grammar/m3.pc", "platform/pure/grammar/functions/lang/all.pc", "platform/pure/grammar/functions/collection/filter.pc");
+        testReadFiles("platform/pure/grammar/m3.pc", "platform/pure/grammar/functions/lang/all.pc", "platform/pure/grammar/functions/collection/base/filter.pc");
     }
 
     protected void testReadFiles(String... files)

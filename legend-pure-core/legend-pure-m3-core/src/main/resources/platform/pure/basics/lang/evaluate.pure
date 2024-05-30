@@ -13,8 +13,9 @@
 // limitations under the License.
 
 import meta::pure::functions::lang::tests::model::*;
+import meta::pure::test::pct::*;
 
-native function meta::pure::functions::lang::evaluate(func:Function<Any>[1], params:List<Any>[*]):Any[*];
+native function <<PCT.platformOnly>> meta::pure::functions::lang::evaluate(func:Function<Any>[1], params:List<Any>[*]):Any[*];
 
 
 function <<test.Test>> meta::pure::functions::lang::tests::evaluate::testEvaluateOne():Boolean[1]

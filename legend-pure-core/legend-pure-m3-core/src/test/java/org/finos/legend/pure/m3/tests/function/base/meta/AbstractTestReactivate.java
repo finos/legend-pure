@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m3.tests.function.base.meta;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
