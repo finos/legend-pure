@@ -577,7 +577,7 @@ public class TestTDS
                     throw new RuntimeException("ERROR " + copy.columnType.get(columnName) + " not supported in slice!");
             }
         });
-        copy.rowCount = to - from;
+        copy.rowCount = (long) to - from;
         return copy;
     }
 

@@ -152,14 +152,7 @@ public class IncrementalCompiler_New extends IncrementalCompiler
                     throw e;
                 }
                 result.merge(repoResult);
-                if (repo == null)
-                {
-                    compiledSourcesByRepo.putAll(repo, repoSources);
-                }
-                else
-                {
-                    compiledSourcesByRepo.putAll(repo, repoSources);
-                }
+                compiledSourcesByRepo.putAll(repo, repoSources);
             });
         }
 
