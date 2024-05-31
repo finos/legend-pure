@@ -843,22 +843,7 @@ public class CompiledSupport
 
     public static String joinStrings(RichIterable<String> strings, String prefix, String separator, String suffix)
     {
-        int size = (strings == null) ? 0 : strings.size();
-        switch (size)
-        {
-            case 0:
-            {
-                return prefix + suffix;
-            }
-            case 1:
-            {
-                return prefix + strings.getAny() + suffix;
-            }
-            default:
-            {
-                return strings.makeString(prefix, separator, suffix);
-            }
-        }
+        return ((strings == null) || strings.isEmpty()) ? (prefix + suffix) : strings.makeString(prefix, separator, suffix);
     }
 
     public static String format(String formatString, Object formatArgs, BiFunction<Object, ? super ExecutionSupport, ? extends String> toRepresentationFunction, ExecutionSupport executionSupport)
