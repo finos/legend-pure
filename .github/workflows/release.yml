@@ -68,7 +68,11 @@ jobs:
           theme: dark
 
       - name: Prepare release
-        run: mvn -T2 -B -DpreparationGoals=clean release:prepare -DreleaseVersion=${{ github.event.inputs.releaseVersion }} -DdevelopmentVersion=${{ env.DEVELOPMENT_VERSION }} -P release -DargLine="-Xmx5g"
+        run: mvn -B -DpreparationGoals=clean release:prepare -DreleaseVersion=${{ github.event.inputs.releaseVersion }} -DdevelopmentVersion=${{ env.DEVELOPMENT_VERSION }} -DargLine="-XX:MaxRAMPercentage=25.0" -DforkCount=3 -DreuseForks=true -Dsurefire.reports.directory=${GITHUB_WORKSPACE}/surefire-reports-aggregate -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat="yyyy-MM-dd HH:mm:ss.SSSZ" -P release
+        env:
+          MAVEN_OPTS: -XX:MaxRAMPercentage=25.0
 
       - name: Perform release
-        run: mvn -T2 -DargLine="-Xmx5g" -B release:perform -P release -DargLine="-Xmx5g"
+        run: mvn -B release:perform -P release
+        env:
+          MAVEN_OPTS: -XX:MaxRAMPercentage=90.0
