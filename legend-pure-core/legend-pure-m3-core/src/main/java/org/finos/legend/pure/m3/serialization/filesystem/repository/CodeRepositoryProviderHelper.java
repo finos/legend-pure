@@ -19,10 +19,13 @@ import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.impl.utility.Iterate;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CodeRepositoryProviderHelper
 {
@@ -33,13 +36,15 @@ public class CodeRepositoryProviderHelper
 
     public static RichIterable<CodeRepository> findCodeRepositories(Path directory)
     {
-        try
+        try (Stream<Path> stream = Files.walk(directory, 1))
         {
-            return Files.walk(directory, 1).filter(p -> p.toString().endsWith("definition.json")).collect(Collectors.toCollection(Lists.mutable::empty)).collect(GenericCodeRepository::build);
+            return stream.filter(p -> p.toString().endsWith("definition.json"))
+                    .map(GenericCodeRepository::build)
+                    .collect(Collectors.toCollection(Lists.mutable::empty));
         }
-        catch (Exception e)
+        catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -55,7 +60,7 @@ public class CodeRepositoryProviderHelper
      */
     public static CodeRepository findPlatformCodeRepository()
     {
-        return findCodeRepositories(false).select(c -> "platform".equals(c.getName())).getFirst();
+        return findCodeRepositories(false).detect(c -> "platform".equals(c.getName()));
     }
 
     /**
