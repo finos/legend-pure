@@ -52,24 +52,6 @@ jobs:
           server-username: CI_DEPLOY_USERNAME
           server-password: CI_DEPLOY_PASSWORD
 
-      - name: Get Yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn config get cacheFolder)"
-
-      - name: Setup Yarn cache
-        uses: actions/cache@v4
-        id: yarn-cache
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 14.x
-
       - name: Configure git
         run: |
           git config --global committer.email "infra@finos.org"
@@ -78,7 +60,9 @@ jobs:
           git config --global author.name "${GITHUB_ACTOR}"
 
       - name: Download deps and plugins
-        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -DargLine="-Xmx5g"
+        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
+        env:
+          MAVEN_OPTS: -XX:MaxRAMPercentage=90.0
 
       - name: Collect Workflow Telemetry
         uses: runforesight/workflow-telemetry-action@v1
@@ -87,22 +71,22 @@ jobs:
 
       - name: Build + Test
         if: (github.repository != 'finos/legend-pure') || (github.ref != 'refs/heads/master')
-        run: mvn -T3 -B -e install javadoc:javadoc -DargLine="-Xmx5g"
+        run: mvn -B -e install javadoc:javadoc -DargLine="-XX:MaxRAMPercentage=25.0" -DforkCount=3 -DreuseForks=true -Dsurefire.reports.directory=${GITHUB_WORKSPACE}/surefire-reports-aggregate -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat="yyyy-MM-dd HH:mm:ss.SSSZ"
         env:
-          MAVEN_OPTS: -Xmx4g
+          MAVEN_OPTS: -XX:MaxRAMPercentage=25.0
 
       - name: Build + Test + Sonar + Maven Deploy
         if: (github.repository == 'finos/legend-pure') && (github.ref == 'refs/heads/master')
-        run: mvn -T3 -B -e deploy javadoc:javadoc -Psonar -DargLine="-Xmx5g"
+        run: mvn -B -e deploy javadoc:javadoc -Psonar -DargLine="-XX:MaxRAMPercentage=25.0" -DforkCount=3 -DreuseForks=true -Dsurefire.reports.directory=${GITHUB_WORKSPACE}/surefire-reports-aggregate -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat="yyyy-MM-dd HH:mm:ss.SSSZ"
         env:
-          MAVEN_OPTS: -Xmx4g
+          MAVEN_OPTS: -XX:MaxRAMPercentage=25.0
 
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: legend-pure-test-reports/surefire-reports-aggregate/*.xml
+          path: ${{ github.workspace }}/surefire-reports-aggregate/*.xml
 
       - name: Upload CI Event
         if: always()

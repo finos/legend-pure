@@ -30,7 +30,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>legend-pure-test-reports</module>
         <module>legend-pure-core</module>
         <module>legend-pure-dsl</module>
         <module>legend-pure-functions</module>
@@ -47,6 +46,8 @@
 
         <!-- Overridden by sub-modules without Java code -->
         <javadoc.skip>false</javadoc.skip>
+
+        <surefire.reports.directory />
 
         <encoding>UTF-8</encoding>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -404,6 +405,16 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <trimStackTrace>false</trimStackTrace>
+                    <!-- Used to aggregate test reports if required -->
+                    <reportsDirectory>${surefire.reports.directory}</reportsDirectory>
+                </configuration>
+            </plugin>
+
         </plugins>
     </build>
 
