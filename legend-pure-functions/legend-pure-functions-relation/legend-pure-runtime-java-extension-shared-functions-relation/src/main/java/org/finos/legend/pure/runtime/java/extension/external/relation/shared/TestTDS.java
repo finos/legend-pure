@@ -576,7 +576,7 @@ public class TestTDS
                     throw new RuntimeException("ERROR " + copy.columnType.get(columnName) + " not supported in drop!");
             }
         });
-        copy.rowCount = to - from;
+        copy.rowCount = (long) to - from;
         return copy;
     }
 
