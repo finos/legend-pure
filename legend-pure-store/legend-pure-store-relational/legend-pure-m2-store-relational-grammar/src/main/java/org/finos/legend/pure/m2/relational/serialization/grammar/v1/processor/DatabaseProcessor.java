@@ -17,18 +17,15 @@ package org.finos.legend.pure.m2.relational.serialization.grammar.v1.processor;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.predicate.Predicate2;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.block.factory.Functions0;
 import org.eclipse.collections.impl.block.factory.Predicates2;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m2.relational.M2RelationalPaths;
@@ -83,8 +80,11 @@ public class DatabaseProcessor extends Processor<Database>
     public static final String DEFAULT_SCHEMA_NAME = "default";
     public static final String SELF_JOIN_TABLE_NAME = "{target}";
 
+    @Deprecated
     public static final Predicate2<Schema, Object> SCHEMA_NAME_PREDICATE = Predicates2.attributeEqual(Schema::_name);
+    @Deprecated
     public static final Predicate2<RelationalOperationElement, Object> COLUMN_NAME_PREDICATE = Predicates2.attributeEqual(c -> ((Column) c)._name());
+    @Deprecated
     public static final Predicate2<NamedRelation, Object> NAMED_RELATION_NAME_PREDICATE = Predicates2.attributeEqual(NamedRelationAccessor::_name);
 
     @Override
@@ -159,7 +159,7 @@ public class DatabaseProcessor extends Processor<Database>
 
     private static <T extends CoreInstance> void checkForDuplicatesByName(RichIterable<? extends CoreInstance> instances, Function<T, String> nameFn, String scope)
     {
-        MutableMap<String, CoreInstance> instancesByName = UnifiedMap.newMap(instances.size());
+        MutableMap<String, CoreInstance> instancesByName = Maps.mutable.ofInitialCapacity(instances.size());
         for (T instance : (RichIterable<T>) instances)
         {
             String name = nameFn.valueOf(instance);
@@ -215,7 +215,7 @@ public class DatabaseProcessor extends Processor<Database>
         if (tableOrView instanceof Relation)
         {
             ListIterable<? extends RelationalOperationElement> columns = ((Relation) tableOrView)._columns().toList();
-            MutableMap<String, Column> columnsByName = UnifiedMap.newMap(columns.size());
+            MutableMap<String, Column> columnsByName = Maps.mutable.ofInitialCapacity(columns.size());
             for (RelationalOperationElement column : columns)
             {
                 if (!(column instanceof Column))
@@ -322,9 +322,9 @@ public class DatabaseProcessor extends Processor<Database>
 
     private void processFilter(Filter filter, Database defaultDb, ProcessorSupport processorSupport) throws PureCompilationException
     {
-        MutableMap<String, MutableMap<String, CoreInstance>> tableByAlias = UnifiedMap.newMap();
+        MutableMap<String, MutableMap<String, CoreInstance>> tableByAlias = Maps.mutable.empty();
         Operation operation = filter._operation();
-        MutableList<TableAliasColumn> selfJoinTarget = FastList.newList();
+        MutableList<TableAliasColumn> selfJoinTarget = Lists.mutable.empty();
         scanOperation(operation, tableByAlias, selfJoinTarget, defaultDb, null, processorSupport, false);
     }
 
@@ -378,11 +378,16 @@ public class DatabaseProcessor extends Processor<Database>
                 Column col = null;
                 if (existingRelationalElement instanceof Relation)
                 {
-                    col = (Column) ((Relation) existingRelationalElement)._columns().selectWith(COLUMN_NAME_PREDICATE, columnName).toList().getFirst();
+                    col = (Column) ((Relation) existingRelationalElement)._columns().detect(c -> (c instanceof Column) && columnName.equals(((Column) c)._name()));
                 }
                 if (col == null)
                 {
-                    throw new PureCompilationException(selfJoinTarget.getSourceInformation(), "The column '" + columnName + "' can't be found in the table '" + ((NamedRelation) existingRelationalElement)._name() + "'");
+                    StringBuilder builder = new StringBuilder("The column '").append(columnName).append("' can't be found");
+                    if (existingRelationalElement instanceof NamedRelation)
+                    {
+                        builder.append(" in the table '").append(((NamedRelation) existingRelationalElement)._name()).append("'");
+                    }
+                    throw new PureCompilationException(selfJoinTarget.getSourceInformation(), builder.toString());
                 }
                 selfJoinTarget._column(col);
             }
@@ -495,7 +500,7 @@ public class DatabaseProcessor extends Processor<Database>
                 table = findTableForAlias(database, tableAlias, processorSupport);
                 if (tableByAliasBySchema != null)
                 {
-                    tableByAliasBySchema.getIfAbsentPut(schemaName, Functions0.<String, CoreInstance>newUnifiedMap()).put(alias, table);
+                    tableByAliasBySchema.getIfAbsentPut(schemaName, Maps.mutable::empty).put(alias, table);
                 }
             }
             tableAlias._relationalElement((RelationalOperationElement) table);
@@ -504,11 +509,16 @@ public class DatabaseProcessor extends Processor<Database>
             Column col = null;
             if (table instanceof Relation)
             {
-                col = (Column) ((Relation) table)._columns().selectWith(COLUMN_NAME_PREDICATE, columnName).toList().getFirst();
+                col = (Column) ((Relation) table)._columns().detect(c -> (c instanceof Column) && columnName.equals(((Column) c)._name()));
             }
             if (col == null)
             {
-                throw new PureCompilationException(tableAliasColumn.getSourceInformation(), "The column '" + columnName + "' can't be found in the table '" + ((NamedRelation) table)._name() + "'");
+                StringBuilder builder = new StringBuilder("The column '").append(columnName).append("' can't be found");
+                if (table instanceof NamedRelation)
+                {
+                    builder.append(" in the table '").append(((NamedRelation) table)._name()).append("'");
+                }
+                throw new PureCompilationException(tableAliasColumn.getSourceInformation(), builder.toString());
             }
             tableAliasColumn._column(col);
 

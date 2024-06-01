@@ -28,6 +28,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Functi
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationTypeCoreInstanceWrapper;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
@@ -137,8 +138,8 @@ public class _RelationType
         {
             return false;
         }
-        RelationType<?> rOne = (RelationType<?>) one;
-        RelationType<?> rTwo = (RelationType<?>) two;
+        RelationType<?> rOne = RelationTypeCoreInstanceWrapper.toRelationType(one);
+        RelationType<?> rTwo = RelationTypeCoreInstanceWrapper.toRelationType(two);
         boolean twoContainsWildCard = rTwo._columns().injectInto(true, (a, b) -> a && b._nameWildCard());
         if (!twoContainsWildCard)
         {
