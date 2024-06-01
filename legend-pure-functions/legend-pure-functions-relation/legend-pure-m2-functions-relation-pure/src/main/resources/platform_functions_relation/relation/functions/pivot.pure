@@ -135,31 +135,30 @@ function <<PCT.test>> meta::pure::functions::relation::tests::pivot::testSimpleP
                   '#', $res->toString());
 }
 
-// TODO: enable this once we support column name (identifier) with quotes
-// function <<PCT.test>> meta::pure::functions::relation::tests::pivot::testSimplePivotChained<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
-// {
-//     let expr = {
-//                 |#TDS
-//                     city, country, year, treePlanted
-//                     NYC, USA, 2011, 5000
-//                     NYC, USA, 2000, 5000
-//                     SAN, USA, 2000, 2000
-//                     SAN, USA, 2011, 100
-//                     LND, UK, 2011, 3000
-//                     SAN, USA, 2011, 2500
-//                     NYC, USA, 2000, 10000
-//                     NYC, USA, 2012, 7600
-//                     NYC, USA, 2012, 7600
-//                  #->pivot(~[year], ~[newCol : x | $x.treePlanted : y | $y->plus()])->cast(@Relation<(city:String,country:String,'2000__|__newCol':Integer,'2011__|__newCol':Integer,'2012__|__newCol':Integer)>)->filter(x|$x.city=='NYC')
-//                };
+function <<PCT.test>> meta::pure::functions::relation::tests::pivot::testSimplePivotChained<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
+{
+    let expr = {
+                |#TDS
+                    city, country, year, treePlanted
+                    NYC, USA, 2011, 5000
+                    NYC, USA, 2000, 5000
+                    SAN, USA, 2000, 2000
+                    SAN, USA, 2011, 100
+                    LND, UK, 2011, 3000
+                    SAN, USA, 2011, 2500
+                    NYC, USA, 2000, 10000
+                    NYC, USA, 2012, 7600
+                    NYC, USA, 2012, 7600
+                 #->pivot(~[year], ~['newCol' : x | $x.treePlanted : y | $y->plus()])->cast(@Relation<(city:String,country:String,'2000__|__newCol':Integer,'2011__|__newCol':Integer,'2012__|__newCol':Integer)>)->filter(x|$x.city=='NYC')
+               };
 
-//     let res =  $f->eval($expr);
+    let res =  $f->eval($expr);
 
-//     assertEquals( '#TDS\n'+
-//                   '   city,country,2000__|__newCol,2011__|__newCol,2012__|__newCol\n' +
-//                   '   NYC,USA,15000,5000,15200\n' +
-//                   '#', $res->toString());
-// }
+    assertEquals( '#TDS\n'+
+                  '   city,country,2000__|__newCol,2011__|__newCol,2012__|__newCol\n' +
+                  '   NYC,USA,15000,5000,15200\n' +
+                  '#', $res->toString());
+}
 
 // TODO: test pivot with no aggregation function specified
 // TODO when we support specifying pivot with specific values
