@@ -337,22 +337,24 @@ public class MappingValidator implements MatchRunner<Mapping>
             CoreInstance original = ImportStub.withImportStubByPass(storeSubstitution._originalCoreInstance(), processorSupport);
             if (!(original instanceof Store))
             {
-                throwStoreSubstitutionError(include, original);
+                throw new PureCompilationException(include.getSourceInformation(), PackageableElement.writeUserPathForPackageableElement(new StringBuilder("Store substitution error: "), original).append(" is not a Store").toString());
             }
 
             CoreInstance substitute = ImportStub.withImportStubByPass(storeSubstitution._substituteCoreInstance(), processorSupport);
             if (!(substitute instanceof Store))
             {
-                throwStoreSubstitutionError(include, substitute);
+                throw new PureCompilationException(include.getSourceInformation(), PackageableElement.writeUserPathForPackageableElement(new StringBuilder("Store substitution error: "), substitute).append(" is not a Store").toString());
             }
 
-            if (substitutionMap.put((Store) original, (Store) substitute) != null)
+            Store originalStore = (Store) original;
+            Store substituteStore = (Store) substitute;
+            if (substitutionMap.put(originalStore, substituteStore) != null)
             {
                 StringBuilder message = new StringBuilder("Store substitution error: multiple substitutions for ");
                 PackageableElement.writeUserPathForPackageableElement(message, original);
                 throw new PureCompilationException(include.getSourceInformation(), message.toString());
             }
-            if (!storeIncludes((Store) substitute, (Store) original, processorSupport))
+            if (!storeIncludes(substituteStore, originalStore, processorSupport))
             {
                 StringBuilder message = new StringBuilder("Store substitution error: ");
                 PackageableElement.writeUserPathForPackageableElement(message, substitute);
@@ -361,7 +363,7 @@ public class MappingValidator implements MatchRunner<Mapping>
                 throw new PureCompilationException(include.getSourceInformation(), message.toString());
             }
         }
-        for (Store substitute : substitutionMap.valuesView())
+        substitutionMap.forEachValue(substitute ->
         {
             if (substitutionMap.containsKey(substitute))
             {
@@ -370,16 +372,8 @@ public class MappingValidator implements MatchRunner<Mapping>
                 message.append(" appears both as an original and a substitute");
                 throw new PureCompilationException(include.getSourceInformation(), message.toString());
             }
-        }
+        });
         return substitutionMap;
-    }
-
-    private static void throwStoreSubstitutionError(MappingInclude include, CoreInstance original)
-    {
-        StringBuilder message = new StringBuilder("Store substitution error: ");
-        PackageableElement.writeUserPathForPackageableElement(message, original);
-        message.append(" is not a Store");
-        throw new PureCompilationException(include.getSourceInformation(), message.toString());
     }
 
     private static void validateInclusionHierarchy(Mapping mapping, MutableList<Mapping> visited, ProcessorSupport processorSupport)

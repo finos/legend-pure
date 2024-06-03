@@ -685,6 +685,12 @@ public class GenericType
             return true;
         }
 
+        // Check null
+        if ((genericType1 == null) || (genericType2 == null))
+        {
+            return false;
+        }
+
         // Operation
         if (GenericType.isGenericTypeOperation(genericType1, processorSupport))
         {

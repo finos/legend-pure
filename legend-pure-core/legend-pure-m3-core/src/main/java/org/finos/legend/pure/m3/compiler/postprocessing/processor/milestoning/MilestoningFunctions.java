@@ -30,6 +30,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportS
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.ElementWithStereotypes;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedPropertyCoreInstanceWrapper;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
@@ -195,7 +196,8 @@ public class MilestoningFunctions
     {
         if (isGeneratedQualifiedProperty(property, processorSupport))
         {
-            return getParametersCount((QualifiedProperty<?>) property, processorSupport) == getCountOfParametersSatisfyingMilestoningDateRequirments((QualifiedProperty<?>) property, processorSupport);
+            QualifiedProperty<?> qualifiedProperty = QualifiedPropertyCoreInstanceWrapper.toQualifiedProperty(property);
+            return getParametersCount(qualifiedProperty, processorSupport) == getCountOfParametersSatisfyingMilestoningDateRequirments(qualifiedProperty, processorSupport);
         }
         return false;
     }
@@ -204,7 +206,8 @@ public class MilestoningFunctions
     {
         if (isGeneratedQualifiedProperty(property, processorSupport))
         {
-            return getParametersCount((QualifiedProperty<?>) property, processorSupport) != getCountOfParametersSatisfyingMilestoningDateRequirments((QualifiedProperty<?>) property, processorSupport);
+            QualifiedProperty<?> qualifiedProperty = QualifiedPropertyCoreInstanceWrapper.toQualifiedProperty(property);
+            return getParametersCount(qualifiedProperty, processorSupport) != getCountOfParametersSatisfyingMilestoningDateRequirments(qualifiedProperty, processorSupport);
         }
         return false;
     }

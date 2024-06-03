@@ -24,10 +24,10 @@ import org.finos.legend.pure.m3.compiler.validation.ValidatorState;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionTypeCoreInstanceWrapper;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.TypeParameter;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -153,8 +153,8 @@ public class GenericTypeValidator implements MatchRunner<GenericType>
             }
             else if (org.finos.legend.pure.m3.navigation.function.FunctionType.isFunctionType(rawType, processorSupport))
             {
-                FunctionType rawTypeFunctionType = (FunctionType)rawType;
-                for (VariableExpression parameter : rawTypeFunctionType._parameters())
+                FunctionType rawTypeFunctionType = FunctionTypeCoreInstanceWrapper.toFunctionType(rawType);
+                rawTypeFunctionType._parameters().forEach(parameter ->
                 {
                     GenericType parameterGenericType = parameter._genericType();
                     if (parameterGenericType != null)
@@ -167,7 +167,7 @@ public class GenericTypeValidator implements MatchRunner<GenericType>
                         org.finos.legend.pure.m3.navigation.function.FunctionType.print(message, rawTypeFunctionType, processorSupport);
                         throw new PureCompilationException(sourceInformationForError, message.toString());
                     }
-                }
+                });
 
                 GenericType returnType = rawTypeFunctionType._returnType();
                 if (returnType != null)
