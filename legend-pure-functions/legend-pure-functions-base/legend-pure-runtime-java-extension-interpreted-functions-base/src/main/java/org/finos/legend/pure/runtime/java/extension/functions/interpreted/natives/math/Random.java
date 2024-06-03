@@ -17,8 +17,6 @@ package org.finos.legend.pure.runtime.java.extension.functions.interpreted.nativ
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -30,11 +28,13 @@ import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NumericUtilities;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
+import java.security.SecureRandom;
 import java.util.Stack;
 
 public class Random extends NativeFunction
 {
     private final ModelRepository repository;
+    private final SecureRandom random = new SecureRandom();
 
     public Random(FunctionExecutionInterpreted functionExecution, ModelRepository repository)
     {
@@ -44,6 +44,6 @@ public class Random extends NativeFunction
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport)
     {
-        return NumericUtilities.toPureNumberValueExpression(Math.random(), false, this.repository, processorSupport);
+        return NumericUtilities.toPureNumberValueExpression(this.random.nextDouble(), false, this.repository, processorSupport);
     }
 }
