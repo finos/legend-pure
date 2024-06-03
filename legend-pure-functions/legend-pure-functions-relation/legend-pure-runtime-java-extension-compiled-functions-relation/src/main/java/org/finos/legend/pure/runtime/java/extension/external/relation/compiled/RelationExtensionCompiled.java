@@ -60,9 +60,7 @@ public class RelationExtensionCompiled implements CompiledExtension
                 new Slice(),
                 new Distinct(),
                 new Select(),
-                new SelectArray(),
-                new Pivot(),
-                new PivotArray()
+                new SelectArray()
         );
     }
 

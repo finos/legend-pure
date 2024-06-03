@@ -32,7 +32,6 @@ import org.finos.legend.pure.runtime.java.extension.external.relation.interprete
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Join;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Limit;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Map;
-import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Pivot;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Project;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Rename;
 import org.finos.legend.pure.runtime.java.extension.external.relation.interpreted.natives.Select;
@@ -71,10 +70,6 @@ public class RelationExtensionInterpreted extends BaseInterpretedExtension
                 Tuples.pair("groupBy_Relation_1__ColSpec_1__AggColSpec_1__Relation_1_", GroupBy::new),
                 Tuples.pair("groupBy_Relation_1__ColSpec_1__AggColSpecArray_1__Relation_1_", GroupBy::new),
                 Tuples.pair("groupBy_Relation_1__ColSpecArray_1__AggColSpecArray_1__Relation_1_", GroupBy::new),
-                Tuples.pair("pivot_Relation_1__ColSpecArray_1__AggColSpecArray_1__Relation_1_", Pivot::new),
-                Tuples.pair("pivot_Relation_1__ColSpecArray_1__AggColSpec_1__Relation_1_", Pivot::new),
-                Tuples.pair("pivot_Relation_1__ColSpec_1__AggColSpecArray_1__Relation_1_", Pivot::new),
-                Tuples.pair("pivot_Relation_1__ColSpec_1__AggColSpec_1__Relation_1_", Pivot::new),
                 Tuples.pair("project_C_MANY__FuncColSpecArray_1__Relation_1_", Project::new),
                 Tuples.pair("columns_Relation_1__Column_MANY_", Columns::new),
                 Tuples.pair("select_Relation_1__ColSpec_1__Relation_1_", Select::new),
