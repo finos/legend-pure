@@ -33,6 +33,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Concre
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.DefaultValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
@@ -731,8 +732,33 @@ public class Pure
                     {
                         m.invoke(result, Lists.fixedSize.of(res));
                     }
+
                 }
             });
+
+            // Set default values
+            aClass._properties().forEach(new CheckedProcedure<Property<?, ?>>()
+            {
+                @Override
+                public void safeValue(Property<?, ?> p) throws Exception
+                {
+                    DefaultValue defaultValue = p._defaultValue();
+                    if (defaultValue != null)
+                    {
+                        Object result = reactivate(defaultValue._functionDefinition()._expressionSequence().getFirst(), new PureMap(Maps.fixedSize.empty()), bridge, es);
+                        Method method = c.getMethod("_" + p._name(), RichIterable.class);
+                        if (result instanceof RichIterable)
+                        {
+                            method.invoke(result, result);
+                        }
+                        else
+                        {
+                            method.invoke(result, Lists.fixedSize.of(result));
+                        }
+                    }
+                }
+            });
+
 
             return result;
         }
