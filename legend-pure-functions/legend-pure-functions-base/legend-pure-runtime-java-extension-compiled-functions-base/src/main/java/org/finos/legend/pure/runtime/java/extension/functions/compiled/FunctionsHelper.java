@@ -82,12 +82,12 @@ import java.math.RoundingMode;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -97,8 +97,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-
-import static org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport.getPureGeneratedClassName;
 
 public class FunctionsHelper
 {
@@ -248,8 +246,6 @@ public class FunctionsHelper
 
 
     // DATE-TIME --------------------------------------------------------------
-    private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
-
     public static PureDate adjustDate(PureDate date, long number, Enum unit)
     {
         switch (unit._name())
@@ -471,7 +467,7 @@ public class FunctionsHelper
         }
         catch (Exception e)
         {
-            throw new PureExecutionException(sourceInformation, e.getMessage());
+            throw new PureExecutionException(sourceInformation, e.getMessage(), e);
         }
     }
 
@@ -483,7 +479,7 @@ public class FunctionsHelper
         }
         catch (Exception e)
         {
-            throw new PureExecutionException(sourceInformation, e.getMessage());
+            throw new PureExecutionException(sourceInformation, e.getMessage(), e);
         }
     }
 
@@ -495,7 +491,7 @@ public class FunctionsHelper
         }
         catch (Exception e)
         {
-            throw new PureExecutionException(sourceInformation, e.getMessage());
+            throw new PureExecutionException(sourceInformation, e.getMessage(), e);
         }
     }
 
@@ -762,6 +758,12 @@ public class FunctionsHelper
         return number.doubleValue();
     }
 
+    private static final SecureRandom RANDOM = new SecureRandom();
+
+    public static double random()
+    {
+        return RANDOM.nextDouble();
+    }
 
     // MATH --------------------------------------------------------------------
 
@@ -1561,7 +1563,7 @@ public class FunctionsHelper
         }
         catch (NoSuchMethodException e)
         {
-            throw new PureExecutionException(sourceInformation, "Cannot find property '" + property + "' on " + getPureGeneratedClassName(val));
+            throw new PureExecutionException(sourceInformation, "Cannot find property '" + property + "' on " + CompiledSupport.getPureGeneratedClassName(val));
         }
         catch (Exception e)
         {

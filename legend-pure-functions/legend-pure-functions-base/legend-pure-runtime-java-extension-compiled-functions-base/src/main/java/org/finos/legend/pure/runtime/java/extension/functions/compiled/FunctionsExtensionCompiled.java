@@ -416,12 +416,6 @@ public class FunctionsExtensionCompiled implements CompiledExtension
                         "    {\n" +
                         "        return FunctionsGen.traceSpan(es, function, operationName, funcToGetTags, tagsCritical, CoreGen.bridge);\n" +
                         "    }\n" +
-                        "\n" +
-                        "    public static Double random()\n" +
-                        "    {\n" +
-                        "        return Math.random();\n" +
-                        "    }" +
-                        "\n" +
                         "}"));
     }
 
