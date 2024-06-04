@@ -186,4 +186,22 @@ public abstract class AbstractTestReactivate extends AbstractPureTestWithCoreCom
                         "}\n");
         Assert.assertEquals(runtime.getCoreInstance("test::pkg1"), ((InstanceValue) execute("test::pkg1::test():Any[1]"))._values().getOnly());
     }
+
+    @Test
+    public void testReactivateNewDefaultValues()
+    {
+        compileTestSource("testSource.pure",
+                "Class test::A\n" +
+                        "{\n" +
+                        "  a:Boolean[1] = true;\n" +
+                        "}\n" +
+                        "\n" +
+                        "function test::f():Boolean[1]\n" +
+                        "{\n" +
+                        "  let l = {| ^test::A()};\n" +
+                        "  let a = $l.expressionSequence->evaluateAndDeactivate()->toOne()->reactivate()->cast(@test::A)->toOne();\n" +
+                        "  assert($a.a, | '');\n" +
+                        "}\n");
+        execute("test::f():Boolean[1]");
+    }
 }
