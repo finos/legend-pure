@@ -194,13 +194,23 @@ public abstract class AbstractTestReactivate extends AbstractPureTestWithCoreCom
                 "Class test::A\n" +
                         "{\n" +
                         "  a:Boolean[1] = true;\n" +
+                        "  i:Integer[1] = 10;\n" +
+                        "  enumProperty:EnumWithDefault[1] = test::EnumWithDefault.DefaultValue;\n" +
+                        "}\n" +
+                        "\n" +
+                        "Enum test::EnumWithDefault\n" +
+                        "{\n" +
+                        "   DefaultValue,\n" +
+                        "   AnotherValue\n" +
                         "}\n" +
                         "\n" +
                         "function test::f():Boolean[1]\n" +
                         "{\n" +
                         "  let l = {| ^test::A()};\n" +
                         "  let a = $l.expressionSequence->evaluateAndDeactivate()->toOne()->reactivate()->cast(@test::A)->toOne();\n" +
-                        "  assert($a.a, | '');\n" +
+                        "  assert($a.a, | 'Default value for property a set to wrong value');\n" +
+                        "  assertEquals($a.i, 10);\n" +
+                        "  assertEquals($a.enumProperty, test::EnumWithDefault.DefaultValue);\n" +
                         "}\n");
         execute("test::f():Boolean[1]");
     }
