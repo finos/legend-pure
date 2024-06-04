@@ -195,7 +195,7 @@ public abstract class AbstractTestReactivate extends AbstractPureTestWithCoreCom
                         "{\n" +
                         "  a:Boolean[1] = true;\n" +
                         "  i:Integer[1] = 10;\n" +
-                        "  enumProperty:EnumWithDefault[1] = test::EnumWithDefault.DefaultValue;\n" +
+                        "  enumProperty:test::EnumWithDefault[1] = test::EnumWithDefault.DefaultValue;\n" +
                         "}\n" +
                         "\n" +
                         "Enum test::EnumWithDefault\n" +
