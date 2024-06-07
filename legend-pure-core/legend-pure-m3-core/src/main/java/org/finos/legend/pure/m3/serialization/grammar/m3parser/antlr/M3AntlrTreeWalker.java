@@ -26,8 +26,8 @@ import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.Ty
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.SourceState;
 import org.finos.legend.pure.m3.statelistener.M3M4StateListener;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 
 import static org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DefinitionContext;

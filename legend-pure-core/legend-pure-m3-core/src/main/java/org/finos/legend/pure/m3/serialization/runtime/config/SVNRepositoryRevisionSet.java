@@ -14,9 +14,6 @@
 
 package org.finos.legend.pure.m3.serialization.runtime.config;
 
-import java.io.IOException;
-import java.util.Map;
-
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.predicate.primitive.LongPredicate;
 import org.eclipse.collections.api.block.procedure.primitive.ObjectLongProcedure;
@@ -30,6 +27,9 @@ import org.eclipse.collections.impl.factory.primitive.ObjectLongMaps;
 import org.eclipse.collections.impl.map.mutable.primitive.ObjectLongHashMap;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
+
+import java.io.IOException;
+import java.util.Map;
 
 public class SVNRepositoryRevisionSet
 {

@@ -15,8 +15,8 @@
 package org.finos.legend.pure.m3.serialization.grammar.m3parser;
 
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 public interface ToPure
 {

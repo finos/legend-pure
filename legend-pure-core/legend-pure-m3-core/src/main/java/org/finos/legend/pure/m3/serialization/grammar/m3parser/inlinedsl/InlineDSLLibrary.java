@@ -15,8 +15,8 @@
 package org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.map.MutableMap;
 
 public class InlineDSLLibrary
 {

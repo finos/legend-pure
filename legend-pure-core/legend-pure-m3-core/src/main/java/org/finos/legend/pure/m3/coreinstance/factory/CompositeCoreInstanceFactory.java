@@ -18,11 +18,11 @@ import org.finos.legend.pure.m3.coreinstance.BaseM3CoreInstanceFactory;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.EnumInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.factory.CoreInstanceFactory;
 import org.finos.legend.pure.m4.coreinstance.factory.MultipassCoreInstanceFactory;
-import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.simple.SimpleCoreInstanceFactory;
 
 public class CompositeCoreInstanceFactory extends BaseM3CoreInstanceFactory implements MultipassCoreInstanceFactory

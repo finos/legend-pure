@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr;
 
-import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.antlr.v4.runtime.RecognitionException;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 public final class ParsingUtils
 {

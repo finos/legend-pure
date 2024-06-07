@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m3.tests.elements.function.functionMatching;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;

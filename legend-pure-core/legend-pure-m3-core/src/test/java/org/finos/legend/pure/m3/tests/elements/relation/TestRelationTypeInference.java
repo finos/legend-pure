@@ -15,7 +15,11 @@
 package org.finos.legend.pure.m3.tests.elements.relation;
 
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import static org.junit.Assert.fail;
 

@@ -16,7 +16,13 @@ package org.finos.legend.pure.m3.coreinstance.helper;
 
 import org.eclipse.collections.api.block.function.Function2;
 import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.coreinstance.primitive.*;
+import org.finos.legend.pure.m4.coreinstance.primitive.BooleanCoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.DateCoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.DecimalCoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.FloatCoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.IntegerCoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.StrictTimeCoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.StringCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
 

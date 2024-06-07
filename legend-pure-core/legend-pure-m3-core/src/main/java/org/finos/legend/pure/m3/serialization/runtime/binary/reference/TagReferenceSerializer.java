@@ -14,10 +14,10 @@
 
 package org.finos.legend.pure.m3.serialization.runtime.binary.reference;
 
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Tag;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.profile.Profile;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Tag;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public class TagReferenceSerializer implements ExternalReferenceSerializer

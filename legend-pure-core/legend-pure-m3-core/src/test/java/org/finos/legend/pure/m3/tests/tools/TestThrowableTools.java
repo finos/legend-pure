@@ -14,12 +14,12 @@
 
 package org.finos.legend.pure.m3.tests.tools;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-
 import org.finos.legend.pure.m3.tools.ThrowableTools;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 public class TestThrowableTools
 {
