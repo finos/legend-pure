@@ -15,6 +15,7 @@
 package org.finos.legend.pure.runtime.java.extension.functions.compiled.natives.meta;
 
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.source.SourceInformation;
 
 public class FunctionDescriptorToId extends AbstractNativeFunctionGeneric
 {

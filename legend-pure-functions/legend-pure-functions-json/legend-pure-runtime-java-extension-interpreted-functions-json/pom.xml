@@ -56,10 +56,6 @@
             <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-runtime-java-extension-shared-functions-conversion</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-runtime-java-extension-interpreted-functions-base</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>org.finos.legend.pure</groupId>

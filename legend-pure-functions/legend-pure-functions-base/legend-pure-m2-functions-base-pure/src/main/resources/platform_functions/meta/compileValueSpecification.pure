@@ -43,3 +43,11 @@ function <<test.Test, temporaryLazyExclusion.exclude>> meta::pure::functions::me
     assertEquals('filter', $expr->cast(@SimpleFunctionExpression).func.functionName);
     assertSize($expr->cast(@SimpleFunctionExpression).parametersValues, 2);
 }
+
+function <<test.Test,test.ToFix>> meta::pure::functions::meta::tests::reactivate::testPredicateReactivate():Boolean[1]
+{
+    let res = compileValueSpecification('[1,2,3]->exists(x|$x>1)');
+    let expr = $res.result;
+
+    assertEquals(true, $expr->toOne()->reactivate());
+}

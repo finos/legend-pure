@@ -30,7 +30,7 @@ public class PlatformCodeRepositoryProvider implements CodeRepositoryProvider
     public static final ReportScope basicFunctions = new ReportScope(
             "basic",
             "meta::pure::functions",
-            "/platform/pure/basics/"
+            "/platform/pure/essentials/"
     );
 
     public static final ReportScope grammarFunctions = new ReportScope(

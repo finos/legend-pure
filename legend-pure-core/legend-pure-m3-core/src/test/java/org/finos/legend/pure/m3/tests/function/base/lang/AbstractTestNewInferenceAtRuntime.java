@@ -216,10 +216,6 @@ public abstract class AbstractTestNewInferenceAtRuntime extends AbstractPureTest
         compileTestSource("fromString.pure", "function test():Any[*]\n" +
                 "{" +
                 "   meta::pure::metamodel::function::ConcreteFunctionDefinition.all()->map(f|pair($f.name->toOne(),$f))" +
-                "}" +
-                "function meta::pure::functions::collection::pair<U,V>(first:U[1], second:V[1]):Pair<U,V>[1]\n" +
-                "{\n" +
-                "   ^Pair<U,V>(first=$first, second=$second);\n" +
                 "}");
         this.compileAndExecute("test():Any[*]");
     }

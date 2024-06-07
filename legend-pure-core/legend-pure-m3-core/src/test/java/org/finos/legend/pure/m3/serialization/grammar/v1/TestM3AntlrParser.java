@@ -261,8 +261,7 @@ public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testComplexFunctions()
     {
-        String code = "import meta::json::*;\n" +
-                "import meta::PR1::*;\n" +
+        String code = "import meta::PR1::*;\n" +
                 "import datamarts::dm::mapping::*;\n" +
                 "import datamarts::dm::store::*;\n" +
                 "import datamarts::dm::domain::pactnext::reporting::subdom1::*;\n" +

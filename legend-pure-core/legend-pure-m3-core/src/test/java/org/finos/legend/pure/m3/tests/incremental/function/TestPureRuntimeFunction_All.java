@@ -82,10 +82,6 @@ public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompile
                 "{\n" +
                 "   ConcreteFunctionDefinition.all()->filter(f|!$f.name->isEmpty() && isContract($f)).name;\n" +
                 "}\n" +
-                "function meta::pure::functions::meta::tag(profile:Profile[1], str:String[1]):Tag[1]" +
-                "{" +
-                "   $profile.p_tags->at(0);" +
-                "}\n" +
                 "function isContract(f:ConcreteFunctionDefinition<Any>[1]):Boolean[1]\n" +
                 "{\n" +
                 "   $f.taggedValues->filter(t|$t.tag == PR1->tag('Contract'))->size() > 0;\n" +

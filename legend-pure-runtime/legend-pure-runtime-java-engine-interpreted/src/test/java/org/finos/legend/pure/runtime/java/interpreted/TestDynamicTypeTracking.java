@@ -52,10 +52,6 @@ public class TestDynamicTypeTracking extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         "  $c->map(x|$x.properties->map(w|pair($x,$w)));\n" +
                         "}" +
-                        "function meta::pure::functions::collection::pair<U,V>(first:U[1], second:V[1]):Pair<U,V>[1]\n" +
-                        "{\n" +
-                        "   ^Pair<U,V>(first=$first, second=$second);\n" +
-                        "}" +
                         "function z():Boolean[1]" +
                         "{" +
                         " [X,Y]->process();" +

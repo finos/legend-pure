@@ -167,10 +167,6 @@ public class TestNilTypeCompiled extends AbstractPureTestWithCoreCompiled
                 "    plus($nums)\n" +
                 "}\n" +
                 "" +
-                "function meta::pure::functions::collection::pair<U,V>(first:U[1], second:V[1]):Pair<U,V>[1]\n" +
-                "{\n" +
-                "   ^Pair<U,V>(first=$first, second=$second);\n" +
-                "}\n" +
                 "function test::testFn9():Pair<Number,String>[1]\n" +
                 "{\n" +
                 "    let x = [];\n" +

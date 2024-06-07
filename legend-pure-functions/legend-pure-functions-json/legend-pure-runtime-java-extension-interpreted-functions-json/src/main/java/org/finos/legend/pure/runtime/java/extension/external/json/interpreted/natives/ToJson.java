@@ -39,7 +39,7 @@ import org.finos.legend.pure.m4.coreinstance.simple.SimpleCoreInstance;
 import org.finos.legend.pure.runtime.java.extension.external.json.shared.JsonSerializationCache;
 import org.finos.legend.pure.runtime.java.extension.external.json.shared.JsonSerializationContext;
 import org.finos.legend.pure.runtime.java.extension.external.json.shared.JsonSerializer;
-import org.finos.legend.pure.runtime.java.extension.functions.interpreted.natives.anonymousCollections.map.KeyValues;
+import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.collection.anonymous.map.KeyValues;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;

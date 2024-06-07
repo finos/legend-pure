@@ -39,7 +39,7 @@ public class TestGraphPathIterable extends AbstractPureTestWithCoreCompiled
                 new CompositeCodeStorage(new ClassLoaderCodeStorage(CodeRepositoryProviderHelper.findPlatformCodeRepository(), GenericCodeRepository.build("test", "test(::.*)?", "platform"))),
                 getFactoryRegistryOverride(),
                 getOptions(),
-                Tuples.pair("/test/testModel.pure",
+                Tuples.pair("/test/_testModel.pure",
                         "import test::domain::*;\n" +
                                 "Class test::domain::ClassA\n" +
                                 "{\n" +

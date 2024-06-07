@@ -81,6 +81,7 @@ public class M3Paths
     public static final String KeyValueValueSpecificationContext = "meta::pure::metamodel::valuespecification::KeyValueValueSpecificationContext";
     public static final String LambdaFunction = "meta::pure::metamodel::function::LambdaFunction";
     public static final String LatestDate = ModelRepository.LATEST_DATE_TYPE_NAME;
+    public static final String MapStats = "meta::pure::functions::collection::MapStats";
     public static final String Measure = "meta::pure::metamodel::type::Measure";
     public static final String ModelElement = "meta::pure::metamodel::ModelElement";
     public static final String Multiplicity = "meta::pure::metamodel::multiplicity::Multiplicity";
@@ -124,6 +125,7 @@ public class M3Paths
     public static final String Type = "meta::pure::metamodel::type::Type";
     public static final String TypeParameter = "meta::pure::metamodel::type::generics::TypeParameter";
     public static final String Unit = "meta::pure::metamodel::type::Unit";
+    public static final String ValueHolder = "meta::pure::functions::collection::ValueHolder";
     public static final String ValueSpecification = "meta::pure::metamodel::valuespecification::ValueSpecification";
     public static final String VariableExpression = "meta::pure::metamodel::valuespecification::VariableExpression";
     public static final String ZeroMany = "meta::pure::metamodel::multiplicity::ZeroMany";

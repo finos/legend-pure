@@ -52,7 +52,7 @@ import org.finos.legend.pure.runtime.java.interpreted.natives.DeserializationUti
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NumericUtilities;
-import org.finos.legend.pure.runtime.java.interpreted.natives.basics.meta.NewUnit;
+import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.lang.unit.NewUnit;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
 import java.math.BigDecimal;

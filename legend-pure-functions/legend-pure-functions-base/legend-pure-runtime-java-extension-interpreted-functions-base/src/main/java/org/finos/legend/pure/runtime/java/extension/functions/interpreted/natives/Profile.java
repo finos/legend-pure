@@ -32,7 +32,7 @@ import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpret
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
-import org.finos.legend.pure.runtime.java.interpreted.natives.basics.io.Print;
+import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.io.Print;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.ActiveProfiler;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 

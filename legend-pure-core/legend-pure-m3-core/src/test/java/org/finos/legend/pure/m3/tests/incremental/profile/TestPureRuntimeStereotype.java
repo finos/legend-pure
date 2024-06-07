@@ -108,10 +108,6 @@ public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledP
 
         runtime.createInMemorySource("userId.pure", "Profile my::profile::testProfile{stereotypes:[s1,s2];tags: [name];}");
         runtime.createInMemorySource("sourceId.pure", "import meta::pure::functions::meta::*;\n" +
-                "function meta::pure::functions::meta::stereotype(profile:Profile[1], str:String[1]):Stereotype[1]" +
-                "{" +
-                "   $profile.stereotypes->at(0);" +
-                "}\n" +
                 "function meta::pure::functions::meta::hasStereotype(f:ElementWithStereotypes[1], stereotype:String[1], profile:Profile[1]):Boolean[1]\n" +
                 "{\n" +
                 "    let st = $profile->stereotype($stereotype);\n" +
@@ -137,10 +133,6 @@ public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledP
                         .createInMemorySource("sourceId.pure", "import meta::pure::functions::meta::*;\n" +
                                 "import my::pack::*;\n" +
                                 "Class my::pack::A{ value:Any[0..1]; }\n" +
-                                "function meta::pure::functions::meta::stereotype(profile:Profile[1], str:String[1]):Stereotype[1]" +
-                                "{" +
-                                "   $profile.stereotypes->at(0);" +
-                                "}\n" +
                                 "function my::pack::newObj(a:ElementWithStereotypes[1]):A[1]{ ^A(value=if(!$a.stereotypes->filter(x|$x == my::pack::testProfile->stereotype('s1'))->isEmpty(), | true, | false))}")
                         .compile(),
                 new RuntimeTestScriptBuilder()

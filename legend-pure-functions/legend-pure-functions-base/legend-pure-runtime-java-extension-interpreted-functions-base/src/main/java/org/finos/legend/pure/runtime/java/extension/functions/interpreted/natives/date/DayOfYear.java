@@ -17,6 +17,7 @@ package org.finos.legend.pure.runtime.java.extension.functions.interpreted.nativ
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.date.extract.NativeDateElementFunction;
 
 import java.util.Calendar;
 

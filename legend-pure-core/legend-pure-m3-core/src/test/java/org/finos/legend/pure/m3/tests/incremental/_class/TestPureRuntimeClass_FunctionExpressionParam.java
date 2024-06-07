@@ -139,11 +139,6 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("other.pure", "function test():Nil[0]{^XX(ok='1');[];}")
                         .createInMemorySource("sourceId.pure", "Class XX{ok:String[1];}\n" +
                                 "\n" +
-                                "function meta::pure::functions::meta::functionType(f:Function<Any>[1]):FunctionType[1]\n" +
-                                "{\n" +
-                                "   assert($f->instanceOf(FunctionDefinition) || $f->instanceOf(NativeFunction), | 'functionType is not supported yet for this subtype of function '+$f->type()->id());\n" +
-                                "   $f.classifierGenericType->toOne().typeArguments->at(0).rawType->toOne()->cast(@FunctionType);\n" +
-                                "}\n" +
                                 "function go():Boolean[1]\n" +
                                 "{\n" +
                                 "   assert(1 == test__Nil_0_->functionType().returnType.referenceUsages->size(), |'');\n" +
@@ -154,11 +149,6 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
                         .createInMemorySource("sourceId.pure", "Class XX{ok:String[1];}\n" +
-                                "function meta::pure::functions::meta::functionType(f:Function<Any>[1]):FunctionType[1]\n" +
-                                "{\n" +
-                                "   assert($f->instanceOf(FunctionDefinition) || $f->instanceOf(NativeFunction), | 'functionType is not supported yet for this subtype of function '+$f->type()->id());\n" +
-                                "   $f.classifierGenericType->toOne().typeArguments->at(0).rawType->toOne()->cast(@FunctionType);\n" +
-                                "}\n" +
                                 "function go():Boolean[1]\n" +
                                 "{\n" +
                                 "   assert(1 == test__Nil_0_->functionType().returnType.referenceUsages->size(), |'');\n" +

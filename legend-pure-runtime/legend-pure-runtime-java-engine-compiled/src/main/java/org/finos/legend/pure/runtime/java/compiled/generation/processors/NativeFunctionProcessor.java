@@ -28,73 +28,165 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.Native;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.collection.Add;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.collection.At;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.collection.Concatenate;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.collection.Fold;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.collection.Init;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.collection.RemoveDuplicates;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.collection.Sort;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.collection.Tail;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.io.Print;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.lang.Cast;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.lang.DynamicNew;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.lang.Eval;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.lang.Evaluate;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.lang.If;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.lang.Match;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.math.Abs;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.ElementPath;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.ElementToPath;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.EvaluateAndDeactivate;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.GenericType;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.GenericTypeClass;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.GetUnitValue;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.Id;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.InstanceOf;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.LenientPathToElement;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.NewUnit;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.meta.PathToElement;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.string.Format;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.string.Length;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.string.Replace;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.string.Split;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.string.StartsWith;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.string.Substring2;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.string.Substring3;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.string.ToString;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.basics.tests.Assert;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.conjunctions.And;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.conjunctions.Not;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.conjunctions.Or;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.anonymous.map.GetIfAbsentPutWithKey;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.anonymous.map.GetMapStats;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.anonymous.map.KeyValues;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.anonymous.map.Keys;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.anonymous.map.NewMap;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.anonymous.map.NewMapWithProperties;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.anonymous.map.Put;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.anonymous.map.PutAllMaps;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.anonymous.map.PutAllPairs;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.anonymous.map.ReplaceAll;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.anonymous.map.Values;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.anonymous.tree.ReplaceTreeNode;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.index.IndexOf;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.iteration.Find;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.operation.Add;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.index.At;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.operation.Concatenate;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.iteration.Fold;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.operation.RemoveAllOptimized;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.operation.Zip;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.order.Reverse;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.quantification.Exists;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.quantification.ForAll;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.slice.Drop;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.slice.Init;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.operation.RemoveDuplicates;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.order.Sort;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.slice.Last;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.slice.Slice;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.slice.Tail;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.slice.Take;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.creation.NewDate;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.extract.DatePart;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.extract.DayOfMonth;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.extract.Hour;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.extract.Minute;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.extract.MonthNumber;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.extract.Second;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.extract.Year;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.has.HasDay;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.has.HasHour;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.has.HasMinute;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.has.HasMonth;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.has.HasSecond;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.has.HasSubsecond;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.has.HasSubsecondWithAtLeastPrecision;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.operation.AdjustDate;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.operation.DateDiff;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.io.Print;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.cast.Cast;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.cast.ToDecimal;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.cast.ToFloat;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.cast.ToMultiplicity;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.creation.DynamicNew;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.eval.Eval;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.eval.Evaluate;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.eval.RawEvalProperty;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.flow.If;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.flow.Match;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.flow.MatchWith;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.Random;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.exponential.Exp;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.exponential.Log;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.exponential.Log10;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.operation.Abs;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.operation.Mod;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.operation.Rem;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.operation.Sign;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.power.Cbrt;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.power.Pow;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.power.Sqrt;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.round.Ceiling;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.round.Floor;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.round.Round;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.round.RoundWithScale;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.trigonometry.ArcCosine;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.trigonometry.ArcSine;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.trigonometry.ArcTangent;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.trigonometry.ArcTangent2;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.trigonometry.CoTangent;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.trigonometry.Cosine;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.trigonometry.Sine;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.trigonometry.Tangent;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.RemoveOverride;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.graph.ElementPath;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.graph.ElementToPath;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.profile.Stereotype;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.profile.Tag;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.reflect.CanReactivateDynamically;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.reflect.Deactivate;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.reflect.EvaluateAndDeactivate;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.reflect.OpenVariableValues;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.reflect.Reactivate;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.type.Generalizations;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.type.GenericType;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.type.SubTypeOf;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.type._class.GenericTypeClass;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.unit.GetUnitValue;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.instance.Id;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.type.InstanceOf;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.graph.LenientPathToElement;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.unit.NewUnit;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.graph.PathToElement;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.type._enum.EnumName;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.type._enum.EnumValues;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string._boolean.Contains;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string._boolean.EndsWith;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.index.IndexOfWithFrom;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.operation.ReverseString;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.operation.ToLower;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.operation.ToUpper;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.parse.ParseBoolean;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.parse.ParseDate;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.parse.ParseDecimal;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.parse.ParseFloat;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.parse.ParseInteger;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.toString.Format;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.index.Length;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.operation.Replace;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.split.Split;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string._boolean.StartsWith;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.operation.Substring2;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.operation.Substring3;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.toString.ToString;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.trim.LTrim;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.trim.RTrim;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.trim.Trim;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.tests.Assert;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.operation.And;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.operation.Not;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.operation.Or;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.equality.Eq;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.equality.Equal;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.equality.Is;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.inequalities.LessThan;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.inequalities.LessThanEqual;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.Filter;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.First;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.IsEmpty;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.Map;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.Range;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.Size;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.inequality.LessThan;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.inequality.LessThanEqual;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.iteration.Filter;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.slice.First;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.size.IsEmpty;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.iteration.Map;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.math.sequence.Range;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.size.Size;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.Compare;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.Copy;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.ExtractEnumValue;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.GetAll;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.creation.Copy;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang._enum.ExtractEnumValue;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.all.GetAll;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.Let;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.New;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.NewWithKeyExpr;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.math.Divide;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.math.DivideDecimal;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.math.Minus;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.math.Plus;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.math.Times;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.mulitplicity.ToOne;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.mulitplicity.ToOneMany;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.mulitplicity.ToOneManyWithMessage;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.mulitplicity.ToOneWithMessage;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.string.JoinStrings;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.creation.New;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.creation.NewWithKeyExpr;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.math.operation.Divide;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.math.operation.DivideDecimal;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.math.operation.Minus;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.math.operation.Plus;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.math.operation.Times;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.cast.ToOne;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.cast.ToOneMany;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.cast.ToOneManyWithMessage;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.cast.ToOneWithMessage;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.string.operation.JoinStrings;
 
 public class NativeFunctionProcessor
 {
@@ -261,51 +353,186 @@ public class NativeFunctionProcessor
     private static void registerBasicsCoreNatives(MutableMap<String, Native> map)
     {
         //Collection
-        registerNative(map, new Concatenate());
-        registerNative(map, new Add());
+        //  Anonymous
+        //    Map
+        registerNative(map, new org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.anonymous.map.Get());
+        registerNative(map, new GetIfAbsentPutWithKey());
+        registerNative(map, new GetMapStats());
+        registerNative(map, new Keys());
+        registerNative(map, new NewMap());
+        registerNative(map, new KeyValues());
+        registerNative(map, new NewMapWithProperties());
+        registerNative(map, new Put());
+        registerNative(map, new PutAllMaps());
+        registerNative(map, new PutAllPairs());
+        registerNative(map, new ReplaceAll());
+        registerNative(map, new Values());
+        //    Tree
+        registerNative(map, new ReplaceTreeNode());
+        //  Index
         registerNative(map, new At());
+        registerNative(map, new IndexOf());
+        //  Iteration
         registerNative(map, new Fold());
-        registerNative(map, new Init());
+        registerNative(map, new Find());
+        //  Operation
+        registerNative(map, new Add());
+        registerNative(map, new Concatenate());
+        registerNative(map, new RemoveAllOptimized());
         registerNative(map, new RemoveDuplicates());
+        registerNative(map, new Zip());
+        //  Order
         registerNative(map, new Sort());
+        registerNative(map, new Reverse());
+        //  Quantification
+        registerNative(map, new Exists());
+        registerNative(map, new ForAll());
+        //  Slice
+        registerNative(map, new Drop());
+        registerNative(map, new Init());
+        registerNative(map, new Last());
+        registerNative(map, new Slice());
         registerNative(map, new Tail());
+        registerNative(map, new Take());
+
+        //Date
+        //  Creation
+        registerNative(map, new NewDate());
+        //  Extract
+        registerNative(map, new DatePart());
+        registerNative(map, new DayOfMonth());
+        registerNative(map, new Hour());
+        registerNative(map, new Minute());
+        registerNative(map, new MonthNumber());
+        registerNative(map, new Second());
+        registerNative(map, new Year());
+        //  Has
+        registerNative(map, new HasDay());
+        registerNative(map, new HasHour());
+        registerNative(map, new HasMinute());
+        registerNative(map, new HasMonth());
+        registerNative(map, new HasSecond());
+        registerNative(map, new HasSubsecond());
+        registerNative(map, new HasSubsecondWithAtLeastPrecision());
+        //  Operation
+        registerNative(map, new AdjustDate());
+        registerNative(map, new DateDiff());
 
         //IO
         registerNative(map, new Print());
 
         //Lang
+        //  Cast
         registerNative(map, new Cast());
+        registerNative(map, new ToDecimal());
+        registerNative(map, new ToFloat());
+        registerNative(map, new ToMultiplicity());
+        //  Creation
+        registerNative(map, new DynamicNew());
+        //  Eval
         registerNative(map, new Eval());
+        registerNative(map, new Evaluate());
+        registerNative(map, new RawEvalProperty());
+        //  Flow
         registerNative(map, new If());
         registerNative(map, new Match());
-        registerNative(map, new DynamicNew());
-        registerNative(map, new Evaluate());
+        registerNative(map, new MatchWith());
+        //  Unit
+        registerNative(map, new GetUnitValue());
+        registerNative(map, new NewUnit());
 
         //Math
+        registerNative(map, new Random());
+        //  Exponential
+        registerNative(map, new Exp());
+        registerNative(map, new Log());
+        registerNative(map, new Log10());
+        //  Operation
         registerNative(map, new Abs());
+        registerNative(map, new Mod());
+        registerNative(map, new Rem());
+        registerNative(map, new Sign());
+        //  Power
+        registerNative(map, new Cbrt());
+        registerNative(map, new Pow());
+        registerNative(map, new Sqrt());
+        //  Round
+        registerNative(map, new Ceiling());
+        registerNative(map, new Floor());
+        registerNative(map, new Round());
+        registerNative(map, new RoundWithScale());
+        //  Trigonometry
+        registerNative(map, new ArcCosine());
+        registerNative(map, new ArcSine());
+        registerNative(map, new ArcTangent());
+        registerNative(map, new ArcTangent2());
+        registerNative(map, new Cosine());
+        registerNative(map, new CoTangent());
+        registerNative(map, new Sine());
+        registerNative(map, new Tangent());
 
         //Meta
+        registerNative(map, new RemoveOverride());
+        //  Graph
         registerNative(map, new ElementPath());
         registerNative(map, new ElementToPath());
-        registerNative(map, new EvaluateAndDeactivate());
-        registerNative(map, new GenericType());
-        registerNative(map, new GenericTypeClass());
-        registerNative(map, new GetUnitValue());
-        registerNative(map, new Id());
-        registerNative(map, new InstanceOf());
-        registerNative(map, new LenientPathToElement());
-        registerNative(map, new NewUnit());
         registerNative(map, new PathToElement());
+        registerNative(map, new LenientPathToElement());
+        //  Id
+        registerNative(map, new Id());
+        //  Profile
+        registerNative(map, new Stereotype());
+        registerNative(map, new Tag());
+        //  Reflect
+        registerNative(map, new CanReactivateDynamically());
+        registerNative(map, new Deactivate());
+        registerNative(map, new EvaluateAndDeactivate());
+        registerNative(map, new OpenVariableValues());
+        registerNative(map, new Reactivate());
+        //  Source
+        registerNative(map, new org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.source.SourceInformation());
+        //  Type
+        registerNative(map, new Generalizations());
+        registerNative(map, new GenericType());
+        registerNative(map, new InstanceOf());
+        registerNative(map, new SubTypeOf());
+        //    Class
+        registerNative(map, new GenericTypeClass());
+        //    Enum
+        registerNative(map, new EnumName());
+        registerNative(map, new EnumValues());
 
         //String
-        registerNative(map, new Format());
-        registerNative(map, new Length());
-        registerNative(map, new Replace());
-        registerNative(map, new Split());
+        //  Boolean
+        registerNative(map, new Contains());
+        registerNative(map, new EndsWith());
         registerNative(map, new StartsWith());
+        //  Index
+        registerNative(map, new org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.index.IndexOf());
+        registerNative(map, new IndexOfWithFrom());
+        registerNative(map, new Length());
+        //  Operation
+        registerNative(map, new Replace());
+        registerNative(map, new ReverseString());
         registerNative(map, new Substring2());
         registerNative(map, new Substring3());
+        registerNative(map, new ToLower());
+        registerNative(map, new ToUpper());
+        //  Parse
+        registerNative(map, new ParseBoolean());
+        registerNative(map, new ParseDate());
+        registerNative(map, new ParseFloat());
+        registerNative(map, new ParseDecimal());
+        registerNative(map, new ParseInteger());
+        //  Split
+        registerNative(map, new Split());
+        //  toString
+        registerNative(map, new Format());
         registerNative(map, new ToString());
+        //  Trim
+        registerNative(map, new LTrim());
+        registerNative(map, new RTrim());
+        registerNative(map, new Trim());
 
         //Tests
         registerNative(map, new Assert());

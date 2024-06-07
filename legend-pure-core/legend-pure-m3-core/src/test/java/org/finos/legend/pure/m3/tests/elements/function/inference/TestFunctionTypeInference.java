@@ -526,7 +526,6 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     {
         compileInferenceTest(
                 "Class A{p(s:String[1]){$s}:String[1];}\n" +
-                        "native function meta::pure::functions::meta::functionType(f:Function<Any>[1]):FunctionType[1];\n" +
                         "native function meta::pure::functions::collection::sortBy<T,U|m>(col:T[m], key:Function<{T[1]->U[1]}>[0..1]):T[m];\n" +
                         "function filterToSimpleFunctionProperties(qualifiedProperties : QualifiedProperty<Any>[*]) : QualifiedProperty<Any>[*]\n" +
                         "{\n" +
@@ -774,7 +773,6 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     public void testEvalWithFuncAsAParam()
     {
         compileInferenceTest(
-                "native function meta::pure::functions::math::acos(number:Number[1]):Float[1];" +
                         "function test<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]\n" +
                         "{\n" +
                         "   assertEqWithinTolerance(1.570796326794, $f->eval(|acos(0)), 0.000000000001);\n" +

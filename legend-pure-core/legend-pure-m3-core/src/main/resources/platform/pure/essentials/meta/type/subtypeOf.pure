@@ -1,0 +1,218 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::functions::meta::tests::subTypeOf::*;
+
+
+native function meta::pure::functions::meta::subTypeOf(subType:Type[1], superType:Type[1]):Boolean[1];
+
+
+Class meta::pure::functions::meta::tests::subTypeOf::SA {}
+
+Class meta::pure::functions::meta::tests::subTypeOf::SB extends SA {}
+
+Class meta::pure::functions::meta::tests::subTypeOf::SC extends SA {}
+
+Class meta::pure::functions::meta::tests::subTypeOf::SD extends SB {}
+
+Class meta::pure::functions::meta::tests::subTypeOf::SE extends SD, SC {}
+
+Class meta::pure::functions::meta::tests::subTypeOf::SF extends SC, SD {}
+
+Class meta::pure::functions::meta::tests::subTypeOf::SG extends SE, SD {}
+
+Class meta::pure::functions::meta::tests::subTypeOf::SH extends SE, SB {}
+
+Class meta::pure::functions::meta::tests::subTypeOf::SI extends SF, SB, SA {}
+
+
+function <<test.Test>> meta::pure::functions::meta::tests::subTypeOf::testSubTypeOfAny():Boolean[1]
+{
+    assert(Any->subTypeOf(Any));
+    assertFalse(Any->subTypeOf(Nil));
+    assertFalse(Any->subTypeOf(Integer));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::subTypeOf::testSubTypeOfNil():Boolean[1]
+{
+    assert(Nil->subTypeOf(Nil));
+    assert(Nil->subTypeOf(Any));
+    assert(Nil->subTypeOf(String));
+    assert(Nil->subTypeOf(Integer));
+    assert(Nil->subTypeOf(Float));
+    assert(Nil->subTypeOf(Number));
+    assert(Nil->subTypeOf(Boolean));
+    assert(Nil->subTypeOf(Date));
+    assert(Nil->subTypeOf(SA));
+    assert(Nil->subTypeOf(SB));
+    assert(Nil->subTypeOf(SC));
+    assert(Nil->subTypeOf(SD));
+    assert(Nil->subTypeOf(SE));
+    assert(Nil->subTypeOf(SF));
+    assert(Nil->subTypeOf(SG));
+    assert(Nil->subTypeOf(SH));
+    assert(Nil->subTypeOf(SI));
+}
+
+
+function <<test.Test>> meta::pure::functions::meta::tests::subTypeOf::testSubTypeOfPrimitive():Boolean[1]
+{
+    assert(Boolean->subTypeOf(Boolean));
+    assert(Boolean->subTypeOf(Any));
+
+    assert(Date->subTypeOf(Date));
+    assert(Date->subTypeOf(Any));
+
+    assert(Integer->subTypeOf(Integer));
+    assert(Integer->subTypeOf(Number));
+    assert(Integer->subTypeOf(Any));
+
+    assert(Float->subTypeOf(Float));
+    assert(Float->subTypeOf(Number));
+    assert(Float->subTypeOf(Any));
+
+    assert(Number->subTypeOf(Number));
+    assert(Number->subTypeOf(Any));
+
+    assert(String->subTypeOf(String));
+    assert(String->subTypeOf(Any));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::subTypeOf::testSubTypeOfA():Boolean[1]
+{
+    assert(SA->subTypeOf(Any));
+    assert(SA->subTypeOf(SA));
+    assertFalse(SA->subTypeOf(SB));
+    assertFalse(SA->subTypeOf(SC));
+    assertFalse(SA->subTypeOf(SD));
+    assertFalse(SA->subTypeOf(SE));
+    assertFalse(SA->subTypeOf(SF));
+    assertFalse(SA->subTypeOf(SG));
+    assertFalse(SA->subTypeOf(SH));
+    assertFalse(SA->subTypeOf(SI));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::subTypeOf::testSubTypeOfB():Boolean[1]
+{
+    assert(SB->subTypeOf(Any));
+    assert(SB->subTypeOf(SA));
+    assert(SB->subTypeOf(SB));
+    assertFalse(SB->subTypeOf(SC));
+    assertFalse(SB->subTypeOf(SD));
+    assertFalse(SB->subTypeOf(SE));
+    assertFalse(SB->subTypeOf(SF));
+    assertFalse(SB->subTypeOf(SG));
+    assertFalse(SB->subTypeOf(SH));
+    assertFalse(SB->subTypeOf(SI));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::subTypeOf::testSubTypeOfC():Boolean[1]
+{
+    assert(SC->subTypeOf(Any));
+    assert(SC->subTypeOf(SA));
+    assertFalse(SC->subTypeOf(SB));
+    assert(SC->subTypeOf(SC));
+    assertFalse(SC->subTypeOf(SD));
+    assertFalse(SC->subTypeOf(SE));
+    assertFalse(SC->subTypeOf(SF));
+    assertFalse(SC->subTypeOf(SG));
+    assertFalse(SC->subTypeOf(SH));
+    assertFalse(SC->subTypeOf(SI));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::subTypeOf::testSubTypeOfD():Boolean[1]
+{
+    assert(SD->subTypeOf(Any));
+    assert(SD->subTypeOf(SA));
+    assert(SD->subTypeOf(SB));
+    assertFalse(SD->subTypeOf(SC));
+    assert(SD->subTypeOf(SD));
+    assertFalse(SD->subTypeOf(SE));
+    assertFalse(SD->subTypeOf(SF));
+    assertFalse(SD->subTypeOf(SG));
+    assertFalse(SD->subTypeOf(SH));
+    assertFalse(SD->subTypeOf(SI));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::subTypeOf::testSubTypeOfE():Boolean[1]
+{
+    assert(SE->subTypeOf(Any));
+    assert(SE->subTypeOf(SA));
+    assert(SE->subTypeOf(SB));
+    assert(SE->subTypeOf(SC));
+    assert(SE->subTypeOf(SD));
+    assert(SE->subTypeOf(SE));
+    assertFalse(SE->subTypeOf(SF));
+    assertFalse(SE->subTypeOf(SG));
+    assertFalse(SE->subTypeOf(SH));
+    assertFalse(SE->subTypeOf(SI));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::subTypeOf::testSubTypeOfF():Boolean[1]
+{
+    assert(SF->subTypeOf(Any));
+    assert(SF->subTypeOf(SA));
+    assert(SF->subTypeOf(SB));
+    assert(SF->subTypeOf(SC));
+    assert(SF->subTypeOf(SD));
+    assertFalse(SF->subTypeOf(SE));
+    assert(SF->subTypeOf(SF));
+    assertFalse(SF->subTypeOf(SG));
+    assertFalse(SF->subTypeOf(SH));
+    assertFalse(SF->subTypeOf(SI));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::subTypeOf::testSubTypeOfG():Boolean[1]
+{
+    assert(SG->subTypeOf(Any));
+    assert(SG->subTypeOf(SA));
+    assert(SG->subTypeOf(SB));
+    assert(SG->subTypeOf(SC));
+    assert(SG->subTypeOf(SD));
+    assert(SG->subTypeOf(SE));
+    assertFalse(SG->subTypeOf(SF));
+    assert(SG->subTypeOf(SG));
+    assertFalse(SG->subTypeOf(SH));
+    assertFalse(SG->subTypeOf(SI));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::subTypeOf::testSubTypeOfH():Boolean[1]
+{
+    assert(SH->subTypeOf(Any));
+    assert(SH->subTypeOf(SA));
+    assert(SH->subTypeOf(SB));
+    assert(SH->subTypeOf(SC));
+    assert(SH->subTypeOf(SD));
+    assert(SH->subTypeOf(SE));
+    assertFalse(SH->subTypeOf(SF));
+    assertFalse(SH->subTypeOf(SG));
+    assert(SH->subTypeOf(SH));
+    assertFalse(SH->subTypeOf(SI));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::subTypeOf::testSubTypeOfI():Boolean[1]
+{
+    assert(SI->subTypeOf(Any));
+    assert(SI->subTypeOf(SA));
+    assert(SI->subTypeOf(SB));
+    assert(SI->subTypeOf(SC));
+    assert(SI->subTypeOf(SD));
+    assertFalse(SI->subTypeOf(SE));
+    assert(SI->subTypeOf(SF));
+    assertFalse(SI->subTypeOf(SG));
+    assertFalse(SI->subTypeOf(SH));
+    assert(SI->subTypeOf(SI));
+}
+
+

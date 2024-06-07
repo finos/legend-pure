@@ -33,10 +33,6 @@ public abstract class AbstractTestEvaluateTypeManagement extends AbstractPureTes
                 "{" +
                 "   $f2->eval();" +
                 "}" +
-                "function meta::pure::functions::collection::list<U>(vals:U[*]):List<U>[1]\n" +
-                "{\n" +
-                "   ^List<U>(values = $vals);\n" +
-                "}" +
                 "function meta::pure::router::execute<R|y>(f:FunctionDefinition<{->R[y]}>[1]):Result<R|y>[0..1]\n" +
                 "{\n" +
                 "   meta::alloy::test::mayExecuteAlloyTest(\n" +
@@ -65,15 +61,7 @@ public abstract class AbstractTestEvaluateTypeManagement extends AbstractPureTes
                         "   let evalProp = {p:Property<Nil,Any|*>[1], k:Any[1]|let values = $p->eval($k);};\n" +
                         "   let p = Pair.properties->cast(@Property<Nil,Any|*>)->filter(p|$p.name=='first')->toOne();" +
                         "   $evalProp->evaluate([list($p), list($pair)]);\n" +
-                        "}\n" +
-                        "function meta::pure::functions::collection::pair<U,V>(first:U[1], second:V[1]):Pair<U,V>[1]\n" +
-                        "{\n" +
-                        "   ^Pair<U,V>(first=$first, second=$second);\n" +
-                        "}" +
-                        "function meta::pure::functions::collection::list<U>(vals:U[*]):List<U>[1]\n" +
-                        "{\n" +
-                        "   ^List<U>(values = $vals);\n" +
-                        "}");
+                        "}\n");
         this.compileAndExecute("go():Any[*]");
     }
 
@@ -84,10 +72,6 @@ public abstract class AbstractTestEvaluateTypeManagement extends AbstractPureTes
                 "function go():Any[*] {\n" +
                         "        list('ok');\n" +
                         "}\n" +
-                        "function meta::pure::functions::collection::list<U>(vals:U[*]):List<U>[1]\n" +
-                        "{\n" +
-                        "   ^List<U>(values = $vals);\n" +
-                        "}" +
                         "");
         this.compileAndExecute("go():Any[*]");
     }
@@ -105,10 +89,6 @@ public abstract class AbstractTestEvaluateTypeManagement extends AbstractPureTes
                 "                                                            f2:meta::pure::metamodel::function::Function<{->X[k]}>[1]):X[k]" +
                 "{" +
                 "   $f2->eval();" +
-                "}" +
-                "function meta::pure::functions::collection::list<U>(vals:U[*]):List<U>[1]\n" +
-                "{\n" +
-                "   ^List<U>(values = $vals);\n" +
                 "}" +
                 "function meta::pure::router::execute<R|y>(f:FunctionDefinition<{->R[y]}>[1]):Result<R|y>[0..1]\n" +
                 "{\n" +

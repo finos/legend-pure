@@ -29,11 +29,15 @@ public class CoreExtensionCompiled implements CompiledExtension
                 "package org.finos.legend.pure.generated;\n" +
                         "\n" +
                         "import org.eclipse.collections.api.RichIterable;\n" +
+                        "import org.eclipse.collections.api.block.function.Function0;\n" +
                         "import org.eclipse.collections.api.factory.Lists;\n" +
                         "import org.eclipse.collections.api.list.MutableList;\n" +
+                        "import org.eclipse.collections.impl.list.mutable.FastList;\n" +
                         "import org.eclipse.collections.impl.map.mutable.UnifiedMap;\n" +
                         "import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List;\n" +
+                        "import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair;\n" +
                         "import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;\n" +
+                        "import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;\n" +
                         "import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;\n" +
                         "import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ElementOverride;\n" +
                         "import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.GetterOverride;\n" +
@@ -41,6 +45,7 @@ public class CoreExtensionCompiled implements CompiledExtension
                         "import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;\n" +
                         "import org.finos.legend.pure.m3.execution.ExecutionSupport;\n" +
                         "import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;\n" +
+                        "import org.finos.legend.pure.runtime.java.compiled.CoreHelper;\n" +
                         "import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;\n" +
                         "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Bridge;\n" +
                         "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;\n" +
@@ -50,6 +55,7 @@ public class CoreExtensionCompiled implements CompiledExtension
                         "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureFunction2;\n" +
                         "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureFunction2Wrapper;\n" +
                         "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction;\n" +
+                        "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.DefendedFunction;\n" +
                         "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.DefendedFunction0;\n" +
                         "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.DefendedFunction2;\n" +
                         "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.DefendedProcedure;\n" +
@@ -61,7 +67,7 @@ public class CoreExtensionCompiled implements CompiledExtension
                         "import java.lang.reflect.Method;\n" +
                         "import java.math.BigDecimal;\n" +
                         "\n" +
-                        "public class CoreGen\n" +
+                        "public class CoreGen extends CoreHelper\n" +
                         "{\n" +
                         "    public static final Bridge bridge = new BridgeImpl();\n" +
                         "\n" +
@@ -265,6 +271,84 @@ public class CoreExtensionCompiled implements CompiledExtension
                         "    {\n" +
                         "        return newObject((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class<?>) genericType._rawType(), root_meta_pure_functions_lang_keyExpressions, override, getterToOne, getterToMany, payload, getterToOneExec, getterToManyExec, es);\n" +
                         "    }\n" +
+                        "\n" +
+                        "\n" +
+                        "    public static PureMap newMap(RichIterable<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?>> pairs, RichIterable<? extends Property<?, ?>> properties, ExecutionSupport es)\n" +
+                        "    {\n" +
+                        "        return newMap(pairs, properties, CoreGen.bridge, es);\n" +
+                        "    }\n" +
+                        "\n" +
+                        "    public static <U, V> RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>> zip(Object l1, Object l2)\n" +
+                        "    {\n" +
+                        "        return zip(l1, l2, new DefendedFunction0<Pair<U, V>>()\n" +
+                        "        {\n" +
+                        "            @Override\n" +
+                        "            public org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V> value()\n" +
+                        "            {\n" +
+                        "                return new Root_meta_pure_functions_collection_Pair_Impl<U, V>(\"\");\n" +
+                        "            }\n" +
+                        "        });\n" +
+                        "    }\n" +
+                        "\n" +
+                        "    public static <U, V> RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>> zip(RichIterable<? extends U> l1, RichIterable<? extends V> l2)\n" +
+                        "    {\n" +
+                        "        return zip(l1, l2, new DefendedFunction0<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>>()\n" +
+                        "        {\n" +
+                        "            @Override\n" +
+                        "            public org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V> value()\n" +
+                        "            {\n" +
+                        "                return new Root_meta_pure_functions_collection_Pair_Impl<U, V>(\"\");\n" +
+                        "            }\n" +
+                        "        });\n" +
+                        "    }\n" +
+                        "\n" +
+                        "    public static <U, V> RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>> zip(Object l1, Object l2, Function0<? extends Pair<U, V>> pairBuilder)\n" +
+                        "    {\n" +
+                        "        return zipImpl((RichIterable<? extends U>) l1, (RichIterable<? extends V>) l2, pairBuilder);\n" +
+                        "    }\n" +
+                        "\n" +
+                        "    public static <U, V> RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>> zip(RichIterable<? extends U> l1, RichIterable<? extends V> l2, final Function0<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>> pairBuilder)\n" +
+                        "    {\n" +
+                        "        return zipImpl(l1, l2, pairBuilder);\n" +
+                        "    }\n" +
+                        "\n" +
+                        "    private static <U, V> RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>> zipImpl(RichIterable<? extends U> l1, RichIterable<? extends V> l2, final Function0<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>> pairBuilder)\n" +
+                        "    {\n" +
+                        "        return l1 == null || l2 == null ? FastList.<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V>>newList() : l1.zip(l2).collect(new DefendedFunction<org.eclipse.collections.api.tuple.Pair<? extends U, ? extends V>, Pair<U, V>>()\n" +
+                        "        {\n" +
+                        "            @Override\n" +
+                        "            public org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<U, V> valueOf(org.eclipse.collections.api.tuple.Pair<? extends U, ? extends V> pair)\n" +
+                        "            {\n" +
+                        "                return pairBuilder.value()._first(pair.getOne())._second(pair.getTwo());\n" +
+                        "            }\n" +
+                        "        });\n" +
+                        "    }\n" +
+                        "\n" +
+                        "    public static Object dynamicMatchWith(Object obj, RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>> funcs, Object var, ExecutionSupport es)\n" +
+                        "    {\n" +
+                        "        return dynamicMatchWith(obj, funcs, var, CoreGen.bridge, es);\n" +
+                        "    }\n" +
+                        "\n" +
+                        "    public static PureMap getOpenVariables(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func)\n" +
+                        "    {\n" +
+                        "        return Pure.getOpenVariables(func, CoreGen.bridge);\n" +
+                        "    }\n" +
+                        "\n" +
+                        "    public static Object reactivate(ValueSpecification valueSpecification, PureMap lambdaOpenVariablesMap, ExecutionSupport es)\n" +
+                        "    {\n" +
+                        "        return Pure.reactivate(valueSpecification, lambdaOpenVariablesMap, true, CoreGen.bridge, es);\n" +
+                        "    }\n" +
+                        "\n" +
+                        "    public static Object reactivate(ValueSpecification valueSpecification, PureMap lambdaOpenVariablesMap, boolean allowJavaCompilation, ExecutionSupport es)\n" +
+                        "    {\n" +
+                        "        return Pure.reactivate(valueSpecification, lambdaOpenVariablesMap, allowJavaCompilation, CoreGen.bridge, es);\n" +
+                        "    }\n" +
+                        "\n" +
+                        "    public static Double random()\n" +
+                        "    {\n" +
+                        "        return Math.random();\n" +
+                        "    }\n" +
+                        "\n" +
                         "}"));
     }
 
