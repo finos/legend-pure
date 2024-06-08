@@ -20,7 +20,6 @@ import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionCoreInstanceWrapper;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinitionCoreInstanceWrapper;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
@@ -820,7 +819,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
             org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInfo = (functionExpressionToUseInStack == null ? null : functionExpressionToUseInStack.getSourceInformation());
             if (sourceInfo != null && sourceInfo != e.getSourceInformation())
             {
-                String testPurePlatformFileName = "/platform/pure/essentials/tests/";
+                String testPurePlatformFileName = "/platform/pure/essential/tests/";
                 boolean allFromAssert = true;
                 for (org.finos.legend.pure.m4.coreinstance.SourceInformation si : e.getPureStackSourceInformation())
                 {

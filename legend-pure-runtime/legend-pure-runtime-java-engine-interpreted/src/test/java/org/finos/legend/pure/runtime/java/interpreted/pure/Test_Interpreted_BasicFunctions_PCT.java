@@ -26,7 +26,7 @@ import org.finos.legend.pure.runtime.java.interpreted.testHelper.PureTestBuilder
 
 public class Test_Interpreted_BasicFunctions_PCT extends PCTReportConfiguration
 {
-    private static final ReportScope reportScope = PlatformCodeRepositoryProvider.basicFunctions;
+    private static final ReportScope reportScope = PlatformCodeRepositoryProvider.essentialFunctions;
     private static final Adapter adapter = PlatformCodeRepositoryProvider.nativeAdapter;
     private static final String platform = "interpreted";
     private static final MutableList<ExclusionSpecification> expectedFailures = Lists.mutable.empty();

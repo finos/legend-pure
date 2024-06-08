@@ -36,7 +36,7 @@ public class Core_Compiled_PCTReportProvider implements PCTReportProvider
         {
             return Lists.mutable.with(
                     JsonMapper.builder().build().readValue(
-                            Core_Compiled_PCTReportProvider.class.getResourceAsStream("/pct-reports/ADAPTER_basic_compiled_Native.json"),
+                            Core_Compiled_PCTReportProvider.class.getResourceAsStream("/pct-reports/ADAPTER_essential_compiled_Native.json"),
                             AdapterReport.class
                     ),
                     JsonMapper.builder().build().readValue(

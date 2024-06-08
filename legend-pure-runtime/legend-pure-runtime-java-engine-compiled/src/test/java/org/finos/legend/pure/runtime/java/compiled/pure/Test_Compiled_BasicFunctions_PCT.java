@@ -28,7 +28,7 @@ import static org.finos.legend.pure.runtime.java.compiled.testHelper.PureTestBui
 
 public class Test_Compiled_BasicFunctions_PCT extends PCTReportConfiguration
 {
-    private static final ReportScope reportScope = PlatformCodeRepositoryProvider.basicFunctions;
+    private static final ReportScope reportScope = PlatformCodeRepositoryProvider.essentialFunctions;
 
     private static final Adapter adapter = PlatformCodeRepositoryProvider.nativeAdapter;
     private static final String platform = "compiled";

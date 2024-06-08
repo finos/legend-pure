@@ -31,7 +31,7 @@ native function meta::pure::functions::meta::sourceInformation(node:Any[1]):Sour
 function <<test.Test>> meta::pure::functions::meta::tests::sourceInformation::testClassSourceInformation():Boolean[1]
 {
     let sourceInfo = XTestClass->sourceInformation()->toOne();
-    assertEq('/platform/pure/essentials/meta/source/sourceInformation.pure', $sourceInfo.source);
+    assertEq('/platform/pure/essential/meta/source/sourceInformation.pure', $sourceInfo.source);
     assertEq(61, $sourceInfo.startLine);
     assertEq(1, $sourceInfo.startColumn);
     assertEq(61, $sourceInfo.line);
@@ -43,7 +43,7 @@ function <<test.Test>> meta::pure::functions::meta::tests::sourceInformation::te
 function <<test.Test>> meta::pure::functions::meta::tests::sourceInformation::testFunctionSourceInformation():Boolean[1]
 {
     let sourceInfo = meta::pure::functions::meta::tests::sourceInformation::testFunctionSourceInformation__Boolean_1_->sourceInformation()->toOne();
-    assertEq('/platform/pure/essentials/meta/source/sourceInformation.pure', $sourceInfo.source);
+    assertEq('/platform/pure/essential/meta/source/sourceInformation.pure', $sourceInfo.source);
     assertEq(43, $sourceInfo.startLine);
     assertEq(1, $sourceInfo.startColumn);
     assertEq(43, $sourceInfo.line);

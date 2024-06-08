@@ -176,7 +176,7 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>Generate PCT Basic</id>
+                        <id>Generate PCT Essential</id>
                         <phase>process-classes</phase>
                         <goals>
                             <goal>java</goal>
@@ -185,7 +185,7 @@
                             <mainClass>org.finos.legend.pure.m3.pct.functions.generation.FunctionsGeneration</mainClass>
                             <arguments>
                                 <argument>${project.build.directory}/classes/pct-reports/</argument>
-                                <argument>org.finos.legend.pure.m3.PlatformCodeRepositoryProvider.basicFunctions</argument>
+                                <argument>org.finos.legend.pure.m3.PlatformCodeRepositoryProvider.essentialFunctions</argument>
                             </arguments>
                         </configuration>
                     </execution>
