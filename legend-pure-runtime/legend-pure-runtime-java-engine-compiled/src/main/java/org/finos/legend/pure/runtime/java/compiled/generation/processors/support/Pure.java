@@ -750,15 +750,15 @@ public class Pure
                     DefaultValue defaultValue = p._defaultValue();
                     if (defaultValue != null)
                     {
-                        Object result = reactivate(defaultValue._functionDefinition()._expressionSequence().getFirst(), new PureMap(Maps.fixedSize.empty()), bridge, es);
+                        Object res = reactivate(defaultValue._functionDefinition()._expressionSequence().getFirst(), new PureMap(Maps.fixedSize.empty()), bridge, es);
                         Method method = c.getMethod("_" + p._name(), RichIterable.class);
-                        if (result instanceof RichIterable)
+                        if (res instanceof RichIterable)
                         {
-                            method.invoke(result, result);
+                            method.invoke(result, res);
                         }
                         else
                         {
-                            method.invoke(result, Lists.fixedSize.of(result));
+                            method.invoke(result, Lists.fixedSize.of(res));
                         }
                     }
                 }
