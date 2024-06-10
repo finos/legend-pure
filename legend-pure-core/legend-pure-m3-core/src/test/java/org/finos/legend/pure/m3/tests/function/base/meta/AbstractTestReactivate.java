@@ -195,6 +195,7 @@ public abstract class AbstractTestReactivate extends AbstractPureTestWithCoreCom
                         "{\n" +
                         "  a:Boolean[1] = true;\n" +
                         "  i:Integer[1] = 10;\n" +
+                        "  d:Decimal[1] = 10.0;\n" +
                         "  enumProperty:test::EnumWithDefault[1] = test::EnumWithDefault.DefaultValue;\n" +
                         "}\n" +
                         "\n" +
@@ -211,6 +212,7 @@ public abstract class AbstractTestReactivate extends AbstractPureTestWithCoreCom
                         "  assert($a.a, | 'Default value for property a set to wrong value');\n" +
                         "  assertEquals($a.i, 10);\n" +
                         "  assertEquals($a.enumProperty, test::EnumWithDefault.DefaultValue);\n" +
+                        "  assertEquals($d.i, 10.0);\n" +
                         "}\n");
         execute("test::f():Boolean[1]");
     }
