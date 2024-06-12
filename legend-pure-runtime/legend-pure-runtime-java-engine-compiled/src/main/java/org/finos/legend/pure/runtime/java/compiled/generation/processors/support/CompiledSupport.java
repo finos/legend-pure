@@ -341,20 +341,37 @@ public class CompiledSupport
 
     public static Object makeOne(Object object)
     {
-        if (object instanceof RichIterable)
-        {
-            return ((RichIterable<?>) object).getFirst();
-        }
-        return object;
+        return makeOne(object, null);
     }
 
-    public static <T> T makeOne(RichIterable<? extends T> object)
+    public static Object makeOne(Object object, SourceInformation sourceInfo)
+    {
+        return (object instanceof Iterable) ? makeOne((Iterable<?>) object, sourceInfo) : object;
+    }
+
+    public static <T> T makeOne(Iterable<? extends T> object)
+    {
+        return makeOne(object, null);
+    }
+
+    public static <T> T makeOne(Iterable<? extends T> object, SourceInformation sourceInfo)
     {
         if (object == null)
         {
             return null;
         }
-        return object.getFirst();
+
+        Iterator<? extends T> iterator = object.iterator();
+        if (!iterator.hasNext())
+        {
+            return null;
+        }
+        T value = iterator.next();
+        if (iterator.hasNext())
+        {
+            throw new PureExecutionException(sourceInfo, "Expected at most one object, but found many");
+        }
+        return value;
     }
 
     public static <T> T toMultiplicityOne(T object, int lowerBound, int upperBound, SourceInformation sourceInformation)
