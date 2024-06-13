@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure-functions-base</artifactId>
-        <version>5.8.2</version>
+        <version>5.8.3-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
