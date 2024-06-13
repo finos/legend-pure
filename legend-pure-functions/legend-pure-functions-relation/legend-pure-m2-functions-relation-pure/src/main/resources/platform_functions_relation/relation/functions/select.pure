@@ -68,28 +68,3 @@ function <<PCT.test>> meta::pure::functions::relation::tests::select::testSingle
                   '   weq\n'+
                   '#', $res->toString());
 }
-
-function <<PCT.test>> meta::pure::functions::relation::tests::select::testSingleSelectWithQuotedColumn<T|m>(f:Function<{Function<{->T[m]}>[1]->T[m]}>[1]):Boolean[1]
-{
-    let expr = {
-                | #TDS
-                      val, str, other kind
-                      1, a,  a
-                      3, ewe, b
-                      4, qw, c
-                      5, wwe, d
-                      6, weq, e
-                  #->select(~'other kind');
-               };
-
-    let res =  $f->eval($expr);
-
-    assertEquals( '#TDS\n'+
-                  '   other kind\n'+
-                  '   a\n'+
-                  '   b\n'+
-                  '   c\n'+
-                  '   d\n'+
-                  '   e\n'+
-                  '#', $res->toString());
-}

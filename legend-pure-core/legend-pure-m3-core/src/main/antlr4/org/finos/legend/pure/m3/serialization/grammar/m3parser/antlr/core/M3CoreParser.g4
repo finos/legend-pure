@@ -314,10 +314,12 @@ atomicExpression:
                  | (lambdaParam lambdaPipe)
 ;
 
-columnBuilders: TILDE (oneColSpec | (BRACKET_OPEN (oneColSpec(COMMA oneColSpec)*)? BRACKET_CLOSE))
+columnBuilders: TILDE (oneColSpec | (BRACKET_OPEN oneColSpec(COMMA oneColSpec)* BRACKET_CLOSE))
 ;
-oneColSpec: columnName (COLON (type | lambdaParam lambdaPipe) extraFunction?)?
+
+oneColSpec: identifier ((COLON (type | lambdaParam lambdaPipe) extraFunction? ))?
 ;
+
 extraFunction: (COLON lambdaParam lambdaPipe)
 ;
 
@@ -468,9 +470,7 @@ type: ( qualifiedName (LESSTHAN (typeArguments? (PIPE multiplicityArguments)?) G
       unitName
 ;
 
-columnType: (QUESTION | columnName) COLON type
-;
-columnName: identifier | STRING
+columnType : (QUESTION | identifier) COLON type
 ;
 
 multiplicity: BRACKET_OPEN multiplicityArgument BRACKET_CLOSE

@@ -1105,9 +1105,7 @@ public class AntlrContextToM3CoreInstance
             MutableList<CoreInstance> extraFunction = Lists.mutable.empty();
             ListIterate.forEach(ctx.columnBuilders().oneColSpec(), oneColSpec ->
             {
-                M3Parser.ColumnNameContext colNameCtx = oneColSpec.columnName();
-                String colName = colNameCtx.STRING() != null ? this.removeQuotes(colNameCtx.STRING()) : colNameCtx.identifier().getText();
-                columnNames.add(this.repository.newStringCoreInstance(colName));
+                columnNames.add(this.repository.newStringCoreInstance(oneColSpec.identifier().getText()));
                 String returnType = null;
                 if (oneColSpec.lambdaParam() != null && oneColSpec.lambdaPipe() != null)
                 {
@@ -1123,7 +1121,7 @@ public class AntlrContextToM3CoreInstance
                     GenericType returnGType = type(oneColSpec.type(), typeParametersNames, "", importId, addLines);
                     returnType = returnGType._rawType().getName();
                 }
-                columnInstances.add(_Column.getColumnInstance(colName, false, relationTypeGenericType, returnType, src, processorSupport));
+                columnInstances.add(_Column.getColumnInstance(oneColSpec.identifier().getText(), false, relationTypeGenericType, returnType, src, processorSupport));
             });
             relationTypeGenericType._rawTypeCoreInstance(_RelationType.build(columnInstances, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport));
 
@@ -2141,12 +2139,7 @@ public class AntlrContextToM3CoreInstance
                     _RelationType.build(
                             ListIterate.collect(
                                     ctx.columnType(),
-                                    c ->
-                                    {
-                                        M3Parser.ColumnNameContext colNameCtx = c.columnName();
-                                        String colName = colNameCtx != null ? colNameCtx.STRING() != null ? this.removeQuotes(colNameCtx.STRING()) : colNameCtx.identifier().getText() : "";
-                                        return _Column.getColumnInstance(c.QUESTION() != null ? "" : colName, c.QUESTION() != null, genericTypeInstance, this.type(c.type(), typeParametersNames, spacePlusTabs(space, 5), importId, addLines), srcInfo, processorSupport);
-                                    }
+                                    c -> _Column.getColumnInstance(c.QUESTION() != null ? "" : c.identifier().getText(), c.QUESTION() != null, genericTypeInstance, this.type(c.type(), typeParametersNames, spacePlusTabs(space, 5), importId, addLines), srcInfo, processorSupport)
                             ), srcInfo, processorSupport
                     )
             );
