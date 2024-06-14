@@ -24,6 +24,7 @@ public class TestRelationAccessor extends AbstractPureRelationalTestWithCoreComp
     {
         String sourceCode =
                 "###Pure\n" +
+                "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
                 "function f():meta::pure::metamodel::relation::Relation<Any>[1]" +
                 "{" +
                 "   #>{my::mainDb.PersonTable}#->filter(f|$f.lastName == 'ee');" +
@@ -41,6 +42,7 @@ public class TestRelationAccessor extends AbstractPureRelationalTestWithCoreComp
     {
         String sourceCode =
                 "###Pure\n" +
+                        "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
                         "function f():meta::pure::metamodel::relation::Relation<Any>[1]" +
                         "{" +
                         "   #>{my::mainDb.PersonTable}#->filter(f|$f.'first Name' == 'ee');" +
@@ -58,6 +60,7 @@ public class TestRelationAccessor extends AbstractPureRelationalTestWithCoreComp
     {
         String sourceCode =
                 "###Pure\n" +
+                        "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
                         "function f():meta::pure::metamodel::relation::Relation<Any>[1]" +
                         "{" +
                         "   #>{my::mainDb.PersonTable}#->filter(f|$f.lastName == 'ee');" +

@@ -74,6 +74,7 @@ public class TestRelationDatabaseAccessor extends AbstractPureRelationalTestWith
     public void testCompileAndDeleteStore()
     {
         String INITIAL_DATA = "import test::*;\n" +
+                "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
                 "\n" +
                 "function myFunc():Any[1]\n" +
                 "{ \n" +
@@ -91,7 +92,7 @@ public class TestRelationDatabaseAccessor extends AbstractPureRelationalTestWith
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("source3.pure")
-                        .compileWithExpectedCompileFailure("The store 'test::TestDB' can't be found", "source1.pure", 5, 5)
+                        .compileWithExpectedCompileFailure("The store 'test::TestDB' can't be found", "source1.pure", 5, 6)
                         .createInMemorySource("source3.pure", STORE)
                         .compile(),
                 runtime, functionExecution, Lists.fixedSize.empty());
@@ -103,6 +104,7 @@ public class TestRelationDatabaseAccessor extends AbstractPureRelationalTestWith
     {
         String INITIAL_DATA = "import test::*;\n" +
                 "\n" +
+                "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
                 "function myFunc():Any[1]\n" +
                 "{ \n" +
                 "   #>{test::TestDB.personTb}#" +
@@ -126,7 +128,7 @@ public class TestRelationDatabaseAccessor extends AbstractPureRelationalTestWith
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source3.pure", STORE2)
-                        .compileWithExpectedCompileFailure("The system can't find the column name in the Relation (name22:String, firmId:Integer)", "source1.pure", 5, 51)
+                        .compileWithExpectedCompileFailure("The system can't find the column name in the Relation (name22:String, firmId:Integer)", "source1.pure", 6, 51)
                         .updateSource("source3.pure", STORE)
                         .compile(),
                 runtime, functionExecution, Lists.fixedSize.empty());
@@ -177,6 +179,7 @@ public class TestRelationDatabaseAccessor extends AbstractPureRelationalTestWith
     {
         String INITIAL_DATA = "import test::*;\n" +
                 "\n" +
+                "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
                 "function myFunc():Any[1]\n" +
                 "{ \n" +
                 "   #>{test::TestDB.personTb}#" +
@@ -200,7 +203,7 @@ public class TestRelationDatabaseAccessor extends AbstractPureRelationalTestWith
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source1.pure", INITIAL_DATA + STORE2)
-                        .compileWithExpectedCompileFailure("The system can't find the column name in the Relation (name22:String, firmId:Integer)", "source1.pure", 5, 51)
+                        .compileWithExpectedCompileFailure("The system can't find the column name in the Relation (name22:String, firmId:Integer)", "source1.pure", 6, 51)
                         .updateSource("source1.pure", INITIAL_DATA + STORE)
                         .compile(),
                 runtime, functionExecution, Lists.fixedSize.empty());

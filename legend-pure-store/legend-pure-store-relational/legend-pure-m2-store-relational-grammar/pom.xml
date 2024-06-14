@@ -180,10 +180,5 @@
             <artifactId>eclipse-collections-testutils</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-m2-functions-relation-pure</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 </project>

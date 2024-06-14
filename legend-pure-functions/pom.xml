@@ -46,6 +46,5 @@
     <modules>
         <module>legend-pure-functions-base</module>
         <module>legend-pure-functions-json</module>
-        <module>legend-pure-functions-relation</module>
     </modules>
 </project>

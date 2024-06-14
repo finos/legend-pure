@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.code.core;
+package org.finos.legend.pure.m3;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.factory.Lists;
-import org.finos.legend.pure.m3.pct.shared.provider.PCTReportProvider;
-import org.finos.legend.pure.m3.pct.reports.model.AdapterReport;
 import org.finos.legend.pure.m3.pct.functions.model.Functions;
+import org.finos.legend.pure.m3.pct.reports.model.AdapterReport;
+import org.finos.legend.pure.m3.pct.shared.provider.PCTReportProvider;
 
-public class Relation_Functions_PCTReportProvider implements PCTReportProvider
+public class Essential_Functions_PCTReportProvider implements PCTReportProvider
 {
     @Override
     public MutableList<Functions> getFunctions()
@@ -30,7 +30,7 @@ public class Relation_Functions_PCTReportProvider implements PCTReportProvider
         {
             return org.eclipse.collections.api.factory.Lists.mutable.with(
                     JsonMapper.builder().build().readValue(
-                            Relation_Functions_PCTReportProvider.class.getResourceAsStream("/pct-reports/FUNCTIONS_relation.json"),
+                            Essential_Functions_PCTReportProvider.class.getResourceAsStream("/pct-reports/FUNCTIONS_essential.json"),
                             Functions.class
                     )
             );
