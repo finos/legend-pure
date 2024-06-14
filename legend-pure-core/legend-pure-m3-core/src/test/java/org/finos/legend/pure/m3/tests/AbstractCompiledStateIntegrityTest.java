@@ -150,6 +150,60 @@ public abstract class AbstractCompiledStateIntegrityTest
     }
 
     @Test
+    public void testCorePackages()
+    {
+        // Root
+        CoreInstance root = repository.getTopLevel(M3Paths.Root);
+        Assert.assertNotNull(root);
+        Assert.assertTrue(processorSupport.instance_instanceOf(root, M3Paths.Package));
+        Assert.assertEquals(M3Paths.Root, root.getName());
+        Assert.assertEquals(M3Paths.Root, PrimitiveUtilities.getStringValue(root.getValueForMetaPropertyToOne(M3Properties.name)));
+        Assert.assertEquals(M3Paths.Root, PackageableElement.getUserPathForPackageableElement(root));
+        Assert.assertNull(root.getValueForMetaPropertyToOne(M3Properties._package));
+
+        CoreInstance meta = assertCorePackage("meta", root);
+        CoreInstance metaPure = assertCorePackage("meta::pure", meta);
+        CoreInstance metaPureMetamodel = assertCorePackage("meta::pure::metamodel", metaPure);
+        CoreInstance metaPureFunctions = assertCorePackage("meta::pure::functions", metaPure);
+        assertCorePackage("meta::pure::tools", metaPure);
+        assertCorePackage("meta::pure::router", metaPure);
+        assertCorePackage("meta::pure::test", metaPure);
+
+        CoreInstance metaPureMetamodelType = assertCorePackage("meta::pure::metamodel::type", metaPureMetamodel);
+        assertCorePackage("meta::pure::metamodel::treepath", metaPureMetamodel);
+        assertCorePackage("meta::pure::metamodel::constraint", metaPureMetamodel);
+        CoreInstance metaPureMetamodelFunction = assertCorePackage("meta::pure::metamodel::function", metaPureMetamodel);
+        assertCorePackage("meta::pure::metamodel::relation", metaPureMetamodel);
+        assertCorePackage("meta::pure::metamodel::relationship", metaPureMetamodel);
+        assertCorePackage("meta::pure::metamodel::valuespecification", metaPureMetamodel);
+        assertCorePackage("meta::pure::metamodel::multiplicity", metaPureMetamodel);
+        assertCorePackage("meta::pure::metamodel::extension", metaPureMetamodel);
+        assertCorePackage("meta::pure::metamodel::import", metaPureMetamodel);
+
+        assertCorePackage("meta::pure::functions::lang", metaPureFunctions);
+        assertCorePackage("meta::pure::metamodel::type::generics", metaPureMetamodelType);
+        assertCorePackage("meta::pure::metamodel::function::property", metaPureMetamodelFunction);
+
+        CoreInstance system = assertCorePackage("system", root);
+        assertCorePackage("system::imports", system);
+    }
+
+    private CoreInstance assertCorePackage(String path, CoreInstance parent)
+    {
+        int lastColon = path.lastIndexOf(':');
+        String name = (lastColon == -1) ? path : path.substring(lastColon + 1);
+        CoreInstance pkg = parent.getValueInValueForMetaPropertyToManyWithKey(M3Properties.children, M3Properties.name, name);
+        Assert.assertNotNull(path, pkg);
+        Assert.assertTrue(path, processorSupport.instance_instanceOf(pkg, M3Paths.Package));
+        Assert.assertSame(path, parent, pkg.getValueForMetaPropertyToOne(M3Properties._package));
+        Assert.assertEquals(path, name, pkg.getName());
+        Assert.assertEquals(path, name, PrimitiveUtilities.getStringValue(pkg.getValueForMetaPropertyToOne(M3Properties.name)));
+        Assert.assertEquals(path, PackageableElement.getUserPathForPackageableElement(pkg));
+        Assert.assertNotEquals(path, Lists.fixedSize.empty(), pkg.getValueForMetaPropertyToMany(M3Properties.children));
+        return pkg;
+    }
+
+    @Test
     public void testNullClassifiers()
     {
         MutableList<CoreInstance> nullClassifiers = selectNodes(n -> n.getClassifier() == null);
