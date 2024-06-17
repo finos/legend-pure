@@ -73,16 +73,15 @@ import org.finos.legend.pure.m3.compiler.unload.walk.ExpressionSequenceValueSpec
 import org.finos.legend.pure.m3.compiler.unload.walk.FunctionTypeUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.unload.walk.FunctionUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.unload.walk.GeneralizationUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.GenericTypeUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.unload.walk.InstanceValueSpecificationContextUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.unload.walk.KeyValueValueSpecificationContextUnloaderWalk;
-import org.finos.legend.pure.m3.compiler.unload.walk.LambdaFunctionUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.unload.walk.MeasureUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.unload.walk.NativeFunctionUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.unload.walk.PackageableElementUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.unload.walk.ParameterValueSpecificationContextUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.unload.walk.ProfileUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.unload.walk.PropertyUnloaderWalk;
+import org.finos.legend.pure.m3.compiler.unload.walk.ReferenceableUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.unload.walk.TypeUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.unload.walk.UnitUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.unload.walk.ValueSpecificationUnloaderWalk;
@@ -454,6 +453,7 @@ public class M3AntlrParser implements Parser
     public RichIterable<MatchRunner> getUnLoadWalkers()
     {
         return Lists.immutable.with(
+                new ReferenceableUnloaderWalk(),
                 new PackageableElementUnloaderWalk(),
                 new TypeUnloaderWalk(),
                 new FunctionTypeUnloaderWalk(),
@@ -464,7 +464,6 @@ public class M3AntlrParser implements Parser
                 new ProfileUnloaderWalk(),
                 new GeneralizationUnloaderWalk(),
                 new AssociationUnloaderWalk(),
-                new GenericTypeUnloaderWalk(),
                 new ValueSpecificationUnloaderWalk(),
                 new VariableExpressionUnloaderWalk(),
                 new MeasureUnloaderWalk(),
@@ -480,7 +479,6 @@ public class M3AntlrParser implements Parser
                 new AbstractPropertyUnloaderWalk(),
                 new PropertyUnloaderWalk(),
                 new FunctionUnloaderWalk(),
-                new LambdaFunctionUnloaderWalk(),
                 new NativeFunctionUnloaderWalk(),
 
                 new RootRouteNodeUnloaderWalk(),

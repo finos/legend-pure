@@ -20,23 +20,25 @@ Class meta::pure::graphFetch::GraphFetchTree
    subTrees : GraphFetchTree[*];
    subTypeTrees : SubTypeGraphFetchTree[*];
 
-  propertyTrees() {
-     $this.subTrees->filter(st|$st->instanceOf(PropertyGraphFetchTree))->cast(@PropertyGraphFetchTree)
-  }: PropertyGraphFetchTree[*];
+   propertyTrees()
+   {
+      $this.subTrees->filter(st|$st->instanceOf(PropertyGraphFetchTree))->cast(@PropertyGraphFetchTree)
+   }: PropertyGraphFetchTree[*];
 
-  propertyTreeForProperty(property : AbstractProperty<Any>[1]) {
-     $this.propertyTrees()->filter(st|$st.property == $property)
-  }: PropertyGraphFetchTree[*] ;
+   propertyTreeForProperty(property : AbstractProperty<Any>[1])
+   {
+      $this.propertyTrees()->filter(st|$st.property == $property)
+   }: PropertyGraphFetchTree[*];
+}
+
+Class meta::pure::graphFetch::RootGraphFetchTree<T> extends GraphFetchTree, Referenceable
+{
+   class : Class<T>[1];
 }
 
 Class meta::pure::graphFetch::SubTypeGraphFetchTree extends GraphFetchTree
 {
-  subTypeClass: Class<Any>[1];
-}
-
-Class meta::pure::graphFetch::RootGraphFetchTree<T> extends GraphFetchTree, PackageableElement
-{
-   class : Class<T>[1];
+   subTypeClass: Class<Any>[1];
 }
 
 Class meta::pure::graphFetch::PropertyGraphFetchTree extends GraphFetchTree
@@ -46,11 +48,13 @@ Class meta::pure::graphFetch::PropertyGraphFetchTree extends GraphFetchTree
    alias : String[0..1];
    subType : Class<Any>[0..1];
    
-   isPrimitive(){
+   isPrimitive()
+   {
       $this.property.genericType.rawType->toOne()->instanceOf(PrimitiveType) || $this.property.genericType.rawType->toOne()->instanceOf(Enumeration)
    }:Boolean[1];
 
-   isQualifiedProperty(){
+   isQualifiedProperty()
+   {
       $this.property->instanceOf(QualifiedProperty)
    }:Boolean[1];
 }

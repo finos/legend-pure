@@ -681,8 +681,7 @@ public class GraphLoader
                     SpecializationProcessor.process((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type) instance, this.processorSupport);
                 }
 
-                // referenceUsages_GenericType
-                // referenceUsages_PackageableElement
+                // referenceUsages
                 if (instance.hasBeenProcessed())
                 {
                     genlsList.asReversed().forEach(type ->

@@ -35,6 +35,7 @@ public class TestStaticInstance extends AbstractPureTestWithCoreCompiled
     public void cleanRuntime()
     {
         runtime.delete("fromString.pure");
+        runtime.compile();
     }
 
     @Test
@@ -49,7 +50,7 @@ public class TestStaticInstance extends AbstractPureTestWithCoreCompiled
                 "{\n" +
                 "    print(p, 1);\n" +
                 "}\n");
-        this.execute("testGet():Nil[0]");
+        execute("testGet():Nil[0]");
         Assert.assertEquals("p instance Person\n" +
                 "    lastName(Property):\n" +
                 "        last instance String", functionExecution.getConsole().getLine(0));
@@ -68,30 +69,25 @@ public class TestStaticInstance extends AbstractPureTestWithCoreCompiled
                 "{\n" +
                 "    print(a.lastName, 1);\n" +
                 "}\n");
-        this.execute("testGet():Nil[0]");
+        execute("testGet():Nil[0]");
         Assert.assertEquals("'last'", functionExecution.getConsole().getLine(0));
     }
 
     @Test
     public void testGetterFromStaticInstanceWithWrongProperty()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "Class test::Person\n" +
-                    "{\n" +
-                    "   lastName:String[1];\n" +
-                    "}\n" +
-                    "^test::Person p (lastName='last')\n" +
-                    "function testGet():Nil[0]\n" +
-                    "{\n" +
-                    "    print(p.wrongProperty);\n" +
-                    "}");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Can't find the property 'wrongProperty' in the class test::Person", 8, 13, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "Class test::Person\n" +
+                        "{\n" +
+                        "   lastName:String[1];\n" +
+                        "}\n" +
+                        "^test::Person p (lastName='last')\n" +
+                        "function testGet():Nil[0]\n" +
+                        "{\n" +
+                        "    print(p.wrongProperty);\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "Can't find the property 'wrongProperty' in the class test::Person", 8, 13, e);
     }
 
     protected static FunctionExecution getFunctionExecution()

@@ -19,7 +19,6 @@ import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningFunctions;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PropertyOwner;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.ReferenceUsage;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.AssociationProjection;
@@ -45,10 +44,6 @@ public class AbstractPropertyUnloaderWalk implements MatchRunner<AbstractPropert
     public void run(AbstractProperty<?> abstractProperty, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
         WalkerState walkerState = (WalkerState) state;
-        for (ReferenceUsage referenceUsage : abstractProperty._referenceUsages())
-        {
-            matcher.fullMatch(referenceUsage._ownerCoreInstance(), state);
-        }
         PropertyOwner owner = abstractProperty._owner();
         if (owner != null)
         {

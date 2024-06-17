@@ -105,6 +105,7 @@ public class M3Paths
     public static final String PureOne = "meta::pure::metamodel::multiplicity::PureOne";
     public static final String PureZero = "meta::pure::metamodel::multiplicity::PureZero";
     public static final String QualifiedProperty = "meta::pure::metamodel::function::property::QualifiedProperty";
+    public static final String Referenceable = "meta::pure::metamodel::Referenceable";
     public static final String ReferenceUsage = "meta::pure::metamodel::ReferenceUsage";
     public static final String Relation = "meta::pure::metamodel::relation::Relation";
     public static final String RelationElementAccessor = "meta::pure::metamodel::relation::RelationElementAccessor";
@@ -154,5 +155,4 @@ public class M3Paths
     public static final String Pair = "meta::pure::functions::collection::Pair";
     public static final String Map = "meta::pure::functions::collection::Map";
     public static final String List = "meta::pure::functions::collection::List";
-
 }

@@ -15,6 +15,7 @@
 package org.finos.legend.pure.m2.inlinedsl.graph;
 
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -32,31 +33,25 @@ public class TestMilestonedPropertyUsageInGraph extends AbstractPureTestWithCore
     public void cleanRuntime()
     {
         runtime.delete("file.pure");
+        runtime.compile();
     }
 
     @Test
-    public void testGeneratedQualifiedPropertyUsage() throws Exception
+    public void testGeneratedQualifiedPropertyUsage()
     {
-        try
-        {
-            runtime.createInMemorySource("file.pure", "import meta::test::milestoning::domain::*;\n" +
-                    "Class meta::test::milestoning::domain::Product{\n" +
-                    "   classification : Classification[1];\n" +
-                    "}\n" +
-                    "Class  <<temporal.businesstemporal>> meta::test::milestoning::domain::Classification{\n" +
-                    "   classificationType : String[1];\n" +
-                    "}\n" +
-                    "function go():Any[*]\n" +
-                    "{\n" +
-                    "   print(#{Product{classification{classificationType}}}#)" +
-                    "}\n");
-            runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:file.pure line:10 column:20), \"The system can't find a match for the property / qualified property: classification(). No-Arg milestoned property: 'classification' is not supported yet in graph fetch flow! It needs to be supplied with [businessDate] parameters\"", e.getMessage());
-        }
+        runtime.createInMemorySource("file.pure", "import meta::test::milestoning::domain::*;\n" +
+                "Class meta::test::milestoning::domain::Product{\n" +
+                "   classification : Classification[1];\n" +
+                "}\n" +
+                "Class  <<temporal.businesstemporal>> meta::test::milestoning::domain::Classification{\n" +
+                "   classificationType : String[1];\n" +
+                "}\n" +
+                "function go():Any[*]\n" +
+                "{\n" +
+                "   print(#{Product{classification{classificationType}}}#)" +
+                "}\n");
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:file.pure line:10 column:20), \"The system can't find a match for the property / qualified property: classification(). No-Arg milestoned property: 'classification' is not supported yet in graph fetch flow! It needs to be supplied with [businessDate] parameters\"", e.getMessage());
 
         runtime.modify("file.pure", "import meta::test::milestoning::domain::*;\n" +
                 "Class meta::test::milestoning::domain::Product{\n" +
@@ -73,28 +68,21 @@ public class TestMilestonedPropertyUsageInGraph extends AbstractPureTestWithCore
     }
 
     @Test
-    public void testQualifiedPropertyInference() throws Exception
+    public void testQualifiedPropertyInference()
     {
-        try
-        {
-            runtime.createInMemorySource("file.pure", "import meta::test::milestoning::domain::*;\n" +
-                    "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
-                    "   classification : Classification[1];\n" +
-                    "}\n" +
-                    "Class  <<temporal.businesstemporal>> meta::test::milestoning::domain::Classification{\n" +
-                    "   classificationType : String[1];\n" +
-                    "}\n" +
-                    "function go():Any[*]\n" +
-                    "{\n" +
-                    "   print(#{Product{classification{classificationType}}}#)" +
-                    "}\n");
-            runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:file.pure line:10 column:20), \"No-Arg milestoned property: 'classification' is not supported yet in graph fetch flow! It needs to be supplied with [businessDate] parameters\"", e.getMessage());
-        }
+        runtime.createInMemorySource("file.pure", "import meta::test::milestoning::domain::*;\n" +
+                "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
+                "   classification : Classification[1];\n" +
+                "}\n" +
+                "Class  <<temporal.businesstemporal>> meta::test::milestoning::domain::Classification{\n" +
+                "   classificationType : String[1];\n" +
+                "}\n" +
+                "function go():Any[*]\n" +
+                "{\n" +
+                "   print(#{Product{classification{classificationType}}}#)" +
+                "}\n");
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:file.pure line:10 column:20), \"No-Arg milestoned property: 'classification' is not supported yet in graph fetch flow! It needs to be supplied with [businessDate] parameters\"", e.getMessage());
 
         runtime.modify("file.pure", "import meta::test::milestoning::domain::*;\n" +
                 "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +

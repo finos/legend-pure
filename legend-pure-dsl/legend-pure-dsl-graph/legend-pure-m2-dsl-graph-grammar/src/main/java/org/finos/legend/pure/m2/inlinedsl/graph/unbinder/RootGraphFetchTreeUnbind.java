@@ -33,7 +33,7 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class RootGraphFetchTreeUnbind implements MatchRunner<RootGraphFetchTree>
+public class RootGraphFetchTreeUnbind implements MatchRunner<RootGraphFetchTree<?>>
 {
     @Override
     public String getClassName()
@@ -42,7 +42,7 @@ public class RootGraphFetchTreeUnbind implements MatchRunner<RootGraphFetchTree>
     }
 
     @Override
-    public void run(RootGraphFetchTree instance, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
+    public void run(RootGraphFetchTree<?> instance, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
         ProcessorSupport processorSupport = state.getProcessorSupport();
         for (GraphFetchTree subTree : instance._subTrees())
@@ -60,7 +60,7 @@ public class RootGraphFetchTreeUnbind implements MatchRunner<RootGraphFetchTree>
         instance._classifierGenericTypeRemove();
     }
 
-    private void unbindPropertyGraphFetchTree(PropertyGraphFetchTree propertyGraphFetchTree, RootGraphFetchTree mainTree, MatcherState state, Matcher matcher)
+    private void unbindPropertyGraphFetchTree(PropertyGraphFetchTree propertyGraphFetchTree, RootGraphFetchTree<?> mainTree, MatcherState state, Matcher matcher)
     {
         ProcessorSupport processorSupport = state.getProcessorSupport();
 
