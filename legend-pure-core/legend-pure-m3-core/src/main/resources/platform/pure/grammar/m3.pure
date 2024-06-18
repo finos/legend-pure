@@ -3062,7 +3062,7 @@
         [
             ^Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization]
             {
-                Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[general] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType] {Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType] : Root.children[meta].children[pure].children[metamodel].children[PackageableElement]},
+                Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[general] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType] {Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType] : Root.children[meta].children[pure].children[metamodel].children[ModelElement]},
                 Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[specific] : Root.children[meta].children[pure].children[metamodel].children[constraint].children[Constraint]
             }
         ]
