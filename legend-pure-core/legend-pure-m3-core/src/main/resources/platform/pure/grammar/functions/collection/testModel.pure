@@ -25,3 +25,9 @@ Class meta::pure::functions::collection::tests::model::CO_Person
     firstName : String[1];
     lastName: String[1];
 }
+
+Class meta::pure::functions::collection::tests::model::CO_NPerson extends CO_Person
+{
+    locations : CO_Location[*];
+    address : CO_Address[0..1];
+}

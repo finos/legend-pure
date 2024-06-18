@@ -1,7 +1,0 @@
-{
-  "name": "platform_functions",
-  "pattern": "(meta::pure::functions|meta::pure|meta::core|meta::alloy|meta::legend|meta::vcs)(::.*)?",
-  "dependencies": [
-    "platform"
-  ]
-}

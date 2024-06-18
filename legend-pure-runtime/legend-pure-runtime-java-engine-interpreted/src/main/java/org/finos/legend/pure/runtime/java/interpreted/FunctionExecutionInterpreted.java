@@ -20,6 +20,7 @@ import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionCoreInstanceWrapper;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinitionCoreInstanceWrapper;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
@@ -61,6 +62,7 @@ import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.collection.anonymous.map.ConstructorForPairList;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.collection.anonymous.map.GetIfAbsentPutWithKey;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.collection.anonymous.map.GetMapStats;
+import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.collection.anonymous.map.GroupBy;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.collection.anonymous.map.KeyValues;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.collection.anonymous.map.Keys;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.collection.anonymous.map.Put;
@@ -140,6 +142,7 @@ import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.math.tr
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.math.trigonometry.Cosine;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.math.trigonometry.Sine;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.math.trigonometry.Tangent;
+import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.meta.RemoveOverride;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.meta.graph.ElementPath;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.meta.graph.ElementToPath;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.meta.profile.Stereotype;
@@ -371,6 +374,8 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.nativeFunctions.put("putAll_Map_1__Pair_MANY__Map_1_", new PutAllPairs(this, repository));
         this.nativeFunctions.put("replaceAll_Map_1__Pair_MANY__Map_1_", new ReplaceAll(this, repository));
         this.nativeFunctions.put("values_Map_1__V_MANY_", new Values(this, repository));
+        this.nativeFunctions.put("groupBy_X_MANY__Function_1__Map_1_", new GroupBy(this, repository));
+
         //    Tree
         this.nativeFunctions.put("replaceTreeNode_TreeNode_1__TreeNode_1__TreeNode_1__TreeNode_1_", new ReplaceTreeNode(this, repository));
         //  Index
@@ -432,6 +437,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.nativeFunctions.put("print_Any_MANY__Integer_1__Nil_0_", new Print(this, repository));
 
         //Lang
+        this.nativeFunctions.put("removeOverride_T_1__T_1_", new RemoveOverride(this, repository));
         //  Cast
         this.nativeFunctions.put("cast_Any_m__T_1__T_m_", new Cast(repository));
         this.nativeFunctions.put("toDecimal_Number_1__Decimal_1_", new ToDecimal(this, repository));

@@ -39,8 +39,8 @@ public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompile
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
         MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
-        CodeRepository system = GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform", "platform_functions");
-        CodeRepository test = GenericCodeRepository.build("test", "test(::.*)?", "platform", "system", "platform_functions");
+        CodeRepository system = GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform", "core_functions_unclassified");
+        CodeRepository test = GenericCodeRepository.build("test", "test(::.*)?", "platform", "system", "core_functions_unclassified");
         repositories.add(system);
         repositories.add(test);
         return repositories;

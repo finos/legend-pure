@@ -30,6 +30,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.Native;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.anonymous.map.GetIfAbsentPutWithKey;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.anonymous.map.GetMapStats;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.anonymous.map.GroupBy;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.anonymous.map.KeyValues;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.anonymous.map.Keys;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.collection.anonymous.map.NewMap;
@@ -367,6 +368,7 @@ public class NativeFunctionProcessor
         registerNative(map, new PutAllPairs());
         registerNative(map, new ReplaceAll());
         registerNative(map, new Values());
+        registerNative(map, new GroupBy());
         //    Tree
         registerNative(map, new ReplaceTreeNode());
         //  Index

@@ -1,4 +1,4 @@
-// Copyright 2022 Goldman Sachs
+// Copyright 2023 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,13 +14,10 @@
 
 import meta::pure::test::pct::*;
 
-native function <<PCT.function>> meta::pure::functions::string::parseInteger(string:String[1]):Integer[1];
+native function <<PCT.function>> meta::pure::functions::string::reverseString(str:String[1]):String[1];
 
-function <<test.Test>> meta::pure::functions::string::tests::parseInteger::testParseInteger():Boolean[1]
+function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::string::tests::reverse::testReverseString():Boolean[1]
 {
-    assertEq(17, parseInteger('17'));
-    assertEq(17, parseInteger('+00000017'));
-    assertEq(-17, parseInteger('-17'));
-
-    assertEq(9999999999999992, parseInteger('9999999999999992'));
+    assertEquals('', ''->reverseString());
+    assertEquals('abc', 'cba'->reverseString());
 }

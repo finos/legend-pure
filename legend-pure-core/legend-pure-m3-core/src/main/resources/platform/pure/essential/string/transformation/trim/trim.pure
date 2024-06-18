@@ -14,15 +14,10 @@
 
 import meta::pure::test::pct::*;
 
-native function <<PCT.function>> meta::pure::functions::string::endsWith(source:String[1], val:String[1]):Boolean[1];
+native function <<PCT.function>> meta::pure::functions::string::trim(str:String[1]):String[1];
 
-function <<test.Test>> meta::pure::functions::string::tests::endswith::testTrueEndsWith():Boolean[1]
+function <<test.Test>> meta::pure::functions::string::tests::trim::testTrim():Boolean[1]
 {
-    assert(endsWith('the quick brown fox jumps over the lazy dog', 'dog'));
-    assert(endsWith('the quick brown fox jumps over the lazy dog', 'lazy dog'));
-}
-
-function <<test.Test>> meta::pure::functions::string::tests::endswith::testFalseEndsWith():Boolean[1]
-{
-    assertFalse(endsWith('the quick brown fox jumps over the lazy dog', 'brown fox'));
+    assertEquals('A Simple Text To Trim', ' A Simple Text To Trim    '->trim());
+    assertEquals('A Simple Text To Trim', ' A Simple Text To Trim'->trim());
 }

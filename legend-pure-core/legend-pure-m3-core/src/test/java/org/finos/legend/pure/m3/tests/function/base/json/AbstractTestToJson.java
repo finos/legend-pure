@@ -371,7 +371,7 @@ public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompile
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         CodeRepositorySet.Builder builder = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true));
         MutableList<CodeRepository> rep = Lists.mutable.withAll(builder.build().getRepositories());
-        rep.add(new GenericCodeRepository("test", null, "platform", "platform_functions", "platform_functions_json"));
+        rep.add(new GenericCodeRepository("test", null, "platform", "core_functions_unclassified", "core_functions_json"));
         return new CompositeCodeStorage(new ClassLoaderCodeStorage(rep));
     }
 

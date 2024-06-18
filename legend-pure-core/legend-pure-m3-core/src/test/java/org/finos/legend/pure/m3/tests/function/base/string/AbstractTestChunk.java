@@ -93,7 +93,7 @@ public abstract class AbstractTestChunk extends AbstractPureTestWithCoreCompiled
     protected static MutableRepositoryCodeStorage getCodeStorage()
     {
         MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
-        CodeRepository test = new GenericCodeRepository("test", null, "platform", "platform_functions");
+        CodeRepository test = new GenericCodeRepository("test", null, "platform", "core_functions_unclassified");
         repositories.add(test);
         return new CompositeCodeStorage(new ClassLoaderCodeStorage(repositories));
     }

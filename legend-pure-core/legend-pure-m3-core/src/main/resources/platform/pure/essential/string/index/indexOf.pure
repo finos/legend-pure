@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::string::indexOf(str:String[1], toFind:String[1]):Integer[1];
+import meta::pure::test::pct::*;
 
-native function meta::pure::functions::string::indexOf(str:String[1], toFind:String[1], fromIndex:Integer[1]):Integer[1];
+native function <<PCT.function>> meta::pure::functions::string::indexOf(str:String[1], toFind:String[1]):Integer[1];
+
+native function <<PCT.function>> meta::pure::functions::string::indexOf(str:String[1], toFind:String[1], fromIndex:Integer[1]):Integer[1];
 
 
 function <<test.Test>> meta::pure::functions::string::tests::indexOf::testSimple():Boolean[1]

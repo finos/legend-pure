@@ -3,7 +3,6 @@
   "pattern": "(meta::relational|meta::external::store::relational|meta::pure::functions::io)(::.*)?",
   "dependencies": [
     "platform",
-    "platform_functions",
     "platform_dsl_mapping",
     "platform_dsl_store"
   ]
