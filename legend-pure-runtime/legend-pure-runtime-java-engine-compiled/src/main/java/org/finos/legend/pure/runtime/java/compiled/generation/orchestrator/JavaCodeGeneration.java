@@ -34,6 +34,7 @@ import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
 import org.finos.legend.pure.m3.serialization.runtime.cache.CacheState;
 import org.finos.legend.pure.m3.serialization.runtime.cache.ClassLoaderPureGraphCache;
+import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompileException;
 import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompiler;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtensionLoader;
 import org.finos.legend.pure.runtime.java.compiled.generation.Generate;
@@ -42,6 +43,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.JavaStandaloneLibr
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphSerializer;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -49,7 +52,7 @@ import java.util.Set;
 
 public class JavaCodeGeneration
 {
-    public static void main(String... args) throws Exception
+    public static void main(String... args)
     {
         Log log = new Log()
         {
@@ -302,32 +305,25 @@ public class JavaCodeGeneration
         String generateStep = "Pure compiled mode Java code generation";
         long generateStart = startStep(generateStep, log);
         Generate generate;
-        try
+        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), addExternalAPI, externalAPIPackage, log);
+        switch (generationType)
         {
-            JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), addExternalAPI, externalAPIPackage, log);
-            switch (generationType)
+            case monolithic:
             {
-                case monolithic:
-                {
-                    generate = generator.generateOnly(false, generateSources, codegenDirectory);
-                    break;
-                }
-                case modular:
-                {
-                    generate = generator.generateOnly(selectedRepositories, true, generateSources, codegenDirectory);
-                    break;
-                }
-                default:
-                {
-                    throw new RuntimeException("Unhandled generation type: " + generationType);
-                }
+                generate = generator.generateOnly(false, generateSources, codegenDirectory);
+                break;
             }
-            completeStep(generateStep, generateStart, log);
+            case modular:
+            {
+                generate = generator.generateOnly(selectedRepositories, true, generateSources, codegenDirectory);
+                break;
+            }
+            default:
+            {
+                throw new RuntimeException("Unhandled generation type: " + generationType);
+            }
         }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        completeStep(generateStep, generateStart, log);
         return generate;
     }
 
@@ -373,7 +369,7 @@ public class JavaCodeGeneration
         catch (Exception e)
         {
             log.error(String.format("    Error initializing Pure (%.9fs)", durationSinceInSeconds(start)), e);
-            throw new RuntimeException(e);
+            throw e;
         }
     }
 
@@ -381,64 +377,44 @@ public class JavaCodeGeneration
     {
         String writeMetadataStep = "writing distributed Pure metadata";
         long writeMetadataStart = startStep(writeMetadataStep, log);
-        try
-        {
-            DistributedBinaryGraphSerializer.newSerializer(runtime).serializeToDirectory(distributedMetadataDirectory);
-            completeStep(writeMetadataStep, writeMetadataStart, log);
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        DistributedBinaryGraphSerializer.newSerializer(runtime).serializeToDirectory(distributedMetadataDirectory);
+        completeStep(writeMetadataStep, writeMetadataStart, log);
     }
 
     private static void generateModularMetadata(long start, PureRuntime runtime, Iterable<String> repositoriesForMetadata, Path distributedMetadataDirectory, Log log)
     {
         String writeMetadataStep = "writing distributed Pure metadata";
         long writeMetadataStart = startStep(writeMetadataStep, log);
-        try
+        for (String repository : repositoriesForMetadata)
         {
-            for (String repository : repositoriesForMetadata)
-            {
-                generateModularMetadata(start, runtime, repository, distributedMetadataDirectory, log);
-            }
-            completeStep(writeMetadataStep, writeMetadataStart, log);
+            generateModularMetadata(start, runtime, repository, distributedMetadataDirectory, log);
         }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        completeStep(writeMetadataStep, writeMetadataStart, log);
     }
 
     private static void generateModularMetadata(long start, PureRuntime runtime, String repository, Path distributedMetadataDirectory, Log log)
     {
         String writeMetadataStep = "writing distributed Pure metadata for " + repository;
         long writeMetadataStart = startStep(writeMetadataStep, log);
-        try
-        {
-            DistributedBinaryGraphSerializer.newSerializer(runtime, repository).serializeToDirectory(distributedMetadataDirectory);
-            completeStep(writeMetadataStep, writeMetadataStart, log);
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        DistributedBinaryGraphSerializer.newSerializer(runtime, repository).serializeToDirectory(distributedMetadataDirectory);
+        completeStep(writeMetadataStep, writeMetadataStart, log);
     }
 
     private static PureJavaCompiler compileJavaSources(long start, Generate generate, boolean addExternalAPI, Log log)
     {
         String compilationStep = "Pure compiled mode Java code compilation";
         long compilationStart = startStep(compilationStep, log);
+        PureJavaCompiler compiler;
         try
         {
-            PureJavaCompiler compiler = JavaStandaloneLibraryGenerator.compileOnly(generate.getJavaSourcesByGroup(), generate.getExternalizableSources(), addExternalAPI, log);
-            completeStep(compilationStep, compilationStart, log);
-            return compiler;
+            compiler = JavaStandaloneLibraryGenerator.compileOnly(generate.getJavaSourcesByGroup(), generate.getExternalizableSources(), addExternalAPI, log);
         }
-        catch (Exception e)
+        catch (PureJavaCompileException e)
         {
             throw new RuntimeException(e);
         }
+        completeStep(compilationStep, compilationStart, log);
+        return compiler;
     }
 
     private static void writeJavaClassFiles(long start, PureJavaCompiler compiler, File classesDirectory, Log log)
@@ -448,12 +424,12 @@ public class JavaCodeGeneration
         try
         {
             compiler.writeClassJavaSources(classesDirectory.toPath(), log);
-            completeStep(writeClassFilesStep, writeClassFilesStart, log);
         }
-        catch (Exception e)
+        catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
+        completeStep(writeClassFilesStep, writeClassFilesStart, log);
     }
 
     public static double durationSinceInSeconds(long startNanos)

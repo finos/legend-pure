@@ -15,162 +15,161 @@
 ^Package Root
 {
     Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'Root',
-    Package.properties[children] : [
-            ^Package meta
-            {
-                Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'meta',
-                Package.properties[children] : [
-                                        ^Package pure
-                                        {
-                                            Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'pure',
-                                            Package.properties[children] : [^Package metamodel
-                                                                            {
-                                                                                Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'metamodel',
-                                                                                Package.properties[children] :  [
-                                                                                                                    ^Package type
-                                                                                                                    {
-                                                                                                                        Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'type',
-                                                                                                                        Package.properties[children] :
-                                                                                                                        [
-                                                                                                                            ^Package generics
-                                                                                                                            {
-                                                                                                                                Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'generics',
-                                                                                                                                Package.properties[children] : [],
-                                                                                                                                Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel].children[type]
-                                                                                                                            }
-                                                                                                                        ],
-                                                                                                                        Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel]
-                                                                                                                    }
-                                                                                                                    ,
-                                                                                                                    ^Package treepath
-                                                                                                                    {
-                                                                                                                        Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'treepath',
-                                                                                                                        Package.properties[children] :
-                                                                                                                        [],
-                                                                                                                        Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel]
-                                                                                                                    }
-                                                                                                                    ,
-                                                                                                                    ^Package constraint
-                                                                                                                     {
-                                                                                                                         Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'constraint',
-                                                                                                                         Package.properties[children] :
-                                                                                                                         [],
-                                                                                                                         Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel]
-                                                                                                                     }
-                                                                                                                     ,
-                                                                                                                    ^Package function
-                                                                                                                    {
-                                                                                                                        Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'function',
-                                                                                                                        Package.properties[children] :
-                                                                                                                        [
-                                                                                                                            ^Package property
-                                                                                                                            {
-                                                                                                                                Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'property',
-                                                                                                                                Package.properties[children] : [],
-                                                                                                                                Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel].children[function]
-                                                                                                                            }
-                                                                                                                        ],
-                                                                                                                        Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel]
-                                                                                                                    }
-                                                                                                                    ,
-                                                                                                                    ^Package relation
-                                                                                                                    {
-                                                                                                                        Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'relation',
-                                                                                                                        Package.properties[children] : [],
-                                                                                                                        Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel]
-                                                                                                                    }
-                                                                                                                    ,
-                                                                                                                    ^Package relationship
-                                                                                                                    {
-                                                                                                                        Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'relationship',
-                                                                                                                        Package.properties[children] : [],
-                                                                                                                        Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel]
-                                                                                                                    }
-                                                                                                                    ,
-                                                                                                                    ^Package valuespecification
-                                                                                                                    {
-                                                                                                                        Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'valuespecification',
-                                                                                                                        Package.properties[children] : [],
-                                                                                                                        Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel]
-                                                                                                                    }
-                                                                                                                    ,
-                                                                                                                    ^Package multiplicity
-                                                                                                                    {
-                                                                                                                        Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'multiplicity',
-                                                                                                                        Package.properties[children] : [],
-                                                                                                                        Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel]
-                                                                                                                    }
-                                                                                                                    ,
-                                                                                                                    ^Package extension
-                                                                                                                    {
-                                                                                                                        Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'extension',
-                                                                                                                        Package.properties[children] : [],
-                                                                                                                        Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel]
-                                                                                                                    }
-                                                                                                                    ,
-                                                                                                                    ^Package import
-                                                                                                                    {
-                                                                                                                        Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'import',
-                                                                                                                        Package.properties[children] : [],
-                                                                                                                        Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel]
-                                                                                                                    }
-                                                                                                                ],
-                                                                                Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure]
-                                                                            },
-                                                                            ^Package functions
-                                                                            {
-                                                                                Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'functions',
-                                                                                Package.properties[children] :
-                                                                                                        [
-                                                                                                            ^Package lang
-                                                                                                            {
-                                                                                                                Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'lang',
-                                                                                                                Package.properties[children] : [],
-                                                                                                                Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[functions]
-                                                                                                            }
-                                                                                                        ],
-                                                                                Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure]
-                                                                            },
-                                                                            ^Package tools
-                                                                            {
-                                                                                Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'tools',
-                                                                                Package.properties[children] : [],
-                                                                                Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure]
-                                                                            },
-                                                                            ^Package router
-                                                                            {
-                                                                                Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'router',
-                                                                                Package.properties[children] : [],
-                                                                                Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure]
-                                                                            },
-                                                                            ^Package test
-                                                                            {
-                                                                                Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'test',
-                                                                                Package.properties[children] : [],
-                                                                                Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure]
-                                                                            }],
-                                            Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta]
-                                        }
-                                    ]
-                                    ,
-                                    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root
-            }
-            ,
-            ^Package system
-            {
-                Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'system',
-                Package.properties[children] :
-                [
-                    ^Package imports
-                    {
-                        Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'imports',
-                        Package.properties[children] : [],
-                        Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[system]
-                    }
-                ],
-                Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root
-            }
-    ]
+    Package.properties[children] : []
+}
+
+^Package meta @Root.children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'meta',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root
+}
+
+^Package system @Root.children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'system',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root
+}
+
+^Package pure @Root.children[meta].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'pure',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta]
+}
+
+^Package metamodel @Root.children[meta].children[pure].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'metamodel',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure]
+}
+
+^Package functions @Root.children[meta].children[pure].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'functions',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure]
+}
+
+^Package tools @Root.children[meta].children[pure].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'tools',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure]
+}
+
+^Package router @Root.children[meta].children[pure].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'router',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure]
+}
+
+^Package test @Root.children[meta].children[pure].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'test',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure]
+}
+
+^Package type @Root.children[meta].children[pure].children[metamodel].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'type',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel]
+}
+
+^Package treepath @Root.children[meta].children[pure].children[metamodel].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'treepath',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel]
+}
+
+^Package constraint @Root.children[meta].children[pure].children[metamodel].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'constraint',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel]
+}
+
+^Package function @Root.children[meta].children[pure].children[metamodel].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'function',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel]
+}
+
+^Package relation @Root.children[meta].children[pure].children[metamodel].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'relation',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel]
+}
+
+^Package relationship @Root.children[meta].children[pure].children[metamodel].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'relationship',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel]
+}
+
+^Package valuespecification @Root.children[meta].children[pure].children[metamodel].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'valuespecification',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel]
+}
+
+^Package multiplicity @Root.children[meta].children[pure].children[metamodel].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'multiplicity',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel]
+}
+
+^Package extension @Root.children[meta].children[pure].children[metamodel].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'extension',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel]
+}
+
+^Package import @Root.children[meta].children[pure].children[metamodel].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'import',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel]
+}
+
+^Package lang @Root.children[meta].children[pure].children[functions].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'lang',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[functions]
+}
+
+^Package generics @Root.children[meta].children[pure].children[metamodel].children[type].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'generics',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel].children[type]
+}
+
+^Package property @Root.children[meta].children[pure].children[metamodel].children[function].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'property',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel].children[function]
+}
+
+^Package imports @Root.children[system].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'imports',
+    Package.properties[children] : [],
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[system]
 }
 
 ^Root.children[meta].children[pure].children[metamodel].children[import].children[ImportGroup] coreImport @Root.children[system].children[imports].children
