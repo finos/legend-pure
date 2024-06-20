@@ -14,11 +14,10 @@
 
 package org.finos.legend.pure.m3.pct.aggregate.model;
 
-import org.eclipse.collections.api.factory.Maps;
-
-import java.util.Map;
+import org.eclipse.collections.api.multimap.MutableMultimap;
+import org.eclipse.collections.impl.factory.Multimaps;
 
 public class Documentation
 {
-    public Map<String, FunctionDocumentation> documentationByName = Maps.mutable.empty();
+    public MutableMultimap<String, FunctionDocumentation> documentationByName = Multimaps.mutable.list.empty();
 }
