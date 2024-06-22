@@ -90,7 +90,6 @@ public class _RelationType
             throw new PureCompilationException("The relation contains duplicates: " + Sets.mutable.withAll(duplicates));
         }
 
-
         // Ensure T is set to parent
         GenericType classifierGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(pureSourceInformation, M3Paths.GenericType);
         classifierGenericType._rawType((Type) _Package.getByUserPath(M3Paths.RelationType, processorSupport));
@@ -206,7 +205,7 @@ public class _RelationType
                             GenericType a = _Column.getColumnType(c.getOne());
                             GenericType b = _Column.getColumnType(c.getTwo());
                             GenericType merged = a._rawType() == null ? b : b._rawType() == null ? a : (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(Lists.mutable.with(a, b), isCovariant, false, genericTypeCopy.getSourceInformation(), processorSupport);
-                            return _Column.getColumnInstance(cName, wildcard, res, merged, null, processorSupport);
+                            return _Column.getColumnInstance(cName, wildcard, merged, null, processorSupport);
                         }),
                         existingGenericType.getValueForMetaPropertyToOne(M3Properties.rawType).getSourceInformation(),
                         processorSupport

@@ -388,7 +388,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             }
             else
             {
-                ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(1).getValueForMetaPropertyToOne("genericType"), (GenericType) processorSupport.type_wrapGenericType(_RelationType.build(found.collect(foundC -> _Column.getColumnInstance(foundC._name(), false, null, _Column.getColumnType(foundC), null, processorSupport)), null, processorSupport)), ctx, observer);
+                ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(1).getValueForMetaPropertyToOne("genericType"), (GenericType) processorSupport.type_wrapGenericType(_RelationType.build(found.collect(foundC -> _Column.getColumnInstance(foundC._name(), false, _Column.getColumnType(foundC), functionExpression.getSourceInformation(), processorSupport)), null, processorSupport)), ctx, observer);
                 columnTypeInferenceSuccess = true;
             }
         }
@@ -445,7 +445,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             }
             else
             {
-                ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(1).getValueForMetaPropertyToOne("genericType"), (GenericType) processorSupport.type_wrapGenericType(_RelationType.build(found.collect(foundC -> _Column.getColumnInstance(foundC._name(), false, null, _Column.getColumnType(foundC), null, processorSupport)), null, processorSupport)), ctx, observer);
+                ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(1).getValueForMetaPropertyToOne("genericType"), (GenericType) processorSupport.type_wrapGenericType(_RelationType.build(found.collect(foundC -> _Column.getColumnInstance(foundC._name(), false, _Column.getColumnType(foundC), functionExpression.getSourceInformation(), processorSupport)), null, processorSupport)), ctx, observer);
                 columnTypeInferenceSuccess = true;
             }
         }
@@ -832,7 +832,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
     public static boolean isColumnWithEmptyTypeGenericType(CoreInstance genericType, ProcessorSupport processorSupport)
     {
         CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, "rawType", processorSupport);
-        if (rawType != null && processorSupport.instance_instanceOf(rawType, "meta::pure::metamodel::relation::RelationType"))
+        if (rawType != null && processorSupport.instance_instanceOf(rawType, M3Paths.RelationType))
         {
             return rawType.getValueForMetaPropertyToMany("columns").injectInto(true, (a, c) -> a && c.getValueForMetaPropertyToOne("classifierGenericType").getValueForMetaPropertyToMany("typeArguments").get(1).getValueForMetaPropertyToOne("rawType") == null);
         }
