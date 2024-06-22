@@ -2692,7 +2692,7 @@ public class AntlrContextToM3CoreInstance
 
                 if (complexConstraintContext.constraintExternalId() != null)
                 {
-                    constraintExternalId = this.removeQuotes(complexConstraintContext.constraintExternalId().STRING());
+                    constraintExternalId = StringEscape.unescape(removeQuotes(complexConstraintContext.constraintExternalId().STRING()));
                 }
 
                 constraintFunctionDefinition = this.combinedExpression(complexConstraintContext.constraintFunction().combinedExpression(), "", Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, "", true, importId, addLines);

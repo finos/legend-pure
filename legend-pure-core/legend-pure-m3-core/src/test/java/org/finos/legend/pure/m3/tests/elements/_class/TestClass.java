@@ -14,14 +14,14 @@
 
 package org.finos.legend.pure.m3.tests.elements._class;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation._class._Class;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestClass extends AbstractPureTestWithCoreCompiledPlatform
+public class TestClass extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
@@ -33,6 +33,7 @@ public class TestClass extends AbstractPureTestWithCoreCompiledPlatform
     public void cleanRuntime()
     {
         runtime.delete("fromString.pure");
+        runtime.compile();
     }
 
     @Test
@@ -213,7 +214,7 @@ public class TestClass extends AbstractPureTestWithCoreCompiledPlatform
                 "                            propertyName(Property):\n" +
                 "                                typeArguments instance String\n" +
                 "            propertyName(Property):\n" +
-                "                rawType instance String", this.runtime.getCoreInstance("Table").printWithoutDebug("", 3));
+                "                rawType instance String", runtime.getCoreInstance("Table").printWithoutDebug("", 3));
 
         Assert.assertEquals("Column instance Class\n" +
                 "    classifierGenericType(Property):\n" +
@@ -292,7 +293,7 @@ public class TestClass extends AbstractPureTestWithCoreCompiledPlatform
                 "                        Anonymous_StripedId instance ReferenceUsage\n" +
                 "                            [... >2]\n" +
                 "            propertyName(Property):\n" +
-                "                rawType instance String", this.runtime.getCoreInstance("Column").printWithoutDebug("", 2));
+                "                rawType instance String", runtime.getCoreInstance("Column").printWithoutDebug("", 2));
     }
 
     @Test
@@ -330,7 +331,7 @@ public class TestClass extends AbstractPureTestWithCoreCompiledPlatform
                 "                Test instance String\n" +
                 "        Anonymous_StripedId instance Column\n" +
                 "    name(Property):\n" +
-                "        Hello instance String", this.runtime.getCoreInstance("instance").printWithoutDebug(""));
+                "        Hello instance String", runtime.getCoreInstance("instance").printWithoutDebug(""));
     }
 
     @Test
