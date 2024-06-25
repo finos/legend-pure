@@ -1,4 +1,4 @@
-// Copyright 2021 Goldman Sachs
+// Copyright 2024 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m3.tests;
+package org.finos.legend.pure.m2.inlinedsl.graph;
 
+import org.finos.legend.pure.m3.tests.AbstractCompiledStateIntegrityTest;
 import org.junit.BeforeClass;
 
-
-public class TestM3CoreCompiledStateIntegrity extends AbstractCompiledStateIntegrityTest
+public class TestM2GraphCompiledStateIntegrity extends AbstractCompiledStateIntegrityTest
 {
     @BeforeClass
     public static void initialize()
     {
-        initialize("platform");
+        initialize("platform_dsl_graph");
     }
 }

@@ -28,7 +28,6 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.api.tuple.primitive.ObjectIntPair;
-import org.eclipse.collections.impl.test.Verify;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.eclipse.collections.impl.tuple.primitive.PrimitiveTuples;
 import org.eclipse.collections.impl.utility.Iterate;
@@ -48,7 +47,12 @@ import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.type.Type;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositorySet;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.serialization.runtime.PrintPureRuntimeStatus;
@@ -90,8 +94,19 @@ public abstract class AbstractCompiledStateIntegrityTest
         initialize(codeStorage);
     }
 
+    protected static void initialize(String... repositories)
+    {
+        CodeRepositorySet repos = CodeRepositorySet.newBuilder()
+                .withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories())
+                .build()
+                .subset(repositories);
+        initialize(new CompositeCodeStorage(new ClassLoaderCodeStorage(repos.getRepositories())));
+    }
+
     protected static void initialize(MutableRepositoryCodeStorage codeStorage)
     {
+        System.out.println(codeStorage.getAllRepositories().collect(CodeRepository::getName, Lists.mutable.empty()).sortThis().makeString("Repositories: ", ", ", ""));
+
         runtime = new PureRuntimeBuilder(codeStorage)
                 .withRuntimeStatus(new PrintPureRuntimeStatus(System.out))
                 .setTransactionalByDefault(false)
@@ -137,14 +152,12 @@ public abstract class AbstractCompiledStateIntegrityTest
         MutableSet<String> topLevelNames = repository.getTopLevels().collect(CoreInstance::getName, Sets.mutable.empty());
         MutableSet<String> expectedTopLevelNames = _Package.SPECIAL_TYPES.toSet().with(M3Paths.Root);
 
-        Assert.assertEquals(repository.getTopLevels().size(), topLevelNames.size());
-        Verify.assertSetsEqual(expectedTopLevelNames, topLevelNames);
+        Assert.assertEquals(expectedTopLevelNames.toSortedList(), topLevelNames.toSortedList());
 
         repository.getTopLevels().forEach(topLevel ->
         {
             SourceInformation sourceInfo = topLevel.getSourceInformation();
             Assert.assertNotNull("Null source information for " + topLevel.getName(), sourceInfo);
-
             Assert.assertEquals("Source information for " + topLevel.getName() + " not in m3.pure", "/platform/pure/grammar/m3.pure", sourceInfo.getSourceId());
         });
     }
@@ -526,7 +539,7 @@ public abstract class AbstractCompiledStateIntegrityTest
         });
 
         // Check for annotations that aren't really annotations
-        Verify.assertEmpty(expectedModelElements.keysView().reject(actualModelElements::containsKey, Lists.mutable.empty()));
+        Assert.assertEquals(Lists.fixedSize.empty(), expectedModelElements.keysView().reject(actualModelElements::containsKey, Lists.mutable.empty()));
 
         // Check for missing and extra elements
         MutableMap<CoreInstance, SetIterable<CoreInstance>> annotationsWithMissingModelElements = Maps.mutable.empty();
@@ -857,7 +870,7 @@ public abstract class AbstractCompiledStateIntegrityTest
             }
         });
 
-        Verify.assertMapsEqual(expected, actual);
+        Assert.assertEquals(expected, actual);
     }
 
     @Test
@@ -1053,7 +1066,7 @@ public abstract class AbstractCompiledStateIntegrityTest
                     }
                 });
 
-        Verify.assertMapsEqual(expected, actual);
+        Assert.assertEquals(expected, actual);
     }
 
     @Test
