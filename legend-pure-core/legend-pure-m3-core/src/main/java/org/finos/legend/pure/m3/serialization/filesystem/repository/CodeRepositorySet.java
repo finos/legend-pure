@@ -17,9 +17,11 @@ package org.finos.legend.pure.m3.serialization.filesystem.repository;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.eclipse.collections.impl.utility.Iterate;
@@ -107,8 +109,7 @@ public class CodeRepositorySet
     /**
      * Return the minimal subset of this CodeRepositorySet which contains all the selected repositories and is closed
      * under repository visibility. That is, it is guaranteed to include all the selected repositories as well as all
-     * repositories from the original set which are visible to any repository in the subset. The platform repository
-     * will always be included in the subset, even if the set of selected repositories is empty.
+     * repositories from the original set which are visible to any repository in the subset.
      *
      * @param selectedRepositories names of repositories to include in the subset
      * @return subset with selected repositories
@@ -121,8 +122,7 @@ public class CodeRepositorySet
     /**
      * Return the minimal subset of this CodeRepositorySet which contains all the selected repositories and is closed
      * under repository visibility. That is, it is guaranteed to include all the selected repositories as well as all
-     * repositories from the original set which are visible to any repository in the subset. The platform repository
-     * will always be included in the subset, even if the set of selected repositories is empty.
+     * repositories from the original set which are visible to any repository in the subset.
      *
      * @param selectedRepositories names of repositories to include in the subset
      * @return subset with selected repositories
@@ -151,10 +151,20 @@ public class CodeRepositorySet
 
     public static Builder newBuilder()
     {
-        return new Builder();
+        return builder();
     }
 
     public static Builder newBuilder(CodeRepositorySet manager)
+    {
+        return builder(manager);
+    }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
+    public static Builder builder(CodeRepositorySet manager)
     {
         return new Builder(manager);
     }
@@ -195,10 +205,6 @@ public class CodeRepositorySet
 
         public void removeCodeRepository(String repositoryName)
         {
-            if ("platform".equals(repositoryName))
-            {
-                throw new IllegalArgumentException("The code repository " + "platform" + " may not be removed");
-            }
             this.repositories.removeKey(repositoryName);
         }
 
@@ -245,6 +251,80 @@ public class CodeRepositorySet
         public Builder withoutCodeRepositories(String... repositoryNames)
         {
             removeCodeRepositories(repositoryNames);
+            return this;
+        }
+
+        /**
+         * Find the minimal subset of which contains all the selected repositories and is closed under repository
+         * dependency and visibility. That is, it is guaranteed to include all the selected repositories as well as all
+         * repositories which are visible to or a dependency of any repository in the subset. If a dependency is missing
+         * that prevents computation of the subset, the builder will not be modified and an IllegalStateException will
+         * be thrown.
+         *
+         * @param selectedRepositories names of repositories to include in the subset
+         * @return this builder
+         * @throws IllegalArgumentException if any of the selected repositories is not found
+         * @throws IllegalStateException if the subset cannot be computed because of a missing dependency
+         */
+        public Builder subset(String... selectedRepositories)
+        {
+            return subset(ArrayAdapter.adapt(selectedRepositories));
+        }
+
+        /**
+         * Find the minimal subset of which contains all the selected repositories and is closed under repository
+         * dependency and visibility. That is, it is guaranteed to include all the selected repositories as well as all
+         * repositories which are visible to or a dependency of any repository in the subset. If a dependency is missing
+         * that prevents computation of the subset, the builder will not be modified and an IllegalStateException will
+         * be thrown.
+         *
+         * @param selectedRepositories names of repositories to include in the subset
+         * @return this builder
+         * @throws IllegalArgumentException if any of the selected repositories is not found
+         * @throws IllegalStateException if the subset cannot be computed because of a missing dependency
+         */
+        public Builder subset(Iterable<? extends String> selectedRepositories)
+        {
+            Deque<CodeRepository> deque = new ArrayDeque<>();
+            selectedRepositories.forEach(repoName ->
+            {
+                CodeRepository repo = this.repositories.get(repoName);
+                if (repo == null)
+                {
+                    throw new IllegalArgumentException("The code repository '" + repoName + "' can't be found!");
+                }
+                deque.add(repo);
+            });
+
+            MutableSet<String> selected = Sets.mutable.empty();
+            while (!deque.isEmpty())
+            {
+                CodeRepository repository = deque.removeLast();
+                if (selected.add(repository.getName()))
+                {
+                    if (repository instanceof GenericCodeRepository)
+                    {
+                        ((GenericCodeRepository) repository).getDependencies().forEach(depName ->
+                        {
+                            if (!selected.contains(depName))
+                            {
+                                CodeRepository repo = this.repositories.get(depName);
+                                if (repo == null)
+                                {
+                                    throw new IllegalStateException("Cannot compute subset because dependency '" + depName + "' is missing for '" + repository.getName() + "'");
+                                }
+                                deque.add(repo);
+                            }
+                        });
+                    }
+                    else
+                    {
+                        this.repositories.select(r -> !selected.contains(r.getName()) && repository.isVisible(r), deque);
+                    }
+                }
+            }
+
+            this.repositories.removeIf((name, repo) -> !selected.contains(name));
             return this;
         }
 

@@ -14,39 +14,28 @@
 
 package org.finos.legend.pure.m3.serialization.filesystem.repository;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.list.ImmutableList;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class TestCodeRepositorySet
 {
     @Test
-    public void testBaseRepositories()
-    {
-        CodeRepositorySet set = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findPlatformCodeRepository()).build();
-        Assert.assertEquals(1, set.size());
-        Assert.assertEquals("platform", set.getRepositories().getAny().getName());
-        Assert.assertTrue(set.getRepository("platform") instanceof GenericCodeRepository);
-
-        IllegalArgumentException e = Assert.assertThrows(IllegalArgumentException.class, () -> CodeRepositorySet.newBuilder().withoutCodeRepository("platform"));
-        Assert.assertEquals("The code repository platform may not be removed", e.getMessage());
-    }
-
-    @Test
     public void testBuilder()
     {
         GenericCodeRepository testRepoA = new GenericCodeRepository("test_repo_a", "test::a::.*", "platform");
         GenericCodeRepository testRepoB = new GenericCodeRepository("test_repo_b", "test::b::.*", "platform", "test_repo_a");
         GenericCodeRepository badDependenciesRepo = new GenericCodeRepository("test_repo_bad_deps", "test3::.*", "platform", "non_existent");
-        CodeRepositorySet set1 = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findPlatformCodeRepository()).withCodeRepositories(testRepoA, testRepoB).build();
+        CodeRepositorySet set1 = CodeRepositorySet.builder().withCodeRepositories(CodeRepositoryProviderHelper.findPlatformCodeRepository(), testRepoA, testRepoB).build();
         Assert.assertEquals(3, set1.size());
         Assert.assertEquals(Sets.fixedSize.with("platform", "test_repo_a", "test_repo_b"), set1.getRepositories().collect(CodeRepository::getName, Sets.mutable.empty()));
         Assert.assertSame(testRepoA, set1.getRepository("test_repo_a"));
         Assert.assertSame(testRepoB, set1.getRepository("test_repo_b"));
 
-        CodeRepositorySet set2 = CodeRepositorySet.newBuilder()
-                .withCodeRepositories(CodeRepositoryProviderHelper.findPlatformCodeRepository())
-                .withCodeRepositories(testRepoA, testRepoB, badDependenciesRepo)
+        CodeRepositorySet set2 = CodeRepositorySet.builder()
+                .withCodeRepositories(CodeRepositoryProviderHelper.findPlatformCodeRepository(), testRepoA, testRepoB, badDependenciesRepo)
                 .withoutCodeRepository("test_repo_bad_deps")
                 .build();
         Assert.assertEquals(3, set2.size());
@@ -66,11 +55,12 @@ public class TestCodeRepositorySet
         GenericCodeRepository testRepoA2 = new GenericCodeRepository("test_repo_a", "test::a::.*", "platform");
 
         // Try to add with name conflict with platform
-        IllegalStateException e1 = Assert.assertThrows(IllegalStateException.class, () -> CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories()).withCodeRepositories(testRepoA, testRepoB, fakePlatformRepo));
+        IllegalStateException e1 = Assert.assertThrows(IllegalStateException.class, () -> CodeRepositorySet.builder()
+                .withCodeRepositories(CodeRepositoryProviderHelper.findPlatformCodeRepository(), testRepoA, testRepoB, fakePlatformRepo));
         Assert.assertEquals("The code repository platform already exists!", e1.getMessage());
 
         // Try to add with name conflict among new repos
-        IllegalStateException e2 = Assert.assertThrows(IllegalStateException.class, () -> CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories()).withCodeRepositories(testRepoA, testRepoB, testRepoA2));
+        IllegalStateException e2 = Assert.assertThrows(IllegalStateException.class, () -> CodeRepositorySet.builder().withCodeRepositories(testRepoA, testRepoB, testRepoA2));
         Assert.assertEquals("The code repository test_repo_a already exists!", e2.getMessage());
     }
 
@@ -81,7 +71,7 @@ public class TestCodeRepositorySet
         GenericCodeRepository testRepoB = new GenericCodeRepository("test_repo_b", "test::b::.*", "platform", "test_repo_a");
         GenericCodeRepository badDependenciesRepo = new GenericCodeRepository("test_repo_bad_deps", "test3::.*", "platform", "non_existent");
 
-        CodeRepositorySet.Builder builder = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories()).withCodeRepositories(testRepoA, testRepoB, badDependenciesRepo);
+        CodeRepositorySet.Builder builder = CodeRepositorySet.builder().withCodeRepositories(CodeRepositoryProviderHelper.findPlatformCodeRepository(), testRepoA, testRepoB, badDependenciesRepo);
         IllegalStateException e = Assert.assertThrows(IllegalStateException.class, builder::build);
         Assert.assertEquals("The dependency 'non_existent' required by the Code Repository 'test_repo_bad_deps' can't be found!", e.getMessage());
     }
@@ -93,13 +83,13 @@ public class TestCodeRepositorySet
         GenericCodeRepository testRepoB = new GenericCodeRepository("test_repo_b", "test::b::.*", "platform", "test_repo_a");
         GenericCodeRepository testRepoC = new GenericCodeRepository("test_repo_c", "test::c::.*", "platform", "test_repo_b");
 
-        CodeRepositorySet set1 = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findPlatformCodeRepository()).withCodeRepositories(testRepoA, testRepoB).build();
+        CodeRepositorySet set1 = CodeRepositorySet.builder().withCodeRepositories(CodeRepositoryProviderHelper.findPlatformCodeRepository(), testRepoA, testRepoB).build();
         Assert.assertEquals(3, set1.size());
         Assert.assertEquals(Sets.fixedSize.with("platform", "test_repo_a", "test_repo_b"), set1.getRepositories().collect(CodeRepository::getName, Sets.mutable.empty()));
         Assert.assertSame(testRepoA, set1.getRepository("test_repo_a"));
         Assert.assertSame(testRepoB, set1.getRepository("test_repo_b"));
 
-        CodeRepositorySet set2 = CodeRepositorySet.newBuilder(set1).withCodeRepository(testRepoC).build();
+        CodeRepositorySet set2 = CodeRepositorySet.builder(set1).withCodeRepository(testRepoC).build();
         Assert.assertEquals(4, set2.size());
         Assert.assertEquals(Sets.fixedSize.with("platform", "test_repo_a", "test_repo_b", "test_repo_c"), set2.getRepositories().collect(CodeRepository::getName, Sets.mutable.empty()));
         Assert.assertSame(testRepoA, set2.getRepository("test_repo_a"));
@@ -113,7 +103,7 @@ public class TestCodeRepositorySet
     {
         GenericCodeRepository testRepoA = new GenericCodeRepository("test_repo_a", "test::a::.*", "platform");
         GenericCodeRepository testRepoB = new GenericCodeRepository("test_repo_b", "test::b::.*", "platform", "test_repo_a");
-        CodeRepositorySet set = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories()).withCodeRepositories(testRepoA, testRepoB).build();
+        CodeRepositorySet set = CodeRepositorySet.builder().withCodeRepositories(CodeRepositoryProviderHelper.findPlatformCodeRepository(), testRepoA, testRepoB).build();
 
         Assert.assertSame(testRepoA, set.getRepository("test_repo_a"));
         Assert.assertSame(testRepoB, set.getRepository("test_repo_b"));
@@ -128,7 +118,7 @@ public class TestCodeRepositorySet
     {
         GenericCodeRepository testRepoA = new GenericCodeRepository("test_repo_a", "test::a::.*", "platform");
         GenericCodeRepository testRepoB = new GenericCodeRepository("test_repo_b", "test::b::.*", "platform", "test_repo_a");
-        CodeRepositorySet set = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories()).withCodeRepositories(testRepoA, testRepoB).build();
+        CodeRepositorySet set = CodeRepositorySet.builder().withCodeRepositories(CodeRepositoryProviderHelper.findPlatformCodeRepository(), testRepoA, testRepoB).build();
         Assert.assertTrue(set.hasRepository("platform"));
         Assert.assertTrue(set.hasRepository("test_repo_a"));
         Assert.assertTrue(set.hasRepository("test_repo_b"));
@@ -138,11 +128,12 @@ public class TestCodeRepositorySet
     @Test
     public void testSubset()
     {
+        CodeRepository platform = CodeRepositoryProviderHelper.findPlatformCodeRepository();
         GenericCodeRepository testRepoA = new GenericCodeRepository("test_repo_a", "test::a::.*", "platform");
         GenericCodeRepository testRepoB = new GenericCodeRepository("test_repo_b", "test::b::.*", "platform", "test_repo_a");
         GenericCodeRepository testRepoC = new GenericCodeRepository("test_repo_c", "test::c::.*", "platform", "test_repo_b");
 
-        CodeRepositorySet set = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findPlatformCodeRepository()).withCodeRepositories(testRepoA, testRepoB, testRepoC).build();
+        CodeRepositorySet set = CodeRepositorySet.builder().withCodeRepositories(platform, testRepoA, testRepoB, testRepoC).build();
         Assert.assertEquals(4, set.size());
         Assert.assertEquals(Sets.fixedSize.with("platform", "test_repo_a", "test_repo_b", "test_repo_c"), set.getRepositories().collect(CodeRepository::getName, Sets.mutable.empty()));
         Assert.assertSame(testRepoA, set.getRepository("test_repo_a"));
@@ -158,15 +149,65 @@ public class TestCodeRepositorySet
         Assert.assertSame(set, set.subset("test_repo_c"));
 
         // Minimal subset
-        Assert.assertEquals(CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findPlatformCodeRepository()).build(), set.subset());
-        Assert.assertEquals(CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findPlatformCodeRepository()).build(), set.subset("platform"));
+        Assert.assertEquals(CodeRepositorySet.builder().withCodeRepositories(platform).build(), set.subset());
+        Assert.assertEquals(CodeRepositorySet.builder().withCodeRepositories(platform).build(), set.subset("platform"));
 
         // In between
-        Assert.assertEquals(CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findPlatformCodeRepository()).withCodeRepositories(testRepoA, testRepoB).build(), set.subset("platform", "test_repo_a", "test_repo_b"));
-        Assert.assertEquals(CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findPlatformCodeRepository()).withCodeRepositories(testRepoA, testRepoB).build(), set.subset("test_repo_a", "test_repo_b"));
-        Assert.assertEquals(CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findPlatformCodeRepository()).withCodeRepositories(testRepoA, testRepoB).build(), set.subset("test_repo_b"));
+        Assert.assertEquals(CodeRepositorySet.builder().withCodeRepositories(platform, testRepoA, testRepoB).build(), set.subset("platform", "test_repo_a", "test_repo_b"));
+        Assert.assertEquals(CodeRepositorySet.builder().withCodeRepositories(platform, testRepoA, testRepoB).build(), set.subset("test_repo_a", "test_repo_b"));
+        Assert.assertEquals(CodeRepositorySet.builder().withCodeRepositories(platform, testRepoA, testRepoB).build(), set.subset("test_repo_b"));
 
-        Assert.assertEquals(CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findPlatformCodeRepository()).withCodeRepositories(testRepoA).build(), set.subset("platform", "test_repo_a"));
-        Assert.assertEquals(CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findPlatformCodeRepository()).withCodeRepositories(testRepoA).build(), set.subset("test_repo_a"));
+        Assert.assertEquals(CodeRepositorySet.builder().withCodeRepositories(platform, testRepoA).build(), set.subset("platform", "test_repo_a"));
+        Assert.assertEquals(CodeRepositorySet.builder().withCodeRepositories(platform, testRepoA).build(), set.subset("test_repo_a"));
+    }
+
+    @Test
+    public void testBuilderSubset()
+    {
+        CodeRepository platform = CodeRepositoryProviderHelper.findPlatformCodeRepository();
+        GenericCodeRepository testRepoA = new GenericCodeRepository("test_repo_a", "test::a::.*", "platform");
+        GenericCodeRepository testRepoB = new GenericCodeRepository("test_repo_b", "test::b::.*", "platform", "test_repo_a");
+        GenericCodeRepository testRepoC = new GenericCodeRepository("test_repo_c", "test::c::.*", "platform", "test_repo_b");
+        ImmutableList<CodeRepository> allRepos = Lists.immutable.with(platform, testRepoA, testRepoB, testRepoC);
+
+        CodeRepositorySet set = CodeRepositorySet.builder().withCodeRepositories(allRepos).build();
+        Assert.assertEquals(4, set.size());
+        Assert.assertEquals(Sets.fixedSize.with("platform", "test_repo_a", "test_repo_b", "test_repo_c"), set.getRepositories().collect(CodeRepository::getName, Sets.mutable.empty()));
+        Assert.assertSame(testRepoA, set.getRepository("test_repo_a"));
+        Assert.assertSame(testRepoB, set.getRepository("test_repo_b"));
+        Assert.assertSame(testRepoC, set.getRepository("test_repo_c"));
+
+        // Full subset
+        Assert.assertEquals(set, CodeRepositorySet.builder().withCodeRepositories(allRepos).subset(set.getRepositoryNames()).build());
+        Assert.assertEquals(set, CodeRepositorySet.builder().withCodeRepositories(allRepos).subset("platform", "test_repo_a", "test_repo_b", "test_repo_c").build());
+        Assert.assertEquals(set, CodeRepositorySet.builder().withCodeRepositories(allRepos).subset("test_repo_a", "test_repo_b", "test_repo_c").build());
+        Assert.assertEquals(set, CodeRepositorySet.builder().withCodeRepositories(allRepos).subset("test_repo_a", "test_repo_c").build());
+        Assert.assertEquals(set, CodeRepositorySet.builder().withCodeRepositories(allRepos).subset("test_repo_b", "test_repo_c").build());
+        Assert.assertEquals(set, CodeRepositorySet.builder().withCodeRepositories(allRepos).subset("test_repo_c").build());
+
+        // Minimal subset
+        Assert.assertEquals(CodeRepositorySet.builder().build(), CodeRepositorySet.builder().withCodeRepositories(allRepos).subset().build());
+
+        // In between
+        Assert.assertEquals(CodeRepositorySet.builder().withCodeRepositories(platform, testRepoA, testRepoB).build(), CodeRepositorySet.builder().withCodeRepositories(allRepos).subset("platform", "test_repo_a", "test_repo_b").build());
+        Assert.assertEquals(CodeRepositorySet.builder().withCodeRepositories(platform, testRepoA, testRepoB).build(), CodeRepositorySet.builder().withCodeRepositories(allRepos).subset("test_repo_a", "test_repo_b").build());
+        Assert.assertEquals(CodeRepositorySet.builder().withCodeRepositories(platform, testRepoA, testRepoB).build(), CodeRepositorySet.builder().withCodeRepositories(allRepos).subset("test_repo_b").build());
+
+        Assert.assertEquals(CodeRepositorySet.builder().withCodeRepositories(platform, testRepoA).build(), CodeRepositorySet.builder().withCodeRepositories(allRepos).subset("platform", "test_repo_a").build());
+        Assert.assertEquals(CodeRepositorySet.builder().withCodeRepositories(platform, testRepoA).build(), CodeRepositorySet.builder().withCodeRepositories(allRepos).subset("test_repo_a").build());
+
+        // Unrelated dependency missing
+        // First, assert that {platform, A, C} is invalid
+        IllegalStateException e0 = Assert.assertThrows(IllegalStateException.class, CodeRepositorySet.builder().withCodeRepositories(platform, testRepoA, testRepoC)::build);
+        Assert.assertEquals("The dependency 'test_repo_b' required by the Code Repository 'test_repo_c' can't be found!", e0.getMessage());
+        // Then assert that taking the subset from A is valid
+        Assert.assertEquals(CodeRepositorySet.builder().withCodeRepositories(platform, testRepoA).build(), CodeRepositorySet.builder().withCodeRepositories(platform, testRepoA, testRepoC).subset("test_repo_a").build());
+
+        // Invalid
+        IllegalArgumentException e1 = Assert.assertThrows(IllegalArgumentException.class, () -> CodeRepositorySet.builder().withCodeRepositories(allRepos).subset("unknown_repo"));
+        Assert.assertEquals("The code repository 'unknown_repo' can't be found!", e1.getMessage());
+
+        IllegalStateException e2 = Assert.assertThrows(IllegalStateException.class, () -> CodeRepositorySet.builder().withCodeRepositories(platform, testRepoB, testRepoC).subset("test_repo_c"));
+        Assert.assertEquals("Cannot compute subset because dependency 'test_repo_a' is missing for 'test_repo_b'", e2.getMessage());
     }
 }

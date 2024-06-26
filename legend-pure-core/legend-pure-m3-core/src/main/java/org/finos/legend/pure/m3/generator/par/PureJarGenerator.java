@@ -90,7 +90,7 @@ public class PureJarGenerator
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         RichIterable<CodeRepository> cpRepositories = CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true);
         log.info("  Found repositories (in the classpath): " + cpRepositories.collect(CodeRepository::getName).makeString("[", ",", "]"));
-        CodeRepositorySet.Builder builder = CodeRepositorySet.newBuilder().withCodeRepositories(cpRepositories);
+        CodeRepositorySet.Builder builder = CodeRepositorySet.builder().withCodeRepositories(cpRepositories);
         if (extraRepositories != null)
         {
             extraRepositories.forEach(r -> builder.addCodeRepository(getExtraRepository(classLoader, r)));
@@ -99,8 +99,11 @@ public class PureJarGenerator
         {
             builder.withoutCodeRepositories(excludedRepositories);
         }
-        CodeRepositorySet newRepositories = builder.build();
-        return ((repositories == null) || repositories.isEmpty()) ? newRepositories : newRepositories.subset(repositories);
+        if ((repositories != null) && !repositories.isEmpty())
+        {
+            builder.subset(repositories);
+        }
+        return builder.build();
     }
 
     private static GenericCodeRepository getExtraRepository(ClassLoader classLoader, String extraRepository)
