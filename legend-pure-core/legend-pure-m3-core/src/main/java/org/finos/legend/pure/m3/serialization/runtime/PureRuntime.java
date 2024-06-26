@@ -925,7 +925,7 @@ public class PureRuntime
         }
         MutableRepositoryCodeStorage codeStorage = getCodeStorage();
         CodeRepository repo = codeStorage.getRepositoryForPath(path);
-        boolean immutable = this.forceImmutable || (repo != null && repo.getName() != null && repo.getName().startsWith("platform")); // TODO do something smarter here
+        boolean immutable = this.forceImmutable || (repo != null && repo.getName() != null && (repo.getName().startsWith("platform") || repo.getName().startsWith("core_functions"))); // TODO do something smarter here
         if (Source.isInMemory(path))
         {
             throw new RuntimeException("'" + path + "' should not be in memory!");

@@ -186,14 +186,6 @@ public abstract class AbstractPureTestWithCoreCompiled
 
     public static void setUpRuntime(FunctionExecution execution, MutableRepositoryCodeStorage codeStorage, CoreInstanceFactoryRegistry registry, RuntimeOptions options, Pair<String, String> extra, boolean loadFromCache)
     {
-        codeRepositories = codeStorage.getAllRepositories();
-        functionExecution = execution;
-        runtime = new PureRuntimeBuilder(codeStorage)
-                .withRuntimeStatus(getPureRuntimeStatus())
-                .withFactoryRegistryOverride(registry)
-                .setTransactionalByDefault(isTransactionalByDefault())
-                .withOptions(options)
-                .build();
         Message message = new Message("")
         {
             @Override
@@ -202,6 +194,16 @@ public abstract class AbstractPureTestWithCoreCompiled
 //                System.out.println(message);
             }
         };
+
+        codeRepositories = codeStorage.getAllRepositories();
+        functionExecution = execution;
+        runtime = new PureRuntimeBuilder(codeStorage)
+                .withRuntimeStatus(getPureRuntimeStatus())
+                .withFactoryRegistryOverride(registry)
+                .setTransactionalByDefault(isTransactionalByDefault())
+                .withOptions(options)
+                .withMessage(message)
+                .build();
 
         functionExecution.init(runtime, message);
 
@@ -213,10 +215,10 @@ public abstract class AbstractPureTestWithCoreCompiled
         }
         else
         {
-            runtime.loadAndCompileCore();
+            runtime.loadAndCompileCore(message);
         }
 
-        runtime.loadAndCompileSystem();
+        runtime.loadAndCompileSystem(message);
         if (extra != null)
         {
             runtime.createInMemoryAndCompile(Lists.immutable.with(extra));
