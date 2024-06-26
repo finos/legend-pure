@@ -98,8 +98,8 @@ public abstract class AbstractCompiledStateIntegrityTest
     {
         CodeRepositorySet repos = CodeRepositorySet.newBuilder()
                 .withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories())
-                .build()
-                .subset(repositories);
+                .subset(repositories)
+                .build();
         initialize(new CompositeCodeStorage(new ClassLoaderCodeStorage(repos.getRepositories())));
     }
 
