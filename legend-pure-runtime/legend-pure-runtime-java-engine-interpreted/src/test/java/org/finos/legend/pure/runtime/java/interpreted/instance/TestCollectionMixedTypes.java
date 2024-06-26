@@ -38,6 +38,7 @@ public class TestCollectionMixedTypes extends AbstractPureTestWithCoreCompiled
     public void cleanRuntime()
     {
         runtime.delete("fromString.pure");
+        runtime.compile();
     }
 
     @Test

@@ -16,16 +16,14 @@ package org.finos.legend.pure.m3.compiler.unload.walk;
 
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
 import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class FunctionUnloaderWalk implements MatchRunner<Function<CoreInstance>>
+public class FunctionUnloaderWalk implements MatchRunner<Function<?>>
 {
     @Override
     public String getClassName()
@@ -34,11 +32,8 @@ public class FunctionUnloaderWalk implements MatchRunner<Function<CoreInstance>>
     }
 
     @Override
-    public void run(Function<CoreInstance> function, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
+    public void run(Function<?> function, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
-        for (FunctionExpression functionExpression : function._applications())
-        {
-            matcher.fullMatch(functionExpression, state);
-        }
+        function._applications().forEach(app -> matcher.fullMatch(app, state));
     }
 }

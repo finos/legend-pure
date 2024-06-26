@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.m2.inlinedsl.graph.incremental;
 
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
@@ -39,6 +39,7 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
         runtime.delete("source2.pure");
         runtime.delete("userId.pure");
         runtime.delete("enumSourceId.pure");
+        runtime.compile();
     }
 
     @Test
@@ -76,8 +77,6 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
     @Test
     public void testPureRuntimeGraphChangeClass()
     {
-
-
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder()
                         .createInMemorySource("source1.pure", "Class A{version : Integer[1];}")
                         .createInMemorySource("source2.pure", "function test():Boolean[1]{print(#{A{version}}#,0);true;}")
@@ -108,8 +107,6 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
     @Test
     public void testPureRuntimeGraphRemoveVariable()
     {
-
-
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder()
                         .createInMemorySource("source1.pure", "Class A{version : Integer[1]; version2(i:Integer[1]){$i+$this.version}:Integer[1];}")
                         .createInMemorySource("source2.pure", "function test():Boolean[1]{let x = 0;print(#{A{version2($x)}}#,0);true;}")
@@ -125,8 +122,6 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
     @Test
     public void testPureRuntimeGraphRemoveSubType()
     {
-
-
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder()
                         .createInMemorySource("source1.pure", "Class A{version : Integer[1];b:B[1];}Class B{} Class XC extends B{}")
                         .createInMemorySource("source2.pure", "function test():Boolean[1]{print(#{A{version,b->subType(@XC)}}#,0);true;}")
@@ -307,8 +302,6 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
     @Test
     public void testPureRuntimeGraphRemoveTree()
     {
-
-
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder()
                         .createInMemorySource("source1.pure", "Class A{version : Integer[1];}")
                         .createInMemorySource("source2.pure", "function test():Boolean[1]{print(#{A{version}}#,0);true;}")
@@ -324,8 +317,6 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
     @Test
     public void testPureRuntimeGraphChangeTreeAddProperty()
     {
-
-
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder()
                         .createInMemorySource("source1.pure", "Class A{version : Integer[1]; version2: Integer[1];}")
                         .createInMemorySource("source2.pure", "function test():Boolean[1]{print(#{A{version}}#,0);true;}")
@@ -341,8 +332,6 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
     @Test
     public void testPureRuntimeGraphChangeTreeMainClass()
     {
-
-
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder()
                         .createInMemorySource("source1.pure", "Class A{version : Integer[1]; version2: Integer[1];} Class A2{version : Integer[1]; version2: Integer[1];}")
                         .createInMemorySource("source2.pure", "function test():Boolean[1]{print(#{A{version}}#,0);true;}")
@@ -358,8 +347,6 @@ public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
     @Test
     public void testPureRuntimeGraphChangeSubTypeClass()
     {
-
-
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder()
                         .createInMemorySource("source1.pure", "Class A{version : Integer[1];b:B[1];}Class B{} Class C extends B{} Class D extends B{}")
                         .createInMemorySource("source2.pure", "function test():Boolean[1]{print(#{A{version,b->subType(@C)}}#,0);true;}")

@@ -39,8 +39,8 @@ public abstract class Processor<T extends CoreInstance> implements MatchRunner<T
     {
         ProcessorState processorState = (ProcessorState)state;
         ProcessorSupport processorSupport = processorState.getProcessorSupport();
-        this.process(instance, processorState, matcher, modelRepository, context, processorSupport);
-        this.populateReferenceUsages(instance, modelRepository, processorSupport);
+        process(instance, processorState, matcher, modelRepository, context, processorSupport);
+        populateReferenceUsages(instance, modelRepository, processorSupport);
     }
 
     public abstract void process(T instance, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport);
@@ -52,13 +52,13 @@ public abstract class Processor<T extends CoreInstance> implements MatchRunner<T
         CoreInstance resolvedReference = ImportStub.withImportStubByPass(reference, processorSupport);
         if (resolvedReference != null)
         {
-            this.addReferenceUsage(instance, resolvedReference, property, 0, repository, processorSupport);
+            addReferenceUsage(instance, resolvedReference, property, 0, repository, processorSupport);
         }
     }
 
     protected void addReferenceUsageForToOneProperty(CoreInstance instance, CoreInstance reference, String property, ModelRepository repository, ProcessorSupport processorSupport)
     {
-        this.addReferenceUsageForToOneProperty(instance, reference, property, repository, processorSupport, null);
+        addReferenceUsageForToOneProperty(instance, reference, property, repository, processorSupport, null);
     }
 
     protected void addReferenceUsageForToOneProperty(CoreInstance instance, CoreInstance reference, String property, ModelRepository repository, ProcessorSupport processorSupport, SourceInformation sourceInformationForUsage)
@@ -68,7 +68,7 @@ public abstract class Processor<T extends CoreInstance> implements MatchRunner<T
         {
             throw new PureCompilationException(instance.getSourceInformation(), "Could not add reference usage for property '" + property + "' on " + instance + " because no value was found");
         }
-        this.addReferenceUsage(instance, resolvedReference, property, 0, repository, processorSupport, sourceInformationForUsage);
+        addReferenceUsage(instance, resolvedReference, property, 0, repository, processorSupport, sourceInformationForUsage);
     }
 
     protected void addReferenceUsagesForToManyProperty(CoreInstance instance, RichIterable<? extends CoreInstance> values, String property, ModelRepository repository, ProcessorSupport processorSupport)
@@ -76,12 +76,12 @@ public abstract class Processor<T extends CoreInstance> implements MatchRunner<T
         ListIterable<? extends CoreInstance> valuesResolved = ImportStub.withImportStubByPasses(ListHelper.wrapListIterable(values), processorSupport);
         if (valuesResolved.notEmpty())
         {
-            CoreInstance packageableElementClass = processorSupport.package_getByUserPath(M3Paths.PackageableElement);
+            CoreInstance referenceableClass = processorSupport.package_getByUserPath(M3Paths.Referenceable);
             valuesResolved.forEachWithIndex((value, i) ->
             {
-                if (Instance.instanceOf(value, packageableElementClass, processorSupport))
+                if (Instance.instanceOf(value, referenceableClass, processorSupport))
                 {
-                    this.addReferenceUsage(instance, value, property, i, repository, processorSupport);
+                    addReferenceUsage(instance, value, property, i, repository, processorSupport);
                 }
             });
         }
@@ -93,12 +93,12 @@ public abstract class Processor<T extends CoreInstance> implements MatchRunner<T
         ListIterable<? extends SourceInformation> sourceInformationList = ListHelper.wrapListIterable(sourceInformations);
         if (valuesResolved.notEmpty())
         {
-            CoreInstance packageableElementClass = processorSupport.package_getByUserPath(M3Paths.PackageableElement);
+            CoreInstance referenceableClass = processorSupport.package_getByUserPath(M3Paths.Referenceable);
             valuesResolved.forEachWithIndex((value, i) ->
             {
-                if (Instance.instanceOf(value, packageableElementClass, processorSupport))
+                if (Instance.instanceOf(value, referenceableClass, processorSupport))
                 {
-                    this.addReferenceUsage(instance, value, property, i, repository, processorSupport, sourceInformationList.get(i));
+                    addReferenceUsage(instance, value, property, i, repository, processorSupport, sourceInformationList.get(i));
                 }
             });
         }

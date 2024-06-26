@@ -18,7 +18,6 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.block.factory.Functions;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.GenericTypeTraceability;
 import org.finos.legend.pure.m3.compiler.postprocessing.PostProcessor;
@@ -105,14 +104,7 @@ public class InstanceValueProcessor extends Processor<InstanceValue>
         }
         else
         {
-            values.forEachWithIndex((value, i) ->
-            {
-                //TODO use java instanceof operator once we sort out issue PURE-3418 with Path object being SimpleCoreInstance
-                if (Instance.instanceOf(value, M3Paths.PackageableElement, processorSupport) || Instance.instanceOf(value, M3Paths.RelationElementAccessor, processorSupport) || Instance.instanceOf(value, M3Paths.Function, processorSupport))
-                {
-                    addReferenceUsage(instance, value, M3Properties.values, i, repository, processorSupport);
-                }
-            });
+            addReferenceUsagesForToManyProperty(instance, values, M3Properties.values, repository, processorSupport);
         }
     }
 
@@ -169,7 +161,7 @@ public class InstanceValueProcessor extends Processor<InstanceValue>
 
                 if (typeParameters.notEmpty())
                 {
-                    MutableList<CoreInstance> typeArgs = FastList.newList(typeParameters.size());
+                    MutableList<CoreInstance> typeArgs = Lists.mutable.ofInitialCapacity(typeParameters.size());
                     for (CoreInstance typeParameter : typeParameters)
                     {
                         boolean isContravariant = PrimitiveUtilities.getBooleanValue(typeParameter.getValueForMetaPropertyToOne(M3Properties.contravariant), false);

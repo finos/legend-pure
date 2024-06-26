@@ -20,7 +20,6 @@ import org.finos.legend.pure.m2.inlinedsl.graph.processor.RootGraphFetchTreeProc
 import org.finos.legend.pure.m2.inlinedsl.graph.unbinder.RootGraphFetchTreeUnbind;
 import org.finos.legend.pure.m2.inlinedsl.graph.validator.RootGraphFetchTreeValidator;
 import org.finos.legend.pure.m2.inlinedsl.graph.validator.RootGraphFetchTreeVisibilityValidator;
-import org.finos.legend.pure.m2.inlinedsl.graph.walker.RootGraphFetchTreeUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.GraphCoreInstanceFactoryRegistry;
@@ -69,7 +68,7 @@ public class GraphDSL implements InlineDSL
     @Override
     public RichIterable<MatchRunner> getUnLoadWalkers()
     {
-        return Lists.immutable.with(new RootGraphFetchTreeUnloaderWalk());
+        return Lists.immutable.empty();
     }
 
     @Override

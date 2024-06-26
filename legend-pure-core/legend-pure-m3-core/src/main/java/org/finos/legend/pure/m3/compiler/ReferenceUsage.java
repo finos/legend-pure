@@ -29,6 +29,7 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecification;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecifications;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class ReferenceUsage
 {
@@ -149,9 +150,7 @@ public class ReferenceUsage
         }
         catch (Exception e)
         {
-            StringBuilder message = new StringBuilder("Error getting used instance for reference usage: ");
-            writeReferenceUsage(message, referenceUsage, true);
-            throw new RuntimeException(message.toString(), e);
+            throw new RuntimeException(writeReferenceUsage(new StringBuilder("Error getting used instance for reference usage: "), referenceUsage, true).toString(), e);
         }
     }
 
@@ -322,41 +321,40 @@ public class ReferenceUsage
 
     public static String printReferenceUsage(CoreInstance referenceUsage, boolean includeOwnerSourceInfo, boolean includeName)
     {
-        StringBuilder builder = new StringBuilder(96);
-        writeReferenceUsage(builder, referenceUsage, includeOwnerSourceInfo, includeName);
-        return builder.toString();
+        return writeReferenceUsage(new StringBuilder(96), referenceUsage, includeOwnerSourceInfo, includeName).toString();
     }
 
-    public static void writeReferenceUsage(StringBuilder builder, CoreInstance referenceUsage)
+    public static <T extends Appendable> T writeReferenceUsage(T appendable, CoreInstance referenceUsage)
     {
-        writeReferenceUsage(builder, referenceUsage, false);
+        return writeReferenceUsage(appendable, referenceUsage, false);
     }
 
-    public static void writeReferenceUsage(StringBuilder builder, CoreInstance referenceUsage, boolean includeOwnerSourceInfo)
+    public static <T extends Appendable> T writeReferenceUsage(T appendable, CoreInstance referenceUsage, boolean includeOwnerSourceInfo)
     {
-        writeReferenceUsage(builder, referenceUsage, includeOwnerSourceInfo, false);
+        return writeReferenceUsage(appendable, referenceUsage, includeOwnerSourceInfo, false);
     }
 
-    public static void writeReferenceUsage(StringBuilder builder, CoreInstance referenceUsage, boolean includeOwnerSourceInfo, boolean includeName)
+    public static <T extends Appendable> T writeReferenceUsage(T appendable, CoreInstance referenceUsage, boolean includeOwnerSourceInfo, boolean includeName)
     {
-        builder.append("<ReferenceUsage owner=");
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
         CoreInstance owner = referenceUsage.getValueForMetaPropertyToOne(M3Properties.owner);
-        builder.append(owner);
+        safeAppendable.append("<ReferenceUsage owner=").append(owner);
         if (includeOwnerSourceInfo && (owner != null))
         {
             SourceInformation sourceInfo = owner.getSourceInformation();
             if (sourceInfo != null)
             {
-                sourceInfo.appendMessage(builder.append(" (")).append(')');
+                sourceInfo.appendMessage(safeAppendable.append(" (")).append(')');
             }
         }
-        builder.append(", propertyName='").append(PrimitiveUtilities.getStringValue(referenceUsage.getValueForMetaPropertyToOne(M3Properties.propertyName), null));
-        builder.append("', offset=").append(PrimitiveUtilities.getIntegerValue(referenceUsage.getValueForMetaPropertyToOne(M3Properties.offset), (Integer) null));
+        safeAppendable.append(", propertyName='").append(PrimitiveUtilities.getStringValue(referenceUsage.getValueForMetaPropertyToOne(M3Properties.propertyName), null));
+        safeAppendable.append("', offset=").append(PrimitiveUtilities.getIntegerValue(referenceUsage.getValueForMetaPropertyToOne(M3Properties.offset), (Integer) null));
         if (includeName)
         {
-            builder.append(", name='").append(referenceUsage.getName()).append('\'');
+            safeAppendable.append(", name='").append(referenceUsage.getName()).append('\'');
         }
-        builder.append('>');
+        safeAppendable.append('>');
+        return appendable;
     }
 
     private static class ReferenceUsageIndexKey

@@ -21,7 +21,6 @@ import org.finos.legend.pure.m2.inlinedsl.path.processor.PathProcessor;
 import org.finos.legend.pure.m2.inlinedsl.path.unloader.PathUnbind;
 import org.finos.legend.pure.m2.inlinedsl.path.validation.PathValidator;
 import org.finos.legend.pure.m2.inlinedsl.path.validation.PathVisibilityValidator;
-import org.finos.legend.pure.m2.inlinedsl.path.walker.PathWalk;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.PathCoreInstanceFactoryRegistry;
@@ -71,7 +70,7 @@ public class NavigationPath implements InlineDSL
     @Override
     public RichIterable<MatchRunner> getUnLoadWalkers()
     {
-        return Lists.immutable.with(new PathWalk());
+        return Lists.immutable.empty();
     }
 
     @Override
