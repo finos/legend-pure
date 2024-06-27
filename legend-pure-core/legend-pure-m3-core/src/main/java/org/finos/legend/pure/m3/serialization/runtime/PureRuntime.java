@@ -232,7 +232,7 @@ public class PureRuntime
 
         try
         {
-            RichIterable<CodeRepository> allPlatform = this.getCodeStorage().getAllRepositories().select(c -> c.getName() != null && c.getName().startsWith("platform"));
+            RichIterable<CodeRepository> allPlatform = this.getCodeStorage().getAllRepositories().select(c -> c.getName() != null && (c.getName().startsWith("platform") || c.getName().startsWith("core_functions")));
             MutableList<String> sourcePaths = allPlatform.flatCollect(c -> this.getCodeStorage().getFileOrFiles(c.getName())).toList();
 
             if (message != null)

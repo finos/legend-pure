@@ -30,6 +30,7 @@ import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.eclipse.collections.impl.tuple.Tuples;
+import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.StringIterate;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
@@ -821,7 +822,7 @@ public class CompositeCodeStorage implements MutableVersionControlledCodeStorage
         // platform is required, so add it if it is missing
         if (!index.containsKey("platform"))
         {
-            throw new RuntimeException("platform can't be found!");
+            throw new RuntimeException("platform can't be found!\n  " + ArrayIterate.collect(codeStorages, x -> x.getAllRepositories().collect(z -> z.getName()).makeString(",")).makeString("\n  "));
         }
         return index;
     }
