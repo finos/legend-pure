@@ -213,6 +213,7 @@ Class meta::relational::metamodel::relation::SelectSQLQuery extends Relation, SQ
    data : RootJoinTreeNode[0..1];
    filteringOperation : RelationalOperationElement[*];
    groupBy : RelationalOperationElement[*];
+   pivot : Pivot[0..1];
    havingOperation : RelationalOperationElement[*];
    orderBy : OrderBy[*];
    fromRow : meta::relational::metamodel::Literal[0..1];
@@ -496,4 +497,10 @@ Class meta::relational::metamodel::Window extends meta::relational::metamodel::R
    <<equality.Key>> sortBy: RelationalOperationElement [*];
 
    sortDirection: meta::relational::metamodel::SortDirection[0..1] ;
+}
+
+Class meta::relational::metamodel::Pivot
+{
+  pivotColumns : RelationalOperationElement[*];
+  aggColumns : RelationalOperationElement[*];
 }
