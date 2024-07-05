@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-function meta::pure::functions::meta::hasToOneUpperBound(multiplicity:Multiplicity[1]):Boolean[1]
+import meta::pure::test::pct::*;
+
+function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::hasToOneUpperBound(multiplicity:Multiplicity[1]):Boolean[1]
 {
     $multiplicity->hasUpperBound() && eq($multiplicity->getUpperBound(), 1)
 }

@@ -16,65 +16,65 @@ import meta::pure::test::pct::*;
 import meta::pure::functions::boolean::tests::equalitymodel::*;
 
 native function
-    <<PCT.function, PCT.platformOnly>>
+    <<PCT.function>>
     {
         doc.doc='Identity (i.e., pointer equality)'
     }
     meta::pure::functions::boolean::is(left:Any[1], right:Any[1]):Boolean[1];
 
-function <<test.Test>> meta::pure::functions::boolean::tests::testIsPrimitive():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::testIsPrimitive<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let x = 6;
-    assert(is($x, $x));
-    assertFalse(is($x, 7));
+    assert($f->eval(|is($x, $x)));
+    assertFalse($f->eval(|is($x, 7)));
 
     let y = 'the quick brown fox jumps over the lazy dog';
-    assert(is($y, $y));
-    assertFalse(is($y, 'the lazy dog is jumped over by the quick brown fox'));
+    assert($f->eval(|is($y, $y)));
+    assertFalse($f->eval(|is($y, 'the lazy dog is jumped over by the quick brown fox')));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::testIsEnum():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::testIsEnum<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert(is(TestEnum1.FIRST, TestEnum1.FIRST));
-    assert(is(TestEnum1.SECOND, TestEnum1.SECOND));
+    assert($f->eval(|is(TestEnum1.FIRST, TestEnum1.FIRST)));
+    assert($f->eval(|is(TestEnum1.SECOND, TestEnum1.SECOND)));
 
-    assertFalse(is(TestEnum1.FIRST, TestEnum1.SECOND));
-    assertFalse(is(TestEnum1.SECOND, TestEnum1.FIRST));
+    assertFalse($f->eval(|is(TestEnum1.FIRST, TestEnum1.SECOND)));
+    assertFalse($f->eval(|is(TestEnum1.SECOND, TestEnum1.FIRST)));
 
-    assertFalse(is(TestEnum1.FIRST, TestEnum2.FIRST));
-    assertFalse(is(TestEnum1.SECOND, TestEnum2.SECOND));
+    assertFalse($f->eval(|is(TestEnum1.FIRST, TestEnum2.FIRST)));
+    assertFalse($f->eval(|is(TestEnum1.SECOND, TestEnum2.SECOND)));
 
-    assertFalse(is(TestEnum1.FIRST, 1));
-    assertFalse(is('a', TestEnum1.SECOND));
+    assertFalse($f->eval(|is(TestEnum1.FIRST, 1)));
+    assertFalse($f->eval(|is('a', TestEnum1.SECOND)));
 
     let x = TestEnum1.FIRST;
-    assert(is($x, TestEnum1.FIRST));
-    assertFalse(is($x, TestEnum1.SECOND));
+    assert($f->eval(|is($x, TestEnum1.FIRST)));
+    assertFalse($f->eval(|is($x, TestEnum1.SECOND)));
 }
 
-function <<test.Test>> meta::pure::functions::boolean::tests::testIsNonPrimitive():Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::testIsNonPrimitive<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let side1 = ^SideClass(stringId='firstSide', intId=1);
     let side2 = ^SideClass(stringId='firstSide', intId=1);
     let side3 = ^SideClass(stringId='secondSide', intId=1);
     let side4 = ^SideClass(stringId='secondSide', intId=2);
 
-    assert(is($side1, $side1));
-    assertFalse(is($side1, $side2));
-    assertFalse(is($side2, $side1));
-    assertFalse(is($side1, $side3));
-    assertFalse(is($side3, $side1));
-    assertFalse(is($side1, $side4));
+    assert($f->eval(|is($side1, $side1)));
+    assertFalse($f->eval(|is($side1, $side2)));
+    assertFalse($f->eval(|is($side2, $side1)));
+    assertFalse($f->eval(|is($side1, $side3)));
+    assertFalse($f->eval(|is($side3, $side1)));
+    assertFalse($f->eval(|is($side1, $side4)));
 
     let left11 = ^LeftClass(name='left', left=1, sides=[$side1, $side3]);
     let left12 = ^LeftClass(name='left', left=1, sides=[$side2, $side3]);
     let left21 = ^LeftClass(name='left', left=2, sides=[$side1]);
 
-    assert(is($left11, $left11));
-    assertFalse(is($left11, $left12));
-    assertFalse(is($left12, $left11));
-    assertFalse(is($left11, $left21));
-    assertFalse(is($left21, $left11));
+    assert($f->eval(|is($left11, $left11)));
+    assertFalse($f->eval(|is($left11, $left12)));
+    assertFalse($f->eval(|is($left12, $left11)));
+    assertFalse($f->eval(|is($left11, $left21)));
+    assertFalse($f->eval(|is($left21, $left11)));
 
     let right11 = ^RightClass(name='right1', right=1, sides=[$side1]);
     let right12 = ^RightClass(name='right1', right=2, sides=[$side1]);
@@ -82,12 +82,12 @@ function <<test.Test>> meta::pure::functions::boolean::tests::testIsNonPrimitive
     let right22 = ^RightClass(name='right2', right=1, sides=[$side2]);
     let right23 = ^RightClass(name='right2', right=1, sides=[$side3]);
 
-    assert(is($right11, $right11));
-    assertFalse(is($right11, $right12));
-    assertFalse(is($right12, $right11));
-    assertFalse(is($right11, $right21));
-    assertFalse(is($right21, $right22));
-    assertFalse(is($right21, $right23));
+    assert($f->eval(|is($right11, $right11)));
+    assertFalse($f->eval(|is($right11, $right12)));
+    assertFalse($f->eval(|is($right12, $right11)));
+    assertFalse($f->eval(|is($right11, $right21)));
+    assertFalse($f->eval(|is($right21, $right22)));
+    assertFalse($f->eval(|is($right21, $right23)));
 
     assertFalse(is($left11, $right11));
 
@@ -95,9 +95,9 @@ function <<test.Test>> meta::pure::functions::boolean::tests::testIsNonPrimitive
     let bot12 = ^BottomClass(name='left', left=1, right=2, sides=[$side2, $side3]);
     let bot21 = ^BottomClass(name='left', left=2, right=1, sides=[$side1, $side3]);
 
-    assert(is($bot11, $bot11));
-    assertFalse(is($bot11, $bot12));
-    assertFalse(is($bot11, $bot21));
+    assert($f->eval(|is($bot11, $bot11)));
+    assertFalse($f->eval(|is($bot11, $bot12)));
+    assertFalse($f->eval(|is($bot11, $bot21)));
 
-    assertFalse(is($left11, $bot11));
+    assertFalse($f->eval(|is($left11, $bot11)));
 }

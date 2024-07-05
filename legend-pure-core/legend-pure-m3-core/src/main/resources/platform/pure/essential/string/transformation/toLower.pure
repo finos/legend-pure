@@ -16,8 +16,8 @@ import meta::pure::test::pct::*;
 
 native function <<PCT.function>> meta::pure::functions::string::toLower(source:String[1]):String[1];
 
-function <<test.Test>> meta::pure::functions::string::tests::tolower::testToLower():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::tolower::testToLower<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('test', 'TesT'->toLower());
-    assertEquals('test', 'test'->toLower());
+    assertEquals('test', $f->eval(|'TesT'->toLower()));
+    assertEquals('test', $f->eval(|'test'->toLower()));
 }

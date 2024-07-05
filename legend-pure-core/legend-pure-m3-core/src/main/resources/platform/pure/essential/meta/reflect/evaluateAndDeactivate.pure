@@ -14,7 +14,7 @@
 
 import meta::pure::test::pct::*;
 
-native function <<PCT.platformOnly>> meta::pure::functions::meta::evaluateAndDeactivate<T|m>(var:T[m]):T[m];
+native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::evaluateAndDeactivate<T|m>(var:T[m]):T[m];
 
 function <<test.Test>> meta::pure::functions::meta::tests::evaluateAndDeactivate::testEvaluateAndDeactivate():Boolean[1]
 {

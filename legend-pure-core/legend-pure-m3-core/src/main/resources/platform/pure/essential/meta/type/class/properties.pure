@@ -15,7 +15,7 @@
 import meta::pure::functions::meta::tests::model::*;
 import meta::pure::test::pct::*;
 
-function <<PCT.platformOnly>> meta::pure::functions::meta::properties(genericType:GenericType[1]):Property<Nil,Any|*>[*]
+function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::properties(genericType:GenericType[1]):Property<Nil,Any|*>[*]
 {
     // TODO use this once problems with compiled execution are fixed
 //    $genericType.rawType->toOne()->generalizations()->map(cls | $cls->cast(@Class<Any>).properties->concatenate($cls->cast(@Class<Any>).propertiesFromAssociations))

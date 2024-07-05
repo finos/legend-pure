@@ -24,7 +24,7 @@ native function
     }
     meta::pure::functions::lang::copy<T>(object:T[1], id:String[1], keyExpressions:KeyExpression[*]):T[1];
 
-native function <<PCT.function>> meta::pure::functions::lang::copy<T>(object:T[1], id:String[1]):T[1];
+native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::lang::copy<T>(object:T[1], id:String[1]):T[1];
 
 
 function <<test.Test>> meta::pure::functions::lang::tests::copy::testFlatCopyToOne():Boolean[1]

@@ -16,9 +16,9 @@ import meta::pure::test::pct::*;
 
 native function <<PCT.function>> meta::pure::functions::string::toUpper(source:String[1]):String[1];
 
-function <<test.Test>> meta::pure::functions::string::tests::toupper::testToUpper():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::toupper::testToUpper<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('TEST', 'TesT'->toUpper());
-    assertEquals('TEST', 'TEST'->toUpper());
+    assertEquals('TEST', $f->eval(|'TesT'->toUpper()));
+    assertEquals('TEST', $f->eval(|'TEST'->toUpper()));
 }
 

@@ -16,9 +16,9 @@ import meta::pure::test::pct::*;
 
 native function <<PCT.function>> meta::pure::functions::string::ltrim(str:String[1]):String[1];
 
-function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::string::tests::trim::testLTrim():Boolean[1]
+function <<PCT.test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::string::tests::trim::testLTrim<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('A Simple Text To Trim    ', ' A Simple Text To Trim    '->ltrim());
-    assertEquals('A Simple Text To Trim', ' A Simple Text To Trim'->ltrim());
-    assertEquals('A Simple Text To Trim ', 'A Simple Text To Trim '->ltrim());
+    assertEquals('A Simple Text To Trim    ', $f->eval(|' A Simple Text To Trim    '->ltrim()));
+    assertEquals('A Simple Text To Trim', $f->eval(|' A Simple Text To Trim'->ltrim()));
+    assertEquals('A Simple Text To Trim ', $f->eval(|'A Simple Text To Trim '->ltrim()));
 }

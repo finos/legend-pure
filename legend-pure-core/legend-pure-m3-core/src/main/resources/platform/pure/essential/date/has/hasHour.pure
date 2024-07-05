@@ -12,15 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::date::hasHour(d:Date[1]):Boolean[1];
+import meta::pure::test::pct::*;
 
-function <<test.Test>> meta::pure::functions::date::tests::testHasHour():Boolean[1]
+native function <<PCT.function>> meta::pure::functions::date::hasHour(d:Date[1]):Boolean[1];
+
+function <<PCT.test>> meta::pure::functions::date::tests::testHasHour<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert(%2015-04-15T17:09:21.398->hasHour());
-    assert(%2015-04-15T17:09:21->hasHour());
-    assert(%2015-04-15T17:09->hasHour());
-    assert(%2015-04-15T17->hasHour());
-    assertFalse(%2015-04-15->hasHour());
-    assertFalse(%2015-04->hasHour());
-    assertFalse(%2015->hasHour());
+    assert($f->eval(|%2015-04-15T17:09:21.398->hasHour()));
+    assert($f->eval(|%2015-04-15T17:09:21->hasHour()));
+    assert($f->eval(|%2015-04-15T17:09->hasHour()));
+    assert($f->eval(|%2015-04-15T17->hasHour()));
+    assertFalse($f->eval(|%2015-04-15->hasHour()));
+    assertFalse($f->eval(|%2015-04->hasHour()));
+    assertFalse($f->eval(|%2015->hasHour()));
 }

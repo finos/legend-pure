@@ -15,7 +15,7 @@
 import meta::pure::functions::string::tests::toRepresentation::*;
 import meta::pure::test::pct::*;
 
-function <<PCT.platformOnly>> meta::pure::functions::string::toRepresentation(any:Any[1]):String[1]
+function <<PCT.function, PCT.platformOnly>> meta::pure::functions::string::toRepresentation(any:Any[1]):String[1]
 {
     $any->match([
                  s:String[1] | '\'' + $s->replace('\'', '\\\'') + '\'',

@@ -13,8 +13,9 @@
 // limitations under the License.
 
 import meta::pure::functions::collection::tests::removeAllOptimized::*;
+import meta::pure::test::pct::*;
 
-native function meta::pure::functions::collection::removeAllOptimized<T>(set:T[*], other:T[*]):T[*];
+native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::collection::removeAllOptimized<T>(set:T[*], other:T[*]):T[*];
 
 Class meta::pure::functions::collection::tests::removeAllOptimized::TestClassWithEquality
 {

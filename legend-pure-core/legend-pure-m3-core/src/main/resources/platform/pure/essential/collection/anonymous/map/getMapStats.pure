@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::collection::getMapStats<U,V>(m:Map<U,V>[1]):MapStats[0..1];
+import meta::pure::test::pct::*;
+
+native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::collection::getMapStats<U,V>(m:Map<U,V>[1]):MapStats[0..1];
 
 Class meta::pure::functions::collection::MapStats
 {

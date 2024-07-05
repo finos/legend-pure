@@ -15,7 +15,7 @@
 import meta::pure::functions::meta::tests::model::*;
 import meta::pure::test::pct::*;
 
-function <<PCT.platformOnly>> meta::pure::functions::meta::pathToElement(path:String[1]):PackageableElement[1]
+function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::pathToElement(path:String[1]):PackageableElement[1]
 {
     $path->pathToElement('::')
 }

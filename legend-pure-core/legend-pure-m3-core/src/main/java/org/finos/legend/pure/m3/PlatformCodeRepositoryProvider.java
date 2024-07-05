@@ -24,6 +24,7 @@ public class PlatformCodeRepositoryProvider implements CodeRepositoryProvider
 {
     public static final Adapter nativeAdapter = new Adapter(
             "Native",
+            "",
             "meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_"
     );
 

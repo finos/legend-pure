@@ -16,13 +16,13 @@ import meta::pure::test::pct::*;
 
 native function <<PCT.function>> meta::pure::functions::string::endsWith(source:String[1], val:String[1]):Boolean[1];
 
-function <<test.Test>> meta::pure::functions::string::tests::endswith::testTrueEndsWith():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::endswith::testTrueEndsWith<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert(endsWith('the quick brown fox jumps over the lazy dog', 'dog'));
-    assert(endsWith('the quick brown fox jumps over the lazy dog', 'lazy dog'));
+    assert($f->eval(|endsWith('the quick brown fox jumps over the lazy dog', 'dog')));
+    assert($f->eval(|endsWith('the quick brown fox jumps over the lazy dog', 'lazy dog')));
 }
 
-function <<test.Test>> meta::pure::functions::string::tests::endswith::testFalseEndsWith():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::endswith::testFalseEndsWith<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertFalse(endsWith('the quick brown fox jumps over the lazy dog', 'brown fox'));
+    assertFalse($f->eval(|endsWith('the quick brown fox jumps over the lazy dog', 'brown fox')));
 }

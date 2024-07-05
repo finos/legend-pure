@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::lang::removeOverride<T>(instance:T[1]):T[1];
+import meta::pure::test::pct::*;
+
+native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::lang::removeOverride<T>(instance:T[1]):T[1];

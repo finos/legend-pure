@@ -16,23 +16,23 @@ import meta::pure::test::pct::*;
 
 native function <<PCT.function>> meta::pure::functions::string::parseBoolean(string:String[1]):Boolean[1];
 
-function <<test.Test>> meta::pure::functions::string::tests::parseBoolean::testParseTrue():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::parseBoolean::testParseTrue<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert(parseBoolean('true'));
-    assert(parseBoolean('True'));
-    assert(parseBoolean('tRue'));
-    assert(parseBoolean('trUe'));
-    assert(parseBoolean('truE'));
-    assert(parseBoolean('TRUE'));
+    assert($f->eval(|parseBoolean('true')));
+    assert($f->eval(|parseBoolean('True')));
+    assert($f->eval(|parseBoolean('tRue')));
+    assert($f->eval(|parseBoolean('trUe')));
+    assert($f->eval(|parseBoolean('truE')));
+    assert($f->eval(|parseBoolean('TRUE')));
 }
 
-function <<test.Test>> meta::pure::functions::string::tests::parseBoolean::testParseFalse():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::parseBoolean::testParseFalse<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertFalse(parseBoolean('false'));
-    assertFalse(parseBoolean('False'));
-    assertFalse(parseBoolean('fAlse'));
-    assertFalse(parseBoolean('faLse'));
-    assertFalse(parseBoolean('falSe'));
-    assertFalse(parseBoolean('falsE'));
-    assertFalse(parseBoolean('FALSE'));
+    assertFalse($f->eval(|parseBoolean('false')));
+    assertFalse($f->eval(|parseBoolean('False')));
+    assertFalse($f->eval(|parseBoolean('fAlse')));
+    assertFalse($f->eval(|parseBoolean('faLse')));
+    assertFalse($f->eval(|parseBoolean('falSe')));
+    assertFalse($f->eval(|parseBoolean('falsE')));
+    assertFalse($f->eval(|parseBoolean('FALSE')));
 }

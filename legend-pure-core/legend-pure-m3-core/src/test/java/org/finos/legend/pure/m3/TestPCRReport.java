@@ -26,6 +26,6 @@ public class TestPCRReport
         Assert.assertEquals(2, PCTReportProviderLoader.gatherFunctions().size());
         Assert.assertEquals("essential, grammar", PCTReportProviderLoader.gatherFunctions().collect(c -> c.reportScope.module).distinct().sortThis().makeString(", "));
         Assert.assertEquals(0, PCTReportProviderLoader.gatherReports().size());
-        Assert.assertEquals("", PCTReportProviderLoader.gatherReports().collect(c -> c.adapterKey.adapter).distinct().sortThis().makeString(", "));
+        Assert.assertEquals("", PCTReportProviderLoader.gatherReports().collect(c -> c.adapterKey.adapter.name).distinct().sortThis().makeString(", "));
     }
 }

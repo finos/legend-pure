@@ -13,8 +13,9 @@
 // limitations under the License.
 
 import meta::pure::functions::meta::tests::subTypeOf::*;
+import meta::pure::test::pct::*;
 
-function meta::pure::functions::meta::_subTypeOf(subType:Type[1], superType:Type[1]):Boolean[1]
+function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::_subTypeOf(subType:Type[1], superType:Type[1]):Boolean[1]
 {
     if($subType == Nil,|true, |$subType->getAllTypeGeneralisations()->contains($superType));  
 }

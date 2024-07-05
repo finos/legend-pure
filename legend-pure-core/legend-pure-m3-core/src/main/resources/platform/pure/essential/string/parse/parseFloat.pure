@@ -16,15 +16,15 @@ import meta::pure::test::pct::*;
 
 native function <<PCT.function>> meta::pure::functions::string::parseFloat(string:String[1]):Float[1];
 
-function <<test.Test>> meta::pure::functions::string::tests::parseFloat::testParseFloat():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::parseFloat::testParseFloat<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(3.14159, parseFloat('3.14159'));
-    assertEq(3.14159, parseFloat('+0000003.1415900000'));
-    assertEq(-3.14159, parseFloat('-0000003.1415900000'));
+    assertEq(3.14159, $f->eval(|parseFloat('3.14159')));
+    assertEq(3.14159, $f->eval(|parseFloat('+0000003.1415900000')));
+    assertEq(-3.14159, $f->eval(|parseFloat('-0000003.1415900000')));
 }
 
-function <<test.Test>> meta::pure::functions::string::tests::parseFloat::testParseZero():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::parseFloat::testParseZero<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEq(0.0, parseFloat('0.0'));
-    assertEq(0.0, parseFloat('-000.000'));
+    assertEq(0.0, $f->eval(|parseFloat('0.0')));
+    assertEq(0.0, $f->eval(|parseFloat('-000.000')));
 }

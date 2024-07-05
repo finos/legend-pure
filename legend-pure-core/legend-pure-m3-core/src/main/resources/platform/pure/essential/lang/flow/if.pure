@@ -50,22 +50,22 @@ function <<PCT.test>> meta::pure::functions::lang::tests::if::testIfWithFunction
 }
 
 
-function <<test.Test>> meta::pure::functions::lang::tests::if::testMultiIf():Boolean[1]
+function <<PCT.test>> meta::pure::functions::lang::tests::if::testMultiIf<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let val = 5;
-    assertEquals(7, if(
+    assertEquals(7, $f->eval(|if(
                           [
                             pair(|$val==1,|2),
                             pair(|$val==2,|22)
                           ],
                           |4
-                    )+3);
+                    )+3));
 
-    assertEquals(5, if(
+    assertEquals(5, $f->eval(|if(
                         [
                           pair(|$val >1,|2),
                           pair(|$val==5,|4)
                         ],
                         |4
-                  )+3);
+                    )+3));
 }

@@ -12,30 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
 
 // Returns the date part of a date, i.e., the year, month, and day. For dates that are month or year precision, the date is returned unchanged.
-native function meta::pure::functions::date::datePart(d:Date[1]):Date[1];
+native function <<PCT.function>> meta::pure::functions::date::datePart(d:Date[1]):Date[1];
 
-function <<test.Test>> meta::pure::functions::date::tests::testDatePart():Boolean[1]
+function <<PCT.test>> meta::pure::functions::date::tests::testDatePart<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals(%1973-11-05, %1973-11-05T13:01:25->datePart());
-    assertEquals(%2015-08-29, %2015-08-29T22:22:22.9914234->datePart());
+    assertEquals(%1973-11-05, $f->eval(|%1973-11-05T13:01:25->datePart()));
+    assertEquals(%2015-08-29, $f->eval(|%2015-08-29T22:22:22.9914234->datePart()));
 }
 
-function <<test.Test>> meta::pure::functions::date::tests::testDatePartTrivial():Boolean[1]
+function <<PCT.test>> meta::pure::functions::date::tests::testDatePartTrivial<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals(%1973-11-05, %1973-11-05->datePart());
-    assertEquals(%2015-08-29, %2015-08-29->datePart());
+    assertEquals(%1973-11-05, $f->eval(|%1973-11-05->datePart()));
+    assertEquals(%2015-08-29, $f->eval(|%2015-08-29->datePart()));
 }
 
-function <<test.Test>> meta::pure::functions::date::tests::testDatePartYearMonthOnly():Boolean[1]
+function <<PCT.test>> meta::pure::functions::date::tests::testDatePartYearMonthOnly<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals(%1973-11, %1973-11->datePart());
-    assertEquals(%2015-08, %2015-08->datePart());
+    assertEquals(%1973-11, $f->eval(|%1973-11->datePart()));
+    assertEquals(%2015-08, $f->eval(|%2015-08->datePart()));
 }
 
-function <<test.Test>> meta::pure::functions::date::tests::testDatePartYearOnly():Boolean[1]
+function <<PCT.test>> meta::pure::functions::date::tests::testDatePartYearOnly<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals(%1973, %1973->datePart());
-    assertEquals(%2015, %2015->datePart());
+    assertEquals(%1973, $f->eval(|%1973->datePart()));
+    assertEquals(%2015, $f->eval(|%2015->datePart()));
 }

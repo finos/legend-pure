@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::date::minute(d:Date[1]):Integer[1];
+import meta::pure::test::pct::*;
 
-function <<test.Test>> meta::pure::functions::date::tests::testMinute():Boolean[1]
+native function <<PCT.function>> meta::pure::functions::date::minute(d:Date[1]):Integer[1];
+
+function <<PCT.test>> meta::pure::functions::date::tests::testMinute<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals(9, %2015-04-15T17:09->minute());
-    assertEquals(9, %2015-04-15T17:09:21->minute());
-    assertEquals(9, %2015-04-15T17:09:21.398->minute());
+    assertEquals(9, $f->eval(|%2015-04-15T17:09->minute()));
+    assertEquals(9, $f->eval(|%2015-04-15T17:09:21->minute()));
+    assertEquals(9, $f->eval(|%2015-04-15T17:09:21.398->minute()));
 }

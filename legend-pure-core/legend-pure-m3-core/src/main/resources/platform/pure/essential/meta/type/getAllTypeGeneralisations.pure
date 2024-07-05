@@ -12,8 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-function {doc.doc = 'Get all generalisations of a type'}
- meta::pure::functions::meta::getAllTypeGeneralisations(class:Type[1]):Type[*]
+import meta::pure::test::pct::*;
+
+function
+    <<PCT.function, PCT.platformOnly>>
+    {doc.doc = 'Get all generalisations of a type'}
+    meta::pure::functions::meta::getAllTypeGeneralisations(class:Type[1]):Type[*]
 {
    let generalisations = $class.generalizations->map(g | $g.general->cast(@GenericType).rawType->toOne()->getAllTypeGeneralisations());
    $class->concatenate($generalisations);

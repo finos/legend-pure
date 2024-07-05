@@ -20,6 +20,7 @@ import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.pct.shared.provider.PCTReportProvider;
 import org.finos.legend.pure.m3.pct.reports.model.AdapterReport;
 import org.finos.legend.pure.m3.pct.functions.model.Functions;
+import org.finos.legend.pure.m3.pct.shared.provider.PCTReportProviderTool;
 
 public class Core_Interpreted_PCTReportProvider implements PCTReportProvider
 {
@@ -32,22 +33,9 @@ public class Core_Interpreted_PCTReportProvider implements PCTReportProvider
     @Override
     public MutableList<AdapterReport> getAdapterReports()
     {
-        try
-        {
-            return Lists.mutable.with(
-                    JsonMapper.builder().build().readValue(
-                            Core_Interpreted_PCTReportProvider.class.getResourceAsStream("/pct-reports/ADAPTER_essential_interpreted_Native.json"),
-                            AdapterReport.class
-                    ),
-                    JsonMapper.builder().build().readValue(
-                            Core_Interpreted_PCTReportProvider.class.getResourceAsStream("/pct-reports/ADAPTER_grammar_interpreted_Native.json"),
-                            AdapterReport.class
-                    )
-            );
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        return PCTReportProviderTool.load(Core_Interpreted_PCTReportProvider.class.getClassLoader(), AdapterReport.class,
+                "pct-reports/ADAPTER_essential_interpreted_Native.json",
+                "pct-reports/ADAPTER_grammar_interpreted_Native.json"
+        );
     }
 }

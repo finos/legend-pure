@@ -20,25 +20,16 @@ import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.pct.functions.model.Functions;
 import org.finos.legend.pure.m3.pct.reports.model.AdapterReport;
 import org.finos.legend.pure.m3.pct.shared.provider.PCTReportProvider;
+import org.finos.legend.pure.m3.pct.shared.provider.PCTReportProviderTool;
 
 public class Essential_Functions_PCTReportProvider implements PCTReportProvider
 {
     @Override
     public MutableList<Functions> getFunctions()
     {
-        try
-        {
-            return org.eclipse.collections.api.factory.Lists.mutable.with(
-                    JsonMapper.builder().build().readValue(
-                            Essential_Functions_PCTReportProvider.class.getResourceAsStream("/pct-reports/FUNCTIONS_essential.json"),
-                            Functions.class
-                    )
-            );
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        return PCTReportProviderTool.load(Grammar_Functions_PCTReportProvider.class.getClassLoader(), Functions.class,
+                "pct-reports/FUNCTIONS_essential.json"
+        );
     }
 
     @Override

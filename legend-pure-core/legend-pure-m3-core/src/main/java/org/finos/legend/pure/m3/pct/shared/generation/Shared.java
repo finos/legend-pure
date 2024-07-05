@@ -28,6 +28,6 @@ public class Shared
         Path targetPath = Paths.get(target, name);
         byte[] bytes = reportStr.getBytes(StandardCharsets.UTF_8);
         Files.createDirectories(targetPath.getParent());
-        Files.write(targetPath, bytes, StandardOpenOption.CREATE);
+        Files.write(targetPath, bytes, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
 }

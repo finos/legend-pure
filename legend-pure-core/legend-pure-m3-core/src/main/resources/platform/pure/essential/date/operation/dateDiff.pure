@@ -12,118 +12,120 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::date::dateDiff(d1:Date[1], d2:Date[1], du:DurationUnit[1]):Integer[1];
+import meta::pure::test::pct::*;
 
-function <<test.Test>> meta::pure::functions::date::tests::testDateDiffYears():Boolean[1]
+native function <<PCT.function>> meta::pure::functions::date::dateDiff(d1:Date[1], d2:Date[1], du:DurationUnit[1]):Integer[1];
+
+function <<PCT.test>> meta::pure::functions::date::tests::testDateDiffYears<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-   assertEquals(1, %2015->dateDiff(%2016, DurationUnit.YEARS));
-   assertEquals(-1, %2016->dateDiff(%2015, DurationUnit.YEARS));
-   assertEquals(20, %2000->dateDiff(%2020, DurationUnit.YEARS));
-   assertEquals(-20, %2020->dateDiff(%2000, DurationUnit.YEARS));
-   assertEquals(0, %2015->dateDiff(%2015, DurationUnit.YEARS));
-   assertEquals(0, %2015-01-01T00:00:00->dateDiff(%2015-12-31T23:59:59, DurationUnit.YEARS));
-   assertEquals(1, %2015-12-31T23:59:59->dateDiff(%2016-01-01T00:00:01, DurationUnit.YEARS));
+   assertEquals(1, $f->eval(|%2015->dateDiff(%2016, DurationUnit.YEARS)));
+   assertEquals(-1, $f->eval(|%2016->dateDiff(%2015, DurationUnit.YEARS)));
+   assertEquals(20, $f->eval(|%2000->dateDiff(%2020, DurationUnit.YEARS)));
+   assertEquals(-20, $f->eval(|%2020->dateDiff(%2000, DurationUnit.YEARS)));
+   assertEquals(0, $f->eval(|%2015->dateDiff(%2015, DurationUnit.YEARS)));
+   assertEquals(0, $f->eval(|%2015-01-01T00:00:00->dateDiff(%2015-12-31T23:59:59, DurationUnit.YEARS)));
+   assertEquals(1, $f->eval(|%2015-12-31T23:59:59->dateDiff(%2016-01-01T00:00:01, DurationUnit.YEARS)));
 }
 
-function <<test.Test>> meta::pure::functions::date::tests::testDateDiffMonths():Boolean[1]
+function <<PCT.test>> meta::pure::functions::date::tests::testDateDiffMonths<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-   assertEquals(0, %2016-02-01->dateDiff(%2016-02-01, DurationUnit.MONTHS));
-   assertEquals(0, %2016-02-01->dateDiff(%2016-02-29, DurationUnit.MONTHS));
-   assertEquals(1, %2016-02-01->dateDiff(%2016-03-01, DurationUnit.MONTHS));
-   assertEquals(-1, %2016-03-01->dateDiff(%2016-02-01, DurationUnit.MONTHS));
-   assertEquals(12, %2015-01-29->dateDiff(%2016-01-29, DurationUnit.MONTHS));
-   assertEquals(14, %2015-01-29->dateDiff(%2016-03-29, DurationUnit.MONTHS));
-   assertEquals(-14, %2016-03-29->dateDiff(%2015-01-29, DurationUnit.MONTHS));
-   assertEquals(0, %2014-12-01T00:00:00->dateDiff(%2014-12-01T23:59:59, DurationUnit.MONTHS));
-   assertEquals(11, %2016-01-01->dateDiff(%2016-12-31, DurationUnit.MONTHS));
-   assertEquals(11, %2016-01-31->dateDiff(%2016-12-31, DurationUnit.MONTHS));
-   assertEquals(12, %2016-01-01->dateDiff(%2017-01-01, DurationUnit.MONTHS));
+   assertEquals(0, $f->eval(|%2016-02-01->dateDiff(%2016-02-01, DurationUnit.MONTHS)));
+   assertEquals(0, $f->eval(|%2016-02-01->dateDiff(%2016-02-29, DurationUnit.MONTHS)));
+   assertEquals(1, $f->eval(|%2016-02-01->dateDiff(%2016-03-01, DurationUnit.MONTHS)));
+   assertEquals(-1, $f->eval(|%2016-03-01->dateDiff(%2016-02-01, DurationUnit.MONTHS)));
+   assertEquals(12, $f->eval(|%2015-01-29->dateDiff(%2016-01-29, DurationUnit.MONTHS)));
+   assertEquals(14, $f->eval(|%2015-01-29->dateDiff(%2016-03-29, DurationUnit.MONTHS)));
+   assertEquals(-14, $f->eval(|%2016-03-29->dateDiff(%2015-01-29, DurationUnit.MONTHS)));
+   assertEquals(0, $f->eval(|%2014-12-01T00:00:00->dateDiff(%2014-12-01T23:59:59, DurationUnit.MONTHS)));
+   assertEquals(11, $f->eval(|%2016-01-01->dateDiff(%2016-12-31, DurationUnit.MONTHS)));
+   assertEquals(11, $f->eval(|%2016-01-31->dateDiff(%2016-12-31, DurationUnit.MONTHS)));
+   assertEquals(12, $f->eval(|%2016-01-01->dateDiff(%2017-01-01, DurationUnit.MONTHS)));
 }
 
-function <<test.Test>> meta::pure::functions::date::tests::testDateDiffWeeks():Boolean[1]
+function <<PCT.test>> meta::pure::functions::date::tests::testDateDiffWeeks<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-   assertEquals(0, %2015-07-05->dateDiff(%2015-07-05, DurationUnit.WEEKS));
-   assertEquals(0, %2015-07-03->dateDiff(%2015-07-04, DurationUnit.WEEKS));
-   assertEquals(1, %2015-07-04->dateDiff(%2015-07-05, DurationUnit.WEEKS));
-   assertEquals(0, %2015-07-05->dateDiff(%2015-07-04, DurationUnit.WEEKS));
-   assertEquals(1, %2015-07-05->dateDiff(%2015-07-12, DurationUnit.WEEKS));
-   assertEquals(-1, %2015-07-12->dateDiff(%2015-07-05, DurationUnit.WEEKS));
-   assertEquals(0, %2015-07-12->dateDiff(%2015-07-06, DurationUnit.WEEKS));
-   assertEquals(4, %2015-07-05->dateDiff(%2015-08-02, DurationUnit.WEEKS));
-   assertEquals(-4, %2015-08-02->dateDiff(%2015-07-05, DurationUnit.WEEKS));
-   assertEquals(-3, %2015-08-02->dateDiff(%2015-07-06, DurationUnit.WEEKS));
-   assertEquals(1, %2014-12-28->dateDiff(%2015-01-04, DurationUnit.WEEKS));
-   assertEquals(52, %2015-01-01->dateDiff(%2016-01-01, DurationUnit.WEEKS));
-   assertEquals(52, %2016-01-01->dateDiff(%2016-12-31, DurationUnit.WEEKS));
-   assertEquals(53, %2016-01-01->dateDiff(%2017-01-01, DurationUnit.WEEKS));
+   assertEquals(0, $f->eval(|%2015-07-05->dateDiff(%2015-07-05, DurationUnit.WEEKS)));
+   assertEquals(0, $f->eval(|%2015-07-03->dateDiff(%2015-07-04, DurationUnit.WEEKS)));
+   assertEquals(1, $f->eval(|%2015-07-04->dateDiff(%2015-07-05, DurationUnit.WEEKS)));
+   assertEquals(0, $f->eval(|%2015-07-05->dateDiff(%2015-07-04, DurationUnit.WEEKS)));
+   assertEquals(1, $f->eval(|%2015-07-05->dateDiff(%2015-07-12, DurationUnit.WEEKS)));
+   assertEquals(-1, $f->eval(|%2015-07-12->dateDiff(%2015-07-05, DurationUnit.WEEKS)));
+   assertEquals(0, $f->eval(|%2015-07-12->dateDiff(%2015-07-06, DurationUnit.WEEKS)));
+   assertEquals(4, $f->eval(|%2015-07-05->dateDiff(%2015-08-02, DurationUnit.WEEKS)));
+   assertEquals(-4, $f->eval(|%2015-08-02->dateDiff(%2015-07-05, DurationUnit.WEEKS)));
+   assertEquals(-3, $f->eval(|%2015-08-02->dateDiff(%2015-07-06, DurationUnit.WEEKS)));
+   assertEquals(1, $f->eval(|%2014-12-28->dateDiff(%2015-01-04, DurationUnit.WEEKS)));
+   assertEquals(52, $f->eval(|%2015-01-01->dateDiff(%2016-01-01, DurationUnit.WEEKS)));
+   assertEquals(52, $f->eval(|%2016-01-01->dateDiff(%2016-12-31, DurationUnit.WEEKS)));
+   assertEquals(53, $f->eval(|%2016-01-01->dateDiff(%2017-01-01, DurationUnit.WEEKS)));
 }
 
-function <<test.Test>> meta::pure::functions::date::tests::testDateDiffDays():Boolean[1]
+function <<PCT.test>> meta::pure::functions::date::tests::testDateDiffDays<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-   assertEquals(0, %2015-07-07->dateDiff(%2015-07-07, DurationUnit.DAYS));
-   assertEquals(1, %2015-07-07->dateDiff(%2015-07-08, DurationUnit.DAYS));
-   assertEquals(-1, %2015-07-08->dateDiff(%2015-07-07, DurationUnit.DAYS));
-   assertEquals(365, %2015-01-1->dateDiff(%2016-01-01, DurationUnit.DAYS));
-   assertEquals(366, %2016-01-1->dateDiff(%2017-01-01, DurationUnit.DAYS));
-   assertEquals(394, %2014-01-31->dateDiff(%2015-03-01, DurationUnit.DAYS));
-   assertEquals(395, %2016-01-31->dateDiff(%2017-03-01, DurationUnit.DAYS));
-   assertEquals(-395, %2017-03-01->dateDiff(%2016-01-31, DurationUnit.DAYS));
-   assertEquals(7, %2014-12-28->dateDiff(%2015-01-04, DurationUnit.DAYS));
-   assertEquals(-7, %2015-01-04->dateDiff(%2014-12-28, DurationUnit.DAYS));
+   assertEquals(0, $f->eval(|%2015-07-07->dateDiff(%2015-07-07, DurationUnit.DAYS)));
+   assertEquals(1, $f->eval(|%2015-07-07->dateDiff(%2015-07-08, DurationUnit.DAYS)));
+   assertEquals(-1, $f->eval(|%2015-07-08->dateDiff(%2015-07-07, DurationUnit.DAYS)));
+   assertEquals(365, $f->eval(|%2015-01-1->dateDiff(%2016-01-01, DurationUnit.DAYS)));
+   assertEquals(366, $f->eval(|%2016-01-1->dateDiff(%2017-01-01, DurationUnit.DAYS)));
+   assertEquals(394, $f->eval(|%2014-01-31->dateDiff(%2015-03-01, DurationUnit.DAYS)));
+   assertEquals(395, $f->eval(|%2016-01-31->dateDiff(%2017-03-01, DurationUnit.DAYS)));
+   assertEquals(-395, $f->eval(|%2017-03-01->dateDiff(%2016-01-31, DurationUnit.DAYS)));
+   assertEquals(7, $f->eval(|%2014-12-28->dateDiff(%2015-01-04, DurationUnit.DAYS)));
+   assertEquals(-7, $f->eval(|%2015-01-04->dateDiff(%2014-12-28, DurationUnit.DAYS)));
 }
 
-function <<test.Test>> meta::pure::functions::date::tests::testDateDiffHours():Boolean[1]
+function <<PCT.test>> meta::pure::functions::date::tests::testDateDiffHours<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-   assertEquals(0, %2015-07-07T13:00:00->dateDiff(%2015-07-07T13:00:00, DurationUnit.HOURS));
-   assertEquals(1, %2015-07-07T13:00:00->dateDiff(%2015-07-07T14:00:00, DurationUnit.HOURS));
-   assertEquals(-1, %2015-07-07T14:00:00->dateDiff(%2015-07-07T13:00:00, DurationUnit.HOURS));
-   assertEquals(2, %2015-07-07T23:00:00->dateDiff(%2015-07-08T01:00:00, DurationUnit.HOURS));
-   assertEquals(2, %2015-07-07T23:00:00->dateDiff(%2015-07-08T01:59:59, DurationUnit.HOURS));
-   assertEquals(24, %2014-12-31T23:00:00->dateDiff(%2015-01-01T23:00:00, DurationUnit.HOURS));
-   assertEquals(0, %2014-12-01T00:00:00->dateDiff(%2014-12-01T00:59:59, DurationUnit.HOURS));
+   assertEquals(0, $f->eval(|%2015-07-07T13:00:00->dateDiff(%2015-07-07T13:00:00, DurationUnit.HOURS)));
+   assertEquals(1, $f->eval(|%2015-07-07T13:00:00->dateDiff(%2015-07-07T14:00:00, DurationUnit.HOURS)));
+   assertEquals(-1, $f->eval(|%2015-07-07T14:00:00->dateDiff(%2015-07-07T13:00:00, DurationUnit.HOURS)));
+   assertEquals(2, $f->eval(|%2015-07-07T23:00:00->dateDiff(%2015-07-08T01:00:00, DurationUnit.HOURS)));
+   assertEquals(2, $f->eval(|%2015-07-07T23:00:00->dateDiff(%2015-07-08T01:59:59, DurationUnit.HOURS)));
+   assertEquals(24, $f->eval(|%2014-12-31T23:00:00->dateDiff(%2015-01-01T23:00:00, DurationUnit.HOURS)));
+   assertEquals(0, $f->eval(|%2014-12-01T00:00:00->dateDiff(%2014-12-01T00:59:59, DurationUnit.HOURS)));
 }
 
-function <<test.Test>> meta::pure::functions::date::tests::testDateDiffMinutes():Boolean[1]
+function <<PCT.test>> meta::pure::functions::date::tests::testDateDiffMinutes<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-   assertEquals(0, %2015-07-07T13:00:00->dateDiff(%2015-07-07T13:00:00, DurationUnit.MINUTES));
-   assertEquals(1, %2015-07-07T13:00:00->dateDiff(%2015-07-07T13:01:00, DurationUnit.MINUTES));
-   assertEquals(-1, %2015-07-07T13:01:00->dateDiff(%2015-07-07T13:00:00, DurationUnit.MINUTES));
-   assertEquals(1, %2015-07-07T13:00:00->dateDiff(%2015-07-07T13:01:01, DurationUnit.MINUTES));
-   assertEquals(61, %2015-07-07T13:00:00->dateDiff(%2015-07-07T14:01:00, DurationUnit.MINUTES));
-   assertEquals(120, %2015-07-07T23:00:00->dateDiff(%2015-07-08T01:00:00, DurationUnit.MINUTES));
-   assertEquals(0, %2014-12-01T00:00:00->dateDiff(%2014-12-01T00:00:59, DurationUnit.MINUTES));
+   assertEquals(0, $f->eval(|%2015-07-07T13:00:00->dateDiff(%2015-07-07T13:00:00, DurationUnit.MINUTES)));
+   assertEquals(1, $f->eval(|%2015-07-07T13:00:00->dateDiff(%2015-07-07T13:01:00, DurationUnit.MINUTES)));
+   assertEquals(-1, $f->eval(|%2015-07-07T13:01:00->dateDiff(%2015-07-07T13:00:00, DurationUnit.MINUTES)));
+   assertEquals(1, $f->eval(|%2015-07-07T13:00:00->dateDiff(%2015-07-07T13:01:01, DurationUnit.MINUTES)));
+   assertEquals(61, $f->eval(|%2015-07-07T13:00:00->dateDiff(%2015-07-07T14:01:00, DurationUnit.MINUTES)));
+   assertEquals(120, $f->eval(|%2015-07-07T23:00:00->dateDiff(%2015-07-08T01:00:00, DurationUnit.MINUTES)));
+   assertEquals(0, $f->eval(|%2014-12-01T00:00:00->dateDiff(%2014-12-01T00:00:59, DurationUnit.MINUTES)));
 }
 
-function <<test.Test>> meta::pure::functions::date::tests::testDateDiffSeconds():Boolean[1]
+function <<PCT.test>> meta::pure::functions::date::tests::testDateDiffSeconds<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-   assertEquals(0, %2015-07-07T13:00:00->dateDiff(%2015-07-07T13:00:00, DurationUnit.SECONDS));
-   assertEquals(1, %2015-07-07T13:00:00->dateDiff(%2015-07-07T13:00:01, DurationUnit.SECONDS));
-   assertEquals(-1, %2015-07-07T13:00:01->dateDiff(%2015-07-07T13:00:00, DurationUnit.SECONDS));
-   assertEquals(60, %2015-07-07T13:00:00->dateDiff(%2015-07-07T13:01:00, DurationUnit.SECONDS));
-   assertEquals(61, %2015-07-07T13:00:00->dateDiff(%2015-07-07T13:01:01, DurationUnit.SECONDS));
-   assertEquals(3661, %2015-07-07T13:00:00->dateDiff(%2015-07-07T14:01:01, DurationUnit.SECONDS));
-   assertEquals(7200, %2015-07-07T23:00:00->dateDiff(%2015-07-08T01:00:00, DurationUnit.SECONDS));
+   assertEquals(0, $f->eval(|%2015-07-07T13:00:00->dateDiff(%2015-07-07T13:00:00, DurationUnit.SECONDS)));
+   assertEquals(1, $f->eval(|%2015-07-07T13:00:00->dateDiff(%2015-07-07T13:00:01, DurationUnit.SECONDS)));
+   assertEquals(-1, $f->eval(|%2015-07-07T13:00:01->dateDiff(%2015-07-07T13:00:00, DurationUnit.SECONDS)));
+   assertEquals(60, $f->eval(|%2015-07-07T13:00:00->dateDiff(%2015-07-07T13:01:00, DurationUnit.SECONDS)));
+   assertEquals(61, $f->eval(|%2015-07-07T13:00:00->dateDiff(%2015-07-07T13:01:01, DurationUnit.SECONDS)));
+   assertEquals(3661, $f->eval(|%2015-07-07T13:00:00->dateDiff(%2015-07-07T14:01:01, DurationUnit.SECONDS)));
+   assertEquals(7200, $f->eval(|%2015-07-07T23:00:00->dateDiff(%2015-07-08T01:00:00, DurationUnit.SECONDS)));
 }
 
-function <<test.Test>> meta::pure::functions::date::tests::testDateDiffMilliseconds():Boolean[1]
+function <<PCT.test>> meta::pure::functions::date::tests::testDateDiffMilliseconds<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-   assertEquals(0, %2015-07-07T13:00:00->dateDiff(%2015-07-07T13:00:00, DurationUnit.MILLISECONDS));
-   assertEquals(1 * 1000, %2015-07-07T13:00:00->dateDiff(%2015-07-07T13:00:01, DurationUnit.MILLISECONDS));
-   assertEquals(-1 * 1000, %2015-07-07T13:00:01->dateDiff(%2015-07-07T13:00:00, DurationUnit.MILLISECONDS));
-   assertEquals(60 * 1000, %2015-07-07T13:00:00->dateDiff(%2015-07-07T13:01:00, DurationUnit.MILLISECONDS));
-   assertEquals(61 * 1000, %2015-07-07T13:00:00->dateDiff(%2015-07-07T13:01:01, DurationUnit.MILLISECONDS));
-   assertEquals(3661 * 1000, %2015-07-07T13:00:00->dateDiff(%2015-07-07T14:01:01, DurationUnit.MILLISECONDS));
-   assertEquals(7200 * 1000, %2015-07-07T23:00:00->dateDiff(%2015-07-08T01:00:00, DurationUnit.MILLISECONDS));
+   assertEquals(0, $f->eval(|%2015-07-07T13:00:00->dateDiff(%2015-07-07T13:00:00, DurationUnit.MILLISECONDS)));
+   assertEquals(1 * 1000, $f->eval(|%2015-07-07T13:00:00->dateDiff(%2015-07-07T13:00:01, DurationUnit.MILLISECONDS)));
+   assertEquals(-1 * 1000, $f->eval(|%2015-07-07T13:00:01->dateDiff(%2015-07-07T13:00:00, DurationUnit.MILLISECONDS)));
+   assertEquals(60 * 1000, $f->eval(|%2015-07-07T13:00:00->dateDiff(%2015-07-07T13:01:00, DurationUnit.MILLISECONDS)));
+   assertEquals(61 * 1000, $f->eval(|%2015-07-07T13:00:00->dateDiff(%2015-07-07T13:01:01, DurationUnit.MILLISECONDS)));
+   assertEquals(3661 * 1000, $f->eval(|%2015-07-07T13:00:00->dateDiff(%2015-07-07T14:01:01, DurationUnit.MILLISECONDS)));
+   assertEquals(7200 * 1000, $f->eval(|%2015-07-07T23:00:00->dateDiff(%2015-07-08T01:00:00, DurationUnit.MILLISECONDS)));
 }
 
-function <<test.Test>> meta::pure::functions::date::tests::testDateDiffWithDifferentTimeZones():Boolean[1]
+function <<PCT.test>> meta::pure::functions::date::tests::testDateDiffWithDifferentTimeZones<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
    let ny = parseDate('2014-12-31T23:00:00.000-0500');
    let paris = parseDate('2015-1-1T5:00:00.000+0100');
 
-   assertEquals(0, $ny->dateDiff($paris, DurationUnit.YEARS));
-   assertEquals(0, $ny->dateDiff($paris, DurationUnit.MONTHS));
-   assertEquals(0, $ny->dateDiff($paris, DurationUnit.HOURS));
-   assertEquals(0, $ny->dateDiff($paris, DurationUnit.MINUTES));
-   assertEquals(0, $ny->dateDiff($paris, DurationUnit.SECONDS));
+   assertEquals(0, $f->eval(|$ny->dateDiff($paris, DurationUnit.YEARS)));
+   assertEquals(0, $f->eval(|$ny->dateDiff($paris, DurationUnit.MONTHS)));
+   assertEquals(0, $f->eval(|$ny->dateDiff($paris, DurationUnit.HOURS)));
+   assertEquals(0, $f->eval(|$ny->dateDiff($paris, DurationUnit.MINUTES)));
+   assertEquals(0, $f->eval(|$ny->dateDiff($paris, DurationUnit.SECONDS)));
 }

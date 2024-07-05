@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::meta::canReactivateDynamically(vs:ValueSpecification[1]):Boolean[1];
+import meta::pure::test::pct::*;
+
+native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::canReactivateDynamically(vs:ValueSpecification[1]):Boolean[1];

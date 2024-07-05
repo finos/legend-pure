@@ -16,8 +16,8 @@ import meta::pure::test::pct::*;
 
 native function <<PCT.function>> meta::pure::functions::string::reverseString(str:String[1]):String[1];
 
-function <<test.Test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::string::tests::reverse::testReverseString():Boolean[1]
+function <<PCT.test>> {test.excludePlatform = 'Java compiled'} meta::pure::functions::string::tests::reverse::testReverseString<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('', ''->reverseString());
-    assertEquals('abc', 'cba'->reverseString());
+    assertEquals('', $f->eval(|''->reverseString()));
+    assertEquals('abc', $f->eval(|'cba'->reverseString()));
 }

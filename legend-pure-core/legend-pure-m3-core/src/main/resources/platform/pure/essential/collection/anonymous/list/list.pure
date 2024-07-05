@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::test::pct::*;
 
-function meta::pure::functions::collection::list<U>(vals:U[*]):List<U>[1]
+function <<PCT.function, PCT.platformOnly>> meta::pure::functions::collection::list<U>(vals:U[*]):List<U>[1]
 {
    ^List<U>(values = $vals);
 }

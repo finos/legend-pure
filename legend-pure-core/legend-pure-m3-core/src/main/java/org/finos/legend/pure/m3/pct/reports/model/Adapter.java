@@ -19,15 +19,17 @@ import java.util.Objects;
 public class Adapter
 {
     public String name;
+    public String group;
     public String function;
 
     public Adapter()
     {
     }
 
-    public Adapter(String name, String function)
+    public Adapter(String name, String group, String function)
     {
         this.name = name;
+        this.group = group;
         this.function = function;
     }
 

@@ -14,4 +14,4 @@
 
 import meta::pure::test::pct::*;
 
-native function <<PCT.platformOnly>> meta::pure::functions::io::print(param:Any[*], max:Integer[1]):Nil[0];
+native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::io::print(param:Any[*], max:Integer[1]):Nil[0];

@@ -12,5 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::lang::rawEvalProperty<V|m>(p:Property<Nil,V|m>[1], a:Any[1]):V[m];
+import meta::pure::test::pct::*;
+
+native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::lang::rawEvalProperty<V|m>(p:Property<Nil,V|m>[1], a:Any[1]):V[m];
 

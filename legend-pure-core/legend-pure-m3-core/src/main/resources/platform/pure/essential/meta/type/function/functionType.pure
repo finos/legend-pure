@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-function meta::pure::functions::meta::functionType(f:Function<Any>[1]):FunctionType[1]
+import meta::pure::test::pct::*;
+
+function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::functionType(f:Function<Any>[1]):FunctionType[1]
 {
    assert($f->instanceOf(FunctionDefinition) || $f->instanceOf(NativeFunction), | 'functionType is not supported yet for this subtype of function '+$f->type()->id());
    $f.classifierGenericType->toOne().typeArguments->at(0).rawType->toOne()->cast(@FunctionType);

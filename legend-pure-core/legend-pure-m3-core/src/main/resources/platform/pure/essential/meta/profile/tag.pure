@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::meta::tag(profile:Profile[1], str:String[1]):Tag[1];
+import meta::pure::test::pct::*;
+
+native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::tag(profile:Profile[1], str:String[1]):Tag[1];

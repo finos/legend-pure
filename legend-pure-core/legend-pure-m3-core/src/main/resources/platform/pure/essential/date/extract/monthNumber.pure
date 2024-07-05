@@ -12,27 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::date::monthNumber(d:Date[1]):Integer[1];
+import meta::pure::test::pct::*;
 
-function <<test.Test>> meta::pure::functions::date::tests::testMonthNumber():Boolean[1]
+native function <<PCT.function>> meta::pure::functions::date::monthNumber(d:Date[1]):Integer[1];
+
+function <<PCT.test>> meta::pure::functions::date::tests::testMonthNumber<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals(4, %2015-04->monthNumber());
-    assertEquals(4, %2015-04-15->monthNumber());
-    assertEquals(4, %2015-04-15T17->monthNumber());
-    assertEquals(4, %2015-04-15T17:09->monthNumber());
-    assertEquals(4, %2015-04-15T17:09:21->monthNumber());
-    assertEquals(4, %2015-04-15T17:09:21.398->monthNumber());
+    assertEquals(4, $f->eval(|%2015-04->monthNumber()));
+    assertEquals(4, $f->eval(|%2015-04-15->monthNumber()));
+    assertEquals(4, $f->eval(|%2015-04-15T17->monthNumber()));
+    assertEquals(4, $f->eval(|%2015-04-15T17:09->monthNumber()));
+    assertEquals(4, $f->eval(|%2015-04-15T17:09:21->monthNumber()));
+    assertEquals(4, $f->eval(|%2015-04-15T17:09:21.398->monthNumber()));
 
-    assertEquals(1, %2015-01->monthNumber());
-    assertEquals(2, %2015-02->monthNumber());
-    assertEquals(3, %2015-03->monthNumber());
-    assertEquals(4, %2015-04->monthNumber());
-    assertEquals(5, %2015-05->monthNumber());
-    assertEquals(6, %2015-06->monthNumber());
-    assertEquals(7, %2015-07->monthNumber());
-    assertEquals(8, %2015-08->monthNumber());
-    assertEquals(9, %2015-09->monthNumber());
-    assertEquals(10, %2015-10->monthNumber());
-    assertEquals(11, %2015-11->monthNumber());
-    assertEquals(12, %2015-12->monthNumber());
+    assertEquals(1, $f->eval(|%2015-01->monthNumber()));
+    assertEquals(2, $f->eval(|%2015-02->monthNumber()));
+    assertEquals(3, $f->eval(|%2015-03->monthNumber()));
+    assertEquals(4, $f->eval(|%2015-04->monthNumber()));
+    assertEquals(5, $f->eval(|%2015-05->monthNumber()));
+    assertEquals(6, $f->eval(|%2015-06->monthNumber()));
+    assertEquals(7, $f->eval(|%2015-07->monthNumber()));
+    assertEquals(8, $f->eval(|%2015-08->monthNumber()));
+    assertEquals(9, $f->eval(|%2015-09->monthNumber()));
+    assertEquals(10, $f->eval(|%2015-10->monthNumber()));
+    assertEquals(11, $f->eval(|%2015-11->monthNumber()));
+    assertEquals(12, $f->eval(|%2015-12->monthNumber()));
 }

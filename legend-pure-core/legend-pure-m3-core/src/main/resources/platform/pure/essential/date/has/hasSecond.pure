@@ -12,15 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::date::hasSecond(d:Date[1]):Boolean[1];
+import meta::pure::test::pct::*;
 
-function <<test.Test>> meta::pure::functions::date::tests::testHasSecond():Boolean[1]
+native function <<PCT.function>> meta::pure::functions::date::hasSecond(d:Date[1]):Boolean[1];
+
+function <<PCT.test>> meta::pure::functions::date::tests::testHasSecond<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert(%2015-04-15T17:09:21.398->hasSecond());
-    assert(%2015-04-15T17:09:21->hasSecond());
-    assertFalse(%2015-04-15T17:09->hasSecond());
-    assertFalse(%2015-04-15T17->hasSecond());
-    assertFalse(%2015-04-15->hasSecond());
-    assertFalse(%2015-04->hasSecond());
-    assertFalse(%2015->hasSecond());
+    assert($f->eval(|%2015-04-15T17:09:21.398->hasSecond()));
+    assert($f->eval(|%2015-04-15T17:09:21->hasSecond()));
+    assertFalse($f->eval(|%2015-04-15T17:09->hasSecond()));
+    assertFalse($f->eval(|%2015-04-15T17->hasSecond()));
+    assertFalse($f->eval(|%2015-04-15->hasSecond()));
+    assertFalse($f->eval(|%2015-04->hasSecond()));
+    assertFalse($f->eval(|%2015->hasSecond()));
 }

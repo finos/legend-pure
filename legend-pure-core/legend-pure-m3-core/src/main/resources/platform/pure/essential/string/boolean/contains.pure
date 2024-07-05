@@ -16,13 +16,13 @@ import meta::pure::test::pct::*;
 
 native function <<PCT.function>> meta::pure::functions::string::contains(source:String[1], val:String[1]):Boolean[1];
 
-function <<test.Test>> meta::pure::functions::string::tests::contains::testTrueContains():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::contains::testTrueContains<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert(contains('the quick brown fox jumps over the lazy dog', 'lazy dog'));
-    assert(contains('the quick brown fox jumps over the lazy dog', 'brown fox'));
+    assert($f->eval(|contains('the quick brown fox jumps over the lazy dog', 'lazy dog')));
+    assert($f->eval(|contains('the quick brown fox jumps over the lazy dog', 'brown fox')));
 }
 
-function <<test.Test>> meta::pure::functions::string::tests::contains::testFalseContains():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::contains::testFalseContains<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertFalse(contains('the quick brown fox jumps over the lazy dog', 'lazy fox'));
+    assertFalse($f->eval(|contains('the quick brown fox jumps over the lazy dog', 'lazy fox')));
 }

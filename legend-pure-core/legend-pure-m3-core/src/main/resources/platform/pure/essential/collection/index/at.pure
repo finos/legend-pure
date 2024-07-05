@@ -21,28 +21,28 @@ native function
     }
     meta::pure::functions::collection::at<T>(set:T[*], key:Integer[1]):T[1];
 
-function <<test.Test>> meta::pure::functions::collection::tests::at::testAt():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::at::testAt<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let collection = ['a', 'b', 'c'];
-    assertEq('a', $collection->at(0));
-    assertEq('b', $collection->at(1));
-    assertEq('c', $collection->at(2));
+    assertEq('a', $f->eval(|$collection->at(0)));
+    assertEq('b', $f->eval(|$collection->at(1)));
+    assertEq('c', $f->eval(|$collection->at(2)));
 
    let singleItem = 'a';
-   assertEq('a', $singleItem->at(0));
+   assertEq('a', $f->eval(|$singleItem->at(0)));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::at::testAtOtherScenario():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::at::testAtOtherScenario<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let collection = ['a', 'b', 'c'];
-    assertEq('az', $collection->map(x | $x + 'z')->at(0));
-    assertEq('bz', $collection->map(x | $x + 'z')->at(1));
-    assertEq('cz', $collection->map(x | $x + 'z')->at(2));
+    assertEq('az', $f->eval(|$collection->map(x | $x + 'z')->at(0)));
+    assertEq('bz', $f->eval(|$collection->map(x | $x + 'z')->at(1)));
+    assertEq('cz', $f->eval(|$collection->map(x | $x + 'z')->at(2)));
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::at::testAtWithVariable():Boolean[1]
+function <<PCT.test>> meta::pure::functions::collection::tests::at::testAtWithVariable<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let collection = ['a', 'b', 'c'];
     let index = 1;
-    assertEq('b', $collection->at($index));
+    assertEq('b', $f->eval(|$collection->at($index)));
 }

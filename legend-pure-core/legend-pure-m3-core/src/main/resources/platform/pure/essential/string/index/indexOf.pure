@@ -19,26 +19,26 @@ native function <<PCT.function>> meta::pure::functions::string::indexOf(str:Stri
 native function <<PCT.function>> meta::pure::functions::string::indexOf(str:String[1], toFind:String[1], fromIndex:Integer[1]):Integer[1];
 
 
-function <<test.Test>> meta::pure::functions::string::tests::indexOf::testSimple():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::indexOf::testSimple<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let string = 'the quick brown fox jumps over the lazy dog';
 
-    assertEquals(4, $string->indexOf('quick'));
-    assertEquals(16, $string->indexOf('fox'));
-    assertEquals(-1, $string->indexOf('happy'));
+    assertEquals(4, $f->eval(|$string->indexOf('quick')));
+    assertEquals(16, $f->eval(|$string->indexOf('fox')));
+    assertEquals(-1, $f->eval(|$string->indexOf('happy')));
 }
 
 
-function <<test.Test>> meta::pure::functions::string::tests::indexOf::testFromIndex():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::indexOf::testFromIndex<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let string = 'the the';
 
-    assertEquals(1, $string->indexOf('h', 0));
-    assertEquals(5, $string->indexOf('h', 3));
+    assertEquals(1, $f->eval(|$string->indexOf('h', 0)));
+    assertEquals(5, $f->eval(|$string->indexOf('h', 3)));
 }
 
 
-function <<test.Test>> meta::pure::functions::string::tests::indexOf::testSubstringWithIndexOf():Boolean[1]
+function <<PCT.test>> meta::pure::functions::string::tests::indexOf::testSubstringWithIndexOf<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let text = 'Pure is <awesome>';
     let endIndex = $text->indexOf('>') + 1;

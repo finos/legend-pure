@@ -42,10 +42,7 @@ public class ReportGeneration
         {
             try
             {
-                System.out.println(testSuites);
                 PCTReportConfiguration reportManager = (PCTReportConfiguration) Thread.currentThread().getContextClassLoader().loadClass(suiteClass).newInstance();
-                System.out.println(reportManager.getReportScope()._package);
-                System.out.println(reportManager.getReportScope().filePath);
                 return generateReport(TestCollection.buildPCTTestCollection(reportManager.getReportScope()._package, reportManager.getReportScope().filePath, processorSupport), reportManager, processorSupport);
             }
             catch (Exception e)

@@ -14,11 +14,17 @@
 
 package org.finos.legend.pure.m3.pct.aggregate.model;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.list.MutableList;
+import org.finos.legend.pure.m3.pct.reports.model.Adapter;
+import org.finos.legend.pure.m3.pct.reports.model.AdapterKey;
 
+import java.util.List;
 import java.util.Map;
 
 public class Documentation
 {
-    public Map<String, FunctionDocumentation> documentationByName = Maps.mutable.empty();
+    public List<AdapterKey> adapters = Lists.mutable.empty();
+    public List<FunctionDocumentation> functionsDocumentation = Lists.mutable.empty();
 }

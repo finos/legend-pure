@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-native function meta::pure::functions::date::dayOfMonth(d:Date[1]):Integer[1];
+import meta::pure::test::pct::*;
 
-function <<test.Test>> meta::pure::functions::date::tests::testDayOfMonth():Boolean[1]
+native function <<PCT.function>> meta::pure::functions::date::dayOfMonth(d:Date[1]):Integer[1];
+
+function <<PCT.test>> meta::pure::functions::date::tests::testDayOfMonth<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals(15, %2015-04-15->dayOfMonth());
-    assertEquals(15, %2015-04-15T17->dayOfMonth());
-    assertEquals(15, %2015-04-15T17:09->dayOfMonth());
-    assertEquals(15, %2015-04-15T17:09:21->dayOfMonth());
-    assertEquals(15, %2015-04-15T17:09:21.398->dayOfMonth());
+    assertEquals(15, $f->eval(|%2015-04-15->dayOfMonth()));
+    assertEquals(15, $f->eval(|%2015-04-15T17->dayOfMonth()));
+    assertEquals(15, $f->eval(|%2015-04-15T17:09->dayOfMonth()));
+    assertEquals(15, $f->eval(|%2015-04-15T17:09:21->dayOfMonth()));
+    assertEquals(15, $f->eval(|%2015-04-15T17:09:21.398->dayOfMonth()));
 }

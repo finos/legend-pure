@@ -14,7 +14,7 @@
 
 import meta::pure::test::pct::*;
 
-function <<PCT.platformOnly>> meta::pure::functions::meta::getHiddenPayload(o:Any[1]):Any[1]
+function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::getHiddenPayload(o:Any[1]):Any[1]
 {
    $o.elementOverride->toOne()->cast(@GetterOverride).hiddenPayload->toOne();
 }

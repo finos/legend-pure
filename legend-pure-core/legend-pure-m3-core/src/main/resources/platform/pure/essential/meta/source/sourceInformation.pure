@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import meta::pure::functions::meta::tests::sourceInformation::*;
+import meta::pure::test::pct::*;
 
 Class meta::pure::functions::meta::SourceInformation
 {
@@ -25,8 +26,7 @@ Class meta::pure::functions::meta::SourceInformation
     <<equality.Key>> endColumn : Integer[1];
 }
 
-native function meta::pure::functions::meta::sourceInformation(node:Any[1]):SourceInformation[0..1];
-
+native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::sourceInformation(node:Any[1]):SourceInformation[0..1];
 
 function <<test.Test>> meta::pure::functions::meta::tests::sourceInformation::testClassSourceInformation():Boolean[1]
 {
