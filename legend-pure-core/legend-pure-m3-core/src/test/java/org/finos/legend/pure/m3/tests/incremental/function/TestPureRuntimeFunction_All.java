@@ -39,8 +39,8 @@ public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompile
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
         MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
-        CodeRepository system = GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform", "platform_functions");
-        CodeRepository test = GenericCodeRepository.build("test", "test(::.*)?", "platform", "system", "platform_functions");
+        CodeRepository system = GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform", "core_functions_unclassified");
+        CodeRepository test = GenericCodeRepository.build("test", "test(::.*)?", "platform", "system", "core_functions_unclassified");
         repositories.add(system);
         repositories.add(test);
         return repositories;
@@ -81,10 +81,6 @@ public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompile
                 "function {PR1.Contract='eee'} go():Any[*]\n" +
                 "{\n" +
                 "   ConcreteFunctionDefinition.all()->filter(f|!$f.name->isEmpty() && isContract($f)).name;\n" +
-                "}\n" +
-                "function meta::pure::functions::meta::tag(profile:Profile[1], str:String[1]):Tag[1]" +
-                "{" +
-                "   $profile.p_tags->at(0);" +
                 "}\n" +
                 "function isContract(f:ConcreteFunctionDefinition<Any>[1]):Boolean[1]\n" +
                 "{\n" +

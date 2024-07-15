@@ -46,28 +46,6 @@ public class TestMultiplicityArgument extends AbstractPureTestWithCoreCompiled
                 " \n" +
                 "}" +
                 "" +
-                "function meta::pure::functions::meta::hasUpperBound(multiplicity:Multiplicity[1]):Boolean[1]\n" +
-                "{\n" +
-                "    let upperBound = $multiplicity.upperBound;\n" +
-                "    !$upperBound->isEmpty() && !$upperBound->toOne().value->isEmpty() && $upperBound->toOne().value != -1;\n" +
-                "}" +
-                "function meta::pure::functions::meta::hasToOneUpperBound(multiplicity:Multiplicity[1]):Boolean[1]\n" +
-                "{\n" +
-                "    $multiplicity->hasUpperBound() && eq($multiplicity->getUpperBound(), 1)\n" +
-                "}" +
-                "function meta::pure::functions::meta::getUpperBound(multiplicity:Multiplicity[1]):Integer[1]\n" +
-                "{\n" +
-                "    $multiplicity.upperBound->toOne().value->toOne()\n" +
-                "}" +
-                "\n" +
-                "function meta::pure::functions::meta::getLowerBound(multiplicity:Multiplicity[1]):Integer[1]\n" +
-                "{\n" +
-                "    $multiplicity.lowerBound->toOne().value->toOne()\n" +
-                "}" +
-                "function meta::pure::functions::meta::isToOne(multiplicity:Multiplicity[1]):Boolean[1]\n" +
-                "{\n" +
-                "    hasToOneUpperBound($multiplicity) && eq($multiplicity->getLowerBound(), 1)\n" +
-                "}" +
                 "function test(v:ServiceResult<Any|*>[1]):Boolean[1]\n" +
                 "{\n" +
                 "   $v->match(j:JSONResult<Any|*>[1]| $j.value->match([a:Any[*]|$j.classifierGenericType.multiplicityArguments->at(0)->isToOne()]))\n" +

@@ -21,6 +21,8 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.multimap.list.ListMultimap;
+import org.eclipse.collections.impl.utility.ListIterate;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -104,10 +106,12 @@ public class FunctionsGeneration
         loader.loadAll(message);
 
         MutableMap<String, FunctionDefinition> functionsInfo = Maps.mutable.empty();
-        getPCTFunctions(_Package.getByUserPath(reportScope._package, runtime.getProcessorSupport()), reportScope.filePath, runtime.getProcessorSupport()).forEach(x ->
-        {
-            addFunctionToFunctionsDB(x, functionsInfo, runtime.getProcessorSupport());
-        });
+        FunctionsRepository functionsRepository = getPCTFunctions(_Package.getByUserPath(reportScope._package, runtime.getProcessorSupport()), reportScope.filePath, runtime.getProcessorSupport());
+
+        functionsRepository.PCTFunctions.forEach(x -> addPCTFunctionToFunctionsDB(x, functionsInfo, runtime.getProcessorSupport()));
+        validateFunctionFiles(functionsInfo);
+        functionsRepository.PCTTests.forEach(x -> addPCTTestToFunctionsDB(x, functionsInfo, runtime.getProcessorSupport()));
+        functionsRepository.Tests.forEach(x -> addTestToFunctionsDB(x, functionsInfo, runtime.getProcessorSupport()));
 
         Functions functions = new Functions();
         functions.reportScope = reportScope;
@@ -116,8 +120,42 @@ public class FunctionsGeneration
         return functions;
     }
 
+    private static void validateFunctionFiles(MutableMap<String, FunctionDefinition> functionsInfo)
+    {
+        functionsInfo.values().forEach(x ->
+        {
+            ListMultimap<Boolean, Signature> res = ListIterate.groupBy(x.signatures, z -> z.platformOnly);
+            if (res.keySet().size() != 1)
+            {
+                throw new RuntimeException("The source " + x.sourceId + " contains both 'platform only' and regular functions.");
+            }
+        });
+    }
 
-    private static void addFunctionToFunctionsDB(PackageableFunction<?> _function, MutableMap<String, FunctionDefinition> functionsDB, ProcessorSupport ps)
+    private static void addPCTTestToFunctionsDB(PackageableFunction<?> _function, MutableMap<String, FunctionDefinition> functionsDB, ProcessorSupport ps)
+    {
+        FunctionDefinition functionInfo = functionsDB.get(_function.getSourceInformation().getSourceId());
+        // FunctionDefinition can be null if the PCT Tests are meant to test functions composition.
+        if (functionInfo != null)
+        {
+            if (functionInfo.signatures.get(0).platformOnly)
+            {
+                throw new RuntimeException("The test " + _function._functionName() + " in the source " + _function.getSourceInformation().getSourceId() + " is a PCT test for platform-only functions.");
+            }
+            functionInfo.pctTestCount++;
+        }
+    }
+
+    private static void addTestToFunctionsDB(PackageableFunction<?> _function, MutableMap<String, FunctionDefinition> functionsDB, ProcessorSupport ps)
+    {
+        FunctionDefinition functionInfo = functionsDB.get(_function.getSourceInformation().getSourceId());
+        if (functionInfo != null)
+        {
+            functionInfo.testCount++;
+        }
+    }
+
+    private static void addPCTFunctionToFunctionsDB(PackageableFunction<?> _function, MutableMap<String, FunctionDefinition> functionsDB, ProcessorSupport ps)
     {
         FunctionDefinition functionInfo = functionsDB.getIfAbsentPut(_function.getSourceInformation().getSourceId(), () -> new FunctionDefinition(_function.getSourceInformation().getSourceId()));
         // Name
@@ -137,31 +175,47 @@ public class FunctionsGeneration
         functionInfo.signatures.add(new Signature(PackageableElement.getUserPathForPackageableElement(_function), FunctionDescriptor.getFunctionDescriptor(_function, ps), PCTTools.isPlatformOnly(_function, ps), PCTTools.getDoc(_function, ps), PCTTools.getGrammarDoc(_function, ps), PCTTools.getGrammarCharacters(_function, ps)));
     }
 
-
-    private static MutableList<PackageableFunction<?>> getPCTFunctions(CoreInstance pkg, String filePath, ProcessorSupport processorSupport)
+    private static FunctionsRepository getPCTFunctions(CoreInstance pkg, String filePath, ProcessorSupport processorSupport)
     {
-        MutableList<PackageableFunction<?>> result = Lists.mutable.empty();
+        FunctionsRepository result = new FunctionsRepository();
         getPCTFunctionsRecurse(pkg, result, filePath, processorSupport);
         return result;
     }
 
-    private static void getPCTFunctionsRecurse(CoreInstance pkg, MutableList<PackageableFunction<?>> func, String filePath, ProcessorSupport processorSupport)
+    private static void getPCTFunctionsRecurse(CoreInstance pkg, FunctionsRepository functionsRepository, String filePath, ProcessorSupport processorSupport)
     {
         for (CoreInstance child : Instance.getValueForMetaPropertyToManyResolved(pkg, M3Properties.children, processorSupport))
         {
             if (Instance.instanceOf(child, M3Paths.PackageableFunction, processorSupport))
             {
-                if (PCTTools.isPCTFunction(child, processorSupport) && child.getSourceInformation().getSourceId().startsWith(filePath))
+                if (child.getSourceInformation().getSourceId().startsWith(filePath))
                 {
-                    func.add((PackageableFunction<?>) child);
+                    if (PCTTools.isPCTFunction(child, processorSupport))
+                    {
+                        functionsRepository.PCTFunctions.add((PackageableFunction<?>) child);
+                    }
+                    else if (PCTTools.isPCTTest(child, processorSupport))
+                    {
+                        functionsRepository.PCTTests.add((PackageableFunction<?>) child);
+                    }
+                    else if (PCTTools.isTest(child, processorSupport))
+                    {
+                        functionsRepository.Tests.add((PackageableFunction<?>) child);
+                    }
                 }
             }
             else if (Instance.instanceOf(child, M3Paths.Package, processorSupport))
             {
-                getPCTFunctionsRecurse(child, func, filePath, processorSupport);
+                getPCTFunctionsRecurse(child, functionsRepository, filePath, processorSupport);
             }
         }
     }
 
+    private static class FunctionsRepository
+    {
+        public MutableList<PackageableFunction<?>> PCTFunctions = Lists.mutable.empty();
+        public MutableList<PackageableFunction<?>> PCTTests = Lists.mutable.empty();
+        public MutableList<PackageableFunction<?>> Tests = Lists.mutable.empty();
+    }
 
 }

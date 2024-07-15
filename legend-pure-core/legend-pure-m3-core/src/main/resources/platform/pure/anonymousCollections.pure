@@ -46,3 +46,8 @@ Class meta::pure::functions::collection::Map<U,V>
 //   _values : Pair<U,V>[*];
 //   _func : Function<{U[1],U[1]->Boolean[1]}>[0..1];
 }
+
+Class meta::pure::functions::collection::ValueHolder<T>
+{
+    value : T[1];
+}

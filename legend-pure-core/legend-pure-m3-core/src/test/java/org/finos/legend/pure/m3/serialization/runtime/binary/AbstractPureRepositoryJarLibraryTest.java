@@ -77,7 +77,7 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
     public void testIsKnownFile()
     {
         Assert.assertTrue(this.library.isKnownFile("platform/pure/grammar/m3.pc"));
-        Assert.assertTrue(this.library.isKnownFile("platform/pure/grammar/functions/lang/all.pc"));
+        Assert.assertTrue(this.library.isKnownFile("platform/pure/grammar/functions/lang/all/all.pc"));
 
         Assert.assertFalse(this.library.isKnownFile("not a file at all"));
         Assert.assertFalse(this.library.isKnownFile("datamart_datamt/something/somethingelse.pure"));
@@ -114,7 +114,7 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
     @Test
     public void testReadFiles()
     {
-        testReadFiles("platform/pure/grammar/m3.pc", "platform/pure/grammar/functions/lang/all.pc", "platform/pure/grammar/functions/collection/base/filter.pc");
+        testReadFiles("platform/pure/grammar/m3.pc", "platform/pure/grammar/functions/lang/all/all.pc", "platform/pure/grammar/functions/collection/iteration/filter.pc");
     }
 
     protected void testReadFiles(String... files)
@@ -220,7 +220,7 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
     public void testFileDependencies_MultipleFiles()
     {
         String m3BinPath = "platform/pure/grammar/m3.pc";
-        String collectionBinPath = "platform/pure/grammar/functions/lang/all.pc";
+        String collectionBinPath = "platform/pure/grammar/functions/lang/all/all.pc";
 
         MutableSet<String> m3Dependencies = this.library.getFileDependencies(m3BinPath).toSet();
         Verify.assertSetsEqual(Sets.mutable.with(m3BinPath), m3Dependencies);
@@ -269,8 +269,8 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
     public void testDependentFiles_MultipleFiles()
     {
         String m3BinPath = "platform/pure/grammar/m3.pc";
-        String collectionBinPath = "platform/pure/grammar/functions/lang/all.pc";
-        String dateBinPath = "platform/pure/grammar/functions/string/plus.pc";
+        String collectionBinPath = "platform/pure/grammar/functions/lang/all/all.pc";
+        String dateBinPath = "platform/pure/grammar/functions/string/operation/plus.pc";
 
         MutableSetMultimap<String, String> allExpectedDependents = Multimaps.mutable.set.empty();
         for (Source source : runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()))

@@ -22,7 +22,7 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.lang.New;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.lang.creation.New;
 
 public class DeserializationUtils
 {

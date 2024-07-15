@@ -14,10 +14,10 @@
 
 package org.finos.legend.pure.m2.dsl.diagram.serialization.grammar.walker;
 
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.unload.walk.WalkerState;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.diagram.GeneralizationView;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;

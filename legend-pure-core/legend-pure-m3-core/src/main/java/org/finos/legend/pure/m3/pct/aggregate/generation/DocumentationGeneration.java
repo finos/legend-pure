@@ -15,8 +15,12 @@
 package org.finos.legend.pure.m3.pct.aggregate.generation;
 
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m3.pct.aggregate.model.Documentation;
 import org.finos.legend.pure.m3.pct.aggregate.model.FunctionDocumentation;
+import org.finos.legend.pure.m3.pct.functions.model.FunctionDefinition;
+import org.finos.legend.pure.m3.pct.reports.model.AdapterReport;
 import org.finos.legend.pure.m3.pct.shared.provider.PCTReportProviderLoader;
 
 import java.util.Map;
@@ -27,38 +31,41 @@ public class DocumentationGeneration
     {
         Documentation documentation = new Documentation();
 
-        Map<String, FunctionDocumentation> documentationBySourceId = Maps.mutable.empty();
+        MutableMap<String, FunctionDocumentation> documentationBySourceId = Maps.mutable.empty();
 
         PCTReportProviderLoader.gatherFunctions().forEach(functions ->
                 {
                     functions.functionDefinitions.forEach(function ->
                     {
                         FunctionDocumentation doc = new FunctionDocumentation();
-                        doc.module = functions.reportScope.module;
+                        doc.reportScope = functions.reportScope;
                         doc.functionDefinition = function;
                         documentationBySourceId.put(function.sourceId, doc);
                     });
                 }
         );
 
-        PCTReportProviderLoader.gatherReports().forEach(report ->
+        MutableList<AdapterReport> allReports = PCTReportProviderLoader.gatherReports();
+        allReports.forEach(report ->
                 {
                     report.functionTests.forEach(functionTest ->
                     {
-                        FunctionDocumentation doc = documentationBySourceId.get(functionTest.sourceId);
-                        if (doc != null)
+                        FunctionDocumentation doc = documentationBySourceId.getIfAbsentPut(functionTest.sourceId, () ->
                         {
-                            doc.functionTestResults.put(report.adapterKey, functionTest);
-                        }
+                            // Create an Empty one, accounts for source files containing only tests (function composition use case)
+                            FunctionDocumentation funcDoc = new FunctionDocumentation();
+                            funcDoc.functionDefinition = new FunctionDefinition(functionTest.sourceId);
+                            funcDoc.reportScope = report.reportScope;
+                            return funcDoc;
+                        });
+                        doc.functionTestResults.put(report.adapterKey, functionTest);
                     });
                 }
         );
 
-        documentationBySourceId.values().forEach(v ->
-                {
-                    documentation.documentationByName.put(v.functionDefinition.name, v);
-                }
-        );
+        documentation.functionsDocumentation = documentationBySourceId.valuesView().toList();
+
+        documentation.adapters = allReports.collect(c -> c.adapterKey).distinct();
 
         return documentation;
     }

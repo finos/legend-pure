@@ -29,21 +29,21 @@ import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class _Column
 {
-    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType sourceType, String type, SourceInformation src, ProcessorSupport processorSupport)
+    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, String type, SourceInformation src, ProcessorSupport processorSupport)
     {
-        GenericType target = (GenericType) processorSupport.newEphemeralAnonymousCoreInstance(M3Paths.GenericType);
+        GenericType target = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
         target._rawType(type == null ? null : (Type) _Package.getByUserPath(type, processorSupport));
-        return _Column.getColumnInstance(name, nameWildCard, sourceType, target, src, processorSupport);
+        return _Column.getColumnInstance(name, nameWildCard, target, src, processorSupport);
     }
 
-    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType sourceType, GenericType targetType, SourceInformation src, ProcessorSupport processorSupport)
+    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType targetType, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
-        Column<?, ?> columnInstance = (Column<?, ?>) processorSupport.newAnonymousCoreInstance(src, M3Paths.Column);
+        Column<?, ?> columnInstance = (Column<?, ?>) processorSupport.newAnonymousCoreInstance(sourceInformation, M3Paths.Column);
         columnInstance._name(removeQuotes(name));
         columnInstance._nameWildCard(nameWildCard);
-        GenericType columnGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
+        GenericType columnGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(sourceInformation, M3Paths.GenericType);
         columnGenericType._rawType((Type) _Package.getByUserPath(M3Paths.Column, processorSupport));
-        columnGenericType._typeArguments(Lists.mutable.with(sourceType, targetType));
+        columnGenericType._typeArguments(Lists.mutable.with(null, targetType));
         columnGenericType._multiplicityArgumentsAdd((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport));
         columnInstance.setKeyValues(M3PropertyPaths.classifierGenericType, Lists.mutable.with(columnGenericType));
         return columnInstance;

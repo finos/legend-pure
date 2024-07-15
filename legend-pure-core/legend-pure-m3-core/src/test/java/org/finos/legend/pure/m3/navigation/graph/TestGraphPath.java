@@ -47,7 +47,7 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                 getFactoryRegistryOverride(),
                 getOptions(),
                 Tuples.pair(
-                        "/test/testModel.pure",
+                        "/test/_testModel.pure",
                         "import test::domain::*;\n" +
                                 "Class test::domain::ClassA\n" +
                                 "{\n" +

@@ -26,6 +26,7 @@ public class PCTTools
 {
     public static final String PCT_PROFILE = "meta::pure::test::pct::PCT";
     public static final String DOC_PROFILE = "meta::pure::profiles::doc";
+    public static final String TEST_PROFILE = "meta::pure::profiles::test";
 
     public static boolean isPCTTest(CoreInstance node, ProcessorSupport processorSupport)
     {
@@ -98,5 +99,10 @@ public class PCTTools
     {
         debugHelper(testFunction, pctExecutor, false, null);
         fail("The PCT test runner expected an error containing: \"" + message + "\" but the test succeeded!");
+    }
+
+    public static boolean isTest(CoreInstance node, ProcessorSupport processorSupport)
+    {
+        return Profile.hasStereotype(node, TEST_PROFILE, "Test", processorSupport);
     }
 }

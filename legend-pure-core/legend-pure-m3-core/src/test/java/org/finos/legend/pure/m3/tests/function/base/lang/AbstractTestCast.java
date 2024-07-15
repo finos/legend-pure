@@ -348,7 +348,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
     protected static MutableRepositoryCodeStorage getCodeStorage()
     {
         MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
-        repositories.add(new GenericCodeRepository("test", null, "platform", "platform_functions"));
+        repositories.add(new GenericCodeRepository("test", null, "platform", "core_functions_unclassified"));
         return new CompositeCodeStorage(new ClassLoaderCodeStorage(repositories));
     }
 

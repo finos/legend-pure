@@ -135,7 +135,6 @@ public class GenericType
                     (CoreInstance) _Column.getColumnInstance(
                             c._name(),
                             c._nameWildCard(),
-                            null,
                             (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) makeTypeArgumentAsConcreteAsPossible(_Column.getColumnType(c), filteredGenericTypeByTypeParameterNames, sourceMulBinding, processorSupport),
                             c.getSourceInformation(),
                             processorSupport
@@ -266,7 +265,7 @@ public class GenericType
 
         // Set RelationType on Generic
         return ((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) processorSupport.newGenericType(null, operation, true))
-                ._rawType(_RelationType.build(newColumnSet, gLeft._rawType().getSourceInformation(), processorSupport));
+                ._rawType(_RelationType.build(newColumnSet.collect(c -> _Column.getColumnInstance(c._name(), c._nameWildCard(), _Column.getColumnType(c), c.getSourceInformation(), processorSupport)), gLeft._rawType().getSourceInformation(), processorSupport));
     }
 
     @Deprecated
@@ -1164,7 +1163,6 @@ public class GenericType
                     src._columns().collect(c -> (CoreInstance) _Column.getColumnInstance(
                                     c._name(),
                                     c._nameWildCard(),
-                                    null,
                                     (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) copyGenericType(_Column.getColumnType(c), replaceSourceInfo, newSourceInfo, processorSupport, inferred),
                                     replaceSourceInfo ? newSourceInfo : src.getSourceInformation(),
                                     processorSupport

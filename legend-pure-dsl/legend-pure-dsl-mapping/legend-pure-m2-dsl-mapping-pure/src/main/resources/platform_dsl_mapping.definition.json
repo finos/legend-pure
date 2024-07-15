@@ -3,7 +3,6 @@
   "pattern": "(meta::pure::mapping|meta::external::store::model|meta::pure::metamodel)(::.*)?",
   "dependencies": [
     "platform",
-    "platform_functions",
     "platform_dsl_store"
   ]
 }

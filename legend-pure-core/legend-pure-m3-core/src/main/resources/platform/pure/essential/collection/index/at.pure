@@ -1,0 +1,48 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::test::pct::*;
+
+native function
+    <<PCT.function>>
+    {
+        doc.doc=''
+    }
+    meta::pure::functions::collection::at<T>(set:T[*], key:Integer[1]):T[1];
+
+function <<PCT.test>> meta::pure::functions::collection::tests::at::testAt<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    let collection = ['a', 'b', 'c'];
+    assertEq('a', $f->eval(|$collection->at(0)));
+    assertEq('b', $f->eval(|$collection->at(1)));
+    assertEq('c', $f->eval(|$collection->at(2)));
+
+   let singleItem = 'a';
+   assertEq('a', $f->eval(|$singleItem->at(0)));
+}
+
+function <<PCT.test>> meta::pure::functions::collection::tests::at::testAtOtherScenario<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    let collection = ['a', 'b', 'c'];
+    assertEq('az', $f->eval(|$collection->map(x | $x + 'z')->at(0)));
+    assertEq('bz', $f->eval(|$collection->map(x | $x + 'z')->at(1)));
+    assertEq('cz', $f->eval(|$collection->map(x | $x + 'z')->at(2)));
+}
+
+function <<PCT.test>> meta::pure::functions::collection::tests::at::testAtWithVariable<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    let collection = ['a', 'b', 'c'];
+    let index = 1;
+    assertEq('b', $f->eval(|$collection->at($index)));
+}

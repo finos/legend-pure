@@ -40,7 +40,11 @@ import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
 import org.finos.legend.pure.m3.navigation.function.InvalidFunctionDescriptorException;
 import org.finos.legend.pure.m3.serialization.PureRuntimeEventHandler;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.*;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNodeStatus;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.MutableVersionControlledCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.UpdateReport;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
@@ -228,7 +232,7 @@ public class PureRuntime
 
         try
         {
-            RichIterable<CodeRepository> allPlatform = this.getCodeStorage().getAllRepositories().select(c -> c.getName() != null && c.getName().startsWith("platform"));
+            RichIterable<CodeRepository> allPlatform = this.getCodeStorage().getAllRepositories().select(c -> c.getName() != null && (c.getName().startsWith("platform") || c.getName().startsWith("core_functions")));
             MutableList<String> sourcePaths = allPlatform.flatCollect(c -> this.getCodeStorage().getFileOrFiles(c.getName())).toList();
 
             if (message != null)
@@ -921,7 +925,7 @@ public class PureRuntime
         }
         MutableRepositoryCodeStorage codeStorage = getCodeStorage();
         CodeRepository repo = codeStorage.getRepositoryForPath(path);
-        boolean immutable = this.forceImmutable || (repo != null && repo.getName() != null && repo.getName().startsWith("platform")); // TODO do something smarter here
+        boolean immutable = this.forceImmutable || (repo != null && repo.getName() != null && (repo.getName().startsWith("platform") || repo.getName().startsWith("core_functions"))); // TODO do something smarter here
         if (Source.isInMemory(path))
         {
             throw new RuntimeException("'" + path + "' should not be in memory!");

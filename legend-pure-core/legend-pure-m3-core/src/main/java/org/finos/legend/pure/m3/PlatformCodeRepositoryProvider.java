@@ -24,13 +24,14 @@ public class PlatformCodeRepositoryProvider implements CodeRepositoryProvider
 {
     public static final Adapter nativeAdapter = new Adapter(
             "Native",
+            "",
             "meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_"
     );
 
-    public static final ReportScope basicFunctions = new ReportScope(
-            "basic",
+    public static final ReportScope essentialFunctions = new ReportScope(
+            "essential",
             "meta::pure::functions",
-            "/platform/pure/basics/"
+            "/platform/pure/essential/"
     );
 
     public static final ReportScope grammarFunctions = new ReportScope(

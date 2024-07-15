@@ -25,6 +25,8 @@ public class FunctionDefinition
     public String sourceId;
 
     public List<Signature> signatures = Lists.mutable.empty();
+    public int testCount;
+    public int pctTestCount;
 
     public FunctionDefinition()
     {

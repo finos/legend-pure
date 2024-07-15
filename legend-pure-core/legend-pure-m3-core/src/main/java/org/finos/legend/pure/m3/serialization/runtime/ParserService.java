@@ -14,11 +14,11 @@
 
 package org.finos.legend.pure.m3.serialization.runtime;
 
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 
 import java.util.Iterator;
 import java.util.ServiceLoader;

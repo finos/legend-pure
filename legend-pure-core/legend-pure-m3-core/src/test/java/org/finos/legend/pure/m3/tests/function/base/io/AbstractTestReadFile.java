@@ -145,7 +145,7 @@ public abstract class AbstractTestReadFile extends AbstractPureTestWithCoreCompi
     protected static MutableRepositoryCodeStorage getCodeStorage()
     {
         MutableList<CodeRepository> repositories = Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
-        repositories.add(new GenericCodeRepository("read_file_test", null, "platform", "platform_functions"));
+        repositories.add(new GenericCodeRepository("read_file_test", null, "platform", "core_functions_unclassified"));
         return new CompositeCodeStorage(new ClassLoaderCodeStorage(repositories));
     }
 }

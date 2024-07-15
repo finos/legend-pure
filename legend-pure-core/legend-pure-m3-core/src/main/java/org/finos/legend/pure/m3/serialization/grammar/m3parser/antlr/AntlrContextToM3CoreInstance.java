@@ -74,6 +74,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Mu
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.MultiplicityInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.MultiplicityValueInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.GenericTypeOperationInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.AssociationInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.AssociationProjectionInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
@@ -1098,7 +1099,6 @@ public class AntlrContextToM3CoreInstance
             SourceInformation src = this.sourceInformation.getPureSourceInformation(ctx.getStart());
 
             // Create the RelationType
-            GenericTypeInstance relationTypeGenericType = GenericTypeInstance.createPersistent(this.repository);
             MutableList<CoreInstance> lambdas = Lists.mutable.empty();
             MutableList<CoreInstance> columnNames = Lists.mutable.empty();
             MutableList<CoreInstance> columnInstances = Lists.mutable.empty();
@@ -1123,9 +1123,10 @@ public class AntlrContextToM3CoreInstance
                     GenericType returnGType = type(oneColSpec.type(), typeParametersNames, "", importId, addLines);
                     returnType = returnGType._rawType().getName();
                 }
-                columnInstances.add(_Column.getColumnInstance(colName, false, relationTypeGenericType, returnType, src, processorSupport));
+                columnInstances.add(_Column.getColumnInstance(colName, false, returnType, src, processorSupport));
             });
-            relationTypeGenericType._rawTypeCoreInstance(_RelationType.build(columnInstances, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport));
+            RelationType<?> relationType = _RelationType.build(columnInstances, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport);
+            GenericType relationTypeGenericType = (GenericType) processorSupport.type_wrapGenericType(relationType);
 
             // Build the function
             CoreInstance replacementFunction = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart()), null, null, importId, null);
@@ -1147,7 +1148,7 @@ public class AntlrContextToM3CoreInstance
                     for (int i = 0; i < lambdas.size(); i++)
                     {
                         GenericType localColumnType = GenericTypeInstance.createPersistent(this.repository);
-                        localColumnType._rawTypeCoreInstance(_RelationType.build(Lists.mutable.with(_Column.getColumnInstance(columnNames.get(i).getName(), false, null, (String) null, src, processorSupport)), this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport));
+                        localColumnType._rawTypeCoreInstance(_RelationType.build(Lists.mutable.with(_Column.getColumnInstance(columnNames.get(i).getName(), false, (String) null, src, processorSupport)), this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport));
 
                         CoreInstance aggColFunc = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart()), null, null, importId, null);
                         aggColFunc.setKeyValues(Lists.mutable.with("functionName"), Lists.mutable.with(this.repository.newStringCoreInstance("aggColSpec")));
@@ -1172,7 +1173,7 @@ public class AntlrContextToM3CoreInstance
                     for (int i = 0; i < lambdas.size(); i++)
                     {
                         GenericType localColumnType = GenericTypeInstance.createPersistent(this.repository);
-                        localColumnType._rawTypeCoreInstance(_RelationType.build(Lists.mutable.with(_Column.getColumnInstance(columnNames.get(i).getName(), false, null, (String) null, src, processorSupport)), this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport));
+                        localColumnType._rawTypeCoreInstance(_RelationType.build(Lists.mutable.with(_Column.getColumnInstance(columnNames.get(i).getName(), false, (String) null, src, processorSupport)), this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport));
 
                         CoreInstance colFunc = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart()), null, null, importId, null);
                         colFunc.setKeyValues(Lists.mutable.with("functionName"), Lists.mutable.with(this.repository.newStringCoreInstance("funcColSpec")));
@@ -2145,7 +2146,7 @@ public class AntlrContextToM3CoreInstance
                                     {
                                         M3Parser.ColumnNameContext colNameCtx = c.columnName();
                                         String colName = colNameCtx != null ? colNameCtx.STRING() != null ? this.removeQuotes(colNameCtx.STRING()) : colNameCtx.identifier().getText() : "";
-                                        return _Column.getColumnInstance(c.QUESTION() != null ? "" : colName, c.QUESTION() != null, genericTypeInstance, this.type(c.type(), typeParametersNames, spacePlusTabs(space, 5), importId, addLines), srcInfo, processorSupport);
+                                        return _Column.getColumnInstance(c.QUESTION() != null ? "" : colName, c.QUESTION() != null, this.type(c.type(), typeParametersNames, spacePlusTabs(space, 5), importId, addLines), srcInfo, processorSupport);
                                     }
                             ), srcInfo, processorSupport
                     )

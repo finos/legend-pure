@@ -62,10 +62,6 @@ public class TestClassWithParamSuperType extends AbstractPureTestWithCoreCompile
                         "{\n" +
                         "}\n" +
                         "" +
-                        "function meta::pure::functions::collection::pair<U,V>(first:U[1], second:V[1]):Pair<U,V>[1]\n" +
-                        "{\n" +
-                        "   ^Pair<U,V>(first=$first, second=$second);\n" +
-                        "}\n" +
                         "function test():Any[*]\n" +
                         "{\n" +
                         "  ^D(test = pair('eeee', 'ffff'), withMult = 'aaaa');\n" +

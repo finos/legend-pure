@@ -18,12 +18,13 @@ import org.eclipse.collections.api.factory.Maps;
 import org.finos.legend.pure.m3.pct.functions.model.FunctionDefinition;
 import org.finos.legend.pure.m3.pct.reports.model.AdapterKey;
 import org.finos.legend.pure.m3.pct.reports.model.FunctionTestResults;
+import org.finos.legend.pure.m3.pct.shared.model.ReportScope;
 
 import java.util.Map;
 
 public class FunctionDocumentation
 {
-    public String module;
+    public ReportScope reportScope;
 
     public FunctionDefinition functionDefinition;
     public Map<AdapterKey, FunctionTestResults> functionTestResults = Maps.mutable.empty();

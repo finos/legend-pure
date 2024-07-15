@@ -28,37 +28,13 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composi
 public class AbstractPureTestWithCoreCompiledPlatform extends AbstractPureTestWithCoreCompiled
 {
     public static final Pair<String, String> EXTRA = Tuples.pair("/system/extra.pure",
-                    "Profile meta::pure::profiles::typemodifiers\n" +
-                    "{\n" +
-                    "    stereotypes: [abstract];\n" +
-                    "}" +
-                    "Enum meta::pure::functions::date::DurationUnit\n" +
-                    "{\n" +
-                    "    YEARS,\n" +
-                    "    MONTHS,\n" +
-                    "    WEEKS,\n" +
-                    "    DAYS,\n" +
-                    "    HOURS,\n" +
-                    "    MINUTES,\n" +
-                    "    SECONDS,\n" +
-                    "    MILLISECONDS,\n" +
-                    "    MICROSECONDS,\n" +
-                    "    NANOSECONDS\n" +
-                    "}" +
-                    "Enum meta::pure::functions::hash::HashType\n" +
+            "Enum meta::pure::functions::hash::HashType\n" +
                     "{\n" +
                     "    MD5,\n" +
                     "    SHA1,\n" +
                     "    SHA256\n" +
                     "}" +
-                    "native function meta::pure::functions::hash::hash(text: String[1], hashType: meta::pure::functions::hash::HashType[1]):String[1];" +
-                    "native function meta::pure::functions::date::dateDiff(d1:Date[1], d2:Date[1], du:DurationUnit[1]):Integer[1];\n" +
-                    "native function meta::pure::functions::collection::exists<T>(value:T[*], func:Function<{T[1]->Boolean[1]}>[1]):Boolean[1];\n" +
-                    "native function meta::pure::functions::collection::pair<U,V>(first:U[1], second:V[1]):Pair<U,V>[1];\n" +
-                    "native function meta::pure::functions::meta::deactivate(var:Any[*]):ValueSpecification[1];\n" +
-                    "native function meta::pure::functions::string::trim(str:String[1]):String[1];\n" +
-                    "native function meta::pure::functions::collection::forAll<T>(value:T[*], func:Function<{T[1]->Boolean[1]}>[1]):Boolean[1];\n" +
-                    "native function meta::pure::functions::collection::contains(collection:Any[*], value:Any[1]):Boolean[1];\n");
+                    "native function meta::pure::functions::hash::hash(text: String[1], hashType: meta::pure::functions::hash::HashType[1]):String[1];");
 
     public static Pair<String, String> getExtra()
     {

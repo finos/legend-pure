@@ -17,28 +17,19 @@ package org.finos.legend.pure.m3;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.factory.Lists;
-import org.finos.legend.pure.m3.pct.shared.provider.PCTReportProvider;
-import org.finos.legend.pure.m3.pct.reports.model.AdapterReport;
 import org.finos.legend.pure.m3.pct.functions.model.Functions;
+import org.finos.legend.pure.m3.pct.reports.model.AdapterReport;
+import org.finos.legend.pure.m3.pct.shared.provider.PCTReportProvider;
+import org.finos.legend.pure.m3.pct.shared.provider.PCTReportProviderTool;
 
 public class Grammar_Functions_PCTReportProvider implements PCTReportProvider
 {
     @Override
     public MutableList<Functions> getFunctions()
     {
-        try
-        {
-            return org.eclipse.collections.api.factory.Lists.mutable.with(
-                    JsonMapper.builder().build().readValue(
-                            Grammar_Functions_PCTReportProvider.class.getResourceAsStream("/pct-reports/FUNCTIONS_grammar.json"),
-                            Functions.class
-                    )
-            );
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        return PCTReportProviderTool.load(Grammar_Functions_PCTReportProvider.class.getClassLoader(), Functions.class,
+                "pct-reports/FUNCTIONS_grammar.json"
+        );
     }
 
     @Override

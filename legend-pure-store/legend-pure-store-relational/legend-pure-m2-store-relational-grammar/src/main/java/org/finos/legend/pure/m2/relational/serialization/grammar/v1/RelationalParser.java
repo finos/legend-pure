@@ -306,7 +306,6 @@ public class RelationalParser implements IRelationalParser
                         table._columns().collect(c -> (CoreInstance) _Column.getColumnInstance(
                                         c.getValueForMetaPropertyToOne("name").getName(),
                                         false,
-                                        null,
                                         convertType(c.getValueForMetaPropertyToOne("type").getClassifier().getName(), processorSupport),
                                         sourceInformation,
                                         processorSupport

@@ -42,7 +42,7 @@ public class TestFunctionTypeInferenceInPath extends AbstractPureTestWithCoreCom
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
         MutableList<CodeRepository> codeRepositories = Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
-        codeRepositories.add(GenericCodeRepository.build("test", "((test)|(meta))(::.*)?", "platform", "platform_functions"));
+        codeRepositories.add(GenericCodeRepository.build("test", "((test)|(meta))(::.*)?", "platform", "core_functions_unclassified"));
         return codeRepositories;
     }
 
