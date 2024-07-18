@@ -92,7 +92,6 @@ public class MappingParser implements IMappingParser
     {
         String result = parseDefinition(true, string, sourceName, addLines, offset, repository, listener, context, count);
         new M3AntlrParser(false).parse(result, sourceName, false, offset, repository, coreInstancesResult, listener, context, count, null);
-
     }
 
     private String parseDefinition(boolean useFastParser, String code, String sourceName, boolean addLines, int offset, ModelRepository repository, M3M4StateListener listener, Context context, int count)

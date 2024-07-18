@@ -27,7 +27,6 @@ import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecifications;
 
 public class _Package
 {
@@ -84,10 +83,7 @@ public class _Package
 
     public static CoreInstance findInPackage(CoreInstance pkg, String name)
     {
-        // TODO eliminate duplicate import group names, then use an id index lookup
-//        return pkg.getValueInValueForMetaPropertyToMany(M3Properties.children, name);
-        ListIterable<? extends CoreInstance> childrenWithName = pkg.getValueInValueForMetaPropertyToManyByIndex(M3Properties.children, IndexSpecifications.getCoreInstanceNameIndexSpec(), name);
-        return childrenWithName.getFirst();
+        return pkg.getValueInValueForMetaPropertyToMany(M3Properties.children, name);
     }
 
     public static MutableList<String> convertM3PathToM4(String m3UserPath)

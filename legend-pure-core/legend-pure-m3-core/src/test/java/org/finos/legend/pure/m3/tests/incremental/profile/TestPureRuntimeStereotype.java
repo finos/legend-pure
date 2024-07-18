@@ -30,17 +30,17 @@ public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledP
         setUpRuntime(getExtra());
     }
 
-
     @After
     public void cleanRuntime()
     {
         runtime.delete("userId.pure");
         runtime.delete("sourceId.pure");
         runtime.delete("classId.pure");
+        runtime.compile();
     }
 
     @Test
-    public void testPureRuntimeProfileStereotypeClass() throws Exception
+    public void testPureRuntimeProfileStereotypeClass()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Profile testProfile{stereotypes:[s1,s2];}")
                         .createInMemorySource("userId.pure", "Class <<testProfile.s1>> A{}")
@@ -55,7 +55,7 @@ public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
-    public void testPureRuntimeProfileStereotypeClassError() throws Exception
+    public void testPureRuntimeProfileStereotypeClassError()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Profile testProfile{stereotypes:[s1,s2];}")
                         .createInMemorySource("userId.pure", "Class <<testProfile.s1>> A{}")
@@ -71,7 +71,7 @@ public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
-    public void testPureRuntimeProfileStereotypeClassValueError() throws Exception
+    public void testPureRuntimeProfileStereotypeClassValueError()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Profile testProfile{stereotypes:[s1,s2];}")
                         .createInMemorySource("userId.pure", "Class <<testProfile.s1>> A{}")
@@ -84,11 +84,10 @@ public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledP
                         .updateSource("sourceId.pure", "Profile testProfile{stereotypes:[s1,s2];}")
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
-
     }
 
     @Test
-    public void testPureRuntimeProfileStereotypeClassInverse() throws Exception
+    public void testPureRuntimeProfileStereotypeClassInverse()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class <<testProfile.s1>> A{}")
                         .createInMemorySource("userId.pure", "Profile testProfile{stereotypes:[s1,s2];}")
@@ -99,11 +98,10 @@ public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledP
                         .createInMemorySource("sourceId.pure", "Class <<testProfile.s1>> A{}")
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
-
     }
 
     @Test
-    public void testPureRuntimeProfileUsedInFunction() throws Exception
+    public void testPureRuntimeProfileUsedInFunction()
     {
 
         runtime.createInMemorySource("userId.pure", "Profile my::profile::testProfile{stereotypes:[s1,s2];tags: [name];}");
@@ -126,9 +124,8 @@ public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
-    public void testPureRuntimeProfileUsedInNew() throws Exception
+    public void testPureRuntimeProfileUsedInNew()
     {
-
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("userId.pure", "Profile my::pack::testProfile{stereotypes:[s1,s2];tags: [name];}")
                         .createInMemorySource("sourceId.pure", "import meta::pure::functions::meta::*;\n" +
                                 "import my::pack::*;\n" +
@@ -143,7 +140,7 @@ public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
-    public void testPureRuntimeProfileWithEnumWithReferenceToEnum() throws Exception
+    public void testPureRuntimeProfileWithEnumWithReferenceToEnum()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("userId.pure", "Profile my::pack::testProfile{stereotypes:[s1,s2];tags: [name];}")
                         .createInMemorySource("sourceId.pure", "import my::pack::*;\n" + "Enum my::pack::myEnum{ <<testProfile.s1>> VAL1, VAL2}")
@@ -154,6 +151,5 @@ public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledP
                                 "Profile my::pack::testProfile{stereotypes:[s1,s2];tags: [name];}")
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
-
     }
 }
