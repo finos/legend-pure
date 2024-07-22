@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m2.dsl.diagram.test.incremental;
+package org.finos.legend.pure.m2.dsl.diagram;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
@@ -95,6 +95,7 @@ public class TestPureRuntimeDiagram extends AbstractPureTestWithCoreCompiled
     {
         runtime.delete(TEST_DIAGRAM_SOURCE_ID);
         runtime.delete(TEST_MODEL_SOURCE_ID);
+        runtime.compile();
     }
 
     @Test

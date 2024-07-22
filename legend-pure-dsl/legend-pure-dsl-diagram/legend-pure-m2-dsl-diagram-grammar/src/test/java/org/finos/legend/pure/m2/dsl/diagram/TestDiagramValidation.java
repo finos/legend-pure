@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m2.dsl.diagram.test.incremental;
+package org.finos.legend.pure.m2.dsl.diagram;
 
-import org.finos.legend.pure.m2.dsl.diagram.M2DiagramPaths;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -41,16 +40,10 @@ public class TestDiagramValidation extends AbstractPureTestWithCoreCompiled
         Assert.assertNotNull(myDiagram);
         Assert.assertTrue(Instance.instanceOf(myDiagram, M2DiagramPaths.Diagram, processorSupport));
 
-        try
-        {
-            compileTestSource("diagram2.pure",
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource(
+                "diagram2.pure",
                     "###Diagram\n" +
-                            "Diagram test::MyDiagram {}");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureParserException.class, "The element 'MyDiagram' already exists in the package 'test'", "diagram2.pure", 2, 1, 2, 15, 2, 26, e);
-        }
+                            "Diagram test::MyDiagram {}"));
+        assertPureException(PureParserException.class, "The element 'MyDiagram' already exists in the package 'test'", "diagram2.pure", 2, 1, 2, 15, 2, 26, e);
     }
 }
