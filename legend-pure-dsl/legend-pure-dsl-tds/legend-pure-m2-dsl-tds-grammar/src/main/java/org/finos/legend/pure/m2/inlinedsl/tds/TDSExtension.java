@@ -28,6 +28,7 @@ import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.TDSCoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.TDS;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
@@ -89,7 +90,7 @@ public class TDSExtension implements InlineDSL
         GenericType tdsGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
         tdsGenericType._rawType(tdsType);
         GenericType typeParam = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
-        typeParam._rawType(_RelationType.build(ArrayIterate.collect(result.columns(), c -> _Column.getColumnInstance(c.name(), false, convertType(c.dataType()), src, processorSupport)), src, processorSupport));
+        typeParam._rawType(_RelationType.build(ArrayIterate.collect(result.columns(), c -> _Column.getColumnInstance(c.name(), false, convertType(c.dataType()), (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport), src, processorSupport)), src, processorSupport));
         tdsGenericType._typeArgumentsAdd(typeParam);
         tds._classifierGenericType(tdsGenericType);
         tds._csv(val);

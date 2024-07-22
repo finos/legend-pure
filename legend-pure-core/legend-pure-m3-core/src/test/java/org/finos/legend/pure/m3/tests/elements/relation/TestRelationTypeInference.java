@@ -741,6 +741,25 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                         "}");
     }
 
+    @Test
+    public void testColumnError()
+    {
+        try
+        {
+            compileInferenceTest(
+                    "import meta::pure::metamodel::relation::*;\n" +
+                            "native function test<T,W>(r:Relation<T>[1], cols:ColSpec<W⊆T>[1]):Relation<T>[1];\n" +
+                            "function x<T>(r:Relation<T>[1]):Boolean[1]\n" +
+                            "{\n" +
+                            "    |$r->cast(@Relation<(a:Integer, f:String)>)->test(~id);\n" +
+                            "}");
+        }
+        catch (Exception e)
+        {
+            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:5 column:55), \"The column 'id' can't be found in the relation (a:Integer, f:String)\"", e.getMessage());
+        }
+    }
+
     private void compileInferenceTest(String source)
     {
         compileTestSource(inferenceTestFileName, source);

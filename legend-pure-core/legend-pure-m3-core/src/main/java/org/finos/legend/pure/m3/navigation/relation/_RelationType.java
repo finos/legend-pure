@@ -39,6 +39,7 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
+import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
@@ -205,7 +206,8 @@ public class _RelationType
                             GenericType a = _Column.getColumnType(c.getOne());
                             GenericType b = _Column.getColumnType(c.getTwo());
                             GenericType merged = a._rawType() == null ? b : b._rawType() == null ? a : (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(Lists.mutable.with(a, b), isCovariant, false, genericTypeCopy.getSourceInformation(), processorSupport);
-                            return _Column.getColumnInstance(cName, wildcard, merged, null, processorSupport);
+                            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity mergedMul = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) Multiplicity.minSubsumingMultiplicity(_Column.getColumnMultiplicity(c.getOne()), _Column.getColumnMultiplicity(c.getTwo()), processorSupport);
+                            return _Column.getColumnInstance(cName, wildcard, merged, mergedMul, null, processorSupport);
                         }),
                         existingGenericType.getValueForMetaPropertyToOne(M3Properties.rawType).getSourceInformation(),
                         processorSupport

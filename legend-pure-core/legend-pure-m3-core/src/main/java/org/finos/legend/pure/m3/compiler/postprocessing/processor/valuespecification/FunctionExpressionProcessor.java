@@ -164,7 +164,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
 
                     if (isColumnWithEmptyType(instance, processorSupport))
                     {
-                        columnTypeInferenceSuccess = processEmptyColumnType(templateGenericType, instance, paramsType, z, observer, state, processorSupport);
+                        columnTypeInferenceSuccess = processEmptyColumnType(templateGenericType, instance, paramsType, z, functionExpression.getSourceInformation(), observer, state, processorSupport);
                     }
                     else if (isLambdaWithEmptyParamType(instance, processorSupport))
                     {
@@ -374,7 +374,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
 
     private static boolean manageMagicColumnFunctions(FunctionExpression functionExpression, Function<?> foundFunction, boolean columnTypeInferenceSuccess, TypeInferenceContext ctx, TypeInferenceObserver observer, ProcessorSupport processorSupport)
     {
-        if ("funcColSpecArray_FuncColSpec_MANY__P_1__FuncColSpecArray_1_".equals(foundFunction.getName()))
+        if ("funcColSpecArray_FuncColSpec_MANY__P_1__FuncColSpecArray_1_".equals(foundFunction.getName()) || "funcColSpecArray2_FuncColSpec_MANY__P_1__FuncColSpecArray_1_".equals(foundFunction.getName()))
         {
             MutableList<ValueSpecification> parameters = Lists.mutable.withAll(functionExpression._parametersValues());
             MutableList<? extends Column<?, ?>> found = ((InstanceValue) parameters.get(0))._values().collect(v ->
@@ -388,11 +388,11 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             }
             else
             {
-                ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(1).getValueForMetaPropertyToOne("genericType"), (GenericType) processorSupport.type_wrapGenericType(_RelationType.build(found.collect(foundC -> _Column.getColumnInstance(foundC._name(), false, _Column.getColumnType(foundC), functionExpression.getSourceInformation(), processorSupport)), null, processorSupport)), ctx, observer);
+                ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(1).getValueForMetaPropertyToOne("genericType"), (GenericType) processorSupport.type_wrapGenericType(_RelationType.build(found.collect(foundC -> _Column.getColumnInstance(foundC._name(), false, _Column.getColumnType(foundC), _Column.getColumnMultiplicity(foundC), functionExpression.getSourceInformation(), processorSupport)), null, processorSupport)), ctx, observer);
                 columnTypeInferenceSuccess = true;
             }
         }
-        if ("funcColSpec_Function_1__String_1__T_1__FuncColSpec_1_".equals(foundFunction.getName()))
+        if ("funcColSpec_Function_1__String_1__T_1__FuncColSpec_1_".equals(foundFunction.getName()) || "funcColSpec2_Function_1__String_1__T_1__FuncColSpec_1_".equals(foundFunction.getName()))
         {
             MutableList<ValueSpecification> parameters = Lists.mutable.withAll(functionExpression._parametersValues());
             MutableList<CoreInstance> lambdas = Lists.mutable.withAll(parameters.get(0).getValueForMetaPropertyToMany("values"));
@@ -417,7 +417,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                 }
             }
         }
-        if ("aggColSpec_Function_1__Function_1__String_1__T_1__AggColSpec_1_".equals(foundFunction.getName()))
+        if ("aggColSpec_Function_1__Function_1__String_1__T_1__AggColSpec_1_".equals(foundFunction.getName()) || "aggColSpec2_Function_1__Function_1__String_1__T_1__AggColSpec_1_".equals(foundFunction.getName()))
         {
             MutableList<ValueSpecification> parameters = Lists.mutable.withAll(functionExpression._parametersValues());
             CoreInstance reduceLambda = parameters.get(1).getValueForMetaPropertyToOne("values");
@@ -431,7 +431,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                 columnTypeInferenceSuccess = true;
             }
         }
-        if ("aggColSpecArray_AggColSpec_MANY__P_1__AggColSpecArray_1_".equals(foundFunction.getName()))
+        if ("aggColSpecArray_AggColSpec_MANY__P_1__AggColSpecArray_1_".equals(foundFunction.getName()) || "aggColSpecArray2_AggColSpec_MANY__P_1__AggColSpecArray_1_".equals(foundFunction.getName()))
         {
             MutableList<ValueSpecification> parameters = Lists.mutable.withAll(functionExpression._parametersValues());
             MutableList<? extends Column<?, ?>> found = ((InstanceValue) parameters.get(0))._values().collect(v ->
@@ -445,7 +445,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             }
             else
             {
-                ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(1).getValueForMetaPropertyToOne("genericType"), (GenericType) processorSupport.type_wrapGenericType(_RelationType.build(found.collect(foundC -> _Column.getColumnInstance(foundC._name(), false, _Column.getColumnType(foundC), functionExpression.getSourceInformation(), processorSupport)), null, processorSupport)), ctx, observer);
+                ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(1).getValueForMetaPropertyToOne("genericType"), (GenericType) processorSupport.type_wrapGenericType(_RelationType.build(found.collect(foundC -> _Column.getColumnInstance(foundC._name(), false, _Column.getColumnType(foundC), _Column.getColumnMultiplicity(foundC), functionExpression.getSourceInformation(), processorSupport)), null, processorSupport)), ctx, observer);
                 columnTypeInferenceSuccess = true;
             }
         }
@@ -639,7 +639,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
         return lambdaParametersInferenceSuccess;
     }
 
-    private static boolean processEmptyColumnType(GenericType templateGenericType, ValueSpecification instance, ListIterable<? extends VariableExpression> paramsType, int z, TypeInferenceObserver observer, ProcessorState state, ProcessorSupport processorSupport)
+    private static boolean processEmptyColumnType(GenericType templateGenericType, ValueSpecification instance, ListIterable<? extends VariableExpression> paramsType, int z, SourceInformation sourceInformation, TypeInferenceObserver observer, ProcessorState state, ProcessorSupport processorSupport)
     {
         CoreInstance actualTemplateToInferColumnType = state.getTypeInferenceContext().getTypeParameterToGenericType().get(org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(templateGenericType));
         if (actualTemplateToInferColumnType != null)
@@ -670,7 +670,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                             Column<?, ?> foundColumn = referenceRelation._columns().detect(e -> e._name().equals(colName));
                             if (foundColumn == null)
                             {
-                                throw new PureCompilationException("The column '" + colName + "' can't be found in the relation " + _RelationType.print(referenceRelation, processorSupport));
+                                throw new PureCompilationException(sourceInformation, "The column '" + colName + "' can't be found in the relation " + _RelationType.print(referenceRelation, processorSupport));
                             }
                             Type foundColumnType = _Column.getColumnType(foundColumn)._rawType();
 
