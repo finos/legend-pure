@@ -22,14 +22,16 @@ import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.tests.TrackingTransactionObserver;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 
 public class TestPureRuntimeProjection extends AbstractPureTestWithCoreCompiledPlatform
 {
@@ -49,6 +51,7 @@ public class TestPureRuntimeProjection extends AbstractPureTestWithCoreCompiledP
         runtime.delete("association.pure");
         runtime.delete("associationProjection.pure");
         runtime.delete("function.pure");
+        runtime.compile();
     }
 
     @Test
@@ -76,7 +79,6 @@ public class TestPureRuntimeProjection extends AbstractPureTestWithCoreCompiledP
         RuntimeVerifier.replaceWithCompileErrorCompileAndReloadMultipleTimesIsStable(runtime,
                 Lists.fixedSize.of(Tuples.pair(sourceId, badSource)), "The property 'version' can't be found in the type 'A' (or any supertype).",
                 "userId.pure", 1, 24);
-
     }
 
     @Test
@@ -190,12 +192,11 @@ public class TestPureRuntimeProjection extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
-    public void testProjectionMemoryLeak() throws Exception
+    public void testProjectionMemoryLeak()
     {
         String sourceId = "sourceId.pure";
         String sampleTestModel = readFile("org/finos/legend/pure/m3/tests/incremental/projection/projectionTestModel.pure");
         runtime.createInMemorySource(sourceId, sampleTestModel);
-        System.out.println("Compile Iteration #1");
         runtime.compile();
         byte[] before = runtime.getModelRepository().serialize();
         int repositorySize = before.length;
@@ -209,17 +210,34 @@ public class TestPureRuntimeProjection extends AbstractPureTestWithCoreCompiledP
 
         byte[] after = runtime.getModelRepository().serialize();
         int sizeAfter = after.length;
-        int delta = sizeAfter - repositorySize;
         if (sizeAfter != repositorySize)
         {
             TrackingTransactionObserver.compareBytes(before, after);
+            Assert.assertEquals(sourceId + ", delta " + (sizeAfter - repositorySize), repositorySize, sizeAfter);
         }
-        System.out.println((delta == 0 ? "PASS," : "FAIL,") + delta + "," + sourceId);
     }
 
-    protected String readFile(String fileName) throws URISyntaxException, IOException
+    protected String readFile(String fileName)
     {
         URL url = getClass().getClassLoader().getResource(fileName);
-        return new String(Files.readAllBytes(Paths.get(url.toURI())), "UTF8");
+        if (url == null)
+        {
+            throw new RuntimeException("Cannot find file: " + fileName);
+        }
+        StringBuilder builder = new StringBuilder();
+        try (Reader reader = new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))
+        {
+            char[] buffer = new char[8196];
+            int read;
+            while ((read = reader.read(buffer)) != -1)
+            {
+                builder.append(buffer, 0, read);
+            }
+        }
+        catch (IOException e)
+        {
+            throw new UncheckedIOException(e);
+        }
+        return builder.toString();
     }
 }

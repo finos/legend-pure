@@ -29,8 +29,6 @@ import org.finos.legend.pure.runtime.java.compiled.CompiledMetadataStateVerifier
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
 
 public class TestPureRuntimeStereotypeCompiled extends TestPureRuntimeStereotype
 {
@@ -42,18 +40,10 @@ public class TestPureRuntimeStereotypeCompiled extends TestPureRuntimeStereotype
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
-        MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
+        MutableList<CodeRepository> repositories = Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
         CodeRepository system = GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform");
         repositories.add(system);
         return repositories;
-    }
-
-    @Override
-    @Test
-    @Ignore
-    public void testPureRuntimeProfileWithEnumWithReferenceToEnum() throws Exception
-    {
-        super.testPureRuntimeProfileWithEnumWithReferenceToEnum();
     }
 
     protected static FunctionExecution getFunctionExecution()
