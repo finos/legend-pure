@@ -270,11 +270,29 @@ public class SourceInformation implements Comparable<SourceInformation>
      */
     public boolean isValid()
     {
-        return (this.sourceId != null) &&
-                (this.startLine >= 1) &&
-                (this.startColumn >= 1) &&
-                (this.column >= 1) &&
-                (this.endColumn >= 1) &&
+        // Source id must not be null
+        if (this.sourceId == null)
+        {
+            return false;
+        }
+
+        // Source information with 0 for a line or column value occurs with ImportGroups with no Imports. In this case,
+        // all column values should be 0 and all line values should be equal (and may be 0). We check for this unusual
+        // but valid case by checking if the start column is 0.
+        if (this.startColumn == 0)
+        {
+            return (this.startLine >= 0) &&
+                    (this.startLine == this.line) &&
+                    (this.startLine == this.endLine) &&
+                    (this.column == 0) &&
+                    (this.endColumn == 0);
+        }
+
+        // Otherwise, all line and column values must be strictly greater than 0, and the interval must be valid.
+        return (this.startLine > 0) &&
+                (this.startColumn > 0) &&
+                (this.column > 0) &&
+                (this.endColumn > 0) &&
                 isNotBefore(this.line, this.column, this.startLine, this.startColumn) &&
                 isNotBefore(this.endLine, this.endColumn, this.line, this.column);
     }
