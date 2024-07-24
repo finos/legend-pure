@@ -213,6 +213,7 @@ Class meta::relational::metamodel::relation::SelectSQLQuery extends Relation, SQ
    data : RootJoinTreeNode[0..1];
    filteringOperation : RelationalOperationElement[*];
    groupBy : RelationalOperationElement[*];
+   pivot : Pivot[0..1];
    havingOperation : RelationalOperationElement[*];
    orderBy : OrderBy[*];
    fromRow : meta::relational::metamodel::Literal[0..1];
@@ -476,6 +477,12 @@ Class meta::relational::metamodel::OrderBy
 Enum meta::relational::metamodel::SortDirection
 {
     ASC, DESC
+}
+
+Class meta::relational::metamodel::Pivot
+{
+    pivotColumns : RelationalOperationElement[*];
+    aggColumns : RelationalOperationElement[*];
 }
 
 Class meta::relational::metamodel::WindowColumn extends meta::relational::metamodel::RelationalOperationElement
