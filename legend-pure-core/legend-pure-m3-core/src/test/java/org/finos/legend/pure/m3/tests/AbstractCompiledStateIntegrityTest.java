@@ -23,7 +23,6 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.multimap.Multimap;
-import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.api.tuple.Pair;
@@ -245,17 +244,13 @@ public abstract class AbstractCompiledStateIntegrityTest
     @Test
     public void testPackageableElementsHaveSourceInfo()
     {
-        CoreInstance importGroupClass = runtime.getCoreInstance(M3Paths.ImportGroup);
         CoreInstance packageClass = runtime.getCoreInstance(M3Paths.Package);
         CoreInstance packageableElementClass = runtime.getCoreInstance(M3Paths.PackageableElement);
-        Assert.assertNotNull(importGroupClass);
         Assert.assertNotNull(packageClass);
         Assert.assertNotNull(packageableElementClass);
 
-        ImmutableSet<CoreInstance> exceptionClasses = Sets.immutable.with(importGroupClass, packageClass);
-
         MutableList<CoreInstance> noSourceInfo = selectNodes(instance -> (instance.getSourceInformation() == null) &&
-                !exceptionClasses.contains(instance.getClassifier()) &&
+                (instance.getClassifier() != packageClass) &&
                 Type.subTypeOf(instance.getClassifier(), packageableElementClass, processorSupport));
         if (noSourceInfo.notEmpty())
         {
@@ -264,6 +259,32 @@ public abstract class AbstractCompiledStateIntegrityTest
             {
                 PackageableElement.writeUserPathForPackageableElement(message.append("\n\t"), instance);
                 PackageableElement.writeUserPathForPackageableElement(message.append(" ("), instance.getClassifier()).append(')');
+            });
+            Assert.fail(message.toString());
+        }
+    }
+
+    @Test
+    public void testAllSourceInformationIsValid()
+    {
+        MutableList<CoreInstance> invalidSourceInfo = selectNodes(instance -> (instance.getSourceInformation() != null) && !instance.getSourceInformation().isValid());
+        if (invalidSourceInfo.notEmpty())
+        {
+            StringBuilder message = new StringBuilder("The following elements have invalid source information:");
+            CoreInstance packageableElementClass = runtime.getCoreInstance(M3Paths.PackageableElement);
+            invalidSourceInfo.forEach(instance ->
+            {
+                message.append("\n\t");
+                if (Type.subTypeOf(instance.getClassifier(), packageableElementClass, processorSupport))
+                {
+                    PackageableElement.writeUserPathForPackageableElement(message, instance);
+                }
+                else
+                {
+                    message.append(instance);
+                }
+                PackageableElement.writeUserPathForPackageableElement(message.append(" ("), instance.getClassifier()).append("): ");
+                instance.getSourceInformation().appendMessage(message);
             });
             Assert.fail(message.toString());
         }
