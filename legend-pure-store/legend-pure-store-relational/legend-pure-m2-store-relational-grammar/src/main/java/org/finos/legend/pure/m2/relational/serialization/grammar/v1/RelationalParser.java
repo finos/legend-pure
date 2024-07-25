@@ -55,8 +55,10 @@ import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.RelationalStoreCoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
+import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.Table;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -307,6 +309,7 @@ public class RelationalParser implements IRelationalParser
                                         c.getValueForMetaPropertyToOne("name").getName(),
                                         false,
                                         convertType(c.getValueForMetaPropertyToOne("type").getClassifier().getName(), processorSupport),
+                                        (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(((Column) c)._nullable() ? 0 : 1, 1, processorSupport),
                                         sourceInformation,
                                         processorSupport
                                 ),

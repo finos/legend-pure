@@ -15,6 +15,7 @@
 package org.finos.legend.pure.m3.navigation.relation;
 
 import org.eclipse.collections.api.factory.Lists;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
@@ -29,14 +30,14 @@ import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class _Column
 {
-    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, String type, SourceInformation src, ProcessorSupport processorSupport)
+    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, String type, Multiplicity multiplicity, SourceInformation src, ProcessorSupport processorSupport)
     {
         GenericType target = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
         target._rawType(type == null ? null : (Type) _Package.getByUserPath(type, processorSupport));
-        return _Column.getColumnInstance(name, nameWildCard, target, src, processorSupport);
+        return _Column.getColumnInstance(name, nameWildCard, target, multiplicity, src, processorSupport);
     }
 
-    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType targetType, SourceInformation sourceInformation, ProcessorSupport processorSupport)
+    public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType targetType, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity multiplicity, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
         Column<?, ?> columnInstance = (Column<?, ?>) processorSupport.newAnonymousCoreInstance(sourceInformation, M3Paths.Column);
         columnInstance._name(removeQuotes(name));
@@ -44,7 +45,7 @@ public class _Column
         GenericType columnGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(sourceInformation, M3Paths.GenericType);
         columnGenericType._rawType((Type) _Package.getByUserPath(M3Paths.Column, processorSupport));
         columnGenericType._typeArguments(Lists.mutable.with(null, targetType));
-        columnGenericType._multiplicityArgumentsAdd((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport));
+        columnGenericType._multiplicityArgumentsAdd(multiplicity);
         columnInstance.setKeyValues(M3PropertyPaths.classifierGenericType, Lists.mutable.with(columnGenericType));
         return columnInstance;
     }
@@ -64,6 +65,11 @@ public class _Column
     public static GenericType getColumnType(Column<?, ?> column)
     {
         return ListHelper.wrapListIterable(column._classifierGenericType()._typeArguments()).get(1);
+    }
+
+    public static Multiplicity getColumnMultiplicity(Column<?, ?> column)
+    {
+        return ListHelper.wrapListIterable(column._classifierGenericType()._multiplicityArguments()).get(0);
     }
 
     public static GenericType getColumnSourceType(Column<?, ?> column)

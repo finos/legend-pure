@@ -587,6 +587,57 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
+    public void testRelationTypeUsingUnknwonOneColumn()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "function f(t:Relation<(value:Integer,str:String)>[1]):String[1]\n" +
+                        "{\n" +
+                        "    $t->test(~str->ascending());\n" +
+                        "}" +
+                        "native function test<X>(x:Relation<X>[1], rel:SortInfo<(?:?)⊆X>[1]):String[1];" +
+                        "Class meta::pure::functions::relation::SortInfo<R>\n" +
+                        "{\n" +
+                        "   column : ColSpec<R>[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "function <<functionType.NormalizeRequiredFunction>> meta::pure::functions::relation::ascending<SW> (column:ColSpec<SW>[1]):SortInfo<SW>[1]\n" +
+                        "{\n" +
+                        "   ^SortInfo<SW>(column=$column)\n" +
+                        "}"
+        );
+    }
+
+    @Test
+    public void testRelationTypeUsingUnknwonOneColumnError()
+    {
+        try
+        {
+            compileInferenceTest(
+                    "import meta::pure::metamodel::relation::*;" +
+                            "function f(t:Relation<(value:Integer,str:String)>[1]):String[1]\n" +
+                            "{\n" +
+                            "    $t->test(~strx->ascending());\n" +
+                            "}" +
+                            "native function test<X>(x:Relation<X>[1], rel:SortInfo<(?:?)⊆X>[1]):String[1];" +
+                            "Class meta::pure::functions::relation::SortInfo<R>\n" +
+                            "{\n" +
+                            "   column : ColSpec<R>[1];\n" +
+                            "}\n" +
+                            "\n" +
+                            "function <<functionType.NormalizeRequiredFunction>> meta::pure::functions::relation::ascending<SW> (column:ColSpec<SW>[1]):SortInfo<SW>[1]\n" +
+                            "{\n" +
+                            "   ^SortInfo<SW>(column=$column)\n" +
+                            "}"
+            );
+        }
+        catch (Exception e)
+        {
+            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:14), \"The column 'strx' can't be found in the relation (value:Integer, str:String)\"", e.getMessage());
+        }
+    }
+
+    @Test
     public void testRelationTypeUsingSubsetAndAnonymousColumnAndAssignment()
     {
         compileInferenceTest(
@@ -739,6 +790,25 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                         "{\n" +
                         "    assertEq('the quick brown fox jumps over the lazy [dog, [cat, mouse]]', format('the quick brown %s jumps over the lazy %s', ['fox', ^List<Any>(values=['dog', ^List<String>(values=['cat', 'mouse'])])]));\n" +
                         "}");
+    }
+
+    @Test
+    public void testColumnError()
+    {
+        try
+        {
+            compileInferenceTest(
+                    "import meta::pure::metamodel::relation::*;\n" +
+                            "native function test<T,W>(r:Relation<T>[1], cols:ColSpec<W⊆T>[1]):Relation<T>[1];\n" +
+                            "function x<T>(r:Relation<T>[1]):Boolean[1]\n" +
+                            "{\n" +
+                            "    |$r->cast(@Relation<(a:Integer, f:String)>)->test(~id);\n" +
+                            "}");
+        }
+        catch (Exception e)
+        {
+            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:5 column:55), \"The column 'id' can't be found in the relation (a:Integer, f:String)\"", e.getMessage());
+        }
     }
 
     private void compileInferenceTest(String source)

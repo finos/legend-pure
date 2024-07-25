@@ -1158,13 +1158,13 @@ public class AntlrContextToM3CoreInstance
                 String colName = colNameCtx.STRING() != null ? this.removeQuotes(colNameCtx.STRING()) : colNameCtx.identifier().getText();
                 columnNames.add(this.repository.newStringCoreInstance(colName));
                 String returnType = null;
-                if (oneColSpec.lambdaParam() != null && oneColSpec.lambdaPipe() != null)
+                if (oneColSpec.anyLambda() != null)
                 {
-                    lambdas.add(processSingleParamLambda(oneColSpec.lambdaParam(), oneColSpec.lambdaPipe(), Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, space, false, importId, addLines, Lists.mutable.empty()));
+                    lambdas.add(processLambda(oneColSpec.anyLambda(), Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, importId, space, addLines, false, Lists.mutable.empty()));
                     if (oneColSpec.extraFunction() != null)
                     {
                         ExtraFunctionContext extraFunctionContext = oneColSpec.extraFunction();
-                        extraFunction.add(processSingleParamLambda(extraFunctionContext.lambdaParam(), extraFunctionContext.lambdaPipe(), Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, space, false, importId, addLines, Lists.mutable.empty()));
+                        extraFunction.add(processLambda(extraFunctionContext.anyLambda(), Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, importId, space, addLines, false, Lists.mutable.empty()));
                     }
                 }
                 else if (oneColSpec.type() != null)
@@ -1172,7 +1172,7 @@ public class AntlrContextToM3CoreInstance
                     GenericType returnGType = type(oneColSpec.type(), typeParametersNames, "", importId, addLines);
                     returnType = returnGType._rawType().getName();
                 }
-                columnInstances.add(_Column.getColumnInstance(colName, false, returnType, src, processorSupport));
+                columnInstances.add(_Column.getColumnInstance(colName, false, returnType, (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport), src, processorSupport));
             });
             RelationType<?> relationType = _RelationType.build(columnInstances, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport);
             GenericType relationTypeGenericType = (GenericType) processorSupport.type_wrapGenericType(relationType);
@@ -1197,10 +1197,10 @@ public class AntlrContextToM3CoreInstance
                     for (int i = 0; i < lambdas.size(); i++)
                     {
                         GenericType localColumnType = GenericTypeInstance.createPersistent(this.repository);
-                        localColumnType._rawTypeCoreInstance(_RelationType.build(Lists.immutable.with(_Column.getColumnInstance(columnNames.get(i).getName(), false, (String) null, src, processorSupport)), this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport));
+                        localColumnType._rawTypeCoreInstance(_RelationType.build(Lists.immutable.with(_Column.getColumnInstance(columnNames.get(i).getName(), false, (String) null, (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport), src, processorSupport)), this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport));
 
                         CoreInstance aggColFunc = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart()), null, null, importId, null);
-                        aggColFunc.setKeyValues(Lists.immutable.with("functionName"), Lists.mutable.with(this.repository.newStringCoreInstance("aggColSpec")));
+                        aggColFunc.setKeyValues(Lists.immutable.with("functionName"), Lists.mutable.with(this.repository.newStringCoreInstance(mayShiftTo2kindFunction((LambdaFunction<?>) lambdas.get(i), "aggColSpec"))));
                         MutableList<CoreInstance> parameters = Lists.mutable.empty();
                         parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(lambdas.get(i), true, processorSupport));
                         parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(extraFunction.get(i), true, processorSupport));
@@ -1209,7 +1209,7 @@ public class AntlrContextToM3CoreInstance
                         aggColFunc.setKeyValues(Lists.immutable.with("parametersValues"), parameters);
                         allColSpecs.add(aggColFunc);
                     }
-                    replacementFunction.setKeyValues(Lists.immutable.with("functionName"), Lists.mutable.with(this.repository.newStringCoreInstance("aggColSpecArray")));
+                    replacementFunction.setKeyValues(Lists.immutable.with("functionName"), Lists.mutable.with(this.repository.newStringCoreInstance(mayShiftTo2kindFunction(ctx, lambdas, "aggColSpecArray"))));
                     MutableList<CoreInstance> parameters = Lists.mutable.empty();
                     parameters.add(InstanceValueInstance.createPersistent(this.repository, null, null)._values(allColSpecs));
                     parameters.add(InstanceValueInstance.createPersistent(this.repository, "", relationTypeGenericType, this.getPureOne()));
@@ -1222,10 +1222,10 @@ public class AntlrContextToM3CoreInstance
                     for (int i = 0; i < lambdas.size(); i++)
                     {
                         GenericType localColumnType = GenericTypeInstance.createPersistent(this.repository);
-                        localColumnType._rawTypeCoreInstance(_RelationType.build(Lists.immutable.with(_Column.getColumnInstance(columnNames.get(i).getName(), false, (String) null, src, processorSupport)), this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport));
+                        localColumnType._rawTypeCoreInstance(_RelationType.build(Lists.immutable.with(_Column.getColumnInstance(columnNames.get(i).getName(), false, (String) null, (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport), src, processorSupport)), this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport));
 
                         CoreInstance colFunc = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart()), null, null, importId, null);
-                        colFunc.setKeyValues(Lists.immutable.with("functionName"), Lists.mutable.with(this.repository.newStringCoreInstance("funcColSpec")));
+                        colFunc.setKeyValues(Lists.immutable.with("functionName"), Lists.mutable.with(this.repository.newStringCoreInstance(mayShiftTo2kindFunction((LambdaFunction<?>) lambdas.get(i), "funcColSpec"))));
                         MutableList<CoreInstance> parameters = Lists.mutable.empty();
                         parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(lambdas.get(i), true, processorSupport));
                         parameters.add(ValueSpecificationBootstrap.wrapValueSpecification(columnNames.get(i), true, processorSupport));
@@ -1233,7 +1233,7 @@ public class AntlrContextToM3CoreInstance
                         colFunc.setKeyValues(Lists.immutable.with("parametersValues"), parameters);
                         allColSpecs.add(colFunc);
                     }
-                    replacementFunction.setKeyValues(Lists.immutable.with("functionName"), Lists.mutable.with(this.repository.newStringCoreInstance("funcColSpecArray")));
+                    replacementFunction.setKeyValues(Lists.immutable.with("functionName"), Lists.mutable.with(this.repository.newStringCoreInstance(mayShiftTo2kindFunction(ctx, lambdas, "funcColSpecArray"))));
                     MutableList<CoreInstance> parameters = Lists.mutable.empty();
                     parameters.add(InstanceValueInstance.createPersistent(this.repository, null, null)._values(allColSpecs));
                     parameters.add(InstanceValueInstance.createPersistent(this.repository, "", relationTypeGenericType, this.getPureOne()));
@@ -1244,6 +1244,8 @@ public class AntlrContextToM3CoreInstance
             else
             {
                 String functionName = !extraFunction.isEmpty() ? "aggColSpec" : nonFunction ? isArray ? "colSpecArray" : "colSpec" : isArray ? "funcColSpecArray" : "funcColSpec";
+                functionName = nonFunction ? functionName : mayShiftTo2kindFunction((LambdaFunction<?>) lambdas.get(0), functionName);
+
                 replacementFunction.setKeyValues(Lists.mutable.with("functionName"), Lists.mutable.with(this.repository.newStringCoreInstance(functionName)));
 
                 // Function Parameters
@@ -1263,8 +1265,6 @@ public class AntlrContextToM3CoreInstance
 
                 result = replacementFunction;
             }
-
-
         }
         else if (ctx.dsl() != null)
         {
@@ -1307,24 +1307,53 @@ public class AntlrContextToM3CoreInstance
             genericType._rawTypeCoreInstance(type);
             result = InstanceValueInstance.createPersistent(this.repository, genericType, multiplicity);
         }
-        else if (ctx.lambdaFunction() != null)
+        else if (ctx.anyLambda() != null)
         {
-            result = processMultiParamLambda(ctx.lambdaFunction(), typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines, expressions);
+            result = this.processLambda(ctx.anyLambda(), typeParametersNames, multiplicityParameterNames, lambdaContext, importId, space, addLines, wrapFlag, expressions);
         }
-        else if (ctx.lambdaParam() != null && ctx.lambdaPipe() != null)
-        {
-            result = processSingleParamLambda(ctx.lambdaParam(), ctx.lambdaPipe(), typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines, expressions);
-        }
-        else if (ctx.instanceReference() != null)
+        else
         {
             result = this.instanceReference(ctx.instanceReference(), typeParametersNames, multiplicityParameterNames, lambdaContext, importId, space, addLines);
+        }
+
+        return result;
+    }
+
+    private String mayShiftTo2kindFunction(AtomicExpressionContext ctx, MutableList<CoreInstance> lambdas, String functionName)
+    {
+        MutableList<Boolean> res = lambdas.collect(lambda -> (((FunctionType) ((LambdaFunction<?>) lambda)._classifierGenericType()._typeArguments().getFirst()._rawType())._parameters().size() == 2)).distinct();
+        if (res.size() == 1)
+        {
+            return res.getFirst() ? functionName + "2" : functionName;
+        }
+        throw new PureParserException(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), "All functions used in the col array should be of the same type.");
+    }
+
+    private static String mayShiftTo2kindFunction(LambdaFunction<?> lambda, String functionName)
+    {
+        if (((FunctionType) lambda._classifierGenericType()._typeArguments().getFirst()._rawType())._parameters().size() == 2)
+        {
+            functionName = functionName + "2";
+        }
+        return functionName;
+    }
+
+
+    private CoreInstance processLambda(M3Parser.AnyLambdaContext lambda, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, ImportGroup importId, String space, boolean addLines, boolean wrapFlag, MutableList<VariableExpression> expressions)
+    {
+        if (lambda.lambdaFunction() != null)
+        {
+            return processMultiParamLambda(lambda.lambdaFunction(), typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines, expressions);
+        }
+        else if (lambda.lambdaParam() != null && lambda.lambdaPipe() != null)
+        {
+            return processSingleParamLambda(lambda.lambdaParam(), lambda.lambdaPipe(), typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines, expressions);
         }
         else
         {
             //lambdaPipe
-            result = this.lambdaPipe(ctx.lambdaPipe(), null, expressions, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
+            return this.lambdaPipe(lambda.lambdaPipe(), null, expressions, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
         }
-        return result;
     }
 
     private CoreInstance processMultiParamLambda(LambdaFunctionContext ctx, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines, MutableList<VariableExpression> expressions)
@@ -2178,9 +2207,16 @@ public class AntlrContextToM3CoreInstance
                                     ctx.columnType(),
                                     c ->
                                     {
-                                        M3Parser.ColumnNameContext colNameCtx = c.columnName();
+                                        M3Parser.ColumnNameContext colNameCtx = c.mayColumnName().columnName();
                                         String colName = colNameCtx != null ? colNameCtx.STRING() != null ? this.removeQuotes(colNameCtx.STRING()) : colNameCtx.identifier().getText() : "";
-                                        return _Column.getColumnInstance(c.QUESTION() != null ? "" : colName, c.QUESTION() != null, this.type(c.type(), typeParametersNames, spacePlusTabs(space, 5), importId, addLines), srcInfo, processorSupport);
+                                        return _Column.getColumnInstance(
+                                                c.mayColumnName().QUESTION() != null ? "" : colName,
+                                                c.mayColumnName().QUESTION() != null,
+                                                c.mayColumnType().QUESTION() != null ? GenericTypeInstance.createPersistent(this.repository) : this.type(c.mayColumnType().type(), typeParametersNames, spacePlusTabs(space, 5), importId, addLines),
+                                                (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport),
+                                                srcInfo,
+                                                processorSupport
+                                        );
                                     }
                             ), srcInfo, processorSupport
                     )

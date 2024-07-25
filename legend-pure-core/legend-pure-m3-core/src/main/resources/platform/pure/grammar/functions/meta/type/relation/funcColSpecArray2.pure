@@ -1,0 +1,32 @@
+// Copyright 2023 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::test::pct::*;
+import meta::pure::metamodel::relation::*;
+
+function
+    <<functionType.NormalizeRequiredFunction,
+    PCT.function>>
+    {
+        doc.doc='Create a Relation typed column array, each containing a name and a function',
+        PCT.grammarDoc='~[col : {w,x|$x.val+3}, other : {w,t|$t.ww+4}]',
+        PCT.grammarCharacters='~[:,:]'
+    }
+    meta::pure::functions::relation::funcColSpecArray2<U,T,P>(funcSpecs:FuncColSpec<{Relation<U>[1], U[1]->Any[*]}, T>[*], cl:P[1]):FuncColSpecArray<{Relation<U>[1], U[1]->Any[*]}, P>[1]
+{
+    ^FuncColSpecArray<{Relation<U>[1], U[1]->Any[*]}, P>
+    (
+        funcSpecs = $funcSpecs
+    );
+}

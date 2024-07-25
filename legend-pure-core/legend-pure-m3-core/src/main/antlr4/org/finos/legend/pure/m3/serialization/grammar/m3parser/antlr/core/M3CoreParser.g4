@@ -308,20 +308,21 @@ atomicExpression:
                  | variable
                  | columnBuilders
                  | (AT (type | multiplicity))
-                 | lambdaPipe
-                 | lambdaFunction
+                 | anyLambda
                  | instanceReference
-                 | (lambdaParam lambdaPipe)
 ;
 
 columnBuilders: TILDE (oneColSpec | (BRACKET_OPEN (oneColSpec(COMMA oneColSpec)*)? BRACKET_CLOSE))
 ;
-oneColSpec: columnName (COLON (type | lambdaParam lambdaPipe) extraFunction?)?
+oneColSpec: columnName (COLON (type | anyLambda) extraFunction?)?
 ;
-extraFunction: (COLON lambdaParam lambdaPipe)
+extraFunction: (COLON anyLambda)
 ;
 
 instanceReference: (PATH_SEPARATOR | qualifiedName | unitName) allOrFunction?
+;
+
+anyLambda : lambdaPipe | lambdaFunction | lambdaParam lambdaPipe
 ;
 
 lambdaFunction: CURLY_BRACKET_OPEN (lambdaParam (COMMA lambdaParam)* )? lambdaPipe CURLY_BRACKET_CLOSE
@@ -468,8 +469,15 @@ type: ( qualifiedName (LESSTHAN (typeArguments? (PIPE multiplicityArguments)?) G
       unitName
 ;
 
-columnType: (QUESTION | columnName) COLON type
+columnType: mayColumnName COLON mayColumnType
 ;
+
+mayColumnName: (QUESTION | columnName)
+;
+
+mayColumnType: (QUESTION | type)
+;
+
 columnName: identifier | STRING
 ;
 

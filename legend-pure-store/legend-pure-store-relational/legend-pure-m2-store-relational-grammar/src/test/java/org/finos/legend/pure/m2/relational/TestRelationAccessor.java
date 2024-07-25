@@ -15,7 +15,10 @@
 package org.finos.legend.pure.m2.relational;
 
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.Test;
+
+import static org.junit.Assert.fail;
 
 public class TestRelationAccessor extends AbstractPureRelationalTestWithCoreCompiled
 {
@@ -24,16 +27,60 @@ public class TestRelationAccessor extends AbstractPureRelationalTestWithCoreComp
     {
         String sourceCode =
                 "###Pure\n" +
-                "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
-                "function f():meta::pure::metamodel::relation::Relation<Any>[1]" +
-                "{" +
-                "   #>{my::mainDb.PersonTable}#->filter(f|$f.lastName == 'ee');" +
-                "}\n" +
-                "###Relational\n" +
-                "Database my::mainDb\n" +
-                "( \n" +
-                "   Table PersonTable(firstName VARCHAR(200), lastName VARCHAR(200), firmId INTEGER)\n" +
-                ")\n";
+                        "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
+                        "function f():meta::pure::metamodel::relation::Relation<Any>[1]" +
+                        "{" +
+                        "   #>{my::mainDb.PersonTable}#->filter(f|$f.lastName == 'ee');" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database my::mainDb\n" +
+                        "( \n" +
+                        "   Table PersonTable(firstName VARCHAR(200), lastName VARCHAR(200), firmId INTEGER)\n" +
+                        ")\n";
+        createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
+    }
+
+    @Test
+    public void testRelationAccessorMultiplicityError()
+    {
+        String sourceCode =
+                "###Pure\n" +
+                        "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
+                        "function f():meta::pure::metamodel::relation::Relation<Any>[1]" +
+                        "{" +
+                        "   #>{my::mainDb.PersonTable}#->filter(f|($f.firmId + 1) == 1);" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database my::mainDb\n" +
+                        "( \n" +
+                        "   Table PersonTable(firstName VARCHAR(200), lastName VARCHAR(200), firmId INTEGER)\n" +
+                        ")\n";
+        try
+        {
+            createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
+            fail();
+        }
+        catch (Exception e)
+        {
+            assertPureException(PureCompilationException.class, "Required multiplicity: 1, found: 0..1", "myFile.pure", 3, 109, e);
+        }
+    }
+
+    @Test
+    public void testRelationAccessorMultiplicity()
+    {
+        String sourceCode =
+                "###Pure\n" +
+                        "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
+                        "function f():meta::pure::metamodel::relation::Relation<Any>[1]" +
+                        "{" +
+                        "   #>{my::mainDb.PersonTable}#->filter(f|($f.firmId + 1) == 1);" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database my::mainDb\n" +
+                        "( \n" +
+                        "   Table PersonTable(firstName VARCHAR(200), lastName VARCHAR(200), firmId INTEGER NOT NULL)\n" +
+                        ")\n";
         createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
     }
 
