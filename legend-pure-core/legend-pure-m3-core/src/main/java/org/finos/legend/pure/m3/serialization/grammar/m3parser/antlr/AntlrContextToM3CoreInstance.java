@@ -2207,9 +2207,16 @@ public class AntlrContextToM3CoreInstance
                                     ctx.columnType(),
                                     c ->
                                     {
-                                        M3Parser.ColumnNameContext colNameCtx = c.columnName();
+                                        M3Parser.ColumnNameContext colNameCtx = c.mayColumnName().columnName();
                                         String colName = colNameCtx != null ? colNameCtx.STRING() != null ? this.removeQuotes(colNameCtx.STRING()) : colNameCtx.identifier().getText() : "";
-                                        return _Column.getColumnInstance(c.QUESTION() != null ? "" : colName, c.QUESTION() != null, this.type(c.type(), typeParametersNames, spacePlusTabs(space, 5), importId, addLines), (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport), srcInfo, processorSupport);
+                                        return _Column.getColumnInstance(
+                                                c.mayColumnName().QUESTION() != null ? "" : colName,
+                                                c.mayColumnName().QUESTION() != null,
+                                                c.mayColumnType().QUESTION() != null ? GenericTypeInstance.createPersistent(this.repository) : this.type(c.mayColumnType().type(), typeParametersNames, spacePlusTabs(space, 5), importId, addLines),
+                                                (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport),
+                                                srcInfo,
+                                                processorSupport
+                                        );
                                     }
                             ), srcInfo, processorSupport
                     )

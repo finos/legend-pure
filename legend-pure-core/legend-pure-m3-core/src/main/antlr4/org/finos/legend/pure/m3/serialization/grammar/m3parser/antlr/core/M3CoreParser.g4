@@ -469,8 +469,15 @@ type: ( qualifiedName (LESSTHAN (typeArguments? (PIPE multiplicityArguments)?) G
       unitName
 ;
 
-columnType: (QUESTION | columnName) COLON type
+columnType: mayColumnName COLON mayColumnType
 ;
+
+mayColumnName: (QUESTION | columnName)
+;
+
+mayColumnType: (QUESTION | type)
+;
+
 columnName: identifier | STRING
 ;
 
