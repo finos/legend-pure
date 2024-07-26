@@ -120,6 +120,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecificat
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation._package._Package;
@@ -2234,88 +2235,54 @@ public class AntlrContextToM3CoreInstance
         return result;
     }
 
-    private CoreInstance enumValue(EnumValueContext ctx, CoreInstance enumeration, ImportGroup importId)
+    private CoreInstance enumValue(EnumValueContext ctx, Enumeration<?> enumeration, ImportGroup importId)
     {
-        ListIterable<CoreInstance> stereotypes = null;
-        ListIterable<TaggedValue> tags = null;
-        if (ctx.stereotypes() != null)
-        {
-            stereotypes = this.stereotypes(ctx.stereotypes(), importId);
-        }
-        if (ctx.taggedValues() != null)
-        {
-            tags = this.taggedValues(ctx.taggedValues(), importId);
-        }
         CoreInstance enumValue = this.repository.newCoreInstance(ctx.identifier().getText(), enumeration, this.sourceInformation.getPureSourceInformation(ctx.identifier().getStart()), true);
+        enumValue.addKeyValue(M3PropertyPaths.name_Enum, this.repository.newStringCoreInstance_cached(ctx.identifier().getText()));
 
-        enumValue.addKeyValue(Lists.immutable.of("Root", "children", "meta", "children", "pure", "children", "metamodel", "children", "type", "children", "Enum", "properties", "name"), this.repository.newStringCoreInstance_cached(ctx.identifier().getText()));
-        if (stereotypes != null)
+        ListIterable<CoreInstance> stereotypes = (ctx.stereotypes() == null) ? Lists.immutable.empty() : stereotypes(ctx.stereotypes(), importId);
+        if (stereotypes.notEmpty())
         {
-            enumValue.setKeyValues(Lists.immutable.of("Root", "children", "meta", "children", "pure", "children", "metamodel", "children", "extension", "children", "ElementWithStereotypes", "properties", "stereotypes"), Lists.mutable.withAll(stereotypes));
+            enumValue.setKeyValues(M3PropertyPaths.stereotypes, stereotypes);
         }
-        if (tags != null)
+        ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
+        if (taggedValues.notEmpty())
         {
-            enumValue.setKeyValues(Lists.immutable.of("Root", "children", "meta", "children", "pure", "children", "metamodel", "children", "extension", "children", "ElementWithTaggedValues", "properties", "taggedValues"), Lists.mutable.<CoreInstance>withAll(tags));
+            enumValue.setKeyValues(M3PropertyPaths.taggedValues, taggedValues);
         }
         return enumValue;
     }
 
-    private Enumeration<?> enumParser(EnumDefinitionContext ctx, ImportGroup importId) throws PureParserException
+    private Enumeration<?> enumParser(EnumDefinitionContext ctx, ImportGroup importId)
     {
-        EnumerationInstance enumerationInstance;
-        CoreInstance value;
-        MutableList<CoreInstance> values = Lists.mutable.empty();
-        ListIterable<CoreInstance> stereotypes = Lists.mutable.empty();
-        ListIterable<TaggedValue> tags = Lists.mutable.empty();
+        checkExists(ctx.qualifiedName().packagePath(), ctx.qualifiedName().identifier(), null);
 
-        if (ctx.stereotypes() != null)
-        {
-            stereotypes = this.stereotypes(ctx.stereotypes(), importId);
-        }
-        if (ctx.taggedValues() != null)
-        {
-            tags = this.taggedValues(ctx.taggedValues(), importId);
-        }
-
-        this.checkExists(ctx.qualifiedName().packagePath(), ctx.qualifiedName().identifier(), null);
+        EnumerationInstance enumerationInstance = EnumerationInstance.createPersistent(this.repository, ctx.qualifiedName().identifier().getText());
+        enumerationInstance._name(ctx.qualifiedName().identifier().getText());
 
         Package packageInstance = buildPackage(ctx.qualifiedName().packagePath());
-
-        GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
-        ClassInstance enumerationType = (ClassInstance) this.processorSupport.package_getByUserPath(M3Paths.Enumeration);
-        genericTypeInstance._rawTypeCoreInstance(enumerationType);
-
-        enumerationInstance = EnumerationInstance.createPersistent(this.repository, ctx.qualifiedName().identifier().getText());
-        enumerationInstance._name(ctx.qualifiedName().identifier().getText());
         enumerationInstance._package(packageInstance);
-        GenericTypeInstance taGenericType = GenericTypeInstance.createPersistent(this.repository);
-        taGenericType._rawTypeCoreInstance(enumerationInstance);
-        genericTypeInstance._typeArguments(Lists.mutable.<GenericType>of(taGenericType));
-        enumerationInstance._classifierGenericType(genericTypeInstance);
         packageInstance._childrenAdd(enumerationInstance);
-        if (!tags.isEmpty())
+
+        enumerationInstance._classifierGenericType(GenericTypeInstance.createPersistent(this.repository)
+                ._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Enumeration))
+                ._typeArguments(Lists.immutable.with(GenericTypeInstance.createPersistent(this.repository)._rawType(enumerationInstance))));
+
+        ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
+        if (taggedValues.notEmpty())
         {
-            enumerationInstance._taggedValues(tags);
+            enumerationInstance._taggedValues(taggedValues);
         }
-        if (!stereotypes.isEmpty())
+        ListIterable<CoreInstance> stereotypes = (ctx.stereotypes() == null) ? Lists.immutable.empty() : stereotypes(ctx.stereotypes(), importId);
+        if (stereotypes.notEmpty())
         {
             enumerationInstance._stereotypesCoreInstance(stereotypes);
         }
-        enumerationInstance._classifierGenericType(genericTypeInstance);
 
-        GenericTypeInstance general = GenericTypeInstance.createPersistent(this.repository);
-        ClassInstance enumType = (ClassInstance) this.processorSupport.package_getByUserPath(M3Paths.Enum);
-        general._rawTypeCoreInstance(enumType);
-        GeneralizationInstance gen = GeneralizationInstance.createPersistent(this.repository, general, enumerationInstance);
-        enumerationInstance._generalizations(Lists.mutable.<Generalization>of(gen));
+        enumerationInstance._generalizations(Lists.immutable.with(GeneralizationInstance.createPersistent(this.repository, GenericTypeInstance.createPersistent(this.repository)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Enum)), enumerationInstance)));
 
-        for (EnumValueContext evCtx : ctx.enumValue())
-        {
-            value = this.enumValue(evCtx, enumerationInstance, importId);
-            values.add(value);
-        }
         enumerationInstance.setSourceInformation(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop()));
-        enumerationInstance._values(values);
+        enumerationInstance._values(ListIterate.collect(ctx.enumValue(), evCtx -> enumValue(evCtx, enumerationInstance, importId)));
         return enumerationInstance;
     }
 
