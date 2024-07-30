@@ -242,4 +242,26 @@ public abstract class AbstractTestReactivate extends AbstractPureTestWithCoreCom
                         "}\n");
         execute("test::f1():Boolean[1]");
     }
+
+    @Test
+    public void testReactivateNewDefaultValueInheritance()
+    {
+        compileTestSource("testSource.pure",
+                "Class test::A\n" +
+                        "{\n" +
+                        "  a:Boolean[1] = true;\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class test::B extends test::A\n" +
+                        "{\n" +
+                        "  b:Boolean[1] = true;\n" +
+                        "}\n" +
+                        "function test::f():Boolean[1]\n" +
+                        "{\n" +
+                        "  let l = {| ^test::B()};\n" +
+                        "  let b = $l.expressionSequence->evaluateAndDeactivate()->toOne()->reactivate()->cast(@test::B)->toOne();\n" +
+                        "  assert($b.a, | 'Default value for property b set to wrong value');\n" +
+                        "}\n");
+        execute("test::f():Boolean[1]");
+    }
 }

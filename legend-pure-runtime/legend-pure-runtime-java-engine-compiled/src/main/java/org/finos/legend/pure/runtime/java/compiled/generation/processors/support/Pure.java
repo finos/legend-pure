@@ -56,6 +56,7 @@ import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -723,23 +724,28 @@ public class Pure
             Class<?> c = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.platformJavaPackage() + "." + Pure.elementToPath(aClass, "_", true) + "_Impl");
             Any result = (Any) c.getConstructor(String.class).newInstance(name);
             // Set default values
-            aClass._properties().forEach(new CheckedProcedure<Property<?, ?>>()
+            RichIterable<CoreInstance> classProperties = _Class.getSimpleProperties(aClass, ((CompiledExecutionSupport) es).getProcessorSupport());
+            classProperties.forEach(new CheckedProcedure<CoreInstance>()
             {
                 @Override
-                public void safeValue(Property<?, ?> p) throws Exception
+                public void safeValue(CoreInstance p) throws Exception
                 {
-                    DefaultValue defaultValue = p._defaultValue();
-                    if (defaultValue != null)
+                    if (p instanceof Property<?, ?>)
                     {
-                        Object res = reactivate(defaultValue._functionDefinition()._expressionSequence().getFirst(), new PureMap(Maps.fixedSize.empty()), bridge, es);
-                        Method method = c.getMethod("_" + p._name(), RichIterable.class);
-                        if (res instanceof RichIterable)
+                        Property<?, ?> prop = (Property<?, ?>) p;
+                        DefaultValue defaultValue = prop._defaultValue();
+                        if (defaultValue != null)
                         {
-                            method.invoke(result, res);
-                        }
-                        else
-                        {
-                            method.invoke(result, Lists.fixedSize.of(res));
+                            Object res = reactivate(defaultValue._functionDefinition()._expressionSequence().getFirst(), new PureMap(Maps.fixedSize.empty()), bridge, es);
+                            Method method = c.getMethod("_" + prop._name(), RichIterable.class);
+                            if (res instanceof RichIterable)
+                            {
+                                method.invoke(result, res);
+                            }
+                            else
+                            {
+                                method.invoke(result, Lists.fixedSize.of(res));
+                            }
                         }
                     }
                 }
