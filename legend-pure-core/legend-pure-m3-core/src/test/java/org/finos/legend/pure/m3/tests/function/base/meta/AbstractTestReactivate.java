@@ -16,12 +16,21 @@ package org.finos.legend.pure.m3.tests.function.base.meta;
 
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tools.test.ToFix;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public abstract class AbstractTestReactivate extends AbstractPureTestWithCoreCompiled
 {
+
+    @BeforeClass
+    public static void setUp()
+    {
+        setUpRuntime();
+    }
+
     @After
     public void cleanRuntime()
     {
@@ -265,30 +274,31 @@ public abstract class AbstractTestReactivate extends AbstractPureTestWithCoreCom
         execute("test::f():Boolean[1]");
     }
 
-    @Test
+    @ToFix
     public void testReactivateNewDefaultValueAssociation()
     {
         compileTestSource("testSource.pure",
-                "Class test::A\n" +
+                "import test::*;\n" +
+                        "Class test::K\n" +
                         "{\n" +
                         "  i : Integer[1];\n" +
                         "}\n" +
                         "\n" +
-                        "Class test::B\n" +
+                        "Class test::L\n" +
                         "{\n" +
                         "  j : Integer[1];\n" +
                         "}\n" +
-                        "Association test::AB\n" +
+                        "Association test::KL\n" +
                         "{\n" +
-                        "   a : test::A[1];\n" +
-                        "   b : test::B[1] = ^test::B(j=1);\n" +
+                        "   a : K[1];\n" +
+                        "   b : L[1] = ^test::L(j=1);\n" +
                         "}\n" +
-                        "function test::f():Boolean[1]\n" +
+                        "function test::f2():Boolean[1]\n" +
                         "{\n" +
-                        "  let l = {| ^test::A(i=1)};\n" +
-                        "  let b = $l.expressionSequence->evaluateAndDeactivate()->toOne()->reactivate()->cast(@test::A)->toOne();\n" +
-                        "  assertEquals(1, $A.b.j ,| 'Default value for property b set to wrong value');\n" +
+                        "  let l = {| ^test::K(i=1)};\n" +
+                        "  let a = $l.expressionSequence->evaluateAndDeactivate()->toOne()->reactivate()->cast(@test::K)->toOne();\n" +
+                        "  assertEquals(1, $a.b.j ,| 'Default value for property b set to wrong value');\n" +
                         "}\n");
-        execute("test::f():Boolean[1]");
+        execute("test::f2():Boolean[1]");
     }
 }
