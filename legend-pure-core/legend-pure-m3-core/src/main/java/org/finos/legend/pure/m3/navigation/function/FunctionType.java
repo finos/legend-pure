@@ -23,6 +23,7 @@ import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
+import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstanceWrapper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 
@@ -30,8 +31,15 @@ public class FunctionType
 {
     public static boolean isFunctionType(CoreInstance instance, ProcessorSupport processorSupport)
     {
-        return (instance instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType) ||
-                (!(instance instanceof Any) && processorSupport.instance_instanceOf(instance, M3Paths.FunctionType));
+        if (instance == null)
+        {
+            return false;
+        }
+        if (instance instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType)
+        {
+            return true;
+        }
+        return (!(instance instanceof Any) || (instance instanceof AbstractCoreInstanceWrapper)) && processorSupport.instance_instanceOf(instance, M3Paths.FunctionType);
     }
 
     public static boolean functionTypesEqual(CoreInstance functionType1, CoreInstance functionType2, ProcessorSupport processorSupport)
