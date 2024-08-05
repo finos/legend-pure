@@ -32,6 +32,7 @@ import org.eclipse.collections.impl.utility.StringIterate;
 import org.finos.legend.pure.m3.tools.JavaTools;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -233,10 +234,18 @@ public class M3ToJavaGenerator
 
     private static String getJavaPackageString(CoreInstance instance)
     {
-        String javaPackage = ROOT_PACKAGE;
+        return appendJavaPackageString(new StringBuilder(), instance).toString();
+    }
 
+    private static <T extends Appendable> T appendJavaPackageString(T appendable, CoreInstance instance)
+    {
+        appendJavaPackageString(SafeAppendable.wrap(appendable), instance);
+        return appendable;
+    }
+
+    private static SafeAppendable appendJavaPackageString(SafeAppendable appendable, CoreInstance instance)
+    {
         CoreInstance pkg = instance.getValueForMetaPropertyToOne("package");
-
         if (pkg == null)
         {
             CoreInstance type = getType(instance);
@@ -244,21 +253,15 @@ public class M3ToJavaGenerator
             {
                 pkg = type.getValueForMetaPropertyToOne("package");
             }
-
         }
-
-        if (pkg != null)
-        {
-            ListIterable<String> packagePath = getUserObjectPathForPackageableElement(pkg, false);
-            javaPackage = getJavaPackageString(packagePath);
-        }
-
-        return javaPackage;
+        return appendJavaPackageString(appendable, (pkg == null) ? Lists.immutable.empty() : getUserObjectPathForPackageableElement(pkg, false));
     }
 
-    private static String getJavaPackageString(ListIterable<String> packagePath)
+    private static SafeAppendable appendJavaPackageString(SafeAppendable appendable, ListIterable<String> packagePath)
     {
-        return packagePath.isEmpty() ? ROOT_PACKAGE : packagePath.collectWith(JavaTools::makeValidJavaIdentifier, "_").makeString(ROOT_PACKAGE + ".", ".", "");
+        appendable.append(ROOT_PACKAGE);
+        packagePath.forEach(name -> appendable.append('.').append(JavaTools.makeValidJavaIdentifier(name, "_")));
+        return appendable;
     }
 
 
@@ -1222,7 +1225,18 @@ public class M3ToJavaGenerator
 
     private static String getClassName(CoreInstance instance)
     {
-        return instance.getName() + CLASS_SUFFIX;
+        return appendClassName(new StringBuilder(instance.getName().length() + CLASS_SUFFIX.length()), instance).toString();
+    }
+
+    private static <T extends Appendable> T appendClassName(T appendable, CoreInstance instance)
+    {
+        appendClassName(SafeAppendable.wrap(appendable), instance);
+        return appendable;
+    }
+
+    private static SafeAppendable appendClassName(SafeAppendable appendable, CoreInstance instance)
+    {
+        return appendable.append(instance.getName()).append(CLASS_SUFFIX);
     }
 
     private String fromCoreInstanceGettor(CoreInstance property, CoreInstance propertyReturnGenericType, Imports imports, String expression)
@@ -1893,6 +1907,17 @@ public class M3ToJavaGenerator
     private static String getInterfaceName(CoreInstance instance)
     {
         return instance.getName();
+    }
+
+    private static <T extends Appendable> T appendInterfaceName(T appendable, CoreInstance type)
+    {
+        appendInterfaceName(SafeAppendable.wrap(appendable), type);
+        return appendable;
+    }
+
+    private static SafeAppendable appendInterfaceName(SafeAppendable appendable, CoreInstance type)
+    {
+        return appendable.append(type.getName());
     }
 
     private String createWrapperClass(final CoreInstance instance, String javaPackage, MutableSet<CoreInstance> properties, MutableSet<CoreInstance> propertiesFromAssociations, MutableSet<CoreInstance> qualifiedProperties, Imports imports, MutableMap<String, CoreInstance> propertyOwners)
@@ -2600,23 +2625,47 @@ public class M3ToJavaGenerator
 
     public static String getFullyQualifiedM3InterfaceForCompiledModel(CoreInstance instance)
     {
-        return getJavaPackageString(instance) + "." + getInterfaceName(instance);
+        return appendFullyQualifiedM3InterfaceForCompiledModel(new StringBuilder(64), instance).toString();
+    }
+
+    public static <T extends Appendable> T appendFullyQualifiedM3InterfaceForCompiledModel(T appendable, CoreInstance type)
+    {
+        appendInterfaceName(appendJavaPackageString(SafeAppendable.wrap(appendable), type).append('.'), type);
+        return appendable;
     }
 
     public static String getFullyQualifiedM3InterfaceForCompiledModel(ListIterable<String> packagePath, CoreInstance instance)
     {
-        return getJavaPackageString(packagePath) + "." + getInterfaceName(instance);
+        return appendFullyQualifiedM3InterfaceForCompiledModel(new StringBuilder(64), packagePath, instance).toString();
+    }
+
+    public static <T extends Appendable> T appendFullyQualifiedM3InterfaceForCompiledModel(T appendable, ListIterable<String> packagePath, CoreInstance instance)
+    {
+        appendInterfaceName(appendJavaPackageString(SafeAppendable.wrap(appendable), packagePath).append('.'), instance);
+        return appendable;
     }
 
     public static String getFullyQualifiedM3ImplForCompiledModel(CoreInstance instance)
     {
-        return getJavaPackageString(instance) + "." + getClassName(instance);
+        return appendFullyQualifiedM3ImplForCompiledModel(new StringBuilder(64), instance).toString();
+    }
+
+    public static <T extends Appendable> T appendFullyQualifiedM3ImplForCompiledModel(T appendable, CoreInstance instance)
+    {
+        appendClassName(appendJavaPackageString(SafeAppendable.wrap(appendable), instance).append('.'), instance);
+        return appendable;
     }
 
     public static String getFullyQualifiedM3InterfaceForCompiledModel(String m3Path)
     {
-        ListIterable<String> elementsAsString = StringIterate.tokensToList(m3Path, "::");
-        return elementsAsString.size() > 1 ? getJavaPackageString(elementsAsString.take(elementsAsString.size() - 1)) + "." + elementsAsString.getLast() : ROOT_PACKAGE + "." + elementsAsString.getLast();
+        return appendFullyQualifiedM3InterfaceForCompiledModel(new StringBuilder(m3Path.length() + ROOT_PACKAGE.length()), m3Path).toString();
+    }
+
+    public static <T extends Appendable> T appendFullyQualifiedM3InterfaceForCompiledModel(T appendable, String m3Path)
+    {
+        ListIterable<String> m3PathList = StringIterate.tokensToList(m3Path, "::");
+        appendJavaPackageString(SafeAppendable.wrap(appendable), m3PathList.subList(0, m3PathList.size() - 1)).append('.').append(m3PathList.getLast());
+        return appendable;
     }
 
     private String coreInstanceToTypeToOne(CoreInstance propertyReturnGenericType, String type, String expression)
