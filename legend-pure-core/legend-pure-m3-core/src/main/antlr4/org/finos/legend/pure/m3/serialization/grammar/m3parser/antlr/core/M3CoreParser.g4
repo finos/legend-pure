@@ -43,31 +43,31 @@ classDefinition: CLASS stereotypes? taggedValues? qualifiedName typeParametersWi
        )
 ;
 
-measureDefinition: MEASURE qualifiedName
+measureDefinition: MEASURE stereotypes? taggedValues? qualifiedName
                    measureBody
 ;
 
 measureBody: CURLY_BRACKET_OPEN
              (
                 (
-                    measureExpr* canonicalExpr measureExpr*
+                    unitExpr* canonicalUnitExpr unitExpr*
                 )
                 |
-                nonConvertibleMeasureExpr+
+                nonConvertibleUnitExpr+
              )
              CURLY_BRACKET_CLOSE
 ;
 
-canonicalExpr: STAR measureExpr
+canonicalUnitExpr: STAR unitExpr
 ;
 
-measureExpr: qualifiedName COLON unitExpr
+unitExpr: identifier COLON unitConversionExpr
 ;
 
-nonConvertibleMeasureExpr : qualifiedName END_LINE
+nonConvertibleUnitExpr : identifier END_LINE
 ;
 
-unitExpr: identifier ARROW codeBlock
+unitConversionExpr: identifier ARROW codeBlock
 ;
 
 mapping : (MAPPING_SRC qualifiedName)? (MAPPING_FILTER combinedExpression)? mappingLine (COMMA mappingLine)*
