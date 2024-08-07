@@ -1321,7 +1321,7 @@ public class AntlrContextToM3CoreInstance
 
     private String mayShiftTo2kindFunction(AtomicExpressionContext ctx, MutableList<CoreInstance> lambdas, String functionName)
     {
-        MutableList<Boolean> res = lambdas.collect(lambda -> (((FunctionType) ((LambdaFunction<?>) lambda)._classifierGenericType()._typeArguments().getFirst()._rawType())._parameters().size() == 2)).distinct();
+        MutableList<Boolean> res = lambdas.collect(lambda -> (((FunctionType) ((LambdaFunction<?>) lambda)._classifierGenericType()._typeArguments().getFirst()._rawType())._parameters().size() == 3)).distinct();
         if (res.size() == 1)
         {
             return res.getFirst() ? functionName + "2" : functionName;
@@ -1331,7 +1331,7 @@ public class AntlrContextToM3CoreInstance
 
     private static String mayShiftTo2kindFunction(LambdaFunction<?> lambda, String functionName)
     {
-        if (((FunctionType) lambda._classifierGenericType()._typeArguments().getFirst()._rawType())._parameters().size() == 2)
+        if (((FunctionType) lambda._classifierGenericType()._typeArguments().getFirst()._rawType())._parameters().size() == 3)
         {
             functionName = functionName + "2";
         }

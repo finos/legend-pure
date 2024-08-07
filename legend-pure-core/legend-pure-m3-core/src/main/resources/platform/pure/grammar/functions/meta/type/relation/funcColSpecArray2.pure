@@ -20,12 +20,12 @@ function
     PCT.function>>
     {
         doc.doc='Create a Relation typed column array, each containing a name and a function',
-        PCT.grammarDoc='~[col : {w,x|$x.val+3}, other : {w,t|$t.ww+4}]',
+        PCT.grammarDoc='~[col : {p,f,r|$r.val+3}, other : {p,f,r|$r.ww+4}]',
         PCT.grammarCharacters='~[:,:]'
     }
-    meta::pure::functions::relation::funcColSpecArray2<U,T,P>(funcSpecs:FuncColSpec<{Relation<U>[1], U[1]->Any[*]}, T>[*], cl:P[1]):FuncColSpecArray<{Relation<U>[1], U[1]->Any[*]}, P>[1]
+    meta::pure::functions::relation::funcColSpecArray2<U,T,P>(funcSpecs:FuncColSpec<{Relation<U>[1], Frame[1], U[1]->Any[*]}, T>[*], cl:P[1]):FuncColSpecArray<{Relation<U>[1], Frame[1], U[1]->Any[*]}, P>[1]
 {
-    ^FuncColSpecArray<{Relation<U>[1], U[1]->Any[*]}, P>
+    ^FuncColSpecArray<{Relation<U>[1], Frame[1], U[1]->Any[*]}, P>
     (
         funcSpecs = $funcSpecs
     );
