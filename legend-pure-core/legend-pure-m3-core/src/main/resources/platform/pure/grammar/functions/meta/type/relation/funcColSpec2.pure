@@ -20,12 +20,12 @@ function
     PCT.function>>
     {
         doc.doc='Create a Relation typed column containing a name and a function with 2 parameters',
-        PCT.grammarDoc='~col : {w,x|$x.val+3}',
+        PCT.grammarDoc='~col : {p,f,r|$r.val+3}',
         PCT.grammarCharacters='~:'
     }
-    meta::pure::functions::relation::funcColSpec2<U,T>(f:Function<{Relation<U>[1], U[1]->Any[*]}>[1], s:String[1], cl:T[1]):FuncColSpec<{Relation<U>[1], U[1]->Any[1]}, T>[1]
+    meta::pure::functions::relation::funcColSpec2<U,T>(f:Function<{Relation<U>[1], Frame[1], U[1]->Any[*]}>[1], s:String[1], cl:T[1]):FuncColSpec<{Relation<U>[1], Frame[1], U[1]->Any[1]}, T>[1]
 {
-    ^FuncColSpec<{Relation<U>[1], U[1]->Any[1]}, T>
+    ^FuncColSpec<{Relation<U>[1], Frame[1], U[1]->Any[1]}, T>
     (
         name = $s,
         function = $f

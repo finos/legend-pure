@@ -20,12 +20,12 @@ function
     PCT.function>>
     {
         doc.doc='Create a Relation typed columns containing a name, a map function and a reduce function',
-        PCT.grammarDoc='~propName : {w,x|$x.val} : y|$y->sum()',
+        PCT.grammarDoc='~propName : {p,f,r|$r.val} : y|$y->sum()',
         PCT.grammarCharacters='~::'
     }
-    meta::pure::functions::relation::aggColSpec2<U,V,K,T>(map:Function<{Relation<U>[1], U[1]->V[0..1]}>[1], reduce:Function<{V[*]->K[1]}>[1], s:String[1], cl:T[1]):AggColSpec<{Relation<U>[1], U[1]->V[0..1]}, {V[*]->K[1]}, T>[1]
+    meta::pure::functions::relation::aggColSpec2<U,V,K,T>(map:Function<{Relation<U>[1], Frame[1], U[1]->V[0..1]}>[1], reduce:Function<{V[*]->K[1]}>[1], s:String[1], cl:T[1]):AggColSpec<{Relation<U>[1], Frame[1], U[1]->V[0..1]}, {V[*]->K[1]}, T>[1]
 {
-    ^AggColSpec<{Relation<U>[1], U[1]->V[0..1]}, {V[*]->K[1]}, T>
+    ^AggColSpec<{Relation<U>[1], Frame[1], U[1]->V[0..1]}, {V[*]->K[1]}, T>
     (
         name = $s,
         map = $map,
