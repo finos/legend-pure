@@ -111,6 +111,16 @@ public class AssociationProcessor extends Processor<Association>
 
         validateAssociationPropertiesRawTypes(association, leftRawType, rightRawType);
 
+        if (leftProperty._defaultValue() != null)
+        {
+            throw new PureCompilationException(association.getSourceInformation(), "Association properties should not have default values defined. Error in property: " + leftProperty.getName());
+        }
+
+        if (rightProperty._defaultValue() != null)
+        {
+            throw new PureCompilationException(association.getSourceInformation(), "Association properties should not have default values defined. Error in property: " + rightProperty.getName());
+        }
+
         return processAssociationProperties(association, context, processorSupport, modelRepository, leftProperty, rightProperty, leftType, (Class<?>) leftRawType, rightType, (Class<?>) rightRawType);
     }
 
