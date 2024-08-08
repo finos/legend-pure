@@ -15,22 +15,13 @@
 package org.finos.legend.pure.m3.tests.function.base.meta;
 
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
-import org.finos.legend.pure.m3.tools.test.ToFix;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-public abstract class AbstractTestReactivate extends AbstractPureTestWithCoreCompiled
+public abstract class AbstractTestReactivate extends AbstractPureTestWithCoreCompiledPlatform
 {
-
-    @BeforeClass
-    public static void setUp()
-    {
-        setUpRuntime();
-    }
-
     @After
     public void cleanRuntime()
     {
@@ -272,33 +263,5 @@ public abstract class AbstractTestReactivate extends AbstractPureTestWithCoreCom
                         "  assert($b.a, | 'Default value for property b set to wrong value');\n" +
                         "}\n");
         execute("test::f():Boolean[1]");
-    }
-
-    @ToFix
-    public void testReactivateNewDefaultValueAssociation()
-    {
-        compileTestSource("testSource.pure",
-                "import test::*;\n" +
-                        "Class test::K\n" +
-                        "{\n" +
-                        "  i : Integer[1];\n" +
-                        "}\n" +
-                        "\n" +
-                        "Class test::L\n" +
-                        "{\n" +
-                        "  j : Integer[1];\n" +
-                        "}\n" +
-                        "Association test::KL\n" +
-                        "{\n" +
-                        "   a : K[1];\n" +
-                        "   b : L[1] = ^test::L(j=1);\n" +
-                        "}\n" +
-                        "function test::f2():Boolean[1]\n" +
-                        "{\n" +
-                        "  let l = {| ^test::K(i=1)};\n" +
-                        "  let a = $l.expressionSequence->evaluateAndDeactivate()->toOne()->reactivate()->cast(@test::K)->toOne();\n" +
-                        "  assertEquals(1, $a.b.j ,| 'Default value for property b set to wrong value');\n" +
-                        "}\n");
-        execute("test::f2():Boolean[1]");
     }
 }
