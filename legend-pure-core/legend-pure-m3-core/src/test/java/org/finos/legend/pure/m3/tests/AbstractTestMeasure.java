@@ -37,7 +37,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
             "function meta::pure::functions::math::sum(numbers:Number[*]):Number[1]\n" +
                     "{\n" +
                     "    $numbers->plus();\n" +
-                    "}" +
+                    "}\n" +
                     "function meta::pure::functions::math::plus(masses: Mass[*]):Mass~Gram[1]\n" +
                     "{\n" +
                     "   let cv = $masses->map(m|let cv = $m->type()->cast(@Unit).conversionFunction->cast(@Function<{Number[1]->Number[1]}>)->toOne()->eval(getUnitValue($m)););\n" +
@@ -56,7 +56,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
     private static final String multFunction =
             "function meta::pure::unit::massScalarTimes(mass: Mass[1], nums: Number[*]):Mass~Gram[1]\n" +
                     "{\n" +
-                    "   let convertedValue = $mass->type()->cast(@Unit).conversionFunction->cast(@Function<{Number[1]->Number[1]}>)->toOne()->eval(getUnitValue($mass));" +
+                    "   let convertedValue = $mass->type()->cast(@Unit).conversionFunction->cast(@Function<{Number[1]->Number[1]}>)->toOne()->eval(getUnitValue($mass));\n" +
                     "   let numsMultResult = $nums->times();\n" +
                     "   let myValue = [$convertedValue, $numsMultResult]->times();\n" +
                     "   newUnit(Mass~Gram, $myValue)->cast(@Mass~Gram);\n" +
@@ -65,7 +65,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
     private static final String divFunction =
             "function meta::pure::unit::massScalarDivision(mass: Mass[1], nums: Number[*]):Mass~Gram[1]\n" +
                     "{\n" +
-                    "   let convertedValue = $mass->type()->cast(@Unit).conversionFunction->cast(@Function<{Number[1]->Number[1]}>)->toOne()->eval(getUnitValue($mass));" +
+                    "   let convertedValue = $mass->type()->cast(@Unit).conversionFunction->cast(@Function<{Number[1]->Number[1]}>)->toOne()->eval(getUnitValue($mass));\n" +
                     "   let numsMultResult = $nums->times();\n" +
                     "   assert($numsMultResult != 0, 'Cannot divide by zero.');\n" +
                     "   let myValue = $convertedValue->divide($numsMultResult);\n" +
@@ -105,8 +105,8 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                 "import pkg::*;\n" +
                         "function testFunc():Any[*]\n" +
                         "{\n" +
-                        "   let a = 'IamAString' Mass~Pound;" +
-                        "}"));
+                        "   let a = 'IamAString' Mass~Pound;\n" +
+                        "}\n"));
         assertPureException(PureParserException.class, "expected: '}' found: 'Mass'", e);
     }
 
@@ -119,8 +119,8 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                 "import pkg::*;\n" +
                         "function testFunc():Any[*]\n" +
                         "{\n" +
-                        "   let a = false Mass~Pound;" +
-                        "}"));
+                        "   let a = false Mass~Pound;\n" +
+                        "}\n"));
         assertPureException(PureParserException.class, "expected: '}' found: 'Mass'", e);
     }
 
@@ -137,8 +137,8 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "function testFunc():Any[*]\n" +
                         "{\n" +
                         "   let a = ^A(name='className');\n" +
-                        "   let b = $a Mass~Pound;" +
-                        "}"));
+                        "   let b = $a Mass~Pound;\n" +
+                        "}\n"));
         assertPureException(PureParserException.class, "expected: ';' found: 'Mass'", e);
     }
 

@@ -16,7 +16,6 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.type;
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.impl.factory.Lists;
-import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.GenericTypeOperation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -120,7 +119,7 @@ public class TypeProcessor
         {
             return FullJavaPaths.Enum;
         }
-        String finalRawTypeSystemPath = fullyQualify || "Package".equals(rawType.getName()) ? fullyQualifiedJavaInterfaceNameForType(rawType) : javaInterfaceForType(rawType);
+        String finalRawTypeSystemPath = fullyQualify || M3Paths.Package.equals(rawType.getName()) ? fullyQualifiedJavaInterfaceNameForType(rawType) : javaInterfaceForType(rawType);
         if (rawType instanceof Unit)
         {
             return UnitProcessor.convertToJavaCompatibleClassName(finalRawTypeSystemPath) + "_Instance";
@@ -171,17 +170,17 @@ public class TypeProcessor
 
     public static String javaInterfaceForType(CoreInstance rawType)
     {
-        return ClassProcessor.isPlatformClass(rawType) ? fullyQualifiedJavaInterfaceNameForType(rawType) : PackageableElement.getSystemPathForPackageableElement(rawType, "_");
+        return ClassProcessor.isPlatformClass(rawType) ? fullyQualifiedJavaInterfaceNameForType(rawType) : JavaPackageAndImportBuilder.buildInterfaceNameFromType(rawType);
     }
 
     public static String javaInterfaceNameForType(CoreInstance rawType)
     {
-        return ClassProcessor.isPlatformClass(rawType) ? rawType.getName() : PackageableElement.getSystemPathForPackageableElement(rawType, "_");
+        return ClassProcessor.isPlatformClass(rawType) ? rawType.getName() : JavaPackageAndImportBuilder.buildInterfaceNameFromType(rawType);
     }
 
-    public static String fullyQualifiedJavaInterfaceNameForType(final CoreInstance element)
+    public static String fullyQualifiedJavaInterfaceNameForType(CoreInstance element)
     {
-        return ClassProcessor.isPlatformClass(element) ? M3ToJavaGenerator.getFullyQualifiedM3InterfaceForCompiledModel(element) : JavaPackageAndImportBuilder.buildPackageForPackageableElement(element) + "." + PackageableElement.getSystemPathForPackageableElement(element, "_");
+        return JavaPackageAndImportBuilder.buildInterfaceReferenceFromType(element);
     }
 
     private static String pureSystemPathToJava_simpleCases(String fullUserPath, boolean primitiveIfPossible)

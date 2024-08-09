@@ -40,6 +40,7 @@ import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
+import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstanceWrapper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
@@ -49,9 +50,15 @@ public class _RelationType
 {
     public static boolean isRelationType(CoreInstance type, ProcessorSupport processorSupport)
     {
-        return (type != null) &&
-                ((type instanceof RelationType) ||
-                        (!(type instanceof Any) && processorSupport.instance_instanceOf(type, M3Paths.RelationType)));
+        if (type == null)
+        {
+            return false;
+        }
+        if (type instanceof RelationType)
+        {
+            return true;
+        }
+        return (!(type instanceof Any) || (type instanceof AbstractCoreInstanceWrapper)) && processorSupport.instance_instanceOf(type, M3Paths.RelationType);
     }
 
     public static String print(CoreInstance relationType, ProcessorSupport processorSupport)

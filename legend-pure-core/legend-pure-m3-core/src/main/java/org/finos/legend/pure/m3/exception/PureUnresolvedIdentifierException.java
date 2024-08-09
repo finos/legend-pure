@@ -15,10 +15,8 @@
 package org.finos.legend.pure.m3.exception;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.map.MapIterable;
-import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.utility.Iterate;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.compiler.visibility.Visibility;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -59,46 +57,29 @@ public class PureUnresolvedIdentifierException extends PureCompilationException
         return getImportCandidates(this.id, this.repository, this.processorSupport, this.importStubNode, codeRepositories);
     }
 
-    private static RichIterable<CoreInstance> getImportCandidates(String id, ModelRepository repository, ProcessorSupport processorSupport, CoreInstance importStubNode, RichIterable<CodeRepository> codeRepositories)
-    {
-        return SearchTools.findInAllPackages(id, repository).select((CoreInstance instance) ->
-        {
-            String sourceId = null == importStubNode.getSourceInformation() ? null : importStubNode.getSourceInformation().getSourceId();
-            return Visibility.isVisibleInSource(instance, sourceId, codeRepositories, processorSupport);
-        });
-    }
-
     public CoreInstance getImportGroup()
     {
         return this.importGroup;
     }
 
-    private static String buildInfo(String idOrPath, RichIterable<CoreInstance> candidates)
+    private static RichIterable<CoreInstance> getImportCandidates(String id, ModelRepository repository, ProcessorSupport processorSupport, CoreInstance importStubNode, RichIterable<CodeRepository> codeRepositories)
     {
-        StringBuilder builder = new StringBuilder(idOrPath);
-        builder.append(" has not been defined!");
-        if (Iterate.notEmpty(candidates))
+        return SearchTools.findInAllPackages(id, repository).select(instance ->
         {
-            MapIterable<String, CoreInstance> candidatesByPath = indexCandidatesByPath(candidates);
-            builder.append(" The system found ");
-            builder.append(candidatesByPath.size());
-            builder.append(" possible matches:");
-            for (String path : candidatesByPath.keysView().toSortedList())
-            {
-                builder.append("\n    ");
-                builder.append(path);
-            }
-        }
-        return builder.toString();
+            String sourceId = (importStubNode.getSourceInformation() == null) ? null : importStubNode.getSourceInformation().getSourceId();
+            return Visibility.isVisibleInSource(instance, sourceId, codeRepositories, processorSupport);
+        });
     }
 
-    private static MapIterable<String, CoreInstance> indexCandidatesByPath(Iterable<? extends CoreInstance> candidates)
+    private static String buildInfo(String idOrPath, RichIterable<CoreInstance> candidates)
     {
-        MutableMap<String, CoreInstance> index = Maps.mutable.empty();
-        for (CoreInstance candidate : candidates)
+        StringBuilder builder = new StringBuilder(idOrPath).append(" has not been defined!");
+        if (candidates.notEmpty())
         {
-            index.put(PackageableElement.getUserPathForPackageableElement(candidate), candidate);
+            MutableList<String> candidatePaths = candidates.collect(PackageableElement::getUserPathForPackageableElement, Lists.mutable.empty()).sortThis();
+            builder.append(" The system found ").append(candidatePaths.size()).append(" possible matches:");
+            candidatePaths.forEach(path -> builder.append("\n    ").append(path));
         }
-        return index;
+        return builder.toString();
     }
 }

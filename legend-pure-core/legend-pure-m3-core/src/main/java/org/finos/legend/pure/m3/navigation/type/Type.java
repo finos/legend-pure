@@ -15,10 +15,10 @@
 package org.finos.legend.pure.m3.navigation.type;
 
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Sets;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -26,6 +26,7 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.linearization.C3Linearization;
+import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstanceWrapper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
@@ -61,9 +62,15 @@ public class Type
      */
     public static boolean isPrimitiveType(CoreInstance type, ProcessorSupport processorSupport)
     {
-        return (type != null) &&
-                ((type instanceof PrimitiveType) ||
-                        (!(type instanceof Any) && processorSupport.type_subTypeOf(type.getClassifier(), processorSupport.package_getByUserPath(M3Paths.PrimitiveType))));
+        if (type == null)
+        {
+            return false;
+        }
+        if (type instanceof PrimitiveType)
+        {
+            return true;
+        }
+        return (!(type instanceof Any) || (type instanceof AbstractCoreInstanceWrapper)) && processorSupport.instance_instanceOf(type, M3Paths.PrimitiveType);
     }
 
     /**

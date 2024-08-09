@@ -41,11 +41,12 @@ public class M3PropertyPaths
     public static final ImmutableList<String> multiplicityArguments = makePropertyPath(M3Paths.GenericType, M3Properties.multiplicityArguments);
     public static final ImmutableList<String> multiplicityParameters = makePropertyPath(M3Paths.Class, M3Properties.multiplicityParameters);
     public static final ImmutableList<String> name = makePropertyPath(M3Paths.ModelElement, M3Properties.name);
+    public static final ImmutableList<String> name_Enum = makePropertyPath(M3Paths.Enum, M3Properties.name);
     public static final ImmutableList<String> offset_ReferenceUsage = makePropertyPath(M3Paths.ReferenceUsage, M3Properties.offset);
+    public static final ImmutableList<String> originalMilestonedProperties = makePropertyPath(M3Paths.Class, M3Properties.originalMilestonedProperties);
     public static final ImmutableList<String> owner_ReferenceUsage = makePropertyPath(M3Paths.ReferenceUsage, M3Properties.owner);
     public static final ImmutableList<String> _package = makePropertyPath(M3Paths.PackageableElement, M3Properties._package);
     public static final ImmutableList<String> properties = makePropertyPath(M3Paths.Class, M3Properties.properties);
-    public static final ImmutableList<String> originalMilestonedProperties = makePropertyPath(M3Paths.Class, M3Properties.originalMilestonedProperties);
     public static final ImmutableList<String> propertiesFromAssociations = makePropertyPath(M3Paths.Class, M3Properties.propertiesFromAssociations);
     public static final ImmutableList<String> propertyName_ReferenceUsage = makePropertyPath(M3Paths.ReferenceUsage, M3Properties.propertyName);
     public static final ImmutableList<String> qualifiedProperties = makePropertyPath(M3Paths.Class, M3Properties.qualifiedProperties);
@@ -57,8 +58,8 @@ public class M3PropertyPaths
     public static final ImmutableList<String> typeArguments = makePropertyPath(M3Paths.GenericType, M3Properties.typeArguments);
     public static final ImmutableList<String> typeParameter = makePropertyPath(M3Paths.GenericType, M3Properties.typeParameter);
     public static final ImmutableList<String> typeParameters = makePropertyPath(M3Paths.Class, M3Properties.typeParameters);
-    public static final ImmutableList<String> stereotypes = makePropertyPath(M3Paths.Class, M3Properties.stereotypes);
-    public static final ImmutableList<String> taggedValues = makePropertyPath(M3Paths.Class, M3Properties.taggedValues);
+    public static final ImmutableList<String> stereotypes = makePropertyPath(M3Paths.ElementWithStereotypes, M3Properties.stereotypes);
+    public static final ImmutableList<String> taggedValues = makePropertyPath(M3Paths.ElementWithTaggedValues, M3Properties.taggedValues);
 
     @SuppressWarnings("unchecked")
     public static final ImmutableSet<ImmutableList<String>> BACK_REFERENCE_PROPERTY_PATHS = Sets.immutable.with(

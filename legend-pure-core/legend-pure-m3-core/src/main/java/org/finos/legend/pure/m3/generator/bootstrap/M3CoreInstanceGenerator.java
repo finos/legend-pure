@@ -15,12 +15,10 @@
 package org.finos.legend.pure.m3.generator.bootstrap;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.utility.StringIterate;
+import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
 import org.finos.legend.pure.m3.bootstrap.generator.StubDef;
 import org.finos.legend.pure.m3.compiler.Context;
@@ -50,10 +48,9 @@ public class M3CoreInstanceGenerator
         String fileNameStr = args[2];
         String fileNameStartsWith = args.length >= 4 ? args[3] : null;
 
-        SetIterable<String> filePaths = fileNameStr == null ? Sets.mutable.empty() : StringIterate.tokensToSet(fileNameStr.replaceAll("\\r", "").replaceAll("\\n", "").replaceAll(" ", ""), ",");
+        SetIterable<String> filePaths = fileNameStr == null ? Sets.immutable.empty() : Sets.mutable.with(fileNameStr.split("\\s*+,\\s*+"));
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        CodeRepositorySet.Builder builder = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true));
-        RichIterable<CodeRepository> repositories = builder.build().getRepositories();
+        RichIterable<CodeRepository> repositories = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true)).build().getRepositories();
         PureRuntime runtime = new PureRuntimeBuilder(new CompositeCodeStorage(new ClassLoaderCodeStorage(repositories))).setTransactionalByDefault(false).build();
 
         ModelRepository repository = runtime.getModelRepository();
@@ -64,9 +61,9 @@ public class M3CoreInstanceGenerator
         m3ToJavaGenerator.generate(repository, filePaths, fileNameStartsWith);
     }
 
-    public static M3ToJavaGenerator generator(String outputFir, String factoryNamePrefix, ModelRepository repository)
+    public static M3ToJavaGenerator generator(String outputDir, String factoryNamePrefix, ModelRepository repository)
     {
-        MutableMap<String, StubDef> STUB_DEFS = Lists.immutable.with(
+        MutableMap<String, StubDef> additionalStubDefs = ArrayAdapter.adapt(
                 StubDef.build("Mapping", "ImportStub"),
                 StubDef.build("SetBasedStore", "ImportStub"),
                 StubDef.build("Store", "ImportStub"),
@@ -81,12 +78,9 @@ public class M3CoreInstanceGenerator
                 StubDef.build("DeDupeType", "GrammarInfoStub"),
                 StubDef.build("ValueTransformer", "GrammarInfoStub"),
                 StubDef.build("TypeView", "GrammarInfoStub"),
-                StubDef.build("JoinType", "GrammarInfoStub")).injectInto(Maps.mutable.empty(), (map, stubDef) ->
-        {
-            map.put(stubDef.getClassName(), stubDef);
-            return map;
-        });
-        return new M3ToJavaGenerator(outputFir, factoryNamePrefix, false, new PropertyTypeResolverUsingInheritence(new M3ProcessorSupport(new Context(), repository)), STUB_DEFS);
+                StubDef.build("JoinType", "GrammarInfoStub")
+        ).groupByUniqueKey(StubDef::getClassName);
+        return new M3ToJavaGenerator(outputDir, factoryNamePrefix, false, new PropertyTypeResolverUsingInheritence(new M3ProcessorSupport(new Context(), repository)), additionalStubDefs);
     }
 
     static class PropertyTypeResolverUsingInheritence implements M3ToJavaGenerator.PropertyTypeResolver

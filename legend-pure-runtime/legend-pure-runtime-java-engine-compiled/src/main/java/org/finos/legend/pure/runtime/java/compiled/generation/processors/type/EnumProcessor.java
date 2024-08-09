@@ -54,7 +54,7 @@ public class EnumProcessor
     public static StringJavaSource processEnumLazy()
     {
         String className = ENUM_LAZY_CLASS_NAME;
-        String superClassName =  JavaPackageAndImportBuilder.buildInterfaceFromUserPath(M3Paths.Enum) + "_LazyImpl";
+        String superClassName =  JavaPackageAndImportBuilder.buildInterfaceNameFromUserPath(M3Paths.Enum) + "_LazyImpl";
         return StringJavaSource.newStringJavaSource(JavaPackageAndImportBuilder.rootPackage(), className,
                 "import " + JavaPackageAndImportBuilder.buildPackageFromUserPath(M3Paths.Enum) + ".*;\n" +
                 "import org.finos.legend.pure.m4.coreinstance.SourceInformation;\n" +
