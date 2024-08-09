@@ -21,7 +21,6 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.function.Function0;
-import org.eclipse.collections.api.block.predicate.Predicate2;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
@@ -32,7 +31,7 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.list.mutable.ListAdapter;
+import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.eclipse.collections.impl.utility.Iterate;
@@ -120,6 +119,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecificat
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation._package._Package;
@@ -132,7 +132,6 @@ import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.As
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.AtomicExpressionContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.BooleanPartContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.BuildMilestoningVariableExpressionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.CanonicalExprContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ClassDefinitionContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.CodeBlockContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.CombinedArithmeticOnlyContext;
@@ -178,10 +177,10 @@ import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.Le
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MappingContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MappingLineContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MeasureDefinitionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MeasureExprContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MultiplicityArgumentContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MultiplicityArgumentsContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.NativeFunctionContext;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.NonConvertibleUnitExprContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.NotExpressionContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.PackagePathContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ProfileContext;
@@ -214,6 +213,7 @@ import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.Ty
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TypeParameterContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TypeParametersWithContravarianceAndMultiplicityParametersContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TypeWithOperationContext;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.UnitExprContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.VariableContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
@@ -230,6 +230,7 @@ import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformati
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 import java.util.List;
+import java.util.Optional;
 
 public class AntlrContextToM3CoreInstance
 {
@@ -384,72 +385,55 @@ public class AntlrContextToM3CoreInstance
         {
             for (MeasureDefinitionContext dCtx : ctx.measureDefinition())
             {
+                Measure measure;
                 if (hasImportChanged)
                 {
-                    result = this.measureParser(dCtx, importId);
+                    measure = measureParser(dCtx, importId);
                 }
                 else
                 {
                     String importGroupID = importId._name();
                     String newContent = normalizeContent(dCtx.start.getInputStream().getText(new Interval(dCtx.start.getStartIndex(), dCtx.stop.getStopIndex())));
                     MutableList<CoreInstance> oldInstances = this.oldInstances.select(i -> this.oldState.instanceImportGroupInSourceEqualsNewImportGroup(i, importGroupID) && this.oldState.instanceContentInSourceEqualsNewContent(i, newContent), Lists.mutable.empty());
-
-                    Predicate2<CoreInstance, SourceInformation> matchesOldInstance = (oldMeasureInstance, newSourceInfo) ->
+                    if (oldInstances.size() == 1)
                     {
-                        if (newSourceInfo == null || oldMeasureInstance.getSourceInformation().getStartColumn() == newSourceInfo.getStartColumn())
-                        {
-                            if (newSourceInfo != null)
-                            {
-                                offsetSourceInformationForInstanceAndChildren(oldMeasureInstance, newSourceInfo.getStartLine() - oldMeasureInstance.getSourceInformation().getStartLine());
-                            }
-                            Function<String, IdentifierContext> newIdentifierContext = s -> new IdentifierContext(null, 1)
-                            {
-                                @Override
-                                public String getText()
-                                {
-                                    return s;
-                                }
-                            };
-                            Package packageInstance = buildPackage(Lists.mutable.with(newIdentifierContext.valueOf(oldMeasureInstance.getValueForMetaPropertyToOne(M3Properties._package).getName())));
-                            ((PackageableElement) oldMeasureInstance)._package(packageInstance);
-                            packageInstance._childrenAdd((PackageableElement) oldMeasureInstance);
-                            return true;
-                        }
-                        return false;
-                    };
-
-                    CoreInstance oldMeasureInstance = ListIterate.detect(oldInstances, i -> Instance.instanceOf(i, M3Paths.Measure, this.processorSupport));
-
-                    if (oldMeasureInstance != null)
-                    {
-                        this.oldInstances.remove(oldMeasureInstance);
+                        CoreInstance thisInstance = oldInstances.get(0);
+                        this.oldInstances.remove(thisInstance);
                         SourceInformation newSourceInfo = this.sourceInformation.getPureSourceInformation(dCtx.getStart(), dCtx.qualifiedName().identifier().getStart(), dCtx.getStop());
-                        if (matchesOldInstance.accept(oldMeasureInstance, newSourceInfo))
+                        if (thisInstance.getSourceInformation().getStartColumn() == newSourceInfo.getStartColumn())
                         {
-                            Measure mI = (Measure) oldMeasureInstance;
-                            result = mI;
+                            measure = (Measure) thisInstance;
+                            offsetSourceInformationForInstanceAndChildren(thisInstance, newSourceInfo.getStartLine() - thisInstance.getSourceInformation().getStartLine());
+                            Package packageInstance = buildPackage(dCtx.qualifiedName().packagePath());
+                            measure._package(packageInstance);
+                            packageInstance._childrenAdd(measure);
 
-                            for (Unit unit : Lists.mutable.with(mI._canonicalUnit()).withAll(mI._nonCanonicalUnits()))
+                            Unit canonicalUnit = measure._canonicalUnit();
+                            if (canonicalUnit != null)
                             {
-                                Package packageInstance = buildPackage(Lists.mutable.withAll(dCtx.qualifiedName().packagePath() == null ? Lists.mutable.empty() : ListAdapter.adapt(dCtx.qualifiedName().packagePath().identifier())));
+                                canonicalUnit._package(packageInstance);
+                                packageInstance._childrenAdd(canonicalUnit);
+                            }
+                            measure._nonCanonicalUnits().forEach(unit ->
+                            {
                                 unit._package(packageInstance);
                                 packageInstance._childrenAdd(unit);
-                            }
+                            });
                         }
                         else
                         {
-                            result = this.measureParser(dCtx, importId);
+                            measure = measureParser(dCtx, importId);
                         }
                     }
                     else
                     {
-                        result = this.measureParser(dCtx, importId);
+                        measure = measureParser(dCtx, importId);
                     }
                 }
-                Measure mI = (Measure) result;
-                this.coreInstancesResult.add(result);
-                this.coreInstancesResult.addAllIterable(mI._nonCanonicalUnits());
-                this.coreInstancesResult.add(mI._canonicalUnit());
+                result = measure;
+                this.coreInstancesResult.add(measure);
+                Optional.ofNullable(measure._canonicalUnit()).ifPresent(this.coreInstancesResult::add);
+                this.coreInstancesResult.addAllIterable(measure._nonCanonicalUnits());
             }
         }
         if (ctx.association() != null)
@@ -1804,11 +1788,16 @@ public class AntlrContextToM3CoreInstance
         return wrapperIv;
     }
 
-    private String getUnitNameWithMeasure(org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.UnitNameContext ctx)
+    private String getUnitNameWithMeasure(M3Parser.UnitNameContext ctx)
     {
         QualifiedNameContext measureQualifiedName = ctx.qualifiedName();
-        String nameWithoutPath = measureQualifiedName.identifier().getText().concat(this.tilde).concat(ctx.identifier().getText());
-        return measureQualifiedName.packagePath() != null ? this.packageToString(measureQualifiedName.packagePath()).concat("::").concat(nameWithoutPath) : nameWithoutPath;
+        StringBuilder builder = new StringBuilder();
+        if (measureQualifiedName.packagePath() != null)
+        {
+            appendPackage(builder, measureQualifiedName.packagePath()).append("::");
+        }
+        builder.append(measureQualifiedName.identifier().getText()).append(this.tilde).append(ctx.identifier().getText());
+        return builder.toString();
     }
 
     private SimpleFunctionExpression expressionInstanceParser(ExpressionInstanceContext ctx, MutableList<String> typeParametersNames, LambdaContext lambdaContext, ImportGroup importId, boolean addLines, String space)
@@ -2234,88 +2223,54 @@ public class AntlrContextToM3CoreInstance
         return result;
     }
 
-    private CoreInstance enumValue(EnumValueContext ctx, CoreInstance enumeration, ImportGroup importId)
+    private CoreInstance enumValue(EnumValueContext ctx, Enumeration<?> enumeration, ImportGroup importId)
     {
-        ListIterable<CoreInstance> stereotypes = null;
-        ListIterable<TaggedValue> tags = null;
-        if (ctx.stereotypes() != null)
-        {
-            stereotypes = this.stereotypes(ctx.stereotypes(), importId);
-        }
-        if (ctx.taggedValues() != null)
-        {
-            tags = this.taggedValues(ctx.taggedValues(), importId);
-        }
         CoreInstance enumValue = this.repository.newCoreInstance(ctx.identifier().getText(), enumeration, this.sourceInformation.getPureSourceInformation(ctx.identifier().getStart()), true);
+        enumValue.addKeyValue(M3PropertyPaths.name_Enum, this.repository.newStringCoreInstance_cached(ctx.identifier().getText()));
 
-        enumValue.addKeyValue(Lists.immutable.of("Root", "children", "meta", "children", "pure", "children", "metamodel", "children", "type", "children", "Enum", "properties", "name"), this.repository.newStringCoreInstance_cached(ctx.identifier().getText()));
-        if (stereotypes != null)
+        ListIterable<CoreInstance> stereotypes = (ctx.stereotypes() == null) ? Lists.immutable.empty() : stereotypes(ctx.stereotypes(), importId);
+        if (stereotypes.notEmpty())
         {
-            enumValue.setKeyValues(Lists.immutable.of("Root", "children", "meta", "children", "pure", "children", "metamodel", "children", "extension", "children", "ElementWithStereotypes", "properties", "stereotypes"), Lists.mutable.withAll(stereotypes));
+            enumValue.setKeyValues(M3PropertyPaths.stereotypes, stereotypes);
         }
-        if (tags != null)
+        ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
+        if (taggedValues.notEmpty())
         {
-            enumValue.setKeyValues(Lists.immutable.of("Root", "children", "meta", "children", "pure", "children", "metamodel", "children", "extension", "children", "ElementWithTaggedValues", "properties", "taggedValues"), Lists.mutable.<CoreInstance>withAll(tags));
+            enumValue.setKeyValues(M3PropertyPaths.taggedValues, taggedValues);
         }
         return enumValue;
     }
 
-    private Enumeration<?> enumParser(EnumDefinitionContext ctx, ImportGroup importId) throws PureParserException
+    private Enumeration<?> enumParser(EnumDefinitionContext ctx, ImportGroup importId)
     {
-        EnumerationInstance enumerationInstance;
-        CoreInstance value;
-        MutableList<CoreInstance> values = Lists.mutable.empty();
-        ListIterable<CoreInstance> stereotypes = Lists.mutable.empty();
-        ListIterable<TaggedValue> tags = Lists.mutable.empty();
+        checkExists(ctx.qualifiedName().packagePath(), ctx.qualifiedName().identifier(), null);
 
-        if (ctx.stereotypes() != null)
-        {
-            stereotypes = this.stereotypes(ctx.stereotypes(), importId);
-        }
-        if (ctx.taggedValues() != null)
-        {
-            tags = this.taggedValues(ctx.taggedValues(), importId);
-        }
-
-        this.checkExists(ctx.qualifiedName().packagePath(), ctx.qualifiedName().identifier(), null);
+        EnumerationInstance enumerationInstance = EnumerationInstance.createPersistent(this.repository, ctx.qualifiedName().identifier().getText());
+        enumerationInstance._name(ctx.qualifiedName().identifier().getText());
 
         Package packageInstance = buildPackage(ctx.qualifiedName().packagePath());
-
-        GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
-        ClassInstance enumerationType = (ClassInstance) this.processorSupport.package_getByUserPath(M3Paths.Enumeration);
-        genericTypeInstance._rawTypeCoreInstance(enumerationType);
-
-        enumerationInstance = EnumerationInstance.createPersistent(this.repository, ctx.qualifiedName().identifier().getText());
-        enumerationInstance._name(ctx.qualifiedName().identifier().getText());
         enumerationInstance._package(packageInstance);
-        GenericTypeInstance taGenericType = GenericTypeInstance.createPersistent(this.repository);
-        taGenericType._rawTypeCoreInstance(enumerationInstance);
-        genericTypeInstance._typeArguments(Lists.mutable.<GenericType>of(taGenericType));
-        enumerationInstance._classifierGenericType(genericTypeInstance);
         packageInstance._childrenAdd(enumerationInstance);
-        if (!tags.isEmpty())
+
+        enumerationInstance._classifierGenericType(GenericTypeInstance.createPersistent(this.repository)
+                ._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Enumeration))
+                ._typeArguments(Lists.immutable.with(GenericTypeInstance.createPersistent(this.repository)._rawType(enumerationInstance))));
+
+        ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
+        if (taggedValues.notEmpty())
         {
-            enumerationInstance._taggedValues(tags);
+            enumerationInstance._taggedValues(taggedValues);
         }
-        if (!stereotypes.isEmpty())
+        ListIterable<CoreInstance> stereotypes = (ctx.stereotypes() == null) ? Lists.immutable.empty() : stereotypes(ctx.stereotypes(), importId);
+        if (stereotypes.notEmpty())
         {
             enumerationInstance._stereotypesCoreInstance(stereotypes);
         }
-        enumerationInstance._classifierGenericType(genericTypeInstance);
 
-        GenericTypeInstance general = GenericTypeInstance.createPersistent(this.repository);
-        ClassInstance enumType = (ClassInstance) this.processorSupport.package_getByUserPath(M3Paths.Enum);
-        general._rawTypeCoreInstance(enumType);
-        GeneralizationInstance gen = GeneralizationInstance.createPersistent(this.repository, general, enumerationInstance);
-        enumerationInstance._generalizations(Lists.mutable.<Generalization>of(gen));
+        enumerationInstance._generalizations(Lists.immutable.with(GeneralizationInstance.createPersistent(this.repository, GenericTypeInstance.createPersistent(this.repository)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Enum)), enumerationInstance)));
 
-        for (EnumValueContext evCtx : ctx.enumValue())
-        {
-            value = this.enumValue(evCtx, enumerationInstance, importId);
-            values.add(value);
-        }
         enumerationInstance.setSourceInformation(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop()));
-        enumerationInstance._values(values);
+        enumerationInstance._values(ListIterate.collect(ctx.enumValue(), evCtx -> enumValue(evCtx, enumerationInstance, importId)));
         return enumerationInstance;
     }
 
@@ -2323,100 +2278,39 @@ public class AntlrContextToM3CoreInstance
      * Parses the measure given its definition context.
      * Returns the parsed measure as a CoreInstance.
      */
-    private CoreInstance measureParser(MeasureDefinitionContext ctx, ImportGroup importId) throws PureParserException
+    private Measure measureParser(MeasureDefinitionContext ctx, ImportGroup importId) throws PureParserException
     {
-        UnitInstance canonicalUnit;
-        MutableList<UnitInstance> nonCanonicalUnits;
-
-        MutableList<GenericType> superTypesGenericTypes = Lists.mutable.empty();
-        MutableList<String> typeParameterNames = Lists.mutable.empty();
-        MutableList<Boolean> contravariants = Lists.mutable.empty();
-        MutableList<String> multiplicityParameterNames = Lists.mutable.empty();
-        ListIterable<CoreInstance> stereotypes = Lists.mutable.empty();
-        ListIterable<TaggedValue> tags = Lists.mutable.empty();
-        MeasureInstance measureInstance;
+        checkExists(ctx.qualifiedName().packagePath(), ctx.qualifiedName().identifier(), null);
 
         String measureName = ctx.qualifiedName().identifier().getText();
-        measureInstance = MeasureInstance.createPersistent(this.repository, measureName);
+        Measure measureInstance = MeasureInstance.createPersistent(this.repository, measureName, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop()))
+                ._name(measureName)
+                ._classifierGenericType(GenericTypeInstance.createPersistent(this.repository)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Measure)));
+
         Package packageInstance = buildPackage(ctx.qualifiedName().packagePath());
         measureInstance._package(packageInstance);
         packageInstance._childrenAdd(measureInstance);
 
-        measureInstance.setSourceInformation(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop()));
-
-        if (superTypesGenericTypes.isEmpty())
-        {
-            GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
-            genericTypeInstance._rawTypeCoreInstance(this.processorSupport.package_getByUserPath(M3Paths.Any));
-            superTypesGenericTypes.add(genericTypeInstance);
-        }
-
-        GenericTypeInstance classifierGT = GenericTypeInstance.createPersistent(this.repository);
-        ClassInstance measureType = (ClassInstance) this.processorSupport.package_getByUserPath(M3Paths.Measure);
-        classifierGT._rawTypeCoreInstance(measureType);
-
-
-        measureInstance._classifierGenericType(classifierGT);
-
-        if (!typeParameterNames.isEmpty())
-        {
-            MutableList<TypeParameter> typeParameters = Lists.mutable.of();
-            MutableList<Pair<String, Boolean>> tps = typeParameterNames.zip(contravariants);
-            for (Pair<String, Boolean> typeParam : tps)
-            {
-                TypeParameterInstance tp = TypeParameterInstance.createPersistent(this.repository, typeParam.getOne());
-                tp._contravariant(typeParam.getTwo());
-                typeParameters.add(tp);
-            }
-
-            MutableList<GenericType> typeArgs = Lists.mutable.of();
-            for (String typeParamName : typeParameterNames)
-            {
-                TypeParameterInstance tp = TypeParameterInstance.createPersistent(this.repository, typeParamName);
-                GenericTypeInstance gt = GenericTypeInstance.createPersistent(this.repository);
-                gt._typeParameter(tp);
-                typeArgs.add(gt);
-            }
-
-        }
-
-        if (!multiplicityParameterNames.isEmpty())
-        {
-            MutableList<Multiplicity> multParameters = Lists.mutable.of();
-
-            for (String multiplicityParam : multiplicityParameterNames)
-            {
-                MultiplicityInstance mult = MultiplicityInstance.createPersistent(this.repository, null, null);
-                mult._multiplicityParameter(multiplicityParam);
-                multParameters.add(mult);
-            }
-        }
-
-        measureInstance._name(ctx.qualifiedName().identifier().getText());
-        if (!stereotypes.isEmpty())
+        ListIterable<CoreInstance> stereotypes = (ctx.stereotypes() == null) ? Lists.immutable.empty() : stereotypes(ctx.stereotypes(), importId);
+        if (stereotypes.notEmpty())
         {
             measureInstance._stereotypesCoreInstance(stereotypes);
         }
-        if (!tags.isEmpty())
+        ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
+        if (taggedValues.notEmpty())
         {
-            measureInstance._taggedValues(tags);
+            measureInstance._taggedValues(taggedValues);
         }
 
-        MutableList<Generalization> generalizations = Lists.mutable.empty();
-        for (GenericType superType : superTypesGenericTypes)
-        {
-            GeneralizationInstance generalizationInstance = GeneralizationInstance.createPersistent(this.repository, superType, measureInstance);
-            generalizations.add(generalizationInstance);
-        }
-        measureInstance._generalizations(generalizations);
+        measureInstance._generalizations(Lists.immutable.with(GeneralizationInstance.createPersistent(this.repository, GenericTypeInstance.createPersistent(this.repository)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Any)), measureInstance)));
 
-        if (null != ctx.measureBody().canonicalExpr())
+        M3Parser.MeasureBodyContext measureBodyCtx = ctx.measureBody();
+        if (measureBodyCtx.canonicalUnitExpr() != null)
         {
             // traditional canonical unit pattern
-            canonicalUnit = this.canonicalUnitParser(ctx.measureBody().canonicalExpr(), importId, measureInstance, ctx);
-            measureInstance._canonicalUnit(canonicalUnit);
+            measureInstance._canonicalUnit(unitParser(measureBodyCtx.canonicalUnitExpr().unitExpr(), importId, measureInstance));
 
-            nonCanonicalUnits = this.nonCanonicalUnitsParser(ctx.measureBody().measureExpr(), importId, measureInstance, ctx);
+            MutableList<Unit> nonCanonicalUnits = ListIterate.collect(measureBodyCtx.unitExpr(), unitCtx -> unitParser(unitCtx, importId, measureInstance));
             if (nonCanonicalUnits.notEmpty())
             {
                 measureInstance._nonCanonicalUnits(nonCanonicalUnits);
@@ -2425,150 +2319,78 @@ public class AntlrContextToM3CoreInstance
         else
         {
             // non-convertible unit pattern
-            MutableList<UnitInstance> nonConvertibleUnits = Lists.mutable.empty();
-            for (org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.NonConvertibleMeasureExprContext ncctx : ctx.measureBody().nonConvertibleMeasureExpr())
-            {
-                UnitInstance currentUnit = this.nonConvertibleUnitParser(ncctx, measureInstance, ctx);
-                nonConvertibleUnits.add(currentUnit);
-            }
+            MutableList<Unit> nonConvertibleUnits = ListIterate.collect(measureBodyCtx.nonConvertibleUnitExpr(), unitCtx -> nonConvertibleUnitParser(unitCtx, measureInstance));
             measureInstance._canonicalUnit(nonConvertibleUnits.get(0));
             if (nonConvertibleUnits.size() > 1)
             {
-                measureInstance._nonCanonicalUnits(nonConvertibleUnits.subList(1, nonConvertibleUnits.size()));
+                measureInstance._nonCanonicalUnits(Lists.immutable.withAll(nonConvertibleUnits.subList(1, nonConvertibleUnits.size())));
             }
         }
         return measureInstance;
     }
 
     /**
-     * Parse the canonical unit and returns it as a UnitInstance
-     */
-    private UnitInstance canonicalUnitParser(CanonicalExprContext ctx, ImportGroup importId, MeasureInstance measureInstance, MeasureDefinitionContext mctx) throws PureParserException
-    {
-        return this.unitParser(ctx.measureExpr(), importId, measureInstance, mctx);
-    }
-
-    /**
-     * Parses the non-canonical units in a measure and return a MutableList of UnitInstance's.
-     */
-    private MutableList<UnitInstance> nonCanonicalUnitsParser(List<MeasureExprContext> ctxList, ImportGroup importId, MeasureInstance measureInstance, MeasureDefinitionContext mctx) throws PureParserException
-    {
-        return ListIterate.collect(ctxList, ctx -> unitParser(ctx, importId, measureInstance, mctx));
-    }
-
-    /**
      * Helps build the unitInstance for any canonical and non-canonical units and returns the parsed unitInstance.
      */
-    private UnitInstance unitParser(MeasureExprContext ctx, ImportGroup importId, MeasureInstance measureInstance, MeasureDefinitionContext mctx) throws PureParserException
+    @SuppressWarnings("unchecked")
+    private Unit unitParser(UnitExprContext ctx, ImportGroup importId, Measure measure)
     {
-        UnitInstance unitInstance;
+        String unitName = measure._name() + this.tilde + ctx.identifier().getText();
+        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.identifier().getStart(), ctx.getStop());
+        checkExists(measure._package(), unitName, sourceInfo);
+        Unit unitInstance = UnitInstance.createPersistent(this.repository, unitName, sourceInfo)
+                ._name(unitName)
+                ._measure(measure)
+                ._classifierGenericType(GenericTypeInstance.createPersistent(this.repository)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Unit)));
 
-        MutableList<GenericType> superTypesGenericTypes = Lists.mutable.empty();
+        // set unit super type to be its measure (Kilogram -> Mass)
+        unitInstance._generalizations(Lists.immutable.with(GeneralizationInstance.createPersistent(this.repository, GenericTypeInstance.createPersistent(this.repository)._rawType(measure), unitInstance)));
 
-        this.checkExists(ctx.qualifiedName().packagePath(), ctx.qualifiedName().identifier(), null);
-
-        String unitName = mctx.qualifiedName().identifier().getText().concat(this.tilde).concat(ctx.qualifiedName().identifier().getText());
-        unitInstance = UnitInstance.createPersistent(this.repository, unitName);
-
-        Package packageInstance = buildPackage(Lists.mutable.withAll(mctx.qualifiedName().packagePath() == null ? Lists.mutable.empty() : ListAdapter.adapt(mctx.qualifiedName().packagePath().identifier())));
+        Package packageInstance = measure._package();
         unitInstance._package(packageInstance);
         packageInstance._childrenAdd(unitInstance);
 
-        unitInstance.setSourceInformation(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop()));
-
-        GenericTypeInstance classifierGT = GenericTypeInstance.createPersistent(this.repository);
-        ClassInstance unitType = (ClassInstance) this.processorSupport.package_getByUserPath(M3Paths.Unit);
-        classifierGT._rawTypeCoreInstance(unitType);
-
-        unitInstance._classifierGenericType(classifierGT);
-
-        unitInstance._name(unitName);
-
-        if (superTypesGenericTypes.isEmpty())
-        {
-            GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
-            genericTypeInstance._rawTypeCoreInstance(measureInstance); // set unit super type to be its measure (Kilogram -> Mass)
-            superTypesGenericTypes.add(genericTypeInstance);
-        }
-        MutableList<Generalization> generalizations = Lists.mutable.empty();
-        for (GenericType superType : superTypesGenericTypes)
-        {
-            GeneralizationInstance generalizationInstance = GeneralizationInstance.createPersistent(this.repository, superType, unitInstance);
-            generalizations.add(generalizationInstance);
-        }
-        unitInstance._generalizations(generalizations);
-
-        unitInstance._measure(measureInstance);
-
         // prepare lambda instance for the conversion function
 
-        String fullName = this.getQualifiedNameString(ctx.qualifiedName());
-        LambdaContext lambdaContext = new LambdaContext(fullName.replace("::", "_"));
+        LambdaContext lambdaContext = new LambdaContext(org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.getUserPathForPackageableElement(unitInstance, "_"));
         MutableList<String> typeParametersNames = Lists.mutable.empty();
-        FunctionTypeInstance signature = FunctionTypeInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.unitExpr().getStart(), ctx.unitExpr().getStart(), ctx.unitExpr().getStop()), null, null);
+        FunctionType signature = FunctionTypeInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.unitConversionExpr().getStart(), ctx.unitConversionExpr().getStart(), ctx.unitConversionExpr().getStop()), null, null);
 
         // prepare params
 
-        VariableExpression expr = this.lambdaParam(null, ctx.unitExpr().identifier(), typeParametersNames, "", importId);
-        expr._multiplicity(this.getPureOne());
-        expr._functionTypeOwner(signature);
-        GenericTypeInstance paramGenericType = GenericTypeInstance.createPersistent(this.repository);
-        CoreInstance paramType = this.processorSupport.package_getByUserPath(M3Paths.Number);
-        paramGenericType._rawTypeCoreInstance(paramType);
-        expr._genericType(paramGenericType);
-        signature._parameters(Lists.mutable.with(expr));
+        VariableExpression expr = lambdaParam(null, ctx.unitConversionExpr().identifier(), typeParametersNames, "", importId)
+                ._multiplicity(getPureOne())
+                ._functionTypeOwner(signature)
+                ._genericType(GenericTypeInstance.createPersistent(this.repository)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Number)));
+        signature._parameters(Lists.immutable.with(expr));
 
-        GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
-        Type type = (Type) this.processorSupport.package_getByUserPath(M3Paths.LambdaFunction);
-        genericTypeInstance._rawTypeCoreInstance(type);
-        GenericTypeInstance genericTypeInstanceTa = GenericTypeInstance.createPersistent(this.repository);
-        genericTypeInstanceTa._rawTypeCoreInstance(signature);
-        genericTypeInstance._typeArguments(Lists.mutable.<GenericType>of(genericTypeInstanceTa));
-        LambdaFunctionInstance lambdaFunctionInstance = LambdaFunctionInstance.createPersistent(this.repository, lambdaContext.getLambdaFunctionUniqueName(), this.sourceInformation.getPureSourceInformation(ctx.unitExpr().ARROW().getSymbol()));
-        lambdaFunctionInstance._classifierGenericType(genericTypeInstance);
+        GenericType genericTypeInstance = GenericTypeInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.unitConversionExpr().ARROW().getSymbol()))
+                ._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.LambdaFunction))
+                ._typeArguments(Lists.immutable.with(GenericTypeInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.unitConversionExpr().ARROW().getSymbol()))._rawType(signature)));
+        LambdaFunction<?> lambdaFunctionInstance = LambdaFunctionInstance.createPersistent(this.repository, lambdaContext.getLambdaFunctionUniqueName(), this.sourceInformation.getPureSourceInformation(ctx.unitConversionExpr().ARROW().getSymbol()))
+                ._classifierGenericType(genericTypeInstance)
+                ._expressionSequence(codeBlock(ctx.unitConversionExpr().codeBlock(), typeParametersNames, Lists.mutable.empty(), importId, lambdaContext, this.addLines, tabs(6)));
         signature._functionAdd(lambdaFunctionInstance);
-
-        ListIterable<ValueSpecification> block = this.codeBlock(ctx.unitExpr().codeBlock(), typeParametersNames, Lists.mutable.empty(), importId, lambdaContext, this.addLines, tabs(6));
-        lambdaFunctionInstance._expressionSequence(block);
 
         unitInstance._conversionFunction(lambdaFunctionInstance);
 
         return unitInstance;
     }
 
-    private UnitInstance nonConvertibleUnitParser(org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.NonConvertibleMeasureExprContext ctx, MeasureInstance measureInstance, MeasureDefinitionContext mctx) throws PureParserException
+    private Unit nonConvertibleUnitParser(NonConvertibleUnitExprContext ctx, Measure measure)
     {
-        UnitInstance unitInstance;
-        MutableList<GenericType> superTypesGenericTypes = Lists.mutable.empty();
+        String unitName = measure._name() + this.tilde + ctx.identifier().getText();
+        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.identifier().getStart(), ctx.getStop());
+        checkExists(measure._package(), unitName, sourceInfo);
+        Unit unitInstance = UnitInstance.createPersistent(this.repository, unitName, sourceInfo)
+                ._name(unitName)
+                ._measure(measure)
+                ._classifierGenericType(GenericTypeInstance.createPersistent(this.repository)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Unit)));
+        unitInstance._generalizations(Lists.immutable.with(GeneralizationInstance.createPersistent(this.repository, GenericTypeInstance.createPersistent(this.repository)._rawType(measure), unitInstance)));
 
-        this.checkExists(ctx.qualifiedName().packagePath(), ctx.qualifiedName().identifier(), null);
-
-        String unitName = mctx.qualifiedName().identifier().getText().concat(this.tilde).concat(ctx.qualifiedName().identifier().getText());
-        unitInstance = UnitInstance.createPersistent(this.repository, unitName);
-
-        Package packageInstance = buildPackage(Lists.mutable.withAll(mctx.qualifiedName().packagePath() == null ? Lists.mutable.empty() : ListAdapter.adapt(mctx.qualifiedName().packagePath().identifier())));
+        Package packageInstance = measure._package();
         unitInstance._package(packageInstance);
         packageInstance._childrenAdd(unitInstance);
-
-        unitInstance.setSourceInformation(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop()));
-
-        GenericTypeInstance classifierGT = GenericTypeInstance.createPersistent(this.repository);
-        ClassInstance unitType = (ClassInstance) this.processorSupport.package_getByUserPath(M3Paths.Unit);
-        classifierGT._rawTypeCoreInstance(unitType);
-
-        unitInstance._classifierGenericType(classifierGT);
-
-        unitInstance._name(unitName);
-
-        if (superTypesGenericTypes.isEmpty())
-        {
-            GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
-            genericTypeInstance._rawTypeCoreInstance(measureInstance);
-            superTypesGenericTypes.add(genericTypeInstance);
-        }
-        unitInstance._generalizations(superTypesGenericTypes.collect(superType -> GeneralizationInstance.createPersistent(this.repository, superType, unitInstance)));
-
-        unitInstance._measure(measureInstance);
 
         return unitInstance;
     }
@@ -3512,7 +3334,8 @@ public class AntlrContextToM3CoreInstance
 
     private GenericType processType(QualifiedNameContext classParserPath, MutableList<String> typeParametersNames, ListIterable<GenericType> possibleTypeArguments, ListIterable<Multiplicity> possibleMultiplicityArguments, ImportGroup importId)
     {
-        GenericTypeInstance result = GenericTypeInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(classParserPath.identifier().getStart()));
+        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(classParserPath.identifier().getStart());
+        GenericTypeInstance result = GenericTypeInstance.createPersistent(this.repository, sourceInfo);
 
         MutableList<String> packagePaths = this.qualifiedNameToList(classParserPath);
         if (typeParametersNames.contains(packagePaths.getFirst()))
@@ -3535,10 +3358,9 @@ public class AntlrContextToM3CoreInstance
             }
             else
             {
-                ImportStubInstance is = ImportStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(classParserPath.identifier().getStart()), idOrPath, importId);
+                ImportStubInstance is = ImportStubInstance.createPersistent(this.repository, sourceInfo, idOrPath, importId);
                 result._rawTypeCoreInstance(is);
             }
-
         }
         if (!Iterate.isEmpty(possibleTypeArguments))
         {
@@ -3551,26 +3373,12 @@ public class AntlrContextToM3CoreInstance
         return result;
     }
 
-    private GenericType processUnitType(org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.UnitNameContext unitNameContext, ImportGroup importId)
+    private GenericType processUnitType(M3Parser.UnitNameContext unitNameContext, ImportGroup importId)
     {
-        GenericTypeInstance result = GenericTypeInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(unitNameContext.identifier().getStart()));
+        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(unitNameContext.identifier().getStart());
         String idOrPath = getUnitNameWithMeasure(unitNameContext);
-
-        if (_Package.SPECIAL_TYPES.contains(idOrPath))
-        {
-            CoreInstance type = this.repository.getTopLevel(idOrPath);
-            if (type == null)
-            {
-                throw new RuntimeException("Failed to find type");
-            }
-            result._rawTypeCoreInstance(type);
-        }
-        else
-        {
-            ImportStubInstance is = ImportStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(unitNameContext.identifier().getStart()), idOrPath, importId);
-            result._rawTypeCoreInstance(is);
-        }
-        return result;
+        return GenericTypeInstance.createPersistent(this.repository, sourceInfo)
+                ._rawTypeCoreInstance(ImportStubInstance.createPersistent(this.repository, sourceInfo, idOrPath, importId));
     }
 
     private ListIterable<CoreInstance> stereotypes(StereotypesContext ctx, ImportGroup importId)
@@ -3664,6 +3472,15 @@ public class AntlrContextToM3CoreInstance
     private String packageToString(PackagePathContext ctx)
     {
         return this.packageToList(ctx).makeString("::");
+    }
+
+    private StringBuilder appendPackage(StringBuilder builder, PackagePathContext ctx)
+    {
+        if (ctx != null)
+        {
+            LazyIterate.collect(ctx.identifier(), RuleContext::getText).appendString(builder, org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.DEFAULT_PATH_SEPARATOR);
+        }
+        return builder;
     }
 
     private String getQualifiedNameString(QualifiedNameContext ctx)
@@ -3881,6 +3698,11 @@ public class AntlrContextToM3CoreInstance
     private Package buildPackage(PackagePathContext paths)
     {
         return buildPackage(paths == null ? Lists.immutable.empty() : paths.identifier());
+    }
+
+    private Package buildPackage(IdentifierContext... paths)
+    {
+        return buildPackage(ArrayAdapter.adapt(paths));
     }
 
     private Package buildPackage(Iterable<? extends IdentifierContext> paths)
@@ -4188,6 +4010,14 @@ public class AntlrContextToM3CoreInstance
                 sourceInfo = this.sourceInformation.getPureSourceInformation(identifierCtx.getStart(), identifierCtx.getStart(), identifierCtx.getStop());
             }
             throw new PureParserException(sourceInfo, "The element '" + identifierCtx.getText() + "' already exists in the package '" + (pkgCtx == null ? "::" : this.getQualifiedNameString(pkgCtx)) + "'");
+        }
+    }
+
+    private void checkExists(Package pkg, String name, SourceInformation sourceInfo)
+    {
+        if (pkg._children().anySatisfy(c -> name.equals(c.getName())))
+        {
+            throw new PureParserException(sourceInfo, "The element '" + name + "' already exists in the package '" + org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.getUserPathForPackageableElement(pkg) + "'");
         }
     }
 

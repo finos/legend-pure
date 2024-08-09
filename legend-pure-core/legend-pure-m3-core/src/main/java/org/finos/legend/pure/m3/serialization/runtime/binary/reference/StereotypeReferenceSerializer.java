@@ -17,7 +17,6 @@ package org.finos.legend.pure.m3.serialization.runtime.binary.reference;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.profile.Profile;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
@@ -34,7 +33,7 @@ public class StereotypeReferenceSerializer implements ExternalReferenceSerialize
     {
         Stereotype stereotype = (Stereotype)instance;
         helper.writeElementReference(stereotype._profile());
-        helper.writeString(PrimitiveUtilities.getStringValue(instance));
+        helper.writeString(stereotype._value());
     }
 
     @Override
