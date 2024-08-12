@@ -16,16 +16,16 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.math.o
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
-import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
+import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NumericUtilities;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
@@ -46,7 +46,7 @@ public class Abs extends NativeFunction
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport)
     {
         CoreInstance number = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
-        boolean bigDecimalToPureDecimal = NumericUtilities.IS_DECIMAL_CORE_INSTANCE(processorSupport).accept(number);
+        boolean bigDecimalToPureDecimal = NumericUtilities.isDecimal(number, processorSupport);
         Number javaNumber = NumericUtilities.toJavaNumber(number, processorSupport);
         if (javaNumber instanceof Integer)
         {
@@ -66,11 +66,11 @@ public class Abs extends NativeFunction
         }
         if (javaNumber instanceof BigInteger)
         {
-            return NumericUtilities.toPureNumberValueExpression(((BigInteger)javaNumber).abs(), bigDecimalToPureDecimal, this.repository, processorSupport);
+            return NumericUtilities.toPureNumberValueExpression(((BigInteger) javaNumber).abs(), bigDecimalToPureDecimal, this.repository, processorSupport);
         }
         if (javaNumber instanceof BigDecimal)
         {
-            return NumericUtilities.toPureNumberValueExpression(((BigDecimal)javaNumber).abs(), bigDecimalToPureDecimal, this.repository, processorSupport);
+            return NumericUtilities.toPureNumberValueExpression(((BigDecimal) javaNumber).abs(), bigDecimalToPureDecimal, this.repository, processorSupport);
         }
         throw new IllegalArgumentException("Unhandled number: " + javaNumber);
     }

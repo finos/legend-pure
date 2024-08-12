@@ -16,13 +16,13 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.math.o
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
@@ -39,9 +39,15 @@ public class Rem extends NativeFunction
 {
     private final ModelRepository repository;
 
-    public Rem(FunctionExecutionInterpreted functionExecution, ModelRepository repository)
+    public Rem(ModelRepository repository)
     {
         this.repository = repository;
+    }
+
+    @Deprecated
+    public Rem(FunctionExecutionInterpreted functionExecution, ModelRepository repository)
+    {
+        this(repository);
     }
 
     @Override
@@ -51,7 +57,7 @@ public class Rem extends NativeFunction
         CoreInstance param1 = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
         Number dividend = NumericUtilities.toJavaNumber(param0, processorSupport);
         Number divisor = NumericUtilities.toJavaNumber(param1, processorSupport);
-        boolean bigDecimalToPureDecimal = NumericUtilities.IS_DECIMAL_CORE_INSTANCE(processorSupport).accept(param0) || NumericUtilities.IS_DECIMAL_CORE_INSTANCE(processorSupport).accept(param1);
+        boolean bigDecimalToPureDecimal = NumericUtilities.isDecimal(param0, processorSupport) || NumericUtilities.isDecimal(param1, processorSupport);
         if (divisor.equals(0))
         {
             throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Cannot divide " + dividend.toString() + " by zero");
