@@ -59,7 +59,7 @@ public class Plus extends NativeFunction
             default:
             {
                 NumericAccumulator accumulator = NumericAccumulator.newAccumulator(NumericUtilities.toJavaNumber(numbers.get(0), processorSupport));
-                boolean bigDecimalToPureDecimal = numbers.anySatisfy(NumericUtilities.IS_DECIMAL_CORE_INSTANCE(processorSupport));
+                boolean bigDecimalToPureDecimal = numbers.anySatisfy(n -> NumericUtilities.isDecimal(n, processorSupport));
                 for (int i = 1; i < size; i++)
                 {
                     accumulator.add(NumericUtilities.toJavaNumber(numbers.get(i), processorSupport));
