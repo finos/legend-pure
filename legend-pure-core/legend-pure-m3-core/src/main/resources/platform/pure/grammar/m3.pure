@@ -824,7 +824,7 @@
             [
                 ^Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization]
                                                     {
-                                                        Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[general] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[type].children[Type]},
+                                                        Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[general] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[type].children[DataType]},
                                                         Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[specific] : Root.children[meta].children[pure].children[metamodel].children[type].children[Measure]
                                                     },
                 ^Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization]
