@@ -58,7 +58,7 @@ public class PureJavaCompiler
         this(message, null);
     }
 
-    public MemoryClassLoader compile(Iterable<? extends StringJavaSource> javaSources) throws PureJavaCompileException
+    public MemoryClassLoader compile(Iterable<? extends JavaFileObject> javaSources) throws PureJavaCompileException
     {
         compile(this.compiler, javaSources, this.dynamicManager);
         this.globalClassLoader = new MemoryClassLoader(this.dynamicManager, this.coreClassLoader);
@@ -97,7 +97,7 @@ public class PureJavaCompiler
         this.dynamicManager.writeClassJavaSources(directory, log);
     }
 
-    public static void compile(JavaCompiler compiler, Iterable<? extends StringJavaSource> javaSources, JavaFileManager fileManager) throws PureJavaCompileException
+    public static void compile(JavaCompiler compiler, Iterable<? extends JavaFileObject> javaSources, JavaFileManager fileManager) throws PureJavaCompileException
     {
         compile(compiler, javaSources, fileManager, getClassPath(), null);
     }

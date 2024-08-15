@@ -789,13 +789,21 @@ public final class JavaSourceCodeGenerator
 
     public Collection<StringJavaSource> generateExtensionsCode(String compileGroup)
     {
-        Collection<StringJavaSource> all = compileGroup == null ?
-                Lists.mutable.empty() :
-                Lists.mutable.withAll(this.extensions).select(c -> c.getRelatedRepository().equals(compileGroup)).flatCollect(CompiledExtension::getExtraJavaSources);
+        MutableList<StringJavaSource> extraJavaSources = Lists.mutable.empty();
+        if (compileGroup != null)
+        {
+            this.extensions.forEach(ext ->
+            {
+                if (compileGroup.equals(ext.getRelatedRepository()))
+                {
+                    extraJavaSources.addAll(ext.getExtraJavaSources());
+                }
+            });
+        }
         if (this.writeFilesToDisk)
         {
-            this.javaClassesToDisk(all);
+            javaClassesToDisk(extraJavaSources);
         }
-        return all;
+        return extraJavaSources;
     }
 }
