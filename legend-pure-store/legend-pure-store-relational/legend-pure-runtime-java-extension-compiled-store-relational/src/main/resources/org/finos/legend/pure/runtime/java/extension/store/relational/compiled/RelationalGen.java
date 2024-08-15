@@ -21,7 +21,6 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.RelationalOperationElement;
@@ -32,27 +31,29 @@ import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Pure;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.DefendedFunction;
-import org.finos.legend.pure.runtime.java.extension.store.relational.shared.CsvReader;
-import org.finos.legend.pure.runtime.java.extension.store.relational.shared.LoadToDbTableHelper;
 import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.RelationalNativeImplementation;
 import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.RelationalExecutionProperties;
 import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.ResultSetRowIterableProvider;
 import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.ResultSetValueHandlers;
 import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.SqlFunction;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.ConnectionWithDataSourceInfo;
+import org.finos.legend.pure.runtime.java.extension.store.relational.shared.CsvReader;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.IConnectionManagerHandler;
+import org.finos.legend.pure.runtime.java.extension.store.relational.shared.LoadToDbTableHelper;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.PureConnectionUtils;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.SQLExceptionHandler;
 import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionEndListenerState;
 import org.finos.legend.pure.runtime.java.shared.listeners.IdentifableExecutionEndListner;
 
-import java.sql.*;
-import java.util.Calendar;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
-
-import static org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Pure.collectIterable;
 
 public class RelationalGen
 {
@@ -64,7 +65,7 @@ public class RelationalGen
         {
             if (activity instanceof Root_meta_relational_mapping_RelationalActivity)
             {
-                Root_meta_relational_mapping_RelationalActivity relationalActivity = (Root_meta_relational_mapping_RelationalActivity)activity;
+                Root_meta_relational_mapping_RelationalActivity relationalActivity = (Root_meta_relational_mapping_RelationalActivity) activity;
                 String sql = relationalActivity._sql();
                 String executionPlanInformation = relationalActivity._executionPlanInformation();
                 Long executionTimeInNanoSeconds = relationalActivity._executionTimeInNanoSecond();
@@ -78,16 +79,16 @@ public class RelationalGen
                 {
                     dbType = relationalActivity._dataSource()._type()._name();
                     dbHost = relationalActivity._dataSource()._host();
-                    dbPort = (int)relationalActivity._dataSource()._port();
+                    dbPort = (int) relationalActivity._dataSource()._port();
                     dbName = relationalActivity._dataSource()._name();
                 }
-                ((CompiledExecutionSupport)es).getExecutionActivityListener().relationalActivityCompleted(dbHost, dbPort, dbName, dbType, sql, executionPlanInformation, executionTimeInNanoSeconds, sqlGenerationTimeInNanoSeconds, connectionAcquisitionTimeInNanoSeconds);
+                ((CompiledExecutionSupport) es).getExecutionActivityListener().relationalActivityCompleted(dbHost, dbPort, dbName, dbType, sql, executionPlanInformation, executionTimeInNanoSeconds, sqlGenerationTimeInNanoSeconds, connectionAcquisitionTimeInNanoSeconds);
             }
             if (activity instanceof Root_meta_pure_mapping_RoutingActivity)
             {
-                Root_meta_pure_mapping_RoutingActivity routingActivity = (Root_meta_pure_mapping_RoutingActivity)activity;
+                Root_meta_pure_mapping_RoutingActivity routingActivity = (Root_meta_pure_mapping_RoutingActivity) activity;
                 Long routingTimeInNanoSecond = routingActivity._routingTimeInNanoSecond();
-                ((CompiledExecutionSupport)es).getExecutionActivityListener().routingActivityCompleted(routingTimeInNanoSecond);
+                ((CompiledExecutionSupport) es).getExecutionActivityListener().routingActivityCompleted(routingTimeInNanoSecond);
             }
         }
         return null;
@@ -103,7 +104,7 @@ public class RelationalGen
         {
 
             long startRequestConnection = System.nanoTime();
-            connectionWithDataSourceInfo = connectionManagerHandler.getConnectionWithDataSourceInfo(pureConnection, ((CompiledExecutionSupport)es).getProcessorSupport());
+            connectionWithDataSourceInfo = connectionManagerHandler.getConnectionWithDataSourceInfo(pureConnection, ((CompiledExecutionSupport) es).getProcessorSupport());
             pureResult._connectionAcquisitionTimeInNanoSecond(System.nanoTime() - startRequestConnection);
             connection = connectionWithDataSourceInfo.getConnection();
             connection.setAutoCommit(true);
@@ -120,7 +121,7 @@ public class RelationalGen
 
             DatabaseMetaData databaseMetadata = connection.getMetaData();
 
-            MutableList<String> columns = FastList.newList();
+            MutableList<String> columns = Lists.mutable.empty();
             java.sql.ResultSet rs = sqlFunction.valueOf(databaseMetadata);
             ResultSetMetaData resultSetMetaData = rs.getMetaData();
             pureResult._executionTimeInNanoSecond(System.nanoTime() - startRequestConnection);
@@ -131,7 +132,7 @@ public class RelationalGen
                 columns.add(column);
             }
 
-            MutableList<Function<ListIterable<Object>, String>> extraValueFunctions = FastList.newList();
+            MutableList<Function<ListIterable<Object>, String>> extraValueFunctions = Lists.mutable.empty();
             for (Pair<String, ? extends Function<ListIterable<Object>, String>> pair : extraValues.keyValuesView())
             {
                 columns.add(pair.getOne());
@@ -192,7 +193,7 @@ public class RelationalGen
                 {
                     connection.close();
                 }
-                catch (SQLException e1)
+                catch (SQLException ignore)
                 {
                 }
             }
@@ -210,7 +211,7 @@ public class RelationalGen
         {
 
             long startRequestConnection = System.nanoTime();
-            connectionWithDataSourceInfo = connectionManagerHandler.getConnectionWithDataSourceInfo(pureConnection, ((CompiledExecutionSupport)es).getProcessorSupport());
+            connectionWithDataSourceInfo = connectionManagerHandler.getConnectionWithDataSourceInfo(pureConnection, ((CompiledExecutionSupport) es).getProcessorSupport());
             connection = connectionWithDataSourceInfo.getConnection();
             if (!PureConnectionUtils.isPureConnectionType(pureConnection, "Hive"))
             {
@@ -227,7 +228,7 @@ public class RelationalGen
                 pureResult = pureResult._executionPlanInformation(URL);
             }
 
-            ResultSetRowIterableProvider.ResultSetIterableContainer resultContainer = ResultSetRowIterableProvider.createResultSetIterator(pureConnection, connection, sql, RelationalExecutionProperties.getMaxRows(), RelationalExecutionProperties.shouldThrowIfMaxRowsExceeded(), (int)queryTimeoutInSeconds, (int)fetchSize, new CreateRowFunction(pureResult), sqlNull, tz, si, (CompiledExecutionSupport)es, connectionWithDataSourceInfo);
+            ResultSetRowIterableProvider.ResultSetIterableContainer resultContainer = ResultSetRowIterableProvider.createResultSetIterator(pureConnection, connection, sql, RelationalExecutionProperties.getMaxRows(), RelationalExecutionProperties.shouldThrowIfMaxRowsExceeded(), (int) queryTimeoutInSeconds, (int) fetchSize, new CreateRowFunction(pureResult), sqlNull, tz, si, (CompiledExecutionSupport) es, connectionWithDataSourceInfo);
             pureResult._columnNamesAddAll(resultContainer.columnNames);
             pureResult._executionTimeInNanoSecond(resultContainer.queryTimeInNanos);
             pureResult._rows(resultContainer.rowIterable);
@@ -243,7 +244,10 @@ public class RelationalGen
                 ds._port(dbPort.longValue());
                 ds._host(dbHost);
                 ds._name(dbName);
-                if (serverPrincipal != null) ds._serverPrincipal(serverPrincipal);
+                if (serverPrincipal != null)
+                {
+                    ds._serverPrincipal(serverPrincipal);
+                }
                 pureResult._dataSource(ds);
             }
             return pureResult;
@@ -256,13 +260,13 @@ public class RelationalGen
 
     public static Root_meta_relational_metamodel_execute_ResultSet dropTempTable(String tableName, String sql, Root_meta_external_store_relational_runtime_DatabaseConnection pureConnection, long queryTimeoutInSeconds, long fetchSize, SourceInformation si, ExecutionSupport es)
     {
-        ((CompiledExecutionSupport)es).unRegisterIdentifableExecutionEndListener(tableName);
+        ((CompiledExecutionSupport) es).unRegisterIdentifableExecutionEndListener(tableName);
         return executeInDb(sql, pureConnection, 0, 0, si, es);
     }
 
     public static Root_meta_relational_metamodel_execute_ResultSet createTempTable(final String tableName, String sql, final Root_meta_external_store_relational_runtime_DatabaseConnection pureConnection, long queryTimeoutInSeconds, long fetchSize, final SourceInformation si, final boolean relyOnFinallyForCleanup, final ExecutionSupport es)
     {
-        ((CompiledExecutionSupport)es).registerIdentifableExecutionEndListener(new IdentifableExecutionEndListner()
+        ((CompiledExecutionSupport) es).registerIdentifableExecutionEndListener(new IdentifableExecutionEndListner()
         {
             @Override
             public ExecutionEndListenerState executionEnd(Exception endException)
@@ -299,36 +303,34 @@ public class RelationalGen
         @Override
         public Root_meta_relational_metamodel_execute_Row valueOf(RichIterable<Object> values)
         {
-
             Root_meta_relational_metamodel_execute_Row row = new Root_meta_relational_metamodel_execute_Row_Impl("ID");
             row = row._parent(this.pureResult);
             row._valuesAddAll(values);
             return row;
-
         }
     }
 
     public static RichIterable<Object> loadCsvToDbTable(String filePath, Table table, Root_meta_external_store_relational_runtime_DatabaseConnection pureConnection, Long numberOfRows, ExecutionSupport es)
     {
         Integer rowLimit = numberOfRows == null ? null : numberOfRows.intValue();
-        ListIterable<String> columnTypes = getColumnTypes(table, ((CompiledExecutionSupport)es).getProcessorSupport());
-        Iterable<ListIterable<?>> values = LoadToDbTableHelper.collectIterable(LazyIterate.drop(CsvReader.readCsv(((CompiledExecutionSupport)es).getCodeStorage(), null, filePath, 500, rowLimit), 1), columnTypes, filePath, table._name());
+        ListIterable<String> columnTypes = getColumnTypes(table, ((CompiledExecutionSupport) es).getProcessorSupport());
+        Iterable<ListIterable<?>> values = LoadToDbTableHelper.collectIterable(LazyIterate.drop(CsvReader.readCsv(((CompiledExecutionSupport) es).getCodeStorage(), null, filePath, 500, rowLimit), 1), columnTypes, filePath, table._name());
         bulkInsertInDb(pureConnection, table, values, rowLimit, es);
         return Lists.mutable.empty();
     }
 
     public static RichIterable<Object> loadValuesToDbTable(RichIterable<? extends Object> values, Table table, Root_meta_external_store_relational_runtime_DatabaseConnection pureConnection, ExecutionSupport es)
     {
-        ListIterable<String> columnTypes = getColumnTypes(table, ((CompiledExecutionSupport)es).getProcessorSupport());
-        Iterable<ListIterable<?>> columnValues = collectIterable(LazyIterate.drop(values, 3), columnTypes);
+        ListIterable<String> columnTypes = getColumnTypes(table, ((CompiledExecutionSupport) es).getProcessorSupport());
+        Iterable<ListIterable<?>> columnValues = Pure.collectIterable(LazyIterate.drop(values, 3), columnTypes);
         bulkInsertInDb(pureConnection, table, columnValues, null, es);
         return Lists.mutable.empty();
     }
 
     public static RichIterable<Object> loadValuesToDbTable(org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List<? extends Object>> values, Table table, Root_meta_external_store_relational_runtime_DatabaseConnection pureConnection, ExecutionSupport es)
     {
-        ListIterable<String> columnTypes = getColumnTypes(table, ((CompiledExecutionSupport)es).getProcessorSupport());
-        Iterable<ListIterable<?>> columnValues = collectIterable(LazyIterate.drop(values._values(), 3), columnTypes);
+        ListIterable<String> columnTypes = getColumnTypes(table, ((CompiledExecutionSupport) es).getProcessorSupport());
+        Iterable<ListIterable<?>> columnValues = Pure.collectIterable(LazyIterate.drop(values._values(), 3), columnTypes);
         bulkInsertInDb(pureConnection, table, columnValues, null, es);
         return Lists.mutable.empty();
     }
@@ -340,9 +342,9 @@ public class RelationalGen
             @Override
             public String valueOf(RelationalOperationElement column)
             {
-                return support.getClassifier(((Column)column)._type()).toString();
+                return support.getClassifier(((Column) column)._type()).toString();
             }
-        }).toList();
+        }, Lists.mutable.<String>empty());
     }
 
     private static void bulkInsertInDb(Root_meta_external_store_relational_runtime_DatabaseConnection pureConnection, Table table, Iterable<ListIterable<?>> values, Integer rowLimit, ExecutionSupport es)
@@ -359,9 +361,9 @@ public class RelationalGen
             @Override
             public String valueOf(RelationalOperationElement column)
             {
-                return ((Column)column)._name();
+                return ((Column) column)._name();
             }
-        }).toList();
+        }, Lists.mutable.<String>empty());
 
         StringBuilder sql = LoadToDbTableHelper.buildInsertStatementHeader(schemaName, tableName, columnNames);
 
