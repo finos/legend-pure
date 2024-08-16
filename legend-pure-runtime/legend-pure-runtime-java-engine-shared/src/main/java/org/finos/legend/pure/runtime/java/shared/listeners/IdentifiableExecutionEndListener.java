@@ -1,4 +1,4 @@
-// Copyright 2020 Goldman Sachs
+// Copyright 2024 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,10 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.shared.listeners;
 
-import org.eclipse.collections.api.block.function.Function;
-
-@Deprecated
-public interface IdentifableExecutionEndListner extends IdentifiableExecutionEndListener
+public interface IdentifiableExecutionEndListener extends ExecutionEndListener
 {
-    Function<IdentifableExecutionEndListner, String> TO_ID = IdentifableExecutionEndListner::getId;
+    String getId();
 }

@@ -45,7 +45,7 @@ import org.finos.legend.pure.runtime.java.extension.store.relational.shared.Load
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.PureConnectionUtils;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.SQLExceptionHandler;
 import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionEndListenerState;
-import org.finos.legend.pure.runtime.java.shared.listeners.IdentifableExecutionEndListner;
+import org.finos.legend.pure.runtime.java.shared.listeners.IdentifiableExecutionEndListener;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -260,13 +260,13 @@ public class RelationalGen
 
     public static Root_meta_relational_metamodel_execute_ResultSet dropTempTable(String tableName, String sql, Root_meta_external_store_relational_runtime_DatabaseConnection pureConnection, long queryTimeoutInSeconds, long fetchSize, SourceInformation si, ExecutionSupport es)
     {
-        ((CompiledExecutionSupport) es).unRegisterIdentifableExecutionEndListener(tableName);
+        ((CompiledExecutionSupport) es).unRegisterIdentifiableExecutionEndListener(tableName);
         return executeInDb(sql, pureConnection, 0, 0, si, es);
     }
 
     public static Root_meta_relational_metamodel_execute_ResultSet createTempTable(final String tableName, String sql, final Root_meta_external_store_relational_runtime_DatabaseConnection pureConnection, long queryTimeoutInSeconds, long fetchSize, final SourceInformation si, final boolean relyOnFinallyForCleanup, final ExecutionSupport es)
     {
-        ((CompiledExecutionSupport) es).registerIdentifableExecutionEndListener(new IdentifableExecutionEndListner()
+        ((CompiledExecutionSupport) es).registerIdentifiableExecutionEndListener(new IdentifiableExecutionEndListener()
         {
             @Override
             public ExecutionEndListenerState executionEnd(Exception endException)

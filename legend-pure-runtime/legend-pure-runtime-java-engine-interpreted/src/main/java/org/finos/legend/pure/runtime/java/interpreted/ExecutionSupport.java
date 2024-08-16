@@ -16,7 +16,7 @@ package org.finos.legend.pure.runtime.java.interpreted;
 
 import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionEndListener;
 import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionListeners;
-import org.finos.legend.pure.runtime.java.shared.listeners.IdentifableExecutionEndListner;
+import org.finos.legend.pure.runtime.java.shared.listeners.IdentifiableExecutionEndListener;
 
 public class ExecutionSupport implements org.finos.legend.pure.m3.execution.ExecutionSupport
 {
@@ -27,14 +27,26 @@ public class ExecutionSupport implements org.finos.legend.pure.m3.execution.Exec
         this.executionListeners.registerExecutionEndListener(executionEndListener);
     }
 
-    public void registerIdentifableExecutionEndListener(IdentifableExecutionEndListner identifableExecutionEndListener)
+    @Deprecated
+    public void registerIdentifableExecutionEndListener(IdentifiableExecutionEndListener identifiableExecutionEndListener)
     {
-        this.executionListeners.registerIdentifableExecutionEndListener(identifableExecutionEndListener);
+        registerIdentifiableExecutionEndListener(identifiableExecutionEndListener);
     }
 
-    public void unRegisterIdentifableExecutionEndListener(String listnerId)
+    public void registerIdentifiableExecutionEndListener(IdentifiableExecutionEndListener identifiableExecutionEndListener)
     {
-        this.executionListeners.unRegisterIdentifableExecutionEndListener(listnerId);
+        this.executionListeners.registerIdentifiableExecutionEndListener(identifiableExecutionEndListener);
+    }
+
+    @Deprecated
+    public void unRegisterIdentifableExecutionEndListener(String listenerId)
+    {
+        unRegisterIdentifiableExecutionEndListener(listenerId);
+    }
+
+    public void unRegisterIdentifiableExecutionEndListener(String listenerId)
+    {
+        this.executionListeners.unRegisterIdentifiableExecutionEndListener(listenerId);
     }
 
     public void executionEnd(final Exception exception)
