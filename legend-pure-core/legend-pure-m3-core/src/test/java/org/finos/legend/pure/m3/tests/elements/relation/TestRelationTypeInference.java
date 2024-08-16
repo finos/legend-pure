@@ -596,14 +596,10 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                         "    $t->test(~str->ascending());\n" +
                         "}" +
                         "native function test<X>(x:Relation<X>[1], rel:SortInfo<(?:?)⊆X>[1]):String[1];" +
-                        "Class meta::pure::functions::relation::SortInfo<R>\n" +
-                        "{\n" +
-                        "   column : ColSpec<R>[1];\n" +
-                        "}\n" +
                         "\n" +
                         "function <<functionType.NormalizeRequiredFunction>> meta::pure::functions::relation::ascending<SW> (column:ColSpec<SW>[1]):SortInfo<SW>[1]\n" +
                         "{\n" +
-                        "   ^SortInfo<SW>(column=$column)\n" +
+                        "   ^SortInfo<SW>(column=$column, direction=SortType.ASC)\n" +
                         "}"
         );
     }
@@ -620,14 +616,9 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                             "    $t->test(~strx->ascending());\n" +
                             "}" +
                             "native function test<X>(x:Relation<X>[1], rel:SortInfo<(?:?)⊆X>[1]):String[1];" +
-                            "Class meta::pure::functions::relation::SortInfo<R>\n" +
+                             "function <<functionType.NormalizeRequiredFunction>> meta::pure::functions::relation::ascending<SW> (column:ColSpec<SW>[1]):SortInfo<SW>[1]\n" +
                             "{\n" +
-                            "   column : ColSpec<R>[1];\n" +
-                            "}\n" +
-                            "\n" +
-                            "function <<functionType.NormalizeRequiredFunction>> meta::pure::functions::relation::ascending<SW> (column:ColSpec<SW>[1]):SortInfo<SW>[1]\n" +
-                            "{\n" +
-                            "   ^SortInfo<SW>(column=$column)\n" +
+                            "   ^SortInfo<T>(column=$column, direction=SortType.ASC)\n" +
                             "}"
             );
         }
@@ -748,14 +739,9 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     {
         compileInferenceTest(
                 "import meta::pure::metamodel::relation::*;" +
-                        "Class meta::pure::functions::relation::SortInfo<T>\n" +
-                        "{\n" +
-                        "   column : ColSpec<T>[1];\n" +
-                        "}\n" +
-                        "\n" +
                         "function meta::pure::functions::relation::descending<T>(column:ColSpec<T>[1]):SortInfo<T>[1]\n" +
                         "{\n" +
-                        "   ^SortInfo<T>(column=$column)\n" +
+                        "   ^SortInfo<T>(column=$column, direction=SortType.DESC)\n" +
                         "}\n" +
                         "function f(t:Relation<(value:Integer, name:String)>[1]):Relation<(value:Integer, name:String)>[1]\n" +
                         "{\n" +

@@ -23,9 +23,9 @@ function
         PCT.grammarDoc='~[col : {p,f,r|$r.val+3}, other : {p,f,r|$r.ww+4}]',
         PCT.grammarCharacters='~[:,:]'
     }
-    meta::pure::functions::relation::funcColSpecArray2<U,T,P>(funcSpecs:FuncColSpec<{Relation<U>[1], Frame[1], U[1]->Any[*]}, T>[*], cl:P[1]):FuncColSpecArray<{Relation<U>[1], Frame[1], U[1]->Any[*]}, P>[1]
+    meta::pure::functions::relation::funcColSpecArray2<U,T,P>(funcSpecs:FuncColSpec<{Relation<U>[1], _Window<U>[1], U[1]->Any[*]}, T>[*], cl:P[1]):FuncColSpecArray<{Relation<U>[1], _Window<U>[1], U[1]->Any[*]}, P>[1]
 {
-    ^FuncColSpecArray<{Relation<U>[1], Frame[1], U[1]->Any[*]}, P>
+    ^FuncColSpecArray<{Relation<U>[1], _Window<U>[1], U[1]->Any[*]}, P>
     (
         funcSpecs = $funcSpecs
     );
