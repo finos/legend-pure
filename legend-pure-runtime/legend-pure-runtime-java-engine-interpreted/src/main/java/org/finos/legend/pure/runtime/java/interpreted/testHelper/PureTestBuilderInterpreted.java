@@ -128,7 +128,14 @@ public class PureTestBuilderInterpreted
                     {
                         fail(e.getCause().getMessage());
                     }
-                    throw e.getCause();
+                    if (e.getCause() != null)
+                    {
+                        throw e.getCause();
+                    }
+                    else
+                    {
+                        throw e;
+                    }
                 }
             }
         };
