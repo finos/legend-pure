@@ -28,6 +28,7 @@ import org.eclipse.collections.impl.set.strategy.mutable.UnifiedSetWithHashingSt
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
 import org.finos.legend.pure.m3.compiler.visibility.AccessLevel;
+import org.finos.legend.pure.m3.execution.test.TestTools;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -200,6 +201,12 @@ public final class JavaSourceCodeGenerator
 
     ListIterable<StringJavaSource> generateCode(Source source, CodeRepository codeRepository)
     {
+       return generateCode(source,codeRepository, true);
+    }
+
+
+    ListIterable<StringJavaSource> generateCode(Source source, CodeRepository codeRepository, boolean generatePureTests)
+    {
         if (source.getNewInstances() == null)
         {
             return Lists.fixedSize.empty();
@@ -210,7 +217,7 @@ public final class JavaSourceCodeGenerator
 
             source.getNewInstances().forEach(coreInstance ->
             {
-                if (!Instance.instanceOf(coreInstance, M3Paths.Package, this.processorSupport))
+                if (!Instance.instanceOf(coreInstance, M3Paths.Package, this.processorSupport) && (generatePureTests || !TestTools.hasAnyTestStereotype(coreInstance, processorSupport) || !Instance.instanceOf(coreInstance, M3Paths.FunctionDefinition, this.processorSupport)))
                 {
                     this.toJava(coreInstance, codeRepository, null, processorContext);
                 }

@@ -69,6 +69,12 @@ public class GenerateAndCompile
 
     void generateAndCompileJavaCodeForSources(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo, Function<? super String, ? extends JavaSourceCodeGenerator> sourceCodeGeneratorFn)
     {
+        generateAndCompileJavaCodeForSources(compiledSourcesByRepo, sourceCodeGeneratorFn, true);
+    }
+
+
+    void generateAndCompileJavaCodeForSources(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo, Function<? super String, ? extends JavaSourceCodeGenerator> sourceCodeGeneratorFn, boolean generatePureTests)
+    {
         if (this.message != null)
         {
             this.message.setMessage("Generating and compiling Java source code ...");
@@ -84,7 +90,7 @@ public class GenerateAndCompile
             {
                 if (sources.notEmpty())
                 {
-                    ListIterable<StringJavaSource> compileGroupJavaSources = this.generate.generate(compileGroup, sources, sourceCodeGeneratorFn.apply(compileGroup), sourceCounter, totalSourceCount);
+                    ListIterable<StringJavaSource> compileGroupJavaSources = this.generate.generate(compileGroup, sources, sourceCodeGeneratorFn.apply(compileGroup), sourceCounter, totalSourceCount, generatePureTests);
                     try
                     {
                         this.compile.compile(compileGroup, compileGroupJavaSources, new VoidLog());

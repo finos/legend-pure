@@ -102,6 +102,11 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
                         "    $strings->joinStrings(', ');\n" +
                         "}\n" +
                         "\n" +
+                        "function <<test.Test>> test::standalone::simplePureTest():Boolean[1]\n" +
+                        "{\n" +
+                        "    true;\n" +
+                        "}\n" +
+
                         "function <<access.externalizable>> test::standalone::testWithReflection(prefix:String[1]):String[1]\n" +
                         "{\n" +
                         "    let f = testWithReflection_String_1__String_1_;\n" +
@@ -127,7 +132,7 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
         Path classesDir = this.temporaryFolder.newFolder("classes").toPath();
         generator.serializeAndWriteDistributedMetadata(classesDir);
         generator.compileAndWriteClasses(classesDir, new VoidLog());
-        URLClassLoader classLoader = new URLClassLoader(new URL[]{classesDir.toUri().toURL()}, Thread.currentThread().getContextClassLoader());
+        URLClassLoader classLoader = new URLClassLoader(new URL[] {classesDir.toUri().toURL()}, Thread.currentThread().getContextClassLoader());
 
         MetadataLazy metadataLazy = MetadataLazy.fromClassLoader(classLoader);
         CompiledExecutionSupport executionSupport = new CompiledExecutionSupport(
@@ -190,5 +195,16 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
         Assert.assertNotEquals(Lists.fixedSize.empty(), files);
         Pattern pattern = Pattern.compile("org/finos/legend/pure/generated/((CoreGen|PureEnum|LambdaZero|PureCompiledLambda|PureEnum_LazyImpl)|(test_\\w++)|(Root_test_\\w++))\\.java");
         Assert.assertEquals(Lists.fixedSize.empty(), ListIterate.reject(files, f -> pattern.matcher(Iterate.makeString(sourcesDir.relativize(f), "/")).matches()));
+        Assert.assertTrue(generate.getJavaSourcesByGroup().get("test").stream().filter(s -> s.toUri().getPath().equals("/org/finos/legend/pure/generated/test_standalone_tests.java")).collect(Collectors.toList()).get(0).getCode().contains("Root_test_standalone_simplePureTest__Boolean_1_"));
+
+    }
+
+    @Test
+    public void testPureTestsAreSkipped() throws Exception
+    {
+       JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, null, false, new VoidLog());
+       Path sourcesDir = this.temporaryFolder.newFolder("src", "java").toPath();
+       Generate generate = generator.generateOnly("test", false, sourcesDir);
+       Assert.assertFalse(generate.getJavaSourcesByGroup().get("test").stream().filter(s -> s.toUri().getPath().equals("/org/finos/legend/pure/generated/test_standalone_tests.java")).collect(Collectors.toList()).get(0).getCode().contains("Root_test_standalone_simplePureTest__Boolean_1_"));
     }
 }

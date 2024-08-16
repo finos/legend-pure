@@ -54,14 +54,16 @@ public class JavaStandaloneLibraryGenerator
     private final boolean addExternalAPI;
     private final String externalAPIPackage;
     private final Log log;
+    private final boolean generatePureTests;
 
-    private JavaStandaloneLibraryGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, Log log)
+    private JavaStandaloneLibraryGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, boolean generatePureTests, Log log)
     {
         this.runtime = runtime;
         this.extensions = extensions;
         this.addExternalAPI = addExternalAPI;
         this.externalAPIPackage = externalAPIPackage;
         this.log = log;
+        this.generatePureTests = generatePureTests;
     }
 
     public PureJavaCompiler compile(String repo, boolean writeJavaSourcesToDisk, Path pathToWriteTo) throws PureJavaCompileException
@@ -238,7 +240,7 @@ public class JavaStandaloneLibraryGenerator
         else
         {
             JavaSourceCodeGenerator javaSourceCodeGenerator = getSourceCodeGenerator(null, writeJavaSourcesToDisk, pathToWriteTo);
-            generate.generateJavaCodeForSources(sourcesToCompile, javaSourceCodeGenerator, log);
+            generate.generateJavaCodeForSources(sourcesToCompile, javaSourceCodeGenerator, generatePureTests, log);
             if (this.addExternalAPI)
             {
                 generate.generateExternalizableAPI(javaSourceCodeGenerator, this.externalAPIPackage);
@@ -314,7 +316,12 @@ public class JavaStandaloneLibraryGenerator
 
     public static JavaStandaloneLibraryGenerator newGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, Log log)
     {
-        return new JavaStandaloneLibraryGenerator(runtime, extensions, addExternalAPI, externalAPIPackage, log);
+        return new JavaStandaloneLibraryGenerator(runtime, extensions, addExternalAPI, externalAPIPackage, true, log);
+    }
+
+    public static JavaStandaloneLibraryGenerator newGenerator(PureRuntime runtime, Iterable<? extends CompiledExtension> extensions, boolean addExternalAPI, String externalAPIPackage, boolean generatePureTests, Log log)
+    {
+        return new JavaStandaloneLibraryGenerator(runtime, extensions, addExternalAPI, externalAPIPackage, generatePureTests, log);
     }
 
     public static PureJavaCompiler compileOnly(MapIterable<? extends String, ? extends Iterable<? extends StringJavaSource>> javaSources, ListIterable<? extends StringJavaSource> externalizableSources, boolean addExternalAPI, Log log) throws PureJavaCompileException
