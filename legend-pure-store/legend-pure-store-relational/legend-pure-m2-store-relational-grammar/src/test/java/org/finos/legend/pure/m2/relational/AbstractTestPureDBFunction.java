@@ -16,6 +16,7 @@ package org.finos.legend.pure.m2.relational;
 
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -23,10 +24,20 @@ import java.util.regex.Pattern;
 
 public abstract class AbstractTestPureDBFunction extends AbstractPureTestWithCoreCompiled
 {
+    private static final String TEST_SOURCE_ID = "fromString.pure";
+
+    @After
+    public void cleanUp()
+    {
+        runtime.delete(TEST_SOURCE_ID);
+        runtime.compile();
+    }
+
     @Test
     public void testCreateTempTableError()
     {
         compileTestSource(
+                TEST_SOURCE_ID,
                 "import meta::external::store::relational::runtime::*;\n" +
                         "import meta::relational::metamodel::*;\n" +
                         "import meta::relational::metamodel::execute::*;\n" +
@@ -50,6 +61,7 @@ public abstract class AbstractTestPureDBFunction extends AbstractPureTestWithCor
     public void testDropTempTableError()
     {
         compileTestSource(
+                TEST_SOURCE_ID,
                 "import meta::external::store::relational::runtime::*;\n" +
                         "import meta::relational::metamodel::*;\n" +
                         "import meta::relational::metamodel::execute::*;\n" +
@@ -71,6 +83,7 @@ public abstract class AbstractTestPureDBFunction extends AbstractPureTestWithCor
     public void testExecuteInDbError()
     {
         compileTestSource(
+                TEST_SOURCE_ID,
                 "import meta::external::store::relational::runtime::*;\n" +
                         "import meta::relational::metamodel::*;\n" +
                         "import meta::relational::metamodel::execute::*;\n" +

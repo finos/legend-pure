@@ -16,12 +16,12 @@ package org.finos.legend.pure.runtime.java.extension.store.relational.interprete
 
 import org.finos.legend.pure.m2.relational.AbstractTestPureDBFunction;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.junit.Before;
+import org.junit.BeforeClass;
 
 public class TestPureDBFunction extends AbstractTestPureDBFunction
 {
-    @Before
-    public void setUp()
+    @BeforeClass
+    public static void setUp()
     {
         setUpRuntime(new FunctionExecutionInterpreted());
     }
