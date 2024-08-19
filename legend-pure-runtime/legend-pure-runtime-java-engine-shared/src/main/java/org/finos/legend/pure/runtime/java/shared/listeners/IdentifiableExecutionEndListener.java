@@ -1,4 +1,4 @@
-// Copyright 2021 Goldman Sachs
+// Copyright 2024 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.runtime.java.extension.store.relational.interpreted.natives.test;
+package org.finos.legend.pure.runtime.java.shared.listeners;
 
-import org.finos.legend.pure.m2.relational.AbstractTestTempTableLifecycle;
-import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.junit.BeforeClass;
-
-public class TestTempTableLifecycle extends AbstractTestTempTableLifecycle
+public interface IdentifiableExecutionEndListener extends ExecutionEndListener
 {
-    @BeforeClass
-    public static void setUp()
-    {
-        setUpRuntime(new FunctionExecutionInterpreted());
-    }
+    String getId();
 }

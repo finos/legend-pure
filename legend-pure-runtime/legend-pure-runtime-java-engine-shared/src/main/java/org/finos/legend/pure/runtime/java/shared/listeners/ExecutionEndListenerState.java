@@ -14,40 +14,56 @@
 
 package org.finos.legend.pure.runtime.java.shared.listeners;
 
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.predicate.Predicate;
-
 public class ExecutionEndListenerState
 {
-    private final boolean unexpectedEndState;
-    private String endListenerStateMessage;
+    private final boolean unexpected;
+    private final String message;
+    private final Throwable throwable;
 
-    static final Predicate<ExecutionEndListenerState> UNEXPECTED_END_STATE = new Predicate<ExecutionEndListenerState>()
+    private ExecutionEndListenerState(boolean unexpected, String message, Throwable throwable)
     {
-        @Override
-        public boolean accept(ExecutionEndListenerState executionEndListenerState)
-        {
-            return executionEndListenerState.unexpectedEndState;
-        }
-    };
-
-    static final Function<ExecutionEndListenerState, String> TO_END_LISTENER_STATE_MESSAGE = new Function<ExecutionEndListenerState, String>()
-    {
-        @Override
-        public String valueOf(ExecutionEndListenerState executionEndListenerState)
-        {
-            return executionEndListenerState.endListenerStateMessage;
-        }
-    };
-
-    public ExecutionEndListenerState(boolean unexpectedEndState, String endListenerStateMessage)
-    {
-        this.unexpectedEndState = unexpectedEndState;
-        this.endListenerStateMessage = endListenerStateMessage;
+        this.unexpected = unexpected;
+        this.message = message;
+        this.throwable = throwable;
     }
 
-    public ExecutionEndListenerState(boolean unexpectedEndState)
+    public ExecutionEndListenerState(boolean unexpected, String message)
     {
-        this.unexpectedEndState = unexpectedEndState;
+        this(unexpected, message, null);
+    }
+
+    public ExecutionEndListenerState(boolean unexpected)
+    {
+        this(unexpected, null, null);
+    }
+
+    public ExecutionEndListenerState(Throwable throwable)
+    {
+        this((throwable != null), (throwable == null) ? null : throwable.getMessage(), throwable);
+    }
+
+    public boolean isUnexpectedEnd()
+    {
+        return this.unexpected;
+    }
+
+    public boolean hasMessage()
+    {
+        return this.message != null;
+    }
+
+    public String getMessage()
+    {
+        return this.message;
+    }
+
+    public boolean hasThrowable()
+    {
+        return this.throwable != null;
+    }
+
+    public Throwable getThrowable()
+    {
+        return this.throwable;
     }
 }

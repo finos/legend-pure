@@ -31,10 +31,14 @@ import org.finos.legend.pure.runtime.java.compiled.compiler.JavaCompilerState;
 import org.finos.legend.pure.runtime.java.compiled.compiler.MemoryFileManager;
 import org.finos.legend.pure.runtime.java.compiled.delta.MetadataProvider;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
-import org.finos.legend.pure.runtime.java.compiled.metadata.*;
+import org.finos.legend.pure.runtime.java.compiled.metadata.ClassCache;
+import org.finos.legend.pure.runtime.java.compiled.metadata.FunctionCache;
+import org.finos.legend.pure.runtime.java.compiled.metadata.Metadata;
+import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataAccessor;
+import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataHolder;
 import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionEndListener;
 import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionListeners;
-import org.finos.legend.pure.runtime.java.shared.listeners.IdentifableExecutionEndListner;
+import org.finos.legend.pure.runtime.java.shared.listeners.IdentifiableExecutionEndListener;
 
 public class CompiledExecutionSupport implements ExecutionSupport
 {
@@ -181,14 +185,26 @@ public class CompiledExecutionSupport implements ExecutionSupport
         this.executionListeners.registerExecutionEndListener(executionEndListener);
     }
 
-    public void registerIdentifableExecutionEndListener(IdentifableExecutionEndListner identifableExecutionEndListener)
+    @Deprecated
+    public void registerIdentifableExecutionEndListener(IdentifiableExecutionEndListener identifiableExecutionEndListener)
     {
-        this.executionListeners.registerIdentifableExecutionEndListener(identifableExecutionEndListener);
+        registerIdentifiableExecutionEndListener(identifiableExecutionEndListener);
     }
 
-    public void unRegisterIdentifableExecutionEndListener(String listnerId)
+    public void registerIdentifiableExecutionEndListener(IdentifiableExecutionEndListener identifiableExecutionEndListener)
     {
-        this.executionListeners.unRegisterIdentifableExecutionEndListener(listnerId);
+        this.executionListeners.registerIdentifiableExecutionEndListener(identifiableExecutionEndListener);
+    }
+
+    @Deprecated
+    public void unRegisterIdentifableExecutionEndListener(String listenerId)
+    {
+        unRegisterIdentifiableExecutionEndListener(listenerId);
+    }
+
+    public void unRegisterIdentifiableExecutionEndListener(String listenerId)
+    {
+        this.executionListeners.unRegisterIdentifiableExecutionEndListener(listenerId);
     }
 
     public void executionEnd(final Exception exception)

@@ -14,18 +14,17 @@
 
 package org.finos.legend.pure.runtime.java.shared.listeners;
 
-import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 
 import java.util.Objects;
+import java.util.function.Consumer;
 
 public class ExecutionListeners
 {
     private MutableList<ExecutionEndListener> executionEndListeners = Lists.mutable.of();
-    private MutableList<IdentifableExecutionEndListner> identifableExecutionEndListeners = Lists.mutable.of();
+    private MutableList<IdentifiableExecutionEndListener> identifiableExecutionEndListeners = Lists.mutable.of();
 
     public void registerExecutionEndListener(ExecutionEndListener executionEndListener)
     {
@@ -37,58 +36,91 @@ public class ExecutionListeners
         this.executionEndListeners.remove(executionEndListener);
     }
 
-    public void registerIdentifableExecutionEndListener(IdentifableExecutionEndListner executionEndListener)
+    @Deprecated
+    public void registerIdentifableExecutionEndListener(IdentifiableExecutionEndListener executionEndListener)
     {
-        validateNewExecutionEndListener(executionEndListener);
-        this.identifableExecutionEndListeners.add(executionEndListener);
+        registerIdentifiableExecutionEndListener(executionEndListener);
     }
 
-    private void validateNewExecutionEndListener(IdentifableExecutionEndListner executionEndListener)
+    public void registerIdentifiableExecutionEndListener(IdentifiableExecutionEndListener executionEndListener)
     {
-        if (this.identifableExecutionEndListeners.anySatisfy(l -> Objects.equals(l.getId(), executionEndListener.getId())))
+        validateNewExecutionEndListener(executionEndListener);
+        this.identifiableExecutionEndListeners.add(executionEndListener);
+    }
+
+    private void validateNewExecutionEndListener(IdentifiableExecutionEndListener executionEndListener)
+    {
+        if (this.identifiableExecutionEndListeners.anySatisfy(l -> Objects.equals(l.getId(), executionEndListener.getId())))
         {
-            throw new PureExecutionException("IdentifableExecutionEndListner with Id: " + executionEndListener.getId() + " is already registered");
+            throw new PureExecutionException("IdentifiableExecutionEndListener with Id: " + executionEndListener.getId() + " is already registered");
         }
     }
 
+    @Deprecated
     public void unRegisterIdentifableExecutionEndListener(String eventId)
     {
-        this.identifableExecutionEndListeners.removeIf(l -> Objects.equals(eventId, l.getId()));
+        unRegisterIdentifiableExecutionEndListener(eventId);
     }
 
-    private ListIterable<ExecutionEndListener> allEndListeners()
+    public void unRegisterIdentifiableExecutionEndListener(String eventId)
     {
-        return Lists.mutable.withAll(this.executionEndListeners).withAll(this.identifableExecutionEndListeners);
+        this.identifiableExecutionEndListeners.removeIf(l -> Objects.equals(eventId, l.getId()));
     }
 
-    private void clearAllEndListners()
+    private void clearAllEndListeners()
     {
         this.executionEndListeners = Lists.mutable.empty();
-        this.identifableExecutionEndListeners = Lists.mutable.empty();
+        this.identifiableExecutionEndListeners = Lists.mutable.empty();
     }
 
     public void executionEnd(Exception exception)
     {
-        RichIterable<ExecutionEndListenerState> executionEndStates = this.allEndListeners().collect(executionEndListener ->
+        MutableList<ExecutionEndListenerState> unexpected = Lists.mutable.empty();
+        forEachEndListener(listener ->
         {
-            try
+            ExecutionEndListenerState state = invokeEndListener(listener, exception);
+            if ((state != null) && state.isUnexpectedEnd())
             {
-                return executionEndListener.executionEnd(exception);
-            }
-            catch (Exception ex)
-            {
-                //Ignore, need to make sure we get through all possible listeners
-//                    ex.printStackTrace();
-                return new ExecutionEndListenerState(true, ex.getMessage());
+                unexpected.add(state);
             }
         });
-
-        RichIterable<String> exceptionalState = executionEndStates.select(ExecutionEndListenerState.UNEXPECTED_END_STATE).collect(ExecutionEndListenerState.TO_END_LISTENER_STATE_MESSAGE).toList();
-        if (!exceptionalState.isEmpty())
+        clearAllEndListeners();
+        if (unexpected.notEmpty())
         {
-            throw new ExecutionEndListenerStateException("Error: " + exceptionalState.makeString());
+            MutableList<Throwable> throwables = Lists.mutable.empty();
+            StringBuilder builder = new StringBuilder();
+            unexpected.forEach(state ->
+            {
+                if (state.hasMessage())
+                {
+                    builder.append((builder.length() == 0) ? "Error: " : "\n\t").append(state.getMessage());
+                }
+                if (state.hasThrowable())
+                {
+                    throwables.add(state.getThrowable());
+                }
+            });
+            ExecutionEndListenerStateException toThrow = new ExecutionEndListenerStateException(builder.toString());
+            throwables.forEach(toThrow::addSuppressed);
+            throw toThrow;
         }
+    }
 
-        clearAllEndListners();
+    private void forEachEndListener(Consumer<? super ExecutionEndListener> consumer)
+    {
+        this.executionEndListeners.forEach(consumer);
+        this.identifiableExecutionEndListeners.forEach(consumer);
+    }
+
+    private static ExecutionEndListenerState invokeEndListener(ExecutionEndListener listener, Exception exception)
+    {
+        try
+        {
+            return listener.executionEnd(exception);
+        }
+        catch (Exception e)
+        {
+            return new ExecutionEndListenerState(e);
+        }
     }
 }

@@ -16,9 +16,8 @@ package org.finos.legend.pure.runtime.java.shared.listeners;
 
 import org.eclipse.collections.api.block.function.Function;
 
-public interface IdentifableExecutionEndListner extends ExecutionEndListener
+@Deprecated
+public interface IdentifableExecutionEndListner extends IdentifiableExecutionEndListener
 {
     Function<IdentifableExecutionEndListner, String> TO_ID = IdentifableExecutionEndListner::getId;
-
-    String getId();
 }

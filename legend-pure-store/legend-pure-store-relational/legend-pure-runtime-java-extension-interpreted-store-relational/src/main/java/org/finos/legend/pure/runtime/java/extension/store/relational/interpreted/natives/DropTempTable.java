@@ -14,9 +14,9 @@
 
 package org.finos.legend.pure.runtime.java.extension.store.relational.interpreted.natives;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -36,7 +36,7 @@ import java.util.Stack;
 
 public class DropTempTable extends NativeFunction
 {
-    private ModelRepository repository;
+    private final ModelRepository repository;
     private final Message message;
 
     public DropTempTable(ModelRepository repository, Message message)
@@ -53,7 +53,7 @@ public class DropTempTable extends NativeFunction
         String sqlStr = "drop table " + tableName.getName();
 
         new ExecuteInDb(this.repository, this.message, 0).executeInDb(connection, sqlStr, 0, 0, functionExpressionToUseInStack, processorSupport);
-        executionSupport.unRegisterIdentifableExecutionEndListener(tableName.getName());
+        executionSupport.unRegisterIdentifiableExecutionEndListener(tableName.getName());
 
         return ValueSpecificationBootstrap.wrapValueSpecification(Lists.immutable.<CoreInstance>with(), true, processorSupport);
     }

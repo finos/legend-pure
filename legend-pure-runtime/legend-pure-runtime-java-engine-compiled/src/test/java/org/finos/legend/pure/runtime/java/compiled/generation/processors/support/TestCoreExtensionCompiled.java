@@ -1,4 +1,4 @@
-// Copyright 2021 Goldman Sachs
+// Copyright 2024 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.runtime.java.extension.store.relational.interpreted.natives.test;
+package org.finos.legend.pure.runtime.java.compiled.generation.processors.support;
 
-import org.finos.legend.pure.m2.relational.AbstractTestTempTableLifecycle;
-import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.junit.BeforeClass;
+import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompiler;
+import org.junit.Test;
 
-public class TestTempTableLifecycle extends AbstractTestTempTableLifecycle
+public class TestCoreExtensionCompiled
 {
-    @BeforeClass
-    public static void setUp()
+    @Test
+    public void testExtraJavaSourcesCompile() throws Exception
     {
-        setUpRuntime(new FunctionExecutionInterpreted());
+        PureJavaCompiler compiler = new PureJavaCompiler(null, Thread.currentThread().getContextClassLoader());
+        compiler.compile(new CoreExtensionCompiled().getExtraJavaSources());
     }
 }
