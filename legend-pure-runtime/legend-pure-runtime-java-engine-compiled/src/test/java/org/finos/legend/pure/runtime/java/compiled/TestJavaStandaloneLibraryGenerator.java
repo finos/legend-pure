@@ -110,7 +110,7 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
                         "{\n" +
                         "    true;\n" +
                         "}\n" +
-                        "function  test::standalone::simplePureTestReference():Boolean[1]\n" +
+                        "function test::standalone::simplePureTestReference():Boolean[1]\n" +
                         "{\n" +
                         "    test::standalone::simplePureTestWithApplication();\n" +
                         "}\n" +
