@@ -117,7 +117,7 @@ public class PureCompiledJarMojo extends AbstractMojo
         try
         {
             Thread.currentThread().setContextClassLoader(buildClassLoader(this.project, savedClassLoader, log));
-            JavaCodeGeneration.doIt(repositories, excludedRepositories, extraRepositories, generationType, skip, addExternalAPI, externalAPIPackage, generateMetadata, useSingleDir, generateSources, false, preventJavaCompilation, classesDirectory, targetDirectory,generatePureTests,log);
+            JavaCodeGeneration.doIt(repositories, excludedRepositories, extraRepositories, generationType, skip, addExternalAPI, externalAPIPackage, generateMetadata, useSingleDir, generateSources, false, preventJavaCompilation, classesDirectory, targetDirectory, generatePureTests, log);
         }
         catch (Exception e)
         {
