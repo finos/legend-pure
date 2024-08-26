@@ -217,7 +217,7 @@ public final class JavaSourceCodeGenerator
 
             source.getNewInstances().forEach(coreInstance ->
             {
-                if (!Instance.instanceOf(coreInstance, M3Paths.Package, this.processorSupport) && (generatePureTests || compileGroup == null || compileGroup.startsWith("core") || !TestTools.hasTestStereotype(coreInstance, processorSupport) || !Instance.instanceOf(coreInstance, M3Paths.FunctionDefinition, this.processorSupport) || coreInstance.getValueForMetaPropertyToMany(M3Properties.applications).notEmpty()))
+                if (!Instance.instanceOf(coreInstance, M3Paths.Package, this.processorSupport) && (generatePureTests || compileGroup == null || compileGroup.startsWith("core") || !TestTools.hasAnyTestStereotype(coreInstance, processorSupport) || !Instance.instanceOf(coreInstance, M3Paths.FunctionDefinition, this.processorSupport) || coreInstance.getValueForMetaPropertyToMany(M3Properties.applications).notEmpty()))
                 {
                     this.toJava(coreInstance, codeRepository, null, processorContext);
                 }
