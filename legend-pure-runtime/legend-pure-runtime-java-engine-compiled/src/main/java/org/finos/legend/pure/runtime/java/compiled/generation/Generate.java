@@ -66,7 +66,7 @@ public class Generate
 
     MutableList<StringJavaSource> generate(String compileGroup, RichIterable<? extends Source> sources, JavaSourceCodeGenerator javaSourceCodeGenerator, Counter sourceCounter, int totalSourceCount)
     {
-        return generate(compileGroup,sources,javaSourceCodeGenerator,sourceCounter,totalSourceCount,true);
+        return generate(compileGroup, sources, javaSourceCodeGenerator, sourceCounter, totalSourceCount, true);
     }
 
     MutableList<StringJavaSource> generate(String compileGroup, RichIterable<? extends Source> sources, JavaSourceCodeGenerator javaSourceCodeGenerator, Counter sourceCounter, int totalSourceCount, boolean generatePureTests)
