@@ -84,7 +84,7 @@ public class Generate
 
         sources.forEach(source ->
         {
-            javaSources.addAllIterable(javaSourceCodeGenerator.generateCode(source, null, generatePureTests));
+            javaSources.addAllIterable(javaSourceCodeGenerator.generateCode(source, null, compileGroup, generatePureTests));
             sourceCounter.increment();
             if (this.message != null)
             {

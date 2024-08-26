@@ -102,11 +102,18 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
                         "    $strings->joinStrings(', ');\n" +
                         "}\n" +
                         "\n" +
+                        "function <<test.Test>> test::standalone::simplePureTestWithApplication():Boolean[1]\n" +
+                        "{\n" +
+                        "    true;\n" +
+                        "}\n" +
                         "function <<test.Test>> test::standalone::simplePureTest():Boolean[1]\n" +
                         "{\n" +
                         "    true;\n" +
                         "}\n" +
-
+                        "function  test::standalone::simplePureTestReference():Boolean[1]\n" +
+                        "{\n" +
+                        "    test::standalone::simplePureTestWithApplication();\n" +
+                        "}\n" +
                         "function <<access.externalizable>> test::standalone::testWithReflection(prefix:String[1]):String[1]\n" +
                         "{\n" +
                         "    let f = testWithReflection_String_1__String_1_;\n" +
@@ -206,5 +213,7 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
        Path sourcesDir = this.temporaryFolder.newFolder("src", "java").toPath();
        Generate generate = generator.generateOnly("test", false, sourcesDir);
        Assert.assertFalse(generate.getJavaSourcesByGroup().get("test").stream().filter(s -> s.toUri().getPath().equals("/org/finos/legend/pure/generated/test_standalone_tests.java")).collect(Collectors.toList()).get(0).getCode().contains("Root_test_standalone_simplePureTest__Boolean_1_"));
+       Assert.assertTrue(generate.getJavaSourcesByGroup().get("test").stream().filter(s -> s.toUri().getPath().equals("/org/finos/legend/pure/generated/test_standalone_tests.java")).collect(Collectors.toList()).get(0).getCode().contains("Root_test_standalone_simplePureTestWithApplication__Boolean_1_"));
+
     }
 }

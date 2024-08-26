@@ -201,11 +201,11 @@ public final class JavaSourceCodeGenerator
 
     ListIterable<StringJavaSource> generateCode(Source source, CodeRepository codeRepository)
     {
-       return generateCode(source,codeRepository, true);
+       return generateCode(source,codeRepository, null, true);
     }
 
 
-    ListIterable<StringJavaSource> generateCode(Source source, CodeRepository codeRepository, boolean generatePureTests)
+    ListIterable<StringJavaSource> generateCode(Source source, CodeRepository codeRepository, String compileGroup, boolean generatePureTests)
     {
         if (source.getNewInstances() == null)
         {
@@ -217,7 +217,7 @@ public final class JavaSourceCodeGenerator
 
             source.getNewInstances().forEach(coreInstance ->
             {
-                if (!Instance.instanceOf(coreInstance, M3Paths.Package, this.processorSupport) && (generatePureTests || !TestTools.hasAnyTestStereotype(coreInstance, processorSupport) || !Instance.instanceOf(coreInstance, M3Paths.FunctionDefinition, this.processorSupport)))
+                if (!Instance.instanceOf(coreInstance, M3Paths.Package, this.processorSupport) && (generatePureTests || compileGroup == null || compileGroup.startsWith("core") || !TestTools.hasTestStereotype(coreInstance, processorSupport) || !Instance.instanceOf(coreInstance, M3Paths.FunctionDefinition, this.processorSupport) || coreInstance.getValueForMetaPropertyToMany(M3Properties.applications).notEmpty()))
                 {
                     this.toJava(coreInstance, codeRepository, null, processorContext);
                 }
