@@ -96,8 +96,28 @@ public class JavaCodeGeneration
                 true,
                 new File(args[1]),
                 new File(args[2]),
+                true,
                 log
         );
+    }
+
+    public static void doIt(Set<String> repositories,
+                            Set<String> excludedRepositories,
+                            Set<String> extraRepositories,
+                            JavaCodeGeneration.GenerationType generationType,
+                            boolean skip,
+                            boolean addExternalAPI,
+                            String externalAPIPackage,
+                            boolean generateMetadata,
+                            boolean useSingleDir,
+                            boolean generateSources,
+                            boolean generateTest,
+                            boolean preventJavaCompilation,
+                            File classesDirectory,
+                            File targetDirectory,
+                            Log log)
+    {
+        doIt(repositories,excludedRepositories,extraRepositories,generationType, skip,addExternalAPI,externalAPIPackage,generateMetadata,useSingleDir,generateSources,generateTest,preventJavaCompilation,classesDirectory,targetDirectory,true,log);
     }
 
 
@@ -115,6 +135,7 @@ public class JavaCodeGeneration
                             boolean preventJavaCompilation,
                             File classesDirectory,
                             File targetDirectory,
+                            boolean generatePureTests,
                             Log log)
     {
         // DO NOT DELETE - Needed to avoid circular calls later during static initialization
@@ -175,7 +196,7 @@ public class JavaCodeGeneration
             }
 
             // Generate metadata and Java sources
-            Generate generate = generate(System.nanoTime(), allRepositories, selectedRepositories, distributedMetadataDirectory, codegenDirectory, generateMetadata, addExternalAPI, externalAPIPackage, generationType, generateSources, log);
+            Generate generate = generate(System.nanoTime(), allRepositories, selectedRepositories, distributedMetadataDirectory, codegenDirectory, generateMetadata, addExternalAPI, externalAPIPackage, generationType, generateSources, generatePureTests, log);
 
             // Compile Java sources
             if (!preventJavaCompilation)
@@ -274,7 +295,7 @@ public class JavaCodeGeneration
         return selected;
     }
 
-    private static Generate generate(long start, CodeRepositorySet allRepositories, SetIterable<String> selectedRepositories, Path distributedMetadataDirectory, Path codegenDirectory, boolean generateMetadata, boolean addExternalAPI, String externalAPIPackage, GenerationType generationType, boolean generateSources, Log log)
+    private static Generate generate(long start, CodeRepositorySet allRepositories, SetIterable<String> selectedRepositories, Path distributedMetadataDirectory, Path codegenDirectory, boolean generateMetadata, boolean addExternalAPI, String externalAPIPackage, GenerationType generationType, boolean generateSources, boolean generatePureTests, Log log)
     {
         // Initialize runtime
         PureRuntime runtime = initializeRuntime(start, allRepositories, selectedRepositories, log);
@@ -305,7 +326,7 @@ public class JavaCodeGeneration
         String generateStep = "Pure compiled mode Java code generation";
         long generateStart = startStep(generateStep, log);
         Generate generate;
-        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), addExternalAPI, externalAPIPackage, log);
+        JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), addExternalAPI, externalAPIPackage, generatePureTests, log);
         switch (generationType)
         {
             case monolithic:

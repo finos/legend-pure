@@ -66,6 +66,11 @@ public class Generate
 
     MutableList<StringJavaSource> generate(String compileGroup, RichIterable<? extends Source> sources, JavaSourceCodeGenerator javaSourceCodeGenerator, Counter sourceCounter, int totalSourceCount)
     {
+        return generate(compileGroup, sources, javaSourceCodeGenerator, sourceCounter, totalSourceCount, true);
+    }
+
+    MutableList<StringJavaSource> generate(String compileGroup, RichIterable<? extends Source> sources, JavaSourceCodeGenerator javaSourceCodeGenerator, Counter sourceCounter, int totalSourceCount, boolean generatePureTests)
+    {
         MutableList<StringJavaSource> javaSources = Lists.mutable.empty();
         this.observer.startGeneratingJavaFiles(compileGroup);
 
@@ -79,7 +84,7 @@ public class Generate
 
         sources.forEach(source ->
         {
-            javaSources.addAllIterable(javaSourceCodeGenerator.generateCode(source, null));
+            javaSources.addAllIterable(javaSourceCodeGenerator.generateCode(source, null, compileGroup, generatePureTests));
             sourceCounter.increment();
             if (this.message != null)
             {
@@ -92,6 +97,12 @@ public class Generate
     }
 
     void generateJavaCodeForSources(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo, Function<? super String, ? extends JavaSourceCodeGenerator> sourceCodeGeneratorFn, Log log)
+    {
+        generateJavaCodeForSources(compiledSourcesByRepo, sourceCodeGeneratorFn, true, log);
+    }
+
+
+    void generateJavaCodeForSources(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo, Function<? super String, ? extends JavaSourceCodeGenerator> sourceCodeGeneratorFn,boolean generatePureTests, Log log)
     {
         if (this.message != null)
         {
@@ -111,7 +122,7 @@ public class Generate
                 {
                     long start = System.currentTimeMillis();
                     JavaSourceCodeGenerator sourceCodeGenerator = sourceCodeGeneratorFn.apply(compileGroup);
-                    ListIterable<StringJavaSource> compileGroupJavaSources = generate(compileGroup, sources, sourceCodeGenerator, sourceCounter, totalSourceCount);
+                    ListIterable<StringJavaSource> compileGroupJavaSources = generate(compileGroup, sources, sourceCodeGenerator, sourceCounter, totalSourceCount, generatePureTests);
                     this.javaSourcesByGroup.put(compileGroup, compileGroupJavaSources.toImmutable());
                     log.info("      generated " + compileGroupJavaSources.size() + " sources in " + ((float) (System.currentTimeMillis() - start) / 1000) + "s");
                 }
@@ -125,7 +136,12 @@ public class Generate
 
     public void generateJavaCodeForSources(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo, JavaSourceCodeGenerator sourceCodeGenerator, Log log)
     {
-        generateJavaCodeForSources(compiledSourcesByRepo, compileGroup -> sourceCodeGenerator, log);
+        generateJavaCodeForSources(compiledSourcesByRepo, compileGroup -> sourceCodeGenerator, true, log);
+    }
+
+    public void generateJavaCodeForSources(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo, JavaSourceCodeGenerator sourceCodeGenerator, boolean generatePureTests, Log log)
+    {
+        generateJavaCodeForSources(compiledSourcesByRepo, compileGroup -> sourceCodeGenerator, generatePureTests, log);
     }
 
     public void generateExternalizableAPI(JavaSourceCodeGenerator sourceCodeGenerator, String pack)

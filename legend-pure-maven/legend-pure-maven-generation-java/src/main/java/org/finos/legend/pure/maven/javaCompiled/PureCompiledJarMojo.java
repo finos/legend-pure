@@ -79,6 +79,9 @@ public class PureCompiledJarMojo extends AbstractMojo
     @Parameter(defaultValue = "false")
     private boolean preventJavaCompilation;
 
+    @Parameter(defaultValue = "true")
+    private boolean generatePureTests;
+
     @Override
     public void execute() throws MojoExecutionException
     {
@@ -114,7 +117,7 @@ public class PureCompiledJarMojo extends AbstractMojo
         try
         {
             Thread.currentThread().setContextClassLoader(buildClassLoader(this.project, savedClassLoader, log));
-            JavaCodeGeneration.doIt(repositories, excludedRepositories, extraRepositories, generationType, skip, addExternalAPI, externalAPIPackage, generateMetadata, useSingleDir, generateSources, false, preventJavaCompilation, classesDirectory, targetDirectory, log);
+            JavaCodeGeneration.doIt(repositories, excludedRepositories, extraRepositories, generationType, skip, addExternalAPI, externalAPIPackage, generateMetadata, useSingleDir, generateSources, false, preventJavaCompilation, classesDirectory, targetDirectory, generatePureTests, log);
         }
         catch (Exception e)
         {
