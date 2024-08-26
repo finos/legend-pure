@@ -98,7 +98,7 @@ public class Generate
 
     void generateJavaCodeForSources(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo, Function<? super String, ? extends JavaSourceCodeGenerator> sourceCodeGeneratorFn, Log log)
     {
-        generateJavaCodeForSources(compiledSourcesByRepo,sourceCodeGeneratorFn,true,log);
+        generateJavaCodeForSources(compiledSourcesByRepo, sourceCodeGeneratorFn, true, log);
     }
 
 
