@@ -122,7 +122,7 @@ public class Generate
                 {
                     long start = System.currentTimeMillis();
                     JavaSourceCodeGenerator sourceCodeGenerator = sourceCodeGeneratorFn.apply(compileGroup);
-                    ListIterable<StringJavaSource> compileGroupJavaSources = generate(compileGroup, sources, sourceCodeGenerator, sourceCounter, totalSourceCount,generatePureTests);
+                    ListIterable<StringJavaSource> compileGroupJavaSources = generate(compileGroup, sources, sourceCodeGenerator, sourceCounter, totalSourceCount, generatePureTests);
                     this.javaSourcesByGroup.put(compileGroup, compileGroupJavaSources.toImmutable());
                     log.info("      generated " + compileGroupJavaSources.size() + " sources in " + ((float) (System.currentTimeMillis() - start) / 1000) + "s");
                 }
