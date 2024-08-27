@@ -358,7 +358,7 @@ public class CompiledProcessorSupport implements ProcessorSupport
         try
         {
             String className = JavaPackageAndImportBuilder.buildPackageFromUserPath(type) + "." + "Root_" + type.replace("::", "_") + "_Impl";
-            return (CoreInstance) this.globalClassLoader.loadClass(className).getConstructor(String.class).newInstance("NO_ID");
+            return (CoreInstance) this.globalClassLoader.loadClass(className).getConstructor(String.class, SourceInformation.class, CoreInstance.class).newInstance("NO_ID", null, this.package_getByUserPath(type));
         }
         catch (ReflectiveOperationException e)
         {
@@ -378,7 +378,7 @@ public class CompiledProcessorSupport implements ProcessorSupport
             //When invoked from newCoreInstance(name, classifier, sourceInformation, repository), typeName already begins with Root
             String className = (typeName.startsWith("Root") ? JavaPackageAndImportBuilder.buildPackageFromSystemPath(typeName) + "." + typeName + "_Impl" :
                     JavaPackageAndImportBuilder.buildPackageFromUserPath(typeName) + "." + "Root_" + typeName.replace("::", "_") + "_Impl");
-            return (CoreInstance) this.globalClassLoader.loadClass(className).getConstructor(String.class).newInstance(name);
+            return (CoreInstance) this.globalClassLoader.loadClass(className).getConstructor(String.class, SourceInformation.class, CoreInstance.class).newInstance(name, null, this.package_getByUserPath(typeName));
         }
         catch (ReflectiveOperationException e)
         {

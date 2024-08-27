@@ -60,18 +60,22 @@ function <<PCT.test>> meta::pure::functions::boolean::tests::equality::equal::te
 
 function <<PCT.test>>  meta::pure::functions::boolean::tests::equality::equal::testEqualDate<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assert($f->eval(|%2014 == %2014));
-    assert($f->eval(|equal(%2014, %2014)));
     assert($f->eval(|%2014-02-27T05:01:35.231+0000 == %2014-02-27T05:01:35.231+0000));
     assert($f->eval(|equal(%2014-02-27T05:01:35.231+0000, %2014-02-27T05:01:35.231+0000)));
     assert($f->eval(|%2014-02-27T10:01:35.231+0500 == %2014-02-27T05:01:35.231+0000));
     assert($f->eval(|equal(%2014-02-27T10:01:35.231+0500, %2014-02-27T05:01:35.231+0000)));
-    assert($f->eval(|%2014 != %2013));
-    assert($f->eval(|!equal(%2014, %2013)));
-    assert($f->eval(|%2014 != %2014-01-01));
-    assert($f->eval(|!equal(%2014, %2014-01-01)));
     assert($f->eval(|%2014-02-27T05:01:35.231+0000 != %2014-02-27T05:01:35.231-0500));
     assert($f->eval(|!equal(%2014-02-27T05:01:35.231+0000, %2014-02-27T05:01:35.231-0500)));
+}
+
+function <<PCT.test>>  meta::pure::functions::boolean::tests::equality::equal::testEqualDateStrictYear<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assert($f->eval(|%2014 == %2014));
+    assert($f->eval(|equal(%2014, %2014)));
+    assert($f->eval(|%2014 != %2014-01-01));
+    assert($f->eval(|!equal(%2014, %2014-01-01)));
+    assert($f->eval(|%2014 != %2013));
+    assert($f->eval(|!equal(%2014, %2013)));
 }
 
 function <<PCT.test>> meta::pure::functions::boolean::tests::equality::equal::testEqualBoolean<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
