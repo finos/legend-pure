@@ -51,7 +51,7 @@ class FunctionExpressionExecutor implements Executor
         profiler.startExecutingFunctionExpression(instance, functionExpressionToUseInStack);
         FunctionExpression functionExpression = FunctionExpressionCoreInstanceWrapper.toFunctionExpression(instance);
         ListIterable<? extends CoreInstance> params = (ListIterable<? extends CoreInstance>) functionExpression._parametersValues();
-        Function function = FunctionCoreInstanceWrapper.toFunction(functionExpression._funcCoreInstance());
+        Function function = FunctionCoreInstanceWrapper.toFunction(functionExpression._func());
 
         MutableMap<String, CoreInstance> localResolvedTypeParameters = Maps.mutable.empty();
         MutableMap<String, CoreInstance> localResolvedMultiplicityParameters = Maps.mutable.empty();

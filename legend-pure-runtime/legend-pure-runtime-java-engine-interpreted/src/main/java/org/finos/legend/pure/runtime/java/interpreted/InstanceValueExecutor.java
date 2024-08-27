@@ -42,7 +42,7 @@ class InstanceValueExecutor implements Executor
     @Override
     public CoreInstance execute(CoreInstance instance, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, CoreInstance functionExpressionToUseInStack, VariableContext variableContext, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, FunctionExecutionInterpreted functionExecutionInterpreted, ProcessorSupport processorSupport) throws PureExecutionException
     {
-        CoreInstance newInstanceValue = instance.getRepository().newEphemeralAnonymousCoreInstance(instance.getSourceInformation(), processorSupport.package_getByUserPath(M3Paths.InstanceValue));
+        CoreInstance newInstanceValue = processorSupport.newEphemeralAnonymousCoreInstance(M3Paths.InstanceValue);
         Instance.addValueToProperty(newInstanceValue, M3Properties.genericType, Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.genericType, processorSupport), processorSupport);
         Instance.addValueToProperty(newInstanceValue, M3Properties.multiplicity, Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.multiplicity, processorSupport), processorSupport);
         ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(instance, M3Properties.values, processorSupport);
