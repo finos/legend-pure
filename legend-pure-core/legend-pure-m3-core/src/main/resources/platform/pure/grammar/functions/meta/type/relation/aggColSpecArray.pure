@@ -23,9 +23,9 @@ function
         PCT.grammarDoc='~[propName : x|$x.val : y|$y->sum(), other : x|$x.otherP : y|$y->avg()]',
         PCT.grammarCharacters='~[::,::]'
     }
-    meta::pure::functions::relation::aggColSpecArray<U,V,K,T,P>(map:AggColSpec<{U[1]->V[0..1]}, {V[*]->K[1]}, T>[*], cl:P[1]):AggColSpecArray<{U[1]->Any[0..1]},{Nil[*]->Any[1]},P>[1]
+    meta::pure::functions::relation::aggColSpecArray<U,V,K,T,P>(map:AggColSpec<{U[1]->V[0..1]}, {V[*]->K[0..1]}, T>[*], cl:P[1]):AggColSpecArray<{U[1]->Any[0..1]},{Nil[*]->Any[0..1]},P>[1]
 {
-  ^AggColSpecArray<{U[1]->Any[0..1]},{Nil[*]->Any[1]},P>
+  ^AggColSpecArray<{U[1]->Any[0..1]},{Nil[*]->Any[0..1]},P>
   (
     aggSpecs = $map
   )
