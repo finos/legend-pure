@@ -73,6 +73,16 @@ function <<test.Test>> meta::pure::functions::meta::tests::pathToElement::testCo
     assertIs(meta::pure::functions::boolean::greaterThan_Number_1__Number_1__Boolean_1_, pathToElement('meta::pure::functions::boolean::greaterThan_Number_1__Number_1__Boolean_1_'));
 }
 
+function <<test.Test>> meta::pure::functions::meta::tests::pathToElement::testUnitMeasurePathToElement():Boolean[1]
+{
+    assertIs(RomanLength, pathToElement('meta::pure::functions::meta::tests::model::RomanLength'));
+    assertEquals(RomanLength~Pes, pathToElement('meta::pure::functions::meta::tests::model::RomanLength~Pes'));
+    assertEquals(RomanLength~Cubitum, pathToElement('meta::pure::functions::meta::tests::model::RomanLength~Cubitum'));
+    assertEquals(RomanLength~Passus, pathToElement('meta::pure::functions::meta::tests::model::RomanLength~Passus'));
+    assertEquals(RomanLength~Actus, pathToElement('meta::pure::functions::meta::tests::model::RomanLength~Actus'));
+    assertEquals(RomanLength~Stadium, pathToElement('meta::pure::functions::meta::tests::model::RomanLength~Stadium'));
+}
+
 // To be removed
 function <<test.Test, meta::pure::profiles::doc.deprecated>> meta::pure::functions::boolean::tests::testIsNativeFunctions():Boolean[1]
 {

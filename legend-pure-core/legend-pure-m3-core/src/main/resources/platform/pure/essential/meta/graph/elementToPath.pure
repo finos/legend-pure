@@ -28,7 +28,7 @@ function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::element
 
 function meta::pure::functions::meta::elementToPath(element:Type[1]):String[1]
 {
-    $element->cast(@PackageableElement)->elementToPath('::')
+    $element->elementToPath('::')
 }
 
 function meta::pure::functions::meta::elementToPath(element:Type[1], separator:String[1]):String[1]
@@ -108,6 +108,16 @@ function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testEn
     assertEquals('meta::pure::functions::meta::tests::model', elementToPath(CC_GeographicEntityType->cast(@PackageableElement).package->at(0)));
     assertEquals('meta.pure.functions.meta.tests.model', elementToPath(CC_GeographicEntityType->cast(@PackageableElement).package->at(0), '.'));
     assertEquals('Root&meta&pure&functions&meta&tests&model', elementToPath(CC_GeographicEntityType->cast(@PackageableElement).package->at(0), '&', true));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testUnitMeasureToPath():Boolean[1]
+{
+    assertEquals('meta::pure::functions::meta::tests::model::RomanLength', elementToPath(RomanLength));
+    assertEquals('meta::pure::functions::meta::tests::model::RomanLength~Pes', elementToPath(RomanLength~Pes));
+    assertEquals('meta::pure::functions::meta::tests::model::RomanLength~Cubitum', elementToPath(RomanLength~Cubitum));
+    assertEquals('meta::pure::functions::meta::tests::model::RomanLength~Passus', elementToPath(RomanLength~Passus));
+    assertEquals('meta::pure::functions::meta::tests::model::RomanLength~Actus', elementToPath(RomanLength~Actus));
+    assertEquals('meta::pure::functions::meta::tests::model::RomanLength~Stadium', elementToPath(RomanLength~Stadium));
 }
 
 function <<test.Test>> meta::pure::functions::meta::tests::elementToPath::testEphemeralPackageableElements():Boolean[1]

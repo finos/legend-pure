@@ -61,3 +61,12 @@ Association meta::pure::functions::meta::tests::model::AddressLocation
     location : CC_Location[0..1];
     addresses: CC_Address[*];
 }
+
+Measure meta::pure::functions::meta::tests::model::RomanLength
+{
+    *Pes: x -> $x;
+    Cubitum: x -> $x * 1.5;
+    Passus: x -> $x * 5;
+    Actus: x -> $x * 120;
+    Stadium: x -> $x * 625;
+}
