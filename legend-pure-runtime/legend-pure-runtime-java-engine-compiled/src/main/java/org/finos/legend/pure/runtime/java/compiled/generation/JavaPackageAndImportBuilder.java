@@ -19,10 +19,10 @@ import org.eclipse.collections.api.set.SetIterable;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
 import org.finos.legend.pure.m3.coreinstance.M3CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.M3PlatformCoreInstanceFactoryRegistry;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
@@ -325,12 +325,8 @@ public class JavaPackageAndImportBuilder
 
     private static <T extends Appendable> T buildImplUnitInstanceClassNameFromType(T appendable, CoreInstance unit, String suffix)
     {
-        if (!(unit instanceof Unit))
-        {
-            throw new IllegalArgumentException("Not a Unit: " + unit);
-        }
-        PackageableElement.writeSystemPathForPackageableElement(SafeAppendable.wrap(appendable), ((Unit) unit)._package(), "_")
-                .append('_').append(convertUnitName(((Unit) unit)._name())).append("_Instance").append(suffix);
+        PackageableElement.writeSystemPathForPackageableElement(SafeAppendable.wrap(appendable), unit.getValueForMetaPropertyToOne(M3Properties._package), "_")
+                .append('_').append(convertUnitName(PrimitiveUtilities.getStringValue(unit.getValueForMetaPropertyToOne(M3Properties.name)))).append("_Instance").append(suffix);
         return appendable;
     }
 
