@@ -2338,9 +2338,8 @@ public class AntlrContextToM3CoreInstance
         String unitName = measure._name() + this.tilde + ctx.identifier().getText();
         SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.identifier().getStart(), ctx.getStop());
         checkExists(measure._package(), unitName, sourceInfo);
-        Unit unitInstance = UnitInstance.createPersistent(this.repository, unitName, sourceInfo)
+        Unit unitInstance = UnitInstance.createPersistent(this.repository, unitName, sourceInfo, measure)
                 ._name(unitName)
-                ._measure(measure)
                 ._classifierGenericType(GenericTypeInstance.createPersistent(this.repository)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Unit)));
 
         // set unit super type to be its measure (Kilogram -> Mass)
@@ -2382,9 +2381,8 @@ public class AntlrContextToM3CoreInstance
         String unitName = measure._name() + this.tilde + ctx.identifier().getText();
         SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.identifier().getStart(), ctx.getStop());
         checkExists(measure._package(), unitName, sourceInfo);
-        Unit unitInstance = UnitInstance.createPersistent(this.repository, unitName, sourceInfo)
+        Unit unitInstance = UnitInstance.createPersistent(this.repository, unitName, sourceInfo, measure)
                 ._name(unitName)
-                ._measure(measure)
                 ._classifierGenericType(GenericTypeInstance.createPersistent(this.repository)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Unit)));
         unitInstance._generalizations(Lists.immutable.with(GeneralizationInstance.createPersistent(this.repository, GenericTypeInstance.createPersistent(this.repository)._rawType(measure), unitInstance)));
 

@@ -880,7 +880,7 @@
                                                             {
                                                                 Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType] : Root.children[meta].children[pure].children[metamodel].children[type].children[Measure]
                                                             },
-                                    Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[AbstractProperty].properties[multiplicity] : Root.children[meta].children[pure].children[metamodel].children[multiplicity].children[ZeroOne],
+                                    Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[AbstractProperty].properties[multiplicity] : Root.children[meta].children[pure].children[metamodel].children[multiplicity].children[PureOne],
                                     Root.children[meta].children[pure].children[metamodel].children[type].children[Any].properties[classifierGenericType] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]
                                                             {
                                                                 Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType] : Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[Property],
@@ -895,7 +895,7 @@
                                                                                 Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType] : Root.children[meta].children[pure].children[metamodel].children[type].children[Measure]
                                                                             }
                                                                     ],
-                                                                Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[multiplicityArguments] : Root.children[meta].children[pure].children[metamodel].children[multiplicity].children[ZeroOne]
+                                                                Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[multiplicityArguments] : Root.children[meta].children[pure].children[metamodel].children[multiplicity].children[PureOne]
                                                             }
                                 }
                                 ,
