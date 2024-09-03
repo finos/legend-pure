@@ -14,34 +14,12 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.math.operation;
 
-import org.eclipse.collections.api.list.ListIterable;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
 
-public class Mod extends AbstractNative
+public class Mod extends AbstractNativeFunctionGeneric
 {
     public Mod()
     {
-        super("mod_Integer_1__Integer_1__Integer_1_");
-    }
-
-    @Override
-    public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
-    {
-        return "CoreGen.mod(" + transformedParams.get(0) + "," + transformedParams.get(1) + ")";
-    }
-
-    @Override
-    public String buildBody()
-    {
-        return "new DefendedPureFunction2<Long, Long, Long>()\n" +
-                "        {\n" +
-                "            @Override\n" +
-                "            public Long value(Long input1, Long input2, ExecutionSupport es)\n" +
-                "            {\n" +
-                "                return CoreGen.mod(input1, input2);\n" +
-                "            }\n" +
-                "        }";
+        super("CoreGen.mod", new Class[]{Long.class, Long.class}, "mod_Integer_1__Integer_1__Integer_1_");
     }
 }
