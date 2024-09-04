@@ -30,6 +30,7 @@ public class M3Properties
     public static final String associationViews = "associationViews";
     public static final String originalMilestonedProperty = "originalMilestonedProperty";
     public static final String originalMilestonedPropertyParametersValues = "originalMilestonedPropertyParametersValues";
+    public static final String canonicalUnit = "canonicalUnit";
     public static final String children = "children";
     public static final String childrenData = "childrenData";
     public static final String _class = "class";
@@ -88,6 +89,7 @@ public class M3Properties
     public static final String multiplicityParameter = "multiplicityParameter";
     public static final String multiplicityParameters = "multiplicityParameters";
     public static final String name = "name";
+    public static final String nonCanonicalUnits = "nonCanonicalUnits";
     public static final String offset = "offset";
     public static final String operation = "operation";
     public static final String openVariables = "openVariables";

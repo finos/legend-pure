@@ -56,7 +56,6 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._c
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.ClassImplProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.ClassProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.measureUnit.MeasureProcessor;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.measureUnit.UnitProcessor;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -150,8 +149,6 @@ public final class JavaSourceCodeGenerator
     private final boolean includePureStackTrace;
     private final MutableSet<CoreInstance> processedClasses = Sets.mutable.empty();
     private final MutableSet<CoreInstance> platformEnumerations = Sets.mutable.empty();
-    private final MutableSet<CoreInstance> processedMeasures = Sets.mutable.empty();
-    private final MutableSet<CoreInstance> processedUnits = Sets.mutable.empty();
     private final MutableSet<CoreInstance> javaSerializedClasses = Sets.mutable.empty();
     private final ListIterable<CompiledExtension> extensions;
 
@@ -381,8 +378,7 @@ public final class JavaSourceCodeGenerator
 
     private MutableList<StringJavaSource> buildJavaClasses(ProcessorContext processorContext)
     {
-        MutableList<StringJavaSource> javaClasses = Lists.mutable.empty();
-        javaClasses.addAll(processorContext.getClasses());
+        MutableList<StringJavaSource> javaClasses = Lists.mutable.withAll(processorContext.getClasses());
 
         MutableSet<String> processedSources = Sets.mutable.empty();
         String functionImports = processorContext.getNativeFunctionProcessor().getImports().makeString("");
@@ -459,13 +455,7 @@ public final class JavaSourceCodeGenerator
                     }
                     if (Instance.instanceOf(coreInstance, M3Paths.Measure, this.processorSupport))
                     {
-                        RichIterable<CoreInstance> processedMeasure = MeasureProcessor.processMeasure(coreInstance, processorContext);
-                        this.processedMeasures.addAllIterable(processedMeasure);
-                    }
-                    if (Instance.instanceOf(coreInstance, M3Paths.Unit, this.processorSupport))
-                    {
-                        RichIterable<CoreInstance> processedUnit = UnitProcessor.processUnit(coreInstance, processorContext);
-                        this.processedUnits.addAllIterable(processedUnit);
+                        MeasureProcessor.processMeasure(coreInstance, processorContext);
                     }
                     // We only want to execute if the related repository is available.
                     // Otherwise the type are not in the model and the instanceOf code will fail later.
@@ -714,17 +704,6 @@ public final class JavaSourceCodeGenerator
         return "            .withType(\"" + path + "\", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.EnumInstance.FACTORY, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum.class)\n";
     }
 
-    private String toMeasureFactoryRegistryEntry(String path)
-    {
-        return "            .withType(\"" + path + "\", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.MeasureInstance.FACTORY, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure.class)\n";
-    }
-
-    private String toUnitFactoryRegistryEntry(String path)
-    {
-        // TODO: org.finos.legend.pure.generated.Root_meta_pure_metamodel_type_Unit_Impl
-        return "            .withType(\"" + path + "\", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.UnitInstance.FACTORY, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit.class)\n";
-    }
-
     private String getFactoryRegistryName()
     {
         return this.name + "JavaModelFactoryRegistry";
@@ -741,11 +720,8 @@ public final class JavaSourceCodeGenerator
                 each -> "/platform/pure/grammar/m3.pure".equals(each.getSourceInformation().getSourceId()),
                 PackageableElement::getUserPathForPackageableElement,
                 Lists.mutable.empty()).sortThis();
-        MutableList<String> measures = this.processedMeasures.collect(PackageableElement::getUserPathForPackageableElement, Lists.mutable.empty()).sortThis();
-        MutableList<String> units = this.processedUnits.collect(PackageableElement::getUserPathForPackageableElement, Lists.mutable.empty()).sortThis();
 
-        int count = platformClasses.size() + m3PlatformEnums.size() + measures.size() + units.size();
-
+        int count = platformClasses.size() + m3PlatformEnums.size();
         return "\n" +
                 "import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;\n" +
                 "\n" +
@@ -754,8 +730,6 @@ public final class JavaSourceCodeGenerator
                 "    public static final CoreInstanceFactoryRegistry REGISTRY = CoreInstanceFactoryRegistry.builder(" + count + ")\n" +
                 platformClasses.asLazy().collect(pair -> toFactoryRegistryEntry(pair.getOne(), pair.getTwo())).makeString("") +
                 m3PlatformEnums.asLazy().collect(this::toEnumFactoryRegistryEntry).makeString("") +
-                measures.asLazy().collect(this::toMeasureFactoryRegistryEntry).makeString("") +
-                units.asLazy().collect(this::toUnitFactoryRegistryEntry).makeString("") + // TODO: TO_FACTORY_REGISTRY_ENTRY
                 "            .build();\n" +
                 "\n" +
                 "    @Override\n" +

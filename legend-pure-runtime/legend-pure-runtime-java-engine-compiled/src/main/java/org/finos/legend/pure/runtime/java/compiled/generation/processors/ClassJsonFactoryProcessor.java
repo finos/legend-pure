@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors;
 
-import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningFunctions;
 import org.finos.legend.pure.m3.coreinstance.helper.PropertyTypeHelper;
@@ -22,6 +21,7 @@ import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -84,7 +84,6 @@ public class ClassJsonFactoryProcessor
     {
         ProcessorSupport processorSupport = processorContext.getSupport();
 
-        MutableList<StringJavaSource> classes = processorContext.getClasses();
         MutableSet<CoreInstance> processedClasses = processorContext.getProcessedClasses(ClassJsonFactoryProcessor.class);
 
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
@@ -97,7 +96,7 @@ public class ClassJsonFactoryProcessor
             // Factory to create objects from Json
             if (shouldGenerate(className))
             {
-                classes.add(StringJavaSource.newStringJavaSource(JavaPackageAndImportBuilder.buildPackageForPackageableElement(_class), className + "_JsonFactory", imports +
+                processorContext.addJavaSource(StringJavaSource.newStringJavaSource(JavaPackageAndImportBuilder.buildPackageForPackageableElement(_class), className + "_JsonFactory", imports +
                         "public class " + className + "_JsonFactory" + (typeParams.isEmpty() ? "" : "<" + typeParams + ">\n") +
                         "{\n" +
                         (
@@ -111,13 +110,22 @@ public class ClassJsonFactoryProcessor
                                 .collectIf(
                                         property ->
                                         {
-                                            String name = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.name, processorSupport).getName();
-                                            return !M3Properties.elementOverride.equals(name) && !M3Properties.getterOverrideToOne.equals(name)
-                                                    && !M3Properties.getterOverrideToMany.equals(name)
-                                                    && !"classifierGenericType".equals(name)
-                                                    && !M3Properties.hiddenPayload.equals(name)
-                                                    && !M3Properties.constraintsManager.equals(name);
-
+                                            switch (PrimitiveUtilities.getStringValue(property.getValueForMetaPropertyToOne(M3Properties.name)))
+                                            {
+                                                case M3Properties.classifierGenericType:
+                                                case M3Properties.constraintsManager:
+                                                case M3Properties.elementOverride:
+                                                case M3Properties.getterOverrideToMany:
+                                                case M3Properties.getterOverrideToOne:
+                                                case M3Properties.hiddenPayload:
+                                                {
+                                                    return false;
+                                                }
+                                                default:
+                                                {
+                                                    return true;
+                                                }
+                                            }
                                         },
                                         property ->
                                         {
@@ -137,14 +145,14 @@ public class ClassJsonFactoryProcessor
                                             boolean isToOne = Multiplicity.isToOne(multiplicity, false);
 
                                             String assignment =
-                                                    "if(res != null)\n" +
+                                                    "if (res != null)\n" +
                                                             "{\n" +
                                                             "result._" + name + (isToOne ? "" : "Add") + "((" + typeObject + ")res);\n" +
                                                             "}\n";
 
                                             return "\n" +
                                                     "           notFound.remove(\"" + name + "\");\n" +
-                                                    "           if(" + associationCycleConditionCode(classFullName2, "parentClass", processorSupport, property) + ")\n" +
+                                                    "           if (" + associationCycleConditionCode(classFullName2, "parentClass", processorSupport, property) + ")\n" +
                                                     "           {\n" +
                                                     "               try\n" +
                                                     "               {\n" +
@@ -160,7 +168,7 @@ public class ClassJsonFactoryProcessor
                                                             "                           if (jsonElement instanceof org.json.simple.JSONObject)\n" +
                                                                     "                           {\n" +
                                                                     "                               org.json.simple.JSONObject jsonObject = (org.json.simple.JSONObject) jsonElement;\n" +
-                                                                    "                               __" + name + "Type = Pure.fromJsonResolveType(jsonObject, \"" + classFullName + "\", " + typeObject + ".class, md, typeKey, classLoader);\n" +
+                                                                    "                               __" + name + "Type = Pure.fromJsonResolveType(jsonObject, \"" + classFullName + "\", " + typeObject + ".class, typeKey, es);\n" +
                                                                     "                               Object res = JsonParserHelper.fromJson(jsonElement, __" + name + "Type, \"" + classFullName2 + "\", \"" + classFullUserPath + "\", md, classLoader, si, typeKey, failOnUnknownProperties, constraintsOverride, es, \"" + className + "\");\n" +
                                                                     "                               " + assignment +
                                                                     "                           }\n" +
@@ -181,7 +189,7 @@ public class ClassJsonFactoryProcessor
                                                             "                       if (propertyValue instanceof org.json.simple.JSONObject)\n" +
                                                                     "                       {\n" +
                                                                     "                           org.json.simple.JSONObject jsonObject = (org.json.simple.JSONObject) propertyValue;\n" +
-                                                                    "                           __" + name + "Type = Pure.fromJsonResolveType(jsonObject , \"" + classFullName + "\", " + typeObject + ".class, md, typeKey, classLoader);\n" +
+                                                                    "                           __" + name + "Type = Pure.fromJsonResolveType(jsonObject , \"" + classFullName + "\", " + typeObject + ".class, typeKey, es);\n" +
                                                                     "                       }\n" : ""
                                                     ) +
                                                     "                       Object res = JsonParserHelper.fromJson(propertyValue, __" + name + "Type, \"" + classFullName2 + "\", \"" + classFullUserPath + "\", md, classLoader, si, typeKey, failOnUnknownProperties, constraintsOverride, es, \"" + className + "\");\n" +

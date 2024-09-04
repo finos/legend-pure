@@ -17,19 +17,18 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.type;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.GenericTypeOperation;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.function.FunctionType;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.ClassProcessor;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.measureUnit.UnitProcessor;
 
 public class TypeProcessor
 {
@@ -120,10 +119,6 @@ public class TypeProcessor
             return FullJavaPaths.Enum;
         }
         String finalRawTypeSystemPath = fullyQualify || M3Paths.Package.equals(rawType.getName()) ? fullyQualifiedJavaInterfaceNameForType(rawType) : javaInterfaceForType(rawType);
-        if (rawType instanceof Unit)
-        {
-            return UnitProcessor.convertToJavaCompatibleClassName(finalRawTypeSystemPath) + "_Instance";
-        }
 
         // Manage magical TDS structures
         if ("org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.ColSpec".equals(finalRawTypeSystemPath) ||
@@ -150,7 +145,7 @@ public class TypeProcessor
         {
             return "java.lang.Object";
         }
-        if ("FunctionType".equals(processorSupport.getClassifier(rawType).getName()))
+        if (FunctionType.isFunctionType(rawType, processorSupport))
         {
             return "java.lang.Object";
         }
@@ -266,8 +261,8 @@ public class TypeProcessor
     }
 
     /**
-     * Get default value allowing for Primitive types as per Java spec.
-     * https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html
+     * Get default value allowing for Primitive types as per
+     * <a href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html">Java spec</a>.
      *
      * @param rawType The Raw Type of an item
      * @return A Java-compatible String

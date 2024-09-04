@@ -67,6 +67,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.FunctionProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.JavaCompiledCoreInstance;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.QuantityCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ReflectiveCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ValCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction;
@@ -82,6 +83,7 @@ import org.json.simple.parser.ParseException;
 
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -959,7 +961,7 @@ public class CompiledSupport
         {
             return eq((Number) left, (Number) right);
         }
-        if ((left instanceof String) || (left instanceof PureDate))
+        if ((left instanceof String) || (left instanceof PureDate) || (left instanceof QuantityCoreInstance))
         {
             return left.equals(right);
         }
@@ -2056,7 +2058,8 @@ public class CompiledSupport
         return defaultName[defaultName.length - 1];
     }
 
-    public static String fullyQualifiedJavaInterfaceNameForPackageableElement(final org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement element)
+    @Deprecated
+    public static String fullyQualifiedJavaInterfaceNameForPackageableElement(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement element)
     {
         if (ClassProcessor.isPlatformClass(element))
         {
@@ -2089,5 +2092,56 @@ public class CompiledSupport
             return pkgPath;
         }
         return getUserObjectPathForPackageableElement(pkg, includeRoot).with(packageableElement.getName());
+    }
+
+    public static QuantityCoreInstance newUnitInstance(CoreInstance unit, Number value, ExecutionSupport executionSupport)
+    {
+        return newUnitInstance(unit, value, (CompiledExecutionSupport) executionSupport);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static QuantityCoreInstance newUnitInstance(CoreInstance unit, Number value, CompiledExecutionSupport executionSupport)
+    {
+        Class<? extends QuantityCoreInstance> unitImplClass;
+        try
+        {
+            String javaClassImplName = JavaPackageAndImportBuilder.buildImplClassReferenceFromType(unit);
+            ClassLoader classLoader = executionSupport.getClassLoader();
+            unitImplClass = (Class<? extends QuantityCoreInstance>) classLoader.loadClass(javaClassImplName);
+        }
+        catch (ClassNotFoundException e)
+        {
+            StringBuilder builder = new StringBuilder("Could not find Java class for unit ");
+            PackageableElement.writeUserPathForPackageableElement(builder, unit);
+            throw new PureExecutionException(builder.toString(), e);
+        }
+        catch (Exception e)
+        {
+            StringBuilder builder = new StringBuilder("Error finding Java class for unit ");
+            PackageableElement.writeUserPathForPackageableElement(builder, unit);
+            String eMessage = e.getMessage();
+            if (eMessage != null)
+            {
+                builder.append(": ").append(eMessage);
+            }
+            throw new PureExecutionException(builder.toString(), e);
+        }
+
+        try
+        {
+            Constructor<? extends QuantityCoreInstance> constructor = unitImplClass.getConstructor(Number.class, CompiledExecutionSupport.class);
+            return constructor.newInstance(value, executionSupport);
+        }
+        catch (Exception e)
+        {
+            StringBuilder builder = new StringBuilder("Error instantiating Java class ").append(unitImplClass.getName()).append(" for unit ");
+            PackageableElement.writeUserPathForPackageableElement(builder, unit);
+            String eMessage = e.getMessage();
+            if (eMessage != null)
+            {
+                builder.append(": ").append(eMessage);
+            }
+            throw new PureExecutionException(builder.toString(), (e instanceof InvocationTargetException) ? e.getCause() : e);
+        }
     }
 }

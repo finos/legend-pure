@@ -12,6 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::functions::meta::tests::model::*;
 import meta::pure::test::pct::*;
 
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::newUnit(type:Unit[1], value:Number[1]):Any[1];
+
+
+function <<test.Test>> meta::pure::functions::meta::tests::newUnit::testNewUnit():Boolean[1]
+{
+    assertEquals(5 RomanLength~Pes, newUnit(RomanLength~Pes, 5));
+    assertEquals(10.5D RomanLength~Cubitum, newUnit(RomanLength~Cubitum, 10.5D));
+    assertEquals(-310.72D RomanLength~Stadium, newUnit(RomanLength~Stadium, -310.72D));
+    assertEquals(0 RomanLength~Actus, newUnit(RomanLength~Actus, 0));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::newUnit::testNewUnitEval():Boolean[1]
+{
+    assertEquals(5 RomanLength~Pes, newUnit_Unit_1__Number_1__Any_1_->eval(RomanLength~Pes, 5));
+    assertEquals(10.5D RomanLength~Cubitum, newUnit_Unit_1__Number_1__Any_1_->eval(RomanLength~Cubitum, 10.5D));
+    assertEquals(-310.72D RomanLength~Stadium, newUnit_Unit_1__Number_1__Any_1_->eval(RomanLength~Stadium, -310.72D));
+    assertEquals(0 RomanLength~Actus, newUnit_Unit_1__Number_1__Any_1_->eval(RomanLength~Actus, 0));
+}

@@ -57,8 +57,8 @@ public class CompiledExecutionSupport implements ExecutionSupport
 
     private final CompiledProcessorSupport processorSupport;
 
-    private final FunctionCache functionCache;
     private final ClassCache classCache;
+    private final FunctionCache functionCache;
 
     private final MetadataAccessor metadataAccessor;
     private final MetadataProvider metadataProvider;
@@ -69,19 +69,14 @@ public class CompiledExecutionSupport implements ExecutionSupport
 
     private final MutableList<CompiledExtension> compiledExtensions;
 
-    public CompiledExecutionSupport(JavaCompilerState javaCompilerState, CompiledProcessorSupport processorSupport, SourceRegistry sourceRegistry, RepositoryCodeStorage codeStorage, IncrementalCompiler incrementalCompiler, ExecutionActivityListener executionActivityListener, ConsoleCompiled console, FunctionCache functionCache, ClassCache classCache, MetadataProvider metadataProvider, MutableSet<String> extraSupportedTypes, MutableList<CompiledExtension> compiledExtensions)
-    {
-        this(javaCompilerState, processorSupport, sourceRegistry, codeStorage, incrementalCompiler, executionActivityListener, console, functionCache, classCache, metadataProvider, extraSupportedTypes, compiledExtensions, null);
-    }
-
     public CompiledExecutionSupport(JavaCompilerState javaCompilerState, CompiledProcessorSupport processorSupport, SourceRegistry sourceRegistry, RepositoryCodeStorage codeStorage, IncrementalCompiler incrementalCompiler, ExecutionActivityListener executionActivityListener, ConsoleCompiled console, FunctionCache functionCache, ClassCache classCache, MetadataProvider metadataProvider, MutableSet<String> extraSupportedTypes, MutableList<CompiledExtension> compiledExtensions, RuntimeOptions options)
     {
         this.javaCompilerState = javaCompilerState;
         this.sourceRegistry = sourceRegistry;
         this.codeStorage = codeStorage;
         this.incrementalCompiler = incrementalCompiler;
-        this.functionCache = functionCache;
         this.classCache = (classCache == null) ? new ClassCache(javaCompilerState.getClassLoader()) : ClassCache.reconcileWithClassLoader(classCache, javaCompilerState.getClassLoader());
+        this.functionCache = (functionCache == null) ? new FunctionCache(this.classCache) : FunctionCache.reconcileFunctionCache(functionCache, this.classCache);
         this.metadataProvider = metadataProvider;
         this.executionActivityListener = (executionActivityListener == null) ? VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER : executionActivityListener;
         this.console = console;
@@ -90,6 +85,21 @@ public class CompiledExecutionSupport implements ExecutionSupport
         this.extraSupportedTypes = extraSupportedTypes;
         this.options = (options == null) ? name -> false : options;
         this.compiledExtensions = compiledExtensions;
+    }
+
+    public CompiledExecutionSupport(JavaCompilerState javaCompilerState, CompiledProcessorSupport processorSupport, SourceRegistry sourceRegistry, RepositoryCodeStorage codeStorage, IncrementalCompiler incrementalCompiler, ExecutionActivityListener executionActivityListener, ConsoleCompiled console, FunctionCache functionCache, ClassCache classCache, MetadataProvider metadataProvider, MutableSet<String> extraSupportedTypes, MutableList<CompiledExtension> compiledExtensions)
+    {
+        this(javaCompilerState, processorSupport, sourceRegistry, codeStorage, incrementalCompiler, executionActivityListener, console, functionCache, classCache, metadataProvider, extraSupportedTypes, compiledExtensions, null);
+    }
+
+    public CompiledExecutionSupport(JavaCompilerState javaCompilerState, CompiledProcessorSupport processorSupport, SourceRegistry sourceRegistry, RepositoryCodeStorage codeStorage, IncrementalCompiler incrementalCompiler, ExecutionActivityListener executionActivityListener, ConsoleCompiled console, ClassCache classCache, MetadataProvider metadataProvider, MutableSet<String> extraSupportedTypes, MutableList<CompiledExtension> compiledExtensions)
+    {
+        this(javaCompilerState, processorSupport, sourceRegistry, codeStorage, incrementalCompiler, executionActivityListener, console, null, classCache, metadataProvider, extraSupportedTypes, compiledExtensions, null);
+    }
+
+    public CompiledExecutionSupport(JavaCompilerState javaCompilerState, CompiledProcessorSupport processorSupport, SourceRegistry sourceRegistry, RepositoryCodeStorage codeStorage, IncrementalCompiler incrementalCompiler, ExecutionActivityListener executionActivityListener, ConsoleCompiled console, MetadataProvider metadataProvider, MutableSet<String> extraSupportedTypes, MutableList<CompiledExtension> compiledExtensions)
+    {
+        this(javaCompilerState, processorSupport, sourceRegistry, codeStorage, incrementalCompiler, executionActivityListener, console, null, null, metadataProvider, extraSupportedTypes, compiledExtensions, null);
     }
 
     public SetIterable<String> getExtraSupportedTypes()

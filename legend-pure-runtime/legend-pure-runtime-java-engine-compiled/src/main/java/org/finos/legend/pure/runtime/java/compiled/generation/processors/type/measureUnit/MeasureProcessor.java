@@ -14,50 +14,119 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.type.measureUnit;
 
-import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.set.MutableSet;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation.type.Type;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
+import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.AbstractQuantityCoreInstance;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.QuantityCoreInstance;
 
 public class MeasureProcessor
 {
-    static String typeParameters(CoreInstance _class)
+    public static void processMeasure(CoreInstance measure, ProcessorContext processorContext)
     {
-        return _class.getValueForMetaPropertyToMany(M3Properties.typeParameters).collect(new Function<CoreInstance, String>()
+        String packageName = JavaPackageAndImportBuilder.buildPackageForPackageableElement(measure);
+        String measureInterfaceName = JavaPackageAndImportBuilder.buildInterfaceNameFromType(measure);
+        processorContext.addJavaSource(buildMeasureInterface(packageName, measureInterfaceName));
+
+        CoreInstance canonicalUnit = measure.getValueForMetaPropertyToOne(M3Properties.canonicalUnit);
+        if (canonicalUnit != null)
         {
-            @Override
-            public String valueOf(CoreInstance coreInstance)
-            {
-                return coreInstance.getValueForMetaPropertyToOne(M3Properties.name).getName();
-            }
-        }).makeString(",");
-    }
-
-    public static RichIterable<CoreInstance> processMeasure(final CoreInstance measure, final ProcessorContext processorContext)
-    {
-        ProcessorSupport processorSupport = processorContext.getSupport();
-        MutableList<StringJavaSource> classes = processorContext.getClasses();
-        MutableSet<CoreInstance> processedMeasures = processorContext.getProcessedMeasures(org.finos.legend.pure.runtime.java.compiled.generation.processors.type.measureUnit.MeasureProcessor.class);
-        String _package = JavaPackageAndImportBuilder.buildPackageForPackageableElement(measure);
-        String imports = JavaPackageAndImportBuilder.buildImports(measure);
-
-        if (!processedMeasures.contains(measure))
-        {
-            processedMeasures.add(measure);
-            boolean useJavaInheritance = measure.getValueForMetaPropertyToMany(M3Properties.generalizations).size() == 1;
-            CoreInstance genericType = Type.wrapGenericType(measure, null, processorSupport);
-
-            classes.add(MeasureInterfaceProcessor.buildInterface(_package, imports, genericType, processorContext, processorSupport, useJavaInheritance));
-            classes.add(MeasureImplProcessor.buildImplementation(_package, imports, genericType, processorContext, processorSupport, useJavaInheritance));
+            processUnit(packageName, measureInterfaceName, canonicalUnit, processorContext);
         }
-        return processedMeasures;
+        measure.getValueForMetaPropertyToMany(M3Properties.nonCanonicalUnits).forEach(unit -> processUnit(packageName, measureInterfaceName, unit, processorContext));
     }
 
+    private static void processUnit(String packageName, String measureInterfaceName, CoreInstance unit, ProcessorContext processorContext)
+    {
+        String unitInterfaceName = JavaPackageAndImportBuilder.buildInterfaceNameFromType(unit);
+        processorContext.addJavaSource(buildUnitInterface(packageName, measureInterfaceName, unitInterfaceName, PackageableElement.getUserPathForPackageableElement(unit)));
+
+        String unitImplClassName = JavaPackageAndImportBuilder.buildImplClassNameFromType(unit);
+        processorContext.addJavaSource(buildUnitImplClass(packageName, unitInterfaceName, unitImplClassName));
+    }
+
+    private static StringJavaSource buildMeasureInterface(String packageName, String interfaceName)
+    {
+        String code = "package " + packageName + ";\n" +
+                "\n" +
+                "import " + QuantityCoreInstance.class.getName() +  ";\n" +
+                "\n" +
+                "public interface " + interfaceName + " extends " + QuantityCoreInstance.class.getSimpleName() + "\n" +
+                "{\n" +
+                "    @Override\n" +
+                "    " + interfaceName + " copy();\n" +
+                "}\n";
+        return StringJavaSource.newStringJavaSource(packageName, interfaceName, code);
+    }
+
+    private static StringJavaSource buildUnitInterface(String packageName, String measureInterfaceName, String unitInterfaceName, String unitPath)
+    {
+        String code = "package " + packageName + ";\n" +
+                "\n" +
+                "public interface " + unitInterfaceName + " extends " + measureInterfaceName + "\n" +
+                "{\n" +
+                "    String UNIT_PATH = \"" + StringEscapeUtils.escapeJava(unitPath) + "\";\n" +
+                "\n" +
+                "    @Override\n" +
+                "    " + unitInterfaceName + " copy();\n" +
+                "}\n";
+        return StringJavaSource.newStringJavaSource(packageName, unitInterfaceName, code);
+    }
+
+    private static StringJavaSource buildUnitImplClass(String packageName, String unitInterfaceName, String unitClassImplName)
+    {
+        String code = "package " + packageName + ";\n" +
+                "\n" +
+                "import " + ExecutionSupport.class.getName() + ";\n" +
+                "import " + CompiledExecutionSupport.class.getName() + ";\n" +
+                "import " + AbstractQuantityCoreInstance.class.getName() + ";\n" +
+                "\n" +
+                "public class " + unitClassImplName + " extends " + AbstractQuantityCoreInstance.class.getSimpleName() + " implements " + unitInterfaceName + "\n" +
+                "{\n" +
+                "    public " + unitClassImplName + "(Number value, " + CompiledExecutionSupport.class.getSimpleName() + " executionSupport)\n" +
+                "    {\n" +
+                "        super(value, UNIT_PATH, executionSupport);\n" +
+                "    }\n" +
+                "\n" +
+                "    public " + unitClassImplName + "(Number value, " + ExecutionSupport.class.getSimpleName() + " executionSupport)\n" +
+                "    {\n" +
+                "        super(value, UNIT_PATH, executionSupport);\n" +
+                "    }\n" +
+                "\n" +
+                "    private " + unitClassImplName + "(" + unitClassImplName + " src)\n" +
+                "    {\n" +
+                "        super(src);\n" +
+                "    }\n" +
+                "    \n" +
+                "    private " + unitClassImplName + "(" + unitClassImplName + " src, boolean wrapped)\n" +
+                "    {\n" +
+                "        super(src, wrapped);\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public String getUnitPath()\n" +
+                "    {\n" +
+                "        return UNIT_PATH;\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public " + unitInterfaceName + " copy()\n" +
+                "    {\n" +
+                "        return new " + unitClassImplName + "(this);\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    protected " + unitInterfaceName + " unwrap()\n" +
+                "    {\n" +
+                "        return new " + unitClassImplName + "(this, false);\n" +
+                "    }\n" +
+                "}\n";
+        return StringJavaSource.newStringJavaSource(packageName, unitClassImplName, code);
+    }
 }

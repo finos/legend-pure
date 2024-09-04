@@ -29,14 +29,14 @@ import org.finos.legend.pure.m3.exception.PureAssertFailException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.execution.test.PureTestBuilder;
 import org.finos.legend.pure.m3.execution.test.TestCollection;
-import org.finos.legend.pure.m3.pct.reports.model.Adapter;
-import org.finos.legend.pure.m3.pct.shared.PCTTools;
-import org.finos.legend.pure.m3.pct.reports.config.PCTReportConfiguration;
-import org.finos.legend.pure.m3.pct.reports.config.exclusion.ExclusionSpecification;
-import org.finos.legend.pure.m3.pct.shared.model.ReportScope;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
+import org.finos.legend.pure.m3.pct.reports.config.PCTReportConfiguration;
+import org.finos.legend.pure.m3.pct.reports.config.exclusion.ExclusionSpecification;
+import org.finos.legend.pure.m3.pct.reports.model.Adapter;
+import org.finos.legend.pure.m3.pct.shared.PCTTools;
+import org.finos.legend.pure.m3.pct.shared.model.ReportScope;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
@@ -49,8 +49,6 @@ import org.finos.legend.pure.runtime.java.compiled.execution.ConsoleCompiled;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtensionLoader;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.FunctionProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
-import org.finos.legend.pure.runtime.java.compiled.metadata.ClassCache;
-import org.finos.legend.pure.runtime.java.compiled.metadata.FunctionCache;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataLazy;
 import org.junit.Assert;
 
@@ -200,8 +198,6 @@ public class PureTestBuilderCompiled extends TestSuite
                 null,
                 null,
                 new ConsoleCompiled(),
-                new FunctionCache(),
-                new ClassCache(classLoader),
                 null,
                 Sets.mutable.empty(),
                 CompiledExtensionLoader.extensions()
@@ -223,6 +219,14 @@ public class PureTestBuilderCompiled extends TestSuite
             }
             catch (Throwable e)
             {
+                if (e instanceof Error)
+                {
+                    throw (Error) e;
+                }
+                if (e instanceof RuntimeException)
+                {
+                    throw (RuntimeException) e;
+                }
                 throw new RuntimeException(e);
             }
         });

@@ -33,7 +33,6 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.measureUnit.UnitProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification.ValueSpecificationProcessor;
 
 public class FunctionProcessor
@@ -202,8 +201,7 @@ public class FunctionProcessor
 
     public static String functionNameToJava(CoreInstance function)
     {
-        String result = PackageableElement.getSystemPathForPackageableElement(function, "_");
-        return result.contains("~") ? UnitProcessor.convertToJavaCompatibleClassName(result) : result;
+        return PackageableElement.getSystemPathForPackageableElement(function, "_").replace('~', '$');
     }
 
     public static void writeJavaFunctionName(StringBuilder builder, CoreInstance function)

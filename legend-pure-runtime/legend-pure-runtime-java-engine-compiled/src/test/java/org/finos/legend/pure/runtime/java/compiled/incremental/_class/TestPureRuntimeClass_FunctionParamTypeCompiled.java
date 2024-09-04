@@ -24,8 +24,6 @@ import org.finos.legend.pure.runtime.java.compiled.CompiledMetadataStateVerifier
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
 
 public class TestPureRuntimeClass_FunctionParamTypeCompiled extends TestPureRuntimeClass_FunctionParamType
 {
@@ -33,13 +31,6 @@ public class TestPureRuntimeClass_FunctionParamTypeCompiled extends TestPureRunt
     public static void setUp()
     {
         setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
-    }
-
-    @Ignore
-    @Test
-    public void testPureRuntimeClassAsQualifiedPropertyParameter() throws Exception
-    {
-        this.testPureRuntimeClassAsQualifiedPropertyParameter();
     }
 
     protected static FunctionExecution getFunctionExecution()

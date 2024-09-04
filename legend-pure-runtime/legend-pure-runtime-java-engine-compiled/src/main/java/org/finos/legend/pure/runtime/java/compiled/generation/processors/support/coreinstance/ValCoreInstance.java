@@ -15,9 +15,9 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
