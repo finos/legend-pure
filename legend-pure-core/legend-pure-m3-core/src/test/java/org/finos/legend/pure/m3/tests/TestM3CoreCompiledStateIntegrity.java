@@ -16,7 +16,6 @@ package org.finos.legend.pure.m3.tests;
 
 import org.junit.BeforeClass;
 
-
 public class TestM3CoreCompiledStateIntegrity extends AbstractCompiledStateIntegrityTest
 {
     @BeforeClass

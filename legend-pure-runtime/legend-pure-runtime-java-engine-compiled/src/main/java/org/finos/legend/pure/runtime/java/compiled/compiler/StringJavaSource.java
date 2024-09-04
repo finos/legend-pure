@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.compiler;
 
+import javax.tools.SimpleJavaFileObject;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -27,11 +28,10 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
-import javax.tools.SimpleJavaFileObject;
 
 public abstract class StringJavaSource extends SimpleJavaFileObject
 {
-    private static final Pattern PACKAGE_DECLARATION_PATTERN = Pattern.compile("^\\h*package\\h+[^;\\s]+\\h*;", Pattern.MULTILINE);
+    private static final Pattern PACKAGE_DECLARATION_PATTERN = Pattern.compile("^\\h*+package\\h++[^;\\s]++\\h*+;", Pattern.MULTILINE);
 
     private StringJavaSource(String packageName, String name)
     {
@@ -193,16 +193,16 @@ public abstract class StringJavaSource extends SimpleJavaFileObject
         public InputStream openInputStream()
         {
             return (this.originalLength < 1024) ?
-                    new ByteArrayInputStream(decompressToBytes(this.originalLength, this.compressedCode)) :
-                    new InflaterInputStream(new ByteArrayInputStream(this.compressedCode));
+                   new ByteArrayInputStream(decompressToBytes(this.originalLength, this.compressedCode)) :
+                   new InflaterInputStream(new ByteArrayInputStream(this.compressedCode));
         }
 
         @Override
         public Reader openReader(boolean ignoreEncodingErrors)
         {
             return (this.originalLength < 1024) ?
-                    new StringReader(getCode()) :
-                    new InputStreamReader(new InflaterInputStream(new ByteArrayInputStream(this.compressedCode)), StandardCharsets.UTF_8);
+                   new StringReader(getCode()) :
+                   new InputStreamReader(new InflaterInputStream(new ByteArrayInputStream(this.compressedCode)), StandardCharsets.UTF_8);
         }
     }
 }

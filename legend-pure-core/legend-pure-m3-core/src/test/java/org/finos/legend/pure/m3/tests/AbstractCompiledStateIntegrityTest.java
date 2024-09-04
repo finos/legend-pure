@@ -1064,30 +1064,76 @@ public abstract class AbstractCompiledStateIntegrityTest
         CoreInstance typeClass = runtime.getCoreInstance(M3Paths.Type);
         CoreInstance topType = processorSupport.type_TopType();
 
-        MutableMap<CoreInstance, MutableSet<CoreInstance>> expected = Maps.mutable.empty();
-        MutableMap<CoreInstance, MutableSet<CoreInstance>> actual = Maps.mutable.empty();
+        MutableMap<String, MutableSet<String>> expected = Maps.mutable.empty();
+        MutableMap<String, MutableSet<String>> actual = Maps.mutable.empty();
 
         GraphNodeIterable.fromModelRepository(repository)
                 .select(instance -> Instance.instanceOf(instance, typeClass, processorSupport))
-                .forEach(instance ->
+                .forEach(type ->
                 {
-                    instance.getValueForMetaPropertyToMany(M3Properties.generalizations).forEach(generalization ->
+                    type.getValueForMetaPropertyToMany(M3Properties.generalizations).forEach(generalization ->
                     {
                         CoreInstance general = Instance.getValueForMetaPropertyToOneResolved(generalization, M3Properties.general, M3Properties.rawType, processorSupport);
                         if (general != topType)
                         {
-                            expected.getIfAbsentPut(general, Sets.mutable::empty).add(generalization);
+                            expected.getIfAbsentPut(typetoString(general), Sets.mutable::empty).add(generalizationToString(generalization));
                         }
                     });
 
-                    ListIterable<? extends CoreInstance> specializations = instance.getValueForMetaPropertyToMany(M3Properties.specializations);
+                    ListIterable<? extends CoreInstance> specializations = type.getValueForMetaPropertyToMany(M3Properties.specializations);
                     if (specializations.notEmpty())
                     {
-                        actual.put(instance, Sets.mutable.withAll(specializations));
+                        actual.put(typetoString(type), specializations.collect(this::generalizationToString, Sets.mutable.empty()));
                     }
                 });
 
+        // Filter out types where expected and actual are equal to reduce noise in failure message
+        Sets.mutable.withAll(expected.keySet()).withAll(actual.keySet()).forEach(type ->
+        {
+            MutableSet<String> expectedSpecs = expected.get(type);
+            MutableSet<String> actualSpecs = actual.get(type);
+            if (Objects.equals(expectedSpecs, actualSpecs))
+            {
+                expected.remove(type);
+                actual.remove(type);
+            }
+        });
         Assert.assertEquals(expected, actual);
+    }
+
+    private String typetoString(CoreInstance type)
+    {
+        if (type instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement)
+        {
+            return PackageableElement.getUserPathForPackageableElement(type);
+        }
+        if (type instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType)
+        {
+            return FunctionType.print(type, true, processorSupport);
+        }
+        throw new RuntimeException("Cannot generate string for: " + type);
+    }
+
+    private String generalizationToString(CoreInstance generalization)
+    {
+        StringBuilder builder = new StringBuilder();
+        CoreInstance specific = Instance.getValueForMetaPropertyToOneResolved(generalization, M3Properties.specific, processorSupport);
+        if (specific instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement)
+        {
+            PackageableElement.writeUserPathForPackageableElement(builder, specific);
+        }
+        else if (specific instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType)
+        {
+            FunctionType.print(builder, specific, true, processorSupport);
+        }
+        else
+        {
+            throw new RuntimeException("Cannot generate string for: " + specific);
+        }
+        builder.append(" -> ");
+        CoreInstance general = generalization.getValueForMetaPropertyToOne(M3Properties.general);
+        GenericType.print(builder, general, true, processorSupport);
+        return builder.toString();
     }
 
     @Test

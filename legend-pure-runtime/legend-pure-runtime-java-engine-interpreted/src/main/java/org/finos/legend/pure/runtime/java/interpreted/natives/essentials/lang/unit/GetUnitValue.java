@@ -16,33 +16,33 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.lang.u
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
-import org.finos.legend.pure.runtime.java.interpreted.natives.NumericUtilities;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
 import java.util.Stack;
 
 public class GetUnitValue extends NativeFunction
 {
-    private final FunctionExecutionInterpreted functionExecution;
-    private final ModelRepository repository;
+    public GetUnitValue()
+    {
+    }
 
+    @Deprecated
     public GetUnitValue(FunctionExecutionInterpreted functionExecution, ModelRepository repository)
     {
-        this.functionExecution = functionExecution;
-        this.repository = repository;
+        this();
     }
 
     @Override
@@ -53,9 +53,6 @@ public class GetUnitValue extends NativeFunction
         {
             instance = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
         }
-        FastList valueList = new FastList();
-        valueList.add(instance);
-        boolean bigDecimalToPureDecimal = valueList.anySatisfy(NumericUtilities.IS_DECIMAL_CORE_INSTANCE(processorSupport));
-        return NumericUtilities.toPureNumberValueExpression(NumericUtilities.toJavaNumber(instance, processorSupport), bigDecimalToPureDecimal, this.repository, processorSupport);
+        return ValueSpecificationBootstrap.wrapValueSpecification(instance, true, processorSupport);
     }
 }

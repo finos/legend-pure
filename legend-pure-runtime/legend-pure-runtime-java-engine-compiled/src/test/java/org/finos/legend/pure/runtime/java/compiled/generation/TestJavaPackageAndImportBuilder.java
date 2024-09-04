@@ -55,15 +55,6 @@ public class TestJavaPackageAndImportBuilder extends AbstractPureTestWithCoreCom
                         "\n" +
                         "Class test::generation::compiled::extra::ExtraClass\n" +
                         "{\n" +
-                        "}\n" +
-                        "\n" +
-                        "Measure test::domain::RomanLength\n" +
-                        "{\n" +
-                        "   *Pes: x -> $x;\n" +
-                        "   Cubitum: x -> $x * 1.5;\n" +
-                        "   Passus: x -> $x * 5;\n" +
-                        "   Actus: x -> $x * 120;\n" +
-                        "   Stadium: x -> $x * 625;\n" +
                         "}\n"
         );
     }
@@ -206,9 +197,9 @@ public class TestJavaPackageAndImportBuilder extends AbstractPureTestWithCoreCom
     @Test
     public void testBuildImplUnitInstanceClassNameFromType()
     {
-        Assert.assertEquals("Root_test_domain_RomanLength_Tilde_Cubitum_Instance_Impl", JavaPackageAndImportBuilder.buildImplUnitInstanceClassNameFromType(getElement("test::domain::RomanLength~Cubitum")));
-        Assert.assertEquals("Root_test_domain_RomanLength_Tilde_Pes_Instance_Impl", JavaPackageAndImportBuilder.buildImplUnitInstanceClassNameFromType(getElement("test::domain::RomanLength~Pes")));
-        Assert.assertEquals("Root_test_domain_RomanLength_Tilde_Actus_Instance_Impl", JavaPackageAndImportBuilder.buildImplUnitInstanceClassNameFromType(getElement("test::domain::RomanLength~Actus")));
+        Assert.assertEquals("Root_meta_pure_functions_meta_tests_model_RomanLength_Tilde_Cubitum_Instance_Impl", JavaPackageAndImportBuilder.buildImplUnitInstanceClassNameFromType(getElement("meta::pure::functions::meta::tests::model::RomanLength~Cubitum")));
+        Assert.assertEquals("Root_meta_pure_functions_meta_tests_model_RomanLength_Tilde_Pes_Instance_Impl", JavaPackageAndImportBuilder.buildImplUnitInstanceClassNameFromType(getElement("meta::pure::functions::meta::tests::model::RomanLength~Pes")));
+        Assert.assertEquals("Root_meta_pure_functions_meta_tests_model_RomanLength_Tilde_Actus_Instance_Impl", JavaPackageAndImportBuilder.buildImplUnitInstanceClassNameFromType(getElement("meta::pure::functions::meta::tests::model::RomanLength~Actus")));
     }
 
     @SuppressWarnings("unchecked")

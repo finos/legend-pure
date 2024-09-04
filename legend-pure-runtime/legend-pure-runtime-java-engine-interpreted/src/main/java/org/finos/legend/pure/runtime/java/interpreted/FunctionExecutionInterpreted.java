@@ -465,8 +465,8 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.nativeFunctions.put("match_Any_MANY__Function_$1_MANY$__T_m_", new Match(this, repository));
         this.nativeFunctions.put("match_Any_MANY__Function_$1_MANY$__P_o__T_m_", new Match(this, repository));
         //  Unit
-        this.nativeFunctions.put("getUnitValue_Any_1__Number_1_", new GetUnitValue(this, repository));
-        this.nativeFunctions.put("newUnit_Unit_1__Number_1__Any_1_", new NewUnit(this, repository));
+        this.nativeFunctions.put("getUnitValue_Any_1__Number_1_", new GetUnitValue());
+        this.nativeFunctions.put("newUnit_Unit_1__Number_1__Any_1_", new NewUnit(repository));
 
         // Math
         this.nativeFunctions.put("random__Float_1_", new Random(this, repository));
