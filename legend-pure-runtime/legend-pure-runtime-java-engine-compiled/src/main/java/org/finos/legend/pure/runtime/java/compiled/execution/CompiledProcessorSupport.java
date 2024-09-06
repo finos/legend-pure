@@ -47,6 +47,7 @@ import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.QuantityCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ReflectiveCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ValCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
@@ -464,6 +465,11 @@ public class CompiledProcessorSupport implements ProcessorSupport
         if (instance instanceof ValCoreInstance)
         {
             return this.metadataAccessor.getPrimitiveType(((ValCoreInstance) instance).getType());
+        }
+
+        if (instance instanceof QuantityCoreInstance)
+        {
+            return instance.getClassifier();
         }
 
         //todo: clean this up, seem to have interpreted style core instances in compiled

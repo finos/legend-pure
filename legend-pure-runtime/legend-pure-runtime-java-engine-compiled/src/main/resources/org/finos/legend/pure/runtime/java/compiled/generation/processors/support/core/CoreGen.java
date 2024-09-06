@@ -40,6 +40,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.LambdaCompiledExtended;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Pure;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.GetterOverrideExecutor;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.QuantityCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureFunction2;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureFunction2Wrapper;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction;
@@ -183,7 +184,11 @@ public class CoreGen extends CoreHelper
                 return Pure.elementToPath(p, "::");
             }
         }
-        return "<" + Pure.manageId(any) + "instanceOf " + Pure.elementToPath((PackageableElement) CoreGen.safeGetGenericType(any, es)._rawType(), "::") + ">";
+        if (any instanceof QuantityCoreInstance)
+        {
+            return ((QuantityCoreInstance) any).getName();
+        }
+        return "<" + Pure.manageId(any) + " instanceOf " + Pure.elementToPath((PackageableElement) CoreGen.safeGetGenericType(any, es)._rawType(), "::") + ">";
     }
 
     public static Object newObject(final Class<?> aClass, RichIterable<? extends Root_meta_pure_functions_lang_KeyValue> keyExpressions, ElementOverride override, Function getterToOne, Function getterToMany, Object payload, PureFunction2 getterToOneExec, PureFunction2 getterToManyExec, ExecutionSupport es)

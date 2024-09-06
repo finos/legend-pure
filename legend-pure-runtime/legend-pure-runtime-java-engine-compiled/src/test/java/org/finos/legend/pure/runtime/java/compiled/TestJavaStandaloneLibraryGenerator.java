@@ -37,8 +37,6 @@ import org.finos.legend.pure.runtime.java.compiled.generation.Generate;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaStandaloneLibraryGenerator;
 import org.finos.legend.pure.runtime.java.compiled.generation.orchestrator.VoidLog;
-import org.finos.legend.pure.runtime.java.compiled.metadata.ClassCache;
-import org.finos.legend.pure.runtime.java.compiled.metadata.FunctionCache;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataLazy;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -150,8 +148,6 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
                 null,
                 VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER,
                 new ConsoleCompiled(),
-                new FunctionCache(),
-                new ClassCache(classLoader),
                 null,
                 null,
                 CompiledExtensionLoader.extensions()
@@ -183,7 +179,7 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
 
         List<Path> files = Files.walk(sourcesDir).filter(Files::isRegularFile).collect(Collectors.toList());
         Assert.assertNotEquals(Lists.fixedSize.empty(), files);
-        Pattern pattern = Pattern.compile("org/finos/legend/pure/generated/((CoreGen|PureEnum|LambdaZero|PureCompiledLambda|PureEnum_LazyImpl)|(Package_\\w++)|(test_\\w++)|(platform_\\w++)|(Root_meta_\\w++)|(Root_test_\\w++)|(other_\\w++)|(Root_other_\\w++))\\.java");
+        Pattern pattern = Pattern.compile("org/finos/legend/pure/generated/(CoreGen|PureEnum|LambdaZero|PureCompiledLambda|PureEnum_LazyImpl|(Package_(Lazy)?Impl)|((test|platform|other)_\\w++)|(Root_(meta|test|other)_\\w++(\\$\\w++)?))\\.java");
         Assert.assertEquals(Collections.emptyList(), ListIterate.reject(files, f -> pattern.matcher(Iterate.makeString(sourcesDir.relativize(f), "/")).matches()));
     }
 
@@ -200,7 +196,7 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
 
         List<Path> files = Files.walk(sourcesDir).filter(Files::isRegularFile).collect(Collectors.toList());
         Assert.assertNotEquals(Lists.fixedSize.empty(), files);
-        Pattern pattern = Pattern.compile("org/finos/legend/pure/generated/((CoreGen|PureEnum|LambdaZero|PureCompiledLambda|PureEnum_LazyImpl)|(test_\\w++)|(Root_test_\\w++))\\.java");
+        Pattern pattern = Pattern.compile("org/finos/legend/pure/generated/((CoreGen|PureEnum|LambdaZero|PureCompiledLambda|PureEnum_LazyImpl)|(test_\\w++(\\$\\w++)?)|(Root_test_\\w++(\\$\\w++)?))\\.java");
         Assert.assertEquals(Lists.fixedSize.empty(), ListIterate.reject(files, f -> pattern.matcher(Iterate.makeString(sourcesDir.relativize(f), "/")).matches()));
         Assert.assertTrue(generate.getJavaSourcesByGroup().get("test").stream().filter(s -> s.toUri().getPath().equals("/org/finos/legend/pure/generated/test_standalone_tests.java")).collect(Collectors.toList()).get(0).getCode().contains("Root_test_standalone_simplePureTest__Boolean_1_"));
 

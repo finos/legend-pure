@@ -48,8 +48,8 @@ public class JavaCompilerEventHandler implements CompilerEventHandler
     private final boolean includePureStackTrace;
 
     //Lifecycle of the compiled graph - clear each time we recompile
-    private FunctionCache sharedFunctionCache = new FunctionCache();
     private ClassCache classCache;
+    private FunctionCache sharedFunctionCache;
 
     private final JavaCompilerEventObserver observer;
 
@@ -65,6 +65,7 @@ public class JavaCompilerEventHandler implements CompilerEventHandler
         this.observer = observer;
         this.generateAndCompile = new GenerateAndCompile(this.message, this.observer);
         this.classCache = new ClassCache(this.generateAndCompile.getPureJavaCompiler().getClassLoader());
+        this.sharedFunctionCache = new FunctionCache(this.classCache);
         this.includePureStackTrace = includePureStackTrace;
         this.extensions = extensions;
     }
@@ -94,7 +95,7 @@ public class JavaCompilerEventHandler implements CompilerEventHandler
     public void invalidate(RichIterable<? extends CoreInstance> consolidatedCoreInstances)
     {
         consolidatedCoreInstances.asLazy().selectInstancesOf(Type.class).forEach(this.classCache::remove);
-        this.sharedFunctionCache = new FunctionCache();
+        this.sharedFunctionCache = new FunctionCache(this.classCache);
     }
 
     public void generateAndCompileJavaCode(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo)
@@ -102,8 +103,8 @@ public class JavaCompilerEventHandler implements CompilerEventHandler
         this.generateAndCompile.generateAndCompileJavaCodeForSources(compiledSourcesByRepo, this.getJavaSourceCodeGenerator());
         this.javaGeneratedAndCompiled = true;
 
-        this.sharedFunctionCache = new FunctionCache();
         this.classCache = new ClassCache(getJavaCompiler().getClassLoader());
+        this.sharedFunctionCache = new FunctionCache(this.classCache);
     }
 
     @Override
@@ -111,8 +112,8 @@ public class JavaCompilerEventHandler implements CompilerEventHandler
     {
         this.javaGeneratedAndCompiled = false;
         this.generateAndCompile = new GenerateAndCompile(this.message, this.observer);
-        this.sharedFunctionCache = new FunctionCache();
         this.classCache = new ClassCache(getJavaCompiler().getClassLoader());
+        this.sharedFunctionCache = new FunctionCache(this.classCache);
     }
 
 

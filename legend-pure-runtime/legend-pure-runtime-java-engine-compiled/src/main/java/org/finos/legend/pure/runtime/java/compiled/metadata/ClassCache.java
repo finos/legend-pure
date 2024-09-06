@@ -20,7 +20,6 @@ import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -31,8 +30,7 @@ import java.util.Objects;
  */
 public class ClassCache
 {
-    private final ConcurrentMutableMap<Type, Class<?>> typeToJavaInterface = ConcurrentHashMap.newMap();
-    private final ConcurrentMutableMap<Type, ClassAttributes> typeToJavaConstructor = ConcurrentHashMap.newMap();
+    private final ConcurrentMutableMap<Type, TypeJavaInfo> typeToAttributes = ConcurrentHashMap.newMap();
     private final ClassLoader classLoader;
 
     public ClassCache(ClassLoader classLoader)
@@ -78,38 +76,57 @@ public class ClassCache
 
     public Class<?> getIfAbsentPutInterfaceForType(Type type)
     {
-        return this.typeToJavaInterface.getIfAbsentPutWithKey(Objects.requireNonNull(type, "Null type"), this::getInterfaceForType);
+        TypeJavaInfo java = getJavaInfoForType(type);
+        return java.interfaceClass;
     }
 
     public Constructor<?> getIfAbsentPutConstructorForType(Type type)
     {
-        ClassAttributes attributes = getIfAbsentPutImplClassAttributesForType(type);
-        return attributes.constructor;
+        TypeJavaInfo java = getJavaInfoForType(type);
+        return java.constructor;
     }
 
     public Method getIfAbsentPutPropertySetterMethodForType(Type type, String propertyName)
     {
-        ClassAttributes attributes = getIfAbsentPutImplClassAttributesForType(type);
-        return attributes.getIfAbsentPutSetterMethodForProperty(propertyName);
-    }
-
-    private ClassAttributes getIfAbsentPutImplClassAttributesForType(Type type)
-    {
-        return this.typeToJavaConstructor.getIfAbsentPutWithKey(Objects.requireNonNull(type, "Null type"), this::getClassAttributes);
+        TypeJavaInfo java = getJavaInfoForType(type);
+        return java.getSetterMethodForProperty(propertyName);
     }
 
     public void remove(Type type)
     {
         if (type != null)
         {
-            this.typeToJavaInterface.remove(type);
-            this.typeToJavaConstructor.remove(type);
+            this.typeToAttributes.remove(type);
         }
     }
 
-    private Class<?> getInterfaceForType(Type type)
+    private TypeJavaInfo getJavaInfoForType(Type type)
     {
-        String javaClassName = CompiledSupport.fullyQualifiedJavaInterfaceNameForPackageableElement((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) type);
+        return this.typeToAttributes.getIfAbsentPutWithKey(Objects.requireNonNull(type, "Null type"), this::buildJavaInfo);
+    }
+
+    private TypeJavaInfo buildJavaInfo(Type type)
+    {
+        Class<?> interfaceClass = getJavaInterfaceForPureType(type);
+        Class<?> implClass = getJavaImplClassForPureType(type);
+        Constructor<?> constructor;
+        try
+        {
+            constructor = implClass.getConstructor(String.class);
+        }
+        catch (NoSuchMethodException e)
+        {
+            StringBuilder builder = new StringBuilder("Could not find constructor for ");
+            PackageableElement.writeUserPathForPackageableElement(builder, type);
+            builder.append(" (").append(implClass.getSimpleName()).append(')');
+            throw new RuntimeException(builder.toString(), e);
+        }
+        return new TypeJavaInfo(interfaceClass, implClass, constructor);
+    }
+
+    private Class<?> getJavaInterfaceForPureType(Type type)
+    {
+        String javaClassName = JavaPackageAndImportBuilder.buildInterfaceReferenceFromType(type);
         try
         {
             return this.classLoader.loadClass(javaClassName);
@@ -123,7 +140,7 @@ public class ClassCache
         }
     }
 
-    private Class<?> getImplClassForType(Type type)
+    private Class<?> getJavaImplClassForPureType(Type type)
     {
         String javaClassName = JavaPackageAndImportBuilder.buildImplClassReferenceFromType(type);
         try
@@ -137,24 +154,6 @@ public class ClassCache
             builder.append(" (").append(javaClassName).append(')');
             throw new RuntimeException(builder.toString(), e);
         }
-    }
-
-    private ClassAttributes getClassAttributes(Type type)
-    {
-        Class<?> implClass = getImplClassForType(type);
-        Constructor<?> constructor;
-        try
-        {
-            constructor = implClass.getConstructor(String.class);
-        }
-        catch (NoSuchMethodException e)
-        {
-            StringBuilder builder = new StringBuilder("Could not find constructor for ");
-            PackageableElement.writeUserPathForPackageableElement(builder, type);
-            builder.append(" (").append(implClass.getSimpleName()).append(')');
-            throw new RuntimeException(builder.toString(), e);
-        }
-        return new ClassAttributes(implClass, constructor);
     }
 
     @Deprecated
@@ -172,28 +171,26 @@ public class ClassCache
         return classCache;
     }
 
-    private static class ClassAttributes
+    private static class TypeJavaInfo
     {
+        private final Class<?> interfaceClass;
         private final Class<?> implClass;
         private final Constructor<?> constructor;
-        private final ConcurrentMutableMap<String, Method> propertyNameToSetterMethod = ConcurrentHashMap.newMap();
+        private final ConcurrentMutableMap<String, Method> propertySetterMethods = ConcurrentHashMap.newMap();
 
-        private ClassAttributes(Class<?> implClass, Constructor<?> constructor)
+        private TypeJavaInfo(Class<?> interfaceClass, Class<?> implClass, Constructor<?> constructor)
         {
+            this.interfaceClass = interfaceClass;
             this.implClass = implClass;
             this.constructor = constructor;
         }
 
-        public Method getIfAbsentPutSetterMethodForProperty(String propertyName)
+        Method getSetterMethodForProperty(String propertyName)
         {
-            if (propertyName == null)
-            {
-                throw new IllegalArgumentException("Null property name");
-            }
-            return this.propertyNameToSetterMethod.getIfAbsentPutWithKey(propertyName, this::getSetterMethodForProperty);
+            return this.propertySetterMethods.getIfAbsentPutWithKey(Objects.requireNonNull(propertyName, "Null property name"), this::findPropertySetterMethod);
         }
 
-        private Method getSetterMethodForProperty(String propertyName)
+        private Method findPropertySetterMethod(String propertyName)
         {
             try
             {

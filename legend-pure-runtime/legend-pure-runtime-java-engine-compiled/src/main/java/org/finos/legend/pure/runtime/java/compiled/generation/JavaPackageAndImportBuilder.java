@@ -22,7 +22,6 @@ import org.finos.legend.pure.m3.coreinstance.M3PlatformCoreInstanceFactoryRegist
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
@@ -207,19 +206,6 @@ public class JavaPackageAndImportBuilder
         return buildImplClassNameFromType(appendable, type, ClassLazyImplProcessor.CLASS_LAZYIMPL_SUFFIX);
     }
 
-    // Java classes for Unit instances
-
-    public static String buildImplUnitInstanceClassNameFromType(CoreInstance unit)
-    {
-        return buildImplUnitInstanceClassNameFromType(unit, ClassImplProcessor.CLASS_IMPL_SUFFIX);
-    }
-
-    public static String buildImplUnitInstanceClassNameFromType(CoreInstance unit, String suffix)
-    {
-        return buildImplUnitInstanceClassNameFromType(new StringBuilder(64), unit, suffix).toString();
-    }
-
-
     // JAVA INTERFACES
 
     // Java interfaces from Pure user paths
@@ -323,13 +309,6 @@ public class JavaPackageAndImportBuilder
         return appendable;
     }
 
-    private static <T extends Appendable> T buildImplUnitInstanceClassNameFromType(T appendable, CoreInstance unit, String suffix)
-    {
-        PackageableElement.writeSystemPathForPackageableElement(SafeAppendable.wrap(appendable), unit.getValueForMetaPropertyToOne(M3Properties._package), "_")
-                .append('_').append(convertUnitName(PrimitiveUtilities.getStringValue(unit.getValueForMetaPropertyToOne(M3Properties.name)))).append("_Instance").append(suffix);
-        return appendable;
-    }
-
     private static SafeAppendable buildClassOrInterfaceNameFromType(SafeAppendable appendable, CoreInstance type)
     {
         if (isUnitName(type.getName()))
@@ -351,6 +330,6 @@ public class JavaPackageAndImportBuilder
 
     private static String convertUnitName(String unitName)
     {
-        return unitName.replace("~", "_Tilde_");
+        return unitName.replace('~', '$');
     }
 }

@@ -29,6 +29,19 @@ public class GetUnitValue extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return "(Number)((ValCoreInstance)(" + transformedParams.get(0) + ".getValueForMetaPropertyToOne(\"val\"))).getValue()";
+        return "((QuantityCoreInstance) " + transformedParams.get(0) + ").getValue()";
+    }
+
+    @Override
+    public String buildBody()
+    {
+        return "new DefendedPureFunction1<Object, " + Number.class.getName() + ">()\n" +
+                "        {\n" +
+                "            @Override\n" +
+                "            public " + Number.class.getName() + " value(Object quantity, ExecutionSupport es)\n" +
+                "            {\n" +
+                "                return ((QuantityCoreInstance) quantity).getValue();\n" +
+                "            }\n" +
+                "        }";
     }
 }

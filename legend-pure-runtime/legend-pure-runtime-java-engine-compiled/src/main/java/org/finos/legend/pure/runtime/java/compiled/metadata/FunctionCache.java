@@ -23,7 +23,6 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 
 import java.lang.reflect.Method;
 import java.util.Objects;
@@ -36,6 +35,19 @@ public class FunctionCache
     private final ConcurrentMutableMap<Type, ConcurrentMutableMap<String, SharedPureFunction<?>>> classPropertyJavaFunction = ConcurrentHashMap.newMap();
     private final ConcurrentMutableMap<Function<?>, SharedPureFunction<?>> pureFunctionJavaFunction = ConcurrentHashMap.newMap();
 
+    private final ClassCache classCache;
+
+    public FunctionCache(ClassCache classCache)
+    {
+        this.classCache = classCache;
+    }
+
+    @Deprecated
+    public FunctionCache()
+    {
+        this(null);
+    }
+
     @Deprecated
     public SharedPureFunction<?> getIfAbsentPutFunctionForClassProperty(CoreInstance srcType, CoreInstance propertyFunction, ClassLoader classLoader)
     {
@@ -44,7 +56,7 @@ public class FunctionCache
         {
             throw new IllegalArgumentException("Invalid source type for property '" + property._name() + "': " + ((srcType == null) ? "null" : PackageableElement.getUserPathForPackageableElement(srcType)));
         }
-        return getIfAbsentPutFunctionForClassProperty(property, classLoader);
+        return getFunctionForClassProperty(property);
     }
 
     @Deprecated
@@ -53,7 +65,13 @@ public class FunctionCache
         return getIfAbsentPutJavaFunctionForPureFunction((Function<?>) pureFunction, sharedPureFunctionFunctionCreator);
     }
 
+    @Deprecated
     public SharedPureFunction<?> getIfAbsentPutFunctionForClassProperty(Property<?, ?> property, ClassLoader classLoader)
+    {
+        return getFunctionForClassProperty(property);
+    }
+
+    public SharedPureFunction<?> getFunctionForClassProperty(Property<?, ?> property)
     {
         Type srcType = property._classifierGenericType()._typeArguments().getFirst()._rawType();
         String propertyName = property._name();
@@ -61,34 +79,44 @@ public class FunctionCache
         {
             throw new IllegalArgumentException("Null source type for property: " + propertyName);
         }
-        return this.classPropertyJavaFunction.getIfAbsentPut(srcType, ConcurrentHashMap::new).getIfAbsentPut(propertyName, () ->
-        {
-            String javaClassName = TypeProcessor.fullyQualifiedJavaInterfaceNameForType(srcType);
-            String javaMethodName = "_" + propertyName;
-            try
-            {
-                Class<?> srcJavaClass = classLoader.loadClass(javaClassName);
-                Method propertyMethod = srcJavaClass.getMethod(javaMethodName);
-                return new JavaMethodSharedPureFunction<>(propertyMethod, property.getSourceInformation());
-            }
-            catch (ClassNotFoundException e)
-            {
-                StringBuilder builder = new StringBuilder("Cannot find Java class ").append(javaClassName).append(" for Pure class ");
-                PackageableElement.writeUserPathForPackageableElement(builder, srcType);
-                throw new RuntimeException(builder.toString(), e);
-            }
-            catch (NoSuchMethodException e)
-            {
-                StringBuilder builder = new StringBuilder("Cannot find method ").append(javaMethodName).append(" on Java class ").append(javaClassName)
-                        .append(" for property ").append(propertyName).append(" on Pure class ");
-                PackageableElement.writeUserPathForPackageableElement(builder, srcType);
-                throw new RuntimeException(builder.toString(), e);
-            }
-        });
+        return this.classPropertyJavaFunction.getIfAbsentPut(srcType, ConcurrentHashMap::new)
+                .getIfAbsentPut(propertyName, () -> new JavaMethodSharedPureFunction<>(findGetterMethodForClassProperty(srcType, propertyName), property.getSourceInformation()));
     }
 
     public SharedPureFunction<?> getIfAbsentPutJavaFunctionForPureFunction(Function<?> pureFunction, Function0<? extends SharedPureFunction<?>> sharedPureFunctionFunctionCreator)
     {
         return this.pureFunctionJavaFunction.getIfAbsentPut(pureFunction, sharedPureFunctionFunctionCreator);
+    }
+
+    private Method findGetterMethodForClassProperty(Type srcType, String propertyName)
+    {
+        String javaMethodName = "_" + propertyName;
+        Class<?> javaInterface = this.classCache.getIfAbsentPutInterfaceForType(srcType);
+        try
+        {
+            return javaInterface.getMethod(javaMethodName);
+        }
+        catch (NoSuchMethodException e)
+        {
+            StringBuilder builder = new StringBuilder("Cannot find method ").append(javaMethodName).append(" on Java class ").append(javaInterface.getName())
+                    .append(" for property ").append(propertyName).append(" on Pure class ");
+            PackageableElement.writeUserPathForPackageableElement(builder, srcType);
+            throw new RuntimeException(builder.toString(), e);
+        }
+    }
+
+    @Deprecated
+    public static FunctionCache reconcileFunctionCache(FunctionCache functionCache, ClassCache classCache)
+    {
+        Objects.requireNonNull(classCache, "null classCache");
+        if ((functionCache == null) || (functionCache.classCache == null))
+        {
+            return new FunctionCache(classCache);
+        }
+        if (functionCache.classCache != classCache)
+        {
+            throw new RuntimeException("Conflict between class caches: " + functionCache.classCache + " vs " + classCache);
+        }
+        return functionCache;
     }
 }

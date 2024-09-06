@@ -15,12 +15,15 @@
 package org.finos.legend.pure.m3.navigation.measure;
 
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstanceWrapper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 /**
@@ -53,13 +56,13 @@ public class Measure
         }
 
         CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.genericType, M3Properties.rawType, processorSupport);
-        return (rawType instanceof Unit) || (rawType instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure);
+        return isUnit(rawType, processorSupport) || isMeasure(rawType, processorSupport);
     }
 
     public static boolean isUnitInstance(CoreInstance instance, ProcessorSupport processorSupport)
     {
         return isNonEmptyInstanceValue(instance, processorSupport) &&
-                (Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.genericType, M3Properties.rawType, processorSupport) instanceof Unit);
+                isUnit(Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.genericType, M3Properties.rawType, processorSupport), processorSupport);
     }
 
     // safe for use in unbinders
@@ -91,15 +94,53 @@ public class Measure
         return false;
     }
 
+    public static boolean isUnit(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        if (instance == null)
+        {
+            return false;
+        }
+        if (instance instanceof Unit)
+        {
+            return true;
+        }
+        return (!(instance instanceof Any) || (instance instanceof AbstractCoreInstanceWrapper)) && processorSupport.instance_instanceOf(instance, M3Paths.Unit);
+    }
+
+    public static boolean isMeasure(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        if (instance == null)
+        {
+            return false;
+        }
+        if (instance instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure)
+        {
+            return true;
+        }
+        return (!(instance instanceof Any) || (instance instanceof AbstractCoreInstanceWrapper)) && processorSupport.instance_instanceOf(instance, M3Paths.Measure);
+    }
+
     @Deprecated
     public static boolean isUnitGenericType(CoreInstance genericType, ProcessorSupport processorSupport)
     {
-        return (genericType != null) &&
-                (Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport) instanceof Unit);
+        return (genericType != null) && isUnit(Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), processorSupport);
     }
 
     private static boolean isNonEmptyInstanceValue(CoreInstance instance, ProcessorSupport processorSupport)
     {
-        return (instance instanceof InstanceValue) && Instance.getValueForMetaPropertyToManyResolved(instance, M3Properties.values, processorSupport).notEmpty();
+        return isInstanceValue(instance, processorSupport) && instance.getValueForMetaPropertyToMany(M3Properties.values).notEmpty();
+    }
+
+    private static boolean isInstanceValue(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        if (instance == null)
+        {
+            return false;
+        }
+        if (instance instanceof InstanceValue)
+        {
+            return true;
+        }
+        return (!(instance instanceof Any) || (instance instanceof AbstractCoreInstanceWrapper)) && processorSupport.instance_instanceOf(instance, M3Paths.InstanceValue);
     }
 }

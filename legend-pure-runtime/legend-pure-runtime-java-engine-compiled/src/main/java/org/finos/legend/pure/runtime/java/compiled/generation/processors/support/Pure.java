@@ -68,12 +68,12 @@ import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSu
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.FunctionProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.QuantityCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureFunction1;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureLambdaFunction;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureEqualsHashingStrategy;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 import org.finos.legend.pure.runtime.java.compiled.metadata.JavaMethodWithParamsSharedPureFunction;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataAccessor;
 import org.json.simple.JSONObject;
@@ -284,6 +284,10 @@ public class Pure
         {
             return genericTypeBuilder.get()._rawType(ma.getBottomType());
         }
+        if (val instanceof QuantityCoreInstance)
+        {
+            return genericTypeBuilder.get()._rawType(((QuantityCoreInstance) val).getUnit());
+        }
         if (val instanceof Any)
         {
             Any a = (Any) val;
@@ -292,17 +296,17 @@ public class Pure
         }
         if ((val instanceof Long) || (val instanceof BigInteger))
         {
-            Type type = ma.getPrimitiveType("Integer");
+            Type type = ma.getPrimitiveType(M3Paths.Integer);
             return genericTypeBuilder.get()._rawType(type);
         }
         if (val instanceof String)
         {
-            Type type = ma.getPrimitiveType("String");
+            Type type = ma.getPrimitiveType(M3Paths.String);
             return genericTypeBuilder.get()._rawType(type);
         }
         if (val instanceof Boolean)
         {
-            Type type = ma.getPrimitiveType("Boolean");
+            Type type = ma.getPrimitiveType(M3Paths.Boolean);
             return genericTypeBuilder.get()._rawType(type);
         }
         if (val instanceof PureDate)
@@ -312,12 +316,12 @@ public class Pure
         }
         if (val instanceof Double)
         {
-            Type type = ma.getPrimitiveType("Float");
+            Type type = ma.getPrimitiveType(M3Paths.Float);
             return genericTypeBuilder.get()._rawType(type);
         }
         if (val instanceof BigDecimal)
         {
-            Type type = ma.getPrimitiveType("Decimal");
+            Type type = ma.getPrimitiveType(M3Paths.Decimal);
             return genericTypeBuilder.get()._rawType(type);
         }
         if (val instanceof RichIterable)
@@ -382,7 +386,7 @@ public class Pure
         }
         if (func instanceof Property)
         {
-            return ces.getFunctionCache().getIfAbsentPutFunctionForClassProperty((Property<?, ?>) func, ces.getClassLoader());
+            return ces.getFunctionCache().getFunctionForClassProperty((Property<?, ?>) func);
         }
         if (func instanceof LambdaCompiledExtended)
         {
@@ -1101,14 +1105,19 @@ public class Pure
         });
     }
 
-    public static Class<?> fromJsonResolveType(JSONObject jsonObject, String pureType, Class<?> typeFromClassMetaData, MetadataAccessor md, String typeKey, ClassLoader classLoader)
+    public static Class<?> fromJsonResolveType(JSONObject jsonObject, String pureType, Class<?> typeFromClassMetaData, String typeKey, ExecutionSupport execSupport)
+    {
+        return fromJsonResolveType(jsonObject, pureType, typeFromClassMetaData, typeKey, (CompiledExecutionSupport) execSupport);
+    }
+
+    public static Class<?> fromJsonResolveType(JSONObject jsonObject, String pureType, Class<?> typeFromClassMetaData, String typeKey, CompiledExecutionSupport execSupport)
     {
         String targetTypeName = (String) jsonObject.get(typeKey);
         if (targetTypeName != null)
         {
-            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class<?> cls = md.getClass(pureType);
-            Deque<Generalization> deque = new ArrayDeque<>(cls._specializations().toSet());
+            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class<?> cls = execSupport.getMetadataAccessor().getClass(pureType);
             MutableSet<Generalization> set = Sets.mutable.ofAll(cls._specializations());
+            Deque<Generalization> deque = new ArrayDeque<>(set);
             while (!deque.isEmpty())
             {
                 Type type = deque.poll()._specific();
@@ -1116,22 +1125,21 @@ public class Pure
                 {
                     try
                     {
-                        return classLoader.loadClass(TypeProcessor.fullyQualifiedJavaInterfaceNameForType(type));
+                        return execSupport.getClassCache().getIfAbsentPutInterfaceForType(type);
                     }
-                    catch (ClassNotFoundException e)
+                    catch (Exception ignore)
                     {
                         // Type specified is incorrect or problem with metadata. Return default.
                         return typeFromClassMetaData;
                     }
                 }
-                for (Generalization g : type._specializations())
+                type._specializations().forEach(spec ->
                 {
-                    if (!set.contains(g))
+                    if (set.add(spec))
                     {
-                        set.add(g);
-                        deque.addLast(g);
+                        deque.addLast(spec);
                     }
-                }
+                });
             }
         }
         return typeFromClassMetaData;

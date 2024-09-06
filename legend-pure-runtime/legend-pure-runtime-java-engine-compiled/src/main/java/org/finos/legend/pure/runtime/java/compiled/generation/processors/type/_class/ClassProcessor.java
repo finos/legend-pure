@@ -17,7 +17,6 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.type._
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.factory.Sets;
-import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
@@ -32,7 +31,6 @@ import org.finos.legend.pure.m3.serialization.grammar.CoreInstanceFactoriesRegis
 import org.finos.legend.pure.m3.serialization.runtime.ParserService;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 
@@ -44,7 +42,6 @@ public class ClassProcessor
     public static RichIterable<CoreInstance> processClass(CoreInstance classGenericType, ProcessorContext processorContext, boolean addJavaSerializationSupport, String pureExternalPackage)
     {
         ProcessorSupport processorSupport = processorContext.getSupport();
-        MutableList<StringJavaSource> classes = processorContext.getClasses();
         MutableSet<CoreInstance> processedClasses = processorContext.getProcessedClasses(ClassProcessor.class);
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
 
@@ -59,16 +56,16 @@ public class ClassProcessor
 
             if (!isPlatformClass(_class))
             {
-                classes.add(ClassInterfaceProcessor.buildInterface(_package, imports, classGenericType, processorContext, processorSupport, useJavaInheritance));
+                processorContext.addJavaSource(ClassInterfaceProcessor.buildInterface(_package, imports, classGenericType, processorContext, processorSupport, useJavaInheritance));
             }
             if (requiresCompilationImpl(processorContext.getSupport(), _class))
             {
-                classes.add(ClassImplIncrementalCompilationProcessor.buildImplementation(_package, imports, classGenericType, processorContext, processorSupport));
+                processorContext.addJavaSource(ClassImplIncrementalCompilationProcessor.buildImplementation(_package, imports, classGenericType, processorContext, processorSupport));
             }
-            classes.add(ClassImplProcessor.buildImplementation(_package, imports, classGenericType, processorContext, processorSupport, useJavaInheritance, addJavaSerializationSupport, pureExternalPackage));
+            processorContext.addJavaSource(ClassImplProcessor.buildImplementation(_package, imports, classGenericType, processorContext, processorSupport, useJavaInheritance, addJavaSerializationSupport, pureExternalPackage));
             if (isLazy(_class))
             {
-                classes.add(ClassLazyImplProcessor.buildImplementation(_package, imports, classGenericType, processorContext, processorSupport));
+                processorContext.addJavaSource(ClassLazyImplProcessor.buildImplementation(_package, imports, classGenericType, processorContext, processorSupport));
             }
         }
 

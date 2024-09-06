@@ -12,6 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::pure::functions::meta::tests::model::*;
 import meta::pure::test::pct::*;
 
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::meta::getUnitValue(unit:Any[1]):Number[1];
+
+
+function <<test.Test>> meta::pure::functions::meta::tests::getUnitValue::testGetUnitValue():Boolean[1]
+{
+    assertEquals(5, getUnitValue(5 RomanLength~Pes));
+    assertEquals(10.5D, getUnitValue(10.5D RomanLength~Cubitum));
+    assertEquals(-310.72D, getUnitValue(-310.72D RomanLength~Stadium));
+    assertEquals(0, getUnitValue(0 RomanLength~Actus));
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::getUnitValue::testGetUnitValueEval():Boolean[1]
+{
+    assertEquals(5, getUnitValue_Any_1__Number_1_->eval(5 RomanLength~Pes));
+    assertEquals(10.5D, getUnitValue_Any_1__Number_1_->eval(10.5D RomanLength~Cubitum));
+    assertEquals(-310.72D, getUnitValue_Any_1__Number_1_->eval(-310.72D RomanLength~Stadium));
+    assertEquals(0, getUnitValue_Any_1__Number_1_->eval(0 RomanLength~Actus));
+}

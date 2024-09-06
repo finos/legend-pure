@@ -15,13 +15,14 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.unit;
 
 import org.eclipse.collections.api.list.ListIterable;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.measureUnit.UnitProcessor;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.QuantityCoreInstance;
 
 public class NewUnit extends AbstractNative
 {
@@ -33,8 +34,21 @@ public class NewUnit extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        CoreInstance _unitType = Instance.getValueForMetaPropertyToOneResolved(functionExpression.getValueForMetaPropertyToMany(M3Properties.parametersValues).getFirst(), M3Properties.values, processorContext.getSupport());
-        String unitClassName = UnitProcessor.convertToJavaCompatibleClassName(JavaPackageAndImportBuilder.buildImplUnitInstanceClassNameFromType(_unitType));
-        return "new org.finos.legend.pure.generated." + unitClassName + "(\"Anonymous_NoCounter\", es)._val(" + transformedParams.get(1) + ")";
+        CoreInstance unit = Instance.getValueForMetaPropertyToOneResolved(functionExpression.getValueForMetaPropertyToMany(M3Properties.parametersValues).getFirst(), M3Properties.values, processorContext.getSupport());
+        String unitImplClassReference = JavaPackageAndImportBuilder.buildImplClassReferenceFromType(unit);
+        return "new " + unitImplClassReference + "(" + transformedParams.get(1) + ", es)";
+    }
+
+    @Override
+    public String buildBody()
+    {
+        return "new DefendedPureFunction2<" + Unit.class.getName() + ", " + Number.class.getName() + ", " + QuantityCoreInstance.class.getSimpleName() + ">()\n" +
+                "        {\n" +
+                "            @Override\n" +
+                "            public " + QuantityCoreInstance.class.getSimpleName() + " value(" + Unit.class.getName() + " unit, " + Number.class.getName() + " value, ExecutionSupport es)\n" +
+                "            {\n" +
+                "                return CompiledSupport.newUnitInstance(unit, value, es);\n" +
+                "            }\n" +
+                "        }";
     }
 }

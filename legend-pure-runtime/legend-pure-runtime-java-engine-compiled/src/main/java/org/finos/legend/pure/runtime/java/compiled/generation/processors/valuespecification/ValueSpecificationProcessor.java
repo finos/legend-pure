@@ -36,7 +36,6 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuild
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.MetadataJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.measureUnit.UnitProcessor;
 
 public class ValueSpecificationProcessor
 {
@@ -58,7 +57,7 @@ public class ValueSpecificationProcessor
 
     public static String processValueSpecification(final CoreInstance topLevelElement, CoreInstance valueSpecification, boolean topLevel, final ProcessorContext processorContext)
     {
-        final ProcessorSupport processorSupport = processorContext.getSupport();
+        ProcessorSupport processorSupport = processorContext.getSupport();
 
         if (processorSupport.instance_instanceOf(valueSpecification, M3Paths.FunctionExpression))
         {
@@ -83,7 +82,7 @@ public class ValueSpecificationProcessor
 
             if (values.size() == 1 && Measure.isUnitOrMeasureInstance(valueSpecification, processorSupport))
             {
-                return processUnit(valueSpecification, values.get(0), processorSupport);
+                return processUnit(valueSpecification, values.get(0), processorContext);
             }
             if (values.size() == 1 && processorSupport.instance_instanceOf(values.get(0), M3Paths.FunctionExpression))
             {
@@ -193,12 +192,13 @@ public class ValueSpecificationProcessor
         throw new RuntimeException(" To CODE ! 2" + processorSupport.getClassifier(valueSpecification) + valueSpecification.printWithoutDebug("", 1));
     }
 
-    private static String processUnit(CoreInstance valueSpecification, CoreInstance firstValue, ProcessorSupport processorSupport)
+    private static String processUnit(CoreInstance valueSpecification, CoreInstance firstValue, ProcessorContext processorContext)
     {
+        ProcessorSupport processorSupport = processorContext.getSupport();
         CoreInstance value = Instance.getValueForMetaPropertyToOneResolved(firstValue, M3Properties.values, processorSupport);
-        CoreInstance _unitType = Instance.getValueForMetaPropertyToOneResolved(valueSpecification, M3Properties.genericType, M3Properties.rawType, processorSupport);
-
-        return "new org.finos.legend.pure.generated." + UnitProcessor.convertToJavaCompatibleClassName(JavaPackageAndImportBuilder.buildImplUnitInstanceClassNameFromType(_unitType)) + "(\"Anonymous_NoCounter\", es)._val(" + value.getName() + ")";
+        CoreInstance unit = Instance.getValueForMetaPropertyToOneResolved(valueSpecification, M3Properties.genericType, M3Properties.rawType, processorSupport);
+        String unitImplClassReference = JavaPackageAndImportBuilder.buildImplClassReferenceFromType(unit);
+        return "new " + unitImplClassReference + "(" + JavaPurePrimitiveTypeMapping.convertPureCoreInstanceToJavaType(value, processorContext) + ", es)";
     }
 
     private static String qualifiedThisVariable(CoreInstance topLevelElement, CoreInstance valueSpecification, ProcessorSupport processorSupport, ProcessorContext processorContext)

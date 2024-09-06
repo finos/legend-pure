@@ -47,8 +47,6 @@ public class ProcessorContext
     private final MutableMap<String, MutableMap<String, String>> lambdaFunctionsByIdBySource = Maps.mutable.empty();
     private final MutableList<StringJavaSource> classes = Lists.mutable.empty();
     private final MutableMap<Class<?>, MutableSet<CoreInstance>> processedClasses = Maps.mutable.empty();
-    private final MutableMap<Class<?>, MutableSet<CoreInstance>> processedMeasures = Maps.mutable.empty();
-    private final MutableMap<Class<?>, MutableSet<CoreInstance>> processedUnits = Maps.mutable.empty();
     private final MutableListMultimap<String, String> functionDefinitionsBySource = Multimaps.mutable.list.empty();
     private final MutableMap<String, MutableMap<String, String>> nativeLambdaFunctionsByNameBySource = Maps.mutable.empty();
     private final MutableIntObjectMap<CoreInstance> localLambdas = IntObjectMaps.mutable.empty();
@@ -116,6 +114,11 @@ public class ProcessorContext
         return extraFunctionGenerator;
     }
 
+    public void addJavaSource(StringJavaSource classSource)
+    {
+        this.classes.add(classSource);
+    }
+
     public MutableList<StringJavaSource> getClasses()
     {
         return this.classes;
@@ -124,16 +127,6 @@ public class ProcessorContext
     public MutableSet<CoreInstance> getProcessedClasses(Class<?> processorClass)
     {
         return this.processedClasses.getIfAbsentPut(processorClass, Sets.mutable::empty);
-    }
-
-    public MutableSet<CoreInstance> getProcessedMeasures(Class<?> processorClass)
-    {
-        return this.processedMeasures.getIfAbsentPut(processorClass, Sets.mutable::empty);
-    }
-
-    public MutableSet<CoreInstance> getProcessedUnits(Class<?> processorClass)
-    {
-        return this.processedUnits.getIfAbsentPut(processorClass, Sets.mutable::empty);
     }
 
     public void registerFunctionDefinition(CoreInstance function, String javaCode)

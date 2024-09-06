@@ -61,6 +61,7 @@ public class ClassImplProcessor
             "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.E_;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.*;\n" +
+            "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.QuantityCoreInstance;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ReflectiveCoreInstance;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ValCoreInstance;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.GetterOverrideExecutor;\n" +
@@ -1013,7 +1014,10 @@ public class ClassImplProcessor
                                 if (Multiplicity.isToOne(returnMultiplicity, false))
                                 {
                                     return
-                                            "                if (this._" + name + "() != null){this._" + name + "()._validate(goDeep, sourceInformation, es);}\n";
+                                            "                if (this._" + name + "() != null)\n" +
+                                                    "                {\n" +
+                                                    "                    this._" + name + "()._validate(goDeep, sourceInformation, es);\n" +
+                                                    "                }\n";
                                 }
                                 else
                                 {
