@@ -35,8 +35,8 @@ function meta::pure::functions::meta::elementToPath(element:Type[1], separator:S
 {
     $element->match(
         [
-            u : Unit[1] | if($u.measure.package->isEmpty(), |$u.name->toOne(), |$u.measure.package->toOne()->elementToPath($separator) + $separator + $u.name->toOne()),
-            p : PackageableElement[1] | $p->elementToPath($separator)
+            p : PackageableElement[1] | $p->elementToPath($separator),
+            u : Unit[1] | if($u.measure.package->isEmpty(), |$u.name->toOne(), |$u.measure.package->toOne()->elementToPath($separator) + $separator + $u.name->toOne())
         ]
     )
 }

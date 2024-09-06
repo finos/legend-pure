@@ -33,6 +33,7 @@ import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.ReferenceUsage;
 import org.finos.legend.pure.m3.coreinstance.Package;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -44,6 +45,7 @@ import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.navigation.function.FunctionType;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.navigation.measure.Measure;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
@@ -1111,6 +1113,10 @@ public abstract class AbstractCompiledStateIntegrityTest
         {
             return FunctionType.print(type, true, processorSupport);
         }
+        if (type instanceof Unit)
+        {
+            return Measure.getUserPathForUnit(type);
+        }
         throw new RuntimeException("Cannot generate string for: " + type);
     }
 
@@ -1125,6 +1131,10 @@ public abstract class AbstractCompiledStateIntegrityTest
         else if (specific instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType)
         {
             FunctionType.print(builder, specific, true, processorSupport);
+        }
+        else if (specific instanceof Unit)
+        {
+            Measure.writeUserPathForUnit(builder, specific);
         }
         else
         {
