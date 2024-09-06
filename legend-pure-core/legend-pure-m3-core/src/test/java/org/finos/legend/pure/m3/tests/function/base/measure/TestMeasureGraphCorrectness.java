@@ -29,20 +29,6 @@ import org.junit.Test;
 
 public class TestMeasureGraphCorrectness extends AbstractPureTestWithCoreCompiled
 {
-    @BeforeClass
-    public static void setUp()
-    {
-        setUpRuntime(getFunctionExecution());
-    }
-
-    @After
-    public void clearRuntime()
-    {
-        runtime.delete("testModel.pure");
-        runtime.delete("testSource.pure");
-        runtime.compile();
-    }
-
     private static final String massDefinition =
             "Measure pkg::Mass\n" +
                     "{\n" +
@@ -81,6 +67,20 @@ public class TestMeasureGraphCorrectness extends AbstractPureTestWithCoreCompile
                     "   EUR;\n" +
                     "}\n";
 
+    @BeforeClass
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution());
+    }
+
+    @After
+    public void clearRuntime()
+    {
+        runtime.delete("testModel.pure");
+        runtime.delete("testSource.pure");
+        runtime.compile();
+    }
+
     @Test
     public void testMeasureBuildsCorrectlyInGraph()
     {
@@ -118,7 +118,7 @@ public class TestMeasureGraphCorrectness extends AbstractPureTestWithCoreCompile
     public void testUnitBuildsCorrectlyInGraph()
     {
         compileTestSource("testModel.pure", massDefinition);
-        CoreInstance kilogramCoreInstance = runtime.getCoreInstance("pkg::Mass~Kilogram");
+        CoreInstance kilogramCoreInstance = org.finos.legend.pure.m3.navigation.measure.Measure.findUnit(runtime.getCoreInstance("pkg::Mass"), "Mass~Kilogram");
         Assert.assertEquals("Mass~Kilogram", kilogramCoreInstance.getName());
         Assert.assertTrue(kilogramCoreInstance instanceof Unit);
         Assert.assertEquals("Unit", kilogramCoreInstance.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToOne(M3Properties.rawType).getName());
@@ -126,15 +126,13 @@ public class TestMeasureGraphCorrectness extends AbstractPureTestWithCoreCompile
         CoreInstance myMeasure = kilogramCoreInstance.getValueForMetaPropertyToOne(M3Properties.measure);
         Assert.assertEquals("Mass", myMeasure.getName());
         Assert.assertTrue(myMeasure instanceof Measure);
-        CoreInstance myPackage = kilogramCoreInstance.getValueForMetaPropertyToOne(M3Properties._package);
-        Assert.assertEquals("pkg", myPackage.getName());
     }
 
     @Test
     public void testNonConvertibleUnitBuildsCorrectlyInGraph()
     {
         compileTestSource("testModel.pure", currencyDefinition);
-        CoreInstance dollarCoreInstance = runtime.getCoreInstance("pkg::Currency~USD");
+        CoreInstance dollarCoreInstance = org.finos.legend.pure.m3.navigation.measure.Measure.findUnit(runtime.getCoreInstance("pkg::Currency"), "Currency~USD");
         Assert.assertEquals("Currency~USD", dollarCoreInstance.getName());
         Assert.assertTrue(dollarCoreInstance instanceof Unit);
         Assert.assertEquals("Unit", dollarCoreInstance.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToOne(M3Properties.rawType).getName());
@@ -142,8 +140,6 @@ public class TestMeasureGraphCorrectness extends AbstractPureTestWithCoreCompile
         CoreInstance myMeasure = dollarCoreInstance.getValueForMetaPropertyToOne(M3Properties.measure);
         Assert.assertEquals("Currency", myMeasure.getName());
         Assert.assertTrue(myMeasure instanceof Measure);
-        CoreInstance myPackage = dollarCoreInstance.getValueForMetaPropertyToOne(M3Properties._package);
-        Assert.assertEquals("pkg", myPackage.getName());
     }
 
     @Test

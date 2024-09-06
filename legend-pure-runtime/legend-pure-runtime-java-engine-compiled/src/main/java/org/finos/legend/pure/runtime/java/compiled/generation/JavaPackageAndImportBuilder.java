@@ -313,7 +313,7 @@ public class JavaPackageAndImportBuilder
     {
         if (isUnitName(type.getName()))
         {
-            CoreInstance pkg = type.getValueForMetaPropertyToOne(M3Properties._package);
+            CoreInstance pkg = type.getValueForMetaPropertyToOne(M3Properties.measure).getValueForMetaPropertyToOne(M3Properties._package);
             if (pkg != null)
             {
                 PackageableElement.writeSystemPathForPackageableElement(appendable, pkg, "_").append('_');

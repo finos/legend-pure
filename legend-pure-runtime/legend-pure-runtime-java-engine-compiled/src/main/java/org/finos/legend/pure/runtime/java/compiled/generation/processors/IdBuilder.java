@@ -26,6 +26,7 @@ import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.measure.Measure;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
@@ -156,6 +157,13 @@ public class IdBuilder
         return PackageableElement.writeUserPathForPackageableElement(new StringBuilder(), annotation.getValueForMetaPropertyToOne(M3Properties.profile))
                 .append('.').append(annotation.getName())
                 .toString();
+    }
+
+    // Unit
+
+    private static String buildIdForUnit(CoreInstance unit)
+    {
+        return Measure.getSystemPathForUnit(unit);
     }
 
     // PackageableElement
@@ -327,6 +335,7 @@ public class IdBuilder
             addIdBuilder(M3Paths.PackageableElement, IdBuilder::buildIdForPackageableElement);
             addIdBuilder(M3Paths.Property, IdBuilder::buildIdForProperty);
             addIdBuilder(M3Paths.QualifiedProperty, IdBuilder::buildIdForQualifiedProperty);
+            addIdBuilder(M3Paths.Unit, IdBuilder::buildIdForUnit);
             CompiledExtensionLoader.extensions().flatCollect(x -> x.getExtraIdBuilders(this.processorSupport)).forEach(x -> addIdBuilder(x.getOne(), x.getTwo()));
         }
     }

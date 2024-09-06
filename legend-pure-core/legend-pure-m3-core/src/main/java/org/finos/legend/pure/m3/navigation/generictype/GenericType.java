@@ -39,6 +39,7 @@ import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.linearization.C3Linearization;
+import org.finos.legend.pure.m3.navigation.measure.Measure;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.relation._Column;
 import org.finos.legend.pure.m3.navigation.relation._RelationType;
@@ -925,6 +926,10 @@ public class GenericType
         else if (_RelationType.isRelationType(rawType, processorSupport))
         {
             _RelationType.print(appendable, rawType, processorSupport);
+        }
+        else if (Measure.isUnit(rawType, processorSupport))
+        {
+            Measure.printUnit(appendable, rawType, fullPaths);
         }
         else if (fullPaths)
         {

@@ -33,7 +33,12 @@ function meta::pure::functions::meta::elementToPath(element:Type[1]):String[1]
 
 function meta::pure::functions::meta::elementToPath(element:Type[1], separator:String[1]):String[1]
 {
-    $element->cast(@PackageableElement)->elementToPath($separator)
+    $element->match(
+        [
+            u : Unit[1] | if($u.measure.package->isEmpty(), |$u.name->toOne(), |$u.measure.package->toOne()->elementToPath($separator) + $separator + $u.name->toOne()),
+            p : PackageableElement[1] | $p->elementToPath($separator)
+        ]
+    )
 }
 
 function meta::pure::functions::meta::elementToPath(element:PackageableElement[1]):String[1]

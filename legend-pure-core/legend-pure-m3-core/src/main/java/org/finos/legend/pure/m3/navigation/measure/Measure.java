@@ -22,9 +22,13 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecificat
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstanceWrapper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecifications;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 /**
  * The structure of a unit instance is an InstanceValue wrapping an InstanceValue in its values field,
@@ -142,5 +146,105 @@ public class Measure
             return true;
         }
         return (!(instance instanceof Any) || (instance instanceof AbstractCoreInstanceWrapper)) && processorSupport.instance_instanceOf(instance, M3Paths.InstanceValue);
+    }
+
+    public static CoreInstance findUnit(CoreInstance measure, String name)
+    {
+        CoreInstance canonicalUnit = measure.getValueForMetaPropertyToOne(M3Properties.canonicalUnit);
+        return ((canonicalUnit != null) && name.equals(PrimitiveUtilities.getStringValue(canonicalUnit.getValueForMetaPropertyToOne(M3Properties.name)))) ?
+                canonicalUnit :
+                measure.getValueInValueForMetaPropertyToManyByIDIndex(M3Properties.nonCanonicalUnits, IndexSpecifications.getPropertyValueNameIndexSpec(M3Properties.name), name);
+    }
+
+
+    public static CoreInstance getUnitByUserPath(String path, ProcessorSupport processorSupport)
+    {
+        int tilde = path.indexOf('~');
+        if (tilde == -1)
+        {
+            throw new IllegalArgumentException("Invalid unit path '" + path + "'");
+        }
+        String measurePath = path.substring(0, tilde);
+        CoreInstance measure = processorSupport.package_getByUserPath(measurePath);
+        if (measure == null)
+        {
+            throw new RuntimeException("Error finding unit '" + path + "': cannot find measure '" + measurePath + "'");
+        }
+        String unitName = path.substring(tilde + 1);
+        CoreInstance unit = findUnit(measure, unitName);
+        if (unit == null)
+        {
+            throw new RuntimeException("Error finding unit '" + path + "': cannot find unit '" + unitName + "' in measure '" + measurePath + "'");
+        }
+        return unit;
+    }
+
+    public static String getSystemPathForUnit(CoreInstance unit)
+    {
+        return getSystemPathForUnit(unit, null);
+    }
+
+    public static String getSystemPathForUnit(CoreInstance unit, String separator)
+    {
+        return writeSystemPathForUnit(new StringBuilder(64), unit, separator).toString();
+    }
+
+    public static String getUserPathForUnit(CoreInstance unit)
+    {
+        return getUserPathForUnit(unit, null);
+    }
+
+    public static String getUserPathForUnit(CoreInstance unit, String separator)
+    {
+        return writeUserPathForUnit(new StringBuilder(64), unit, separator).toString();
+    }
+
+    public static <T extends Appendable> T writeSystemPathForUnit(T appendable, CoreInstance unit)
+    {
+        return writeSystemPathForUnit(appendable, unit, null);
+    }
+
+    public static <T extends Appendable> T writeSystemPathForUnit(T appendable, CoreInstance unit, String separator)
+    {
+        CoreInstance measure = unit.getValueForMetaPropertyToOne(M3Properties.measure);
+        CoreInstance pkg = measure.getValueForMetaPropertyToOne(M3Properties._package);
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+        if (pkg != null)
+        {
+            PackageableElement.writeSystemPathForPackageableElement(safeAppendable, pkg)
+                    .append((separator == null) ? PackageableElement.DEFAULT_PATH_SEPARATOR : separator);
+        }
+        safeAppendable.append(unit.getName());
+        return appendable;
+    }
+
+    public static <T extends Appendable> T writeUserPathForUnit(T appendable, CoreInstance unit)
+    {
+        return writeUserPathForUnit(appendable, unit, null);
+    }
+
+    public static <T extends Appendable> T writeUserPathForUnit(T appendable, CoreInstance unit, String separator)
+    {
+        CoreInstance measure = unit.getValueForMetaPropertyToOne(M3Properties.measure);
+        CoreInstance pkg = measure.getValueForMetaPropertyToOne(M3Properties._package);
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+        if (pkg != null)
+        {
+            PackageableElement.writeUserPathForPackageableElement(safeAppendable, pkg, separator)
+                    .append((separator == null) ? PackageableElement.DEFAULT_PATH_SEPARATOR : separator);
+        }
+        safeAppendable.append(unit.getName());
+        return appendable;
+    }
+
+    public static <T extends Appendable> T printUnit(T appendable, CoreInstance unit, boolean fullPaths)
+    {
+        if (fullPaths)
+        {
+            return writeUserPathForUnit(appendable, unit);
+        }
+
+        SafeAppendable.wrap(appendable).append(unit.getName());
+        return appendable;
     }
 }

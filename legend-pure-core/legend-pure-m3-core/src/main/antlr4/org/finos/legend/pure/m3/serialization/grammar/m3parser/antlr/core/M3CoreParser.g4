@@ -151,7 +151,7 @@ functionDescriptor: qualifiedName GROUP_OPEN (functionTypePureType (COMMA functi
 graphPath: graphPathStartNode (DOT graphPathEdge)*
 ;
 
-graphPathStartNode: (PATH_SEPARATOR | qualifiedName | unitName)
+graphPathStartNode: (PATH_SEPARATOR | qualifiedName)
 ;
 
 graphPathEdge: propertyName (BRACKET_OPEN (INTEGER | ((propertyName EQUAL)? STRING)) BRACKET_CLOSE)?

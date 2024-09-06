@@ -23,22 +23,6 @@ import org.junit.Test;
 
 public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlatform
 {
-    @BeforeClass
-    public static void setUp()
-    {
-        setUpRuntime(getExtra());
-    }
-
-    @After
-    public void cleanRuntime()
-    {
-        runtime.delete("userId.pure");
-        runtime.delete("sourceId.pure");
-        runtime.delete("testFunc.pure");
-        runtime.compile();
-    }
-
-
     private final String measureSource = "Measure pkg::Mass \n" +
             "{\n" +
             "   *Gram: x -> $x; \n" +
@@ -65,6 +49,21 @@ public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlat
             "   EUR;\n" +
             "}\n";
 
+    @BeforeClass
+    public static void setUp()
+    {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("userId.pure");
+        runtime.delete("sourceId.pure");
+        runtime.delete("testFunc.pure");
+        runtime.compile();
+    }
+
     @Test
     public void testMeasureAsFunctionParameterTypeIncremental() throws Exception
     {
@@ -89,7 +88,7 @@ public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlat
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
-                        .compileWithExpectedCompileFailure("pkg::Mass~Kilogram has not been defined!", "testFunc.pure", 1, 60)
+                        .compileWithExpectedCompileFailure("pkg::Mass has not been defined!", "testFunc.pure", 1, 60)
                         .createInMemorySource("sourceId.pure", this.measureSource)
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
@@ -104,9 +103,9 @@ public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlat
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
-                        .compileWithExpectedCompileFailure("pkg::Mass~Kilogram has not been defined!", "testFunc.pure", 1, 60)
+                        .compileWithExpectedCompileFailure("pkg::Mass has not been defined!", "testFunc.pure", 1, 60)
                         .createInMemorySource("sourceId.pure", this.updatedMeasure)
-                        .compileWithExpectedCompileFailure("pkg::Mass~Kilogram has not been defined!", "testFunc.pure", 1, 60)
+                        .compileWithExpectedCompileFailure("The unit 'Mass~Kilogram' can't be found in measure 'pkg::Mass'", "testFunc.pure", 1, 60)
                         .updateSource("sourceId.pure", this.measureSource)
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
@@ -188,9 +187,9 @@ public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlat
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
-                        .compileWithExpectedCompileFailure("pkg::Currency~GBP has not been defined!", "testFunc.pure", 1, 64)
+                        .compileWithExpectedCompileFailure("pkg::Currency has not been defined!", "testFunc.pure", 1, 64)
                         .createInMemorySource("sourceId.pure", this.updatedNonConvertibleMeasure)
-                        .compileWithExpectedCompileFailure("pkg::Currency~GBP has not been defined!", "testFunc.pure", 1, 64)
+                        .compileWithExpectedCompileFailure("The unit 'Currency~GBP' can't be found in measure 'pkg::Currency'", "testFunc.pure", 1, 64)
                         .updateSource("sourceId.pure", this.nonConvertibleMeasure)
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
