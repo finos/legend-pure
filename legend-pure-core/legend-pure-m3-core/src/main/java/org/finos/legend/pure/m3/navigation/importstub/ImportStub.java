@@ -163,7 +163,7 @@ public class ImportStub
     private static CoreInstance resolveUnit(String idOrPath, int delimiterIndex, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub importStubNode, ModelRepository repository, ProcessorSupport processorSupport)
     {
         String measureIdOrPath = idOrPath.substring(0, delimiterIndex);
-        String unitName = idOrPath.substring(idOrPath.lastIndexOf(':', delimiterIndex) + 1);
+        String unitName = idOrPath.substring(delimiterIndex + 1);
         CoreInstance packageableElement = resolvePackageableElement(measureIdOrPath, importStubNode, repository, processorSupport);
         if ((packageableElement == null) || (packageableElement.getClassifier() != processorSupport.package_getByUserPath(M3Paths.Measure)))
         {

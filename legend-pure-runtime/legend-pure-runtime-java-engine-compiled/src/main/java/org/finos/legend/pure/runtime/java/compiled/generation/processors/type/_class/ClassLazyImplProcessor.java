@@ -69,8 +69,8 @@ public class ClassLazyImplProcessor
     static StringJavaSource buildImplementation(String _package, String imports, CoreInstance classGenericType, ProcessorContext processorContext, ProcessorSupport processorSupport)
     {
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
-        String className = JavaPackageAndImportBuilder.buildImplClassNameFromType(_class, CLASS_LAZYIMPL_SUFFIX);
-        String classInterfaceName = TypeProcessor.javaInterfaceForType(_class);
+        String className = JavaPackageAndImportBuilder.buildImplClassNameFromType(_class, CLASS_LAZYIMPL_SUFFIX, processorSupport);
+        String classInterfaceName = TypeProcessor.javaInterfaceForType(_class, processorSupport);
         String typeParams = ClassProcessor.typeParameters(_class);
         String typeParamsString = typeParams.isEmpty() ? "" : "<" + typeParams + ">";
         String classNamePlusTypeParams = className + typeParamsString;

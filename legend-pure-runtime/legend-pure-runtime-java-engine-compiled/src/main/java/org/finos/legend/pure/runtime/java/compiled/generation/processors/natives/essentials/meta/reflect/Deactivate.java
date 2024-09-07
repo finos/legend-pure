@@ -38,7 +38,7 @@ public class Deactivate extends AbstractNative
         ListIterable<? extends CoreInstance> parametersValues = Instance.getValueForMetaPropertyToManyResolved(functionExpression, M3Properties.parametersValues, processorSupport);
 
         CoreInstance valueSpecification = parametersValues.get(0);
-        String type = TypeProcessor.javaInterfaceForType(processorSupport.getClassifier(valueSpecification));
+        String type = TypeProcessor.javaInterfaceForType(processorSupport.getClassifier(valueSpecification), processorSupport);
         return "((" + type + ")((CompiledExecutionSupport)es).getMetadata(\"" + MetadataJavaPaths.buildMetadataKeyFromType(processorSupport.getClassifier(valueSpecification)) + "\",\"" + processorContext.getIdBuilder().buildId(valueSpecification) + "\"))";
     }
 }

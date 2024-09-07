@@ -71,7 +71,7 @@ public class CompiledProcessorSupport implements ProcessorSupport
     public CompiledProcessorSupport(ClassLoader globalClassLoader, Metadata metadata, SetIterable<String> extraSupportedTypes)
     {
         this.globalClassLoader = globalClassLoader;
-        this.classCache = new ClassCache(this.globalClassLoader);
+        this.classCache = new ClassCache(this.globalClassLoader, this);
         this.metadata = metadata;
         this.metadataAccessor = new MetadataHolder(metadata);
         this.extraSupportedTypes = extraSupportedTypes;

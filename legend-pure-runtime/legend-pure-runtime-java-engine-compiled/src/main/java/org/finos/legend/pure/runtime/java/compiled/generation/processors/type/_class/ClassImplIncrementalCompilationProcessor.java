@@ -41,14 +41,14 @@ public class ClassImplIncrementalCompilationProcessor
     {
         processorContext.setClassImplSuffix(CLASS_IMPL_SUFFIX);
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
-        String className = JavaPackageAndImportBuilder.buildImplClassNameFromType(_class, CLASS_IMPL_SUFFIX);
+        String className = JavaPackageAndImportBuilder.buildImplClassNameFromType(_class, CLASS_IMPL_SUFFIX, processorSupport);
         String typeParams = ClassProcessor.typeParameters(_class);
         String typeParamsString = typeParams.isEmpty() ? "" : "<" + typeParams + ">";
         String classNamePlusTypeParams = className + typeParamsString;
 
         String _extends = M3ToJavaGenerator.getFullyQualifiedM3ImplForCompiledModel(_class);
         String systemPath = PackageableElement.getSystemPathForPackageableElement(_class, "::");
-        String interfaceName = TypeProcessor.javaInterfaceForType(_class);
+        String interfaceName = TypeProcessor.javaInterfaceForType(_class, processorSupport);
         boolean specialEquals = !_Class.getEqualityKeyProperties(_class, processorContext.getSupport()).isEmpty();
 
         return StringJavaSource.newStringJavaSource(_package, className, ClassImplProcessor.IMPORTS + ClassImplProcessor.FUNCTION_IMPORTS + imports +

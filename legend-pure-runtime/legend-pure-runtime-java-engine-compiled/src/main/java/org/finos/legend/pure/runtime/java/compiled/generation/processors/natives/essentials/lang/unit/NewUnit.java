@@ -38,7 +38,7 @@ public class NewUnit extends AbstractNative
         CoreInstance unit = Instance.getValueForMetaPropertyToOneResolved(functionExpression.getValueForMetaPropertyToMany(M3Properties.parametersValues).getFirst(), M3Properties.values, processorContext.getSupport());
         return Measure.isUnit(unit, processorContext.getSupport()) ?
                // concretely specified unit: we can generate the Java instantiation directly
-               ("new " + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(unit) + "(" + transformedParams.get(1) + ", es)") :
+               ("new " + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(unit, processorContext.getSupport()) + "(" + transformedParams.get(1) + ", es)") :
                // unit comes from a variable or function expression or something like that: we have to instantiate reflectively
                ("CompiledSupport.newUnitInstance(" + transformedParams.get(0) + ", " + transformedParams.get(1) + ", es)");
     }

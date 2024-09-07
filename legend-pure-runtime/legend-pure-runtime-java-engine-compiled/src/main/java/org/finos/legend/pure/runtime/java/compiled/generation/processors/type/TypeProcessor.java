@@ -118,7 +118,7 @@ public class TypeProcessor
         {
             return FullJavaPaths.Enum;
         }
-        String finalRawTypeSystemPath = fullyQualify || M3Paths.Package.equals(rawType.getName()) ? fullyQualifiedJavaInterfaceNameForType(rawType) : javaInterfaceForType(rawType);
+        String finalRawTypeSystemPath = fullyQualify || M3Paths.Package.equals(rawType.getName()) ? fullyQualifiedJavaInterfaceNameForType(rawType, processorSupport) : javaInterfaceForType(rawType, processorSupport);
 
         // Manage magical TDS structures
         if ("org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.ColSpec".equals(finalRawTypeSystemPath) ||
@@ -149,7 +149,7 @@ public class TypeProcessor
         {
             return "java.lang.Object";
         }
-        String systemPath = fullyQualifiedJavaInterfaceNameForType(rawType);
+        String systemPath = fullyQualifiedJavaInterfaceNameForType(rawType, processorSupport);
         String javaType = pureSystemPathToJava_simpleCases(PackageableElement.getUserPathForPackageableElement(rawType), primitiveIfPossible);
         if (javaType != null)
         {
@@ -163,19 +163,19 @@ public class TypeProcessor
     }
 
 
-    public static String javaInterfaceForType(CoreInstance rawType)
+    public static String javaInterfaceForType(CoreInstance rawType, ProcessorSupport processorSupport)
     {
-        return ClassProcessor.isPlatformClass(rawType) ? fullyQualifiedJavaInterfaceNameForType(rawType) : JavaPackageAndImportBuilder.buildInterfaceNameFromType(rawType);
+        return ClassProcessor.isPlatformClass(rawType) ? fullyQualifiedJavaInterfaceNameForType(rawType, processorSupport) : JavaPackageAndImportBuilder.buildInterfaceNameFromType(rawType, processorSupport);
     }
 
-    public static String javaInterfaceNameForType(CoreInstance rawType)
+    public static String javaInterfaceNameForType(CoreInstance rawType, ProcessorSupport processorSupport)
     {
-        return ClassProcessor.isPlatformClass(rawType) ? rawType.getName() : JavaPackageAndImportBuilder.buildInterfaceNameFromType(rawType);
+        return ClassProcessor.isPlatformClass(rawType) ? rawType.getName() : JavaPackageAndImportBuilder.buildInterfaceNameFromType(rawType, processorSupport);
     }
 
-    public static String fullyQualifiedJavaInterfaceNameForType(CoreInstance element)
+    public static String fullyQualifiedJavaInterfaceNameForType(CoreInstance element, ProcessorSupport processorSupport)
     {
-        return JavaPackageAndImportBuilder.buildInterfaceReferenceFromType(element);
+        return JavaPackageAndImportBuilder.buildInterfaceReferenceFromType(element, processorSupport);
     }
 
     private static String pureSystemPathToJava_simpleCases(String fullUserPath, boolean primitiveIfPossible)

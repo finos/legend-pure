@@ -89,11 +89,11 @@ public class ClassImplProcessor
     {
         processorContext.setClassImplSuffix(CLASS_IMPL_SUFFIX);
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
-        String className = JavaPackageAndImportBuilder.buildImplClassNameFromType(_class);
+        String className = JavaPackageAndImportBuilder.buildImplClassNameFromType(_class, processorSupport);
         String typeParams = ClassProcessor.typeParameters(_class);
         String typeParamsString = typeParams.isEmpty() ? "" : "<" + typeParams + ">";
         String classNamePlusTypeParams = className + typeParamsString;
-        String interfaceNamePlusTypeParams = TypeProcessor.javaInterfaceForType(_class) + typeParamsString;
+        String interfaceNamePlusTypeParams = TypeProcessor.javaInterfaceForType(_class, processorSupport) + typeParamsString;
 
         MutableList<String> defaultValueKeys = _Class.getSimpleProperties(_class, processorSupport).collectIf(p -> p.getValueForMetaPropertyToOne(M3Properties.defaultValue) != null, CoreInstance::getName, Lists.mutable.empty());
         ListIterable<String> defaultValues = DefaultValue.manageDefaultValues((name, value) ->
@@ -474,7 +474,7 @@ public class ClassImplProcessor
     public static String buildSimpleProperties(CoreInstance classGenericType, FullPropertyImplementation propertyImpl, ProcessorContext processorContext, ProcessorSupport processorSupport)
     {
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
-        String ownerClassName = TypeProcessor.javaInterfaceForType(_class);
+        String ownerClassName = TypeProcessor.javaInterfaceForType(_class, processorSupport);
         String ownerTypeParams = ClassProcessor.typeParameters(_class);
 
         return processorSupport.class_getSimpleProperties(_class).collect(property ->
@@ -506,8 +506,8 @@ public class ClassImplProcessor
     public static String buildCopy(CoreInstance classGenericType, String suffix, boolean copyGetterOverride, ProcessorSupport processorSupport)
     {
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
-        String className = TypeProcessor.javaInterfaceForType(_class);
-        String implClassName = JavaPackageAndImportBuilder.buildImplClassNameFromType(_class, suffix);
+        String className = TypeProcessor.javaInterfaceForType(_class, processorSupport);
+        String implClassName = JavaPackageAndImportBuilder.buildImplClassNameFromType(_class, suffix, processorSupport);
         String typeParams = ClassProcessor.typeParameters(_class);
         String classNamePlusTypeParams = className + (typeParams.isEmpty() ? "" : "<" + typeParams + "> ");
 
@@ -562,12 +562,12 @@ public class ClassImplProcessor
     static String buildEquality(CoreInstance classGenericType, String suffix, boolean useMethodForEquals, boolean useMethodForHashcode, boolean lazy, ProcessorContext processorContext, ProcessorSupport processorSupport)
     {
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
-        String className = TypeProcessor.javaInterfaceForType(_class);
+        String className = TypeProcessor.javaInterfaceForType(_class, processorSupport);
 
         ListIterable<CoreInstance> equalityProperties = _Class.getEqualityKeyProperties(_class, processorContext.getSupport());
 
         String equalsCompilationClass = ClassProcessor.requiresCompilationImpl(processorContext.getSupport(), _class) ?
-                " && o.getClass() != " + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class, ClassImplIncrementalCompilationProcessor.CLASS_IMPL_SUFFIX) + ".class" : "";
+                " && o.getClass() != " + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class, ClassImplIncrementalCompilationProcessor.CLASS_IMPL_SUFFIX, processorSupport) + ".class" : "";
 
         return equalityProperties.isEmpty() ? "" : "public boolean pureEquals(Object o)\n" +
                 "{\n" +
@@ -575,7 +575,7 @@ public class ClassImplProcessor
                 "    {\n" +
                 "        return true;\n" +
                 "    }\n" +
-                "    if (o == null || " + (lazy ? "(o.getClass() != " + JavaPackageAndImportBuilder.buildLazyImplClassReferenceFromType(_class) + ".class && o.getClass() !=" + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class) + ".class" + equalsCompilationClass + "))" : "getClass() != o.getClass())\n") +
+                "    if (o == null || " + (lazy ? "(o.getClass() != " + JavaPackageAndImportBuilder.buildLazyImplClassReferenceFromType(_class, processorSupport) + ".class && o.getClass() !=" + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class, processorSupport) + ".class" + equalsCompilationClass + "))" : "getClass() != o.getClass())\n") +
                 "    {\n" +
                 "        return false;\n" +
                 "    }\n" +

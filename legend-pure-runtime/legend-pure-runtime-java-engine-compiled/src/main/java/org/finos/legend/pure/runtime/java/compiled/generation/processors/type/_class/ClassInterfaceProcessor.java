@@ -45,7 +45,7 @@ public class ClassInterfaceProcessor
     public static StringJavaSource buildInterface(String _package, String imports, CoreInstance classGenericType, ProcessorContext processorContext, ProcessorSupport processorSupport, boolean useJavaInheritance)
     {
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
-        String interfaceName = TypeProcessor.javaInterfaceForType(_class);
+        String interfaceName = TypeProcessor.javaInterfaceForType(_class, processorSupport);
         String typeParams = ClassProcessor.typeParameters(_class);
         String typeParamsString = typeParams.isEmpty() ? "" : "<" + typeParams + ">";
         String interfaceNamePlusTypeParams = interfaceName + typeParamsString;
@@ -136,7 +136,7 @@ public class ClassInterfaceProcessor
         String typeArgsString = typeArgs.isEmpty() ? "" : "<" + typeArgs + ">";
         if (suffix.isEmpty())
         {
-            return TypeProcessor.javaInterfaceForType(rawType) + typeArgsString;
+            return TypeProcessor.javaInterfaceForType(rawType, processorSupport) + typeArgsString;
         }
         else
         {

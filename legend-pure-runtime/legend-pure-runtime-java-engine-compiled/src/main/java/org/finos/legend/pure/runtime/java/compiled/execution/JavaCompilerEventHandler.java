@@ -64,7 +64,7 @@ public class JavaCompilerEventHandler implements CompilerEventHandler
         this.message = message;
         this.observer = observer;
         this.generateAndCompile = new GenerateAndCompile(this.message, this.observer);
-        this.classCache = new ClassCache(this.generateAndCompile.getPureJavaCompiler().getClassLoader());
+        this.classCache = new ClassCache(this.generateAndCompile.getPureJavaCompiler().getClassLoader(), processorSupport);
         this.sharedFunctionCache = new FunctionCache(this.classCache);
         this.includePureStackTrace = includePureStackTrace;
         this.extensions = extensions;
@@ -103,7 +103,7 @@ public class JavaCompilerEventHandler implements CompilerEventHandler
         this.generateAndCompile.generateAndCompileJavaCodeForSources(compiledSourcesByRepo, this.getJavaSourceCodeGenerator());
         this.javaGeneratedAndCompiled = true;
 
-        this.classCache = new ClassCache(getJavaCompiler().getClassLoader());
+        this.classCache = new ClassCache(getJavaCompiler().getClassLoader(), this.processorSupport);
         this.sharedFunctionCache = new FunctionCache(this.classCache);
     }
 
@@ -112,7 +112,7 @@ public class JavaCompilerEventHandler implements CompilerEventHandler
     {
         this.javaGeneratedAndCompiled = false;
         this.generateAndCompile = new GenerateAndCompile(this.message, this.observer);
-        this.classCache = new ClassCache(getJavaCompiler().getClassLoader());
+        this.classCache = new ClassCache(getJavaCompiler().getClassLoader(), this.processorSupport);
         this.sharedFunctionCache = new FunctionCache(this.classCache);
     }
 

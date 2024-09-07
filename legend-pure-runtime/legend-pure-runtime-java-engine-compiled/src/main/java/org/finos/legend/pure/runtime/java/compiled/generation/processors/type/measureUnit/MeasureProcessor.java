@@ -31,7 +31,7 @@ public class MeasureProcessor
     public static void processMeasure(CoreInstance measure, ProcessorContext processorContext)
     {
         String packageName = JavaPackageAndImportBuilder.buildPackageForPackageableElement(measure);
-        String measureInterfaceName = JavaPackageAndImportBuilder.buildInterfaceNameFromType(measure);
+        String measureInterfaceName = JavaPackageAndImportBuilder.buildInterfaceNameFromType(measure, processorContext.getSupport());
         processorContext.addJavaSource(buildMeasureInterface(packageName, measureInterfaceName));
 
         CoreInstance canonicalUnit = measure.getValueForMetaPropertyToOne(M3Properties.canonicalUnit);
@@ -44,10 +44,10 @@ public class MeasureProcessor
 
     private static void processUnit(String packageName, String measureInterfaceName, CoreInstance unit, ProcessorContext processorContext)
     {
-        String unitInterfaceName = JavaPackageAndImportBuilder.buildInterfaceNameFromType(unit);
+        String unitInterfaceName = JavaPackageAndImportBuilder.buildInterfaceNameFromType(unit, processorContext.getSupport());
         processorContext.addJavaSource(buildUnitInterface(packageName, measureInterfaceName, unitInterfaceName, Measure.getUserPathForUnit(unit)));
 
-        String unitImplClassName = JavaPackageAndImportBuilder.buildImplClassNameFromType(unit);
+        String unitImplClassName = JavaPackageAndImportBuilder.buildImplClassNameFromType(unit, processorContext.getSupport());
         processorContext.addJavaSource(buildUnitImplClass(packageName, unitInterfaceName, unitImplClassName));
     }
 

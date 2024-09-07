@@ -207,14 +207,8 @@ public class Measure
     public static <T extends Appendable> T writeSystemPathForUnit(T appendable, CoreInstance unit, String separator)
     {
         CoreInstance measure = unit.getValueForMetaPropertyToOne(M3Properties.measure);
-        CoreInstance pkg = measure.getValueForMetaPropertyToOne(M3Properties._package);
-        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
-        if (pkg != null)
-        {
-            PackageableElement.writeSystemPathForPackageableElement(safeAppendable, pkg)
-                    .append((separator == null) ? PackageableElement.DEFAULT_PATH_SEPARATOR : separator);
-        }
-        safeAppendable.append(unit.getName());
+        PackageableElement.writeSystemPathForPackageableElement(SafeAppendable.wrap(appendable), measure, separator)
+                .append('~').append(unit.getName());
         return appendable;
     }
 
@@ -226,14 +220,8 @@ public class Measure
     public static <T extends Appendable> T writeUserPathForUnit(T appendable, CoreInstance unit, String separator)
     {
         CoreInstance measure = unit.getValueForMetaPropertyToOne(M3Properties.measure);
-        CoreInstance pkg = measure.getValueForMetaPropertyToOne(M3Properties._package);
-        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
-        if (pkg != null)
-        {
-            PackageableElement.writeUserPathForPackageableElement(safeAppendable, pkg, separator)
-                    .append((separator == null) ? PackageableElement.DEFAULT_PATH_SEPARATOR : separator);
-        }
-        safeAppendable.append(unit.getName());
+        PackageableElement.writeUserPathForPackageableElement(SafeAppendable.wrap(appendable), measure, separator)
+                .append('~').append(unit.getName());
         return appendable;
     }
 
@@ -244,7 +232,8 @@ public class Measure
             return writeUserPathForUnit(appendable, unit);
         }
 
-        SafeAppendable.wrap(appendable).append(unit.getName());
+        CoreInstance measure = unit.getValueForMetaPropertyToOne(M3Properties.measure);
+        SafeAppendable.wrap(appendable).append(measure.getName()).append('~').append(unit.getName());
         return appendable;
     }
 }

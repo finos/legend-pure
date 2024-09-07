@@ -14,14 +14,14 @@
 
 package org.finos.legend.pure.m3.tests.incremental.measure;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlatform
+public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiled
 {
     private final String measureSource = "Measure pkg::Mass \n" +
             "{\n" +
@@ -65,22 +65,22 @@ public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlat
     }
 
     @Test
-    public void testMeasureAsFunctionParameterTypeIncremental() throws Exception
+    public void testMeasureAsFunctionParameterTypeIncremental()
     {
-        String testFunc = "function takesInMass(m:pkg::Mass[1]):pkg::Mass[1]{$m}";
+        String testFunc = "function takesInMass(m:pkg::Mass[1]):Any[1]{$m}";
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", this.measureSource)
                         .createInMemorySource("testFunc.pure", testFunc)
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
-                        .compileWithExpectedCompileFailure("pkg::Mass has not been defined!", "testFunc.pure", 1, 43)
+                        .compileWithExpectedCompileFailure("pkg::Mass has not been defined!", "testFunc.pure", 1, 29)
                         .createInMemorySource("sourceId.pure", this.measureSource)
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testUnitAsFunctionExpressionParameterIncremental() throws Exception
+    public void testUnitAsFunctionExpressionParameterIncremental()
     {
         String testFunc = "function instantiateUnit():String[1]{let a  = 10 pkg::Mass~Kilogram;'ok';}";
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", this.measureSource)
@@ -95,7 +95,7 @@ public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlat
     }
 
     @Test
-    public void testDeleteReferencedUnitIncrementalThrowsError() throws Exception
+    public void testDeleteReferencedUnitIncrementalThrowsError()
     {
         String testFunc = "function instantiateUnit():String[1]{let a  = 10 pkg::Mass~Kilogram;'ok';}";
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", this.measureSource)
@@ -105,14 +105,14 @@ public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlat
                         .deleteSource("sourceId.pure")
                         .compileWithExpectedCompileFailure("pkg::Mass has not been defined!", "testFunc.pure", 1, 60)
                         .createInMemorySource("sourceId.pure", this.updatedMeasure)
-                        .compileWithExpectedCompileFailure("The unit 'Mass~Kilogram' can't be found in measure 'pkg::Mass'", "testFunc.pure", 1, 60)
+                        .compileWithExpectedCompileFailure("The unit 'Kilogram' can't be found in measure 'pkg::Mass'", "testFunc.pure", 1, 60)
                         .updateSource("sourceId.pure", this.measureSource)
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testDeleteUnreferencedUnitIncremental() throws Exception
+    public void testDeleteUnreferencedUnitIncremental()
     {
         String testFunc = "function instantiateUnit():String[1]{let a  = 10 pkg::Mass~Pound;'ok';}";
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", this.measureSource)
@@ -127,7 +127,7 @@ public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlat
     }
 
     @Test
-    public void testCanUpdateIncremental() throws Exception
+    public void testCanUpdateIncremental()
     {
         String testFunc1 = "function testFunc():Any[0..1]\n" +
                 "{\n" +
@@ -150,7 +150,7 @@ public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlat
     }
 
     @Test
-    public void testUpdateMeasureAsParameterMultiplicityManyIncremental() throws Exception
+    public void testUpdateMeasureAsParameterMultiplicityManyIncremental()
     {
         String updatedConversionFunc = "Measure pkg::Mass \n" +
                 "{\n" +
@@ -179,7 +179,7 @@ public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlat
     }
 
     @Test
-    public void testDeleteReferencedNonConvertibleUnitIncrementalThrowsError() throws Exception
+    public void testDeleteReferencedNonConvertibleUnitIncrementalThrowsError()
     {
         String testFunc = "function instantiateUnit():String[1]{let a  = 10 pkg::Currency~GBP;'ok';}";
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", this.nonConvertibleMeasure)
@@ -189,14 +189,14 @@ public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlat
                         .deleteSource("sourceId.pure")
                         .compileWithExpectedCompileFailure("pkg::Currency has not been defined!", "testFunc.pure", 1, 64)
                         .createInMemorySource("sourceId.pure", this.updatedNonConvertibleMeasure)
-                        .compileWithExpectedCompileFailure("The unit 'Currency~GBP' can't be found in measure 'pkg::Currency'", "testFunc.pure", 1, 64)
+                        .compileWithExpectedCompileFailure("The unit 'GBP' can't be found in measure 'pkg::Currency'", "testFunc.pure", 1, 64)
                         .updateSource("sourceId.pure", this.nonConvertibleMeasure)
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testDeleteUnreferencedNonConvertibleUnitIncremental() throws Exception
+    public void testDeleteUnreferencedNonConvertibleUnitIncremental()
     {
         String testFunc = "function instantiateUnit():String[1]{let a  = 10 pkg::Currency~EUR;'ok';}";
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", this.nonConvertibleMeasure)

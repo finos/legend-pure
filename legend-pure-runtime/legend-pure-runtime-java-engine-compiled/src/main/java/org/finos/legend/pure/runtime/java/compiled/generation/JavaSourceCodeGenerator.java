@@ -688,7 +688,7 @@ public final class JavaSourceCodeGenerator
     private String toFactoryRegistryEntry(String path, CoreInstance _class)
     {
         String factory = ClassProcessor.requiresCompilationImpl(this.processorSupport, _class) ?
-                         JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class, ClassImplIncrementalCompilationProcessor.CLASS_IMPL_SUFFIX) :
+                         JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class, ClassImplIncrementalCompilationProcessor.CLASS_IMPL_SUFFIX, this.processorSupport) :
                          M3ToJavaGenerator.getFullyQualifiedM3ImplForCompiledModel(_class);
         String factoryInterface = M3ToJavaGenerator.getFullyQualifiedM3InterfaceForCompiledModel(_class);
         return "            .withType(\"" + path + "\", " + factory + ".FACTORY, " + factoryInterface + ".class)\n";

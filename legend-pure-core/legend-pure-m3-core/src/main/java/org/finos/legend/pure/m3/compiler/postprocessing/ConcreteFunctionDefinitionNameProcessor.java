@@ -16,18 +16,17 @@ package org.finos.legend.pure.m3.compiler.postprocessing;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.navigation.measure.Measure;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -82,38 +81,41 @@ public class ConcreteFunctionDefinitionNameProcessor
     private static String getSignatureAndResolveImports(Function<?> function, ModelRepository repository, ProcessorSupport processorSupport) throws PureCompilationException
     {
         String functionName = function._functionName();
-        FunctionType functionType = (FunctionType)processorSupport.function_getFunctionType(function);
-        GenericType returnTypeGeneric = functionType._returnType();
-        org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveGenericTypeUsingImports(returnTypeGeneric, repository, processorSupport);
-        String returnType = ImportStub.withImportStubByPass(returnTypeGeneric._rawTypeCoreInstance(), processorSupport) == null ? org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(returnTypeGeneric, processorSupport) : ImportStub.withImportStubByPass(returnTypeGeneric._rawTypeCoreInstance(), processorSupport).getName();
-        String multiplicity = Multiplicity.multiplicityToSignatureString(functionType._returnMultiplicity());
-        MutableList<String> vars = functionType._parameters().collect(v -> functionSignatureVariableToString(v, repository, processorSupport), Lists.mutable.empty());
-        return functionName + "_" + vars.makeString("_") + "_" + returnType + multiplicity;
+        FunctionType functionType = (FunctionType) processorSupport.function_getFunctionType(function);
+        StringBuilder builder = new StringBuilder(functionName).append('_');
+        functionType._parameters().forEach(p -> appendSignatureStringForType(builder, p._genericType(), repository, processorSupport)
+                .append(Multiplicity.multiplicityToSignatureString(p._multiplicity()))
+                .append('_'));
+        if (builder.length() == functionName.length() + 1)
+        {
+            builder.append('_');
+        }
+        appendSignatureStringForType(builder, functionType._returnType(), repository, processorSupport)
+                .append(Multiplicity.multiplicityToSignatureString(functionType._returnMultiplicity()));
+        return builder.toString();
     }
 
-    private static String functionSignatureVariableToString(VariableExpression variable, ModelRepository repository, ProcessorSupport processorSupport) throws PureCompilationException
+    private static StringBuilder appendSignatureStringForType(StringBuilder builder, GenericType genericType, ModelRepository repository, ProcessorSupport processorSupport)
     {
-        GenericType variableTypeGeneric = variable._genericType();
-        org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveGenericTypeUsingImports(variableTypeGeneric, repository, processorSupport);
-        String type;
-        if (ImportStub.withImportStubByPass(variableTypeGeneric._rawTypeCoreInstance(), processorSupport) == null)
+        org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveGenericTypeUsingImports(genericType, repository, processorSupport);
+        CoreInstance rawType = ImportStub.withImportStubByPass(genericType._rawTypeCoreInstance(), processorSupport);
+        if (rawType == null)
         {
-            type = org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(variableTypeGeneric, processorSupport);
+            return builder.append(org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(genericType));
         }
-        else
+        if (Measure.isUnit(rawType, processorSupport))
         {
-            Type theType = (Type)ImportStub.withImportStubByPass(variableTypeGeneric._rawTypeCoreInstance(), processorSupport);
-            if ("FunctionType".equals(theType.getClassifier().getName()))
-            {
-                type = "FunctionTypeTODO";
-            }
-            else
-            {
-                type = ImportStub.withImportStubByPass(variableTypeGeneric._rawTypeCoreInstance(), processorSupport).getName();
-            }
+            return builder.append(rawType.getValueForMetaPropertyToOne(M3Properties.measure).getName()).append('~').append(rawType.getName());
         }
-        String multiplicity = Multiplicity.multiplicityToSignatureString(variable._multiplicity());
-        return type + multiplicity;
+        if (PackageableElement.isPackageableElement(rawType, processorSupport))
+        {
+            return builder.append(rawType.getName());
+        }
+        if (org.finos.legend.pure.m3.navigation.function.FunctionType.isFunctionType(rawType, processorSupport))
+        {
+            // TODO should we support this?
+            return builder.append("FunctionTypeTODO");
+        }
+        throw new RuntimeException("Unsupported type: " + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(genericType, processorSupport));
     }
-
 }

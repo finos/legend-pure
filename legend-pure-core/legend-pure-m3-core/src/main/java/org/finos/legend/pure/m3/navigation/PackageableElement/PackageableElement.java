@@ -18,10 +18,13 @@ import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstanceWrapper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 
@@ -46,6 +49,19 @@ public class PackageableElement
         buffer.append(instance.getValueForMetaPropertyToOne(M3Properties.name).getName());
         return buffer.toString();
     };
+
+    public static boolean isPackageableElement(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        if (instance == null)
+        {
+            return false;
+        }
+        if (instance instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement)
+        {
+            return true;
+        }
+        return (!(instance instanceof Any) || (instance instanceof AbstractCoreInstanceWrapper)) && processorSupport.instance_instanceOf(instance, M3Paths.PackageableElement);
+    }
 
     public static void forEachPackagePathElement(CoreInstance packageableElement, Consumer<? super CoreInstance> firstConsumer, Consumer<? super CoreInstance> restConsumer)
     {

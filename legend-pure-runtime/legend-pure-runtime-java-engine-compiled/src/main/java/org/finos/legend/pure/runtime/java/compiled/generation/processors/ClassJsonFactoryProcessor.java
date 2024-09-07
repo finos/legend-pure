@@ -90,7 +90,7 @@ public class ClassJsonFactoryProcessor
         if (!processedClasses.contains(_class) && !processorSupport.instance_instanceOf(_class, M3Paths.DataType))
         {
             processedClasses.add(_class);
-            String className = TypeProcessor.javaInterfaceForType(_class);
+            String className = TypeProcessor.javaInterfaceForType(_class, processorSupport);
             String userDefinedClassName = PackageableElement.getUserPathForPackageableElement(_class);
             String typeParams = typeParameters(_class);
             // Factory to create objects from Json
@@ -140,7 +140,7 @@ public class ClassJsonFactoryProcessor
                                             CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(returnType, M3Properties.rawType, processorSupport);
                                             String classFullName = rawType == null ? null : PackageableElement.getSystemPathForPackageableElement(rawType, "::");
                                             String classFullUserPath = rawType == null ? null : PackageableElement.getUserPathForPackageableElement(rawType);
-                                            String classFullName2 = rawType == null ? null : TypeProcessor.javaInterfaceNameForType(rawType);
+                                            String classFullName2 = rawType == null ? null : TypeProcessor.javaInterfaceNameForType(rawType, processorSupport);
 
                                             boolean isToOne = Multiplicity.isToOne(multiplicity, false);
 
