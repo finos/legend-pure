@@ -325,6 +325,46 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
     }
 
     @Test
+    public void testNewUnitWithUnitParameter()
+    {
+        compileTestSource("testModel.pure", massDefinition);
+        compileTestSource("testFunc.pure",
+                "import pkg::*;\n" +
+                        "function testNewUnit(unit:Unit[1], n:Number[1]):Any[1]\n" +
+                        "{\n" +
+                        "    newUnit($unit, $n)\n" +
+                        "}\n" +
+                        "\n" +
+                        "function testFunc():Mass~Pound[1]\n" +
+                        "{\n" +
+                        "   testNewUnit(Mass~Pound, 10)->cast(@Mass~Pound);\n" +
+                        "}");
+        CoreInstance result = execute("testFunc():Mass~Pound[1]");
+        Assert.assertEquals("Mass~Pound", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+        Assert.assertEquals("10", result.getValueForMetaPropertyToOne(M3Properties.values).getValueForMetaPropertyToOne(M3Properties.values).getName());
+    }
+
+    @Test
+    public void testNewUnitWithUnitParameterAndEval()
+    {
+        compileTestSource("testModel.pure", massDefinition);
+        compileTestSource("testFunc.pure",
+                "import pkg::*;\n" +
+                        "function testNewUnit(unit:Unit[1], n:Number[1]):Any[1]\n" +
+                        "{\n" +
+                        "    newUnit($unit, $n)\n" +
+                        "}\n" +
+                        "\n" +
+                        "function testFunc():Mass~Pound[1]\n" +
+                        "{\n" +
+                        "   testNewUnit_Unit_1__Number_1__Any_1_->eval(Mass~Pound, 10)->cast(@Mass~Pound);\n" +
+                        "}");
+        CoreInstance result = execute("testFunc():Mass~Pound[1]");
+        Assert.assertEquals("Mass~Pound", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+        Assert.assertEquals("10", result.getValueForMetaPropertyToOne(M3Properties.values).getValueForMetaPropertyToOne(M3Properties.values).getName());
+    }
+
+    @Test
     public void testGetUnitValue()
     {
         compileTestSource("testModel.pure", massDefinition);

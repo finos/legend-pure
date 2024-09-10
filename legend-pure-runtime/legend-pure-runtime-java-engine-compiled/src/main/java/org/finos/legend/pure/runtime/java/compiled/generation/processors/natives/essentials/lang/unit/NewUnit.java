@@ -18,6 +18,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.measure.Measure;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
@@ -35,8 +36,11 @@ public class NewUnit extends AbstractNative
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
         CoreInstance unit = Instance.getValueForMetaPropertyToOneResolved(functionExpression.getValueForMetaPropertyToMany(M3Properties.parametersValues).getFirst(), M3Properties.values, processorContext.getSupport());
-        String unitImplClassReference = JavaPackageAndImportBuilder.buildImplClassReferenceFromType(unit);
-        return "new " + unitImplClassReference + "(" + transformedParams.get(1) + ", es)";
+        return Measure.isUnit(unit, processorContext.getSupport()) ?
+               // concretely specified unit: we can generate the Java instantiation directly
+               ("new " + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(unit) + "(" + transformedParams.get(1) + ", es)") :
+               // unit comes from a variable or function expression or something like that: we have to instantiate reflectively
+               ("CompiledSupport.newUnitInstance(" + transformedParams.get(0) + ", " + transformedParams.get(1) + ", es)");
     }
 
     @Override
