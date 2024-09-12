@@ -65,7 +65,7 @@ public class DynamicNew extends NativeFunction
     {
         // The parameter is a Class ... but we encode the typeArguments in the ValueExpression genericType's typeArguments ...
         CoreInstance genericType = isGenericType ? Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport) :
-                Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.genericType, M3Properties.typeArguments, processorSupport);
+                processorSupport.type_wrapGenericType(Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport));
         // key / value list
         ListIterable<? extends CoreInstance> keyValues = Instance.getValueForMetaPropertyToManyResolved(params.get(1), M3Properties.values, processorSupport);
 

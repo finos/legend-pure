@@ -74,6 +74,12 @@ public class ClassCache
         }
     }
 
+    public Class<?> getIfAbsentPutImplForType(Type type)
+    {
+        TypeJavaInfo java = getJavaInfoForType(type);
+        return java.implClass;
+    }
+
     public Class<?> getIfAbsentPutInterfaceForType(Type type)
     {
         TypeJavaInfo java = getJavaInfoForType(type);

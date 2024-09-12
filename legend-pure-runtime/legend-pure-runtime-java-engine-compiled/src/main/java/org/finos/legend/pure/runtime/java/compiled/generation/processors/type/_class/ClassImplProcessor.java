@@ -44,6 +44,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.Functio
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification.ValueSpecificationProcessor;
 
+import java.util.function.BiFunction;
+
 public class ClassImplProcessor
 {
     //DO NOT ADD WIDE * IMPORTS TO THIS LIST IT IMPACTS COMPILE TIMES
@@ -94,6 +96,15 @@ public class ClassImplProcessor
         String typeParamsString = typeParams.isEmpty() ? "" : "<" + typeParams + ">";
         String classNamePlusTypeParams = className + typeParamsString;
         String interfaceNamePlusTypeParams = TypeProcessor.javaInterfaceForType(_class) + typeParamsString;
+
+        ListIterable<String> defaultValues = DefaultValue.manageDefaultValues(new BiFunction<String, String, String>()
+        {
+            @Override
+            public String apply(String name, String value)
+            {
+                return "org.eclipse.collections.impl.tuple.Tuples.pair(\"" + name + "\", " + value + ")";
+            }
+        }, _class, true, processorContext).select(s -> !s.isEmpty());
 
         boolean isGetterOverride = M3Paths.GetterOverride.equals(PackageableElement.getUserPathForPackageableElement(_class)) ||
                 M3Paths.ConstraintsGetterOverride.equals(PackageableElement.getUserPathForPackageableElement(_class));
@@ -146,6 +157,12 @@ public class ClassImplProcessor
                 buildGetFullSystemPath() +
                 //Not supported on platform classes yet
                 (ClassProcessor.isPlatformClass(_class) ? "" : validate(_class, className, classGenericType, processorContext, processorSupport.class_getSimpleProperties(_class))) +
+                (defaultValues.isEmpty() ? "" :
+                        "    @Override\n" +
+                        "    public MutableList<? extends org.eclipse.collections.api.tuple.Pair<? extends String, ? extends RichIterable>> defaultValues(ExecutionSupport es)\n" +
+                        "    {\n" +
+                        "        return Lists.mutable.with(" + defaultValues.makeString(",") + ");\n" +
+                        "    }") +
                 "}");
     }
 

@@ -46,23 +46,10 @@ public class DynamicNew extends AbstractNative
     @Override
     public ListIterable<String> transformParameterValues(ListIterable<? extends CoreInstance> parametersValues, CoreInstance topLevelElement, ProcessorSupport processorSupport, ProcessorContext processorContext)
     {
-        ListIterable<String> defaultValues = transformDefaultValues(parametersValues.get(0), processorSupport, processorContext);
-
         MutableList<String> transformedParams = Lists.mutable.ofInitialCapacity(parametersValues.size());
         parametersValues.forEachWithIndex((parameterValue, index) ->
         {
-            if (defaultValues.notEmpty() && index == 1)
-            {
-                ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(parameterValue, M3Properties.values, processorSupport);
-                String type = TypeProcessor.typeToJavaObjectSingle(Instance.getValueForMetaPropertyToOneResolved(parameterValue, M3Properties.genericType, processorSupport), true, processorSupport);
-
-                MutableList<String> processedValues = values.collect(v -> ValueSpecificationProcessor.processValueSpecification(topLevelElement, v, processorContext), Lists.mutable.withAll(defaultValues));
-                transformedParams.add(processedValues.size() > 1 ? "Lists.mutable.<" + type + ">with(" + processedValues.makeString(",") + ")" : processedValues.makeString(","));
-            }
-            else
-            {
                 transformedParams.add(ValueSpecificationProcessor.processValueSpecification(topLevelElement, parameterValue, processorContext));
-            }
         });
 
         return transformedParams;
@@ -118,19 +105,5 @@ public class DynamicNew extends AbstractNative
 
         String newObjectStatement = newObject + "," + newOverrideInstance + "," + getterOverrides + ",es)";
         return "Pure.handleValidation(false," + newObjectStatement + "," + SourceInfoProcessor.sourceInfoToString(functionExpression.getSourceInformation()) + ",es)";
-    }
-
-    private ListIterable<String> transformDefaultValues(CoreInstance instance, ProcessorSupport processorSupport, ProcessorContext processorContext)
-    {
-        CoreInstance genericType = Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.genericType, M3Properties.typeArguments, processorSupport);
-
-        return genericType != null ? InstantiationHelpers.manageDefaultValues(this::formatDefaultValueString,
-                Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), true, processorContext).select(s -> !s.isEmpty())
-                : Lists.immutable.empty();
-    }
-
-    private String formatDefaultValueString(String name, String value)
-    {
-        return "new org.finos.legend.pure.generated.Root_meta_pure_functions_lang_KeyValue_Impl(\"Anonymous_NoCounter\")._key(\"" + name + "\")._value(" + value + ")";
     }
 }

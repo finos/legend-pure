@@ -26,6 +26,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.SourceI
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.DefaultValue;
 
 public class NewWithKeyExpr extends AbstractNative
 {
@@ -50,7 +51,7 @@ public class NewWithKeyExpr extends AbstractNative
         return "new " + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class) + (addGenericType ? TypeProcessor.buildTypeArgumentsString(genericType, false, processorSupport) : "")
                 + "(\"" + newId + "\")" + (addGenericType ? "._classifierGenericType("
                 + InstantiationHelpers.buildGenericType(genericType, processorContext) + ")" : "")
-                + InstantiationHelpers.manageDefaultValues(this::formatDefaultValueString, Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), false, processorContext).makeString("")
+                + DefaultValue.manageDefaultValues(this::formatDefaultValueString, Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), false, processorContext).makeString("")
                 + InstantiationHelpers.manageKeyValues(genericType, Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), keyValues, processorContext)
                 + (_Class.computeConstraintsInHierarchy(_class, processorSupport).isEmpty() ? "" : "._validate(false, " + SourceInfoProcessor.sourceInfoToString(functionExpression.getSourceInformation()) + ", es)");
     }
