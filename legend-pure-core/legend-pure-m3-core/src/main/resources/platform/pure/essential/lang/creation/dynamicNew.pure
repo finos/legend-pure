@@ -47,6 +47,14 @@ Class meta::pure::functions::lang::tests::dynamicNew::D_D
   name : String[1];
 }
 
+
+Class meta::pure::functions::lang::tests::dynamicNew::ClassWithDefault
+{
+  name : String[1] = 'default_X_Y';
+  other : String[1];
+  optional : String[0..1];
+}
+
 function meta::pure::functions::lang::tests::dynamicNew::getterOverrideToMany(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]
 {
  [^D_D(name = $o->cast(@D_A).a + $o->getHiddenPayload()->cast(@String)->toOne()), ^D_D(name = $o->cast(@D_A).b->toOne() + $o->getHiddenPayload()->cast(@String)->toOne())]
@@ -55,6 +63,34 @@ function meta::pure::functions::lang::tests::dynamicNew::getterOverrideToMany(o:
 function meta::pure::functions::lang::tests::dynamicNew::getterOverrideToOne(o:Any[1], property:Property<Nil,Any|0..1>[1]):Any[0..1]
 {
  ^D_D(name = $o->cast(@D_A).a + $o->getHiddenPayload()->cast(@String)->toOne());
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::dynamicNew::testDynamicNewWithDefault():Boolean[1]
+{
+    assertEquals('default_X_Y', dynamicNew(ClassWithDefault, [^KeyValue(key='other',value='rrr')])->cast(@ClassWithDefault).name);
+
+    let x = [^KeyValue(key='other',value='rrr')];
+    assertEquals('default_X_Y', dynamicNew(ClassWithDefault, $x)->cast(@ClassWithDefault).name);
+
+    let c = ClassWithDefault;
+    assertEquals('default_X_Y', dynamicNew($c, [^KeyValue(key='other',value='rrr')])->cast(@ClassWithDefault).name);
+
+    let c_any = ClassWithDefault->cast(@Class<Any>);
+    assertEquals('default_X_Y', dynamicNew($c_any, [^KeyValue(key='other',value='rrr')])->cast(@ClassWithDefault).name);
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::dynamicNew::testDynamicNewWithDefaultAndSet():Boolean[1]
+{
+    assertEquals('NewVal', dynamicNew(ClassWithDefault, [^KeyValue(key='other',value='rrr'), ^KeyValue(key='name',value='NewVal')])->cast(@ClassWithDefault).name);
+
+    let x = [^KeyValue(key='other',value='rrr'), ^KeyValue(key='name',value='NewVal')];
+    assertEquals('NewVal', dynamicNew(ClassWithDefault, $x)->cast(@ClassWithDefault).name);
+
+    let c = ClassWithDefault;
+    assertEquals('NewVal', dynamicNew($c, [^KeyValue(key='other',value='rrr'), ^KeyValue(key='name',value='NewVal')])->cast(@ClassWithDefault).name);
+
+    let c_any = ClassWithDefault->cast(@Class<Any>);
+    assertEquals('NewVal', dynamicNew($c_any, [^KeyValue(key='other',value='rrr'), ^KeyValue(key='name',value='NewVal')])->cast(@ClassWithDefault).name);
 }
 
 function <<test.Test>> meta::pure::functions::lang::tests::dynamicNew::testSimpleDynamicNew():Boolean[1]

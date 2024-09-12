@@ -19,6 +19,7 @@ import org.eclipse.collections.api.block.function.Function0;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;
@@ -191,6 +192,42 @@ public class CoreGen extends CoreHelper
         return "<" + Pure.manageId(any) + " instanceOf " + Pure.elementToPath((PackageableElement) CoreGen.safeGetGenericType(any, es)._rawType(), "::") + ">";
     }
 
+    public static RichIterable<? extends Root_meta_pure_functions_lang_KeyValue> processKeyExpressions(java.lang.Class<?> _class, Object instance, RichIterable<? extends Root_meta_pure_functions_lang_KeyValue> keyExpressions, ExecutionSupport es)
+    {
+        try
+        {
+            Method method = _class.getMethod("defaultValues", ExecutionSupport.class);
+            MutableList<org.eclipse.collections.api.tuple.Pair<String, RichIterable<? extends Object>>> vals = (MutableList<org.eclipse.collections.api.tuple.Pair<String, RichIterable<? extends Object>>>) method.invoke(instance, es);
+            MutableMap<String, Root_meta_pure_functions_lang_KeyValue> defaultVals = Maps.mutable.empty();
+            MutableMap<String, Root_meta_pure_functions_lang_KeyValue> given = Maps.mutable.empty();
+
+            MutableList<Root_meta_pure_functions_lang_KeyValue> defaultVals_L = vals.collect(new DefendedFunction<org.eclipse.collections.api.tuple.Pair<String, RichIterable<? extends Object>>, Root_meta_pure_functions_lang_KeyValue>()
+            {
+                @Override
+                public Root_meta_pure_functions_lang_KeyValue valueOf(org.eclipse.collections.api.tuple.Pair<String, RichIterable<?>> v)
+                {
+                    return new Root_meta_pure_functions_lang_KeyValue_Impl("")._key(v.getOne())._value(v.getTwo());
+                }
+            });
+            MutableList<? extends Root_meta_pure_functions_lang_KeyValue> givenL = keyExpressions.toList();
+            for (Root_meta_pure_functions_lang_KeyValue kv : defaultVals_L)
+            {
+                defaultVals.put(kv._key(), kv);
+            }
+            for (Root_meta_pure_functions_lang_KeyValue kv : givenL)
+            {
+                given.put(kv._key(), kv);
+
+            }
+            defaultVals.putAll(given);
+            return defaultVals.valuesView();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static Object newObject(final Class<?> aClass, RichIterable<? extends Root_meta_pure_functions_lang_KeyValue> keyExpressions, ElementOverride override, Function getterToOne, Function getterToMany, Object payload, PureFunction2 getterToOneExec, PureFunction2 getterToManyExec, ExecutionSupport es)
     {
         final ClassCache classCache = ((CompiledExecutionSupport) es).getClassCache();
@@ -199,6 +236,7 @@ public class CoreGen extends CoreHelper
         try
         {
             result = (Any) constructor.newInstance("");
+            keyExpressions = processKeyExpressions(classCache.getIfAbsentPutImplForType(aClass), result, keyExpressions, es);
         }
         catch (InvocationTargetException | InstantiationException | IllegalAccessException e)
         {

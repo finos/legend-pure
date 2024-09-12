@@ -14,6 +14,11 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance;
 
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.tuple.Pair;
+import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
@@ -99,5 +104,10 @@ public abstract class AbstractCompiledCoreInstance extends AbstractCoreInstance 
     public boolean equals(Object obj)
     {
         return this.pureEquals(obj);
+    }
+
+    public MutableList<? extends Pair<? extends String, ? extends RichIterable>> defaultValues(ExecutionSupport es)
+    {
+        return Lists.mutable.empty();
     }
 }
