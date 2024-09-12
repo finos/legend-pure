@@ -40,6 +40,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.LambdaCompiledExtended;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Pure;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.AbstractCompiledCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.GetterOverrideExecutor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.QuantityCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureFunction2;
@@ -196,17 +197,16 @@ public class CoreGen extends CoreHelper
     {
         try
         {
-            Method method = _class.getMethod("defaultValues", ExecutionSupport.class);
-            MutableList<org.eclipse.collections.api.tuple.Pair<String, RichIterable<? extends Object>>> vals = (MutableList<org.eclipse.collections.api.tuple.Pair<String, RichIterable<? extends Object>>>) method.invoke(instance, es);
+            MutableList<? extends org.eclipse.collections.api.tuple.Pair<? extends String, ? extends RichIterable>> vals = ((AbstractCompiledCoreInstance)instance).defaultValues(es);
             MutableMap<String, Root_meta_pure_functions_lang_KeyValue> defaultVals = Maps.mutable.empty();
             MutableMap<String, Root_meta_pure_functions_lang_KeyValue> given = Maps.mutable.empty();
 
-            MutableList<Root_meta_pure_functions_lang_KeyValue> defaultVals_L = vals.collect(new DefendedFunction<org.eclipse.collections.api.tuple.Pair<String, RichIterable<? extends Object>>, Root_meta_pure_functions_lang_KeyValue>()
+            MutableList<Root_meta_pure_functions_lang_KeyValue> defaultVals_L = vals.collect(new DefendedFunction<org.eclipse.collections.api.tuple.Pair<? extends String, ? extends RichIterable>, Root_meta_pure_functions_lang_KeyValue>()
             {
                 @Override
-                public Root_meta_pure_functions_lang_KeyValue valueOf(org.eclipse.collections.api.tuple.Pair<String, RichIterable<?>> v)
+                public Root_meta_pure_functions_lang_KeyValue valueOf(org.eclipse.collections.api.tuple.Pair<? extends String, ? extends RichIterable> pair)
                 {
-                    return new Root_meta_pure_functions_lang_KeyValue_Impl("")._key(v.getOne())._value(v.getTwo());
+                    return new Root_meta_pure_functions_lang_KeyValue_Impl("")._key(pair.getOne())._value(pair.getTwo());
                 }
             });
             MutableList<? extends Root_meta_pure_functions_lang_KeyValue> givenL = keyExpressions.toList();
@@ -217,7 +217,6 @@ public class CoreGen extends CoreHelper
             for (Root_meta_pure_functions_lang_KeyValue kv : givenL)
             {
                 given.put(kv._key(), kv);
-
             }
             defaultVals.putAll(given);
             return defaultVals.valuesView();

@@ -157,7 +157,7 @@ public class ClassImplProcessor
                 buildGetFullSystemPath() +
                 //Not supported on platform classes yet
                 (ClassProcessor.isPlatformClass(_class) ? "" : validate(_class, className, classGenericType, processorContext, processorSupport.class_getSimpleProperties(_class))) +
-                (defaultValues.toList().isEmpty() ? "" :
+                (defaultValues.isEmpty() ? "" :
                         "    @Override\n" +
                         "    public MutableList<? extends org.eclipse.collections.api.tuple.Pair<? extends String, ? extends RichIterable>> defaultValues(ExecutionSupport es)\n" +
                         "    {\n" +
