@@ -14,10 +14,11 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.lang.creation;
 
-import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.validation.validator.PropertyValidator;
@@ -64,14 +65,14 @@ public class DynamicNew extends NativeFunction
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, final Context context, final ProcessorSupport processorSupport) throws PureExecutionException
     {
         // The parameter is a Class ... but we encode the typeArguments in the ValueExpression genericType's typeArguments ...
-        CoreInstance genericType = isGenericType ? Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport) :
+        CoreInstance genericType = this.isGenericType ? Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport) :
                 processorSupport.type_wrapGenericType(Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport));
         // key / value list
         ListIterable<? extends CoreInstance> keyValues = Instance.getValueForMetaPropertyToManyResolved(params.get(1), M3Properties.values, processorSupport);
 
         CoreInstance classifier = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
         CoreInstance instance = this.repository.newEphemeralAnonymousCoreInstance(functionExpressionToUseInStack.getSourceInformation(), classifier);
-        if (isGenericType)
+        if (this.isGenericType)
         {
             Instance.addValueToProperty(instance, M3Properties.classifierGenericType, genericType, processorSupport);
         }
@@ -81,6 +82,7 @@ public class DynamicNew extends NativeFunction
         MapIterable<String, CoreInstance> propertiesByName = processorSupport.class_getSimplePropertiesByName(classifier);
 
         // Set property values
+        MutableSet<String> setKeys = Sets.mutable.empty();
         for (CoreInstance keyValue : keyValues)
         {
             // Find and validate Property
@@ -93,50 +95,39 @@ public class DynamicNew extends NativeFunction
 
             ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(keyValue, M3Properties.value, processorSupport);
             Instance.setValuesForProperty(instance, key, values, processorSupport);
-
+            setKeys.add(key);
             if (shouldValidate)
             {
                 try
                 {
                     PropertyValidator.validateMultiplicityRange(instance, property, values, processorSupport);
-
-                    for (CoreInstance val : values)
-                    {
-                        PropertyValidator.validateTypeRange(instance, property, val, processorSupport);
-                    }
+                    values.forEach(val -> PropertyValidator.validateTypeRange(instance, property, val, processorSupport));
                 }
                 catch (PureCompilationException ex)
                 {
-                    throw new PureExecutionException("Unable to create a new instance of class '" + classifier.getName() + "'. Invalid value '" + values.collect(new Function<CoreInstance, String>()
-                    {
-                        @Override
-                        public String valueOf(CoreInstance object)
-                        {
-                            return object.printWithoutDebug("", 1);
-                        }
-                    }).makeString(",") + "' provided for class property '" + key + "': " + ex.getInfo());
+                    throw new PureExecutionException("Unable to create a new instance of class '" + classifier.getName() + "'. Invalid value '" + values.collect(v -> v.printWithoutDebug("", 1)).makeString(",") + "' provided for class property '" + key + "': " + ex.getInfo(), ex);
                 }
             }
         }
 
         // Set default values if the values for any required fields were not provided
+        VariableContext evaluationVariableContext = this.getParentOrEmptyVariableContext(variableContext);
         for (CoreInstance property : propertiesByName)
         {
-            if (property.getValueForMetaPropertyToOne(M3Properties.defaultValue) != null && instance.getValueForMetaPropertyToMany(property.getName()).size() == 0)
+            if (!setKeys.contains(property.getName()) && property.getValueForMetaPropertyToOne(M3Properties.defaultValue) != null)
             {
                 CoreInstance expression = Property.getDefaultValueExpression(property.getValueForMetaPropertyToOne(M3Properties.defaultValue));
-
-                ListIterable<? extends CoreInstance> values = org.finos.legend.pure.m3.navigation.property.Property.getDefaultValue(property.getValueForMetaPropertyToOne(M3Properties.defaultValue));
-                for (CoreInstance value : values)
+                if (Instance.instanceOf(expression, M3Paths.EnumStub, processorSupport))
                 {
-                    if (Instance.instanceOf(expression, M3Paths.EnumStub, processorSupport))
+                    ListIterable<? extends CoreInstance> values = Property.getDefaultValue(property.getValueForMetaPropertyToOne(M3Properties.defaultValue));
+                    for (CoreInstance value : values)
                     {
                         Instance.addValueToProperty(instance, property.getName(), value.getValueForMetaPropertyToOne(M3Properties.resolvedEnum), processorSupport);
                     }
-                    else
-                    {
-                        Instance.addValueToProperty(instance, property.getName(), value, processorSupport);
-                    }
+                }
+                else
+                {
+                    New.setValuesToProperty(expression, expression, property, instance, expression.getSourceInformation(), genericType, evaluationVariableContext, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport, this.functionExecution, processorSupport);
                 }
             }
         }
