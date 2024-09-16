@@ -40,6 +40,8 @@ import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionEndListener;
 import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionListeners;
 import org.finos.legend.pure.runtime.java.shared.listeners.IdentifiableExecutionEndListener;
 
+import java.util.concurrent.ExecutorService;
+
 public class CompiledExecutionSupport implements ExecutionSupport
 {
     private final JavaCompilerState javaCompilerState;
@@ -68,8 +70,15 @@ public class CompiledExecutionSupport implements ExecutionSupport
     private final MutableSet<String> extraSupportedTypes;
 
     private final MutableList<CompiledExtension> compiledExtensions;
+    
+    private final ExecutorService executorService;
 
     public CompiledExecutionSupport(JavaCompilerState javaCompilerState, CompiledProcessorSupport processorSupport, SourceRegistry sourceRegistry, RepositoryCodeStorage codeStorage, IncrementalCompiler incrementalCompiler, ExecutionActivityListener executionActivityListener, ConsoleCompiled console, FunctionCache functionCache, ClassCache classCache, MetadataProvider metadataProvider, MutableSet<String> extraSupportedTypes, MutableList<CompiledExtension> compiledExtensions, RuntimeOptions options)
+    {
+        this(javaCompilerState, processorSupport, sourceRegistry, codeStorage, incrementalCompiler, executionActivityListener, console, functionCache, classCache, metadataProvider, extraSupportedTypes, compiledExtensions, null, null);
+    }
+
+    public CompiledExecutionSupport(JavaCompilerState javaCompilerState, CompiledProcessorSupport processorSupport, SourceRegistry sourceRegistry, RepositoryCodeStorage codeStorage, IncrementalCompiler incrementalCompiler, ExecutionActivityListener executionActivityListener, ConsoleCompiled console, FunctionCache functionCache, ClassCache classCache, MetadataProvider metadataProvider, MutableSet<String> extraSupportedTypes, MutableList<CompiledExtension> compiledExtensions, RuntimeOptions options, ExecutorService executorService)
     {
         this.javaCompilerState = javaCompilerState;
         this.sourceRegistry = sourceRegistry;
@@ -85,6 +94,7 @@ public class CompiledExecutionSupport implements ExecutionSupport
         this.extraSupportedTypes = extraSupportedTypes;
         this.options = (options == null) ? name -> false : options;
         this.compiledExtensions = compiledExtensions;
+        this.executorService = executorService;
     }
 
     public CompiledExecutionSupport(JavaCompilerState javaCompilerState, CompiledProcessorSupport processorSupport, SourceRegistry sourceRegistry, RepositoryCodeStorage codeStorage, IncrementalCompiler incrementalCompiler, ExecutionActivityListener executionActivityListener, ConsoleCompiled console, FunctionCache functionCache, ClassCache classCache, MetadataProvider metadataProvider, MutableSet<String> extraSupportedTypes, MutableList<CompiledExtension> compiledExtensions)
@@ -235,5 +245,10 @@ public class CompiledExecutionSupport implements ExecutionSupport
     public MutableList<CompiledExtension> getCompiledExtensions()
     {
         return compiledExtensions;
+    }
+
+    public ExecutorService getExecutorService()
+    {
+        return this.executorService;
     }
 }

@@ -77,6 +77,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._c
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification.ValueSpecificationProcessor;
 import org.finos.legend.pure.runtime.java.compiled.metadata.JavaMethodWithParamsSharedPureFunction;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataAccessor;
+import org.finos.legend.pure.runtime.java.shared.parallel.ParallelHelper;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -93,12 +94,14 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.StringTokenizer;
+import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
 
 public class CompiledSupport
@@ -748,6 +751,47 @@ public class CompiledSupport
         return (element == null) ? null : function.apply(element, executionSupport);
     }
 
+    public static <T, V> RichIterable<T> parallelMapToManyOverMany(RichIterable<V> collection, BiFunction<? super V, ExecutionSupport, Collection<T>> function, int parallelism, ExecutionSupport executionSupport)
+    {
+        if (collection == null)
+        {
+            return Lists.mutable.empty();
+        }
+        ExecutorService executorService = ((CompiledExecutionSupport) executionSupport).getExecutorService();
+        if (executorService == null)
+        {
+            return (RichIterable<T>) mapToManyOverMany(collection, function, executionSupport);
+        }
+
+        return ParallelHelper.flatCollect(collection, function, executorService, parallelism, executionSupport);
+    }
+
+    public static <T, V> RichIterable<? extends T> parallelMapToOneOverMany(RichIterable<? extends V> collection, BiFunction<? super V, ExecutionSupport, T> function, int parallelism, ExecutionSupport executionSupport)
+    {
+        if (collection == null)
+        {
+            return Lists.mutable.empty();
+        }
+
+        ExecutorService executorService = ((CompiledExecutionSupport) executionSupport).getExecutorService();
+        if (executorService == null)
+        {
+            return mapToOneOverMany(collection, function, executionSupport);
+        }
+        
+        return ParallelHelper.collect(collection, function, executorService, parallelism, executionSupport);
+    }
+
+    public static <T, V> RichIterable<? extends T> parallelMapToManyOverOne(V element, BiFunction<? super V, ExecutionSupport, ? extends RichIterable<? extends T>> function, int parallelism, ExecutionSupport executionSupport)
+    {
+        return mapToManyOverOne(element, function, executionSupport);
+    }
+
+    public static <T, V> T parallelMapToOneOverOne(V element, BiFunction<? super V, ExecutionSupport, T> function, int parallelism, ExecutionSupport executionSupport)
+    {
+        return mapToOneOverOne(element, function, executionSupport);
+    }
+    
     public static <T, V> V fold(RichIterable<? extends T> value, Function2<V, T, ? extends V> function, V accumulator)
     {
         return value == null ? accumulator : value.injectInto(accumulator, function);
