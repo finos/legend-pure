@@ -16,8 +16,10 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.suppor
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -106,8 +108,29 @@ public abstract class AbstractCompiledCoreInstance extends AbstractCoreInstance 
         return this.pureEquals(obj);
     }
 
-    public MutableList<? extends Pair<? extends String, ? extends RichIterable>> defaultValues(ExecutionSupport es)
+    @Deprecated
+    public MutableList<? extends Pair<? extends String, ? extends RichIterable<?>>> defaultValues(ExecutionSupport es)
     {
-        return Lists.mutable.empty();
+        ListIterable<String> keys = getDefaultValueKeys();
+        MutableList<Pair<String, RichIterable<?>>> result = Lists.mutable.ofInitialCapacity(keys.size());
+        for (String key : keys)
+        {
+            RichIterable<?> defaultValue = getDefaultValue(key, es);
+            if ((defaultValue != null) && defaultValue.notEmpty())
+            {
+                result.add(Tuples.pair(key, defaultValue));
+            }
+        }
+        return result;
+    }
+
+    public ListIterable<String> getDefaultValueKeys()
+    {
+        return Lists.immutable.empty();
+    }
+
+    public RichIterable<?> getDefaultValue(String property, ExecutionSupport es)
+    {
+        return Lists.immutable.empty();
     }
 }

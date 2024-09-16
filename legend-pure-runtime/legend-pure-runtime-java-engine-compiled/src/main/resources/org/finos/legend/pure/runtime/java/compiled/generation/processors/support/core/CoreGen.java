@@ -18,8 +18,9 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function0;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;
@@ -195,36 +196,26 @@ public class CoreGen extends CoreHelper
 
     public static RichIterable<? extends Root_meta_pure_functions_lang_KeyValue> processKeyExpressions(java.lang.Class<?> _class, Object instance, RichIterable<? extends Root_meta_pure_functions_lang_KeyValue> keyExpressions, ExecutionSupport es)
     {
-        try
+        MutableList<Root_meta_pure_functions_lang_KeyValue> result = Lists.mutable.empty();
+        MutableSet<String> keys = Sets.mutable.empty();
+        for (Root_meta_pure_functions_lang_KeyValue kv : keyExpressions)
         {
-            MutableList<? extends org.eclipse.collections.api.tuple.Pair<? extends String, ? extends RichIterable>> vals = ((AbstractCompiledCoreInstance)instance).defaultValues(es);
-            MutableMap<String, Root_meta_pure_functions_lang_KeyValue> defaultVals = Maps.mutable.empty();
-            MutableMap<String, Root_meta_pure_functions_lang_KeyValue> given = Maps.mutable.empty();
-
-            MutableList<Root_meta_pure_functions_lang_KeyValue> defaultVals_L = vals.collect(new DefendedFunction<org.eclipse.collections.api.tuple.Pair<? extends String, ? extends RichIterable>, Root_meta_pure_functions_lang_KeyValue>()
+            result.add(kv);
+            keys.add(kv._key());
+        }
+        AbstractCompiledCoreInstance coreInstance = (AbstractCompiledCoreInstance) instance;
+        for (String key : coreInstance.getDefaultValueKeys())
+        {
+            if (!keys.contains(key))
             {
-                @Override
-                public Root_meta_pure_functions_lang_KeyValue valueOf(org.eclipse.collections.api.tuple.Pair<? extends String, ? extends RichIterable> pair)
+                RichIterable<?> defaultValue = coreInstance.getDefaultValue(key, es);
+                if ((defaultValue != null) && !defaultValue.isEmpty())
                 {
-                    return new Root_meta_pure_functions_lang_KeyValue_Impl("")._key(pair.getOne())._value(pair.getTwo());
+                    result.add(new Root_meta_pure_functions_lang_KeyValue_Impl("")._key(key)._value(defaultValue));
                 }
-            });
-            MutableList<? extends Root_meta_pure_functions_lang_KeyValue> givenL = keyExpressions.toList();
-            for (Root_meta_pure_functions_lang_KeyValue kv : defaultVals_L)
-            {
-                defaultVals.put(kv._key(), kv);
             }
-            for (Root_meta_pure_functions_lang_KeyValue kv : givenL)
-            {
-                given.put(kv._key(), kv);
-            }
-            defaultVals.putAll(given);
-            return defaultVals.valuesView();
         }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        return result;
     }
 
     public static Object newObject(final Class<?> aClass, RichIterable<? extends Root_meta_pure_functions_lang_KeyValue> keyExpressions, ElementOverride override, Function getterToOne, Function getterToMany, Object payload, PureFunction2 getterToOneExec, PureFunction2 getterToManyExec, ExecutionSupport es)

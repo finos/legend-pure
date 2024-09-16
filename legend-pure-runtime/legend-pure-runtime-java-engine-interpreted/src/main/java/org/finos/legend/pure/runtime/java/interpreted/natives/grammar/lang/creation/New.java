@@ -17,9 +17,11 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.grammar.lang.crea
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.compiler.Context;
@@ -120,6 +122,7 @@ public class New extends NativeFunction
         // Set property values
         VariableContext evaluationVariableContext = this.getParentOrEmptyVariableContext(variableContext);
         MapIterable<String, CoreInstance> propertiesByName = processorSupport.class_getSimplePropertiesByName(classifier);
+        MutableSet<String> setKeys = Sets.mutable.empty();
         for (CoreInstance keyValue : keyValues)
         {
             // Find and validate Property
@@ -134,19 +137,20 @@ public class New extends NativeFunction
             CoreInstance expression = Instance.getValueForMetaPropertyToOneResolved(keyValue, M3Properties.expression, processorSupport);
 
             setValuesToProperty(expression, keyInstance, property, instance, sourceInfoForErrors, classifierGenericType, evaluationVariableContext, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport, context, processorSupport);
+            setKeys.add(key);
         }
 
         // Set default values if the values for any required fields were not provided
         for (CoreInstance property : propertiesByName)
         {
-            if (property.getValueForMetaPropertyToOne(M3Properties.defaultValue) != null && instance.getValueForMetaPropertyToMany(property.getName()).size() == 0)
+            if (!setKeys.contains(property.getName()) && property.getValueForMetaPropertyToOne(M3Properties.defaultValue) != null)
             {
                 CoreInstance expression = Property.getDefaultValueExpression(property.getValueForMetaPropertyToOne(M3Properties.defaultValue));
                 SourceInformation sourceInfoForErrors = expression.getSourceInformation();
 
                 if (Instance.instanceOf(expression, M3Paths.EnumStub, processorSupport))
                 {
-                    ListIterable<? extends CoreInstance> values = org.finos.legend.pure.m3.navigation.property.Property.getDefaultValue(property.getValueForMetaPropertyToOne(M3Properties.defaultValue));
+                    ListIterable<? extends CoreInstance> values = Property.getDefaultValue(property.getValueForMetaPropertyToOne(M3Properties.defaultValue));
                     for (CoreInstance value : values)
                     {
                         Instance.addValueToProperty(instance, property.getName(), value.getValueForMetaPropertyToOne(M3Properties.resolvedEnum), processorSupport);
@@ -179,10 +183,15 @@ public class New extends NativeFunction
 
     private void setValuesToProperty(CoreInstance expression, CoreInstance keyInstance, CoreInstance property, CoreInstance instance, SourceInformation sourceInfoForErrors, CoreInstance classifierGenericType, VariableContext evaluationVariableContext, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport)
     {
+        setValuesToProperty(expression, keyInstance, property, instance, sourceInfoForErrors, classifierGenericType, evaluationVariableContext, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport, this.functionExecution, processorSupport);
+    }
+
+    public static void setValuesToProperty(CoreInstance expression, CoreInstance keyInstance, CoreInstance property, CoreInstance instance, SourceInformation sourceInfoForErrors, CoreInstance classifierGenericType, VariableContext evaluationVariableContext, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, FunctionExecutionInterpreted functionExecution, ProcessorSupport processorSupport)
+    {
         CoreInstance propertyGenericType = GenericType.resolvePropertyReturnType(Instance.extractGenericTypeFromInstance(instance, processorSupport), property, processorSupport);
 
-        Executor executor = FunctionExecutionInterpreted.findValueSpecificationExecutor(expression, functionExpressionToUseInStack, processorSupport, this.functionExecution);
-        CoreInstance evaluatedExpression = executor.execute(expression, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, evaluationVariableContext, profiler, instantiationContext, executionSupport, this.functionExecution, processorSupport);
+        Executor executor = FunctionExecutionInterpreted.findValueSpecificationExecutor(expression, functionExpressionToUseInStack, processorSupport, functionExecution);
+        CoreInstance evaluatedExpression = executor.execute(expression, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, evaluationVariableContext, profiler, instantiationContext, executionSupport, functionExecution, processorSupport);
 
         ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(evaluatedExpression, M3Properties.values, processorSupport);
 
@@ -193,7 +202,7 @@ public class New extends NativeFunction
 
         if (values.notEmpty() && !ValueSpecification.isExecutable(evaluatedExpression, processorSupport) && Instance.instancesOf(values, M3Paths.ValueSpecification, processorSupport))
         {
-            values = ValueSpecification.instanceOf(evaluatedExpression, M3Paths.Nil, processorSupport) ? Lists.immutable.<CoreInstance>empty() : Lists.immutable.with(evaluatedExpression);
+            values = ValueSpecification.instanceOf(evaluatedExpression, M3Paths.Nil, processorSupport) ? Lists.immutable.empty() : Lists.immutable.with(evaluatedExpression);
         }
 
         CoreInstance propertyMultiplicity = Property.resolveInstancePropertyReturnMultiplicity(instance, property, processorSupport);
@@ -217,7 +226,7 @@ public class New extends NativeFunction
         }
     }
 
-    private CoreInstance resolveToConcreteGenericType(CoreInstance genericType, Stack<MutableMap<String, CoreInstance>> resolvedTypeParametersStack, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParametersStack, ProcessorSupport processorSupport)
+    private static CoreInstance resolveToConcreteGenericType(CoreInstance genericType, Stack<MutableMap<String, CoreInstance>> resolvedTypeParametersStack, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParametersStack, ProcessorSupport processorSupport)
     {
         if (GenericType.isGenericTypeFullyConcrete(genericType, processorSupport))
         {
@@ -240,7 +249,7 @@ public class New extends NativeFunction
         return null;
     }
 
-    private CoreInstance resolveToConcreteMultiplicity(CoreInstance multiplicity, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParametersStack)
+    private static CoreInstance resolveToConcreteMultiplicity(CoreInstance multiplicity, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParametersStack)
     {
         if (Multiplicity.isMultiplicityConcrete(multiplicity))
         {

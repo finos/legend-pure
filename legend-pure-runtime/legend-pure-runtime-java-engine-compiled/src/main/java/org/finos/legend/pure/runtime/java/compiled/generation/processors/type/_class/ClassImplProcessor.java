@@ -44,8 +44,6 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.Functio
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification.ValueSpecificationProcessor;
 
-import java.util.function.BiFunction;
-
 public class ClassImplProcessor
 {
     //DO NOT ADD WIDE * IMPORTS TO THIS LIST IT IMPACTS COMPILE TIMES
@@ -97,14 +95,12 @@ public class ClassImplProcessor
         String classNamePlusTypeParams = className + typeParamsString;
         String interfaceNamePlusTypeParams = TypeProcessor.javaInterfaceForType(_class) + typeParamsString;
 
-        ListIterable<String> defaultValues = DefaultValue.manageDefaultValues(new BiFunction<String, String, String>()
-        {
-            @Override
-            public String apply(String name, String value)
-            {
-                return "org.eclipse.collections.impl.tuple.Tuples.pair(\"" + name + "\", " + value + ")";
-            }
-        }, _class, true, processorContext).select(s -> !s.isEmpty());
+        MutableList<String> defaultValueKeys = _Class.getSimpleProperties(_class, processorSupport).collectIf(p -> p.getValueForMetaPropertyToOne(M3Properties.defaultValue) != null, CoreInstance::getName, Lists.mutable.empty());
+        ListIterable<String> defaultValues = DefaultValue.manageDefaultValues((name, value) ->
+                "            case \"" + name + "\":\n" +
+                "            {\n" +
+                "                return " + value + ";\n" +
+                "            }\n", _class, true, true, processorContext);
 
         boolean isGetterOverride = M3Paths.GetterOverride.equals(PackageableElement.getUserPathForPackageableElement(_class)) ||
                 M3Paths.ConstraintsGetterOverride.equals(PackageableElement.getUserPathForPackageableElement(_class));
@@ -157,11 +153,26 @@ public class ClassImplProcessor
                 buildGetFullSystemPath() +
                 //Not supported on platform classes yet
                 (ClassProcessor.isPlatformClass(_class) ? "" : validate(_class, className, classGenericType, processorContext, processorSupport.class_getSimpleProperties(_class))) +
-                (defaultValues.isEmpty() ? "" :
+                (defaultValueKeys.isEmpty() ? "" :
+                        "\n" +
                         "    @Override\n" +
-                        "    public MutableList<? extends org.eclipse.collections.api.tuple.Pair<? extends String, ? extends RichIterable>> defaultValues(ExecutionSupport es)\n" +
+                        "    public ListIterable<String> getDefaultValueKeys()\n" +
                         "    {\n" +
-                        "        return Lists.mutable.with(" + defaultValues.makeString(",") + ");\n" +
+                        "        return " + defaultValueKeys.makeString("Lists.immutable.with(\"", "\", \"", "\");\n") +
+                        "    }\n") +
+                (defaultValues.isEmpty() ? "" :
+                        "\n" +
+                        "    @Override\n" +
+                        "    public RichIterable<?> getDefaultValue(String property, ExecutionSupport es)\n" +
+                        "    {\n" +
+                        "        switch (property)\n" +
+                        "        {\n" +
+                        defaultValues.makeString("") +
+                        "            default:\n" +
+                        "            {\n" +
+                        "                return Lists.immutable.empty();\n" +
+                        "            }\n" +
+                        "        }\n" +
                         "    }") +
                 "}");
     }
