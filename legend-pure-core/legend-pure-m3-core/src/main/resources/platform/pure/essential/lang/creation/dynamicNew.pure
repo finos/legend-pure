@@ -56,6 +56,11 @@ Class meta::pure::functions::lang::tests::dynamicNew::ClassWithDefault
   list : List<String>[1] = ^List<String>(values=['default', 'strings']);
 }
 
+Class meta::pure::functions::lang::tests::dynamicNew::SubClassWithDefault extends ClassWithDefault
+{
+  age : Integer[1] = -1;
+}
+
 function meta::pure::functions::lang::tests::dynamicNew::getterOverrideToMany(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]
 {
  [^D_D(name = $o->cast(@D_A).a + $o->getHiddenPayload()->cast(@String)->toOne()), ^D_D(name = $o->cast(@D_A).b->toOne() + $o->getHiddenPayload()->cast(@String)->toOne())]
@@ -81,6 +86,11 @@ function <<test.Test>> meta::pure::functions::lang::tests::dynamicNew::testDynam
     let c_any = ClassWithDefault->cast(@Class<Any>);
     assertEquals('default_X_Y', dynamicNew($c_any, [^KeyValue(key='other',value='rrr')])->cast(@ClassWithDefault).name);
     assertEquals(list(['default', 'strings']), dynamicNew($c_any, [^KeyValue(key='other',value='rrr')])->cast(@ClassWithDefault).list);
+
+    let subClass = SubClassWithDefault;
+    assertEquals('default_X_Y', dynamicNew($subClass, [^KeyValue(key='other',value='rrr')])->cast(@SubClassWithDefault).name);
+    assertEquals(list(['default', 'strings']), dynamicNew($subClass, [^KeyValue(key='other',value='rrr')])->cast(@SubClassWithDefault).list);
+    assertEquals(-1, dynamicNew($subClass, [^KeyValue(key='other',value='rrr')])->cast(@SubClassWithDefault).age);
 }
 
 function <<test.Test>> meta::pure::functions::lang::tests::dynamicNew::testDynamicNewWithDefaultAndSet():Boolean[1]
@@ -104,6 +114,11 @@ function <<test.Test>> meta::pure::functions::lang::tests::dynamicNew::testDynam
     let c_any = ClassWithDefault->cast(@Class<Any>);
     assertEquals('NewVal', dynamicNew($c_any, [^KeyValue(key='other',value='rrr'), ^KeyValue(key='name',value='NewVal')])->cast(@ClassWithDefault).name);
     assertEquals(list(['not', 'the', 'default', 'strings']), dynamicNew($c_any, [^KeyValue(key='other',value='rrr'), ^KeyValue(key='name',value='NewVal'), ^KeyValue(key='list',value=list(['not', 'the', 'default', 'strings']))])->cast(@ClassWithDefault).list);
+
+    let subClass = SubClassWithDefault;
+    assertEquals('NewVal', dynamicNew($subClass, [^KeyValue(key='other',value='rrr'), ^KeyValue(key='name',value='NewVal')])->cast(@SubClassWithDefault).name);
+    assertEquals(list(['not', 'the', 'default', 'strings']), dynamicNew($subClass, [^KeyValue(key='other',value='rrr'), ^KeyValue(key='name',value='NewVal'), ^KeyValue(key='list',value=list(['not', 'the', 'default', 'strings']))])->cast(@SubClassWithDefault).list);
+    assertEquals(36, dynamicNew($subClass, [^KeyValue(key='other',value='rrr'), ^KeyValue(key='name',value='NewVal'), ^KeyValue(key='age',value=36)])->cast(@SubClassWithDefault).age);
 }
 
 function <<test.Test>> meta::pure::functions::lang::tests::dynamicNew::testSimpleDynamicNew():Boolean[1]

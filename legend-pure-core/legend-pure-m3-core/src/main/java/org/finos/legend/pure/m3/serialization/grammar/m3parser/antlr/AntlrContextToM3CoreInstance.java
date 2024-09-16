@@ -3433,9 +3433,9 @@ public class AntlrContextToM3CoreInstance
     {
         CoreInstance result = null;
 
-        if (ctx.instanceLiteralToken() != null)
+        if (ctx.instanceLiteral() != null)
         {
-            result = this.instanceLiteralToken(ctx.instanceLiteralToken(), true);
+            result = doWrap(instanceLiteral(ctx.instanceLiteral()), ctx.instanceLiteral().getStart());
         }
         else if (ctx.instanceReference() != null)
         {

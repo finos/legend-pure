@@ -239,7 +239,7 @@ taggedValue: qualifiedName DOT identifier EQUAL STRING (PLUS STRING)*
 defaultValue: EQUAL defaultValueExpression
 ;
 
-defaultValueExpression: (instanceReference)(propertyExpression) | expressionInstance | instanceLiteralToken | defaultValueExpressionsArray
+defaultValueExpression: (instanceReference)(propertyExpression) | expressionInstance | instanceLiteral | defaultValueExpressionsArray
 ;
 
 defaultValueExpressionsArray: BRACKET_OPEN ( defaultValueExpression (COMMA defaultValueExpression)* )? BRACKET_CLOSE

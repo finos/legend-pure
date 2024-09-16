@@ -95,11 +95,12 @@ public class ClassImplProcessor
         String classNamePlusTypeParams = className + typeParamsString;
         String interfaceNamePlusTypeParams = TypeProcessor.javaInterfaceForType(_class) + typeParamsString;
 
+        MutableList<String> defaultValueKeys = _Class.getSimpleProperties(_class, processorSupport).collectIf(p -> p.getValueForMetaPropertyToOne(M3Properties.defaultValue) != null, CoreInstance::getName, Lists.mutable.empty());
         ListIterable<String> defaultValues = DefaultValue.manageDefaultValues((name, value) ->
                 "            case \"" + name + "\":\n" +
                 "            {\n" +
                 "                return " + value + ";\n" +
-                "            }\n", _class, true, processorContext);
+                "            }\n", _class, true, true, processorContext);
 
         boolean isGetterOverride = M3Paths.GetterOverride.equals(PackageableElement.getUserPathForPackageableElement(_class)) ||
                 M3Paths.ConstraintsGetterOverride.equals(PackageableElement.getUserPathForPackageableElement(_class));
@@ -152,7 +153,15 @@ public class ClassImplProcessor
                 buildGetFullSystemPath() +
                 //Not supported on platform classes yet
                 (ClassProcessor.isPlatformClass(_class) ? "" : validate(_class, className, classGenericType, processorContext, processorSupport.class_getSimpleProperties(_class))) +
+                (defaultValueKeys.isEmpty() ? "" :
+                        "\n" +
+                        "    @Override\n" +
+                        "    public ListIterable<String> getDefaultValueKeys()\n" +
+                        "    {\n" +
+                        "        return " + defaultValueKeys.makeString("Lists.immutable.with(\"", "\", \"", "\");\n") +
+                        "    }\n") +
                 (defaultValues.isEmpty() ? "" :
+                        "\n" +
                         "    @Override\n" +
                         "    public RichIterable<?> getDefaultValue(String property, ExecutionSupport es)\n" +
                         "    {\n" +
@@ -161,7 +170,7 @@ public class ClassImplProcessor
                         defaultValues.makeString("") +
                         "            default:\n" +
                         "            {\n" +
-                        "                return super.getDefaultValue(property, es);\n" +
+                        "                return Lists.immutable.empty();\n" +
                         "            }\n" +
                         "        }\n" +
                         "    }") +

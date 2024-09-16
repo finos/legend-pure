@@ -14,11 +14,14 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class;
 
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -31,8 +34,13 @@ public class DefaultValue
 {
     public static ListIterable<String> manageDefaultValues(BiFunction<String, String, String> formatString, CoreInstance sourceClass, boolean doSingleWrap, ProcessorContext processorContext)
     {
+        return manageDefaultValues(formatString, sourceClass, doSingleWrap, false, processorContext);
+    }
+
+    public static ListIterable<String> manageDefaultValues(BiFunction<String, String, String> formatString, CoreInstance sourceClass, boolean doSingleWrap, boolean includeInheritedProperties, ProcessorContext processorContext)
+    {
         ProcessorSupport processorSupport = processorContext.getSupport();
-        ListIterable<? extends CoreInstance> properties = sourceClass.getValueForMetaPropertyToMany(M3Properties.properties);
+        RichIterable<? extends CoreInstance> properties = includeInheritedProperties ? _Class.getSimpleProperties(sourceClass, processorSupport) : sourceClass.getValueForMetaPropertyToMany(M3Properties.properties);
 
         return properties.collectIf(
                 p -> p.getValueForMetaPropertyToOne(M3Properties.defaultValue) != null,
@@ -56,6 +64,7 @@ public class DefaultValue
                     }
 
                     return formatString.apply(p.getName(), value);
-                });
+                },
+                Lists.mutable.empty());
     }
 }

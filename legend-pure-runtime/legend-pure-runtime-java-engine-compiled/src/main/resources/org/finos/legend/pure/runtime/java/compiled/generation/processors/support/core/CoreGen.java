@@ -204,7 +204,7 @@ public class CoreGen extends CoreHelper
             keys.add(kv._key());
         }
         AbstractCompiledCoreInstance coreInstance = (AbstractCompiledCoreInstance) instance;
-        for (String key : coreInstance.getKeys())
+        for (String key : coreInstance.getDefaultValueKeys())
         {
             if (!keys.contains(key))
             {
