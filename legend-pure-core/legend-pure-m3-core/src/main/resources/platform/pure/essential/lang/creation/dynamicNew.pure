@@ -58,6 +58,7 @@ Class meta::pure::functions::lang::tests::dynamicNew::ClassWithDefault
 
 Class meta::pure::functions::lang::tests::dynamicNew::SubClassWithDefault extends ClassWithDefault
 {
+  name : String[1] = 'default_Y_Z';
   age : Integer[1] = -1;
 }
 
@@ -88,7 +89,7 @@ function <<test.Test>> meta::pure::functions::lang::tests::dynamicNew::testDynam
     assertEquals(list(['default', 'strings']), dynamicNew($c_any, [^KeyValue(key='other',value='rrr')])->cast(@ClassWithDefault).list);
 
     let subClass = SubClassWithDefault;
-    assertEquals('default_X_Y', dynamicNew($subClass, [^KeyValue(key='other',value='rrr')])->cast(@SubClassWithDefault).name);
+    assertEquals('default_Y_Z', dynamicNew($subClass, [^KeyValue(key='other',value='rrr')])->cast(@SubClassWithDefault).name);
     assertEquals(list(['default', 'strings']), dynamicNew($subClass, [^KeyValue(key='other',value='rrr')])->cast(@SubClassWithDefault).list);
     assertEquals(-1, dynamicNew($subClass, [^KeyValue(key='other',value='rrr')])->cast(@SubClassWithDefault).age);
 }
