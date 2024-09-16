@@ -34,7 +34,7 @@ function meta::pure::functions::collection::parallelMap<T,V>(value:T[0..1], func
 native function 
     <<PCT.function>>
     {
-        doc.doc='Similar to map() but will try to do the operation in parallel. Also, takes as input the user's desired degree of parallelism. However, note that that actual degree of parallelism depends on the state of the shared threadpool.'
+        doc.doc='Similar to map() but will try to do the operation in parallel. Also, takes as input the user\'s desired degree of parallelism. However, note that that actual degree of parallelism depends on the state of the shared threadpool.'
     } 
     meta::pure::functions::collection::parallelMap<T,V|m>(value:T[m], func:Function<{T[1]->V[1]}>[1], parallelism:Integer[1]):V[m];
 
