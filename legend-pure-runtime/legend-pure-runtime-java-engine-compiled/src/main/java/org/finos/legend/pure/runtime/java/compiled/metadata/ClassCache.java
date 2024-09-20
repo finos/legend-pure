@@ -19,6 +19,7 @@ import org.eclipse.collections.api.map.ConcurrentMutableMap;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 
 import java.lang.reflect.Constructor;
@@ -32,16 +33,24 @@ public class ClassCache
 {
     private final ConcurrentMutableMap<Type, TypeJavaInfo> typeToAttributes = ConcurrentHashMap.newMap();
     private final ClassLoader classLoader;
+    private final ProcessorSupport processorSupport;
 
-    public ClassCache(ClassLoader classLoader)
+    public ClassCache(ClassLoader classLoader, ProcessorSupport processorSupport)
     {
         this.classLoader = classLoader;
+        this.processorSupport = processorSupport;
+    }
+
+    @Deprecated
+    public ClassCache(ClassLoader classLoader)
+    {
+        this(classLoader, null);
     }
 
     @Deprecated
     public ClassCache()
     {
-        this(null);
+        this(null, null);
     }
 
     @Deprecated
@@ -132,7 +141,7 @@ public class ClassCache
 
     private Class<?> getJavaInterfaceForPureType(Type type)
     {
-        String javaClassName = JavaPackageAndImportBuilder.buildInterfaceReferenceFromType(type);
+        String javaClassName = JavaPackageAndImportBuilder.buildInterfaceReferenceFromType(type, this.processorSupport);
         try
         {
             return this.classLoader.loadClass(javaClassName);
@@ -148,7 +157,7 @@ public class ClassCache
 
     private Class<?> getJavaImplClassForPureType(Type type)
     {
-        String javaClassName = JavaPackageAndImportBuilder.buildImplClassReferenceFromType(type);
+        String javaClassName = JavaPackageAndImportBuilder.buildImplClassReferenceFromType(type, this.processorSupport);
         try
         {
             return this.classLoader.loadClass(javaClassName);
@@ -174,6 +183,25 @@ public class ClassCache
         {
             throw new RuntimeException("Conflict between class loaders: " + classCache.classLoader + " vs " + classLoader);
         }
+        return classCache;
+    }
+
+    @Deprecated
+    public static ClassCache reconcileClassCache(ClassCache classCache, ClassLoader classLoader, ProcessorSupport processorSupport)
+    {
+        Objects.requireNonNull(classLoader, "null class loader");
+        Objects.requireNonNull(processorSupport, "null processor support");
+        if ((classCache == null) || ((classCache.classLoader == null) && (classCache.processorSupport == null)))
+        {
+            return new ClassCache(classLoader, processorSupport);
+        }
+        if (classCache.classLoader != classLoader)
+        {
+            throw new RuntimeException("Conflict between class loaders: " + classCache.classLoader + " vs " + classLoader);
+        }
+        // Checking for conflict with the processor support is tricky because there can be multiple processor supports
+        // around at the same time. Also, the behavior of the class cache is much less dependent on the processor
+        // support than on the class loader.
         return classCache;
     }
 

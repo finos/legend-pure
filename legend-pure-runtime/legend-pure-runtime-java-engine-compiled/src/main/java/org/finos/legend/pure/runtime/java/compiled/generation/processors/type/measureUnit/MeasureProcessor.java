@@ -17,7 +17,7 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.type.m
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.measure.Measure;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
@@ -31,7 +31,7 @@ public class MeasureProcessor
     public static void processMeasure(CoreInstance measure, ProcessorContext processorContext)
     {
         String packageName = JavaPackageAndImportBuilder.buildPackageForPackageableElement(measure);
-        String measureInterfaceName = JavaPackageAndImportBuilder.buildInterfaceNameFromType(measure);
+        String measureInterfaceName = JavaPackageAndImportBuilder.buildInterfaceNameFromType(measure, processorContext.getSupport());
         processorContext.addJavaSource(buildMeasureInterface(packageName, measureInterfaceName));
 
         CoreInstance canonicalUnit = measure.getValueForMetaPropertyToOne(M3Properties.canonicalUnit);
@@ -44,10 +44,10 @@ public class MeasureProcessor
 
     private static void processUnit(String packageName, String measureInterfaceName, CoreInstance unit, ProcessorContext processorContext)
     {
-        String unitInterfaceName = JavaPackageAndImportBuilder.buildInterfaceNameFromType(unit);
-        processorContext.addJavaSource(buildUnitInterface(packageName, measureInterfaceName, unitInterfaceName, PackageableElement.getUserPathForPackageableElement(unit)));
+        String unitInterfaceName = JavaPackageAndImportBuilder.buildInterfaceNameFromType(unit, processorContext.getSupport());
+        processorContext.addJavaSource(buildUnitInterface(packageName, measureInterfaceName, unitInterfaceName, Measure.getUserPathForUnit(unit)));
 
-        String unitImplClassName = JavaPackageAndImportBuilder.buildImplClassNameFromType(unit);
+        String unitImplClassName = JavaPackageAndImportBuilder.buildImplClassNameFromType(unit, processorContext.getSupport());
         processorContext.addJavaSource(buildUnitImplClass(packageName, unitInterfaceName, unitImplClassName));
     }
 

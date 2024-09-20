@@ -53,7 +53,7 @@ public class New extends AbstractNative
         else
         {
             String newId = InstantiationHelpers.manageId(parametersValues, processorSupport);
-            return "new " + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class) + (addGenericType ? TypeProcessor.buildTypeArgumentsString(genericType, false, processorSupport) : "")
+            return "new " + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class, processorSupport) + (addGenericType ? TypeProcessor.buildTypeArgumentsString(genericType, false, processorSupport) : "")
                     + "(\"" + newId + "\")" + (addGenericType ? "._classifierGenericType("
                     + InstantiationHelpers.buildGenericType(genericType, processorContext) + ")" : "") + (_Class.computeConstraintsInHierarchy(_class, processorSupport).isEmpty() ? "" : "._validate(false, " + SourceInfoProcessor.sourceInfoToString(functionExpression.getSourceInformation()) + ", es)")
                     + DefaultValue.manageDefaultValues(this::formatDefaultValueString, Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), false, processorContext).makeString("");

@@ -48,39 +48,39 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
     }
 
     @Test
-    public void testPureRuntimeClassAsFunctionParameterType() throws Exception
+    public void testPureRuntimeClassAsFunctionParameterType()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{name:String[1];}")
-                        .createInMemorySource("userId.pure", "function f(c:A[0]):A[0]{$c}" +
+                        .createInMemorySource("userId.pure", "function f(c:A[*]):Any[*]{$c}" +
                                 "function test():Boolean[1]{assert(f([])->isEmpty(),|'')}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
-                        .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 20)
+                        .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 14)
                         .createInMemorySource("sourceId.pure", "Class A{name:String[1];}")
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testPureRuntimeClassAsFunctionParameterTypeError() throws Exception
+    public void testPureRuntimeClassAsFunctionParameterTypeError()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
-                        .createInMemorySource("userId.pure", "function f(c:A[0]):A[0]{$c}" +
+                        .createInMemorySource("userId.pure", "function f(c:A[*]):Any[*]{$c}" +
                                 "function test():Boolean[1]{assert(f([])->isEmpty(),|'')}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .deleteSource("sourceId.pure")
-                        .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 20)
+                        .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 14)
                         .createInMemorySource("sourceId.pure", "Class B{}")
-                        .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 20)
+                        .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 14)
                         .updateSource("sourceId.pure", "Class A{}")
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testPureRuntimeClassAsLambdaParameter() throws Exception
+    public void testPureRuntimeClassAsLambdaParameter()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
                         .createInMemorySource("userId.pure", "function test():Nil[0]{f({a:A[1]|[]->cast(@A)}->eval(^A()));}")
@@ -95,7 +95,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
     }
 
     @Test
-    public void testPureRuntimeClassAsLambdaParameterError() throws Exception
+    public void testPureRuntimeClassAsLambdaParameterError()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
                         .createInMemorySource("userId.pure", "function test():Nil[0]{f({a:A[1]|[]->cast(@A)}->eval(^A()));}")
@@ -114,7 +114,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
 
 
     @Test
-    public void testPureRuntimeClassAsLambdaParameterAndReturn() throws Exception
+    public void testPureRuntimeClassAsLambdaParameterAndReturn()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
                         .createInMemorySource("userId.pure", "function test():Nil[0]{f({a:A[1]|[]->cast(@A)}->eval(^A()));}")
@@ -129,7 +129,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
     }
 
     @Test
-    public void testPureRuntimeClassAsLambdaParameterAndReturnError() throws Exception
+    public void testPureRuntimeClassAsLambdaParameterAndReturnError()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
                         .createInMemorySource("userId.pure", "function test():Nil[0]{f({a:A[1]|$a}->eval(^A()));}")
@@ -147,7 +147,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
 
 
     @Test
-    public void testPureRuntimeClassAsLambdaParameterWithFuncInside() throws Exception
+    public void testPureRuntimeClassAsLambdaParameterWithFuncInside()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
                         .createInMemorySource("userId.pure", "function test():Nil[0]{^A()->match(a:A[1]|f($a));}")
@@ -162,7 +162,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
     }
 
     @Test
-    public void testPureRuntimeClassAsLambdaParameterWithFuncInsideError() throws Exception
+    public void testPureRuntimeClassAsLambdaParameterWithFuncInsideError()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{} Class B{a:A[1];}")
                         .createInMemorySource("userId.pure", "function test():Nil[0]{^B(a=^A())->match(b:B[1]|f($b.a));}")
@@ -179,7 +179,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
     }
 
     @Test
-    public void testPureRuntimeClassAsLambda() throws Exception
+    public void testPureRuntimeClassAsLambda()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{} function k(a:Any[1]):Nil[0]{[]}")
                         .createInMemorySource("userId.pure", "function test():Nil[0]{k(a:A[1]|f($a));}")
@@ -194,7 +194,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
     }
 
     @Test
-    public void testPureRuntimeClassAsFunctionParameterTypeReverse() throws Exception
+    public void testPureRuntimeClassAsFunctionParameterTypeReverse()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("otherId.pure", "Class TK{}")
                         .createInMemorySource("sourceId.pure", "function isContract(p:TK[1]):Nil[0]\n" +
@@ -214,7 +214,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
     }
 
     @Test
-    public void testPureRuntimeClassAsQualifiedPropertyParameter() throws Exception
+    public void testPureRuntimeClassAsQualifiedPropertyParameter()
     {
         ImmutableMap<String, String> sources = Maps.immutable.with(
                 "sourceId.pure", "Class A{name:String[1];}",

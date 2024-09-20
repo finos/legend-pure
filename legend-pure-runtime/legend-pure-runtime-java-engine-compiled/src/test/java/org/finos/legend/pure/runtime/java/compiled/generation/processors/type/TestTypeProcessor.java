@@ -61,34 +61,34 @@ public class TestTypeProcessor extends AbstractPureTestWithCoreCompiled
     @Test
     public void testJavaInterfaceForType()
     {
-        Assert.assertEquals("Root_test_generation_compiled_SimpleClass", TypeProcessor.javaInterfaceForType(getElement("test::generation::compiled::SimpleClass")));
-        Assert.assertEquals("Root_test_generation_compiled_extra_ExtraClass", TypeProcessor.javaInterfaceForType(getElement("test::generation::compiled::extra::ExtraClass")));
-        Assert.assertEquals("org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class", TypeProcessor.javaInterfaceForType(getElement(M3Paths.Class)));
-        Assert.assertEquals("org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association", TypeProcessor.javaInterfaceForType(getElement(M3Paths.Association)));
-        Assert.assertEquals("org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration", TypeProcessor.javaInterfaceForType(getElement(M3Paths.Enumeration)));
-        Assert.assertEquals("org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum", TypeProcessor.javaInterfaceForType(getElement(M3Paths.Enum)));
+        Assert.assertEquals("Root_test_generation_compiled_SimpleClass", TypeProcessor.javaInterfaceForType(getElement("test::generation::compiled::SimpleClass"), processorSupport));
+        Assert.assertEquals("Root_test_generation_compiled_extra_ExtraClass", TypeProcessor.javaInterfaceForType(getElement("test::generation::compiled::extra::ExtraClass"), processorSupport));
+        Assert.assertEquals("org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class", TypeProcessor.javaInterfaceForType(getElement(M3Paths.Class), processorSupport));
+        Assert.assertEquals("org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association", TypeProcessor.javaInterfaceForType(getElement(M3Paths.Association), processorSupport));
+        Assert.assertEquals("org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration", TypeProcessor.javaInterfaceForType(getElement(M3Paths.Enumeration), processorSupport));
+        Assert.assertEquals("org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum", TypeProcessor.javaInterfaceForType(getElement(M3Paths.Enum), processorSupport));
     }
 
     @Test
     public void testJavaInterfaceNameForType()
     {
-        Assert.assertEquals("Root_test_generation_compiled_SimpleClass", TypeProcessor.javaInterfaceNameForType(getElement("test::generation::compiled::SimpleClass")));
-        Assert.assertEquals("Root_test_generation_compiled_extra_ExtraClass", TypeProcessor.javaInterfaceNameForType(getElement("test::generation::compiled::extra::ExtraClass")));
-        Assert.assertEquals("Class", TypeProcessor.javaInterfaceNameForType(getElement(M3Paths.Class)));
-        Assert.assertEquals("Association", TypeProcessor.javaInterfaceNameForType(getElement(M3Paths.Association)));
-        Assert.assertEquals("Enumeration", TypeProcessor.javaInterfaceNameForType(getElement(M3Paths.Enumeration)));
-        Assert.assertEquals("Enum", TypeProcessor.javaInterfaceNameForType(getElement(M3Paths.Enum)));
+        Assert.assertEquals("Root_test_generation_compiled_SimpleClass", TypeProcessor.javaInterfaceNameForType(getElement("test::generation::compiled::SimpleClass"), processorSupport));
+        Assert.assertEquals("Root_test_generation_compiled_extra_ExtraClass", TypeProcessor.javaInterfaceNameForType(getElement("test::generation::compiled::extra::ExtraClass"), processorSupport));
+        Assert.assertEquals("Class", TypeProcessor.javaInterfaceNameForType(getElement(M3Paths.Class), processorSupport));
+        Assert.assertEquals("Association", TypeProcessor.javaInterfaceNameForType(getElement(M3Paths.Association), processorSupport));
+        Assert.assertEquals("Enumeration", TypeProcessor.javaInterfaceNameForType(getElement(M3Paths.Enumeration), processorSupport));
+        Assert.assertEquals("Enum", TypeProcessor.javaInterfaceNameForType(getElement(M3Paths.Enum), processorSupport));
     }
 
     @Test
     public void testFullyQualifiedJavaInterfaceNameForType()
     {
-        Assert.assertEquals("org.finos.legend.pure.generated.Root_test_generation_compiled_SimpleClass", TypeProcessor.fullyQualifiedJavaInterfaceNameForType(getElement("test::generation::compiled::SimpleClass")));
-        Assert.assertEquals("org.finos.legend.pure.generated.Root_test_generation_compiled_extra_ExtraClass", TypeProcessor.fullyQualifiedJavaInterfaceNameForType(getElement("test::generation::compiled::extra::ExtraClass")));
-        Assert.assertEquals("org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class", TypeProcessor.fullyQualifiedJavaInterfaceNameForType(getElement(M3Paths.Class)));
-        Assert.assertEquals("org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association", TypeProcessor.fullyQualifiedJavaInterfaceNameForType(getElement(M3Paths.Association)));
-        Assert.assertEquals("org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration", TypeProcessor.fullyQualifiedJavaInterfaceNameForType(getElement(M3Paths.Enumeration)));
-        Assert.assertEquals("org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum", TypeProcessor.fullyQualifiedJavaInterfaceNameForType(getElement(M3Paths.Enum)));
+        Assert.assertEquals("org.finos.legend.pure.generated.Root_test_generation_compiled_SimpleClass", TypeProcessor.fullyQualifiedJavaInterfaceNameForType(getElement("test::generation::compiled::SimpleClass"), processorSupport));
+        Assert.assertEquals("org.finos.legend.pure.generated.Root_test_generation_compiled_extra_ExtraClass", TypeProcessor.fullyQualifiedJavaInterfaceNameForType(getElement("test::generation::compiled::extra::ExtraClass"), processorSupport));
+        Assert.assertEquals("org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class", TypeProcessor.fullyQualifiedJavaInterfaceNameForType(getElement(M3Paths.Class), processorSupport));
+        Assert.assertEquals("org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association", TypeProcessor.fullyQualifiedJavaInterfaceNameForType(getElement(M3Paths.Association), processorSupport));
+        Assert.assertEquals("org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration", TypeProcessor.fullyQualifiedJavaInterfaceNameForType(getElement(M3Paths.Enumeration), processorSupport));
+        Assert.assertEquals("org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum", TypeProcessor.fullyQualifiedJavaInterfaceNameForType(getElement(M3Paths.Enum), processorSupport));
     }
 
     @SuppressWarnings("unchecked")

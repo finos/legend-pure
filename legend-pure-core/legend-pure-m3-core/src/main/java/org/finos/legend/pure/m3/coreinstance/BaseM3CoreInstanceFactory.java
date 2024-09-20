@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.coreinstance;
 
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.factory.CoreInstanceFactory;
 
@@ -29,23 +30,6 @@ public abstract class BaseM3CoreInstanceFactory implements CoreInstanceFactory
 
     protected String getClassifierPath(CoreInstance classifier)
     {
-        StringBuilder builder = new StringBuilder(64);
-        writeClassifierPath(builder, classifier);
-        return builder.toString();
-    }
-
-    protected void writeClassifierPath(StringBuilder builder, CoreInstance element)
-    {
-        CoreInstance pkg = element.getValueForMetaPropertyToOne("package");
-        if ((pkg == null) || "Root".equals(pkg.getName()))
-        {
-            builder.append(element.getName());
-        }
-        else
-        {
-            writeClassifierPath(builder, pkg);
-            builder.append("::");
-            builder.append(element.getName());
-        }
+        return PackageableElement.getUserPathForPackageableElement(classifier);
     }
 }

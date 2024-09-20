@@ -141,7 +141,7 @@ public class InstantiationHelpers
             CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
             ListIterable<? extends CoreInstance> typeArguments = Instance.getValueForMetaPropertyToManyResolved(genericType, M3Properties.typeArguments, processorSupport);
             String rawTypeStr = "(" + FullJavaPaths.Type + ")((CompiledExecutionSupport)es).getMetadata(\"" + MetadataJavaPaths.buildMetadataKeyFromType(processorSupport.getClassifier(rawType)) + "\", \"" + processorContext.getIdBuilder().buildId(rawType) + "\")";
-            String base = "new " + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(processorSupport.getClassifier(genericType)) + "(\"Anonymous_NoCounter\")._rawType(" + rawTypeStr + ")";
+            String base = "new " + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(processorSupport.getClassifier(genericType), processorSupport) + "(\"Anonymous_NoCounter\")._rawType(" + rawTypeStr + ")";
             if (typeArguments.notEmpty())
             {
                 base += "._typeArguments(Lists.fixedSize.of(" + typeArguments.collect(gt -> buildGenericType(gt, processorContext)).makeString(",") + "))";
@@ -157,7 +157,7 @@ public class InstantiationHelpers
         {
             CoreInstance typeParameter = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.typeParameter, processorSupport);
             String typeParam = "new org.finos.legend.pure.generated.Root_meta_pure_metamodel_type_generics_TypeParameter_Impl(\"Anonymous_NoCounter\")._name(\"" + typeParameter.getValueForMetaPropertyToOne(M3Properties.name).getName() + "\")";
-            return "new " + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(processorSupport.getClassifier(genericType)) + "(\"Anonymous_NoCounter\")._typeParameter(" + typeParam + ")";
+            return "new " + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(processorSupport.getClassifier(genericType), processorSupport) + "(\"Anonymous_NoCounter\")._typeParameter(" + typeParam + ")";
         }
     }
 

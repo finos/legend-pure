@@ -214,6 +214,7 @@ import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.Ty
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TypeParametersWithContravarianceAndMultiplicityParametersContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TypeWithOperationContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.UnitExprContext;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.UnitNameContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.VariableContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
@@ -230,12 +231,10 @@ import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformati
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 import java.util.List;
-import java.util.Optional;
 
 public class AntlrContextToM3CoreInstance
 {
     private final String tab = "    ";
-    private final String tilde = "~";
     private int functionCounter;
     private final ModelRepository repository;
     private final Context context;
@@ -385,10 +384,9 @@ public class AntlrContextToM3CoreInstance
         {
             for (MeasureDefinitionContext dCtx : ctx.measureDefinition())
             {
-                Measure measure;
                 if (hasImportChanged)
                 {
-                    measure = measureParser(dCtx, importId);
+                    result = measureParser(dCtx, importId);
                 }
                 else
                 {
@@ -402,38 +400,23 @@ public class AntlrContextToM3CoreInstance
                         SourceInformation newSourceInfo = this.sourceInformation.getPureSourceInformation(dCtx.getStart(), dCtx.qualifiedName().identifier().getStart(), dCtx.getStop());
                         if (thisInstance.getSourceInformation().getStartColumn() == newSourceInfo.getStartColumn())
                         {
-                            measure = (Measure) thisInstance;
                             offsetSourceInformationForInstanceAndChildren(thisInstance, newSourceInfo.getStartLine() - thisInstance.getSourceInformation().getStartLine());
                             Package packageInstance = buildPackage(dCtx.qualifiedName().packagePath());
-                            measure._package(packageInstance);
-                            packageInstance._childrenAdd(measure);
-
-                            Unit canonicalUnit = measure._canonicalUnit();
-                            if (canonicalUnit != null)
-                            {
-                                canonicalUnit._package(packageInstance);
-                                packageInstance._childrenAdd(canonicalUnit);
-                            }
-                            measure._nonCanonicalUnits().forEach(unit ->
-                            {
-                                unit._package(packageInstance);
-                                packageInstance._childrenAdd(unit);
-                            });
+                            ((PackageableElement) thisInstance)._package(packageInstance);
+                            packageInstance._childrenAdd((PackageableElement) thisInstance);
+                            result = thisInstance;
                         }
                         else
                         {
-                            measure = measureParser(dCtx, importId);
+                            result = measureParser(dCtx, importId);
                         }
                     }
                     else
                     {
-                        measure = measureParser(dCtx, importId);
+                        result = measureParser(dCtx, importId);
                     }
                 }
-                result = measure;
-                this.coreInstancesResult.add(measure);
-                Optional.ofNullable(measure._canonicalUnit()).ifPresent(this.coreInstancesResult::add);
-                this.coreInstancesResult.addAllIterable(measure._nonCanonicalUnits());
+                this.coreInstancesResult.add(result);
             }
         }
         if (ctx.association() != null)
@@ -1788,7 +1771,7 @@ public class AntlrContextToM3CoreInstance
         return wrapperIv;
     }
 
-    private String getUnitNameWithMeasure(M3Parser.UnitNameContext ctx)
+    private String getUnitNameWithMeasure(UnitNameContext ctx)
     {
         QualifiedNameContext measureQualifiedName = ctx.qualifiedName();
         StringBuilder builder = new StringBuilder();
@@ -1796,7 +1779,7 @@ public class AntlrContextToM3CoreInstance
         {
             appendPackage(builder, measureQualifiedName.packagePath()).append("::");
         }
-        builder.append(measureQualifiedName.identifier().getText()).append(this.tilde).append(ctx.identifier().getText());
+        builder.append(measureQualifiedName.identifier().getText()).append(org.finos.legend.pure.m3.navigation.importstub.ImportStub.UNIT_STUB_DELIM).append(ctx.identifier().getText());
         return builder.toString();
     }
 
@@ -2282,51 +2265,52 @@ public class AntlrContextToM3CoreInstance
     {
         checkExists(ctx.qualifiedName().packagePath(), ctx.qualifiedName().identifier(), null);
 
+        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop());
         String measureName = ctx.qualifiedName().identifier().getText();
-        Measure measureInstance = MeasureInstance.createPersistent(this.repository, measureName, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop()))
+        Measure measure = MeasureInstance.createPersistent(this.repository, measureName, sourceInfo)
                 ._name(measureName)
-                ._classifierGenericType(GenericTypeInstance.createPersistent(this.repository)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Measure)));
+                ._classifierGenericType(GenericTypeInstance.createPersistent(this.repository, sourceInfo)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Measure)));
 
         Package packageInstance = buildPackage(ctx.qualifiedName().packagePath());
-        measureInstance._package(packageInstance);
-        packageInstance._childrenAdd(measureInstance);
+        measure._package(packageInstance);
+        packageInstance._childrenAdd(measure);
 
         ListIterable<CoreInstance> stereotypes = (ctx.stereotypes() == null) ? Lists.immutable.empty() : stereotypes(ctx.stereotypes(), importId);
         if (stereotypes.notEmpty())
         {
-            measureInstance._stereotypesCoreInstance(stereotypes);
+            measure._stereotypesCoreInstance(stereotypes);
         }
         ListIterable<TaggedValue> taggedValues = (ctx.taggedValues() == null) ? Lists.immutable.empty() : taggedValues(ctx.taggedValues(), importId);
         if (taggedValues.notEmpty())
         {
-            measureInstance._taggedValues(taggedValues);
+            measure._taggedValues(taggedValues);
         }
 
-        measureInstance._generalizations(Lists.immutable.with(GeneralizationInstance.createPersistent(this.repository, GenericTypeInstance.createPersistent(this.repository)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Any)), measureInstance)));
+        measure._generalizations(Lists.immutable.with(GeneralizationInstance.createPersistent(this.repository, sourceInfo, GenericTypeInstance.createPersistent(this.repository, sourceInfo)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.DataType)), measure)));
 
         M3Parser.MeasureBodyContext measureBodyCtx = ctx.measureBody();
         if (measureBodyCtx.canonicalUnitExpr() != null)
         {
             // traditional canonical unit pattern
-            measureInstance._canonicalUnit(unitParser(measureBodyCtx.canonicalUnitExpr().unitExpr(), importId, measureInstance));
+            measure._canonicalUnit(unitParser(measureBodyCtx.canonicalUnitExpr().unitExpr(), importId, measure));
 
-            MutableList<Unit> nonCanonicalUnits = ListIterate.collect(measureBodyCtx.unitExpr(), unitCtx -> unitParser(unitCtx, importId, measureInstance));
+            MutableList<Unit> nonCanonicalUnits = ListIterate.collect(measureBodyCtx.unitExpr(), unitCtx -> unitParser(unitCtx, importId, measure));
             if (nonCanonicalUnits.notEmpty())
             {
-                measureInstance._nonCanonicalUnits(nonCanonicalUnits);
+                measure._nonCanonicalUnits(nonCanonicalUnits);
             }
         }
         else
         {
             // non-convertible unit pattern
-            MutableList<Unit> nonConvertibleUnits = ListIterate.collect(measureBodyCtx.nonConvertibleUnitExpr(), unitCtx -> nonConvertibleUnitParser(unitCtx, measureInstance));
-            measureInstance._canonicalUnit(nonConvertibleUnits.get(0));
+            MutableList<Unit> nonConvertibleUnits = ListIterate.collect(measureBodyCtx.nonConvertibleUnitExpr(), unitCtx -> nonConvertibleUnitParser(unitCtx, measure));
+            measure._canonicalUnit(nonConvertibleUnits.get(0));
             if (nonConvertibleUnits.size() > 1)
             {
-                measureInstance._nonCanonicalUnits(Lists.immutable.withAll(nonConvertibleUnits.subList(1, nonConvertibleUnits.size())));
+                measure._nonCanonicalUnits(Lists.immutable.withAll(nonConvertibleUnits.subList(1, nonConvertibleUnits.size())));
             }
         }
-        return measureInstance;
+        return measure;
     }
 
     /**
@@ -2335,61 +2319,54 @@ public class AntlrContextToM3CoreInstance
     @SuppressWarnings("unchecked")
     private Unit unitParser(UnitExprContext ctx, ImportGroup importId, Measure measure)
     {
-        String unitName = measure._name() + this.tilde + ctx.identifier().getText();
         SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.identifier().getStart(), ctx.getStop());
-        checkExists(measure._package(), unitName, sourceInfo);
-        Unit unitInstance = UnitInstance.createPersistent(this.repository, unitName, sourceInfo, measure)
+        String unitName = ctx.identifier().getText();
+        Unit unit = UnitInstance.createPersistent(this.repository, unitName, sourceInfo, measure)
                 ._name(unitName)
-                ._classifierGenericType(GenericTypeInstance.createPersistent(this.repository)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Unit)));
+                ._classifierGenericType(GenericTypeInstance.createPersistent(this.repository, sourceInfo)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Unit)));
 
         // set unit super type to be its measure (Kilogram -> Mass)
-        unitInstance._generalizations(Lists.immutable.with(GeneralizationInstance.createPersistent(this.repository, GenericTypeInstance.createPersistent(this.repository)._rawType(measure), unitInstance)));
-
-        Package packageInstance = measure._package();
-        unitInstance._package(packageInstance);
-        packageInstance._childrenAdd(unitInstance);
+        Generalization generalization = GeneralizationInstance.createPersistent(this.repository, sourceInfo, GenericTypeInstance.createPersistent(this.repository, sourceInfo)._rawType(measure), unit);
+        unit._generalizations(Lists.immutable.with(generalization));
+        measure._specializationsAdd(generalization);
 
         // prepare lambda instance for the conversion function
 
-        LambdaContext lambdaContext = new LambdaContext(org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.getUserPathForPackageableElement(unitInstance, "_"));
+        LambdaContext lambdaContext = new LambdaContext(org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.writeUserPathForPackageableElement(new StringBuilder(), measure, "_").append('~').append(unitName).toString());
         MutableList<String> typeParametersNames = Lists.mutable.empty();
-        FunctionType signature = FunctionTypeInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.unitConversionExpr().getStart(), ctx.unitConversionExpr().getStart(), ctx.unitConversionExpr().getStop()), null, null);
+        FunctionType conversionFuncType = FunctionTypeInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.unitConversionExpr().getStart(), ctx.unitConversionExpr().getStart(), ctx.unitConversionExpr().getStop()), null, null);
 
         // prepare params
 
         VariableExpression expr = lambdaParam(null, ctx.unitConversionExpr().identifier(), typeParametersNames, "", importId)
                 ._multiplicity(getPureOne())
-                ._functionTypeOwner(signature)
+                ._functionTypeOwner(conversionFuncType)
                 ._genericType(GenericTypeInstance.createPersistent(this.repository)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Number)));
-        signature._parameters(Lists.immutable.with(expr));
+        conversionFuncType._parameters(Lists.immutable.with(expr));
 
-        GenericType genericTypeInstance = GenericTypeInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.unitConversionExpr().ARROW().getSymbol()))
+        GenericType conversionFuncClassifierGT = GenericTypeInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.unitConversionExpr().ARROW().getSymbol()))
                 ._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.LambdaFunction))
-                ._typeArguments(Lists.immutable.with(GenericTypeInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.unitConversionExpr().ARROW().getSymbol()))._rawType(signature)));
-        LambdaFunction<?> lambdaFunctionInstance = LambdaFunctionInstance.createPersistent(this.repository, lambdaContext.getLambdaFunctionUniqueName(), this.sourceInformation.getPureSourceInformation(ctx.unitConversionExpr().ARROW().getSymbol()))
-                ._classifierGenericType(genericTypeInstance)
+                ._typeArguments(Lists.immutable.with(GenericTypeInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.unitConversionExpr().ARROW().getSymbol()))._rawType(conversionFuncType)));
+        LambdaFunction<?> conversionFunc = LambdaFunctionInstance.createPersistent(this.repository, lambdaContext.getLambdaFunctionUniqueName(), this.sourceInformation.getPureSourceInformation(ctx.unitConversionExpr().ARROW().getSymbol()))
+                ._classifierGenericType(conversionFuncClassifierGT)
                 ._expressionSequence(codeBlock(ctx.unitConversionExpr().codeBlock(), typeParametersNames, Lists.mutable.empty(), importId, lambdaContext, this.addLines, tabs(6)));
-        signature._functionAdd(lambdaFunctionInstance);
+        conversionFuncType._functionAdd(conversionFunc);
 
-        unitInstance._conversionFunction(lambdaFunctionInstance);
+        unit._conversionFunction(conversionFunc);
 
-        return unitInstance;
+        return unit;
     }
 
     private Unit nonConvertibleUnitParser(NonConvertibleUnitExprContext ctx, Measure measure)
     {
-        String unitName = measure._name() + this.tilde + ctx.identifier().getText();
         SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.identifier().getStart(), ctx.getStop());
-        checkExists(measure._package(), unitName, sourceInfo);
+        String unitName = ctx.identifier().getText();
         Unit unitInstance = UnitInstance.createPersistent(this.repository, unitName, sourceInfo, measure)
                 ._name(unitName)
-                ._classifierGenericType(GenericTypeInstance.createPersistent(this.repository)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Unit)));
-        unitInstance._generalizations(Lists.immutable.with(GeneralizationInstance.createPersistent(this.repository, GenericTypeInstance.createPersistent(this.repository)._rawType(measure), unitInstance)));
-
-        Package packageInstance = measure._package();
-        unitInstance._package(packageInstance);
-        packageInstance._childrenAdd(unitInstance);
-
+                ._classifierGenericType(GenericTypeInstance.createPersistent(this.repository, sourceInfo)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Unit)));
+        Generalization generalization = GeneralizationInstance.createPersistent(this.repository, sourceInfo, GenericTypeInstance.createPersistent(this.repository, sourceInfo)._rawType(measure), unitInstance);
+        unitInstance._generalizations(Lists.immutable.with(generalization));
+        measure._specializationsAdd(generalization);
         return unitInstance;
     }
 
@@ -3371,7 +3348,7 @@ public class AntlrContextToM3CoreInstance
         return result;
     }
 
-    private GenericType processUnitType(M3Parser.UnitNameContext unitNameContext, ImportGroup importId)
+    private GenericType processUnitType(UnitNameContext unitNameContext, ImportGroup importId)
     {
         SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(unitNameContext.identifier().getStart());
         String idOrPath = getUnitNameWithMeasure(unitNameContext);

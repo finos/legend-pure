@@ -40,6 +40,6 @@ function <<test.Test>> meta::pure::functions::meta::tests::newUnit::testNewUnitI
     let cubitumFn = {|RomanLength~Cubitum};
     assertEquals(5 RomanLength~Pes, newUnit(RomanLength.canonicalUnit->toOne(), 5));
     assertEquals(10.5D RomanLength~Cubitum, newUnit($cubitumFn->eval(), 10.5D));
-    assertEquals(-310.72D RomanLength~Stadium, newUnit(RomanLength.nonCanonicalUnits->find(u | $u.name == 'RomanLength~Stadium')->toOne(), -310.72D));
+    assertEquals(-310.72D RomanLength~Stadium, newUnit(RomanLength.nonCanonicalUnits->find(u | $u.name == 'Stadium')->toOne(), -310.72D));
     assertEquals(0 RomanLength~Actus, newUnit($actus, 0));
 }

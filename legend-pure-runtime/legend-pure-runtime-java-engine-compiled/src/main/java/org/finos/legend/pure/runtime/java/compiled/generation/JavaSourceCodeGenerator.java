@@ -228,9 +228,9 @@ public final class JavaSourceCodeGenerator
 
             return javaClasses;
         }
-        catch (Throwable t)
+        catch (Exception e)
         {
-            throw new RuntimeException("Error generating Java code for " + source.getId(), t);
+            throw new RuntimeException("Error generating Java code for " + source.getId(), e);
         }
     }
 
@@ -419,14 +419,11 @@ public final class JavaSourceCodeGenerator
     {
         if (Instance.instanceOf(coreInstance, M3Paths.Package, this.processorSupport))
         {
-            for (CoreInstance element : coreInstance.getValueForMetaPropertyToMany(M3Properties.children))
-            {
-                this.toJava(element, codeRepository, allTypes, processorContext);
-            }
+            coreInstance.getValueForMetaPropertyToMany(M3Properties.children).forEach(e -> toJava(e, codeRepository, allTypes, processorContext));
         }
         if (codeRepository == null || (coreInstance.getSourceInformation() != null && coreInstance.getSourceInformation().getSourceId().startsWith("/" + codeRepository.getName())))
         {
-            if (allTypes == null || (allTypes != null && allTypes.contains(PackageableElement.getUserPathForPackageableElement(coreInstance))))
+            if (allTypes == null || allTypes.contains(PackageableElement.getUserPathForPackageableElement(coreInstance)))
             {
                 try
                 {
@@ -465,18 +462,16 @@ public final class JavaSourceCodeGenerator
                 {
                     throw e;
                 }
-                catch (Throwable t)
+                catch (Exception e)
                 {
-                    PureException pe = PureException.findPureException(t);
+                    PureException pe = PureException.findPureException(e);
                     if (pe == null)
                     {
-                        throw new PureCompilationException(coreInstance.getSourceInformation(), "Error generating Java code for " + coreInstance, t);
+                        throw new PureCompilationException(coreInstance.getSourceInformation(), "Error generating Java code for " + coreInstance, e);
                     }
-                    else
-                    {
-                        String info = pe.getInfo();
-                        throw new PureCompilationException(coreInstance.getSourceInformation(), info == null ? "Error generating Java code for " + coreInstance : info, pe);
-                    }
+
+                    String info = pe.getInfo();
+                    throw new PureCompilationException(coreInstance.getSourceInformation(), info == null ? "Error generating Java code for " + coreInstance : info, pe);
                 }
             }
         }
@@ -693,7 +688,7 @@ public final class JavaSourceCodeGenerator
     private String toFactoryRegistryEntry(String path, CoreInstance _class)
     {
         String factory = ClassProcessor.requiresCompilationImpl(this.processorSupport, _class) ?
-                         JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class, ClassImplIncrementalCompilationProcessor.CLASS_IMPL_SUFFIX) :
+                         JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class, ClassImplIncrementalCompilationProcessor.CLASS_IMPL_SUFFIX, this.processorSupport) :
                          M3ToJavaGenerator.getFullyQualifiedM3ImplForCompiledModel(_class);
         String factoryInterface = M3ToJavaGenerator.getFullyQualifiedM3InterfaceForCompiledModel(_class);
         return "            .withType(\"" + path + "\", " + factory + ".FACTORY, " + factoryInterface + ".class)\n";

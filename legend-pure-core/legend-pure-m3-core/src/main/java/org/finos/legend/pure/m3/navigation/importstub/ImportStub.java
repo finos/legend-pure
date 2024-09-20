@@ -29,6 +29,7 @@ import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.navigation.imports.Imports;
+import org.finos.legend.pure.m3.navigation.measure.Measure;
 import org.finos.legend.pure.m3.navigation.profile.Profile;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -38,6 +39,10 @@ import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class ImportStub
 {
+    public static final char STEREOTYPE_STUB_DELIM = '@';
+    public static final char TAG_STUB_DELIM = '%';
+    public static final char UNIT_STUB_DELIM = '~';
+
     public static void processImportStub(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub importStub, ModelRepository repository, ProcessorSupport processorSupport)
     {
         if (importStub.getValueForMetaPropertyToOne(M3Properties.resolvedNode) == null)
@@ -68,30 +73,65 @@ public class ImportStub
     public static CoreInstance resolveImportStub(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub importStub, ModelRepository repository, ProcessorSupport processorSupport)
     {
         String idOrPath = importStub.getValueForMetaPropertyToOne(M3Properties.idOrPath).getName();
-        if (idOrPath.indexOf('@') != -1)
+        int delimiterIndex = findStubDelimiterIndex(idOrPath);
+        if (delimiterIndex != -1)
         {
-            return resolveStereotype(idOrPath, importStub, repository, processorSupport);
-        }
-        if (idOrPath.indexOf('%') != -1)
-        {
-            return resolveTag(idOrPath, importStub, repository, processorSupport);
+            char delimiter = idOrPath.charAt(delimiterIndex);
+            switch (delimiter)
+            {
+                case STEREOTYPE_STUB_DELIM:
+                {
+                    return resolveStereotype(idOrPath, delimiterIndex, importStub, repository, processorSupport);
+                }
+                case TAG_STUB_DELIM:
+                {
+                    return resolveTag(idOrPath, delimiterIndex, importStub, repository, processorSupport);
+                }
+                case UNIT_STUB_DELIM:
+                {
+                    return resolveUnit(idOrPath, delimiterIndex, importStub, repository, processorSupport);
+                }
+                default:
+                {
+                    throw new RuntimeException("Unsupported ImportStub delimiter '" + delimiter + "' at index " + delimiterIndex + " of '" + idOrPath + "'");
+                }
+            }
         }
         return resolvePackageableElement(idOrPath, importStub, repository, processorSupport);
     }
 
+    private static int findStubDelimiterIndex(String idOrPath)
+    {
+        int cp;
+        for (int i = 0, len = idOrPath.length(); i < len; i += Character.charCount(cp))
+        {
+            cp = idOrPath.codePointAt(i);
+            if ((cp == STEREOTYPE_STUB_DELIM) || (cp == TAG_STUB_DELIM) || (cp == UNIT_STUB_DELIM))
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     public static CoreInstance resolveStereotype(String idOrPath, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub importStubNode, ModelRepository repository, ProcessorSupport processorSupport)
     {
-        int splitIndex = idOrPath.indexOf('@');
+        int splitIndex = idOrPath.indexOf(STEREOTYPE_STUB_DELIM);
         if (splitIndex == -1)
         {
             throw new IllegalArgumentException("Invalid stereotype id: " + idOrPath);
         }
-        String profileIdOrPath = idOrPath.substring(0, splitIndex);
-        String stereotypeName = idOrPath.substring(splitIndex + 1);
+        return resolveStereotype(idOrPath, splitIndex, importStubNode, repository, processorSupport);
+    }
+
+    private static CoreInstance resolveStereotype(String idOrPath, int delimiterIndex, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub importStubNode, ModelRepository repository, ProcessorSupport processorSupport)
+    {
+        String profileIdOrPath = idOrPath.substring(0, delimiterIndex);
+        String stereotypeName = idOrPath.substring(delimiterIndex + 1);
         CoreInstance packageableElement = resolvePackageableElement(profileIdOrPath, importStubNode, repository, processorSupport);
         if ((packageableElement == null) || (packageableElement.getClassifier() != processorSupport.package_getByUserPath(M3Paths.Profile)))
         {
-            throw new PureCompilationException(importStubNode.getSourceInformation(), idOrPath + " : " + profileIdOrPath + " is not a profile!");
+            throw new PureCompilationException(importStubNode.getSourceInformation(), profileIdOrPath + STEREOTYPE_STUB_DELIM + stereotypeName + " : " + profileIdOrPath + " is not a profile!");
         }
 
         CoreInstance result = Profile.findStereotype(packageableElement, stereotypeName);
@@ -102,19 +142,14 @@ public class ImportStub
         return result;
     }
 
-    private static CoreInstance resolveTag(String idOrPath, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub importStubNode, ModelRepository repository, ProcessorSupport processorSupport)
+    private static CoreInstance resolveTag(String idOrPath, int delimiterIndex, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub importStubNode, ModelRepository repository, ProcessorSupport processorSupport)
     {
-        int splitIndex = idOrPath.indexOf('%');
-        if (splitIndex == -1)
-        {
-            throw new IllegalArgumentException("Invalid tag id: " + idOrPath);
-        }
-        String profileIdOrPath = idOrPath.substring(0, splitIndex);
-        String tagName = idOrPath.substring(splitIndex + 1);
+        String profileIdOrPath = idOrPath.substring(0, delimiterIndex);
+        String tagName = idOrPath.substring(delimiterIndex + 1);
         CoreInstance packageableElement = resolvePackageableElement(profileIdOrPath, importStubNode, repository, processorSupport);
         if ((packageableElement == null) || (packageableElement.getClassifier() != processorSupport.package_getByUserPath(M3Paths.Profile)))
         {
-            throw new PureCompilationException(importStubNode.getSourceInformation(), idOrPath + " : " + profileIdOrPath + " is not a profile!");
+            throw new PureCompilationException(importStubNode.getSourceInformation(), profileIdOrPath + TAG_STUB_DELIM + tagName + " : " + profileIdOrPath + " is not a profile!");
         }
 
         CoreInstance result = Profile.findTag(packageableElement, tagName);
@@ -123,7 +158,24 @@ public class ImportStub
             throw new PureCompilationException(importStubNode.getSourceInformation(), "The tag '" + tagName + "' can't be found in profile '" + profileIdOrPath + "'");
         }
         return result;
+    }
 
+    private static CoreInstance resolveUnit(String idOrPath, int delimiterIndex, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub importStubNode, ModelRepository repository, ProcessorSupport processorSupport)
+    {
+        String measureIdOrPath = idOrPath.substring(0, delimiterIndex);
+        String unitName = idOrPath.substring(delimiterIndex + 1);
+        CoreInstance packageableElement = resolvePackageableElement(measureIdOrPath, importStubNode, repository, processorSupport);
+        if ((packageableElement == null) || (packageableElement.getClassifier() != processorSupport.package_getByUserPath(M3Paths.Measure)))
+        {
+            throw new PureCompilationException(importStubNode.getSourceInformation(), measureIdOrPath + UNIT_STUB_DELIM + unitName + " : " + measureIdOrPath + " is not a measure!");
+        }
+
+        CoreInstance result = Measure.findUnit(packageableElement, unitName);
+        if (result == null)
+        {
+            throw new PureCompilationException(importStubNode.getSourceInformation(), "The unit '" + unitName + "' can't be found in measure '" + measureIdOrPath + "'");
+        }
+        return result;
     }
 
     private static CoreInstance resolvePackageableElement(String idOrPath, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub importStubNode, ModelRepository repository, ProcessorSupport processorSupport)

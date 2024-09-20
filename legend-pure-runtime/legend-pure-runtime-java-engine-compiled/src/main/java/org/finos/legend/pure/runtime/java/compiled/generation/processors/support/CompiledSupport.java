@@ -2105,7 +2105,7 @@ public class CompiledSupport
         Class<? extends QuantityCoreInstance> unitImplClass;
         try
         {
-            String javaClassImplName = JavaPackageAndImportBuilder.buildImplClassReferenceFromType(unit);
+            String javaClassImplName = JavaPackageAndImportBuilder.buildImplClassReferenceFromType(unit, executionSupport.getProcessorSupport());
             ClassLoader classLoader = executionSupport.getClassLoader();
             unitImplClass = (Class<? extends QuantityCoreInstance>) classLoader.loadClass(javaClassImplName);
         }

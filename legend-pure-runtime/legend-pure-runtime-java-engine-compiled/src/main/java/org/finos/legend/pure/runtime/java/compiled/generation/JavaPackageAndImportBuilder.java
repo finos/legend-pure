@@ -22,6 +22,8 @@ import org.finos.legend.pure.m3.coreinstance.M3PlatformCoreInstanceFactoryRegist
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.measure.Measure;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
@@ -153,58 +155,59 @@ public class JavaPackageAndImportBuilder
 
     // Java classes from Pure types
 
-    public static String buildImplClassReferenceFromType(CoreInstance type)
+    public static String buildImplClassReferenceFromType(CoreInstance type, ProcessorSupport processorSupport)
     {
-        return buildImplClassReferenceFromType(new StringBuilder(CODE_GEN_PACKAGE_NAME.length() + 64), type).toString();
+        return buildImplClassReferenceFromType(new StringBuilder(CODE_GEN_PACKAGE_NAME.length() + 64), type, processorSupport).toString();
     }
 
-    public static String buildImplClassReferenceFromType(CoreInstance type, String suffix)
+    public static String buildImplClassReferenceFromType(CoreInstance type, String suffix, ProcessorSupport processorSupport)
     {
-        return buildImplClassNameFromType(new StringBuilder(CODE_GEN_PACKAGE_NAME).append('.'), type, suffix).toString();
+        return buildImplClassNameFromType(new StringBuilder(CODE_GEN_PACKAGE_NAME).append('.'), type, suffix, processorSupport).toString();
     }
 
-    public static String buildImplClassNameFromType(CoreInstance element)
+    public static String buildImplClassNameFromType(CoreInstance element, ProcessorSupport processorSupport)
     {
-        return buildImplClassNameFromType(new StringBuilder(64), element).toString();
+        return buildImplClassNameFromType(new StringBuilder(64), element, processorSupport).toString();
     }
 
-    public static String buildLazyImplClassReferenceFromType(CoreInstance element)
+    public static String buildLazyImplClassReferenceFromType(CoreInstance element, ProcessorSupport processorSupport)
     {
-        return buildLazyImplClassReferenceFromType(new StringBuilder(CODE_GEN_PACKAGE_NAME.length() + 64), element).toString();
+        return buildLazyImplClassReferenceFromType(new StringBuilder(CODE_GEN_PACKAGE_NAME.length() + 64), element, processorSupport).toString();
     }
 
-    public static String buildLazyImplClassNameFromType(CoreInstance element)
+    public static String buildLazyImplClassNameFromType(CoreInstance element, ProcessorSupport processorSupport)
     {
-        return buildLazyImplClassNameFromType(new StringBuilder(64), element).toString();
+        return buildLazyImplClassNameFromType(new StringBuilder(64), element, processorSupport).toString();
     }
 
-    public static String buildImplClassNameFromType(CoreInstance element, String suffix)
+    public static String buildImplClassNameFromType(CoreInstance element, String suffix, ProcessorSupport processorSupport)
     {
-        return buildImplClassNameFromType(new StringBuilder(suffix.length() + 64), element, suffix).toString();
+        return buildImplClassNameFromType(new StringBuilder(suffix.length() + 64), element, suffix, processorSupport).toString();
     }
 
 
-    public static <T extends Appendable> T buildImplClassReferenceFromType(T appendable, CoreInstance element)
+    public static <T extends Appendable> T buildImplClassReferenceFromType(T appendable, CoreInstance element, ProcessorSupport processorSupport)
     {
-        buildImplClassNameFromType(SafeAppendable.wrap(appendable).append(CODE_GEN_PACKAGE_NAME).append('.'), element);
+        buildImplClassNameFromType(SafeAppendable.wrap(appendable).append(CODE_GEN_PACKAGE_NAME).append('.'), element, processorSupport);
         return appendable;
     }
 
-    public static <T extends Appendable> T buildImplClassNameFromType(T appendable, CoreInstance element)
+    public static <T extends Appendable> T buildImplClassNameFromType(T appendable, CoreInstance element, ProcessorSupport processorSupport)
     {
-        return buildImplClassNameFromType(appendable, element, ClassImplProcessor.CLASS_IMPL_SUFFIX);
+        return buildImplClassNameFromType(appendable, element, ClassImplProcessor.CLASS_IMPL_SUFFIX, processorSupport);
     }
 
-    public static <T extends Appendable> T  buildLazyImplClassReferenceFromType(T appendable, CoreInstance type)
+    public static <T extends Appendable> T buildLazyImplClassReferenceFromType(T appendable, CoreInstance type, ProcessorSupport processorSupport)
     {
-        buildLazyImplClassNameFromType(SafeAppendable.wrap(appendable).append(CODE_GEN_PACKAGE_NAME).append('.'), type);
+        buildLazyImplClassNameFromType(SafeAppendable.wrap(appendable).append(CODE_GEN_PACKAGE_NAME).append('.'), type, processorSupport);
         return appendable;
     }
 
-    public static <T extends Appendable> T buildLazyImplClassNameFromType(T appendable, CoreInstance type)
+    public static <T extends Appendable> T buildLazyImplClassNameFromType(T appendable, CoreInstance type, ProcessorSupport processorSupport)
     {
-        return buildImplClassNameFromType(appendable, type, ClassLazyImplProcessor.CLASS_LAZYIMPL_SUFFIX);
+        return buildImplClassNameFromType(appendable, type, ClassLazyImplProcessor.CLASS_LAZYIMPL_SUFFIX, processorSupport);
     }
+
 
     // JAVA INTERFACES
 
@@ -259,30 +262,30 @@ public class JavaPackageAndImportBuilder
 
     // Java interfaces from Pure types
 
-    public static String buildInterfaceReferenceFromType(CoreInstance type)
+    public static String buildInterfaceReferenceFromType(CoreInstance type, ProcessorSupport processorSupport)
     {
-        return buildInterfaceReferenceFromType(new StringBuilder(64), type).toString();
+        return buildInterfaceReferenceFromType(new StringBuilder(64), type, processorSupport).toString();
     }
 
-    public static String buildInterfaceNameFromType(CoreInstance type)
+    public static String buildInterfaceNameFromType(CoreInstance type, ProcessorSupport processorSupport)
     {
-        return buildInterfaceNameFromType(new StringBuilder(64), type).toString();
+        return buildInterfaceNameFromType(new StringBuilder(64), type, processorSupport).toString();
     }
 
-    public static <T extends Appendable> T buildInterfaceReferenceFromType(T appendable, CoreInstance type)
+    public static <T extends Appendable> T buildInterfaceReferenceFromType(T appendable, CoreInstance type, ProcessorSupport processorSupport)
     {
         if (ClassProcessor.isPlatformClass(type))
         {
             return M3ToJavaGenerator.appendFullyQualifiedM3InterfaceForCompiledModel(appendable, type);
         }
 
-        buildInterfaceNameFromType(SafeAppendable.wrap(appendable).append(CODE_GEN_PACKAGE_NAME).append('.'), type);
+        buildInterfaceNameFromType(SafeAppendable.wrap(appendable).append(CODE_GEN_PACKAGE_NAME).append('.'), type, processorSupport);
         return appendable;
     }
 
-    public static <T extends Appendable> T buildInterfaceNameFromType(T appendable, CoreInstance type)
+    public static <T extends Appendable> T buildInterfaceNameFromType(T appendable, CoreInstance type, ProcessorSupport processorSupport)
     {
-        buildClassOrInterfaceNameFromType(SafeAppendable.wrap(appendable), type);
+        buildClassOrInterfaceNameFromType(SafeAppendable.wrap(appendable), type, processorSupport);
         return appendable;
     }
 
@@ -303,29 +306,29 @@ public class JavaPackageAndImportBuilder
         return appendable;
     }
 
-    private static <T extends Appendable> T buildImplClassNameFromType(T appendable, CoreInstance type, String suffix)
+    private static <T extends Appendable> T buildImplClassNameFromType(T appendable, CoreInstance type, String suffix, ProcessorSupport processorSupport)
     {
-        buildClassOrInterfaceNameFromType(SafeAppendable.wrap(appendable), type).append(suffix);
+        buildClassOrInterfaceNameFromType(SafeAppendable.wrap(appendable), type, processorSupport).append(suffix);
         return appendable;
     }
 
-    private static SafeAppendable buildClassOrInterfaceNameFromType(SafeAppendable appendable, CoreInstance type)
+    private static SafeAppendable buildClassOrInterfaceNameFromType(SafeAppendable appendable, CoreInstance type, ProcessorSupport processorSupport)
     {
-        if (isUnitName(type.getName()))
+        if (Measure.isUnit(type, processorSupport))
         {
-            CoreInstance pkg = type.getValueForMetaPropertyToOne(M3Properties._package);
-            if (pkg != null)
-            {
-                PackageableElement.writeSystemPathForPackageableElement(appendable, pkg, "_").append('_');
-            }
-            return appendable.append(convertUnitName(type.getName()));
+            return buildClassOrInterfaceNameForUnit(appendable, type);
         }
-        return PackageableElement.writeSystemPathForPackageableElement(appendable, type, "_");
+        if (PackageableElement.isPackageableElement(type, processorSupport))
+        {
+            return PackageableElement.writeSystemPathForPackageableElement(appendable, type, "_");
+        }
+        throw new IllegalArgumentException("Unsupported type: " + type);
     }
 
-    private static boolean isUnitName(String name)
+    private static SafeAppendable buildClassOrInterfaceNameForUnit(SafeAppendable appendable, CoreInstance unit)
     {
-        return (name != null) && (name.indexOf('~') != -1);
+        CoreInstance measure = unit.getValueForMetaPropertyToOne(M3Properties.measure);
+        return PackageableElement.writeSystemPathForPackageableElement(appendable, measure, "_").append('$').append(unit.getName());
     }
 
     private static String convertUnitName(String unitName)

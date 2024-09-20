@@ -48,7 +48,7 @@ public class NewWithKeyExpr extends AbstractNative
         CoreInstance genericType = Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(0), M3Properties.genericType, M3Properties.typeArguments, processorSupport);
         boolean addGenericType = Instance.getValueForMetaPropertyToManyResolved(genericType, M3Properties.typeArguments, processorSupport).notEmpty();
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
-        return "new " + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class) + (addGenericType ? TypeProcessor.buildTypeArgumentsString(genericType, false, processorSupport) : "")
+        return "new " + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class, processorSupport) + (addGenericType ? TypeProcessor.buildTypeArgumentsString(genericType, false, processorSupport) : "")
                 + "(\"" + newId + "\")" + (addGenericType ? "._classifierGenericType("
                 + InstantiationHelpers.buildGenericType(genericType, processorContext) + ")" : "")
                 + DefaultValue.manageDefaultValues(this::formatDefaultValueString, Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), false, processorContext).makeString("")

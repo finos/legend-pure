@@ -14,7 +14,9 @@
 
 package org.finos.legend.pure.m3.tests;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.measure.Measure;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -31,7 +33,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                     "   *Gram: x -> $x;\n" +
                     "   Kilogram: x -> $x*1000;\n" +
                     "   Pound: x -> $x*453.59;\n" +
-                    "}";
+                    "}\n";
 
     private static final String plusFunction =
             "function meta::pure::functions::math::sum(numbers:Number[*]):Number[1]\n" +
@@ -40,7 +42,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                     "}\n" +
                     "function meta::pure::functions::math::plus(masses: Mass[*]):Mass~Gram[1]\n" +
                     "{\n" +
-                    "   let cv = $masses->map(m|let cv = $m->type()->cast(@Unit).conversionFunction->cast(@Function<{Number[1]->Number[1]}>)->toOne()->eval(getUnitValue($m)););\n" +
+                    "   let cv = $masses->map(m|let cv = $m->type()->cast(@Unit).conversionFunction->cast(@Function<{Number[1]->Number[1]}>)->toOne()->eval(getUnitValue($m)));\n" +
                     "   let resultNumeric = $cv->sum();\n" +
                     "   newUnit(Mass~Gram, $resultNumeric)->cast(@Mass~Gram);\n" +
                     "}\n";
@@ -48,7 +50,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
     private static final String minusFunction =
             "function meta::pure::functions::math::minus(masses: Mass[*]):Mass~Gram[1]\n" +
                     "{\n" +
-                    "   let cv = $masses->map(m|let cv = $m->type()->cast(@Unit).conversionFunction->cast(@Function<{Number[1]->Number[1]}>)->toOne()->eval(getUnitValue($m)););\n" +
+                    "   let cv = $masses->map(m|let cv = $m->type()->cast(@Unit).conversionFunction->cast(@Function<{Number[1]->Number[1]}>)->toOne()->eval(getUnitValue($m)));\n" +
                     "   let resultNumeric = $cv->minus();\n" +
                     "   newUnit(Mass~Gram, $resultNumeric)->cast(@Mass~Gram);\n" +
                     "}\n";
@@ -91,7 +93,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "   1 Mass~Pound;\n" +
                         "}\n");
         CoreInstance result = execute("testFunc():Mass~Pound[0..1]");
-        Assert.assertEquals("Mass~Pound", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+        Assert.assertEquals("pkg::Mass~Pound", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport));
         Assert.assertEquals("1", result.getValueForMetaPropertyToOne(M3Properties.values).getValueForMetaPropertyToOne(M3Properties.values).getName());
     }
 
@@ -158,7 +160,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "   testUnits(5 Mass~Kilogram);\n" +
                         "}");
         CoreInstance result = execute("testUnitsWrapper():Mass~Kilogram[1]");
-        Assert.assertEquals("Mass~Kilogram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+        Assert.assertEquals("pkg::Mass~Kilogram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport));
         Assert.assertEquals("5", result.getValueForMetaPropertyToOne(M3Properties.values).getValueForMetaPropertyToOne(M3Properties.values).getName());
     }
 
@@ -206,7 +208,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "   testUnits(5 Mass~Kilogram);\n" +
                         "}");
         CoreInstance result = execute("testUnitsWrapper():Mass[1]");
-        Assert.assertEquals("Mass~Kilogram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+        Assert.assertEquals("pkg::Mass~Kilogram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport));
         Assert.assertEquals("5", result.getValueForMetaPropertyToOne(M3Properties.values).getValueForMetaPropertyToOne(M3Properties.values).getName());
     }
 
@@ -226,7 +228,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "   testUnits(5 Mass~Kilogram);\n" +
                         "}");
         CoreInstance result = execute("testUnitsWrapper():Mass[1]");
-        Assert.assertEquals("Mass~Kilogram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+        Assert.assertEquals("pkg::Mass~Kilogram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport));
         Assert.assertEquals("5", result.getValueForMetaPropertyToOne(M3Properties.values).getValueForMetaPropertyToOne(M3Properties.values).getName());
     }
 
@@ -246,7 +248,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "   testUnits(5 Mass~Kilogram);\n" +
                         "}");
         CoreInstance result = execute("testUnitsWrapper():Mass~Kilogram[1]");
-        Assert.assertEquals("Mass~Kilogram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+        Assert.assertEquals("pkg::Mass~Kilogram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport));
         Assert.assertEquals("5", result.getValueForMetaPropertyToOne(M3Properties.values).getValueForMetaPropertyToOne(M3Properties.values).getName());
     }
 
@@ -261,7 +263,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "   5 Mass~Kilogram->cast(@Mass~Kilogram);\n" +
                         "}");
         CoreInstance result = execute("testUnitsWrapper():Mass~Kilogram[1]");
-        Assert.assertEquals("Mass~Kilogram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+        Assert.assertEquals("pkg::Mass~Kilogram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport));
         Assert.assertEquals("5", result.getValueForMetaPropertyToOne(M3Properties.values).getValueForMetaPropertyToOne(M3Properties.values).getName());
     }
 
@@ -276,7 +278,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "   5 Mass~Kilogram->cast(@Mass);\n" +
                         "}");
         CoreInstance result = execute("testUnitsWrapper():Mass[1]");
-        Assert.assertEquals("Mass~Kilogram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+        Assert.assertEquals("pkg::Mass~Kilogram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport));
         Assert.assertEquals("5", result.getValueForMetaPropertyToOne(M3Properties.values).getValueForMetaPropertyToOne(M3Properties.values).getName());
     }
 
@@ -320,7 +322,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "   $teddy;" +
                         "}");
         CoreInstance result = execute("testFunc():Mass~Pound[1]");
-        Assert.assertEquals("Mass~Pound", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+        Assert.assertEquals("pkg::Mass~Pound", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport));
         Assert.assertEquals("10", result.getValueForMetaPropertyToOne(M3Properties.values).getValueForMetaPropertyToOne(M3Properties.values).getName());
     }
 
@@ -372,10 +374,10 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                 "import pkg::*;\n" +
                         "function testGetUnitValue():Number[1]\n" +
                         "{\n" +
-                        "getUnitValue(5 Mass~Kilogram);\n" +
+                        "    getUnitValue(5 Mass~Kilogram);\n" +
                         "}\n");
         CoreInstance result = execute("testGetUnitValue():Number[1]");
-        Assert.assertEquals("Integer", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+        Assert.assertEquals("Integer", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport));
         Assert.assertEquals("5", result.getValueForMetaPropertyToOne(M3Properties.values).getName());
     }
 
@@ -394,7 +396,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "   let result2 = $result + 50 Mass~Gram;\n" +
                         "}");
         CoreInstance result = execute("testFunc():Any[1]");
-        Assert.assertEquals("Mass~Gram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+        Assert.assertEquals("pkg::Mass~Gram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport));
         Assert.assertEquals("5550", result.getValueForMetaPropertyToOne(M3Properties.values).getValueForMetaPropertyToOne(M3Properties.values).getName());
     }
 
@@ -416,7 +418,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "   $y + 5 Mass~Kilogram;\n" +
                         "}");
         CoreInstance result = execute("testParamsWrapper():Mass~Gram[1]");
-        Assert.assertEquals("Mass~Gram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+        Assert.assertEquals("pkg::Mass~Gram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport));
         Assert.assertEquals("5907.18", result.getValueForMetaPropertyToOne(M3Properties.values).getValueForMetaPropertyToOne(M3Properties.values).getName());
     }
 
@@ -435,7 +437,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "   let result2 = $result - 50 Mass~Gram;\n" +
                         "}");
         CoreInstance result = execute("testFunc():Any[1]");
-        Assert.assertEquals("Mass~Gram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+        Assert.assertEquals("pkg::Mass~Gram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport));
         Assert.assertEquals("4650", result.getValueForMetaPropertyToOne(M3Properties.values).getValueForMetaPropertyToOne(M3Properties.values).getName());
     }
 
@@ -452,7 +454,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "   $a.lb;\n" +
                         "}");
         CoreInstance lb = execute("testKilogramInstanceAsClassProperty():Mass~Pound[1]");
-        Assert.assertEquals("Mass~Pound", GenericType.print(lb.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+        Assert.assertEquals("pkg::Mass~Pound", GenericType.print(lb.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport));
         Assert.assertEquals("5", lb.getValueForMetaPropertyToOne(M3Properties.values).getValueForMetaPropertyToOne(M3Properties.values).getName());
     }
 
@@ -478,7 +480,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "   $newA.doStuff();\n" +
                         "}\n");
         CoreInstance result = execute("testQPWrapper():Mass~Gram[1]");
-        Assert.assertEquals("Mass~Gram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+        Assert.assertEquals("pkg::Mass~Gram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport));
         Assert.assertEquals("2453.59", result.getValueForMetaPropertyToOne(M3Properties.values).getValueForMetaPropertyToOne(M3Properties.values).getName());
     }
 
@@ -499,7 +501,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "   testParams(3 Mass~Pound, 5 Mass~Kilogram);\n" +
                         "}\n");
         CoreInstance result = execute("testParamsWrapper():Mass~Gram[1]");
-        Assert.assertEquals("Mass~Gram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+        Assert.assertEquals("pkg::Mass~Gram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport));
         Assert.assertEquals("6360.77", result.getValueForMetaPropertyToOne(M3Properties.values).getValueForMetaPropertyToOne(M3Properties.values).getName());
     }
 
@@ -520,7 +522,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "   testMult(3 Mass~Kilogram);\n" +
                         "}\n");
         CoreInstance result = execute("testMultWrapper():Mass~Gram[1]");
-        Assert.assertEquals("Mass~Gram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+        Assert.assertEquals("pkg::Mass~Gram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport));
         Assert.assertEquals("9000", result.getValueForMetaPropertyToOne(M3Properties.values).getValueForMetaPropertyToOne(M3Properties.values).getName());
     }
 
@@ -541,7 +543,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "   testDiv(9 Mass~Kilogram);\n" +
                         "}\n");
         CoreInstance result = execute("testDivWrapper():Mass~Gram[1]");
-        Assert.assertEquals("Mass~Gram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+        Assert.assertEquals("pkg::Mass~Gram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport));
         Assert.assertEquals("3000.0", result.getValueForMetaPropertyToOne(M3Properties.values).getValueForMetaPropertyToOne(M3Properties.values).getName());
     }
 
@@ -563,7 +565,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "   A.properties->size();\n" +
                         "}\n");
         CoreInstance result = execute("testFunc():Any[*]");
-        Assert.assertEquals("1", result.getValueForMetaPropertyToOne(M3Properties.values).getName());
+        Assert.assertEquals(1, PrimitiveUtilities.getIntegerValue(result.getValueForMetaPropertyToOne(M3Properties.values)));
     }
 
     @Test
@@ -587,7 +589,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "   A.properties->size();\n" +
                         "}\n");
         CoreInstance result = execute("testFunc():Any[*]");
-        Assert.assertEquals("4", result.getValueForMetaPropertyToOne(M3Properties.values).getName());
+        Assert.assertEquals(4, PrimitiveUtilities.getIntegerValue(result.getValueForMetaPropertyToOne(M3Properties.values)));
     }
 
     @Test
@@ -610,7 +612,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "}\n");
         CoreInstance result = execute("testFunc():Mass~Gram[1]");
         Assert.assertTrue(Measure.isUnitOrMeasureInstance(result, processorSupport));
-        Assert.assertEquals("Mass~Gram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+        Assert.assertEquals("pkg::Mass~Gram", GenericType.print(result.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport));
         Assert.assertEquals("3680.385", result.getValueForMetaPropertyToOne(M3Properties.values).getValueForMetaPropertyToOne(M3Properties.values).getName());
     }
 
@@ -641,13 +643,13 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
         compileTestSource("testModel.pure", massDefinition);
         compileTestSource("testFunc.pure",
                 "import pkg::*;\n" +
-                        "function testKilogramMatchesKilogram():Integer[1]\n" +
+                        "function testKilogramMatchesKilogram():Number[1]\n" +
                         "{\n" +
                         "   let x = 5 Mass~Kilogram;\n" +
-                        "   $x->match([m:Mass~Kilogram[1] | 1]);\n" +
+                        "   $x->match([m:Mass~Kilogram[1] | $m->getUnitValue()]);\n" +
                         "}");
-        CoreInstance result = execute("testKilogramMatchesKilogram():Integer[1]");
-        Assert.assertEquals("1", result.getValueForMetaPropertyToOne(M3Properties.values).getName());
+        CoreInstance result = execute("testKilogramMatchesKilogram():Number[1]");
+        Assert.assertEquals(5, PrimitiveUtilities.getIntegerValue(result.getValueForMetaPropertyToOne(M3Properties.values)));
     }
 
     @Test
@@ -656,13 +658,13 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
         compileTestSource("testModel.pure", massDefinition);
         compileTestSource("testFunc.pure",
                 "import pkg::*;\n" +
-                        "function testKilogramMatchesKilogram():Integer[1]\n" +
+                        "function testKilogramMatchesKilogram():Number[*]\n" +
                         "{\n" +
                         "   let x = [5 Mass~Kilogram, 10 Mass~Kilogram];\n" +
-                        "   $x->match([m:Mass~Kilogram[*] | 1]);\n" +
+                        "   $x->match([kgs:Mass~Kilogram[*] | $kgs->map(kg | $kg->getUnitValue())]);\n" +
                         "}");
-        CoreInstance result = execute("testKilogramMatchesKilogram():Integer[1]");
-        Assert.assertEquals("1", result.getValueForMetaPropertyToOne(M3Properties.values).getName());
+        CoreInstance result = execute("testKilogramMatchesKilogram():Number[*]");
+        Assert.assertEquals(Lists.fixedSize.with(5, 10), result.getValueForMetaPropertyToMany(M3Properties.values).collect(PrimitiveUtilities::getIntegerValue));
     }
 
     @Test
@@ -671,13 +673,13 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
         compileTestSource("testModel.pure", massDefinition);
         compileTestSource("testFunc.pure",
                 "import pkg::*;\n" +
-                        "function testKilogramMatchesMass():Integer[1]\n" +
+                        "function testKilogramMatchesMass():Number[1]\n" +
                         "{\n" +
                         "   let x = 5 Mass~Kilogram;\n" +
-                        "   $x->match([m:Mass[1] | 1]);\n" +
+                        "   $x->match([m:Mass[1] | $m->getUnitValue()]);\n" +
                         "}");
-        CoreInstance result = execute("testKilogramMatchesMass():Integer[1]");
-        Assert.assertEquals("1", result.getValueForMetaPropertyToOne(M3Properties.values).getName());
+        CoreInstance result = execute("testKilogramMatchesMass():Number[1]");
+        Assert.assertEquals(5, PrimitiveUtilities.getIntegerValue(result.getValueForMetaPropertyToOne(M3Properties.values)));
     }
 
     @Test
@@ -686,12 +688,12 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
         compileTestSource("testModel.pure", massDefinition);
         compileTestSource("testFunc.pure",
                 "import pkg::*;\n" +
-                        "function testKilogramMatchesMass():Integer[1]\n" +
+                        "function testKilogramMatchesMass():Number[*]\n" +
                         "{\n" +
                         "   let x = [5 Mass~Kilogram, 10 Mass~Kilogram];\n" +
-                        "   $x->match([m:Mass[*] | 1]);\n" +
+                        "   $x->match([masses:Mass[*] | $masses->map(m | $m->getUnitValue())]);\n" +
                         "}");
-        CoreInstance result = execute("testKilogramMatchesMass():Integer[1]");
-        Assert.assertEquals("1", result.getValueForMetaPropertyToOne(M3Properties.values).getName());
+        CoreInstance result = execute("testKilogramMatchesMass():Number[*]");
+        Assert.assertEquals(Lists.fixedSize.with(5, 10), result.getValueForMetaPropertyToMany(M3Properties.values).collect(PrimitiveUtilities::getIntegerValue));
     }
 }

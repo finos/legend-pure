@@ -14,11 +14,12 @@
 
 package org.finos.legend.pure.m3.tests.function.base.measure;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
+import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
-import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
@@ -29,20 +30,6 @@ import org.junit.Test;
 
 public class TestMeasureGraphCorrectness extends AbstractPureTestWithCoreCompiled
 {
-    @BeforeClass
-    public static void setUp()
-    {
-        setUpRuntime(getFunctionExecution());
-    }
-
-    @After
-    public void clearRuntime()
-    {
-        runtime.delete("testModel.pure");
-        runtime.delete("testSource.pure");
-        runtime.compile();
-    }
-
     private static final String massDefinition =
             "Measure pkg::Mass\n" +
                     "{\n" +
@@ -81,69 +68,65 @@ public class TestMeasureGraphCorrectness extends AbstractPureTestWithCoreCompile
                     "   EUR;\n" +
                     "}\n";
 
+    private static CoreInstance measureClass;
+    private static CoreInstance unitClass;
+
+    @BeforeClass
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution());
+        measureClass = runtime.getCoreInstance(M3Paths.Measure);
+        unitClass = runtime.getCoreInstance(M3Paths.Unit);
+        Assert.assertNotNull(measureClass);
+        Assert.assertNotNull(unitClass);
+    }
+
+    @After
+    public void clearRuntime()
+    {
+        runtime.delete("testModel.pure");
+        runtime.delete("testSource.pure");
+        runtime.compile();
+    }
+
     @Test
     public void testMeasureBuildsCorrectlyInGraph()
     {
         compileTestSource("testModel.pure", massDefinition);
-        CoreInstance massCoreInstance = runtime.getCoreInstance("pkg::Mass");
-        Assert.assertEquals("Mass", massCoreInstance.getName());
-        Assert.assertTrue(massCoreInstance instanceof Measure);
-        Assert.assertEquals("Measure", massCoreInstance.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToOne(M3Properties.rawType).getName());
-        CoreInstance canonicalUnit = massCoreInstance.getValueForMetaPropertyToOne("canonicalUnit");
-        Assert.assertEquals("Mass~Gram", canonicalUnit.getName());
-        Assert.assertTrue(canonicalUnit instanceof Unit);
-        ListIterable<? extends CoreInstance> nonCanonicalUnits = massCoreInstance.getValueForMetaPropertyToMany("nonCanonicalUnits");
-        Assert.assertEquals("Mass~Kilogram", nonCanonicalUnits.get(0).getName());
-        Assert.assertTrue(nonCanonicalUnits.get(0) instanceof Unit);
-        Assert.assertEquals("Mass~Pound", nonCanonicalUnits.get(1).getName());
-        Assert.assertTrue(nonCanonicalUnits.get(1) instanceof Unit);
-        Assert.assertEquals("pkg", massCoreInstance.getValueForMetaPropertyToOne(M3Properties._package).getName());
+        Measure mass = getAndAssertMeasure("pkg::Mass");
+
+        assertUnit(mass, "Gram", true, mass._canonicalUnit());
+
+        ListIterable<? extends Unit> nonCanonicalUnits = mass._nonCanonicalUnits().toList();
+        assertUnit(mass, "Kilogram", true, nonCanonicalUnits.get(0));
+        assertUnit(mass, "Pound", true, nonCanonicalUnits.get(1));
+        Assert.assertEquals(2, nonCanonicalUnits.size());
     }
 
     @Test
     public void testMeasureWithOnlyCanonicalUnitBuildsCorrectlyInGraph()
     {
         compileTestSource("testModel.pure", distanceDefinition);
-        CoreInstance distanceCoreInstance = runtime.getCoreInstance("pkg::Distance");
-        Assert.assertEquals("Distance", distanceCoreInstance.getName());
-        Assert.assertTrue(distanceCoreInstance instanceof Measure);
-        Assert.assertEquals("Measure", distanceCoreInstance.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToOne(M3Properties.rawType).getName());
-        CoreInstance canonicalUnit = distanceCoreInstance.getValueForMetaPropertyToOne("canonicalUnit");
-        Assert.assertEquals("Distance~Meter", canonicalUnit.getName());
-        Assert.assertTrue(canonicalUnit instanceof Unit);
-        Assert.assertEquals("pkg", distanceCoreInstance.getValueForMetaPropertyToOne(M3Properties._package).getName());
-    }
+        Measure distance = getAndAssertMeasure("pkg::Distance");
 
-    @Test
-    public void testUnitBuildsCorrectlyInGraph()
-    {
-        compileTestSource("testModel.pure", massDefinition);
-        CoreInstance kilogramCoreInstance = runtime.getCoreInstance("pkg::Mass~Kilogram");
-        Assert.assertEquals("Mass~Kilogram", kilogramCoreInstance.getName());
-        Assert.assertTrue(kilogramCoreInstance instanceof Unit);
-        Assert.assertEquals("Unit", kilogramCoreInstance.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToOne(M3Properties.rawType).getName());
-        Assert.assertTrue(kilogramCoreInstance.getValueForMetaPropertyToOne(M3Properties.conversionFunction) instanceof LambdaFunction);
-        CoreInstance myMeasure = kilogramCoreInstance.getValueForMetaPropertyToOne(M3Properties.measure);
-        Assert.assertEquals("Mass", myMeasure.getName());
-        Assert.assertTrue(myMeasure instanceof Measure);
-        CoreInstance myPackage = kilogramCoreInstance.getValueForMetaPropertyToOne(M3Properties._package);
-        Assert.assertEquals("pkg", myPackage.getName());
+        assertUnit(distance, "Meter", true, distance._canonicalUnit());
+
+        Assert.assertEquals(Lists.fixedSize.empty(), distance._nonCanonicalUnits().toList());
     }
 
     @Test
     public void testNonConvertibleUnitBuildsCorrectlyInGraph()
     {
         compileTestSource("testModel.pure", currencyDefinition);
-        CoreInstance dollarCoreInstance = runtime.getCoreInstance("pkg::Currency~USD");
-        Assert.assertEquals("Currency~USD", dollarCoreInstance.getName());
-        Assert.assertTrue(dollarCoreInstance instanceof Unit);
-        Assert.assertEquals("Unit", dollarCoreInstance.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToOne(M3Properties.rawType).getName());
-        Assert.assertNull(dollarCoreInstance.getValueForMetaPropertyToOne(M3Properties.conversionFunction));
-        CoreInstance myMeasure = dollarCoreInstance.getValueForMetaPropertyToOne(M3Properties.measure);
-        Assert.assertEquals("Currency", myMeasure.getName());
-        Assert.assertTrue(myMeasure instanceof Measure);
-        CoreInstance myPackage = dollarCoreInstance.getValueForMetaPropertyToOne(M3Properties._package);
-        Assert.assertEquals("pkg", myPackage.getName());
+
+        Measure currency = getAndAssertMeasure("pkg::Currency");
+
+        assertUnit(currency, "USD", false, currency._canonicalUnit());
+
+        ListIterable<? extends Unit> nonCanonicalUnits = currency._nonCanonicalUnits().toList();
+        assertUnit(currency, "GBP", false, nonCanonicalUnits.get(0));
+        assertUnit(currency, "EUR", false, nonCanonicalUnits.get(1));
+        Assert.assertEquals(2, nonCanonicalUnits.size());
     }
 
     @Test
@@ -158,5 +141,48 @@ public class TestMeasureGraphCorrectness extends AbstractPureTestWithCoreCompile
     {
         PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource("testSource.pure", currencyDefinitionWithCanonicalUnit));
         assertPureException(PureParserException.class, "expected: ':' found: ';'", 3, 8, e);
+    }
+
+    private Measure getAndAssertMeasure(String path)
+    {
+        CoreInstance rawInstance = runtime.getCoreInstance(path);
+        Assert.assertTrue(path, rawInstance instanceof Measure);
+        Measure measure = (Measure) rawInstance;
+
+        int lastSep = path.lastIndexOf("::");
+        String name = (lastSep == -1) ? path : path.substring(lastSep + 2);
+        String pkg = (lastSep == -1) ? "::" : path.substring(0, lastSep);
+        assertMeasure(name, pkg, measure);
+
+        return measure;
+    }
+
+    private void assertMeasure(String expectedName, String expectedPackage, Measure measure)
+    {
+        Assert.assertEquals(expectedName, measure.getName());
+        Assert.assertEquals(expectedName, measure._name());
+        Assert.assertEquals(expectedName, measureClass, measure.getClassifier());
+        Assert.assertEquals(expectedName, measureClass, measure._classifierGenericType()._rawType());
+
+        CoreInstance pkg = runtime.getCoreInstance(expectedPackage);
+        Assert.assertTrue(expectedPackage, pkg instanceof Package);
+        Assert.assertEquals(pkg, measure._package());
+    }
+
+    private void assertUnit(Measure measure, String name, boolean hasConversionFn, Unit unit)
+    {
+        Assert.assertEquals(name, unit.getName());
+        Assert.assertEquals(name, unit._name());
+        Assert.assertEquals(measure, unit._measure());
+        Assert.assertEquals(name, unitClass, unit.getClassifier());
+        Assert.assertEquals(name, unitClass, unit._classifierGenericType()._rawType());
+        if (hasConversionFn)
+        {
+            Assert.assertNotNull(name, unit._conversionFunction());
+        }
+        else
+        {
+            Assert.assertNull(name, unit._conversionFunction());
+        }
     }
 }

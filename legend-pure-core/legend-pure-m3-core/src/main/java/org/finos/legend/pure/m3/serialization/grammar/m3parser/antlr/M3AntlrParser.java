@@ -32,6 +32,7 @@ import org.finos.legend.pure.m3.compiler.postprocessing.processor.ElementWithCon
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.EnumerationProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.FunctionDefinitionProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.LambdaFunctionProcessor;
+import org.finos.legend.pure.m3.compiler.postprocessing.processor.MeasureProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.PropertyOwnerProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.PropertyProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.QualifiedPropertyProcessor;
@@ -135,6 +136,7 @@ import org.finos.legend.pure.m3.serialization.runtime.binary.reference.PropertyR
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.QualifiedPropertyReferenceSerializer;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.StereotypeReferenceSerializer;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.TagReferenceSerializer;
+import org.finos.legend.pure.m3.serialization.runtime.binary.reference.UnitReferenceSerializer;
 import org.finos.legend.pure.m3.serialization.runtime.navigation.NavigationHandler;
 import org.finos.legend.pure.m3.statelistener.M3M4StateListener;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
@@ -445,6 +447,7 @@ public class M3AntlrParser implements Parser
                 new VariableExpressionProcessor(),
                 new InstanceValueProcessor(),
                 new FunctionExpressionProcessor(),
+                new MeasureProcessor(),
                 new UnitProcessor()
         );
     }
@@ -558,7 +561,8 @@ public class M3AntlrParser implements Parser
                 new PropertyReferenceSerializer(),
                 new QualifiedPropertyReferenceSerializer(),
                 new TagReferenceSerializer(),
-                new StereotypeReferenceSerializer()
+                new StereotypeReferenceSerializer(),
+                new UnitReferenceSerializer()
         );
     }
 

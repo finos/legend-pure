@@ -36,6 +36,7 @@ function <<test.Test>> meta::pure::functions::meta::tests::pathToElement::testPa
     assertIs(CC_Person, pathToElement('meta.pure.functions.meta.tests.model.CC_Person', '.'));
     assertIs(CC_Person.package->toOne(), pathToElement('meta::pure::functions::meta::tests::model'));
     assertIs(CC_Person.package->toOne(), pathToElement('meta_pure_functions_meta_tests_model', '_'));
+    assertIs(RomanLength, pathToElement('meta::pure::functions::meta::tests::model::RomanLength'));
 }
 
 function <<test.Test>> meta::pure::functions::meta::tests::pathToElement::testLenientPathToElement():Boolean[1]
@@ -71,16 +72,6 @@ function <<test.Test>> meta::pure::functions::meta::tests::pathToElement::testNa
 function <<test.Test>> meta::pure::functions::meta::tests::pathToElement::testConcreteFunctionDefinitionPathToElement():Boolean[1]
 {
     assertIs(meta::pure::functions::boolean::greaterThan_Number_1__Number_1__Boolean_1_, pathToElement('meta::pure::functions::boolean::greaterThan_Number_1__Number_1__Boolean_1_'));
-}
-
-function <<test.Test>> meta::pure::functions::meta::tests::pathToElement::testUnitMeasurePathToElement():Boolean[1]
-{
-    assertIs(RomanLength, pathToElement('meta::pure::functions::meta::tests::model::RomanLength'));
-    assertEquals(RomanLength~Pes, pathToElement('meta::pure::functions::meta::tests::model::RomanLength~Pes'));
-    assertEquals(RomanLength~Cubitum, pathToElement('meta::pure::functions::meta::tests::model::RomanLength~Cubitum'));
-    assertEquals(RomanLength~Passus, pathToElement('meta::pure::functions::meta::tests::model::RomanLength~Passus'));
-    assertEquals(RomanLength~Actus, pathToElement('meta::pure::functions::meta::tests::model::RomanLength~Actus'));
-    assertEquals(RomanLength~Stadium, pathToElement('meta::pure::functions::meta::tests::model::RomanLength~Stadium'));
 }
 
 // To be removed

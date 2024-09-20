@@ -114,7 +114,7 @@ public class ValueSpecificationProcessor
                     else
                     {
                         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(valueSpecification, M3Properties.genericType, M3Properties.typeArguments, M3Properties.rawType, processorSupport);
-                        return "((" + FullJavaPaths.Class + "<" + TypeProcessor.fullyQualifiedJavaInterfaceNameForType(_class) + ">)((CompiledExecutionSupport)es).getMetadataAccessor(\"" + PackageableElement.getSystemPathForPackageableElement(_class, "::") + "\"))";
+                        return "((" + FullJavaPaths.Class + "<" + TypeProcessor.fullyQualifiedJavaInterfaceNameForType(_class, processorSupport) + ">)((CompiledExecutionSupport)es).getMetadataAccessor(\"" + PackageableElement.getSystemPathForPackageableElement(_class, "::") + "\"))";
                     }
                 }
                 else if (values.size() == 1)
@@ -127,7 +127,7 @@ public class ValueSpecificationProcessor
                     }
                     CoreInstance type = processorSupport.getClassifier(cls);
                     String classifier = MetadataJavaPaths.buildMetadataKeyFromType(type);
-                    return "((" + TypeProcessor.fullyQualifiedJavaInterfaceNameForType(type) + "<" + TypeProcessor.fullyQualifiedJavaInterfaceNameForType(cls) + ">)((CompiledExecutionSupport)es).getMetadata(\"" + classifier + "\",\"" + PackageableElement.getSystemPathForPackageableElement(cls) + "\"))";
+                    return "((" + TypeProcessor.fullyQualifiedJavaInterfaceNameForType(type, processorSupport) + "<" + TypeProcessor.fullyQualifiedJavaInterfaceNameForType(cls, processorSupport) + ">)((CompiledExecutionSupport)es).getMetadata(\"" + classifier + "\",\"" + PackageableElement.getSystemPathForPackageableElement(cls) + "\"))";
                 }
                 else
                 {
@@ -141,9 +141,9 @@ public class ValueSpecificationProcessor
                             cls = Instance.getValueForMetaPropertyToOneResolved(cls, M3Properties.values, processorSupport);
                         }
 
-                        String type = TypeProcessor.fullyQualifiedJavaInterfaceNameForType(cls);
+                        String type = TypeProcessor.fullyQualifiedJavaInterfaceNameForType(cls, processorSupport);
                         types.add(type);
-                        String classifier = TypeProcessor.fullyQualifiedJavaInterfaceNameForType(processorSupport.getClassifier(cls));
+                        String classifier = TypeProcessor.fullyQualifiedJavaInterfaceNameForType(processorSupport.getClassifier(cls), processorSupport);
                         return "((" + classifier + "<? extends " + type + ">)((CompiledExecutionSupport)es).getMetadata(\"" + MetadataJavaPaths.buildMetadataKeyFromType(processorSupport.getClassifier(cls)) + "\",\"" + PackageableElement.getSystemPathForPackageableElement(cls, "::") + "\"))";
                     }).makeString();
                     String typeString = (types.size() > 1) ? ("<" + TypeProcessor.typeToJavaObjectSingle(Instance.getValueForMetaPropertyToOneResolved(valueSpecification, M3Properties.genericType, processorSupport), true, processorSupport) + ">") : "";
@@ -197,7 +197,7 @@ public class ValueSpecificationProcessor
         ProcessorSupport processorSupport = processorContext.getSupport();
         CoreInstance value = Instance.getValueForMetaPropertyToOneResolved(firstValue, M3Properties.values, processorSupport);
         CoreInstance unit = Instance.getValueForMetaPropertyToOneResolved(valueSpecification, M3Properties.genericType, M3Properties.rawType, processorSupport);
-        String unitImplClassReference = JavaPackageAndImportBuilder.buildImplClassReferenceFromType(unit);
+        String unitImplClassReference = JavaPackageAndImportBuilder.buildImplClassReferenceFromType(unit, processorSupport);
         return "new " + unitImplClassReference + "(" + JavaPurePrimitiveTypeMapping.convertPureCoreInstanceToJavaType(value, processorContext) + ", es)";
     }
 
@@ -212,7 +212,7 @@ public class ValueSpecificationProcessor
                 String result = "this";
                 if ((varRawType != null) && processorSupport.type_subTypeOf(topLevelElement, varRawType) && !varRawType.equals(processorSupport.type_TopType()))
                 {
-                    result = JavaPackageAndImportBuilder.buildImplClassNameFromType(topLevelElement, processorContext.getClassImplSuffix()) + "." + result;
+                    result = JavaPackageAndImportBuilder.buildImplClassNameFromType(topLevelElement, processorContext.getClassImplSuffix(), processorSupport) + "." + result;
                 }
                 return result;
             }
@@ -344,7 +344,7 @@ public class ValueSpecificationProcessor
                     String value;
                     if ("this".equals(varName) && Instance.instanceOf(topLevelElement, M3Paths.Class, processorContext.getSupport()))
                     {
-                        value = JavaPackageAndImportBuilder.buildImplClassNameFromType(topLevelElement) + ".this";
+                        value = JavaPackageAndImportBuilder.buildImplClassNameFromType(topLevelElement, processorContext.getSupport()) + ".this";
                     }
                     else
                     {
@@ -355,7 +355,7 @@ public class ValueSpecificationProcessor
             }
             else
             {
-                openVarsInitializer = vars.asLazy().collect(var -> "        .withKeyValue(\"" + var.getName() + "\", " + ("this".equals(var.getName()) ? JavaPackageAndImportBuilder.buildImplClassNameFromType(topLevelElement) + ".this" : "_" + var.getName()) + ")")
+                openVarsInitializer = vars.asLazy().collect(var -> "        .withKeyValue(\"" + var.getName() + "\", " + ("this".equals(var.getName()) ? JavaPackageAndImportBuilder.buildImplClassNameFromType(topLevelElement, processorContext.getSupport()) + ".this" : "_" + var.getName()) + ")")
                         .makeString("private final MutableMap<String, Object> __vars = Maps.mutable.<String, Object>ofInitialCapacity(" + vars.size() + ")\n", "\n", ";\n");
             }
         }
