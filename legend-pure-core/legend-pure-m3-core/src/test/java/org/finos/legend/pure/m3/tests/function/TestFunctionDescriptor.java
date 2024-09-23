@@ -105,8 +105,8 @@ public class TestFunctionDescriptor
     @Test
     public void testFunctionDescriptorToIdUnits() throws InvalidFunctionDescriptorException
     {
-        Assert.assertEquals("pkg::myFunc__Mass~Gram_1_", FunctionDescriptor.functionDescriptorToId("pkg::myFunc():Mass~Gram[1]"));
-        Assert.assertEquals("pkg::myFunc__Mass~Gram_1_", FunctionDescriptor.functionDescriptorToId(" \t \tpkg::myFunc(       ) : Mass ~ Gram[\t\t1\t]"));
+        Assert.assertEquals("pkg::myFunc__Mass$Gram_1_", FunctionDescriptor.functionDescriptorToId("pkg::myFunc():Mass~Gram[1]"));
+        Assert.assertEquals("pkg::myFunc__Mass$Gram_1_", FunctionDescriptor.functionDescriptorToId(" \t \tpkg::myFunc(       ) : Mass ~ Gram[\t\t1\t]"));
     }
 
     @Test
@@ -221,7 +221,7 @@ public class TestFunctionDescriptor
                 "pkg1::pkg2::test2(String[0..5], Integer[0..*], Integer[0..*]):Date[2..2]");
         assertFunctionDescriptor(
                 processorSupport,
-                "my::test::testUnits_Mass~Kilogram_1__Mass~Kilogram_1_",
+                "my::test::testUnits_Mass$Kilogram_1__Mass$Kilogram_1_",
                 "my::test::testUnits(Mass~Kilogram[1]):Mass~Kilogram[1]",
                 "my::test::testUnits(\tMass~Kilogram[1] ) : Mass~Kilogram[1..1]");
 
