@@ -14,6 +14,10 @@
 
 package org.finos.legend.pure.m3.tests;
 
+import org.antlr.v4.runtime.BailErrorStrategy;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.atn.PredictionMode;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.factory.Lists;
@@ -33,6 +37,7 @@ import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.ReferenceUsage;
 import org.finos.legend.pure.m3.coreinstance.Package;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.ModelElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -55,6 +60,8 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.Mutable
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Lexer;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.serialization.runtime.PrintPureRuntimeStatus;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
@@ -474,27 +481,93 @@ public abstract class AbstractCompiledStateIntegrityTest
     }
 
     @Test
-    public void testAllPackageChildrenHaveNames()
+    public void testAllPackageChildrenHaveValidNames()
     {
-        MutableMap<CoreInstance, MutableList<CoreInstance>> badElements = Maps.mutable.empty();
+        MutableMap<CoreInstance, MutableList<CoreInstance>> noNames = Maps.mutable.empty();
+        MutableMap<CoreInstance, MutableList<ModelElement>> invalidNames = Maps.mutable.empty();
+        M3Lexer lexer = new M3Lexer(null);
+        lexer.removeErrorListeners();
+        M3Parser parser = new M3Parser(null);
+        parser.removeErrorListeners();
+        parser.setErrorHandler(new BailErrorStrategy());
+        parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
         PackageTreeIterable.newRootPackageTreeIterable(repository).forEach(pkg -> pkg._children().forEach(child ->
         {
-            if (child.getValueForMetaPropertyToOne(M3Properties.name) == null)
+            String name = child._name();
+            if (name == null)
             {
-                badElements.getIfAbsentPut(pkg, Lists.mutable::empty).add(child);
+                noNames.getIfAbsentPut(pkg, Lists.mutable::empty).add(child);
+            }
+            else
+            {
+                lexer.setInputStream(CharStreams.fromString(name));
+                parser.setTokenStream(new CommonTokenStream(lexer));
+                try
+                {
+                    M3Parser.IdentifierContext context = parser.identifier();
+                    if (context.getStop().getStopIndex() + 1 < name.length())
+                    {
+                        // some of the name was not parsed, so was not valid identifier text
+                        invalidNames.getIfAbsentPut(pkg, Lists.mutable::empty).add(child);
+                    }
+                }
+                catch (Exception ignore)
+                {
+                    invalidNames.getIfAbsentPut(pkg, Lists.mutable::empty).add(child);
+                }
             }
         }));
-        if (badElements.notEmpty())
+        if (noNames.notEmpty() || invalidNames.notEmpty())
         {
-            StringBuilder builder = new StringBuilder("The following packages have children with no name:");
-            badElements.forEachKeyValue((pkg, children) ->
+            StringBuilder builder = new StringBuilder();
+            if (noNames.notEmpty())
             {
-                if (children.notEmpty())
+                builder.append("The following packages have children with no name:");
+                noNames.forEachKeyValue((pkg, children) ->
                 {
                     PackageableElement.writeUserPathForPackageableElement(builder.append("\n\t"), pkg);
-                    children.appendString(builder, "\n\t\t", "\n\t\t", "");
-                }
-            });
+                    children.forEach(child ->
+                    {
+                        builder.append("\n\t\t");
+                        CoreInstance classifier = processorSupport.getClassifier(child);
+                        if (classifier == null)
+                        {
+                            builder.append(child);
+                        }
+                        else
+                        {
+                            PackageableElement.writeUserPathForPackageableElement(builder.append("instance of "), classifier);
+                        }
+                        SourceInformation sourceInfo = child.getSourceInformation();
+                        if (sourceInfo != null)
+                        {
+                            sourceInfo.appendMessage(builder.append("\n\t\t\tsource: "));
+                        }
+                    });
+                });
+            }
+            if (invalidNames.notEmpty())
+            {
+                (noNames.isEmpty() ? builder : builder.append('\n')).append("The following packages have children with invalid names:");
+                invalidNames.forEachKeyValue((pkg, children) ->
+                {
+                    PackageableElement.writeUserPathForPackageableElement(builder.append("\n\t"), pkg);
+                    children.forEach(child ->
+                    {
+                        builder.append("\n\t\t").append(child._name());
+                        CoreInstance classifier = processorSupport.getClassifier(child);
+                        if (classifier != null)
+                        {
+                            PackageableElement.writeUserPathForPackageableElement(builder.append("\n\t\t\tclassifier: "), classifier);
+                        }
+                        SourceInformation sourceInfo = child.getSourceInformation();
+                        if (sourceInfo != null)
+                        {
+                            sourceInfo.appendMessage(builder.append("\n\t\t\tsource: "));
+                        }
+                    });
+                });
+            }
             Assert.fail(builder.toString());
         }
     }
