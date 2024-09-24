@@ -35,7 +35,7 @@ import java.util.Objects;
 public class ParserLibrary
 {
     private final ImmutableMap<String, Parser> parsers;
-    private final ImmutableMap<String, NavigationHandler> navigationHandlers;
+    private final ImmutableMap<String, NavigationHandler<?>> navigationHandlers;
 
     public ParserLibrary(Iterable<? extends Parser> parsers)
     {
@@ -123,7 +123,7 @@ public class ParserLibrary
         }
     }
 
-    public NavigationHandler getNavigationHandler(String typePath)
+    public NavigationHandler<?> getNavigationHandler(String typePath)
     {
         return this.navigationHandlers.get(typePath);
     }
@@ -142,25 +142,22 @@ public class ParserLibrary
         return index.toImmutable();
     }
 
-    private static ImmutableMap<String, NavigationHandler> indexNavigationHandlers(RichIterable<Parser> parsers)
+    private static ImmutableMap<String, NavigationHandler<?>> indexNavigationHandlers(RichIterable<Parser> parsers)
     {
         if (parsers.isEmpty())
         {
             return Maps.immutable.empty();
         }
 
-        MutableMap<String, NavigationHandler> index = Maps.mutable.empty();
-        for (Parser parser : parsers)
+        MutableMap<String, NavigationHandler<?>> index = Maps.mutable.empty();
+        parsers.forEach(parser -> parser.getNavigationHandlers().forEach(handler ->
         {
-            for (NavigationHandler handler : parser.getNavigationHandlers())
+            NavigationHandler<?> old = index.put(handler.getClassName(), handler);
+            if ((old != null) && (old != handler))
             {
-                NavigationHandler old = index.put(handler.getClassName(), handler);
-                if ((old != null) && (old != handler))
-                {
-                    throw new RuntimeException("Multiple navigation handlers for " + handler.getClassName());
-                }
+                throw new RuntimeException("Multiple navigation handlers for " + handler.getClassName());
             }
-        }
+        }));
         return index.toImmutable();
     }
 
