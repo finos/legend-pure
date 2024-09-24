@@ -293,6 +293,66 @@ public abstract class AbstractCompiledStateIntegrityTest
     }
 
     @Test
+    public void testPackagedElementsHaveNonOverlappingSourceInfo()
+    {
+        CoreInstance packageClass = runtime.getCoreInstance(M3Paths.Package);
+        MutableMap<String, MutableList<CoreInstance>> elementsBySource = Maps.mutable.empty();
+        PackageTreeIterable.newRootPackageTreeIterable(processorSupport).forEach(pkg ->
+        {
+            if (pkg.getSourceInformation() != null)
+            {
+                elementsBySource.getIfAbsentPut(pkg.getSourceInformation().getSourceId(), Lists.mutable::empty).add(pkg);
+            }
+            pkg._children().forEach(element ->
+            {
+                if (element.getClassifier() != packageClass)
+                {
+                    elementsBySource.getIfAbsentPut(element.getSourceInformation().getSourceId(), Lists.mutable::empty).add(element);
+                }
+            });
+        });
+        MutableList<Pair<CoreInstance, CoreInstance>> overlappingSourceInfo = Lists.mutable.empty();
+        elementsBySource.forEachValue(elements ->
+        {
+            elements.sortThisBy(e -> e.getSourceInformation().getStartLine());
+            elements.forEachWithIndex((instance, i) ->
+            {
+                SourceInformation sourceInfo = instance.getSourceInformation();
+                for (int j = i + 1; j < elements.size(); j++)
+                {
+                    CoreInstance other = elements.get(j);
+                    if (sourceInfo.intersects(other.getSourceInformation()))
+                    {
+                        overlappingSourceInfo.add(Tuples.pair(instance, other));
+                    }
+                    else
+                    {
+                        // since these are ordered by start line, we have passed the last possible intersecting element
+                        break;
+                    }
+                }
+            });
+        });
+        if (overlappingSourceInfo.notEmpty())
+        {
+            StringBuilder message = new StringBuilder("The following pairs of packaged elements have overlapping source information:");
+            overlappingSourceInfo.forEach(pair ->
+            {
+                CoreInstance first = pair.getOne();
+                PackageableElement.writeUserPathForPackageableElement(message.append("\n\t"), first);
+                PackageableElement.writeUserPathForPackageableElement(message.append(" ("), first.getClassifier()).append(')');
+                first.getSourceInformation().appendMessage(message.append(" at "));
+
+                CoreInstance second = pair.getTwo();
+                PackageableElement.writeUserPathForPackageableElement(message.append(" vs "), second);
+                PackageableElement.writeUserPathForPackageableElement(message.append(" ("), second.getClassifier()).append(')');
+                second.getSourceInformation().appendMessage(message.append(" at "));
+            });
+            Assert.fail(message.toString());
+        }
+    }
+
+    @Test
     public void testAllSourceNewInstancesArePackageableElements()
     {
         MutableMap<Source, MutableList<CoreInstance>> nonPackageableElementsBySource = Maps.mutable.empty();
