@@ -218,7 +218,6 @@ import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.Un
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.VariableContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLTextContent;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m3.serialization.runtime.SourceState;
 import org.finos.legend.pure.m4.ModelRepository;
@@ -1370,19 +1369,44 @@ public class AntlrContextToM3CoreInstance
 
     private ListIterable<CoreInstance> dsl(DslContext ctx, ImportGroup importId)
     {
-        String res = ctx.getText();
-        res = res.substring(res.indexOf('#') + 1, res.lastIndexOf('#'));
-        if (res.trim().startsWith("/") || res.trim().startsWith("{") || res.trim().startsWith("TDS") || res.trim().startsWith(">"))
+        String fullText = ctx.getText();
+        String dslText = fullText.substring(fullText.indexOf('#') + 1, fullText.lastIndexOf('#'));
+        //TODO temporary hack till we move treepath completely away from dsl
+        String trimmedText = dslText.trim();
+        if (trimmedText.startsWith("/") || trimmedText.startsWith("{") || trimmedText.startsWith("TDS") || trimmedText.startsWith(">"))
         {
-            //TODO temporary hack till we move treepath completely away from dsl
-            InlineDSLTextContent dslTextContext = new InlineDSLTextContent(res, ctx.getStart().getLine() + this.sourceInformation.getOffsetLine(), ctx.getStart().getCharPositionInLine() + 2);
-            CoreInstance instance = this.processWithParser(dslTextContext, importId);
-            return Lists.mutable.of(instance);
+            MutableList<InlineDSL> results = this.inlineDSLLibrary.getInlineDSLs().select(dsl -> dsl.match(dslText), Lists.mutable.empty());
+            if (results.size() == 1)
+            {
+                return Lists.mutable.with(results.get(0).parse(dslText, importId, this.sourceInformation.getSourceName(), ctx.getStart().getCharPositionInLine() + 2, ctx.getStart().getLine() + this.sourceInformation.getOffsetLine(), this.repository, this.context));
+            }
+
+            SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop());
+            StringBuilder builder = new StringBuilder();
+            if (results.isEmpty())
+            {
+                builder.append("Can't find a parser for '");
+                StringEscape.escape(builder, fullText).append("'");
+                MutableList<String> knownDSLs = this.inlineDSLLibrary.getInlineDSLNames().toSortedList();
+                if (knownDSLs.isEmpty())
+                {
+                    builder.append(" (no known inline DSL parsers)");
+                }
+                else
+                {
+                    knownDSLs.appendString(builder, " (known parsers: ", ", ", ")");
+                }
+            }
+            else
+            {
+                builder.append("Found ").append(results.size()).append(" parsers (");
+                results.collect(InlineDSL::getName).sortThis().appendString(builder, ", ");
+                builder.append(") for '");
+                StringEscape.escape(builder, fullText).append("'");
+            }
+            throw new PureParserException(sourceInfo, builder.toString());
         }
-        else
-        {
-            return Lists.mutable.of(new M3AntlrParser(this.inlineDSLLibrary).parseTreePath(res, this.sourceInformation.getSourceName(), ctx.getStart().getLine() + this.sourceInformation.getOffsetLine(), ctx.getStart().getCharPositionInLine() + 2, importId, this.repository, this.context));
-        }
+        return Lists.mutable.of(new M3AntlrParser(this.inlineDSLLibrary).parseTreePath(dslText, this.sourceInformation.getSourceName(), ctx.getStart().getLine() + this.sourceInformation.getOffsetLine(), ctx.getStart().getCharPositionInLine() + 2, importId, this.repository, this.context));
     }
 
     public CoreInstance instanceParser(InstanceContext ctx, boolean wrapFlag, ImportGroup importId, boolean addLines, String space, boolean topLevel, boolean useImportStubsInInstanceParser) throws PureParserException
@@ -1556,21 +1580,6 @@ public class AntlrContextToM3CoreInstance
             return this.repository.newDecimalCoreInstance(sign + ctx.DECIMAL().getText());
         }
         return this.repository.newFloatCoreInstance(sign + ctx.FLOAT().getText());
-    }
-
-    private CoreInstance processWithParser(InlineDSLTextContent code, ImportGroup importId)
-    {
-        MutableList<InlineDSL> results = this.inlineDSLLibrary.getInlineDSLs().select(dsl -> dsl.match(code.getText()), Lists.mutable.empty());
-
-        if (results.isEmpty())
-        {
-            throw new RuntimeException("Can't find a parser for the String '" + code.getText() + "'");
-        }
-        if (results.size() > 1)
-        {
-            throw new RuntimeException("Found " + results.size() + " parsers (" + results.collect(InlineDSL::getName).makeString(", ") + ") for the String '" + code + "'");
-        }
-        return results.get(0).parse(code.getText(), importId, this.sourceInformation.getSourceName(), code.getColumn(), code.getLine(), this.repository, this.context);
     }
 
     private Any lambdaPipe(LambdaPipeContext ctx, Token firstToken, ListIterable<VariableExpression> params, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)

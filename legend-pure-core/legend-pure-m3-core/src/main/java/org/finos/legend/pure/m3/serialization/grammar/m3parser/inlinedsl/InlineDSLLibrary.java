@@ -40,4 +40,9 @@ public class InlineDSLLibrary
     {
         return this.inlineDSLs.valuesView();
     }
+
+    public RichIterable<String> getInlineDSLNames()
+    {
+        return this.inlineDSLs.keysView();
+    }
 }
