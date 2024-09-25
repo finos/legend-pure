@@ -160,7 +160,7 @@ public class AggregationAwareGraphBuilder extends AggregationAwareParserBaseVisi
         {
             parser = this.parserLibrary.getParser(parserName);
         }
-        catch (RuntimeException e)
+        catch (ParserLibrary.UnknownParserException e)
         {
             throw new PureParserException(sourceInfo, e.getMessage(), e);
         }

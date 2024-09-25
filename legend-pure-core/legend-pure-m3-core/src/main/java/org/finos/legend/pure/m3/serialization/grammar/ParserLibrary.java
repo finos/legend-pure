@@ -54,12 +54,19 @@ public class ParserLibrary
         return this.parsers.valuesView();
     }
 
+    /**
+     * Get the named parser from the library.
+     *
+     * @param name parser name
+     * @return parser
+     * @throws UnknownParserException if the parser cannot be found
+     */
     public Parser getParser(String name)
     {
         Parser parser = this.parsers.get(name);
         if (parser == null)
         {
-            throw new RuntimeException("'" + name + "' is not a known parser. Known parsers are: " + this.parsers.keysView().toSortedList().makeString(", "));
+            throw new UnknownParserException(name, this.parsers);
         }
         return this.parsers.get(name).newInstance(this);
     }
@@ -105,6 +112,22 @@ public class ParserLibrary
             throw new RuntimeException("Found 0 or more than one (" + res.size() + ") handlers for resolving the element Accessor " + element.getName() + " " + path.makeString("."));
         }
         return res.get(0);
+    }
+
+    public static class UnknownParserException extends RuntimeException
+    {
+        private final String name;
+
+        private UnknownParserException(String name, ImmutableMap<String, Parser> parsers)
+        {
+            super("'" + name + "' is not a known parser. Known parsers are: " + parsers.keysView().toSortedList().makeString(", "));
+            this.name = name;
+        }
+
+        public String getName()
+        {
+            return this.name;
+        }
     }
 
     public static class InvalidParserLibraryException extends Exception
