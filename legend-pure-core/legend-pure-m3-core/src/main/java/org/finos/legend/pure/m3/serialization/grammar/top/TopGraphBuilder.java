@@ -27,6 +27,7 @@ import org.finos.legend.pure.m3.serialization.runtime.SourceState;
 import org.finos.legend.pure.m3.statelistener.M3M4StateListener;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
@@ -65,18 +66,26 @@ public class TopGraphBuilder extends TopAntlrParserBaseVisitor<MutableListMultim
     public MutableListMultimap<Parser, CoreInstance> visitTop(TopAntlrParser.TopContext ctx)
     {
         String parserName = ctx.CODE_BLOCK_START().getText().substring(4);
+        Parser parser;
+        try
+        {
+            parser = this.parserLibrary.getParser(parserName);
+        }
+        catch (Exception e)
+        {
+            int line = ctx.CODE_BLOCK_START().getSymbol().getLine() - 1;
+            SourceInformation sourceInfo = new SourceInformation(this.sourceName, line, 1, line, parserName.length() + 3);
+            String message = e.getMessage();
+            throw new PureParserException(sourceInfo, (message == null) ? ("Error getting parser '" + parserName + "'") : message, e);
+        }
+
         if (ctx.sectionContent() != null)
         {
             StringBuilder codeBuilder = new StringBuilder();
-            for (TopAntlrParser.SectionContentContext tn : ctx.sectionContent())
-            {
-                codeBuilder.append(tn.getText());
-            }
-
+            ctx.sectionContent().forEach(tn -> codeBuilder.append(tn.getText()));
             String code = codeBuilder.toString();
             try
             {
-                Parser parser = this.parserLibrary.getParser(parserName);
                 MutableList<CoreInstance> subResults = Lists.mutable.empty();
                 this.count++;
                 parser.parse(code, this.sourceName, true, ctx.CODE_BLOCK_START().getSymbol().getLine() - 2, this.repository, subResults, this.listener, this.context, this.count, this.oldState);

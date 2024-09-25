@@ -207,7 +207,7 @@ public class SourceRegistry
         return this.sourceEventHandlers;
     }
 
-    public NavigationHandler getNavigationHandler(String typePath)
+    public NavigationHandler<?> getNavigationHandler(String typePath)
     {
         return this.parserLibrary.getNavigationHandler(typePath);
     }
