@@ -22,9 +22,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.jar.JarInputStream;
 
@@ -53,7 +55,7 @@ public class PureRepositoryJars
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Error getting PureRepositoryJar from path: " + path, e);
+            throw new UncheckedIOException("Error getting PureRepositoryJar from path: " + path, e);
         }
     }
 
@@ -66,28 +68,13 @@ public class PureRepositoryJars
     {
         try
         {
-            if (cacheBytes)
-            {
-                int bufferSize = 8192;
-                byte[] buffer = new byte[bufferSize];
-                ByteArrayOutputStream byteStream = new ByteArrayOutputStream(bufferSize);
-                try (InputStream stream = url.openStream())
-                {
-                    for (int read = stream.read(buffer, 0, bufferSize); read != -1; read = stream.read(buffer, 0, bufferSize))
-                    {
-                        byteStream.write(buffer, 0, read);
-                    }
-                }
-                return new ByteArrayPureRepositoryJar(byteStream.toByteArray());
-            }
-            else
-            {
-                return new URLPureRepositoryJar(url);
-            }
+            return cacheBytes ?
+                   new ByteArrayPureRepositoryJar(readBytes(url)) :
+                   new URLPureRepositoryJar(url);
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Error getting PureRepositoryJar from URL: " + url, e);
+            throw new UncheckedIOException("Error getting PureRepositoryJar from URL: " + url, e);
         }
     }
 
@@ -99,7 +86,7 @@ public class PureRepositoryJars
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Error getting PureRepositoryJar from byte array", e);
+            throw new UncheckedIOException("Error getting PureRepositoryJar from byte array", e);
         }
     }
 
@@ -111,7 +98,7 @@ public class PureRepositoryJars
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Error getting PureRepositoryJar from ByteArrayOutputStream", e);
+            throw new UncheckedIOException("Error getting PureRepositoryJar from ByteArrayOutputStream", e);
         }
     }
 
@@ -123,7 +110,7 @@ public class PureRepositoryJars
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Error getting PureRepositoryJar from ByteIterable", e);
+            throw new UncheckedIOException("Error getting PureRepositoryJar from ByteIterable", e);
         }
     }
 
@@ -135,8 +122,37 @@ public class PureRepositoryJars
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Error getting PureRepositoryJar from unpacked jar in " + directory, e);
+            throw new UncheckedIOException("Error getting PureRepositoryJar from unpacked jar in " + directory, e);
         }
+    }
+
+    private static byte[] readBytes(URL url) throws IOException
+    {
+        if ("file".equalsIgnoreCase(url.getProtocol()))
+        {
+            // if it's a file URL, we have a potentially more efficient method of reading the content
+            try
+            {
+                return Files.readAllBytes(Paths.get(url.toURI()));
+            }
+            catch (Exception ignore)
+            {
+                // fall back to default method
+            }
+        }
+
+        int bufferSize = 8192;
+        ByteArrayOutputStream byteStream = new ByteArrayOutputStream(bufferSize);
+        try (InputStream stream = url.openStream())
+        {
+            byte[] buffer = new byte[bufferSize];
+            int read;
+            while ((read = stream.read(buffer, 0, bufferSize)) != -1)
+            {
+                byteStream.write(buffer, 0, read);
+            }
+        }
+        return byteStream.toByteArray();
     }
 
     private static class PathPureRepositoryJar extends AbstractJarPureRepositoryJar
