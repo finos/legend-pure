@@ -15,7 +15,7 @@
 package org.finos.legend.pure.m3.tests.elements.function;
 
 import org.finos.legend.pure.m3.navigation.Printer;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
@@ -23,7 +23,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
+public class TestFunction extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
@@ -42,107 +42,77 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testFunctionTypeWithWrongTypes()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "function myFunc(f:{String[1]->{String[1]->Booelean[1]}[1]}[*]):String[1]\n" +
-                    "{\n" +
-                    "   'ee';\n" +
-                    "}\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Booelean has not been defined!", 1, 43, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "function myFunc(f:{String[1]->{String[1]->Booelean[1]}[1]}[*]):String[1]\n" +
+                        "{\n" +
+                        "   'ee';\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Booelean has not been defined!", 1, 43, e);
     }
 
 
     @Test
     public void testNewWithUnknownType()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "function myFunc():String[1]\n" +
-                    "{\n" +
-                    "    ^XErrorType(name = 'ok');\n" +
-                    "}\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "XErrorType has not been defined!", 3, 6, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "function myFunc():String[1]\n" +
+                        "{\n" +
+                        "    ^XErrorType(name = 'ok');\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "XErrorType has not been defined!", 3, 6, e);
     }
 
     @Test
     public void testCastWithUnknownType()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "function myFunc():String[1]\n" +
-                    "{\n" +
-                    "    'a'->cast(@Error);\n" +
-                    "}\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Error has not been defined!", 3, 16, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "function myFunc():String[1]\n" +
+                        "{\n" +
+                        "    'a'->cast(@Error);\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Error has not been defined!", 3, 16, e);
     }
 
     @Test
     public void testToMultiplicityWithUnknownMul()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "function myFunc<|o>():String[o]\n" +
-                    "{\n" +
-                    "    'a'->toMultiplicity(@[x]);\n" +
-                    "}\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "The multiplicity parameter x is unknown!", 3, 25, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "function myFunc<|o>():String[o]\n" +
+                        "{\n" +
+                        "    'a'->toMultiplicity(@[x]);\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "The multiplicity parameter x is unknown!", 3, 25, e);
     }
 
     @Test
     public void testToMultiplicityWithWrongMul()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "function myFunc<|o>():String[o]\n" +
-                    "{\n" +
-                    "    'a';\n" +
-                    "}\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Return multiplicity error in function 'myFunc'; found: [1]; expected: [o]", 3, 5, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "function myFunc<|o>():String[o]\n" +
+                        "{\n" +
+                        "    'a';\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Return multiplicity error in function 'myFunc'; found: [1]; expected: [o]", 3, 5, e);
     }
 
 
     @Test
     public void testCastWithUnknownGeneric()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "Class A<E>{}\n" +
-                    "\n" +
-                    "function myFunc():String[1]\n" +
-                    "{\n" +
-                    "    'a'->cast(@A<Error>);\n" +
-                    "}\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Error has not been defined!", 5, 18, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "Class A<E>{}\n" +
+                        "\n" +
+                        "function myFunc():String[1]\n" +
+                        "{\n" +
+                        "    'a'->cast(@A<Error>);\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Error has not been defined!", 5, 18, e);
     }
 
     @Test
@@ -153,76 +123,58 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
                 "{\n" +
                 "    []\n" +
                 "}");
-        try
-        {
-            compileTestSource("fromString2.pure", "function test2<T>(t:T[1]):T[1]\n" +
-                    "{\n" +
-                    "    5\n" +
-                    "}");
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Return type error in function 'test2'; found: Integer; expected: T", 3, 5, e);
-        }
 
-        try
-        {
-            compileTestSource("fromString3.pure", "function test3<T,U>(t:T[1], u:U[1]):T[1]\n" +
-                    "{\n" +
-                    "    $u\n" +
-                    "}");
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Return type error in function 'test3'; found: U; expected: T", 3, 6, e);
-        }
+        PureCompilationException e1 = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString2.pure",
+                "function test2<T>(t:T[1]):T[1]\n" +
+                        "{\n" +
+                        "    5\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "Return type error in function 'test2'; found: Integer; expected: T", 3, 5, e1);
+
+        PureCompilationException e2 = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString3.pure",
+                "function test3<T,U>(t:T[1], u:U[1]):T[1]\n" +
+                        "{\n" +
+                        "    $u\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "Return type error in function 'test3'; found: U; expected: T", 3, 6, e2);
     }
 
     @Test
     public void testReturnMultiplicityValidationWithMultiplicityParameter()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "function test1<|m>(a:Any[m]):Any[m]\n" +
-                    "{\n" +
-                    "    1\n" +
-                    "}");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Return multiplicity error in function 'test1'; found: [1]; expected: [m]", 3, 5, e);
-        }
+        PureCompilationException e1 = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "function test1<|m>(a:Any[m]):Any[m]\n" +
+                        "{\n" +
+                        "    1\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "Return multiplicity error in function 'test1'; found: [1]; expected: [m]", 3, 5, e1);
 
-        try
-        {
-            compileTestSource("fromString2.pure", "function test2<|m,n>(a:Any[m], b:Any[n]):Any[m]\n" +
-                    "{\n" +
-                    "    $b\n" +
-                    "}");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Return multiplicity error in function 'test2'; found: [n]; expected: [m]", 3, 6, e);
-        }
+        PureCompilationException e2 = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString2.pure",
+                "function test2<|m,n>(a:Any[m], b:Any[n]):Any[m]\n" +
+                        "{\n" +
+                        "    $b\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "Return multiplicity error in function 'test2'; found: [n]; expected: [m]", 3, 6, e2);
     }
 
     @Test
     public void testSimple()
     {
-        runtime.createInMemorySource("fromString.pure",
-                "Class a::A{val:String[1];}" +
-                        "function myFunction(func:a::A[1]):String[1]" +
-                        "{" +
-                        "    ^a::A(val='ok').val;" +
-                        "}" +
-                        "" +
+        compileTestSource("fromString.pure",
+                "Class a::A{val:String[1];}\n" +
+                        "function myFunction(func:a::A[1]):String[1]\n" +
+                        "{\n" +
+                        "    ^a::A(val='ok').val;\n" +
+                        "}\n" +
+                        "\n" +
                         "function test():Nil[0]\n" +
                         "{\n" +
-                        "    print(myFunction_A_1__String_1_,1);" +
+                        "    print(myFunction_A_1__String_1_,1);\n" +
                         "}");
-        runtime.compile();
 
         CoreInstance func = runtime.getFunction("test():Nil[0]");
         Assert.assertEquals("test__Nil_0_ instance ConcreteFunctionDefinition\n" +
@@ -407,11 +359,13 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testFunction()
     {
-        compileTestSource("fromString.pure", "Class Employee {name:String[1];}" +
-                "function getValue(source:Any[1], prop:String[1]):Any[*]\n" +
-                "{\n" +
-                "    Employee.all()->filter(t:Employee[1]|$t.name == 'cool');\n" +
-                "}");
+        compileTestSource(
+                "fromString.pure",
+                "Class Employee {name:String[1];}" +
+                        "function getValue(source:Any[1], prop:String[1]):Any[*]\n" +
+                        "{\n" +
+                        "    Employee.all()->filter(t:Employee[1]|$t.name == 'cool');\n" +
+                        "}");
 
         Assert.assertEquals("getValue_Any_1__String_1__Any_MANY_ instance ConcreteFunctionDefinition\n" +
                 "    classifierGenericType(Property):\n" +
@@ -807,4 +761,19 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
 
     }
 
+    @Test
+    public void testFunctionWithUnitName()
+    {
+        compileTestSource(
+                "fromString.pure",
+                "import meta::pure::functions::meta::tests::model::*;\n" +
+                        "function pkg::myTestFunction(input:RomanLength~Cubitum[1]):RomanLength~Pes[1]\n" +
+                        "{\n" +
+                        "    let valuePes = RomanLength~Cubitum.conversionFunction->toOne()->cast(@Function<{Number[1]->Number[1]}>)->eval($input->getUnitValue());\n" +
+                        "    newUnit(RomanLength~Actus, $valuePes)->cast(@RomanLength~Pes);\n" +
+                        "}\n"
+        );
+        CoreInstance func = runtime.getCoreInstance("pkg::myTestFunction_RomanLength$Cubitum_1__RomanLength$Pes_1_");
+        Assert.assertEquals("myTestFunction_RomanLength$Cubitum_1__RomanLength$Pes_1_", func.getName());
+    }
 }

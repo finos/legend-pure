@@ -37,7 +37,9 @@ import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.Qu
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.TypeContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.UnitNameContext;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.serialization.grammar.StringEscape;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
+import org.finos.legend.pure.m4.tools.TextTools;
 
 import java.util.List;
 
@@ -206,7 +208,7 @@ public class FunctionDescriptor
     private static StringBuilder descriptorTypeToId(StringBuilder builder, TypeContext typeContext)
     {
         UnitNameContext unitNameContext = typeContext.unitName();
-        return builder.append((unitNameContext == null) ? typeContext.qualifiedName().getText() : unitNameContext.getText());
+        return builder.append((unitNameContext == null) ? typeContext.qualifiedName().getText() : unitNameContext.getText().replace('~', '$'));
     }
 
     private static StringBuilder descriptorMultToId(StringBuilder builder, MultiplicityArgumentContext multContext)
@@ -265,12 +267,10 @@ public class FunctionDescriptor
     private static FunctionDescriptorContext validateParseResult(FunctionDescriptorContext result, String text)
     {
         // ensure there's no unparsed text left over
-        for (int i = result.getStop().getStopIndex() + 1, len = text.length(); i < len; i++)
+        int nonWhitespaceIndex = TextTools.indexOfNonWhitespace(text, result.getStop().getStopIndex() + 1);
+        if (nonWhitespaceIndex != -1)
         {
-            if (!Character.isWhitespace(text.charAt(i)))
-            {
-                throw new RuntimeException("Unparsed text from index " + i + ": '" + text.substring(i) + "'");
-            }
+            throw new RuntimeException("Unparsed text from index " + nonWhitespaceIndex + ": '" + StringEscape.escape(text.substring(nonWhitespaceIndex)) + "'");
         }
 
         // validate types

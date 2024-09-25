@@ -87,6 +87,9 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
         Assert.assertEquals(
                 "test::domain::ClassA.properties['name with escaped text, \\'\\n\\b\\\\, and other unusual characters, \"#$%^.'].genericType.rawType",
                 GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithKey("properties", "name", "name with escaped text, '\n\b\\, and other unusual characters, \"#$%^.").addToOneProperties("genericType", "rawType").build().getDescription());
+        Assert.assertEquals(
+                "test::domain::ClassA.properties[functionName='prop2'].genericType.rawType",
+                GraphPath.builder("test::domain::ClassA").addToManyPropertyValueWithKey("properties", "functionName", "prop2").addToOneProperties("genericType", "rawType").build().getDescription());
 
         Assert.assertEquals(
                 "::",
@@ -561,76 +564,88 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
     public void testSubpath()
     {
         Assert.assertEquals(
-                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength~Cubitum"),
-                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength~Cubitum").subpath(0));
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength"),
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength").subpath(0));
         Assert.assertEquals(
                 "Index: 1; size: 0",
                 Assert.assertThrows(
                         IndexOutOfBoundsException.class,
-                        () -> GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength~Cubitum").subpath(1)).getMessage());
+                        () -> GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength").subpath(1)).getMessage());
         Assert.assertEquals(
                 "Index: -1; size: 0",
                 Assert.assertThrows(
                         IndexOutOfBoundsException.class,
-                        () -> GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength~Cubitum").subpath(-1)).getMessage());
+                        () -> GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength").subpath(-1)).getMessage());
 
         Assert.assertEquals(
-                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength~Cubitum"),
-                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength~Cubitum", "measure").subpath(0));
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength"),
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength", "canonicalUnit").subpath(0));
         Assert.assertEquals(
-                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength~Cubitum"),
-                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength~Cubitum", "measure").subpath(-1));
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength"),
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength", "canonicalUnit", "measure").subpath(0));
         Assert.assertEquals(
-                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength~Cubitum", "measure"),
-                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength~Cubitum", "measure").subpath(1));
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength", "canonicalUnit"),
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength", "canonicalUnit", "measure").subpath(-1));
         Assert.assertEquals(
-                "Index: 2; size: 1",
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength", "canonicalUnit"),
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength", "canonicalUnit", "measure").subpath(1));
+        Assert.assertEquals(
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength", "canonicalUnit", "measure"),
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength", "canonicalUnit", "measure").subpath(2));
+        Assert.assertEquals(
+                "Index: 3; size: 2",
                 Assert.assertThrows(
                         IndexOutOfBoundsException.class,
-                        () -> GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength~Cubitum", "measure").subpath(2)).getMessage());
+                        () -> GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength", "canonicalUnit", "measure").subpath(3)).getMessage());
         Assert.assertEquals(
-                "Index: -2; size: 1",
+                "Index: -3; size: 2",
                 Assert.assertThrows(
                         IndexOutOfBoundsException.class,
-                        () -> GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength~Cubitum", "measure").subpath(-2)).getMessage());
+                        () -> GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength", "canonicalUnit", "measure").subpath(-3)).getMessage());
 
         Assert.assertEquals(
-                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength~Cubitum"),
-                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength~Cubitum").addToOneProperties("measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(0));
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength"),
+                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToOneProperties("canonicalUnit", "measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(0));
         Assert.assertEquals(
-                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength~Cubitum"),
-                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength~Cubitum").addToOneProperties("measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(-4));
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength"),
+                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToOneProperties("canonicalUnit", "measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(-5));
         Assert.assertEquals(
-                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength~Cubitum", "measure"),
-                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength~Cubitum").addToOneProperties("measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(1));
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength", "canonicalUnit"),
+                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToOneProperties("canonicalUnit", "measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(1));
         Assert.assertEquals(
-                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength~Cubitum", "measure"),
-                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength~Cubitum").addToOneProperties("measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(-3));
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength", "canonicalUnit"),
+                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToOneProperties("canonicalUnit", "measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(-4));
         Assert.assertEquals(
-                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength~Cubitum", "measure", "canonicalUnit"),
-                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength~Cubitum").addToOneProperties("measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(2));
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength", "canonicalUnit", "measure"),
+                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToOneProperties("canonicalUnit", "measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(2));
         Assert.assertEquals(
-                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength~Cubitum", "measure", "canonicalUnit"),
-                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength~Cubitum").addToOneProperties("measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(-2));
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength", "canonicalUnit", "measure"),
+                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToOneProperties("canonicalUnit", "measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(-3));
         Assert.assertEquals(
-                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength~Cubitum", "measure", "canonicalUnit", "measure"),
-                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength~Cubitum").addToOneProperties("measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(3));
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength", "canonicalUnit", "measure", "canonicalUnit"),
+                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToOneProperties("canonicalUnit", "measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(3));
         Assert.assertEquals(
-                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength~Cubitum", "measure", "canonicalUnit", "measure"),
-                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength~Cubitum").addToOneProperties("measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(-1));
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength", "canonicalUnit", "measure", "canonicalUnit"),
+                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToOneProperties("canonicalUnit", "measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(-2));
         Assert.assertEquals(
-                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength~Cubitum").addToOneProperties("measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build(),
-                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength~Cubitum").addToOneProperties("measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(4));
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength", "canonicalUnit", "measure", "canonicalUnit", "measure"),
+                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToOneProperties("canonicalUnit", "measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(4));
         Assert.assertEquals(
-                "Index: 5; size: 4",
+                GraphPath.buildPath("meta::pure::functions::meta::tests::model::RomanLength", "canonicalUnit", "measure", "canonicalUnit", "measure"),
+                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToOneProperties("canonicalUnit", "measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(-1));
+        Assert.assertEquals(
+                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToOneProperties("canonicalUnit", "measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build(),
+                GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToOneProperties("canonicalUnit", "measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(5));
+        Assert.assertEquals(
+                "Index: 6; size: 5",
                 Assert.assertThrows(
                         IndexOutOfBoundsException.class,
-                        () -> GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength~Cubitum").addToOneProperties("measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(5)).getMessage());
+                        () -> GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToOneProperties("canonicalUnit", "measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(6)).getMessage());
         Assert.assertEquals(
-                "Index: -5; size: 4",
+                "Index: -6; size: 5",
                 Assert.assertThrows(
                         IndexOutOfBoundsException.class,
-                        () -> GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength~Cubitum").addToOneProperties("measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(-5)).getMessage());
+                        () -> GraphPath.builder("meta::pure::functions::meta::tests::model::RomanLength").addToOneProperties("canonicalUnit", "measure", "canonicalUnit", "measure").addToManyPropertyValueWithName("nonCanonicalUnits", "Actus").build().subpath(-6)).getMessage());
     }
 
     @Test
@@ -846,15 +861,103 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                         "#test::domain::ClassA",
                         "test::domain::ClassA.properties/0/",
                         "test::domain::ClassA.properties(0)",
+                        "test::domain::ClassA.properties[invalid key='value']",
                         "test::domain.model::ClassA",
                         "test::domain::model::ClassA::",
                         "Integer.generalizations.general.rawType.",
                         "!Integer.generalizations.general.rawType",
-                        "Integer.generalizations.general.rawType   etc...")
+                        "Integer.generalizations.general.rawType   etc...",
+                        "meta::pure::functions::meta::tests::model::RomanLength~Cubitum",
+                        "meta::pure::functions::meta::tests::model::RomanLength~Cubitum.measure")
                 .forEach(s ->
                 {
                     IllegalArgumentException e = Assert.assertThrows("'" + StringEscape.escape(s) + "'", IllegalArgumentException.class, () -> GraphPath.parse(s));
                     String expectedPrefix = "Invalid GraphPath description '" + StringEscape.escape(s) + "'";
+                    String message = e.getMessage();
+                    if (!message.startsWith(expectedPrefix))
+                    {
+                        Assert.assertEquals(expectedPrefix, e.getMessage());
+                    }
+                });
+    }
+
+    @Test
+    public void testStartNodePath()
+    {
+        ArrayAdapter.adapt(
+                        "",
+                        "        ",
+                        "\t\n",
+                        "the quick brown fox jumped over the lazy dog",
+                        "@#$%!@#$%",
+                        ",",
+                        "test::domain::ClassA!",
+                        "#test::domain::ClassA",
+                        "test::domain::ClassA.properties/0/",
+                        "test::domain::ClassA.properties(0)",
+                        "test::domain::ClassA.properties[invalid key='value']",
+                        "test::domain.model::ClassA",
+                        "test::domain::model::ClassA::",
+                        "test::domain::model::ClassA.properties[0]",
+                        "Integer.generalizations.general.rawType.",
+                        "!Integer.generalizations.general.rawType",
+                        "Integer.generalizations.general.rawType   etc...",
+                        "meta::pure::functions::meta::tests::model::RomanLength~Cubitum",
+                        "meta::pure::functions::meta::tests::model::RomanLength~Cubitum.measure")
+                .forEach(s ->
+                {
+                    IllegalArgumentException e = Assert.assertThrows("'" + StringEscape.escape(s) + "'", IllegalArgumentException.class, () -> GraphPath.builder().setStartNodePath(s));
+                    String expectedPrefix = "Invalid GraphPath start node path '" + StringEscape.escape(s) + "'";
+                    String message = e.getMessage();
+                    if (!message.startsWith(expectedPrefix))
+                    {
+                        Assert.assertEquals(expectedPrefix, e.getMessage());
+                    }
+                });
+    }
+
+    @Test
+    public void testPropertyName()
+    {
+        GraphPath.Builder builder = GraphPath.builder().withStartNodePath("test::domain::ClassA");
+        Assert.assertEquals("property may not be null", Assert.assertThrows(NullPointerException.class, () -> builder.addToOneProperty(null)).getMessage());
+        ArrayAdapter.adapt(
+                        "",
+                        "        ",
+                        "\t\n",
+                        "the quick brown fox jumped over the lazy dog",
+                        "@#$%!@#$%",
+                        ",",
+                        "pro%perty")
+                .forEach(s ->
+                {
+                    IllegalArgumentException e = Assert.assertThrows("'" + StringEscape.escape(s) + "'", IllegalArgumentException.class, () -> builder.addToOneProperty(s));
+                    String expectedPrefix = "Invalid property name '" + StringEscape.escape(s) + "'";
+                    String message = e.getMessage();
+                    if (!message.startsWith(expectedPrefix))
+                    {
+                        Assert.assertEquals(expectedPrefix, e.getMessage());
+                    }
+                });
+    }
+
+    @Test
+    public void testPropertyKeyName()
+    {
+        GraphPath.Builder builder = GraphPath.builder().withStartNodePath("test::domain::ClassA");
+        Assert.assertEquals("key property may not be null", Assert.assertThrows(NullPointerException.class, () -> builder.addToManyPropertyValueWithKey("properties", null, "key")).getMessage());
+        ArrayAdapter.adapt(
+                        "",
+                        "        ",
+                        "\t\n",
+                        "the quick brown fox jumped over the lazy dog",
+                        "@#$%!@#$%",
+                        ",",
+                        "pro%perty")
+                .forEach(s ->
+                {
+                    IllegalArgumentException e = Assert.assertThrows("'" + StringEscape.escape(s) + "'", IllegalArgumentException.class, () -> builder.addToManyPropertyValueWithKey("properties", s, "key"));
+                    String expectedPrefix = "Invalid key property name '" + StringEscape.escape(s) + "'";
                     String message = e.getMessage();
                     if (!message.startsWith(expectedPrefix))
                     {

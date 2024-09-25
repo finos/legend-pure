@@ -35,6 +35,7 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.StringEscape;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
+import org.finos.legend.pure.m4.tools.TextTools;
 
 import java.util.List;
 import java.util.Objects;
@@ -440,6 +441,14 @@ public class GraphPath
             {
                 throw new IllegalArgumentException("Invalid GraphPath start node path '" + StringEscape.escape(path) + "'", (e instanceof ParseCancellationException) ? e.getCause() : e);
             }
+
+            // check that there's nothing more in the string (except possibly whitespace)
+            int nonWhitespace = TextTools.indexOfNonWhitespace(path, context.getStop().getStopIndex() + 1);
+            if (nonWhitespace != -1)
+            {
+                throw new IllegalArgumentException("Invalid GraphPath start node path '" + StringEscape.escape(path) + "': error at index " + nonWhitespace);
+            }
+
             this.startNodePath = context.getText();
         }
 
@@ -479,14 +488,10 @@ public class GraphPath
             }
 
             // check that there's nothing more in the string (except possibly whitespace)
-            for (int i = context.getStop().getStopIndex() + 1, len = description.length(); i < len;)
+            int nonWhitespace = TextTools.indexOfNonWhitespace(description, context.getStop().getStopIndex() + 1);
+            if (nonWhitespace != -1)
             {
-                int codePoint = description.codePointAt(i);
-                if (!Character.isWhitespace(codePoint))
-                {
-                    throw new IllegalArgumentException("Invalid GraphPath description '" + StringEscape.escape(description) + "': error at index " + i);
-                }
-                i += Character.charCount(codePoint);
+                throw new IllegalArgumentException("Invalid GraphPath description '" + StringEscape.escape(description) + "': error at index " + nonWhitespace);
             }
 
             // build graph path
@@ -582,14 +587,24 @@ public class GraphPath
         private String validateProperty(String property)
         {
             initParser(Objects.requireNonNull(property, "property may not be null"));
+            M3Parser.PropertyNameContext context;
             try
             {
-                return this.parser.propertyName().getText();
+                context = this.parser.propertyName();
             }
             catch (Exception e)
             {
                 throw new IllegalArgumentException("Invalid property name '" + StringEscape.escape(property) + "'", (e instanceof ParseCancellationException) ? e.getCause() : e);
             }
+
+            // check that there's nothing more in the string (except possibly whitespace)
+            int nonWhitespace = TextTools.indexOfNonWhitespace(property, context.getStop().getStopIndex() + 1);
+            if (nonWhitespace != -1)
+            {
+                throw new IllegalArgumentException("Invalid property name '" + StringEscape.escape(property) + "': error at index " + nonWhitespace);
+            }
+
+            return context.getText();
         }
 
         private int validateIndex(int index)
@@ -604,14 +619,24 @@ public class GraphPath
         private String validateKeyProperty(String keyProperty)
         {
             initParser(Objects.requireNonNull(keyProperty, "key property may not be null"));
+            M3Parser.PropertyNameContext context;
             try
             {
-                return this.parser.propertyName().getText();
+                context = this.parser.propertyName();
             }
             catch (Exception e)
             {
-                throw new IllegalArgumentException("Invalid key property name '" + StringEscape.escape(keyProperty) + "\"", (e instanceof ParseCancellationException) ? e.getCause() : e);
+                throw new IllegalArgumentException("Invalid key property name '" + StringEscape.escape(keyProperty) + "'", (e instanceof ParseCancellationException) ? e.getCause() : e);
             }
+
+            // check that there's nothing more in the string (except possibly whitespace)
+            int nonWhitespace = TextTools.indexOfNonWhitespace(keyProperty, context.getStop().getStopIndex() + 1);
+            if (nonWhitespace != -1)
+            {
+                throw new IllegalArgumentException("Invalid key property name '" + StringEscape.escape(keyProperty) + "': error at index " + nonWhitespace);
+            }
+
+            return context.getText();
         }
 
         private String validateKey(String key)

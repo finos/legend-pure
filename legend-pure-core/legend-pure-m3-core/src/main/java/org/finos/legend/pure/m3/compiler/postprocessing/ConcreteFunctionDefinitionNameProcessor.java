@@ -105,7 +105,7 @@ public class ConcreteFunctionDefinitionNameProcessor
         }
         if (Measure.isUnit(rawType, processorSupport))
         {
-            return builder.append(rawType.getValueForMetaPropertyToOne(M3Properties.measure).getName()).append('~').append(rawType.getName());
+            return builder.append(rawType.getValueForMetaPropertyToOne(M3Properties.measure).getName()).append('$').append(rawType.getName());
         }
         if (PackageableElement.isPackageableElement(rawType, processorSupport))
         {
