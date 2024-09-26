@@ -496,23 +496,32 @@ public class GraphLoader
         results.forEach(result ->
         {
             MutableListMultimap<Parser, CoreInstance> instancesByParser = Multimaps.mutable.list.empty();
-            result.getInstancesByParser().forEachKeyMultiValues((parserName, instancePaths) ->
+            try
             {
-                Parser parser = this.parserLibrary.getParser(parserName);
-                if (parser == null)
+                result.getInstancesByParser().forEachKeyMultiValues((parserName, instancePaths) ->
                 {
-                    throw new RuntimeException("Could not find parser: " + parserName);
-                }
-                instancePaths.forEach(instancePath ->
-                {
-                    CoreInstance instance = instancesByPath.get(instancePath);
-                    if (instance == null)
+                    Parser parser = this.parserLibrary.getParser(parserName);
+                    instancePaths.forEach(instancePath ->
                     {
-                        throw new RuntimeException("Could not find instance: " + instancePath);
-                    }
-                    instancesByParser.put(parser, instance);
+                        CoreInstance instance = instancesByPath.get(instancePath);
+                        if (instance == null)
+                        {
+                            throw new RuntimeException("Could not find instance '" + instancePath + "'");
+                        }
+                        instancesByParser.put(parser, instance);
+                    });
                 });
-            });
+            }
+            catch (Exception e)
+            {
+                StringBuilder builder = new StringBuilder("Error updating ").append(result.getSource().getId());
+                String eMessage = e.getMessage();
+                if (eMessage != null)
+                {
+                    builder.append(": ").append(eMessage);
+                }
+                throw new RuntimeException(builder.toString(), e);
+            }
 
             Source source = result.getSource();
             source.linkInstances(instancesByParser);
@@ -712,20 +721,46 @@ public class GraphLoader
         }
     }
 
-    public static MutableList<PureRepositoryJar> findJars(MutableList<String> repoNames, ClassLoader classLoader, Message message)
+    public static MutableList<PureRepositoryJar> findJars(Iterable<String> repoNames, ClassLoader classLoader, Message message)
     {
-        return repoNames.collect(repoName -> findJar(repoName, classLoader, message));
+        return findJars(repoNames, classLoader, message, true);
     }
 
-    private static PureRepositoryJar findJar(String repoName, ClassLoader classLoader, Message message)
+    public static MutableList<PureRepositoryJar> findJars(Iterable<String> repoNames, ClassLoader classLoader, Message message, boolean errorOnNotFound)
+    {
+        MutableList<PureRepositoryJar> jars = Lists.mutable.empty();
+        repoNames.forEach(repoName ->
+        {
+            PureRepositoryJar jar = findJar(repoName, classLoader, message, errorOnNotFound);
+            if (jar != null)
+            {
+                jars.add(jar);
+            }
+        });
+        return jars;
+    }
+
+    private static PureRepositoryJar findJar(String repoName, ClassLoader classLoader, Message message, boolean errorOnFailure)
     {
         String resourceName = "pure-" + repoName + ".par";
         URL url = classLoader.getResource(resourceName);
         if (url == null)
         {
-            throw new RuntimeException("Could not find resource: " + resourceName);
+            if (errorOnFailure)
+            {
+                throw new RuntimeException("Could not find resource: " + resourceName);
+            }
+            if (message != null)
+            {
+                message.setMessage("  Could not find " + resourceName);
+            }
+            return null;
         }
-        message.setMessage("  Found " + resourceName + " at " + url);
+
+        if (message != null)
+        {
+            message.setMessage("  Found " + resourceName + " at " + url);
+        }
         return PureRepositoryJars.get(url);
     }
 }

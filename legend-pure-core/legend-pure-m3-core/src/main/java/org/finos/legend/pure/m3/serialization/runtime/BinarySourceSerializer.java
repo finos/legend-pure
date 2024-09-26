@@ -188,10 +188,6 @@ public class BinarySourceSerializer
                 {
                     String parserName = parserNames[reader.readInt()];
                     Parser parser = library.getParser(parserName);
-                    if (parser == null)
-                    {
-                        throw new RuntimeException("Unknown parser: " + parserName);
-                    }
                     elementsByParser.putAll(parser, readCoreInstancesById(reader, instancesById));
                 }
             }

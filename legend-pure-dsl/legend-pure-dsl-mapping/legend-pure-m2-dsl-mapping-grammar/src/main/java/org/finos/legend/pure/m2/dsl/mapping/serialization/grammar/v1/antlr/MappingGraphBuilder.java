@@ -166,7 +166,7 @@ public class MappingGraphBuilder extends MappingParserBaseVisitor<String>
         {
             parser = this.parserLibrary.getParser(parserName);
         }
-        catch (RuntimeException e)
+        catch (ParserLibrary.UnknownParserException e)
         {
             throw new PureParserException(this.sourceInformation.getPureSourceInformation(ctx.mappingInstance().CURLY_BRACKET_OPEN().getSymbol()), e.getMessage(), e);
         }

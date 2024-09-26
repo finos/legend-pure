@@ -114,6 +114,11 @@ public class PureRuntime
         this.options = options;
     }
 
+    public void initialize()
+    {
+        initialize(null);
+    }
+
     public void initialize(Message message)
     {
         synchronized (this.initializationLock)
@@ -125,7 +130,10 @@ public class PureRuntime
                 this.initializationError = false;
                 try
                 {
-                    message.setMessage("Initializing...");
+                    if (message != null)
+                    {
+                        message.setMessage("Initializing...");
+                    }
                     this.loadAndCompileCore(message);
                     try
                     {
@@ -136,7 +144,10 @@ public class PureRuntime
                     {
                         this.initialized = true;
                     }
-                    message.setMessage("...");
+                    if (message != null)
+                    {
+                        message.setMessage("...");
+                    }
                 }
                 catch (RuntimeException | Error e)
                 {

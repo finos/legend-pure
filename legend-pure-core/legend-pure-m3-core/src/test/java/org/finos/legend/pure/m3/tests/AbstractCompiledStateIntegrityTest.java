@@ -63,12 +63,15 @@ import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Lexer;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
+import org.finos.legend.pure.m3.serialization.runtime.GraphLoader;
 import org.finos.legend.pure.m3.serialization.runtime.PrintPureRuntimeStatus;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m3.serialization.runtime.binary.BinaryModelSourceDeserializer;
 import org.finos.legend.pure.m3.serialization.runtime.binary.BinaryModelSourceSerializer;
+import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJar;
+import org.finos.legend.pure.m3.serialization.runtime.binary.SimplePureRepositoryJarLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ExternalReferenceSerializerLibrary;
 import org.finos.legend.pure.m3.tools.PackageTreeIterable;
 import org.finos.legend.pure.m4.ModelRepository;
@@ -113,16 +116,50 @@ public abstract class AbstractCompiledStateIntegrityTest
 
     protected static void initialize(MutableRepositoryCodeStorage codeStorage)
     {
-        System.out.println(codeStorage.getAllRepositories().collect(CodeRepository::getName, Lists.mutable.empty()).sortThis().makeString("Repositories: ", ", ", ""));
+        MutableList<String> repoNames = codeStorage.getAllRepositories().collect(CodeRepository::getName, Lists.mutable.empty());
+        System.out.println(repoNames.sortThis().makeString("Repositories: ", ", ", ""));
 
         runtime = new PureRuntimeBuilder(codeStorage)
                 .withRuntimeStatus(new PrintPureRuntimeStatus(System.out))
                 .setTransactionalByDefault(false)
-                .buildAndInitialize();
-
+                .build();
         repository = runtime.getModelRepository();
         context = runtime.getContext();
         processorSupport = runtime.getProcessorSupport();
+
+        MutableList<PureRepositoryJar> repoJars = GraphLoader.findJars(repoNames, Thread.currentThread().getContextClassLoader(), null, false);
+        if (repoJars.isEmpty())
+        {
+            runtime.initialize();
+        }
+        else
+        {
+            try
+            {
+                GraphLoader loader = new GraphLoader(repository, context, runtime.getIncrementalCompiler().getParserLibrary(), runtime.getIncrementalCompiler().getDslLibrary(), runtime.getSourceRegistry(), null, SimplePureRepositoryJarLibrary.newLibrary(repoJars));
+                loader.loadAll();
+                if (repoJars.size() < repoNames.size())
+                {
+                    MutableSet<String> found = repoJars.collect(j -> j.getMetadata().getRepositoryName(), Sets.mutable.ofInitialCapacity(repoJars.size()));
+                    System.out.println(repoNames.reject(found::contains).sortThis().makeString("Missing caches for: ", ", ", ""));
+                    runtime.compile();
+                }
+                System.out.println("Initialized runtime from caches");
+            }
+            catch (Exception e)
+            {
+                System.out.println("Failed to initialize runtime from caches, will try to initialize from source");
+                e.printStackTrace();
+
+                runtime = new PureRuntimeBuilder(codeStorage)
+                        .withRuntimeStatus(new PrintPureRuntimeStatus(System.out))
+                        .setTransactionalByDefault(false)
+                        .buildAndInitialize();
+                repository = runtime.getModelRepository();
+                context = runtime.getContext();
+                processorSupport = runtime.getProcessorSupport();
+            }
+        }
 
         importStubClass = runtime.getCoreInstance(M3Paths.ImportStub);
         propertyStubClass = runtime.getCoreInstance(M3Paths.PropertyStub);
