@@ -69,7 +69,7 @@ public class TestDatabaseConnect extends PerThreadPoolableConnectionProvider
         }
         catch (SQLException ex)
         {
-            throw new PureExecutionException("Unable to create TestDatabaseConnection for user: " + user, ex);
+            throw new PureExecutionException("Unable to create TestDatabaseConnection of type: H2 for user: " + user + ", message: " + ex.getMessage(), ex);
         }
 
         pcw.incrementBorrowedCounter();
