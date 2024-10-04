@@ -50,7 +50,10 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.Collections;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Stack;
 import java.util.TimeZone;
 
@@ -90,6 +93,13 @@ public class ExecuteInDb extends NativeFunction
             .withKeyValue(Types.VARBINARY, M3Paths.String)
             .withKeyValue(Types.LONGVARBINARY, M3Paths.String)
             .toImmutable();
+
+    private static  Map<Integer, Map<String, String>> dbSpecificTypeToPureType = new HashMap<>();
+
+    static
+    {
+        dbSpecificTypeToPureType.put(Types.JAVA_OBJECT, Collections.singletonMap("HUGEINT", M3Paths.Integer));
+    }
 
     private static final IConnectionManagerHandler connectionManagerHandler = IConnectionManagerHandler.CONNECTION_MANAGER_HANDLER;
 
@@ -364,6 +374,19 @@ public class ExecuteInDb extends NativeFunction
                             }
                             break;
                         }
+                        case Types.JAVA_OBJECT:
+                        {
+                            if (metaData.getColumnTypeName(i).equals("HUGEINT"))      // DuckDB Specific datatype
+                            {
+                                long num = rs.getLong(i);
+                                if (!rs.wasNull())
+                                {
+                                    value = repository.newIntegerCoreInstance(num);
+                                }
+                                break;
+                            }
+                            break;
+                        }
                         case Types.NULL:
                         {
                             // do nothing: value is already assigned to null
@@ -462,10 +485,18 @@ public class ExecuteInDb extends NativeFunction
 
         if (pureType == null)
         {
-            throw new RuntimeException("No compatible PURE type found for column type (java.sql.Types): " + sqlType + ", column: " + columnIndex +
-                    " " + metaData.getColumnName(columnIndex) + " " + metaData.getColumnTypeName(columnIndex));
-        }
+           String pureTypeDbSpecific = dbSpecificTypeToPureType.get(sqlType).get(metaData.getColumnTypeName(columnIndex));
 
-        return pureType;
+            if (pureType == null && pureTypeDbSpecific == null)
+            {
+                throw new RuntimeException("No compatible PURE type found for column type (java.sql.Types): " + sqlType + ", column: " + columnIndex +
+                        " " + metaData.getColumnName(columnIndex) + " " + metaData.getColumnTypeName(columnIndex));
+            }
+            return pureTypeDbSpecific;
+        }
+        else
+        {
+            return pureType;
+        }
     }
 }
