@@ -24,7 +24,6 @@ public class DuckDBConnectionWrapper extends ConnectionWrapper
 {
     Logger logger = LoggerFactory.getLogger(DuckDBConnectionWrapper.class);
 
-    private int borrowedCounter;
     String user;
 
     public DuckDBConnectionWrapper(Connection connection, String user)
@@ -33,24 +32,11 @@ public class DuckDBConnectionWrapper extends ConnectionWrapper
         this.user = user;
     }
 
-    public void incrementBorrowedCounter()
-    {
-        borrowedCounter++;
-    }
-
-    private void decrementBorrowedCounter()
-    {
-        borrowedCounter--;
-    }
 
     @Override
     public void close() throws SQLException
     {
-        this.decrementBorrowedCounter();
+        //needed to hijack jdbc connection close method
         //never actually close duck db connection and re-use same connection over
-//        if (borrowedCounter <= 0)
-//        {
-//            this.closeConnection();
-//        }
     }
 }
