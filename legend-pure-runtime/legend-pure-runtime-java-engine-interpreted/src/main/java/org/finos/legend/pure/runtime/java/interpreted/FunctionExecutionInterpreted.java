@@ -194,6 +194,9 @@ import org.finos.legend.pure.runtime.java.interpreted.natives.grammar._boolean.o
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar._boolean.operation.Not;
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar._boolean.operation.Or;
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.collection.iteration.Filter;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.collection.iteration.ParallelMap;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.collection.slice.First;
+import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.collection.size.IsEmpty;
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.collection.iteration.Map;
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.collection.size.IsEmpty;
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.collection.size.Size;
@@ -222,6 +225,7 @@ import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Stack;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @ExecutionPlatform(name = "Interpreted")
@@ -243,10 +247,16 @@ public class FunctionExecutionInterpreted implements FunctionExecution
     private MutableMap<String, NativeFunction> nativeFunctions;
     private final int maxSQLRows;
     private final MutableList<InterpretedExtension> extensions;
+    private final ExecutorService executorService;
 
     public FunctionExecutionInterpreted()
     {
         this(VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER);
+    }
+    
+    public FunctionExecutionInterpreted(ExecutorService executorService)
+    {
+        this(VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER, executorService);
     }
 
     public FunctionExecutionInterpreted(ExecutionActivityListener executionActivityListener)
@@ -254,11 +264,22 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this(DEFAULT_MAX_SQL_ROWS, executionActivityListener);
     }
 
+    public FunctionExecutionInterpreted(ExecutionActivityListener executionActivityListener, ExecutorService executorService)
+    {
+        this(DEFAULT_MAX_SQL_ROWS, executionActivityListener, executorService);
+    }
+
     public FunctionExecutionInterpreted(int maxSQLRows, ExecutionActivityListener executionActivityListener)
+    {
+        this(maxSQLRows, executionActivityListener, null);
+    }
+
+    public FunctionExecutionInterpreted(int maxSQLRows, ExecutionActivityListener executionActivityListener, ExecutorService executorService)
     {
         this.maxSQLRows = Math.max(maxSQLRows, 0);
         this.executionActivityListener = executionActivityListener == null ? VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER : executionActivityListener;
         this.extensions = InterpretedExtensionLoader.extensions();
+        this.executorService = executorService;
     }
 
     public void setProcessorSupport(M3ProcessorSupport processorSupport)
@@ -308,6 +329,10 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.nativeFunctions.put("map_T_m__Function_1__V_m_", c);
         this.nativeFunctions.put("map_T_MANY__Function_1__V_MANY_", c);
         this.nativeFunctions.put("map_T_$0_1$__Function_1__V_$0_1$_", c);
+        ParallelMap pm = new ParallelMap(this);
+        this.nativeFunctions.put("parallelMap_T_m__Function_1__Integer_1__V_m_", pm);
+        this.nativeFunctions.put("parallelMap_T_MANY__Function_1__Integer_1__V_MANY_", pm);
+        this.nativeFunctions.put("parallelMap_T_$0_1$__Function_1__Integer_1__V_$0_1$_", pm);
         this.nativeFunctions.put("range_Integer_1__Integer_1__Integer_1__Integer_MANY_", new Range(repository));
         this.nativeFunctions.put("size_Any_MANY__Integer_1_", new Size(repository));
 
@@ -588,6 +613,11 @@ public class FunctionExecutionInterpreted implements FunctionExecution
     public ExecutionActivityListener getExecutionActivityListener()
     {
         return this.executionActivityListener;
+    }
+
+    public ExecutorService getExecutorService()
+    {
+        return executorService;
     }
 
     public void addNativeFunction(String signature, NativeFunction function)

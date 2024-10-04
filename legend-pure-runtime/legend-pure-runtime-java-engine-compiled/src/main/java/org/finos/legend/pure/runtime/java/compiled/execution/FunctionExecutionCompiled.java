@@ -77,6 +77,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.concurrent.ExecutorService;
 
 @ExecutionPlatform(name = "Java compiled")
 public class FunctionExecutionCompiled implements FunctionExecution, PureRuntimeEventHandler
@@ -98,15 +99,23 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
     private PureRuntime runtime;
 
     private final boolean includePureStackTrace;
+    
+    private final ExecutorService executorService;
 
     private Metadata providedMetadata = null;
 
     private FunctionExecutionCompiled(ExecutionActivityListener executionActivityListener, JavaCompilerEventObserver javaCompilerEventObserver, boolean includePureStackTrace, MutableList<CompiledExtension> extensions)
     {
+        this(executionActivityListener, javaCompilerEventObserver, includePureStackTrace, extensions, null);
+    }
+
+    private FunctionExecutionCompiled(ExecutionActivityListener executionActivityListener, JavaCompilerEventObserver javaCompilerEventObserver, boolean includePureStackTrace, MutableList<CompiledExtension> extensions, ExecutorService executorService)
+    {
         this.executionActivityListener = executionActivityListener;
         this.javaCompilerEventObserver = (javaCompilerEventObserver == null) ? VoidJavaCompilerEventObserver.VOID_JAVA_COMPILER_EVENT_OBSERVER : javaCompilerEventObserver;
         this.includePureStackTrace = includePureStackTrace;
         this.extensions = extensions;
+        this.executorService = executorService;
     }
 
     @Override
@@ -174,7 +183,8 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
                 this.metadataCompilerEventHandler,
                 this.extraSupportedTypes,
                 this.extensions,
-                this.runtime.getOptions()
+                this.runtime.getOptions(),
+                executorService
         );
     }
 
@@ -538,8 +548,8 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
         return (this.javaCompilerEventHandler instanceof MetadataEventObserver) ? (MetadataEventObserver) this.javaCompilerEventObserver : VoidJavaCompilerEventObserver.VOID_JAVA_COMPILER_EVENT_OBSERVER;
     }
 
-    static FunctionExecutionCompiled createFunctionExecutionCompiled(ExecutionActivityListener executionActivityListener, boolean includePureStackTrace, JavaCompilerEventObserver javaCompilerEventObserver)
+    static FunctionExecutionCompiled createFunctionExecutionCompiled(ExecutionActivityListener executionActivityListener, boolean includePureStackTrace, JavaCompilerEventObserver javaCompilerEventObserver, ExecutorService executorService)
     {
-        return new FunctionExecutionCompiled(executionActivityListener, javaCompilerEventObserver, includePureStackTrace, CompiledExtensionLoader.extensions());
+        return new FunctionExecutionCompiled(executionActivityListener, javaCompilerEventObserver, includePureStackTrace, CompiledExtensionLoader.extensions(), executorService);
     }
 }

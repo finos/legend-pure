@@ -166,6 +166,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.inequality.LessThan;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.inequality.LessThanEqual;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.iteration.Filter;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.iteration.ParallelMap;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.slice.First;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.size.IsEmpty;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.collection.iteration.Map;
@@ -322,6 +323,7 @@ public class NativeFunctionProcessor
         registerNative(map, new First());
         registerNative(map, new IsEmpty());
         registerNative(map, new Map());
+        registerNative(map, new ParallelMap());
         registerNative(map, new Range());
         registerNative(map, new Size());
 

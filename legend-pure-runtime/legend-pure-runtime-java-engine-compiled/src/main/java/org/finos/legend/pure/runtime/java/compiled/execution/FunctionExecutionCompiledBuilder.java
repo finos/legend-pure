@@ -19,6 +19,9 @@ import org.finos.legend.pure.m3.statelistener.VoidExecutionActivityListener;
 import org.finos.legend.pure.runtime.java.compiled.statelistener.JavaCompilerEventObserver;
 import org.finos.legend.pure.runtime.java.compiled.statelistener.VoidJavaCompilerEventObserver;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+
 /**
  * Configure the compiled execution environment
  */
@@ -28,6 +31,7 @@ public class FunctionExecutionCompiledBuilder
 
     private ExecutionActivityListener executionActivityListener = VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER;
     private JavaCompilerEventObserver javaCompilerEventObserver = VoidJavaCompilerEventObserver.VOID_JAVA_COMPILER_EVENT_OBSERVER;
+    private ExecutorService executorService = null;
 
     public FunctionExecutionCompiledBuilder shouldIncludePureStackTrace()
     {
@@ -53,8 +57,14 @@ public class FunctionExecutionCompiledBuilder
         return this;
     }
 
+    public FunctionExecutionCompiledBuilder withExecutorService(ExecutorService executorService)
+    {
+        this.executorService = executorService;
+        return this;
+    }
+
     public FunctionExecutionCompiled build()
     {
-        return FunctionExecutionCompiled.createFunctionExecutionCompiled(this.executionActivityListener, this.includePureStackTrace, this.javaCompilerEventObserver);
+        return FunctionExecutionCompiled.createFunctionExecutionCompiled(this.executionActivityListener, this.includePureStackTrace, this.javaCompilerEventObserver, this.executorService);
     }
 }
