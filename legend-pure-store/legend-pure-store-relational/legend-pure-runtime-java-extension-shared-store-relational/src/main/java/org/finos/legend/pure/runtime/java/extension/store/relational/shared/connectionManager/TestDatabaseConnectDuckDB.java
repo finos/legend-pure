@@ -58,7 +58,6 @@ public class TestDatabaseConnectDuckDB
         {
             throw new PureExecutionException("Unable to create TestDatabaseConnection of type: DuckDB for user: " + user + ", message: " + ex.getMessage(), ex);
         }
-        this.singletonConnection.incrementBorrowedCounter();
         return new ConnectionWithDataSourceInfo(this.singletonConnection, TEST_DATA_SOURCE, this.getClass().getSimpleName());
     }
 
