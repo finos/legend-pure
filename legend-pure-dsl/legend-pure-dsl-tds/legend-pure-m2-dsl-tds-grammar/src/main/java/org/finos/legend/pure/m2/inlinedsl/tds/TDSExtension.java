@@ -71,13 +71,29 @@ public class TDSExtension implements InlineDSL
         return parse(val, fileName, processorSupport);
     }
 
+    private static SinkFactory makeMySinkFactory()
+    {
+        return SinkFactory.arrays(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                Long.MIN_VALUE,
+                Long.MIN_VALUE);
+    }
+
     public static TDS<?> parse(String val, String fileName, ProcessorSupport processorSupport)
     {
         final CsvReader.Result result;
 
         try
         {
-            result = CsvReader.read(CsvSpecs.csv(), new ByteArrayInputStream(val.getBytes()), SinkFactory.arrays());
+            result = CsvReader.read(CsvSpecs.csv(), new ByteArrayInputStream(val.getBytes()), makeMySinkFactory());
         }
         catch (Exception e)
         {
@@ -110,9 +126,10 @@ public class TDSExtension implements InlineDSL
             case SHORT:
             case INT:
             case LONG:
-            case DATETIME_AS_LONG:
-            case TIMESTAMP_AS_LONG:
                 value = "Integer";
+                break;
+            case DATETIME_AS_LONG:
+                value = "Date";
                 break;
             case FLOAT:
             case DOUBLE:
@@ -122,6 +139,7 @@ public class TDSExtension implements InlineDSL
             case CHAR:
                 value = "String";
                 break;
+            case TIMESTAMP_AS_LONG:
             case CUSTOM:
                 throw new RuntimeException("Not possible");
         }

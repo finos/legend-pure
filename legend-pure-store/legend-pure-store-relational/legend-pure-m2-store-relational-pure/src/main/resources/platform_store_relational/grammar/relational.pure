@@ -153,6 +153,10 @@ Class meta::relational::metamodel::join::Join
     operation : Operation[1];
 }
 
+Class meta::relational::metamodel::join::AsOfJoin extends Join
+{
+}
+
 Class meta::relational::metamodel::operation::Function extends meta::relational::metamodel::RelationalOperationElement
 {
 }
