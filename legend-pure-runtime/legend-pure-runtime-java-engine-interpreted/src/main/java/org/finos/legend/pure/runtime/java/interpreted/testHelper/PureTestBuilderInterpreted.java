@@ -73,7 +73,7 @@ public class PureTestBuilderInterpreted
         FunctionExecutionInterpreted functionExecutionInterpreted = PureTestBuilderInterpreted.getFunctionExecutionInterpreted();
         MutableMap<String, String> explodedExpectedFailures = PCTReportConfiguration.explodeExpectedFailures(expectedFailures, functionExecutionInterpreted.getProcessorSupport());
         return PureTestBuilderInterpreted.buildPCTTestSuite(
-                TestCollection.buildPCTTestCollection(reportScope._package, reportScope._package, functionExecutionInterpreted.getProcessorSupport()),
+                TestCollection.buildPCTTestCollection(reportScope._package, reportScope.filePath, functionExecutionInterpreted.getProcessorSupport()),
                 explodedExpectedFailures,
                 adapter.function,
                 functionExecutionInterpreted
