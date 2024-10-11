@@ -105,7 +105,7 @@ public final class ResultSetValueHandlers
         public Object value(ResultSet rs, int i, CoreInstance nullSqlInstance, Calendar calendar) throws SQLException
         {
             float f = rs.getFloat(i);
-            return rs.wasNull() ? nullSqlInstance : Double.valueOf(f);
+            return rs.wasNull() ? nullSqlInstance : f;
         }
     };
 
