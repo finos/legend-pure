@@ -17,6 +17,7 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.lang.f
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
@@ -47,11 +48,10 @@ public class If extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         int funcIndex = PrimitiveUtilities.getBooleanValue(Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport)) ? 1 : 2;
         CoreInstance func = Instance.getValueForMetaPropertyToOneResolved(params.get(funcIndex), M3Properties.values, processorSupport);
-        return this.functionExecution.executeFunction(false, LambdaFunctionCoreInstanceWrapper.toLambdaFunction(func), EMPTY_PARAMS, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContextForLambda(variableContext, func),
-                functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+        return this.functionExecution.executeFunction(false, LambdaFunctionCoreInstanceWrapper.toLambdaFunction(func), EMPTY_PARAMS, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContextForLambda(variableContext, func), functionExpressionCallStack, profiler, instantiationContext, executionSupport);
     }
 }

@@ -17,6 +17,7 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.collec
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -45,7 +46,7 @@ public class Slice extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         ListIterable<? extends CoreInstance> collection = Instance.getValueForMetaPropertyToManyResolved(params.get(0), M3Properties.values, processorSupport);
         int low = PrimitiveUtilities.getIntegerValue(Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport)).intValue();
@@ -58,7 +59,7 @@ public class Slice extends NativeFunction
         high = Math.max(0, Math.min(collectionSize, high));
         if (low > high)
         {
-            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "The low bound (" + low + ") can't be higher than the high bound (" + high + ") in a slice operation");
+            throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "The low bound (" + low + ") can't be higher than the high bound (" + high + ") in a slice operation", functionExpressionCallStack);
         }
 
         int resultSize = high - low;

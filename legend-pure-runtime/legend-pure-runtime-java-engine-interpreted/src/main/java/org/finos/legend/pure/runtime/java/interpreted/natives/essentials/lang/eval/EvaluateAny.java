@@ -17,6 +17,7 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.lang.e
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -53,9 +54,9 @@ public class EvaluateAny extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, final Context context, final ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, final Context context, final ProcessorSupport processorSupport) throws PureExecutionException
     {
-        SourceInformation sourceInformation = functionExpressionToUseInStack.getSourceInformation();
+        SourceInformation sourceInformation = functionExpressionCallStack.peek().getSourceInformation();
 
         CoreInstance functionToApplyTo = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
         FunctionType fType = (FunctionType)processorSupport.function_getFunctionType(functionToApplyTo);
@@ -69,7 +70,7 @@ public class EvaluateAny extends NativeFunction
             CoreInstance functionName = Instance.getValueForMetaPropertyToOneResolved(functionToApplyTo, M3Properties.functionName, processorSupport);
             int expected = parameters.size();
             String message = "Expected " + expected + " parameter " + ((expected == 1) ? "value" : "values") + " for function " + ((functionName == null) ? "LAMBDA" : functionName.getName()) + ", got " + parameterValuesCount;
-            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), message);
+            throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), message, functionExpressionCallStack);
         }
 
         MutableList<ValueSpecification> wrappedParameterValues = FastList.newList(parameterValuesCount);
@@ -78,7 +79,7 @@ public class EvaluateAny extends NativeFunction
             CoreInstance parameterValueList = parameterValueLists.get(i);
             ListIterable<? extends CoreInstance> parameterValues = Instance.getValueForMetaPropertyToManyResolved(parameterValueList, M3Properties.values, processorSupport);
             CoreInstance wrappedParameterValue = ValueSpecificationBootstrap.wrapValueSpecification(parameterValues, true, processorSupport);
-            Evaluate.validateValueToSignature(wrappedParameterValue, parameters.get(i), sourceInformation, processorSupport);
+            Evaluate.validateValueToSignature(wrappedParameterValue, parameters.get(i), sourceInformation, functionExpressionCallStack, processorSupport);
             wrappedParameterValues.add((ValueSpecification)wrappedParameterValue);
         }
 
@@ -89,8 +90,8 @@ public class EvaluateAny extends NativeFunction
 
         // Call ------------------
         CoreInstance result =  Instance.instanceOf(functionToApplyTo, M3Paths.LambdaFunction, processorSupport) ?
-                this.functionExecution.executeLambda(LambdaFunctionCoreInstanceWrapper.toLambdaFunction(functionToApplyTo), wrappedParameterValues, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), functionExpressionToUseInStack, profiler, instantiationContext, executionSupport) :
-                this.functionExecution.executeFunctionExecuteParams(FunctionCoreInstanceWrapper.toFunction(functionToApplyTo), wrappedParameterValues, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+                this.functionExecution.executeLambda(LambdaFunctionCoreInstanceWrapper.toLambdaFunction(functionToApplyTo), wrappedParameterValues, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), functionExpressionCallStack, profiler, instantiationContext, executionSupport) :
+                this.functionExecution.executeFunctionExecuteParams(FunctionCoreInstanceWrapper.toFunction(functionToApplyTo), wrappedParameterValues, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), functionExpressionCallStack, profiler, instantiationContext, executionSupport);
 
         resolvedTypeParameters.pop();
         resolvedMultiplicityParameters.pop();

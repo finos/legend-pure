@@ -14,6 +14,9 @@
 
 package org.finos.legend.pure.m3.exception;
 
+import org.eclipse.collections.api.stack.MutableStack;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+
 /**
  * Indicates that an exception was thrown while we were writing to the response
  * during lazy streaming execution
@@ -23,8 +26,8 @@ package org.finos.legend.pure.m3.exception;
  */
 public class PureExecutionStreamingException extends PureExecutionException
 {
-    public PureExecutionStreamingException(Throwable cause)
+    public PureExecutionStreamingException(Throwable cause, MutableStack<CoreInstance> callStack)
         {
-            super(cause);
+            super(cause, callStack);
         }
 }

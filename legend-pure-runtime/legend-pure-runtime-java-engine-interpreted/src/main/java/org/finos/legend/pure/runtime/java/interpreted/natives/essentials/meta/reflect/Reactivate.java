@@ -18,6 +18,7 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.api.tuple.Pair;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
@@ -47,7 +48,7 @@ public class Reactivate extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         MapIterable<CoreInstance, CoreInstance> openVariablesMap = ((MapCoreInstance) Instance.getValueForMetaPropertyToManyResolved(params.get(1), M3Properties.values, processorSupport).getFirst()).getMap();
         RichIterable<Pair<CoreInstance, CoreInstance>> openVariables = openVariablesMap.keyValuesView();
@@ -71,11 +72,11 @@ public class Reactivate extends NativeFunction
             }
             catch (VariableContext.VariableNameConflictException e)
             {
-                throw new PureExecutionException(e);
+                throw new PureExecutionException(e, functionExpressionCallStack);
             }
         }
 
         return this.functionExecution.executeValueSpecification(params.get(0).getValueForMetaPropertyToOne(M3Properties.values),
-                resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, newVarContext, profiler, instantiationContext, executionSupport);
+                resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionCallStack, newVarContext, profiler, instantiationContext, executionSupport);
     }
 }

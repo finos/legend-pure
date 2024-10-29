@@ -14,6 +14,8 @@
 
 package org.finos.legend.pure.m3.exception;
 
+import org.eclipse.collections.api.stack.MutableStack;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureException;
 
@@ -22,37 +24,39 @@ import org.finos.legend.pure.m4.exception.PureException;
  */
 public class PureExecutionException extends PureException
 {
-    public PureExecutionException(SourceInformation sourceInformation, String info, Throwable cause)
+    private MutableStack<CoreInstance> callStack;
+
+    public PureExecutionException(SourceInformation sourceInformation, String info, Throwable cause, MutableStack<CoreInstance> callStack)
     {
         super(sourceInformation, info, cause);
     }
 
-    public PureExecutionException(SourceInformation sourceInformation, String info)
+    public PureExecutionException(SourceInformation sourceInformation, String info, MutableStack<CoreInstance> callStack)
     {
         super(sourceInformation, info, null);
     }
 
-    public PureExecutionException(SourceInformation sourceInformation, Throwable cause)
+    public PureExecutionException(SourceInformation sourceInformation, Throwable cause, MutableStack<CoreInstance> callStack)
     {
         super(sourceInformation, null, cause);
     }
 
-    public PureExecutionException(String info, Throwable cause)
+    public PureExecutionException(String info, Throwable cause, MutableStack<CoreInstance> callStack)
     {
         super(info, cause);
     }
 
-    public PureExecutionException(SourceInformation sourceInformation)
+    public PureExecutionException(SourceInformation sourceInformation, MutableStack<CoreInstance> callStack)
     {
         super(sourceInformation);
     }
 
-    public PureExecutionException(String info)
+    public PureExecutionException(String info, MutableStack<CoreInstance> callStack)
     {
         super(info);
     }
 
-    public PureExecutionException(Throwable cause)
+    public PureExecutionException(Throwable cause, MutableStack<CoreInstance> callStack)
     {
         super(cause);
     }

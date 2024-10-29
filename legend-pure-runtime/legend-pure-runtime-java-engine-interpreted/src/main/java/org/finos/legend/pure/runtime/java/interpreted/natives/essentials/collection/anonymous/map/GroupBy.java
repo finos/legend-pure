@@ -17,6 +17,7 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.collec
 import org.eclipse.collections.api.list.FixedSizeList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -51,16 +52,16 @@ public class GroupBy extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         ListIterable<? extends CoreInstance> collection = Instance.getValueForMetaPropertyToManyResolved(params.get(0), M3Properties.values, processorSupport);
         boolean isExecutable = ValueSpecification.isExecutable(params.get(0), processorSupport);
         CoreInstance listType = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.genericType, processorSupport);
-        CoreInstance listClassifierGenericType = listClassifierGenericType(listType, this.functionExecution.getRuntime().getModelRepository(), functionExpressionToUseInStack.getSourceInformation(), processorSupport);
+        CoreInstance listClassifierGenericType = listClassifierGenericType(listType, this.functionExecution.getRuntime().getModelRepository(), functionExpressionCallStack.peek().getSourceInformation(), processorSupport);
 
         CoreInstance keyType = Instance.getValueForMetaPropertyToOneResolved(processorSupport.function_getFunctionType(params.get(1)), M3Properties.returnType, processorSupport);
 
-        MapCoreInstance results = newMapInstance(keyType, listClassifierGenericType, this.functionExecution.getRuntime().getModelRepository(), functionExpressionToUseInStack.getSourceInformation(), processorSupport);
+        MapCoreInstance results = newMapInstance(keyType, listClassifierGenericType, this.functionExecution.getRuntime().getModelRepository(), functionExpressionCallStack.peek().getSourceInformation(), processorSupport);
 
         if (!collection.isEmpty())
         {
@@ -72,9 +73,9 @@ public class GroupBy extends NativeFunction
             for (CoreInstance instance : collection)
             {
                 parameters.set(0, ValueSpecificationBootstrap.wrapValueSpecification(instance, isExecutable, processorSupport));
-                CoreInstance keyInstanceValue = this.functionExecution.executeFunction(false, LambdaFunctionCoreInstanceWrapper.toLambdaFunction(keyFn), parameters, resolvedTypeParameters, resolvedMultiplicityParameters, evalVarContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+                CoreInstance keyInstanceValue = this.functionExecution.executeFunction(false, LambdaFunctionCoreInstanceWrapper.toLambdaFunction(keyFn), parameters, resolvedTypeParameters, resolvedMultiplicityParameters, evalVarContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
                 CoreInstance key = Instance.getValueForMetaPropertyToOneResolved(keyInstanceValue, M3Properties.values, processorSupport);
-                List<CoreInstance> list = (List) results.getMap().getIfAbsentPut(key, newListInstance(listClassifierGenericType, this.functionExecution.getRuntime().getModelRepository(), functionExpressionToUseInStack.getSourceInformation(), processorSupport));
+                List<CoreInstance> list = (List) results.getMap().getIfAbsentPut(key, newListInstance(listClassifierGenericType, this.functionExecution.getRuntime().getModelRepository(), functionExpressionCallStack.peek().getSourceInformation(), processorSupport));
                 list._valuesAdd(instance);
             }
         }

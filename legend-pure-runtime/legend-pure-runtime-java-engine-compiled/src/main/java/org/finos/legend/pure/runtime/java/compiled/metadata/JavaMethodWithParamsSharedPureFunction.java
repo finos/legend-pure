@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.metadata;
 
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
@@ -61,14 +62,14 @@ public final class JavaMethodWithParamsSharedPureFunction<R> implements SharedPu
                 {
                     String argumentType = CompiledSupport.getPureClassName(var);
                     String paramType = CompiledSupport.getPureClassName(this.paramClasses[i]);
-                    throw new PureExecutionException(this.sourceInformation, "Error during dynamic function evaluation. The type " + argumentType + " is not compatible with the type " + paramType, e);
+                    throw new PureExecutionException(this.sourceInformation, "Error during dynamic function evaluation. The type " + argumentType + " is not compatible with the type " + paramType, e, Stacks.mutable.empty());
                 }
             });
             throw e;
         }
         catch (IllegalAccessException e)
         {
-            throw new PureExecutionException(this.sourceInformation, "Failed to invoke java function.", e);
+            throw new PureExecutionException(this.sourceInformation, "Failed to invoke java function.", e, Stacks.mutable.empty());
         }
         catch (Exception e)
         {
@@ -82,7 +83,7 @@ public final class JavaMethodWithParamsSharedPureFunction<R> implements SharedPu
             {
                 vars.asLazy().reject(v -> v instanceof ExecutionSupport).appendString(builder, " with params [", ", ", "]");
             }
-            throw new PureExecutionException(this.sourceInformation, builder.toString(), (e instanceof InvocationTargetException) ? e.getCause() : e);
+            throw new PureExecutionException(this.sourceInformation, builder.toString(), (e instanceof InvocationTargetException) ? e.getCause() : e, Stacks.mutable.empty());
         }
     }
 

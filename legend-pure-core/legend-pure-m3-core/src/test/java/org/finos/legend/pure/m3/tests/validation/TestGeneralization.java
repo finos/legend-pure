@@ -105,7 +105,7 @@ public class TestGeneralization extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "   ^D(prop=333);\n" +
                         "}\n"));
-        assertPureException(PureCompilationException.class, Pattern.compile("^Diamond inheritance error! (('Integer' is not compatible with 'String')|('String' is not compatible with 'Integer')) going from 'D' to 'A<T>'$"), 7, 4, e);
+        assertPureException(PureCompilationException.class, Pattern.compile("^Diamond inheritance error! (('Integer' is not compatible with 'String')|('String' is not compatible with 'Integer')) going from 'D' to 'A<T>'$"), 7, 5, e);
     }
 
     @Test

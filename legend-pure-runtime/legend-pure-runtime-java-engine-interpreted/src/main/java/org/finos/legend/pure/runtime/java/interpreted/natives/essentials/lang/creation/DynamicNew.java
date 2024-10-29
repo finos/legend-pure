@@ -19,6 +19,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.validation.validator.PropertyValidator;
@@ -62,7 +63,7 @@ public class DynamicNew extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, final Context context, final ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, final Context context, final ProcessorSupport processorSupport) throws PureExecutionException
     {
         // The parameter is a Class ... but we encode the typeArguments in the ValueExpression genericType's typeArguments ...
         CoreInstance genericType = this.isGenericType ? Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport) :
@@ -71,7 +72,7 @@ public class DynamicNew extends NativeFunction
         ListIterable<? extends CoreInstance> keyValues = Instance.getValueForMetaPropertyToManyResolved(params.get(1), M3Properties.values, processorSupport);
 
         CoreInstance classifier = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
-        CoreInstance instance = this.repository.newEphemeralAnonymousCoreInstance(functionExpressionToUseInStack.getSourceInformation(), classifier);
+        CoreInstance instance = this.repository.newEphemeralAnonymousCoreInstance(functionExpressionCallStack.peek().getSourceInformation(), classifier);
         if (this.isGenericType)
         {
             Instance.addValueToProperty(instance, M3Properties.classifierGenericType, genericType, processorSupport);
@@ -90,7 +91,7 @@ public class DynamicNew extends NativeFunction
             CoreInstance property = processorSupport.class_findPropertyUsingGeneralization(classifier, key);
             if (property == null)
             {
-                throw new PureExecutionException(Instance.getValueForMetaPropertyToOneResolved(keyValue, M3Properties.key, processorSupport).getSourceInformation(), "The property '" + key + "' can't be found in the type '" + classifier.getName() + "' or in its hierarchy.");
+                throw new PureExecutionException(Instance.getValueForMetaPropertyToOneResolved(keyValue, M3Properties.key, processorSupport).getSourceInformation(), "The property '" + key + "' can't be found in the type '" + classifier.getName() + "' or in its hierarchy.", functionExpressionCallStack);
             }
 
             ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(keyValue, M3Properties.value, processorSupport);
@@ -105,7 +106,7 @@ public class DynamicNew extends NativeFunction
                 }
                 catch (PureCompilationException ex)
                 {
-                    throw new PureExecutionException("Unable to create a new instance of class '" + classifier.getName() + "'. Invalid value '" + values.collect(v -> v.printWithoutDebug("", 1)).makeString(",") + "' provided for class property '" + key + "': " + ex.getInfo(), ex);
+                    throw new PureExecutionException("Unable to create a new instance of class '" + classifier.getName() + "'. Invalid value '" + values.collect(v -> v.printWithoutDebug("", 1)).makeString(",") + "' provided for class property '" + key + "': " + ex.getInfo(), ex, functionExpressionCallStack);
                 }
             }
         }
@@ -127,24 +128,24 @@ public class DynamicNew extends NativeFunction
                 }
                 else
                 {
-                    New.setValuesToProperty(expression, expression, property, instance, expression.getSourceInformation(), genericType, evaluationVariableContext, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport, this.functionExecution, processorSupport);
+                    New.setValuesToProperty(expression, expression, property, instance, expression.getSourceInformation(), genericType, evaluationVariableContext, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionCallStack, profiler, instantiationContext, executionSupport, this.functionExecution, processorSupport);
                 }
             }
         }
 
-        New.updateReverseProperties(instance, functionExpressionToUseInStack.getSourceInformation(), processorSupport);
+        New.updateReverseProperties(instance, functionExpressionCallStack.peek().getSourceInformation(), functionExpressionCallStack, processorSupport);
 
         CoreInstance override = null;
         if (params.size() > 5)
         {
-            override = processorSupport.newAnonymousCoreInstance(functionExpressionToUseInStack.getSourceInformation(), M3Paths.ConstraintsGetterOverride);
+            override = processorSupport.newAnonymousCoreInstance(functionExpressionCallStack.peek().getSourceInformation(), M3Paths.ConstraintsGetterOverride);
             Instance.addValueToProperty(override, M3Properties.constraintsManager, Instance.getValueForMetaPropertyToOneResolved(params.get(5), M3Properties.values, processorSupport), processorSupport);
         }
         else
         {
             if (params.size() > 2)
             {
-                override = processorSupport.newAnonymousCoreInstance(functionExpressionToUseInStack.getSourceInformation(), M3Paths.GetterOverride);
+                override = processorSupport.newAnonymousCoreInstance(functionExpressionCallStack.peek().getSourceInformation(), M3Paths.GetterOverride);
             }
         }
         if (override != null)
@@ -155,6 +156,6 @@ public class DynamicNew extends NativeFunction
             Instance.addValueToProperty(instance, M3Properties.elementOverride, override, processorSupport);
         }
         CoreInstance value = ValueSpecificationBootstrap.wrapValueSpecification(instance, true, processorSupport);
-        return DefaultConstraintHandler.handleConstraints(classifier, value, functionExpressionToUseInStack.getSourceInformation(), this.functionExecution, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+        return DefaultConstraintHandler.handleConstraints(classifier, value, functionExpressionCallStack.peek().getSourceInformation(), this.functionExecution, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
     }
 }

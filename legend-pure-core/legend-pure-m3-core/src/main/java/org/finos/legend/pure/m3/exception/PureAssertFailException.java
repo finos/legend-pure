@@ -14,6 +14,8 @@
 
 package org.finos.legend.pure.m3.exception;
 
+import org.eclipse.collections.api.stack.MutableStack;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 /**
@@ -21,29 +23,29 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
  */
 public class PureAssertFailException extends PureExecutionException
 {
-    public PureAssertFailException(SourceInformation sourceInformation, String info, PureAssertFailException cause)
+    public PureAssertFailException(SourceInformation sourceInformation, String info, PureAssertFailException cause, MutableStack<CoreInstance> callStack)
     {
-        super(sourceInformation, info, cause);
+        super(sourceInformation, info, cause, callStack);
     }
 
-    public PureAssertFailException(SourceInformation sourceInformation, String info)
+    public PureAssertFailException(SourceInformation sourceInformation, String info, MutableStack<CoreInstance> callStack)
     {
-        super(sourceInformation, info);
+        super(sourceInformation, info, callStack);
     }
 
-    public PureAssertFailException(SourceInformation sourceInformation, PureAssertFailException cause)
+    public PureAssertFailException(SourceInformation sourceInformation, PureAssertFailException cause, MutableStack<CoreInstance> callStack)
     {
-        super(sourceInformation, cause);
+        super(sourceInformation, cause, callStack);
     }
 
-    public PureAssertFailException(String info, PureAssertFailException cause)
+    public PureAssertFailException(String info, PureAssertFailException cause, MutableStack<CoreInstance> callStack)
     {
-        super(info, cause);
+        super(info, cause, callStack);
     }
 
-    public PureAssertFailException(String info)
+    public PureAssertFailException(String info, MutableStack<CoreInstance> callStack)
     {
-        super(info);
+        super(info, callStack);
     }
 
     public PureAssertFailException()

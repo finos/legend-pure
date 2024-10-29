@@ -17,6 +17,7 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.collec
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -45,7 +46,7 @@ public class GetIfAbsentPutWithKey extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         MapCoreInstance mapCi = (MapCoreInstance) params.get(0).getValueForMetaPropertyToOne(M3Properties.values);
         MutableMap<CoreInstance, CoreInstance> map = mapCi.getMap();
@@ -57,7 +58,7 @@ public class GetIfAbsentPutWithKey extends NativeFunction
         CoreInstance res = map.getIfAbsentPutWithKey(key, k ->
         {
             mapCi.getStats().incrementGetIfAbsentCounter();
-            CoreInstance value = this.functionExecution.executeLambdaFromNative(function, Lists.mutable.with(ValueSpecificationBootstrap.wrapValueSpecification(k, isExecutable, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+            CoreInstance value = this.functionExecution.executeLambdaFromNative(function, Lists.mutable.with(ValueSpecificationBootstrap.wrapValueSpecification(k, isExecutable, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
             return value.getValueForMetaPropertyToOne(M3Properties.values);
         });
         return ValueSpecificationBootstrap.wrapValueSpecification(res, ValueSpecification.isExecutable(params.get(0), processorSupport), processorSupport);

@@ -358,7 +358,7 @@ public class ClassImplProcessor
         return "    public " + className + "(String id)\n" +
                 "    {\n" +
                 "        super(id);\n" +
-                (Type.isBottomType(_class, processorSupport) ? "        throw new org.finos.legend.pure.m3.exception.PureExecutionException(\"Cannot instantiate " + PackageableElement.getUserPathForPackageableElement(_class, "::") + "\");\n" : "") +
+                (Type.isBottomType(_class, processorSupport) ? "        throw new org.finos.legend.pure.m3.exception.PureExecutionException(\"Cannot instantiate " + PackageableElement.getUserPathForPackageableElement(_class, "::") + "\", org.eclipse.collections.api.factory.Stacks.mutable.<org.finos.legend.pure.m4.coreinstance.CoreInstance>empty());\n" : "") +
                 "    }\n" +
                 "\n";
     }
@@ -1038,7 +1038,7 @@ public class ClassImplProcessor
                                 return
                                         "            if (!(" + eval + "))\n" +
                                                 "            {\n" +
-                                                "                throw new org.finos.legend.pure.m3.exception.PureExecutionException(sourceInformation, " + errorMessage + ");\n" +
+                                                "                throw new org.finos.legend.pure.m3.exception.PureExecutionException(sourceInformation, " + errorMessage + ", org.eclipse.collections.api.factory.Stacks.mutable.<org.finos.legend.pure.m4.coreinstance.CoreInstance>empty());\n" +
                                                 "            }\n";
                             }
                             else

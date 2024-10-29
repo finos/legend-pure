@@ -17,6 +17,7 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.collec
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -50,13 +51,13 @@ public class ConstructorForPairList extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         CoreInstance mapRawType = processorSupport.package_getByUserPath(M3Paths.Map);
-        MapCoreInstance map = new MapCoreInstance(params.size() > 1 ? params.get(1).getValueForMetaPropertyToMany(M3Properties.values) : Lists.immutable.<CoreInstance>empty(), "", functionExpressionToUseInStack.getSourceInformation(), mapRawType, -1, this.repository, false, processorSupport);
+        MapCoreInstance map = new MapCoreInstance(params.size() > 1 ? params.get(1).getValueForMetaPropertyToMany(M3Properties.values) : Lists.immutable.<CoreInstance>empty(), "", functionExpressionCallStack.peek().getSourceInformation(), mapRawType, -1, this.repository, false, processorSupport);
         CoreInstance genericType = processorSupport.newGenericType(null, map, false);
         Instance.addValueToProperty(genericType, M3Properties.rawType, mapRawType, processorSupport);
-        Instance.addValueToProperty(genericType, M3Properties.typeArguments, getMapTypeArguments(functionExpressionToUseInStack, processorSupport), processorSupport);
+        Instance.addValueToProperty(genericType, M3Properties.typeArguments, getMapTypeArguments(functionExpressionCallStack, processorSupport), processorSupport);
         Instance.addValueToProperty(map, M3Properties.classifierGenericType, genericType, processorSupport);
 
         MutableMap<CoreInstance, CoreInstance> internalMap = map.getMap();
@@ -71,9 +72,9 @@ public class ConstructorForPairList extends NativeFunction
         return ValueSpecificationBootstrap.wrapValueSpecification(map, ValueSpecification.isExecutable(params.get(0), processorSupport), processorSupport);
     }
 
-    private RichIterable<? extends CoreInstance> getMapTypeArguments(CoreInstance functionExpressionToUseInStack, ProcessorSupport processorSupport)
+    private RichIterable<? extends CoreInstance> getMapTypeArguments(MutableStack<CoreInstance> functionExpressionCallStack, ProcessorSupport processorSupport)
     {
-        CoreInstance genericType = functionExpressionToUseInStack.getValueForMetaPropertyToOne(M3Properties.genericType);
+        CoreInstance genericType = functionExpressionCallStack.peek().getValueForMetaPropertyToOne(M3Properties.genericType);
         RichIterable<? extends CoreInstance> typeArguments = genericType.getValueForMetaPropertyToMany(M3Properties.typeArguments);
         if (typeArguments.size() != 2)
         {
@@ -81,7 +82,7 @@ public class ConstructorForPairList extends NativeFunction
             _Class.print(message, processorSupport.package_getByUserPath(M3Paths.Map));
             message.append(" from ");
             GenericType.print(message, genericType, processorSupport);
-            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), message.toString());
+            throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), message.toString(), functionExpressionCallStack);
         }
         return typeArguments;
     }

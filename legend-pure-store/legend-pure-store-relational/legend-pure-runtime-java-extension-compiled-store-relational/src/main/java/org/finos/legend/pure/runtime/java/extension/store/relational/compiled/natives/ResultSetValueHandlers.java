@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives;
 
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
@@ -199,7 +200,7 @@ public final class ResultSetValueHandlers
                 ResultSetValueHandler handlerDbSpecific  = DB_SPECIFIC_HANDLERS.get(metaData.getColumnType(i)).get(metaData.getColumnTypeName(i));
                 if (handler == null && handlerDbSpecific == null)
                 {
-                    throw new PureExecutionException("Unhandled SQL data type (java.sql.Types): " + metaData.getColumnType(i) + ", column: " + i + " " + metaData.getColumnName(i) + " " + metaData.getColumnTypeName(i));
+                    throw new PureExecutionException("Unhandled SQL data type (java.sql.Types): " + metaData.getColumnType(i) + ", column: " + i + " " + metaData.getColumnName(i) + " " + metaData.getColumnTypeName(i), Stacks.mutable.empty());
                 }
                 handlers.add(handlerDbSpecific);
             }

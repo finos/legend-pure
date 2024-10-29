@@ -17,6 +17,7 @@ package org.finos.legend.pure.runtime.java.interpreted;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -40,7 +41,7 @@ class InstanceValueExecutor implements Executor
     }
 
     @Override
-    public CoreInstance execute(CoreInstance instance, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, CoreInstance functionExpressionToUseInStack, VariableContext variableContext, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, FunctionExecutionInterpreted functionExecutionInterpreted, ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(CoreInstance instance, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, MutableStack<CoreInstance> functionExpressionCallStack, VariableContext variableContext, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, FunctionExecutionInterpreted functionExecutionInterpreted, ProcessorSupport processorSupport) throws PureExecutionException
     {
         CoreInstance newInstanceValue = processorSupport.newEphemeralAnonymousCoreInstance(M3Paths.InstanceValue);
         Instance.addValueToProperty(newInstanceValue, M3Properties.genericType, Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.genericType, processorSupport), processorSupport);
@@ -51,8 +52,8 @@ class InstanceValueExecutor implements Executor
         {
             if (Instance.instanceOf(value, M3Paths.ValueSpecification, processorSupport))
             {
-                Executor executor = FunctionExecutionInterpreted.findValueSpecificationExecutor(value, functionExpressionToUseInStack, processorSupport, functionExecutionInterpreted);
-                CoreInstance result = executor.execute(value, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, variableContext, profiler, instantiationContext, executionSupport, functionExecutionInterpreted, processorSupport);
+                Executor executor = FunctionExecutionInterpreted.findValueSpecificationExecutor(value, functionExpressionCallStack, processorSupport, functionExecutionInterpreted);
+                CoreInstance result = executor.execute(value, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionCallStack, variableContext, profiler, instantiationContext, executionSupport, functionExecutionInterpreted, processorSupport);
                 if (Measure.isUnitOrMeasureInstance(result, processorSupport))
                 {
                     processedValues.add(result);

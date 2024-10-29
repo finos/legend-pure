@@ -16,6 +16,7 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.date.c
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.api.tuple.primitive.IntObjectPair;
 import org.eclipse.collections.impl.tuple.primitive.PrimitiveTuples;
 import org.finos.legend.pure.m3.compiler.Context;
@@ -50,7 +51,7 @@ public class NewDate extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         PureDate date;
         switch (params.size())
@@ -125,7 +126,7 @@ public class NewDate extends NativeFunction
             }
             default:
             {
-                throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Unexpected number of arguments: " + params.size());
+                throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "Unexpected number of arguments: " + params.size(), functionExpressionCallStack);
             }
         }
         return ValueSpecificationBootstrap.newDateLiteral(this.repository, date, processorSupport);

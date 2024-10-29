@@ -17,6 +17,7 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.lang.f
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionCoreInstanceWrapper;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
@@ -47,7 +48,7 @@ public class Match extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         CoreInstance firstParam = params.get(0);
         ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(firstParam, M3Properties.values, processorSupport);
@@ -67,11 +68,11 @@ public class Match extends NativeFunction
             {
                 return this.functionExecution.executeFunction(false, LambdaFunctionCoreInstanceWrapper.toLambdaFunction(func),
                         params.size() == 3 ? Lists.mutable.with(firstParam, params.get(2)) : Lists.mutable.with(firstParam),
-                        resolvedTypeParameters, resolvedMultiplicityParameters, this.getParentOrEmptyVariableContextForLambda(variableContext, func), functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+                        resolvedTypeParameters, resolvedMultiplicityParameters, this.getParentOrEmptyVariableContextForLambda(variableContext, func), functionExpressionCallStack, profiler, instantiationContext, executionSupport);
             }
         }
 
-        throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Match failure: " + (valueCount == 1 ? values.getFirst() : values.makeString("[", ", ", "]")));
+        throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "Match failure: " + (valueCount == 1 ? values.getFirst() : values.makeString("[", ", ", "]")), functionExpressionCallStack);
     }
 }
 

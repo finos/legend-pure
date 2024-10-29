@@ -16,6 +16,7 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.meta.g
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -45,7 +46,7 @@ public class PathToElement extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         String path = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport));
         String separator = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport));
@@ -53,7 +54,7 @@ public class PathToElement extends NativeFunction
         CoreInstance instance = processorSupport.package_getByUserPath(pathForLookup);
         if ((instance == null) && !this.allowNotFound)
         {
-            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), notFoundErrorMessage(path, separator, processorSupport));
+            throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), notFoundErrorMessage(path, separator, processorSupport), functionExpressionCallStack);
         }
         return ValueSpecificationBootstrap.wrapValueSpecification(instance, false, processorSupport);
     }

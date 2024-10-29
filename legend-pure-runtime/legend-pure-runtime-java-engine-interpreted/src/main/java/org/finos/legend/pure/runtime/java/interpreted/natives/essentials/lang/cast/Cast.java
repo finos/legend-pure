@@ -16,6 +16,7 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.lang.c
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.compiler.Context;
@@ -53,21 +54,21 @@ public class Cast extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         CoreInstance valuesParam = params.get(0);
         CoreInstance sourceGenericType = valuesParam.getValueForMetaPropertyToOne(M3Properties.genericType);
         CoreInstance targetGenericType = params.get(1).getValueForMetaPropertyToOne(M3Properties.genericType);
         targetGenericType = makeGenericTypeAsConcreteAsPossible(targetGenericType, resolvedTypeParameters, resolvedMultiplicityParameters, processorSupport);
 
-        CoreInstance inst = this.repository.newAnonymousCoreInstance(functionExpressionToUseInStack.getSourceInformation(), processorSupport.getClassifier(valuesParam));
+        CoreInstance inst = this.repository.newAnonymousCoreInstance(functionExpressionCallStack.peek().getSourceInformation(), processorSupport.getClassifier(valuesParam));
         Instance.addValueToProperty(inst, M3Properties.genericType, targetGenericType, processorSupport);
         Instance.addValueToProperty(inst, M3Properties.multiplicity, Instance.getValueForMetaPropertyToOneResolved(valuesParam, M3Properties.multiplicity, processorSupport), processorSupport);
 
         CoreInstance targetRawType = Instance.getValueForMetaPropertyToOneResolved(targetGenericType, M3Properties.rawType, processorSupport);
         if (Type.isExtendedPrimitiveType(targetRawType, processorSupport))
         {
-            return managePrimitiveTypeExtension(instantiationContext, executionSupport, processorSupport, valuesParam, targetGenericType, inst, functionExpressionToUseInStack.getSourceInformation());
+            return managePrimitiveTypeExtension(instantiationContext, executionSupport, processorSupport, valuesParam, targetGenericType, inst, functionExpressionCallStack.peek().getSourceInformation(), functionExpressionCallStack);
         }
         else
         {
@@ -91,7 +92,7 @@ public class Cast extends NativeFunction
                     CoreInstance valGenericType = Instance.extractGenericTypeFromInstance(val, processorSupport);
                     if (!GenericTypeMatch.genericTypeMatches(targetGenericType, valGenericType, true, ParameterMatchBehavior.MATCH_ANYTHING, ParameterMatchBehavior.MATCH_ANYTHING, processorSupport))
                     {
-                        throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Cast exception: " + GenericType.print(valGenericType, processorSupport) + " cannot be cast to " + GenericType.print(targetGenericType, processorSupport));
+                        throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "Cast exception: " + GenericType.print(valGenericType, processorSupport) + " cannot be cast to " + GenericType.print(targetGenericType, processorSupport), functionExpressionCallStack);
                     }
                 }
                 Instance.setValuesForProperty(inst, M3Properties.values, valuesParam.getValueForMetaPropertyToMany(M3Properties.values), processorSupport);
@@ -101,12 +102,12 @@ public class Cast extends NativeFunction
         }
     }
 
-    private CoreInstance managePrimitiveTypeExtension(InstantiationContext instantiationContext, ExecutionSupport executionSupport, ProcessorSupport processorSupport, CoreInstance valuesParam, CoreInstance targetGenericType, CoreInstance inst, SourceInformation sourceInformation) throws PureExecutionException
+    private CoreInstance managePrimitiveTypeExtension(InstantiationContext instantiationContext, ExecutionSupport executionSupport, ProcessorSupport processorSupport, CoreInstance valuesParam, CoreInstance targetGenericType, CoreInstance inst, SourceInformation sourceInformation, MutableStack<CoreInstance> functionExpressionCallStack) throws PureExecutionException
     {
         for (CoreInstance genericType : GenericType.getAllSuperTypesIncludingSelf(targetGenericType, processorSupport))
         {
             CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
-            DefaultConstraintHandler.defaultHandleConstraints(rawType.getValueForMetaPropertyToMany(M3Properties.constraints), valuesParam, genericType, sourceInformation, functionExecutionInterpreted, instantiationContext, executionSupport);
+            DefaultConstraintHandler.defaultHandleConstraints(rawType.getValueForMetaPropertyToMany(M3Properties.constraints), valuesParam, genericType, sourceInformation, functionExecutionInterpreted, functionExpressionCallStack, instantiationContext, executionSupport);
         }
 
         // Special Handling for Primitive Extension.... Also modifies the type of the value itself (as if it were written in the grammar i.e. 1d or 1f)

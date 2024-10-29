@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.extension.store.relational.shared.connectionManager;
 
+import org.eclipse.collections.api.factory.Stacks;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.ConnectionWithDataSourceInfo;
 import org.finos.legend.pure.runtime.java.extension.store.relational.shared.DataSource;
@@ -56,7 +57,7 @@ public class TestDatabaseConnectDuckDB
         }
         catch (SQLException ex)
         {
-            throw new PureExecutionException("Unable to create TestDatabaseConnection of type: DuckDB for user: " + user + ", message: " + ex.getMessage(), ex);
+            throw new PureExecutionException("Unable to create TestDatabaseConnection of type: DuckDB for user: " + user + ", message: " + ex.getMessage(), ex, Stacks.mutable.empty());
         }
         return new ConnectionWithDataSourceInfo(this.singletonConnection, TEST_DATA_SOURCE, this.getClass().getSimpleName());
     }

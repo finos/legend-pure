@@ -15,6 +15,7 @@
 package org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.statelistener.ExecutionActivityListener;
@@ -130,7 +131,7 @@ class CacheNextReadOnceForwardOnlyResultSet extends AbstractCacheNextReadOnceFor
             String error = SQLExceptionHandler.buildExceptionString(e, this.connection);
             //close and clean up the connections
             this.closeAndCleanUp();
-            throw new PureExecutionException(error, e);
+            throw new PureExecutionException(error, e, Stacks.mutable.empty());
         }
     }
 

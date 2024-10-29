@@ -18,6 +18,7 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionCoreInstanceWrapper;
@@ -48,7 +49,7 @@ public class Filter extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         CoreInstance collectionParam = params.get(0);
         ListIterable<? extends CoreInstance> collection = Instance.getValueForMetaPropertyToManyResolved(collectionParam, M3Properties.values, processorSupport);
@@ -64,7 +65,7 @@ public class Filter extends NativeFunction
                 CoreInstance predicate = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
                 CoreInstance instance = collection.get(0);
                 VariableContext evalVariableContext = getParentOrEmptyVariableContextForLambda(variableContext, predicate);
-                return (accept(FunctionCoreInstanceWrapper.toFunction(predicate), instance, isExecutable, resolvedTypeParameters, resolvedMultiplicityParameters, evalVariableContext, functionExpressionToUseInStack, profiler, processorSupport, instantiationContext, executionSupport)) ?
+                return (accept(FunctionCoreInstanceWrapper.toFunction(predicate), instance, isExecutable, resolvedTypeParameters, resolvedMultiplicityParameters, evalVariableContext, functionExpressionCallStack, profiler, processorSupport, instantiationContext, executionSupport)) ?
                        collectionParam :
                        ValueSpecificationBootstrap.wrapValueSpecification(Lists.immutable.empty(), isExecutable, processorSupport);
             }
@@ -77,7 +78,7 @@ public class Filter extends NativeFunction
                 boolean filtered = false;
                 for (CoreInstance instance : collection)
                 {
-                    if (accept(function, instance, isExecutable, resolvedTypeParameters, resolvedMultiplicityParameters, evalVariableContext, functionExpressionToUseInStack, profiler, processorSupport, instantiationContext, executionSupport))
+                    if (accept(function, instance, isExecutable, resolvedTypeParameters, resolvedMultiplicityParameters, evalVariableContext, functionExpressionCallStack, profiler, processorSupport, instantiationContext, executionSupport))
                     {
                         results.add(instance);
                     }
@@ -91,10 +92,10 @@ public class Filter extends NativeFunction
         }
     }
 
-    private boolean accept(Function<?> predicate, CoreInstance instance, boolean isExecutable, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, ProcessorSupport processorSupport, InstantiationContext instantiationContext, ExecutionSupport executionSupport) throws PureExecutionException
+    private boolean accept(Function<?> predicate, CoreInstance instance, boolean isExecutable, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, ProcessorSupport processorSupport, InstantiationContext instantiationContext, ExecutionSupport executionSupport) throws PureExecutionException
     {
         ListIterable<CoreInstance> args = Lists.immutable.with(ValueSpecificationBootstrap.wrapValueSpecification(instance, isExecutable, processorSupport));
-        CoreInstance result = this.functionExecution.executeFunction(false, predicate, args, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+        CoreInstance result = this.functionExecution.executeFunction(false, predicate, args, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
         return PrimitiveUtilities.getBooleanValue(Instance.getValueForMetaPropertyToOneResolved(result, M3Properties.values, processorSupport));
     }
 }

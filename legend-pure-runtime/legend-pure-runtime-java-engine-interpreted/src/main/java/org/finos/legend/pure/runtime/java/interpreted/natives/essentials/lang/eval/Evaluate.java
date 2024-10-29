@@ -18,6 +18,7 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.inference.TypeInference;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionCoreInstanceWrapper;
@@ -55,11 +56,11 @@ public class Evaluate extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         if (Instance.instanceOf(Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport), M3Paths.Nil, processorSupport))
         {
-            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Evaluate can't take an instance of Nil as a function");
+            throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "Evaluate can't take an instance of Nil as a function", functionExpressionCallStack);
         }
 
         CoreInstance functionToApplyTo = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
@@ -68,10 +69,10 @@ public class Evaluate extends NativeFunction
         ListIterable<? extends VariableExpression> parametersSignature = fType._parameters().toList();
 
         MutableList<ValueSpecification> funcParams = Lists.mutable.ofInitialCapacity(params.size());
-        SourceInformation sourceInformation = functionExpressionToUseInStack.getSourceInformation();
+        SourceInformation sourceInformation = functionExpressionCallStack.peek().getSourceInformation();
         for (int i = 1, size = params.size(); i < size; i++)
         {
-            validateValueToSignature(params.get(i), parametersSignature.get(i - 1), sourceInformation, processorSupport);
+            validateValueToSignature(params.get(i), parametersSignature.get(i - 1), sourceInformation, functionExpressionCallStack, processorSupport);
             funcParams.add((ValueSpecification) params.get(i));
         }
 
@@ -81,8 +82,8 @@ public class Evaluate extends NativeFunction
         TypeInference.mapSpecToInstance(parametersSignature, funcParams, resolvedTypeParameters, resolvedMultiplicityParameters, processorSupport);
 
         CoreInstance result = Instance.instanceOf(functionToApplyTo, M3Paths.LambdaFunction, processorSupport) ?
-                this.functionExecution.executeLambda(LambdaFunctionCoreInstanceWrapper.toLambdaFunction(functionToApplyTo), funcParams, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), functionExpressionToUseInStack, profiler, instantiationContext, executionSupport) :
-                this.functionExecution.executeFunctionExecuteParams(FunctionCoreInstanceWrapper.toFunction(functionToApplyTo), funcParams, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+                this.functionExecution.executeLambda(LambdaFunctionCoreInstanceWrapper.toLambdaFunction(functionToApplyTo), funcParams, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), functionExpressionCallStack, profiler, instantiationContext, executionSupport) :
+                this.functionExecution.executeFunctionExecuteParams(FunctionCoreInstanceWrapper.toFunction(functionToApplyTo), funcParams, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), functionExpressionCallStack, profiler, instantiationContext, executionSupport);
 
         resolvedTypeParameters.pop();
         resolvedMultiplicityParameters.pop();
@@ -91,7 +92,7 @@ public class Evaluate extends NativeFunction
 
     }
 
-    public static void validateValueToSignature(CoreInstance value, CoreInstance signature, SourceInformation sourceInfo, ProcessorSupport processorSupport) throws PureExecutionException
+    public static void validateValueToSignature(CoreInstance value, CoreInstance signature, SourceInformation sourceInfo, MutableStack<CoreInstance> functionExpressionCallStack, ProcessorSupport processorSupport) throws PureExecutionException
     {
         CoreInstance signatureMultiplicity = Instance.getValueForMetaPropertyToOneResolved(signature, M3Properties.multiplicity, processorSupport);
         CoreInstance valueMultiplicity = Instance.getValueForMetaPropertyToOneResolved(value, M3Properties.multiplicity, processorSupport);
@@ -99,12 +100,12 @@ public class Evaluate extends NativeFunction
         {
             if (Multiplicity.isMultiplicityConcrete(signatureMultiplicity) && !Multiplicity.subsumes(signatureMultiplicity, valueMultiplicity))
             {
-                throw new PureExecutionException(sourceInfo, "Error during dynamic function evaluation. The multiplicity " + Multiplicity.print(valueMultiplicity) + " is not compatible with the multiplicity " + Multiplicity.print(signatureMultiplicity) + " for parameter:" + signature.getValueForMetaPropertyToOne(M3Properties.name).getName());
+                throw new PureExecutionException(sourceInfo, "Error during dynamic function evaluation. The multiplicity " + Multiplicity.print(valueMultiplicity) + " is not compatible with the multiplicity " + Multiplicity.print(signatureMultiplicity) + " for parameter:" + signature.getValueForMetaPropertyToOne(M3Properties.name).getName(), functionExpressionCallStack);
             }
         }
         catch (RuntimeException e)
         {
-            throw new PureExecutionException(sourceInfo, "Error evaluating multiplicities: " + Multiplicity.print(valueMultiplicity) + ", " + Multiplicity.print(signatureMultiplicity), e);
+            throw new PureExecutionException(sourceInfo, "Error evaluating multiplicities: " + Multiplicity.print(valueMultiplicity) + ", " + Multiplicity.print(signatureMultiplicity), e, functionExpressionCallStack);
         }
 
         CoreInstance signatureGenericType = Instance.getValueForMetaPropertyToOneResolved(signature, M3Properties.genericType, processorSupport);
@@ -113,12 +114,12 @@ public class Evaluate extends NativeFunction
         {
             if (!GenericTypeMatch.genericTypeMatches(signatureGenericType, valueGenericType, true, ParameterMatchBehavior.MATCH_ANYTHING, ParameterMatchBehavior.MATCH_CAUTIOUSLY, processorSupport))
             {
-                throw new PureExecutionException(sourceInfo, "Error during dynamic function evaluation. The type " + GenericType.print(valueGenericType, processorSupport) + " is not compatible with the type " + GenericType.print(signatureGenericType, processorSupport));
+                throw new PureExecutionException(sourceInfo, "Error during dynamic function evaluation. The type " + GenericType.print(valueGenericType, processorSupport) + " is not compatible with the type " + GenericType.print(signatureGenericType, processorSupport), functionExpressionCallStack);
             }
         }
         catch (RuntimeException e)
         {
-            throw new PureExecutionException(sourceInfo, "Error evaluating generic types: " + GenericType.print(valueGenericType, processorSupport) + ", " + GenericType.print(signatureGenericType, processorSupport), e);
+            throw new PureExecutionException(sourceInfo, "Error evaluating generic types: " + GenericType.print(valueGenericType, processorSupport) + ", " + GenericType.print(signatureGenericType, processorSupport), e, functionExpressionCallStack);
         }
     }
 }

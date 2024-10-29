@@ -22,6 +22,7 @@ import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.block.procedure.Procedure;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
@@ -101,7 +102,7 @@ public class CoreHelper
         double result = Math.tan(input);
         if (Double.isNaN(result))
         {
-            throw new PureExecutionException("Unable to compute tan of " + input);
+            throw new PureExecutionException("Unable to compute tan of " + input, Stacks.mutable.empty());
         }
         return result;
     }
@@ -126,7 +127,7 @@ public class CoreHelper
         double result = Math.asin(input);
         if (Double.isNaN(result))
         {
-            throw new PureExecutionException(sourceInformation, "Unable to compute asin of " + input);
+            throw new PureExecutionException(sourceInformation, "Unable to compute asin of " + input, Stacks.mutable.empty());
         }
         return result;
     }
@@ -141,7 +142,7 @@ public class CoreHelper
         double result = Math.acos(input);
         if (Double.isNaN(result))
         {
-            throw new PureExecutionException(sourceInformation, "Unable to compute acos of " + input);
+            throw new PureExecutionException(sourceInformation, "Unable to compute acos of " + input, Stacks.mutable.empty());
         }
         return result;
     }
@@ -166,7 +167,7 @@ public class CoreHelper
         double result = Math.atan2(input1, input2);
         if (Double.isNaN(result))
         {
-            throw new PureExecutionException(sourceInformation, "Unable to compute atan2 of " + input1 + " " + input2);
+            throw new PureExecutionException(sourceInformation, "Unable to compute atan2 of " + input1 + " " + input2, Stacks.mutable.empty());
         }
         return result;
     }
@@ -222,7 +223,7 @@ public class CoreHelper
             }
             default:
             {
-                throw new PureExecutionException("Unsupported duration unit: " + unit);
+                throw new PureExecutionException("Unsupported duration unit: " + unit, Stacks.mutable.empty());
             }
         }
     }
@@ -262,7 +263,7 @@ public class CoreHelper
     {
         if (!date.hasDay())
         {
-            throw new PureExecutionException(sourceInformation, "Cannot get day of month for " + date);
+            throw new PureExecutionException(sourceInformation, "Cannot get day of month for " + date, Stacks.mutable.empty());
         }
         return date.getDay();
     }
@@ -276,7 +277,7 @@ public class CoreHelper
     {
         if (!date.hasHour())
         {
-            throw new PureExecutionException(sourceInformation, "Cannot get hour for " + date);
+            throw new PureExecutionException(sourceInformation, "Cannot get hour for " + date, Stacks.mutable.empty());
         }
         return date.getHour();
     }
@@ -290,7 +291,7 @@ public class CoreHelper
     {
         if (!date.hasMinute())
         {
-            throw new PureExecutionException(sourceInformation, "Cannot get minute for " + date);
+            throw new PureExecutionException(sourceInformation, "Cannot get minute for " + date, Stacks.mutable.empty());
         }
         return date.getMinute();
     }
@@ -304,7 +305,7 @@ public class CoreHelper
     {
         if (!date.hasSecond())
         {
-            throw new PureExecutionException(sourceInformation, "Cannot get second for " + date);
+            throw new PureExecutionException(sourceInformation, "Cannot get second for " + date, Stacks.mutable.empty());
         }
         return date.getSecond();
     }
@@ -327,7 +328,7 @@ public class CoreHelper
         }
         catch (Exception e)
         {
-            throw new PureExecutionException(sourceInformation, e.getMessage());
+            throw new PureExecutionException(sourceInformation, e.getMessage(), Stacks.mutable.empty());
         }
     }
 
@@ -339,7 +340,7 @@ public class CoreHelper
         }
         catch (Exception e)
         {
-            throw new PureExecutionException(sourceInformation, e.getMessage());
+            throw new PureExecutionException(sourceInformation, e.getMessage(), Stacks.mutable.empty());
         }
     }
 
@@ -351,7 +352,7 @@ public class CoreHelper
         }
         catch (Exception e)
         {
-            throw new PureExecutionException(sourceInformation, e.getMessage());
+            throw new PureExecutionException(sourceInformation, e.getMessage(), Stacks.mutable.empty());
         }
     }
 
@@ -363,7 +364,7 @@ public class CoreHelper
         }
         catch (Exception e)
         {
-            throw new PureExecutionException(sourceInformation, e.getMessage(), e);
+            throw new PureExecutionException(sourceInformation, e.getMessage(), e, Stacks.mutable.empty());
         }
     }
 
@@ -375,7 +376,7 @@ public class CoreHelper
         }
         catch (Exception e)
         {
-            throw new PureExecutionException(sourceInformation, e.getMessage(), e);
+            throw new PureExecutionException(sourceInformation, e.getMessage(), e, Stacks.mutable.empty());
         }
     }
 
@@ -407,7 +408,7 @@ public class CoreHelper
         }
         else
         {
-            throw new PureExecutionException(sourceInformation, "Unhandled number: " + second);
+            throw new PureExecutionException(sourceInformation, "Unhandled number: " + second, Stacks.mutable.empty());
         }
         try
         {
@@ -415,7 +416,7 @@ public class CoreHelper
         }
         catch (Exception e)
         {
-            throw new PureExecutionException(sourceInformation, e.getMessage(), e);
+            throw new PureExecutionException(sourceInformation, e.getMessage(), e, Stacks.mutable.empty());
         }
     }
     // DATE-TIME --------------------------------------------------------------
@@ -516,7 +517,7 @@ public class CoreHelper
         double result = Math.sqrt(input);
         if (Double.isNaN(result))
         {
-            throw new PureExecutionException(sourceInformation, "Unable to compute sqrt of " + input);
+            throw new PureExecutionException(sourceInformation, "Unable to compute sqrt of " + input, Stacks.mutable.empty());
         }
         return result;
     }
@@ -531,7 +532,7 @@ public class CoreHelper
         double result = Math.cbrt(input);
         if (Double.isNaN(result))
         {
-            throw new PureExecutionException(sourceInformation, "Unable to compute cbrt of " + input);
+            throw new PureExecutionException(sourceInformation, "Unable to compute cbrt of " + input, Stacks.mutable.empty());
         }
         return result;
     }
@@ -540,7 +541,7 @@ public class CoreHelper
     {
         if (divisor.doubleValue() == 0)
         {
-            throw new PureExecutionException(sourceInformation, "Cannot divide " + dividend.toString() + " by zero");
+            throw new PureExecutionException(sourceInformation, "Cannot divide " + dividend.toString() + " by zero", Stacks.mutable.empty());
         }
 
         if (dividend instanceof Long && divisor instanceof Long)
@@ -755,7 +756,7 @@ public class CoreHelper
         int end = (high > collectionSize) ? collectionSize : (int) high;
         if (start > end)
         {
-            throw new PureExecutionException(sourceInformation, "The low bound (" + start + ") can't be higher than the high bound (" + end + ") in a slice operation");
+            throw new PureExecutionException(sourceInformation, "The low bound (" + start + ") can't be higher than the high bound (" + end + ") in a slice operation", Stacks.mutable.empty());
         }
 
 
@@ -1129,7 +1130,7 @@ public class CoreHelper
         }
         catch (NoSuchFieldException e)
         {
-            throw new PureExecutionException(sourceInformation, "Can't find the property '" + property._name() + "' in the class " + CompiledSupport.getPureClassName(value));
+            throw new PureExecutionException(sourceInformation, "Can't find the property '" + property._name() + "' in the class " + CompiledSupport.getPureClassName(value), Stacks.mutable.empty());
         }
         catch (IllegalAccessException e)
         {

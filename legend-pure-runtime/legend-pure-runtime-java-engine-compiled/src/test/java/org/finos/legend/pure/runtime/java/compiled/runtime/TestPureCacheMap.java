@@ -18,6 +18,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.procedure.primitive.IntProcedure;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.impl.block.factory.Functions;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.list.primitive.IntInterval;
@@ -138,8 +139,8 @@ public class TestPureCacheMap
     {
         PureCacheMap<Integer, String> cacheMap = PureCacheMap.newCacheMap(getCache());
         SourceInformation sourceInfo = new SourceInformation("/fake/file.pure", 1, 2, 3, 4, 5, 6);
-        assertGetException("Exception fetching Cache value for Key 1: Something bad just happened!", cacheMap, 1, new PureAssertFailException(sourceInfo, "Something bad just happened!"));
-        assertGetException("Exception fetching Cache value for Key 2: Now something REALLY BAD just happened!", cacheMap, 2, new PureExecutionException(sourceInfo, "Now something REALLY BAD just happened!"));
+        assertGetException("Exception fetching Cache value for Key 1: Something bad just happened!", cacheMap, 1, new PureAssertFailException(sourceInfo, "Something bad just happened!", Stacks.mutable.empty()));
+        assertGetException("Exception fetching Cache value for Key 2: Now something REALLY BAD just happened!", cacheMap, 2, new PureExecutionException(sourceInfo, "Now something REALLY BAD just happened!", Stacks.mutable.empty()));
         assertGetException("Exception fetching Cache value for Key 3: Oh no! The WORST!", cacheMap, 3, new RuntimeException("Oh no! The WORST!"));
         assertGetException("Exception fetching Cache value for Key 4", cacheMap, 4, new NullPointerException());
     }

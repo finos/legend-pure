@@ -16,6 +16,7 @@ package org.finos.legend.pure.runtime.java.extension.dsl.path.compiled;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.SetIterable;
@@ -72,7 +73,7 @@ public class PathExtensionCompiled implements CompiledExtension
                     {
                         if (!(path instanceof PropertyPathElement))
                         {
-                            throw new PureExecutionException("Only PropertyPathElement is supported yet!");
+                            throw new PureExecutionException("Only PropertyPathElement is supported yet!", Stacks.mutable.empty());
                         }
                         return mutableList.flatCollect(instance ->
                         {

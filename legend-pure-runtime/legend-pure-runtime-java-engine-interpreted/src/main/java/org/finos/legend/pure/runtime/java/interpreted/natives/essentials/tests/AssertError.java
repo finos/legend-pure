@@ -16,6 +16,7 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.tests;
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionCoreInstanceWrapper;
@@ -49,7 +50,7 @@ public class AssertError extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         CoreInstance functionToApplyTo = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
         String message = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport));
@@ -57,27 +58,27 @@ public class AssertError extends NativeFunction
         CoreInstance column = Instance.getValueForMetaPropertyToOneResolved(params.get(3), M3Properties.values, processorSupport);
         try
         {
-            this.functionExecution.executeLambda(LambdaFunctionCoreInstanceWrapper.toLambdaFunction(functionToApplyTo), Lists.mutable.empty(), resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
-            throw new PureAssertFailException(functionExpressionToUseInStack.getSourceInformation(), "No error was thrown");
+            this.functionExecution.executeLambda(LambdaFunctionCoreInstanceWrapper.toLambdaFunction(functionToApplyTo), Lists.mutable.empty(), resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), functionExpressionCallStack, profiler, instantiationContext, executionSupport);
+            throw new PureAssertFailException(functionExpressionCallStack.peek().getSourceInformation(), "No error was thrown", functionExpressionCallStack);
         }
         catch (PureExecutionException e)
         {
             if (!message.equals(e.getInfo()))
             {
-                throw new PureAssertFailException(functionExpressionToUseInStack.getSourceInformation(), "Execution error message mismatch.\nThe actual message was \"" + e.getInfo() + "\"\nwhere the expected message was:\"" + message + "\"");
+                throw new PureAssertFailException(functionExpressionCallStack.peek().getSourceInformation(), "Execution error message mismatch.\nThe actual message was \"" + e.getInfo() + "\"\nwhere the expected message was:\"" + message + "\"", functionExpressionCallStack);
             }
             if (line != null)
             {
                 if (e.getSourceInformation().getLine() != PrimitiveUtilities.getIntegerValue(line).intValue())
                 {
-                    throw new PureAssertFailException(functionExpressionToUseInStack.getSourceInformation(), "Execution error line mismatch. Actual: " + e.getSourceInformation().getLine() + " where expected: " + PrimitiveUtilities.getIntegerValue(line).intValue());
+                    throw new PureAssertFailException(functionExpressionCallStack.peek().getSourceInformation(), "Execution error line mismatch. Actual: " + e.getSourceInformation().getLine() + " where expected: " + PrimitiveUtilities.getIntegerValue(line).intValue(), functionExpressionCallStack);
                 }
             }
             if (column != null)
             {
                 if (e.getSourceInformation().getColumn() != PrimitiveUtilities.getIntegerValue(column).intValue())
                 {
-                    throw new PureAssertFailException(functionExpressionToUseInStack.getSourceInformation(), "Execution error column mismatch. Actual: " + e.getSourceInformation().getColumn() + " where expected: " + PrimitiveUtilities.getIntegerValue(column).intValue());
+                    throw new PureAssertFailException(functionExpressionCallStack.peek().getSourceInformation(), "Execution error column mismatch. Actual: " + e.getSourceInformation().getColumn() + " where expected: " + PrimitiveUtilities.getIntegerValue(column).intValue(), functionExpressionCallStack);
                 }
             }
         }

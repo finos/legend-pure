@@ -16,6 +16,7 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.meta.r
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -47,15 +48,15 @@ public class OpenVariableValues extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport)
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport)
     {
         CoreInstance f = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
 
         CoreInstance mapRawType = processorSupport.package_getByUserPath(M3Paths.Map);
-        MapCoreInstance map = new MapCoreInstance(params.size() > 1 ? params.get(1).getValueForMetaPropertyToMany(M3Properties.values) : Lists.immutable.<CoreInstance>empty(), "", functionExpressionToUseInStack.getSourceInformation(), mapRawType, -1, this.repository, false, processorSupport);
+        MapCoreInstance map = new MapCoreInstance(params.size() > 1 ? params.get(1).getValueForMetaPropertyToMany(M3Properties.values) : Lists.immutable.<CoreInstance>empty(), "", functionExpressionCallStack.peek().getSourceInformation(), mapRawType, -1, this.repository, false, processorSupport);
         MutableMap<CoreInstance, CoreInstance> internalMap = map.getMap();
         CoreInstance genericTypeType = processorSupport.package_getByUserPath(M3Paths.GenericType);
-        CoreInstance classifierGenericType = this.repository.newEphemeralAnonymousCoreInstance(functionExpressionToUseInStack.getSourceInformation(), genericTypeType);
+        CoreInstance classifierGenericType = this.repository.newEphemeralAnonymousCoreInstance(functionExpressionCallStack.peek().getSourceInformation(), genericTypeType);
         Instance.addValueToProperty(classifierGenericType, M3Properties.rawType, mapRawType, processorSupport);
         Instance.addValueToProperty(classifierGenericType, M3Properties.typeArguments, Type.wrapGenericType(processorSupport.package_getByUserPath(M3Paths.String), processorSupport), processorSupport);
         CoreInstance listGenericType = Type.wrapGenericType(processorSupport.package_getByUserPath(M3Paths.List), processorSupport);

@@ -15,6 +15,7 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives;
 
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -47,7 +48,7 @@ public abstract class AbstractCacheNextReadOnceForwardOnly
         }
         else
         {
-            throw new PureExecutionException(this.streamingExceptionMessage());
+            throw new PureExecutionException(this.streamingExceptionMessage(), Stacks.mutable.empty());
         }
 
     }
@@ -64,7 +65,7 @@ public abstract class AbstractCacheNextReadOnceForwardOnly
         }
         else
         {
-            throw new PureExecutionException(this.streamingExceptionMessage());
+            throw new PureExecutionException(this.streamingExceptionMessage(), Stacks.mutable.empty());
         }
     }
 

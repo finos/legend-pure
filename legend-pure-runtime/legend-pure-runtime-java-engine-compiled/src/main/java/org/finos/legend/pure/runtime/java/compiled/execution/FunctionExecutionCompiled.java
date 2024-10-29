@@ -17,6 +17,7 @@ package org.finos.legend.pure.runtime.java.compiled.execution;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.multimap.list.MutableListMultimap;
@@ -215,7 +216,7 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
             catch (PureExecutionException e)
             {
                 exception = e;
-                throw new PureExecutionStreamingException(e);
+                throw new PureExecutionStreamingException(e, Stacks.mutable.empty());
             }
             catch (IOException e)
             {
@@ -388,7 +389,7 @@ public class FunctionExecutionCompiled implements FunctionExecution, PureRuntime
             StringBuilder builder = new StringBuilder();
             org.finos.legend.pure.m3.navigation.function.Function.print(builder, functionDefinition, processorSupport);
             String message = "Error executing the function:" + builder + ". Mismatch between the number of function parameters (" + parameters.size() + ") and the number of supplied arguments (" + coreInstances.size() + ")";
-            throw new PureExecutionException(message);
+            throw new PureExecutionException(message, Stacks.mutable.empty());
         }
 
         for (CoreInstance param : parameters)

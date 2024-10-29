@@ -14,8 +14,10 @@
 
 package org.finos.legend.pure.runtime.java.extension.store.relational.interpreted.natives;
 
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.utility.LazyIterate;
@@ -49,7 +51,7 @@ public class LoadValuesToDbTable extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, final Context context, final ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, final Context context, final ProcessorSupport processorSupport) throws PureExecutionException
     {
         Iterable<? extends CoreInstance> tableData = Instance.getValueForMetaPropertyToManyResolved(params.get(0), M3Properties.values, processorSupport);
         CoreInstance table = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
@@ -61,7 +63,7 @@ public class LoadValuesToDbTable extends NativeFunction
         FastList<FastList<String>> rows = this.getRows(tableData, processorSupport);
         Iterable<ListIterable<?>> tableIterable = this.getTableIterable(rows, table.getValueForMetaPropertyToOne(M3Properties.name).getName(), columns, columnTypes);
 
-        new ExecuteInDb(this.repository, this.message, 0).bulkInsertInDb(connectionInformation, table, tableIterable, functionExpressionToUseInStack, processorSupport);
+        new ExecuteInDb(this.repository, this.message, 0).bulkInsertInDb(connectionInformation, table, tableIterable, functionExpressionCallStack, processorSupport);
         return ValueSpecificationBootstrap.wrapValueSpecification(Lists.immutable.<CoreInstance>with(), true, processorSupport);
 
     }
@@ -87,6 +89,6 @@ public class LoadValuesToDbTable extends NativeFunction
 
     private Iterable<ListIterable<?>> getTableIterable(Iterable<FastList<String>> table, final String tableName, final ListIterable<? extends CoreInstance> columns, final ListIterable<String> columnTypes)
     {
-        return LoadCsvToDbTable.collectIterable(LazyIterate.drop(table, 3), "", tableName, columns, columnTypes);
+        return LoadCsvToDbTable.collectIterable(LazyIterate.drop(table, 3), "", tableName, columns, columnTypes, Stacks.mutable.empty());
     }
 }

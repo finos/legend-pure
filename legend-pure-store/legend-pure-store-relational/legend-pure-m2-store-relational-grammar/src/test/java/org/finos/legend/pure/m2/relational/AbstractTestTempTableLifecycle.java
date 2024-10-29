@@ -79,7 +79,7 @@ public abstract class AbstractTestTempTableLifecycle extends AbstractPureTestWit
                         "                   $dbConnection);\n" +
                         "   let res = executeInDb('select * from tt', $dbConnection, 0, 1000);\n" +
                         "   let columnNames = $res.columnNames;\n" +
-                        "   print($columnNames, 1);\n" +
+                        "   print($columnNames, 1);" +
                         "   assert('COL' == $columnNames, |'');\n" +
                         "}\n" +
                         "###Relational\n" +

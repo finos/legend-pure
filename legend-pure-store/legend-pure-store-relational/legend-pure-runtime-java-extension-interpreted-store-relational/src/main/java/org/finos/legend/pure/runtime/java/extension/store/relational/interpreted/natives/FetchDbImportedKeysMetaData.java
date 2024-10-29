@@ -16,6 +16,7 @@ package org.finos.legend.pure.runtime.java.extension.store.relational.interprete
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -46,10 +47,10 @@ public class FetchDbImportedKeysMetaData extends AbstractFetchDbMetadata
     }
 
     @Override
-    public CoreInstance execute(final ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, final Context context, final ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(final ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, final Context context, final ProcessorSupport processorSupport) throws PureExecutionException
     {
         CoreInstance connectionInformation = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
-        CoreInstance pureResult = this.loadDatabaseMetaData(connectionInformation, functionExpressionToUseInStack, processorSupport, new SqlFunction<DatabaseMetaData, ResultSet>()
+        CoreInstance pureResult = this.loadDatabaseMetaData(connectionInformation, functionExpressionCallStack, processorSupport, new SqlFunction<DatabaseMetaData, ResultSet>()
         {
             @Override
             public ResultSet valueOf(DatabaseMetaData databaseMetaData) throws SQLException

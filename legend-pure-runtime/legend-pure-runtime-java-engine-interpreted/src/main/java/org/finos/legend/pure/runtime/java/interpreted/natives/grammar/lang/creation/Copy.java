@@ -22,6 +22,7 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.api.tuple.Pair;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
@@ -60,7 +61,7 @@ public class Copy extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, final CoreInstance functionExpressionToUseInStack, Profiler profiler, final InstantiationContext instantiationContext, final ExecutionSupport executionSupport, final Context context, final ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, final InstantiationContext instantiationContext, final ExecutionSupport executionSupport, final Context context, final ProcessorSupport processorSupport) throws PureExecutionException
     {
 
         final CoreInstance instance = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
@@ -98,7 +99,7 @@ public class Copy extends NativeFunction
                 property = processorSupport.class_findPropertyUsingGeneralization(classifier, key.getName());
                 if (property == null)
                 {
-                    throw new PureExecutionException(Instance.getValueForMetaPropertyToOneResolved(keyValue, M3Properties.key, processorSupport).getSourceInformation(), "The property '" + key.getName() + "' can't be found in the type '" + classifier.getName() + "' or in its hierarchy.");
+                    throw new PureExecutionException(Instance.getValueForMetaPropertyToOneResolved(keyValue, M3Properties.key, processorSupport).getSourceInformation(), "The property '" + key.getName() + "' can't be found in the type '" + classifier.getName() + "' or in its hierarchy.", functionExpressionCallStack);
                 }
                 treeNode = treeNode.getIfAbsentPut(property, Maps.mutable.empty());
 
@@ -140,10 +141,10 @@ public class Copy extends NativeFunction
             // Add the requested ones
             CoreInstance propertyGenericType = GenericType.resolvePropertyReturnType(Instance.extractGenericTypeFromInstance(instanceCurrent, processorSupport), property, processorSupport);
             CoreInstance expression = Instance.getValueForMetaPropertyToOneResolved(keyValue, M3Properties.expression, processorSupport);
-            Executor executor = FunctionExecutionInterpreted.findValueSpecificationExecutor(expression, functionExpressionToUseInStack, processorSupport, this.functionExecution);
-            CoreInstance instanceValResult = executor.execute(expression, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, evaluationVariableContext, profiler, instantiationContext, executionSupport, this.functionExecution, processorSupport);
+            Executor executor = FunctionExecutionInterpreted.findValueSpecificationExecutor(expression, functionExpressionCallStack, processorSupport, this.functionExecution);
+            CoreInstance instanceValResult = executor.execute(expression, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionCallStack, evaluationVariableContext, profiler, instantiationContext, executionSupport, this.functionExecution, processorSupport);
             ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(instanceValResult, M3Properties.values, processorSupport);
-            New.validateRangeUsingMultiplicity(instance, keyValue, property, values, processorSupport);
+            New.validateRangeUsingMultiplicity(instance, keyValue, property, values, functionExpressionCallStack, processorSupport);
             if (values.isEmpty())
             {
 
@@ -158,7 +159,7 @@ public class Copy extends NativeFunction
             }
             else
             {
-                New.validateTypeFromGenericType(propertyGenericType, Instance.getValueForMetaPropertyToOneResolved(instanceValResult, M3Properties.genericType, processorSupport), expression, processorSupport);
+                New.validateTypeFromGenericType(propertyGenericType, Instance.getValueForMetaPropertyToOneResolved(instanceValResult, M3Properties.genericType, processorSupport), expression, functionExpressionCallStack, processorSupport);
                 for (CoreInstance value : values)
                 {
                     Instance.addValueToProperty(newInstanceCurrent, finalPropertyName, value, processorSupport);
@@ -167,7 +168,7 @@ public class Copy extends NativeFunction
             }
         }
 
-        this.copy(instance, newInstance, sourceClassifier, addedValues, functionExpressionToUseInStack.getSourceInformation(), processorSupport, instantiationContext, propertyTree);
+        this.copy(instance, newInstance, sourceClassifier, addedValues, functionExpressionCallStack.peek().getSourceInformation(), processorSupport, instantiationContext, propertyTree, functionExpressionCallStack);
 
         if (addedValues.isEmpty())
         {
@@ -175,7 +176,7 @@ public class Copy extends NativeFunction
         }
         else
         {
-            newInstance.setSourceInformation(functionExpressionToUseInStack.getSourceInformation());
+            newInstance.setSourceInformation(functionExpressionCallStack.peek().getSourceInformation());
         }
 
         CoreInstance value = ValueSpecificationBootstrap.wrapValueSpecification(newInstance, ValueSpecification.isExecutable(params.get(0), processorSupport), processorSupport);
@@ -188,11 +189,11 @@ public class Copy extends NativeFunction
             instantiationContext.reset();
         }
 
-        return DefaultConstraintHandler.handleConstraints(sourceClassifier, value, functionExpressionToUseInStack.getSourceInformation(), this.functionExecution, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+        return DefaultConstraintHandler.handleConstraints(sourceClassifier, value, functionExpressionCallStack.peek().getSourceInformation(), this.functionExecution, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
 
     }
 
-    private void copy(CoreInstance instance, final CoreInstance newInstance, final CoreInstance sourceClassifier, MutableSet<CoreInstance> addedValues, final SourceInformation sourceInfoForErrors, final ProcessorSupport processorSupport, InstantiationContext instantiationContext, MapIterable<CoreInstance, ? extends MapIterable> propertyTree) throws PureExecutionException
+    private void copy(CoreInstance instance, final CoreInstance newInstance, final CoreInstance sourceClassifier, MutableSet<CoreInstance> addedValues, final SourceInformation sourceInfoForErrors, final ProcessorSupport processorSupport, InstantiationContext instantiationContext, MapIterable<CoreInstance, ? extends MapIterable> propertyTree, MutableStack<CoreInstance> functionExpressionCallStack) throws PureExecutionException
     {
         final MutableList<CoreInstance> propertiesToValidate = Lists.mutable.of();
         for (Pair<String, CoreInstance> pair : processorSupport.class_getSimplePropertiesByName(processorSupport.getClassifier(instance)).keyValuesView())
@@ -222,7 +223,7 @@ public class Copy extends NativeFunction
                         // Need to make sure we don't go deep for something we added!!!!
                         if (!addedValues.contains(newValue))
                         {
-                            this.copy(value, newValue, sourceClassifier, addedValues, sourceInfoForErrors, processorSupport, instantiationContext, propertyTree.get(property));
+                            this.copy(value, newValue, sourceClassifier, addedValues, sourceInfoForErrors, processorSupport, instantiationContext, propertyTree.get(property), functionExpressionCallStack);
                         }
                     }
                 }
@@ -231,7 +232,7 @@ public class Copy extends NativeFunction
         }
 
         // Verify that all updated property values meet multiplicity constraints
-        instantiationContext.registerValidation(() -> New.validatePropertyValueMultiplicities(newInstance, sourceClassifier, propertiesToValidate, sourceInfoForErrors, processorSupport));
-        New.updateReverseProperties(newInstance, sourceInfoForErrors, processorSupport);
+        instantiationContext.registerValidation(() -> New.validatePropertyValueMultiplicities(newInstance, sourceClassifier, propertiesToValidate, sourceInfoForErrors, functionExpressionCallStack, processorSupport));
+        New.updateReverseProperties(newInstance, sourceInfoForErrors, functionExpressionCallStack, processorSupport);
     }
 }

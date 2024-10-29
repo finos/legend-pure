@@ -22,6 +22,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.compiler.Context;
@@ -65,7 +66,7 @@ public class New extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, final CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, final ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, final ProcessorSupport processorSupport) throws PureExecutionException
     {
         // The parameter is a Class ... but we encode the typeArguments in the ValueExpression genericType's typeArguments ...
         CoreInstance __genericType = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.genericType, M3Properties.typeArguments, processorSupport);
@@ -75,7 +76,7 @@ public class New extends NativeFunction
         if (classifier.equals(processorSupport.package_getByUserPath(M3Paths.Map)))
         {
             CoreInstance mapRawType = processorSupport.package_getByUserPath(M3Paths.Map);
-            MapCoreInstance map = new MapCoreInstance(Lists.immutable.<CoreInstance>empty(), "", functionExpressionToUseInStack.getSourceInformation(), mapRawType, -1, this.repository, false, processorSupport);
+            MapCoreInstance map = new MapCoreInstance(Lists.immutable.<CoreInstance>empty(), "", functionExpressionCallStack.peek().getSourceInformation(), mapRawType, -1, this.repository, false, processorSupport);
             CoreInstance genericType = processorSupport.newGenericType(null, map, false);
             Instance.addValueToProperty(genericType, M3Properties.rawType, mapRawType, processorSupport);
             Instance.addValueToProperty(genericType, M3Properties.typeArguments, params.get(0).getValueForMetaPropertyToOne(M3Properties.genericType).getValueForMetaPropertyToOne(M3Properties.typeArguments).getValueForMetaPropertyToMany(M3Properties.typeArguments), processorSupport);
@@ -94,7 +95,7 @@ public class New extends NativeFunction
         // Manage Generics
         if (Type.isBottomType(classifier, processorSupport))
         {
-            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Cannot instantiate " + PackageableElement.getUserPathForPackageableElement(classifier, "::"));
+            throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "Cannot instantiate " + PackageableElement.getUserPathForPackageableElement(classifier, "::"), functionExpressionCallStack);
         }
 
         CoreInstance genericType = classifier.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToOne(M3Properties.typeArguments);
@@ -103,10 +104,10 @@ public class New extends NativeFunction
         ListIterable<? extends CoreInstance> typeVariableValues = Instance.getValueForMetaPropertyToManyResolved(__genericType, M3Properties.typeVariableValues, processorSupport);
 
         // TODO should we start a repository transaction here?
-        final CoreInstance instance = id.isEmpty() ? this.repository.newEphemeralAnonymousCoreInstance(functionExpressionToUseInStack.getSourceInformation(), classifier) : this.repository.newEphemeralCoreInstance(id, classifier, null);
+        final CoreInstance instance = id.isEmpty() ? this.repository.newEphemeralAnonymousCoreInstance(functionExpressionCallStack.peek().getSourceInformation(), classifier) : this.repository.newEphemeralCoreInstance(id, classifier, null);
 
         CoreInstance genericTypeType = processorSupport.package_getByUserPath(M3Paths.GenericType);
-        CoreInstance classifierGenericType = this.repository.newEphemeralAnonymousCoreInstance(functionExpressionToUseInStack.getSourceInformation(), genericTypeType);
+        CoreInstance classifierGenericType = this.repository.newEphemeralAnonymousCoreInstance(functionExpressionCallStack.peek().getSourceInformation(), genericTypeType);
         Instance.addValueToProperty(classifierGenericType, M3Properties.rawType, classifier, processorSupport);
         for (CoreInstance typeArgument : typeArguments)
         {
@@ -138,11 +139,11 @@ public class New extends NativeFunction
             CoreInstance property = propertiesByName.get(key);
             if (property == null)
             {
-                throw new PureExecutionException(sourceInfoForErrors, "The property '" + key + "' can't be found in the type '" + classifier.getName() + "' or in its hierarchy.");
+                throw new PureExecutionException(sourceInfoForErrors, "The property '" + key + "' can't be found in the type '" + classifier.getName() + "' or in its hierarchy.", functionExpressionCallStack);
             }
             CoreInstance expression = Instance.getValueForMetaPropertyToOneResolved(keyValue, M3Properties.expression, processorSupport);
 
-            setValuesToProperty(expression, keyInstance, property, instance, sourceInfoForErrors, classifierGenericType, evaluationVariableContext, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport, context, processorSupport);
+            setValuesToProperty(expression, keyInstance, property, instance, sourceInfoForErrors, classifierGenericType, evaluationVariableContext, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionCallStack, profiler, instantiationContext, executionSupport, context, processorSupport);
             setKeys.add(key);
         }
 
@@ -164,15 +165,15 @@ public class New extends NativeFunction
                 }
                 else
                 {
-                    setValuesToProperty(expression, expression, property, instance, sourceInfoForErrors, classifierGenericType, evaluationVariableContext, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport, context, processorSupport);
+                    setValuesToProperty(expression, expression, property, instance, sourceInfoForErrors, classifierGenericType, evaluationVariableContext, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionCallStack, profiler, instantiationContext, executionSupport, context, processorSupport);
                 }
             }
         }
 
         // Verify that all property values meet multiplicity constraints
-        instantiationContext.registerValidation(() -> validatePropertyValueMultiplicities(instance, classifier, functionExpressionToUseInStack.getSourceInformation(), processorSupport));
+        instantiationContext.registerValidation(() -> validatePropertyValueMultiplicities(instance, classifier, functionExpressionCallStack.peek().getSourceInformation(), functionExpressionCallStack, processorSupport));
 
-        updateReverseProperties(instance, functionExpressionToUseInStack.getSourceInformation(), processorSupport);
+        updateReverseProperties(instance, functionExpressionCallStack.peek().getSourceInformation(), functionExpressionCallStack, processorSupport);
 
         CoreInstance value = ValueSpecificationBootstrap.wrapValueSpecification(instance, true, processorSupport);
 
@@ -184,20 +185,20 @@ public class New extends NativeFunction
             instantiationContext.reset();
         }
 
-        return DefaultConstraintHandler.handleConstraints(classifier, value, functionExpressionToUseInStack.getSourceInformation(), this.functionExecution, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+        return DefaultConstraintHandler.handleConstraints(classifier, value, functionExpressionCallStack.peek().getSourceInformation(), this.functionExecution, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
     }
 
-    private void setValuesToProperty(CoreInstance expression, CoreInstance keyInstance, CoreInstance property, CoreInstance instance, SourceInformation sourceInfoForErrors, CoreInstance classifierGenericType, VariableContext evaluationVariableContext, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport)
+    private void setValuesToProperty(CoreInstance expression, CoreInstance keyInstance, CoreInstance property, CoreInstance instance, SourceInformation sourceInfoForErrors, CoreInstance classifierGenericType, VariableContext evaluationVariableContext, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport)
     {
-        setValuesToProperty(expression, keyInstance, property, instance, sourceInfoForErrors, classifierGenericType, evaluationVariableContext, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport, this.functionExecution, processorSupport);
+        setValuesToProperty(expression, keyInstance, property, instance, sourceInfoForErrors, classifierGenericType, evaluationVariableContext, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionCallStack, profiler, instantiationContext, executionSupport, this.functionExecution, processorSupport);
     }
 
-    public static void setValuesToProperty(CoreInstance expression, CoreInstance keyInstance, CoreInstance property, CoreInstance instance, SourceInformation sourceInfoForErrors, CoreInstance classifierGenericType, VariableContext evaluationVariableContext, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, FunctionExecutionInterpreted functionExecution, ProcessorSupport processorSupport)
+    public static void setValuesToProperty(CoreInstance expression, CoreInstance keyInstance, CoreInstance property, CoreInstance instance, SourceInformation sourceInfoForErrors, CoreInstance classifierGenericType, VariableContext evaluationVariableContext, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, FunctionExecutionInterpreted functionExecution, ProcessorSupport processorSupport)
     {
         CoreInstance propertyGenericType = GenericType.resolvePropertyReturnType(Instance.extractGenericTypeFromInstance(instance, processorSupport), property, processorSupport);
 
-        Executor executor = FunctionExecutionInterpreted.findValueSpecificationExecutor(expression, functionExpressionToUseInStack, processorSupport, functionExecution);
-        CoreInstance evaluatedExpression = executor.execute(expression, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, evaluationVariableContext, profiler, instantiationContext, executionSupport, functionExecution, processorSupport);
+        Executor executor = FunctionExecutionInterpreted.findValueSpecificationExecutor(expression, functionExpressionCallStack, processorSupport, functionExecution);
+        CoreInstance evaluatedExpression = executor.execute(expression, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionCallStack, evaluationVariableContext, profiler, instantiationContext, executionSupport, functionExecution, processorSupport);
 
         ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(evaluatedExpression, M3Properties.values, processorSupport);
 
@@ -216,18 +217,18 @@ public class New extends NativeFunction
         CoreInstance concretePropertyMultiplicity = resolveToConcreteMultiplicity(propertyMultiplicity, resolvedMultiplicityParameters);
         if (concretePropertyMultiplicity == null)
         {
-            throw new PureExecutionException(keyInstance.getSourceInformation(), "Error instantiating the type '" + GenericType.print(classifierGenericType, processorSupport) + "'. Could not resolve multiplicity for the property '" + Property.getPropertyName(property) + "': " + Multiplicity.print(propertyMultiplicity));
+            throw new PureExecutionException(keyInstance.getSourceInformation(), "Error instantiating the type '" + GenericType.print(classifierGenericType, processorSupport) + "'. Could not resolve multiplicity for the property '" + Property.getPropertyName(property) + "': " + Multiplicity.print(propertyMultiplicity), functionExpressionCallStack);
         }
-        validateRangeUsingMultiplicity(instance, property, concretePropertyMultiplicity, values.size(), sourceInfoForErrors, processorSupport);
+        validateRangeUsingMultiplicity(instance, property, concretePropertyMultiplicity, values.size(), sourceInfoForErrors, functionExpressionCallStack, processorSupport);
 
         CoreInstance concretePropertyGenericType = resolveToConcreteGenericType(propertyGenericType, resolvedTypeParameters, resolvedMultiplicityParameters, processorSupport);
         if (concretePropertyGenericType == null)
         {
-            throw new PureExecutionException(keyInstance.getSourceInformation(), "Error instantiating the type '" + GenericType.print(classifierGenericType, processorSupport) + "'. Could not resolve type for the property '" + Property.getPropertyName(property) + "': " + GenericType.print(propertyGenericType, processorSupport));
+            throw new PureExecutionException(keyInstance.getSourceInformation(), "Error instantiating the type '" + GenericType.print(classifierGenericType, processorSupport) + "'. Could not resolve type for the property '" + Property.getPropertyName(property) + "': " + GenericType.print(propertyGenericType, processorSupport), functionExpressionCallStack);
         }
         for (CoreInstance value : values)
         {
-            validateType(concretePropertyGenericType, value, expression, processorSupport);
+            validateType(concretePropertyGenericType, value, expression, functionExpressionCallStack, processorSupport);
             Instance.addValueToProperty(instance, property.getName(), value, processorSupport);
         }
     }
@@ -291,12 +292,12 @@ public class New extends NativeFunction
      * @param instance            newly created instance
      * @param sourceInfoForErrors source information for error reports
      */
-    public static void updateReverseProperties(CoreInstance instance, SourceInformation sourceInfoForErrors, ProcessorSupport processorSupport) throws PureExecutionException
+    public static void updateReverseProperties(CoreInstance instance, SourceInformation sourceInfoForErrors, MutableStack<CoreInstance> functionExpressionCallStack, ProcessorSupport processorSupport) throws PureExecutionException
     {
-        updateReverseProperties(instance, sourceInfoForErrors, processorSupport, false);
+        updateReverseProperties(instance, sourceInfoForErrors, functionExpressionCallStack, processorSupport, false);
     }
 
-    public static void updateReverseProperties(CoreInstance instance, SourceInformation sourceInfoForErrors, ProcessorSupport processorSupport, boolean skipMultiplicityChecks) throws PureExecutionException
+    public static void updateReverseProperties(CoreInstance instance, SourceInformation sourceInfoForErrors, MutableStack<CoreInstance> functionExpressionCallStack, ProcessorSupport processorSupport, boolean skipMultiplicityChecks) throws PureExecutionException
     {
         CoreInstance associationClass = processorSupport.package_getByUserPath(M3Paths.Association);
         for (String propertyName : instance.getKeys())
@@ -318,10 +319,10 @@ public class New extends NativeFunction
                         {
                             int newSize = currentValues.size() + 1;
                             CoreInstance reversePropertyGenericType = GenericType.resolvePropertyReturnType(Instance.extractGenericTypeFromInstance(value, processorSupport), reverseProperty, processorSupport);
-                            validateType(reversePropertyGenericType, instance, value, processorSupport);
+                            validateType(reversePropertyGenericType, instance, value, functionExpressionCallStack, processorSupport);
                             if (!skipMultiplicityChecks)
                             {
-                                validateRangeUsingMultiplicity(value, reverseProperty, Property.resolveInstancePropertyReturnMultiplicity(instance, reverseProperty, processorSupport), newSize, sourceInfoForErrors, processorSupport);
+                                validateRangeUsingMultiplicity(value, reverseProperty, Property.resolveInstancePropertyReturnMultiplicity(instance, reverseProperty, processorSupport), newSize, sourceInfoForErrors, functionExpressionCallStack, processorSupport);
                             }
                             Instance.addValueToProperty(value, reversePropertyName, instance, processorSupport);
                         }
@@ -331,14 +332,14 @@ public class New extends NativeFunction
         }
     }
 
-    private static void validateType(CoreInstance propertyGenericType, CoreInstance value, CoreInstance expression, ProcessorSupport processorSupport) throws PureExecutionException
+    private static void validateType(CoreInstance propertyGenericType, CoreInstance value, CoreInstance expression, MutableStack<CoreInstance> functionExpressionCallStack, ProcessorSupport processorSupport) throws PureExecutionException
     {
         boolean isUnitOrMeasure = Measure.isUnitOrMeasureInstance(value, processorSupport);
         CoreInstance valGenericType = Instance.instanceOf(value, M3Paths.NonExecutableValueSpecification, processorSupport) ? Instance.getValueForMetaPropertyToOneResolved(value, M3Properties.genericType, processorSupport) : (isUnitOrMeasure ? Instance.getValueForMetaPropertyToOneResolved(value, M3Properties.genericType, processorSupport) : Instance.extractGenericTypeFromInstance(value, processorSupport));
-        validateTypeFromGenericType(propertyGenericType, valGenericType, expression, processorSupport);
+        validateTypeFromGenericType(propertyGenericType, valGenericType, expression, functionExpressionCallStack, processorSupport);
     }
 
-    static void validateTypeFromGenericType(CoreInstance propertyGenericType, CoreInstance valGenericType, CoreInstance expression, ProcessorSupport processorSupport) throws PureExecutionException
+    static void validateTypeFromGenericType(CoreInstance propertyGenericType, CoreInstance valGenericType, CoreInstance expression, MutableStack<CoreInstance> functionExpressionCallStack, ProcessorSupport processorSupport) throws PureExecutionException
     {
         boolean compatible;
         try
@@ -354,7 +355,7 @@ public class New extends NativeFunction
                 valTypeString = GenericType.print(valGenericType, true, processorSupport);
                 propertyTypeString = GenericType.print(propertyGenericType, true, processorSupport);
             }
-            throw new PureExecutionException(expression.getSourceInformation(), "Error checking if value type '" + valTypeString + "' is compatible with property type '" + propertyTypeString + "'", e);
+            throw new PureExecutionException(expression.getSourceInformation(), "Error checking if value type '" + valTypeString + "' is compatible with property type '" + propertyTypeString + "'", e, functionExpressionCallStack);
         }
         if (!compatible)
         {
@@ -365,20 +366,20 @@ public class New extends NativeFunction
                 valTypeString = GenericType.print(valGenericType, true, processorSupport);
                 propertyTypeString = GenericType.print(propertyGenericType, true, processorSupport);
             }
-            throw new PureExecutionException(expression.getSourceInformation(), "Type Error: '" + valTypeString + "' not a subtype of '" + propertyTypeString + "'" + (expression.getSourceInformation() == null ? expression.print("") : ""));
+            throw new PureExecutionException(expression.getSourceInformation(), "Type Error: '" + valTypeString + "' not a subtype of '" + propertyTypeString + "'" + (expression.getSourceInformation() == null ? expression.print("") : ""), functionExpressionCallStack);
         }
     }
 
-    static void validateRangeUsingMultiplicity(CoreInstance instance, CoreInstance keyValue, CoreInstance property, ListIterable<? extends CoreInstance> values, ProcessorSupport processorSupport) throws PureExecutionException
+    static void validateRangeUsingMultiplicity(CoreInstance instance, CoreInstance keyValue, CoreInstance property, ListIterable<? extends CoreInstance> values, MutableStack<CoreInstance> functionExpressionCallStack, ProcessorSupport processorSupport) throws PureExecutionException
     {
-        validateRangeUsingMultiplicity(instance, property, Property.resolveInstancePropertyReturnMultiplicity(instance, property, processorSupport), values.size(), Instance.getValueForMetaPropertyToOneResolved(keyValue, M3Properties.key, processorSupport).getSourceInformation(), processorSupport);
+        validateRangeUsingMultiplicity(instance, property, Property.resolveInstancePropertyReturnMultiplicity(instance, property, processorSupport), values.size(), Instance.getValueForMetaPropertyToOneResolved(keyValue, M3Properties.key, processorSupport).getSourceInformation(), functionExpressionCallStack, processorSupport);
     }
 
-    private static void validateRangeUsingMultiplicity(CoreInstance instance, CoreInstance property, CoreInstance propertyMultiplicity, int valueCount, SourceInformation sourceInfoForExceptions, ProcessorSupport processorSupport) throws PureExecutionException
+    private static void validateRangeUsingMultiplicity(CoreInstance instance, CoreInstance property, CoreInstance propertyMultiplicity, int valueCount, SourceInformation sourceInfoForExceptions, MutableStack<CoreInstance> functionExpressionCallStack, ProcessorSupport processorSupport) throws PureExecutionException
     {
         if (!Multiplicity.isValid(propertyMultiplicity, valueCount))
         {
-            throw new PureExecutionException(sourceInfoForExceptions, "Error instantiating the type '" + GenericType.print(Instance.extractGenericTypeFromInstance(instance, processorSupport), processorSupport) + "'. The property '" + Property.getPropertyName(property) + "' has a multiplicity range of " + Multiplicity.print(propertyMultiplicity) + " when the given list has a cardinality equal to " + valueCount);
+            throw new PureExecutionException(sourceInfoForExceptions, "Error instantiating the type '" + GenericType.print(Instance.extractGenericTypeFromInstance(instance, processorSupport), processorSupport) + "'. The property '" + Property.getPropertyName(property) + "' has a multiplicity range of " + Multiplicity.print(propertyMultiplicity) + " when the given list has a cardinality equal to " + valueCount, functionExpressionCallStack);
         }
     }
 
@@ -392,9 +393,9 @@ public class New extends NativeFunction
      * @param sourceInfo source information for exceptions
      * @throws PureExecutionException if any property has an invalid number of values
      */
-    public static void validatePropertyValueMultiplicities(CoreInstance instance, CoreInstance classifier, SourceInformation sourceInfo, ProcessorSupport processorSupport) throws PureExecutionException
+    public static void validatePropertyValueMultiplicities(CoreInstance instance, CoreInstance classifier, SourceInformation sourceInfo, MutableStack<CoreInstance> functionExpressionCallStack, ProcessorSupport processorSupport) throws PureExecutionException
     {
-        validatePropertyValueMultiplicities(instance, classifier, processorSupport.class_getSimpleProperties(classifier), sourceInfo, processorSupport);
+        validatePropertyValueMultiplicities(instance, classifier, processorSupport.class_getSimpleProperties(classifier), sourceInfo, functionExpressionCallStack, processorSupport);
     }
 
     /**
@@ -407,7 +408,7 @@ public class New extends NativeFunction
      * @param sourceInfo source information for exceptions
      * @throws PureExecutionException if any property has an invalid number of values
      */
-    public static void validatePropertyValueMultiplicities(CoreInstance instance, CoreInstance classifier, RichIterable<CoreInstance> propertiesToValidate, SourceInformation sourceInfo, ProcessorSupport processorSupport) throws PureExecutionException
+    public static void validatePropertyValueMultiplicities(CoreInstance instance, CoreInstance classifier, RichIterable<CoreInstance> propertiesToValidate, SourceInformation sourceInfo, MutableStack<CoreInstance> functionExpressionCallStack, ProcessorSupport processorSupport) throws PureExecutionException
     {
         MutableMap<String, Pair<String, Integer>> mismatches = Maps.mutable.with();
         for (CoreInstance property : propertiesToValidate)
@@ -457,7 +458,7 @@ public class New extends NativeFunction
                     message.append(", got ").append(count);
                 }
             }
-            throw new PureExecutionException(sourceInfo, message.toString());
+            throw new PureExecutionException(sourceInfo, message.toString(), functionExpressionCallStack);
         }
     }
 }

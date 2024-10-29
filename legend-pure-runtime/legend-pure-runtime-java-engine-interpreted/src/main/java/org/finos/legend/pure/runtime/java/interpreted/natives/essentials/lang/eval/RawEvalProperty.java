@@ -18,6 +18,7 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.PropertyCoreInstanceWrapper;
@@ -46,7 +47,7 @@ public class RawEvalProperty extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         CoreInstance functionToApplyTo = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
         MutableList<CoreInstance> wrappedParameterValues = Lists.mutable.with(params.get(1));
@@ -54,8 +55,8 @@ public class RawEvalProperty extends NativeFunction
         CoreInstance value = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
         if (processorSupport.class_findPropertyOrQualifiedPropertyUsingGeneralization(processorSupport.getClassifier(value), property._name()) == null)
         {
-            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Can't find the property '" + property._name() + "' in the class " + processorSupport.getClassifier(value).getName());
+            throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "Can't find the property '" + property._name() + "' in the class " + processorSupport.getClassifier(value).getName(), functionExpressionCallStack);
         }
-        return this.functionExecution.executeProperty(property, false, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), profiler, wrappedParameterValues, functionExpressionToUseInStack, instantiationContext, executionSupport);
+        return this.functionExecution.executeProperty(property, false, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), profiler, wrappedParameterValues, functionExpressionCallStack, instantiationContext, executionSupport);
     }
 }

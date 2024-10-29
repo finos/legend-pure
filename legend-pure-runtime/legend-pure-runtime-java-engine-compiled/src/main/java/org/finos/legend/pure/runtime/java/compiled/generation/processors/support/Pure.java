@@ -19,6 +19,7 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
@@ -160,7 +161,7 @@ public class Pure
         Package root = compiledExecSupport.getMetadataAccessor().getPackage(M3Paths.Root);
         if (root == null)
         {
-            throw new PureExecutionException(sourceInfo, "Cannot find " + M3Paths.Root);
+            throw new PureExecutionException(sourceInfo, "Cannot find " + M3Paths.Root, Stacks.mutable.empty());
         }
         if (path.isEmpty() || path.equals(separator) || M3Paths.Root.equals(path))
         {
@@ -173,7 +174,7 @@ public class Pure
             result = (PackageableElement) compiledExecSupport.getProcessorSupport().package_getByUserPath("::".equals(separator) ? path : path.replace(separator, "::"));
             if ((result == null) && !allowNotFound)
             {
-                throw new PureExecutionException(sourceInfo, pathToElementNotFoundErrorMessage(path, separator, compiledExecSupport));
+                throw new PureExecutionException(sourceInfo, pathToElementNotFoundErrorMessage(path, separator, compiledExecSupport), Stacks.mutable.empty());
             }
         }
         return result;
@@ -264,7 +265,7 @@ public class Pure
                 return property;
             }
         }
-        throw new PureExecutionException("Can't find the property '" + propertyName + "' in the class '" + className + "'");
+        throw new PureExecutionException("Can't find the property '" + propertyName + "' in the class '" + className + "'", Stacks.mutable.empty());
     }
 
     public static <E> E getEnumByName(Enumeration<E> enumeration, String name)
@@ -342,7 +343,7 @@ public class Pure
             {
                 if (a._rawType() == null)
                 {
-                    throw new PureExecutionException("TODO: Find most common type for non-concrete generic type");
+                    throw new PureExecutionException("TODO: Find most common type for non-concrete generic type", Stacks.mutable.empty());
                 }
                 if (t != a._rawType())
                 {
@@ -357,7 +358,7 @@ public class Pure
             s.add(r.getFirst());
             return (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) GenericType.findBestCommonGenericType(s.toList(), true, false, processorSupport);
         }
-        throw new PureExecutionException("ERROR unhandled type for value: " + val + " (instance of " + val.getClass() + ")");
+        throw new PureExecutionException("ERROR unhandled type for value: " + val + " (instance of " + val.getClass() + ")", Stacks.mutable.empty());
     }
 
 
@@ -366,7 +367,7 @@ public class Pure
         SharedPureFunction<?> foundFunc = findSharedPureFunction(func, bridge, es);
         if (foundFunc == null)
         {
-            throw new PureExecutionException("Can't execute " + func + " | name:'" + func._name() + "' id:'" + func.getName() + "' yet");
+            throw new PureExecutionException("Can't execute " + func + " | name:'" + func._name() + "' id:'" + func.getName() + "' yet", Stacks.mutable.empty());
         }
         return foundFunc;
     }
@@ -496,7 +497,7 @@ public class Pure
         {
             if (paramInputs.size() > 1)
             {
-                throw new PureExecutionException(func.getSourceInformation(), "Error accessing property '" + func.getName() + "': too many arguments (expected 1, got " + paramInputs.size() + ")");
+                throw new PureExecutionException(func.getSourceInformation(), "Error accessing property '" + func.getName() + "': too many arguments (expected 1, got " + paramInputs.size() + ")", Stacks.mutable.empty());
             }
             Object instance = getInstanceForPropertyEvaluate(paramInputs, func.getName(), func.getSourceInformation());
             try
@@ -514,11 +515,11 @@ public class Pure
                 {
                     throw (PureException) cause;
                 }
-                throw new PureExecutionException(func.getSourceInformation(), "Error invoking property '" + func.getName() + "'", cause);
+                throw new PureExecutionException(func.getSourceInformation(), "Error invoking property '" + func.getName() + "'", cause, Stacks.mutable.empty());
             }
             catch (Exception e)
             {
-                throw new PureExecutionException(func.getSourceInformation(), "Error accessing property '" + func.getName() + "'", e);
+                throw new PureExecutionException(func.getSourceInformation(), "Error accessing property '" + func.getName() + "'", e, Stacks.mutable.empty());
             }
         }
 
@@ -556,11 +557,11 @@ public class Pure
                         builder.append("'").append(name).append("'");
                     }
                     builder.append(" id: '").append(func.getName()).append("' yet");
-                    throw new PureExecutionException(func.getSourceInformation(), builder.toString());
+                    throw new PureExecutionException(func.getSourceInformation(), builder.toString(), Stacks.mutable.empty());
                 }
                 return foundFunc.execute(Lists.mutable.with(paramInstances), es);
             }
-            throw new PureExecutionException(func.getSourceInformation(), "Unknown function type:" + func.getClass().getName());
+            throw new PureExecutionException(func.getSourceInformation(), "Unknown function type:" + func.getClass().getName(), Stacks.mutable.empty());
         }
         catch (RuntimeException e)
         {
@@ -583,7 +584,7 @@ public class Pure
             {
                 builder.append(": ").append(message);
             }
-            throw new PureExecutionException(func.getSourceInformation(), builder.toString(), e);
+            throw new PureExecutionException(func.getSourceInformation(), builder.toString(), e, Stacks.mutable.empty());
         }
     }
 
@@ -600,7 +601,7 @@ public class Pure
                     int size = Iterate.sizeOf((Iterable<?>) first);
                     if (size > 1)
                     {
-                        throw new PureExecutionException(sourceInfo, "Error accessing property '" + name + "': got too many instances (expected 1, got " + size + ")");
+                        throw new PureExecutionException(sourceInfo, "Error accessing property '" + name + "': got too many instances (expected 1, got " + size + ")", Stacks.mutable.empty());
                     }
                     return instance;
                 }
@@ -610,7 +611,7 @@ public class Pure
                 return first;
             }
         }
-        throw new PureExecutionException(sourceInfo, "Error accessing property '" + name + "': no instance");
+        throw new PureExecutionException(sourceInfo, "Error accessing property '" + name + "': no instance", Stacks.mutable.empty());
     }
 
     @SuppressWarnings("unchecked")
@@ -1099,7 +1100,7 @@ public class Pure
                 StringBuilder builder = new StringBuilder("Package '");
                 org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.writeUserPathForPackageableElement(builder, pkg);
                 builder.append("' already has a child named '").append(name).append("' which is not a package");
-                throw new PureExecutionException(si, builder.toString());
+                throw new PureExecutionException(si, builder.toString(), Stacks.mutable.empty());
             }
             return (Package) child;
         });

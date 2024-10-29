@@ -18,6 +18,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -49,7 +50,7 @@ public class RemoveDuplicates extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         ListIterable<? extends CoreInstance> collection = Instance.getValueForMetaPropertyToManyResolved(params.get(0), M3Properties.values, processorSupport);
         int size = collection.size();
@@ -77,7 +78,7 @@ public class RemoveDuplicates extends NativeFunction
         {
             for (CoreInstance instance : collection)
             {
-                if (!contains(results, instance, eqlFn, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack,  ValueSpecification.isExecutable(params.get(0), processorSupport), profiler, processorSupport, instantiationContext, executionSupport))
+                if (!contains(results, instance, eqlFn, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack,  ValueSpecification.isExecutable(params.get(0), processorSupport), profiler, processorSupport, instantiationContext, executionSupport))
                 {
                     results.add(instance);
                 }
@@ -88,7 +89,7 @@ public class RemoveDuplicates extends NativeFunction
             MutableSet<CoreInstance> keys = EqualityUtilities.newCoreInstanceSet(processorSupport, size);
             for (CoreInstance instance : collection)
             {
-                CoreInstance key = Instance.getValueForMetaPropertyToOneResolved(this.functionExecution.executeLambdaFromNative(keyFn, Lists.immutable.with(ValueSpecificationBootstrap.wrapValueSpecification(instance, ValueSpecification.isExecutable(params.get(0), processorSupport), processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport), M3Properties.values, processorSupport);
+                CoreInstance key = Instance.getValueForMetaPropertyToOneResolved(this.functionExecution.executeLambdaFromNative(keyFn, Lists.immutable.with(ValueSpecificationBootstrap.wrapValueSpecification(instance, ValueSpecification.isExecutable(params.get(0), processorSupport), processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport), M3Properties.values, processorSupport);
                 if (keys.add(key))
                 {
                     results.add(instance);
@@ -100,8 +101,8 @@ public class RemoveDuplicates extends NativeFunction
             MutableList<CoreInstance> keys = FastList.newList(size);
             for (CoreInstance instance : collection)
             {
-                CoreInstance key = Instance.getValueForMetaPropertyToOneResolved(this.functionExecution.executeLambdaFromNative(keyFn, Lists.immutable.with(ValueSpecificationBootstrap.wrapValueSpecification(instance, ValueSpecification.isExecutable(params.get(0), processorSupport), processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport), M3Properties.values, processorSupport);
-                if (!contains(keys, key, eqlFn, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack,  ValueSpecification.isExecutable(params.get(0), processorSupport), profiler, processorSupport, instantiationContext, executionSupport))
+                CoreInstance key = Instance.getValueForMetaPropertyToOneResolved(this.functionExecution.executeLambdaFromNative(keyFn, Lists.immutable.with(ValueSpecificationBootstrap.wrapValueSpecification(instance, ValueSpecification.isExecutable(params.get(0), processorSupport), processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport), M3Properties.values, processorSupport);
+                if (!contains(keys, key, eqlFn, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack,  ValueSpecification.isExecutable(params.get(0), processorSupport), profiler, processorSupport, instantiationContext, executionSupport))
                 {
                     keys.add(key);
                     results.add(instance);
@@ -111,11 +112,11 @@ public class RemoveDuplicates extends NativeFunction
         return ValueSpecificationBootstrap.wrapValueSpecification_ResultGenericTypeIsKnown(results, Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.genericType, processorSupport), ValueSpecification.isExecutable(params.get(0), processorSupport), processorSupport);
     }
 
-    private boolean contains(ListIterable<CoreInstance> list, CoreInstance instance, CoreInstance eqlFn, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, boolean executable, Profiler profiler, ProcessorSupport processorSupport, InstantiationContext instantiationContext, ExecutionSupport executionSupport)
+    private boolean contains(ListIterable<CoreInstance> list, CoreInstance instance, CoreInstance eqlFn, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, boolean executable, Profiler profiler, ProcessorSupport processorSupport, InstantiationContext instantiationContext, ExecutionSupport executionSupport)
     {
         for (CoreInstance item : list)
         {
-            CoreInstance valueSpec = this.functionExecution.executeLambdaFromNative(eqlFn, Lists.immutable.with(ValueSpecificationBootstrap.wrapValueSpecification(item, executable, processorSupport), ValueSpecificationBootstrap.wrapValueSpecification(instance, executable, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+            CoreInstance valueSpec = this.functionExecution.executeLambdaFromNative(eqlFn, Lists.immutable.with(ValueSpecificationBootstrap.wrapValueSpecification(item, executable, processorSupport), ValueSpecificationBootstrap.wrapValueSpecification(instance, executable, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
             if (PrimitiveUtilities.getBooleanValue(Instance.getValueForMetaPropertyToOneResolved(valueSpec, M3Properties.values, processorSupport)))
             {
                 return true;

@@ -17,9 +17,11 @@ package org.finos.legend.pure.runtime.java.interpreted;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionCoreInstanceWrapper;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinitionCoreInstanceWrapper;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
@@ -605,7 +607,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         ExecutionSupport executionSupport = new ExecutionSupport();
         try
         {
-            CoreInstance result = this.executeFunction(false, FunctionCoreInstanceWrapper.toFunction(function), arguments, new Stack<>(), new Stack<>(), VariableContext.newVariableContext(), null, VoidProfiler.VOID_PROFILER, new InstantiationContext(), executionSupport);
+            CoreInstance result = this.executeFunction(false, FunctionCoreInstanceWrapper.toFunction(function), arguments, new Stack<>(), new Stack<>(), VariableContext.newVariableContext(), Stacks.mutable.empty(), VoidProfiler.VOID_PROFILER, new InstantiationContext(), executionSupport);
             return result;
         }
         catch (Exception ex)
@@ -670,27 +672,27 @@ public class FunctionExecutionInterpreted implements FunctionExecution
     }
 
 
-    public CoreInstance executeLambda(LambdaFunction<?> function, ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext context, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport)
+    public CoreInstance executeLambda(LambdaFunction<?> function, ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext context, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport)
     {
         if (function instanceof LambdaWithContext)
         {
             context = ((LambdaWithContext) function).getVariableContext();
         }
 
-        return this.executeFunctionExecuteParams(function, params, resolvedTypeParameters, resolvedMultiplicityParameters, context, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+        return this.executeFunctionExecuteParams(function, params, resolvedTypeParameters, resolvedMultiplicityParameters, context, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
     }
 
     /**
      * In this case the parameters have already been evaluated so no need to re-evaluate
      */
-    public CoreInstance executeLambdaFromNative(CoreInstance function, ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext context, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport)
+    public CoreInstance executeLambdaFromNative(CoreInstance function, ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext context, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport)
     {
         if (function instanceof LambdaWithContext)
         {
             context = ((LambdaWithContext) function).getVariableContext();
         }
 
-        return this.executeFunction(false, LambdaFunctionCoreInstanceWrapper.toLambdaFunction(function), params, resolvedTypeParameters, resolvedMultiplicityParameters, context, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+        return this.executeFunction(false, LambdaFunctionCoreInstanceWrapper.toLambdaFunction(function), params, resolvedTypeParameters, resolvedMultiplicityParameters, context, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
     }
 
     public void cancelExecution()
@@ -698,7 +700,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.cancelExecution.set(true);
     }
 
-    public CoreInstance executeFunctionExecuteParams(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> function, ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext context, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport)
+    public CoreInstance executeFunctionExecuteParams(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> function, ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext context, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport)
     {
         if (params.notEmpty())
         {
@@ -706,21 +708,21 @@ public class FunctionExecutionInterpreted implements FunctionExecution
             MutableList<CoreInstance> parameters = Lists.mutable.ofInitialCapacity(params.size());
             for (CoreInstance instance : params)
             {
-                Executor executor = findValueSpecificationExecutor(instance, functionExpressionToUseInStack, processorSupport, this);
-                parameters.add(executor.execute(instance, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, context, profiler, instantiationContext, executionSupport, this, processorSupport));
+                Executor executor = findValueSpecificationExecutor(instance, functionExpressionCallStack, processorSupport, this);
+                parameters.add(executor.execute(instance, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionCallStack, context, profiler, instantiationContext, executionSupport, this, processorSupport));
             }
             params = parameters;
         }
-        return this.executeFunction(false, function, params, resolvedTypeParameters, resolvedMultiplicityParameters, context, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+        return this.executeFunction(false, function, params, resolvedTypeParameters, resolvedMultiplicityParameters, context, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
     }
 
-    public CoreInstance executeFunction(boolean limitScope, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> function, ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext varContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport)
+    public CoreInstance executeFunction(boolean limitScope, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> function, ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext varContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport)
     {
         try
         {
             if (this.cancelExecution.compareAndSet(true, false))
             {
-                throw new PureExecutionException("Cancelled!");
+                throw new PureExecutionException("Cancelled!", functionExpressionCallStack);
             }
 
             ProcessorSupport processorSupport = this.runtime.getProcessorSupport();
@@ -733,10 +735,10 @@ public class FunctionExecutionInterpreted implements FunctionExecution
                     Function.print(builder, function, processorSupport);
                 }
                 String message = "Error executing the function:" + builder + ". Mismatch between the number of function parameters (" + signatureVars.size() + ") and the number of supplied arguments (" + params.size() + ")\n" + params.collect(i -> i.printWithoutDebug("", 3)).makeString("\n");
-                throw new PureExecutionException(functionExpressionToUseInStack == null ? null : functionExpressionToUseInStack.getSourceInformation(), message);
+                throw new PureExecutionException(functionExpressionCallStack.isEmpty() ? null : functionExpressionCallStack.peek().getSourceInformation(), message, functionExpressionCallStack);
             }
 
-            VariableContext variableContext = this.moveParametersIntoVariableContext(varContext, signatureVars, params, functionExpressionToUseInStack);
+            VariableContext variableContext = this.moveParametersIntoVariableContext(varContext, signatureVars, params, functionExpressionCallStack);
             if (limitScope)
             {
                 variableContext.markVariableScopeBoundary();
@@ -748,10 +750,10 @@ public class FunctionExecutionInterpreted implements FunctionExecution
                 {
                     CoreInstance definition = Instance.getValueForMetaPropertyToOneResolved(Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.functionDefinition, processorSupport), M3Properties.expressionSequence, processorSupport);
                     String ruleId = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.name, processorSupport).getName();
-                    CoreInstance evaluatedConstraint = this.executeValueSpecification(definition, new Stack<>(), new Stack<>(), null, variableContext, VoidProfiler.VOID_PROFILER, instantiationContext, executionSupport);
+                    CoreInstance evaluatedConstraint = this.executeValueSpecification(definition, new Stack<>(), new Stack<>(), Stacks.mutable.empty(), variableContext, VoidProfiler.VOID_PROFILER, instantiationContext, executionSupport);
                     if (!PrimitiveUtilities.getBooleanValue(evaluatedConstraint.getValueForMetaPropertyToOne(M3Properties.values)))
                     {
-                        throw new PureExecutionException(functionExpressionToUseInStack == null ? null : functionExpressionToUseInStack.getSourceInformation(), "Constraint (PRE):[" + ruleId + "] violated. (Function:" + function.getName() + ")");
+                        throw new PureExecutionException(functionExpressionCallStack.isEmpty() ? null : functionExpressionCallStack.peek().getSourceInformation(), "Constraint (PRE):[" + ruleId + "] violated. (Function:" + function.getName() + ")", functionExpressionCallStack);
                     }
                 }
             }
@@ -764,13 +766,13 @@ public class FunctionExecutionInterpreted implements FunctionExecution
                 NativeFunction nativeFunction = this.nativeFunctions.get(function1.getName());
                 if (nativeFunction == null)
                 {
-                    throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "The function '" + function1.getName() + "' is not supported by this execution platform");
+                    throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "The function '" + function1.getName() + "' is not supported by this execution platform", functionExpressionCallStack);
                 }
-                result = nativeFunction.execute(params, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport, this.runtime.getContext(), this.runtime.getProcessorSupport());
+                result = nativeFunction.execute(params, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport, this.runtime.getContext(), this.runtime.getProcessorSupport());
             }
             else if (org.finos.legend.pure.m3.navigation.property.Property.isProperty(function, processorSupport))
             {
-                result = this.executeProperty(PropertyCoreInstanceWrapper.toProperty(function), true, resolvedTypeParameters, resolvedMultiplicityParameters, varContext, profiler, params, functionExpressionToUseInStack, instantiationContext, executionSupport);
+                result = this.executeProperty(PropertyCoreInstanceWrapper.toProperty(function), true, resolvedTypeParameters, resolvedMultiplicityParameters, varContext, profiler, params, functionExpressionCallStack, instantiationContext, executionSupport);
             }
             //Qualified properties also go here
             else if (Instance.instanceOf(function, M3Paths.FunctionDefinition, processorSupport))
@@ -780,12 +782,12 @@ public class FunctionExecutionInterpreted implements FunctionExecution
                 CoreInstance returnVal = null;
                 for (CoreInstance expression : expressions)
                 {
-                    Executor executor = findValueSpecificationExecutor(expression, functionExpressionToUseInStack, processorSupport, this);
-                    returnVal = executor.execute(expression, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, variableContext, profiler, instantiationContext, executionSupport, this, processorSupport);
+                    Executor executor = findValueSpecificationExecutor(expression, functionExpressionCallStack, processorSupport, this);
+                    returnVal = executor.execute(expression, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionCallStack, variableContext, profiler, instantiationContext, executionSupport, this, processorSupport);
                 }
                 result = returnVal;
             }
-            List<CoreInstance> instances = this.extensions.collect(x -> x.getExtraFunctionExecution(function, params, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport, processorSupport, this)).select(Objects::nonNull);
+            List<CoreInstance> instances = this.extensions.collect(x -> x.getExtraFunctionExecution(function, params, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport, processorSupport, this)).select(Objects::nonNull);
 
             if (instances.size() == 1)
             {
@@ -793,7 +795,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
             }
             else if (result == null)
             {
-                throw new PureExecutionException("Unsupported function for execution " + function.getName() + " of type " + PackageableElement.getUserPathForPackageableElement(function.getClassifier()) + " (class " + function.getClass().getName() + ")");
+                throw new PureExecutionException("Unsupported function for execution " + function.getName() + " of type " + PackageableElement.getUserPathForPackageableElement(function.getClassifier()) + " (class " + function.getClass().getName() + ")", functionExpressionCallStack);
             }
 
             if (function instanceof PackageableFunction)
@@ -806,18 +808,18 @@ public class FunctionExecutionInterpreted implements FunctionExecution
                     }
                     catch (VariableNameConflictException e)
                     {
-                        throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), e.getMessage(), e);
+                        throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), e.getMessage(), e, functionExpressionCallStack);
                     }
                     for (CoreInstance constraint : ((PackageableFunction<?>) function)._postConstraints())
                     {
 
                         CoreInstance definition = Instance.getValueForMetaPropertyToOneResolved(Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.functionDefinition, processorSupport), M3Properties.expressionSequence, processorSupport);
                         String ruleId = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.name, processorSupport).getName();
-                        CoreInstance evaluatedConstraint = this.executeValueSpecification(definition, new Stack<>(), new Stack<>(), null, variableContext, VoidProfiler.VOID_PROFILER, instantiationContext, executionSupport);
+                        CoreInstance evaluatedConstraint = this.executeValueSpecification(definition, new Stack<>(), new Stack<>(), Stacks.mutable.empty(), variableContext, VoidProfiler.VOID_PROFILER, instantiationContext, executionSupport);
 
                         if (!PrimitiveUtilities.getBooleanValue(evaluatedConstraint.getValueForMetaPropertyToOne(M3Properties.values)))
                         {
-                            throw new PureExecutionException(functionExpressionToUseInStack == null ? null : functionExpressionToUseInStack.getSourceInformation(), "Constraint (POST):[" + ruleId + "] violated. (Function:" + function.getName() + ")");
+                            throw new PureExecutionException(functionExpressionCallStack.isEmpty() ? null : functionExpressionCallStack.peek().getSourceInformation(), "Constraint (POST):[" + ruleId + "] violated. (Function:" + function.getName() + ")", functionExpressionCallStack);
                         }
                     }
                 }
@@ -826,7 +828,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         }
         catch (PureAssertFailException e)
         {
-            org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInfo = (functionExpressionToUseInStack == null ? null : functionExpressionToUseInStack.getSourceInformation());
+            org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInfo = (functionExpressionCallStack.isEmpty() ? null : functionExpressionCallStack.peek().getSourceInformation());
             if (e.getSourceInformation() == null && sourceInfo != null)
             {
                 String testPurePlatformFileName = "/platform/pure/essential/tests/";
@@ -838,11 +840,11 @@ public class FunctionExecutionInterpreted implements FunctionExecution
 
                 if (allFromAssert && !sourceInfo.getSourceId().startsWith(testPurePlatformFileName))
                 {
-                    throw new PureAssertFailException(sourceInfo, e.getInfo());
+                    throw new PureAssertFailException(sourceInfo, e.getInfo(), functionExpressionCallStack);
                 }
                 else
                 {
-                    throw new PureAssertFailException(sourceInfo, e.getInfo(), e);
+                    throw new PureAssertFailException(sourceInfo, e.getInfo(), e, functionExpressionCallStack);
                 }
             }
             else
@@ -852,38 +854,38 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         }
         catch (PureException e)
         {
-            if (functionExpressionToUseInStack != null)
+            if (!functionExpressionCallStack.isEmpty())
             {
-                org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInfo = functionExpressionToUseInStack.getSourceInformation();
+                org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInfo = functionExpressionCallStack.peek().getSourceInformation();
                 if (e.getSourceInformation() == null && sourceInfo != null)
                 {
-                    throw new PureExecutionException(sourceInfo, e.getInfo(), e);
+                    throw new PureExecutionException(sourceInfo, e.getInfo(), e, functionExpressionCallStack);
                 }
             }
             throw e;
         }
         catch (RuntimeException e)
         {
-            if (functionExpressionToUseInStack != null)
+            if (!functionExpressionCallStack.isEmpty())
             {
-                org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInfo = functionExpressionToUseInStack.getSourceInformation();
+                org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInfo = functionExpressionCallStack.peek().getSourceInformation();
                 PureException pureException = PureException.findPureException(e);
                 if (pureException == null)
                 {
                     if (sourceInfo != null)
                     {
-                        throw new PureExecutionException(sourceInfo, e.getMessage(), e);
+                        throw new PureExecutionException(sourceInfo, e.getMessage(), e, functionExpressionCallStack);
                     }
                 }
                 else if (pureException.getSourceInformation() == null && sourceInfo != null)
                 {
                     if (pureException instanceof PureAssertFailException)
                     {
-                        throw new PureAssertFailException(sourceInfo, pureException.getInfo(), (PureAssertFailException) pureException);
+                        throw new PureAssertFailException(sourceInfo, pureException.getInfo(), (PureAssertFailException) pureException, functionExpressionCallStack);
                     }
                     else
                     {
-                        throw new PureExecutionException(sourceInfo, pureException.getInfo(), pureException);
+                        throw new PureExecutionException(sourceInfo, pureException.getInfo(), pureException, functionExpressionCallStack);
                     }
                 }
                 else
@@ -895,7 +897,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         }
     }
 
-    public CoreInstance executeProperty(Property<?, ?> property, boolean route, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, Profiler profiler, ListIterable<? extends CoreInstance> parameters, CoreInstance functionExpressionToUseInStack, InstantiationContext instantiationContext, ExecutionSupport executionSupport) throws PureExecutionException
+    public CoreInstance executeProperty(Property<?, ?> property, boolean route, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, Profiler profiler, ListIterable<? extends CoreInstance> parameters, MutableStack<CoreInstance> functionExpressionCallStack, InstantiationContext instantiationContext, ExecutionSupport executionSupport) throws PureExecutionException
     {
         ProcessorSupport processorSupport = this.runtime.getProcessorSupport();
 
@@ -903,11 +905,11 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         boolean executable = ValueSpecification.isExecutable(source, processorSupport);
         CoreInstance multiplicity = property._multiplicity();
 
-        CoreInstance evaluatedSource = Instance.getValueForMetaPropertyToOneResolved(executable ? findValueSpecificationExecutor(source, property, processorSupport, this).execute(source, resolvedTypeParameters, resolvedMultiplicityParameters, property, variableContext, profiler, instantiationContext, executionSupport, this, processorSupport) : source, M3Properties.values, processorSupport);
+        CoreInstance evaluatedSource = Instance.getValueForMetaPropertyToOneResolved(executable ? findValueSpecificationExecutor(source, Stacks.mutable.with((CoreInstance)property), processorSupport, this).execute(source, resolvedTypeParameters, resolvedMultiplicityParameters, Stacks.mutable.with(property), variableContext, profiler, instantiationContext, executionSupport, this, processorSupport) : source, M3Properties.values, processorSupport);
 
         if (evaluatedSource == null)
         {
-            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "The system can't execute a property function '" + property._name() + "' on a null instance.");
+            throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "The system can't execute a property function '" + property._name() + "' on a null instance.", functionExpressionCallStack);
         }
         CoreInstance overrides = Instance.getValueForMetaPropertyToOneResolved(evaluatedSource, M3Properties.elementOverride, processorSupport);
         if (Multiplicity.isToOne(multiplicity, false))
@@ -915,7 +917,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
             CoreInstance funcToOne = overrides != null ? Instance.getValueForMetaPropertyToOneResolved(overrides, M3Properties.getterOverrideToOne, processorSupport) : null;
             if (route && funcToOne != null && !M3Properties.elementOverride.equals(property._name()) && !M3Properties.hiddenPayload.equals(property._name()) && !Instance.instanceOf(Instance.getValueForMetaPropertyToOneResolved(property._classifierGenericType().getValueForMetaPropertyToMany(M3Properties.typeArguments).get(1), M3Properties.rawType, processorSupport), M3Paths.DataType, processorSupport))
             {
-                return this.executeFunction(true, FunctionCoreInstanceWrapper.toFunction(funcToOne), Lists.mutable.with(ValueSpecificationBootstrap.wrapValueSpecification(evaluatedSource, executable, processorSupport), ValueSpecificationBootstrap.wrapValueSpecification(property, executable, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+                return this.executeFunction(true, FunctionCoreInstanceWrapper.toFunction(funcToOne), Lists.mutable.with(ValueSpecificationBootstrap.wrapValueSpecification(evaluatedSource, executable, processorSupport), ValueSpecificationBootstrap.wrapValueSpecification(property, executable, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
             }
             else
             {
@@ -928,7 +930,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
             CoreInstance funcToMany = overrides != null ? Instance.getValueForMetaPropertyToOneResolved(overrides, M3Properties.getterOverrideToMany, processorSupport) : null;
             if (route && funcToMany != null && !M3Properties.hiddenPayload.equals(property._name()) && !Instance.instanceOf(Instance.getValueForMetaPropertyToOneResolved(property._classifierGenericType().getValueForMetaPropertyToMany(M3Properties.typeArguments).get(1), M3Properties.rawType, processorSupport), M3Paths.DataType, processorSupport))
             {
-                return this.executeFunction(true, FunctionCoreInstanceWrapper.toFunction(funcToMany), Lists.mutable.with(ValueSpecificationBootstrap.wrapValueSpecification(evaluatedSource, executable, processorSupport), ValueSpecificationBootstrap.wrapValueSpecification(property, executable, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+                return this.executeFunction(true, FunctionCoreInstanceWrapper.toFunction(funcToMany), Lists.mutable.with(ValueSpecificationBootstrap.wrapValueSpecification(evaluatedSource, executable, processorSupport), ValueSpecificationBootstrap.wrapValueSpecification(property, executable, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
             }
             else
             {
@@ -939,14 +941,14 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         }
     }
 
-    public CoreInstance executeValueSpecification(CoreInstance instance, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, CoreInstance functionExpressionToUseInStack, VariableContext variableContext, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport) throws PureExecutionException
+    public CoreInstance executeValueSpecification(CoreInstance instance, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, MutableStack<CoreInstance> functionExpressionCallStack, VariableContext variableContext, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport) throws PureExecutionException
     {
         ProcessorSupport processorSupport = this.getProcessorSupport();
-        Executor executor = findValueSpecificationExecutor(instance, functionExpressionToUseInStack, processorSupport, this);
-        return executor.execute(instance, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, variableContext, profiler, instantiationContext, executionSupport, this, processorSupport);
+        Executor executor = findValueSpecificationExecutor(instance, functionExpressionCallStack, processorSupport, this);
+        return executor.execute(instance, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionCallStack, variableContext, profiler, instantiationContext, executionSupport, this, processorSupport);
     }
 
-    public static Executor findValueSpecificationExecutor(CoreInstance instance, CoreInstance functionExpressionToUseInStack, ProcessorSupport processorSupport, FunctionExecutionInterpreted functionExecutionInterpreted) throws PureExecutionException
+    public static Executor findValueSpecificationExecutor(CoreInstance instance, MutableStack<CoreInstance> functionExpressionCallStack, ProcessorSupport processorSupport, FunctionExecutionInterpreted functionExecutionInterpreted) throws PureExecutionException
     {
         if (!ValueSpecification.isExecutable(instance, processorSupport))
         {
@@ -954,7 +956,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         }
         if (functionExecutionInterpreted.cancelExecution.compareAndSet(true, false))
         {
-            throw new PureExecutionException("Execution cancelled!");
+            throw new PureExecutionException("Execution cancelled!", functionExpressionCallStack);
         }
         if (Instance.instanceOf(instance, M3Paths.FunctionExpression, processorSupport))
         {
@@ -978,11 +980,11 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         }
         else
         {
-            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "A new type (" + processorSupport.getClassifier(instance).getName() + ") must have been introduced in the ValueSpecification tree.");
+            throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "A new type (" + processorSupport.getClassifier(instance).getName() + ") must have been introduced in the ValueSpecification tree.", functionExpressionCallStack);
         }
     }
 
-    private VariableContext moveParametersIntoVariableContext(VariableContext variableContext, ListIterable<? extends CoreInstance> signatureVars, ListIterable<? extends CoreInstance> parameters, CoreInstance functionExpressionToUseInStack)
+    private VariableContext moveParametersIntoVariableContext(VariableContext variableContext, ListIterable<? extends CoreInstance> signatureVars, ListIterable<? extends CoreInstance> parameters, MutableStack<CoreInstance> functionExpressionCallStack)
     {
         VariableContext newVarContext = VariableContext.newVariableContext(variableContext);
         try
@@ -996,7 +998,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         }
         catch (VariableNameConflictException e)
         {
-            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), e.getMessage(), e);
+            throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), e.getMessage(), e, functionExpressionCallStack);
         }
         return newVarContext;
     }

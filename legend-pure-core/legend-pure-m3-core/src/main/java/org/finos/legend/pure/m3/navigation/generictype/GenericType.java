@@ -32,7 +32,6 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -92,7 +91,7 @@ public class GenericType
                 print(message.append("' is not compatible with '"), g2, processorSupport);
                 print(message.append("' going from '"), genericTypeSource, processorSupport);
                 print(message.append("' to '"), genericTypeToFind, processorSupport).append('\'');
-                throw new RuntimeException(new PureExecutionException(genericTypeSource.getSourceInformation(), message.toString()));
+                throw new RuntimeException(new PureCompilationException(genericTypeSource.getSourceInformation(), message.toString()));
             }
         });
     }
