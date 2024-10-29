@@ -1,0 +1,173 @@
+// Copyright 2024 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package org.finos.legend.pure.m3.tests.elements.primitive;
+
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
+{
+    @BeforeClass
+    public static void setUp()
+    {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+        runtime.compile();
+    }
+
+    @Test
+    public void testPrimitive()
+    {
+        compileTestSource("fromString.pure",
+                "Primitive test::Int8 extends Integer");
+        Assert.assertEquals("Int8", ((PrimitiveType) runtime.getCoreInstance("test::Int8"))._name());
+    }
+
+    @Test
+    public void testPrimitiveWithConstraints()
+    {
+        compileTestSource("fromString.pure",
+                "Primitive test::Int8 extends Integer" +
+                        "[" +
+                        " $this < 255" +
+                        "]");
+        Assert.assertEquals("Int8", ((PrimitiveType) runtime.getCoreInstance("test::Int8"))._name());
+    }
+
+    @Test
+    public void testPrimitiveWithVariable()
+    {
+        assertCompileError(
+                "Primitive test::IntCap(x:Integer[1], z:String[1]) extends Integer\n" +
+                        "[\n" +
+                        " $this < $x\n" +
+                        "]\n" +
+                        "\n" +
+                        "function test::x():test::IntCap(1)[1]\n" +
+                        "{\n" +
+                        " 2->cast(@test::IntCap(1));\n" +
+                        "}",
+                "Compilation error at (resource:fromString.pure line:6 column:26), \"Type variable mismatch for the class IntCap (expected 2, got 1): IntCap(1)\"");
+    }
+
+    @Test
+    public void testPrimitiveWrongVariableType()
+    {
+        assertCompileError(
+                "Primitive test::IntCap(x:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        " $this < $x\n" +
+                        "]\n" +
+                        "\n" +
+                        "function test::x():test::IntCap('w')[0..1]\n" +
+                        "{\n" +
+                        " [];\n" +
+                        "}",
+                "Compilation error at (resource:fromString.pure line:6 column:26), \"Type variable type mismatch for the class IntCap (expected Integer, got String): \"");
+    }
+
+    @Test
+    public void testPrimitiveVariableTypeInheritance()
+    {
+        compileTestSource("fromString.pure",
+                "Primitive test::IntCap(x:Number[1]) extends Integer\n" +
+                        "[\n" +
+                        " $this < $x\n" +
+                        "]\n" +
+                        "\n" +
+                        "function test::x():test::IntCap(1)[0..1]\n" +
+                        "{\n" +
+                        " [];\n" +
+                        "}");
+    }
+
+    @Test
+    public void testPrimitiveWithVariableExtend()
+    {
+        compileTestSource("fromString.pure",
+                "Primitive test::IntCap(x:Integer[1]) extends Integer" +
+                        "[" +
+                        " $this < $x" +
+                        "]" +
+                        "Primitive test::Int8 extends test::IntCap(255)");
+        Assert.assertEquals("IntCap", ((PrimitiveType) runtime.getCoreInstance("test::IntCap"))._name());
+        Assert.assertEquals("Int8", ((PrimitiveType) runtime.getCoreInstance("test::Int8"))._name());
+    }
+
+    @Test
+    public void testPrimitiveComplexConstraint()
+    {
+        compileTestSource("fromString.pure",
+                "Primitive test::IntCap(x:Integer[1]) extends Integer" +
+                        "[" +
+                        " id(~function:$this < $x)" +
+                        "]" +
+                        "Primitive test::Int8 extends test::IntCap(255)");
+        Assert.assertEquals("IntCap", ((PrimitiveType) runtime.getCoreInstance("test::IntCap"))._name());
+        Assert.assertEquals("Int8", ((PrimitiveType) runtime.getCoreInstance("test::Int8"))._name());
+    }
+
+    @Test
+    public void testPrimitiveWithParameterInClass()
+    {
+        compileTestSource("fromString.pure",
+                "Primitive test::IntCap(x:Integer[1]) extends Integer" +
+                        "[" +
+                        " $this < $x" +
+                        "]" +
+                        "Class x::A" +
+                        "{" +
+                        " v : test::IntCap(2)[1];" +
+                        "}");
+    }
+
+    @Test
+    public void testPrimitiveWithParameterInClassError()
+    {
+        assertCompileError(
+                "Primitive test::IntCap(x:Integer[1]) extends Integer" +
+                        "[" +
+                        " $this < $x" +
+                        "]" +
+                        "Class x::A" +
+                        "{" +
+                        " v : test::IntCap()[1];" +
+                        "}",
+                "Compilation error at (resource:fromString.pure line:1 column:88), \"Type variable mismatch for the class IntCap (expected 1, got 0): IntCap\"");
+
+    }
+
+    public static void assertCompileError(String code, String message)
+    {
+        try
+        {
+            compileTestSource("fromString.pure", code);
+            Assert.fail();
+        }
+        catch (Exception e)
+        {
+            Assert.assertEquals(message, e.getMessage());
+        }
+    }
+}

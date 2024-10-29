@@ -99,7 +99,8 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
                 "        Root instance Package\n" +
                 "    referenceUsages(Property):\n" +
                 "        Anonymous_StripedId instance ReferenceUsage\n" +
-                "            [... >0]", runtime.getCoreInstance("A").printWithoutDebug("", 0));
+                "            [... >0]\n" +
+                "    typeVariables(Property):", runtime.getCoreInstance("A").printWithoutDebug("", 0));
     }
 
     @Test

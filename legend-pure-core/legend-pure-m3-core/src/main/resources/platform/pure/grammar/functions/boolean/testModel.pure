@@ -60,3 +60,6 @@ Class <<test.Test>> meta::pure::functions::boolean::tests::equalitymodel::OtherB
     sides : SideClass[*];
     <<equality.Key>> right : Integer[1];
 }
+
+Primitive meta::pure::functions::boolean::tests::equalitymodel::ExtendedInteger extends Integer
+

@@ -83,7 +83,7 @@ public class ClassLazyImplProcessor
         return StringJavaSource.newStringJavaSource(_package, className, IMPORTS + (hasQualifiers ? QUALIFIER_IMPORTS : "") + imports +
                 "public class " + classNamePlusTypeParams + " extends AbstractLazyReflectiveCoreInstance implements " + interfaceNamePlusTypeParams + "\n" +
                 "{\n" +
-                ClassImplProcessor.buildMetaInfo(classGenericType, processorSupport, true) + "\n" +
+                ClassImplProcessor.buildMetaInfo(classGenericType, className, processorSupport, processorContext, true) + "\n" +
                 buildLazyConstructor(className) +
                 (ClassProcessor.isPlatformClass(_class) ? buildFactory(className) : "") +
                 "\n" +
@@ -109,7 +109,7 @@ public class ClassLazyImplProcessor
                 ClassImplProcessor.buildEquality(classGenericType, CLASS_LAZYIMPL_SUFFIX, true, false, true, processorContext, processorSupport) +
                 ClassImplProcessor.buildGetFullSystemPath() +
                 //Not supported on platform classes yet
-                (ClassProcessor.isPlatformClass(_class) ? "" : ClassImplProcessor.validate(_class, className, classGenericType, processorContext, processorSupport.class_getSimpleProperties(_class))) +
+                (ClassProcessor.isPlatformClass(_class) ? "" : ClassImplProcessor.validate(true, _class, className, classGenericType, processorContext, processorSupport.class_getSimpleProperties(_class), null, null)) +
                 "}");
     }
 

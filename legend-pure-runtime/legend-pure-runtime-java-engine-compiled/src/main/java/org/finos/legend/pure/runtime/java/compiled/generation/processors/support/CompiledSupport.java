@@ -2007,6 +2007,12 @@ public class CompiledSupport
         return (sourceCollection == null) ? Lists.immutable.empty() : sourceCollection.collect(sourceObject -> castWithExceptionHandling(sourceObject, targetType, sourceInformation));
     }
 
+    public static <T> T castExtendedPrimitive(T sourceObject, Runnable run, SourceInformation sourceInformation)
+    {
+        run.run();
+        return sourceObject;
+    }
+
     @SuppressWarnings("unchecked")
     public static <T> T castWithExceptionHandling(Object sourceObject, Class<?> targetType, SourceInformation sourceInformation)
     {

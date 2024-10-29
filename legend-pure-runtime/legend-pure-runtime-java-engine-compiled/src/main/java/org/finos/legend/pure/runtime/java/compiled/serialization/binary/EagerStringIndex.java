@@ -16,7 +16,7 @@ package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
 import org.finos.legend.pure.m4.serialization.Reader;
 
-class EagerStringIndex extends StringIndex
+public class EagerStringIndex extends StringIndex
 {
     private final String[] otherStrings;
 
@@ -32,7 +32,7 @@ class EagerStringIndex extends StringIndex
         return this.otherStrings[index];
     }
 
-    static EagerStringIndex fromReader(Reader reader)
+    public static EagerStringIndex fromReader(Reader reader)
     {
         String[] classifierIds = readClassifierIds(reader);
         String[] otherStrings = reader.readStringArray();

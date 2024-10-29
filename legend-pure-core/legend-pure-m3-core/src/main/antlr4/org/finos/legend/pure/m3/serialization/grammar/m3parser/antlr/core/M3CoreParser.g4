@@ -19,6 +19,7 @@ definition: imports
             (
                   profile
                 | classDefinition
+                | primitiveDefinition
                 | association
                 | enumDefinition
                 | nativeFunction
@@ -29,7 +30,7 @@ definition: imports
             EOF
 ;
 
-classDefinition: CLASS stereotypes? taggedValues? qualifiedName typeParametersWithContravarianceAndMultiplicityParameters?
+classDefinition: CLASS stereotypes? taggedValues? qualifiedName typeVariableParameters? typeParametersWithContravarianceAndMultiplicityParameters?
        (
            (
               PROJECTS projection
@@ -41,6 +42,13 @@ classDefinition: CLASS stereotypes? taggedValues? qualifiedName typeParametersWi
               classBody
            )
        )
+;
+
+typeVariableParameters: GROUP_OPEN (functionVariableExpression (COMMA functionVariableExpression)*)? GROUP_CLOSE
+;
+
+primitiveDefinition: PRIMITIVE stereotypes? taggedValues? qualifiedName typeVariableParameters? EXTENDS type
+                     constraints?
 ;
 
 measureDefinition: MEASURE stereotypes? taggedValues? qualifiedName
@@ -353,7 +361,9 @@ allFunctionWithMilestoning: DOT ALL GROUP_OPEN buildMilestoningVariableExpressio
 buildMilestoningVariableExpression: LATEST_DATE | DATE | variable
 ;
 
-expressionInstance: NEW_SYMBOL (variable | qualifiedName)
+expressionInstance: NEW_SYMBOL
+                          (variable | qualifiedName)
+                          (typeVariableValues)?
                           (LESSTHAN typeArguments? (PIPE multiplicityArguments)? GREATERTHAN)? (identifier)?
                           GROUP_OPEN
                               expressionInstanceParserPropertyAssignment? (COMMA expressionInstanceParserPropertyAssignment)*
@@ -451,7 +461,7 @@ booleanPart:  AND expression
 functionVariableExpression: identifier COLON type multiplicity
 ;
 
-type: ( qualifiedName (LESSTHAN (typeArguments? (PIPE multiplicityArguments)?) GREATERTHAN)? )
+type: ( qualifiedName typeVariableValues? (LESSTHAN (typeArguments? (PIPE multiplicityArguments)?) GREATERTHAN)? )
       |
       (
         CURLY_BRACKET_OPEN
@@ -467,6 +477,9 @@ type: ( qualifiedName (LESSTHAN (typeArguments? (PIPE multiplicityArguments)?) G
       )
       |
       unitName
+;
+
+typeVariableValues: GROUP_OPEN (instanceLiteral (COMMA instanceLiteral)*)? GROUP_CLOSE
 ;
 
 columnType: mayColumnName COLON mayColumnType

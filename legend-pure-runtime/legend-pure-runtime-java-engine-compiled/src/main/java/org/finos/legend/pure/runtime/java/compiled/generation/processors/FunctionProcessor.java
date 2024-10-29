@@ -93,7 +93,13 @@ public class FunctionProcessor
         CoreInstance functionType = processorSupport.function_getFunctionType(func);
         ListIterable<? extends CoreInstance> params = Instance.getValueForMetaPropertyToManyResolved(functionType, M3Properties.parameters, processorSupport);
 
-        String stringParams = (tail ? ListHelper.tail(params) : params).collect(ci -> "final " + TypeProcessor.typeToJavaPrimitiveWithMul(Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.genericType, processorSupport), Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.multiplicity, processorSupport), typeParams, processorContext) + " _" + Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.name, processorSupport).getName()).makeString(", ");
+        MutableList<String> stringParamsItems = (tail ? ListHelper.tail(params) : params).collect(ci -> "final " + TypeProcessor.typeToJavaPrimitiveWithMul(Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.genericType, processorSupport), Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.multiplicity, processorSupport), typeParams, processorContext) + " _" + Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.name, processorSupport).getName()).toList();
+        if (Instance.instanceOf(func, M3Paths.QualifiedProperty, processorSupport))
+        {
+            ListIterable<? extends CoreInstance> typeVariableValues = params.get(0).getValueForMetaPropertyToOne(M3Properties.genericType).getValueForMetaPropertyToMany(M3Properties.typeVariableValues);
+            stringParamsItems = stringParamsItems.subList(typeVariableValues.size(), stringParamsItems.size());
+        }
+        String stringParams = stringParamsItems.makeString(", ");
 
         return TypeProcessor.typeToJavaPrimitiveWithMul(Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnType, processorSupport), Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, processorSupport), typeParams, processorContext) + " " + (fullName ? functionNameToJava(func) : JavaTools.makeValidJavaIdentifier(func.getValueForMetaPropertyToOne(M3Properties.functionName).getName())) + suffix + "(" +
 

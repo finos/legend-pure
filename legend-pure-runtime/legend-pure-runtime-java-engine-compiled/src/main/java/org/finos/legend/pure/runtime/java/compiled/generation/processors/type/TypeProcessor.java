@@ -25,6 +25,7 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionType;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
@@ -92,7 +93,6 @@ public class TypeProcessor
         {
             return "java.lang.Object";
         }
-
         CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
         if (rawType == null)
         {
@@ -107,6 +107,12 @@ public class TypeProcessor
         if ("FunctionType".equals(processorSupport.getClassifier(rawType).getName()))
         {
             return "java.lang.Object";
+        }
+
+        if (Type.isExtendedPrimitiveType(rawType, processorSupport))
+        {
+            rawType = Type.findPrimitiveTypeFromExtendedPrimitiveType(rawType, processorSupport);
+            primitiveIfPossible = false;
         }
 
         String javaType = pureSystemPathToJava_simpleCases(PackageableElement.getUserPathForPackageableElement(rawType), primitiveIfPossible);

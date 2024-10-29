@@ -157,6 +157,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.trim.RTrim;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.trim.Trim;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.tests.Assert;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.tests.AssetError;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.operation.And;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.operation.Not;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar._boolean.operation.Or;
@@ -538,5 +539,6 @@ public class NativeFunctionProcessor
 
         //Tests
         registerNative(map, new Assert());
+        registerNative(map, new AssetError());
     }
 }

@@ -26,6 +26,7 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.DecimalCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.FloatCoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.IntegerCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
 
 import java.math.BigDecimal;
@@ -235,7 +236,27 @@ public class NumericUtilities
                 }
             }
         }
+        else
+        {
+            if (isInteger(pureNumber, processorSupport))
+            {
+                return PrimitiveUtilities.getIntegerValue(pureNumber);
+            }
+            else if (isFloat(pureNumber, processorSupport))
+            {
+                return PrimitiveUtilities.getFloatValue(pureNumber);
+            }
+            else if (isDecimal(pureNumber, processorSupport))
+            {
+                return PrimitiveUtilities.getDecimalValue(pureNumber);
+            }
+        }
         throw new IllegalArgumentException("Not a number: " + pureNumber);
+    }
+
+    public static boolean isInteger(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        return isNumberOfType(instance, IntegerCoreInstance.class, M3Paths.Integer, processorSupport);
     }
 
     public static boolean isFloat(CoreInstance instance, ProcessorSupport processorSupport)

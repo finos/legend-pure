@@ -13,5 +13,78 @@
 // limitations under the License.
 
 import meta::pure::test::pct::*;
+import meta::pure::functions::lang::tests::cast::*;
 
 native function <<PCT.function>> meta::pure::functions::lang::cast<T|m>(source:Any[m], object:T[1]):T[m];
+
+
+Primitive meta::pure::functions::lang::tests::cast::P8 extends Integer
+
+Class meta::pure::functions::lang::tests::cast::Container
+{
+  val : P8[1];
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::cast::testPrimitiveExtensionCast():Boolean[1]
+{
+  assertEquals(1, ^Container(val=1->cast(@P8)).val);
+}
+
+
+Primitive meta::pure::functions::lang::tests::cast::P(x:Integer[1]) extends Integer
+[
+    $this < $x
+]
+
+Class meta::pure::functions::lang::tests::cast::Container2
+{
+    val : P(8)[1];
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::cast::testPrimitiveExtensionCastWithConstraint():Boolean[1]
+{
+    assertEquals(1, ^Container2(val=1->cast(@P(8))).val);
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::cast::testPrimitiveExtensionCastWithConstraintError():Boolean[1]
+{
+    assertError(|^Container2(val=10->cast(@P(8))), 'Constraint :[0] violated in the Class P');
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::cast::testPrimitiveExtensionCastWithAdd():Boolean[1]
+{
+    assertEquals(4, 3->cast(@P(8)) + 1);
+}
+
+Primitive meta::pure::functions::lang::tests::cast::NP(x:Integer[1]) extends Integer
+[
+   id(~function:$this < $x ~message:'the value is greater than '+$x->toString())
+]
+
+Class meta::pure::functions::lang::tests::cast::Container3
+{
+    val : NP(8)[1];
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::cast::testPrimitiveExtensionCastWithConstraintErrorMessage():Boolean[1]
+{
+   assertError(|^Container3(val=10->cast(@NP(8))), 'Constraint :[id] violated in the Class NP, Message: the value is greater than 8');
+}
+
+
+Primitive meta::pure::functions::lang::tests::cast::OP(x:Integer[1]) extends Integer
+[
+   id(~function:$this < $x ~message:'the value is greater than '+$x->toString())
+]
+
+Primitive meta::pure::functions::lang::tests::cast::OP8 extends OP(8)
+
+Class meta::pure::functions::lang::tests::cast::Container4 {val : OP8[1];}
+
+function <<test.Test>> meta::pure::functions::lang::tests::cast::testSimpleConstraintCastErrorWithMessageSimpleInheritance():Any[*]
+{
+   assertError(|^Container4(val=10->cast(@OP8)), 'Constraint :[id] violated in the Class OP, Message: the value is greater than 8')
+}
+
+
+

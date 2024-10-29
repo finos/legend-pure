@@ -15,6 +15,7 @@
 package org.finos.legend.pure.m3.compiler.postprocessing;
 
 import org.finos.legend.pure.m3.compiler.ReferenceUsage;
+import org.finos.legend.pure.m3.compiler.postprocessing.processor.valuespecification.InstanceValueProcessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
@@ -40,19 +41,6 @@ public class GenericTypeTraceability
             functionType._functionAdd(functionDefinition);
         }
         addTraceForFunctionType(functionType, repository, processorSupport);
-    }
-
-    public static void addTraceForFunctionType(FunctionType functionType, ModelRepository repository, ProcessorSupport processorSupport)
-    {
-        functionType._parameters().forEach(variableExpression ->
-        {
-            if (variableExpression._functionTypeOwner() == null)
-            {
-                variableExpression._functionTypeOwner(functionType);
-            }
-            addTraceForAllPossibleTypeArguments(variableExpression, M3Properties.genericType, 0, variableExpression._genericType(), repository, processorSupport);
-        });
-        addTraceForAllPossibleTypeArguments(functionType, M3Properties.returnType, 0, functionType._returnType(), repository, processorSupport);
     }
 
     public static void addTraceForProperty(Property<?, ?> property, ModelRepository repository, ProcessorSupport processorSupport)
@@ -115,6 +103,27 @@ public class GenericTypeTraceability
             {
                 addTraceForAllPossibleTypeArguments(genericType, M3Properties.typeArguments, offset++, typeArgument, repository, processorSupport);
             }
+
+            // May need to extract this one out ------------------------------------
+            for (ValueSpecification vs :genericType._typeVariableValues())
+            {
+                InstanceValueProcessor.updateInstanceValue(vs, processorSupport);
+            }
+            // May need to extract this one out ------------------------------------
         }
     }
+
+    private static void addTraceForFunctionType(FunctionType functionType, ModelRepository repository, ProcessorSupport processorSupport)
+    {
+        functionType._parameters().forEach(variableExpression ->
+        {
+            if (variableExpression._functionTypeOwner() == null)
+            {
+                variableExpression._functionTypeOwner(functionType);
+            }
+            addTraceForAllPossibleTypeArguments(variableExpression, M3Properties.genericType, 0, variableExpression._genericType(), repository, processorSupport);
+        });
+        addTraceForAllPossibleTypeArguments(functionType, M3Properties.returnType, 0, functionType._returnType(), repository, processorSupport);
+    }
+
 }

@@ -47,7 +47,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuesp
 public class ClassImplProcessor
 {
     //DO NOT ADD WIDE * IMPORTS TO THIS LIST IT IMPACTS COMPILE TIMES
-    static final String IMPORTS = "import org.eclipse.collections.api.RichIterable;\n" +
+    public static final String IMPORTS = "import org.eclipse.collections.api.RichIterable;\n" +
             "import org.eclipse.collections.api.factory.Lists;\n" +
             "import org.eclipse.collections.api.factory.Maps;\n" +
             "import org.eclipse.collections.api.list.ListIterable;\n" +
@@ -98,9 +98,9 @@ public class ClassImplProcessor
         MutableList<String> defaultValueKeys = _Class.getSimpleProperties(_class, processorSupport).collectIf(p -> p.getValueForMetaPropertyToOne(M3Properties.defaultValue) != null, CoreInstance::getName, Lists.mutable.empty());
         ListIterable<String> defaultValues = DefaultValue.manageDefaultValues((name, value) ->
                 "            case \"" + name + "\":\n" +
-                "            {\n" +
-                "                return " + value + ";\n" +
-                "            }\n", _class, true, true, processorContext);
+                        "            {\n" +
+                        "                return " + value + ";\n" +
+                        "            }\n", _class, true, true, processorContext);
 
         boolean isGetterOverride = M3Paths.GetterOverride.equals(PackageableElement.getUserPathForPackageableElement(_class)) ||
                 M3Paths.ConstraintsGetterOverride.equals(PackageableElement.getUserPathForPackageableElement(_class));
@@ -113,12 +113,20 @@ public class ClassImplProcessor
         boolean hasFunctions = !_Class.getQualifiedProperties(_class, processorContext.getSupport()).isEmpty()
                 || !_Class.computeConstraintsInHierarchy(_class, processorContext.getSupport()).isEmpty();
 
+        ListIterable<? extends CoreInstance> params = _class.getValueForMetaPropertyToMany(M3Properties.typeVariables);
+
+        MutableList<String> typeVariablesSign = params.collect(ci -> "final " + TypeProcessor.typeToJavaPrimitiveWithMul(Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.genericType, processorSupport), Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.multiplicity, processorSupport), false, processorContext) + " _" + Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.name, processorSupport).getName()).toList();
+        MutableList<String> typeVariablesValues = params.collect(ci -> " _" + Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.name, processorSupport).getName()).toList();
+
+        String stringParams = typeVariablesSign.with("final " + TypeProcessor.typeToJavaObjectSingle(Type.wrapGenericType(_class, processorSupport), false, processorSupport) + " _this").makeString(", ");
+        String stringValues = "Lists.mutable.with(" + typeVariablesValues.with("this").makeString(", ") + ")";
+
         return StringJavaSource.newStringJavaSource(_package, className, IMPORTS + (hasFunctions ? FUNCTION_IMPORTS : "") + (addJavaSerializationSupport ? SERIALIZABLE_IMPORTS : "") + imports +
                 "public class " + classNamePlusTypeParams + " extends " + _extends + " implements " + interfaceNamePlusTypeParams + (isGetterOverride ? ", GetterOverrideExecutor" : "") +
                 (addJavaSerializationSupport ? ", Externalizable" : "") + "\n" +
                 "{\n" +
                 (addJavaSerializationSupport ? "    static final long serialVersionUID = -1L;\n" : "") +
-                buildMetaInfo(classGenericType, processorSupport, false) +
+                buildMetaInfo(classGenericType, className, processorSupport, processorContext, false) +
                 (addJavaSerializationSupport ? buildDefaultConstructor(className) : "") +
                 buildSimpleConstructor(_class, className, processorSupport, useJavaInheritance) +
                 (addJavaSerializationSupport ? buildSerializationMethods(_class, processorSupport, classGenericType, pureExternalPackage) : "") +
@@ -152,28 +160,28 @@ public class ClassImplProcessor
                 (ClassProcessor.isLazy(_class) ? buildEquality(classGenericType, CLASS_IMPL_SUFFIX, true, false, true, processorContext, processorSupport) : buildEquality(classGenericType, CLASS_IMPL_SUFFIX, false, false, false, processorContext, processorSupport)) +
                 buildGetFullSystemPath() +
                 //Not supported on platform classes yet
-                (ClassProcessor.isPlatformClass(_class) ? "" : validate(_class, className, classGenericType, processorContext, processorSupport.class_getSimpleProperties(_class))) +
+                (ClassProcessor.isPlatformClass(_class) ? "" : validate(true, _class, className, classGenericType, processorContext, processorSupport.class_getSimpleProperties(_class), null, stringValues)) +
                 (defaultValueKeys.isEmpty() ? "" :
                         "\n" +
-                        "    @Override\n" +
-                        "    public ListIterable<String> getDefaultValueKeys()\n" +
-                        "    {\n" +
-                        "        return " + defaultValueKeys.makeString("Lists.immutable.with(\"", "\", \"", "\");\n") +
-                        "    }\n") +
+                                "    @Override\n" +
+                                "    public ListIterable<String> getDefaultValueKeys()\n" +
+                                "    {\n" +
+                                "        return " + defaultValueKeys.makeString("Lists.immutable.with(\"", "\", \"", "\");\n") +
+                                "    }\n") +
                 (defaultValues.isEmpty() ? "" :
                         "\n" +
-                        "    @Override\n" +
-                        "    public RichIterable<?> getDefaultValue(String property, ExecutionSupport es)\n" +
-                        "    {\n" +
-                        "        switch (property)\n" +
-                        "        {\n" +
-                        defaultValues.makeString("") +
-                        "            default:\n" +
-                        "            {\n" +
-                        "                return Lists.immutable.empty();\n" +
-                        "            }\n" +
-                        "        }\n" +
-                        "    }") +
+                                "    @Override\n" +
+                                "    public RichIterable<?> getDefaultValue(String property, ExecutionSupport es)\n" +
+                                "    {\n" +
+                                "        switch (property)\n" +
+                                "        {\n" +
+                                defaultValues.makeString("") +
+                                "            default:\n" +
+                                "            {\n" +
+                                "                return Lists.immutable.empty();\n" +
+                                "            }\n" +
+                                "        }\n" +
+                                "    }") +
                 "}");
     }
 
@@ -284,7 +292,7 @@ public class ClassImplProcessor
                 "\n";
     }
 
-    public static String buildMetaInfo(CoreInstance classGenericType, ProcessorSupport processorSupport, boolean lazy)
+    public static String buildMetaInfo(CoreInstance classGenericType, String className, ProcessorSupport processorSupport, ProcessorContext processorContext, boolean lazy)
     {
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
         String fullId = PackageableElement.getSystemPathForPackageableElement(_class);
@@ -332,6 +340,16 @@ public class ClassImplProcessor
         {
             builder.append("    private CoreInstance classifier;\n");
         }
+
+        classGenericType.getValueForMetaPropertyToOne(M3Properties.rawType).getValueForMetaPropertyToMany(M3Properties.typeVariables).forEach(x ->
+                {
+                    String typePrimitive = TypeProcessor.typeToJavaPrimitiveWithMul(Instance.getValueForMetaPropertyToOneResolved(x, M3Properties.genericType, processorSupport), Instance.getValueForMetaPropertyToOneResolved(x, M3Properties.multiplicity, processorSupport), false, processorContext);
+                    String name = "_" + Instance.getValueForMetaPropertyToOneResolved(x, M3Properties.name, processorSupport).getName();
+                    builder.append(typePrimitive + " " + name + ";");
+                    builder.append("    public " + className + " " + name + "(" + typePrimitive + " " + name + ")\n" + "{this." + name + " = " + name + "; return this;}");
+                }
+        );
+
         return builder.toString();
     }
 
@@ -983,23 +1001,23 @@ public class ClassImplProcessor
 
     }
 
-    public static String validate(CoreInstance _class, String className, CoreInstance classGenericType, ProcessorContext processorContext, RichIterable<CoreInstance> properties)
+    public static String validate(boolean stateAndDeep, CoreInstance _class, String className, CoreInstance classGenericType, ProcessorContext processorContext, RichIterable<CoreInstance> properties, String extraParameters, String extraValues)
     {
         ProcessorSupport processorSupport = processorContext.getSupport();
         SetIterable<? extends CoreInstance> localConstraints = Sets.immutable.withAll(_class.getValueForMetaPropertyToMany(M3Properties.constraints));
         ListIterable<CoreInstance> allConstraints = _Class.computeConstraintsInHierarchy(_class, processorSupport);
         return
-                "    public " + className + " _validate(boolean goDeep, org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInformation, final ExecutionSupport es)\n" +
+                "    public " + (stateAndDeep ? "" : "static ") + className + " _validate(" + (stateAndDeep ? "boolean goDeep," : "") + (extraParameters == null ? "" : extraParameters + ",") + " org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInformation, final ExecutionSupport es)\n" +
                         "    {\n" +
-                        "        if (!this.hasCompileState(CompiledSupport.CONSTRAINTS_VALIDATED))\n" +
-                        "        {\n" +
+                        (stateAndDeep ? "        if (!this.hasCompileState(CompiledSupport.CONSTRAINTS_VALIDATED))\n" +
+                                "        {\n" : "") +
                         allConstraints.collect(constraint ->
                         {
                             boolean registerLambdas = localConstraints.contains(constraint);
                             String ruleId = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.name, processorSupport).getName();
                             CoreInstance owner = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.owner, processorSupport);
                             CoreInstance definition = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.functionDefinition, processorSupport);
-                            String eval = "(Boolean) " + ValueSpecificationProcessor.createFunctionForLambda(constraint, definition, registerLambdas, processorSupport, processorContext) + ".execute(Lists.mutable.with(this),es)";
+                            String eval = "(Boolean) " + ValueSpecificationProcessor.createFunctionForLambda(constraint, definition, registerLambdas, processorSupport, processorContext) + ".execute(" + (extraValues == null ? "Lists.mutable.with(this)" : extraValues) + ",es)";
 
                             String messageJavaFunction = null;
                             CoreInstance message = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.messageFunction, processorSupport);
@@ -1011,11 +1029,11 @@ public class ClassImplProcessor
                             if (owner == null || "Global".equals(owner.getName()))
                             {
                                 CoreInstance expression = Instance.getValueForMetaPropertyToOneResolved(definition, M3Properties.expressionSequence, processorSupport);
-                                CoreInstance constraintClass = Instance.getValueForMetaPropertyToOneResolved(expression, M3Properties.usageContext, processorSupport).getValueForMetaPropertyToOne(M3Properties._class);
+                                CoreInstance constraintClass = Instance.getValueForMetaPropertyToOneResolved(expression, M3Properties.usageContext, processorSupport).getValueForMetaPropertyToOne(M3Properties.type);
 
                                 String errorMessage = message == null ?
                                         "\"Constraint :[" + ruleId + "] violated in the Class " + constraintClass.getValueForMetaPropertyToOne(M3Properties.name).getName() + "\"" :
-                                        "\"Constraint :[" + ruleId + "] violated in the Class " + constraintClass.getValueForMetaPropertyToOne(M3Properties.name).getName() + ", Message: \" + (String) " + messageJavaFunction + ".execute(Lists.mutable.with(this),es)";
+                                        "\"Constraint :[" + ruleId + "] violated in the Class " + constraintClass.getValueForMetaPropertyToOne(M3Properties.name).getName() + ", Message: \" + (String) " + messageJavaFunction + ".execute(" + (extraValues == null ? "Lists.mutable.with(this)" : extraValues) + ",es)";
 
                                 return
                                         "            if (!(" + eval + "))\n" +
@@ -1028,9 +1046,9 @@ public class ClassImplProcessor
                                 return "";
                             }
                         }).makeString("") +
-                        "            this.addCompileState(CompiledSupport.CONSTRAINTS_VALIDATED);\n" +
-                        "            if (goDeep)\n" +
-                        "            {\n" +
+                        (stateAndDeep ? "            this.addCompileState(CompiledSupport.CONSTRAINTS_VALIDATED);\n" +
+                                "            if (goDeep)\n" +
+                                "            {\n" : "") +
                         properties.collect(property ->
                         {
                             CoreInstance returnType = ClassProcessor.getPropertyResolvedReturnType(classGenericType, property, processorSupport);
@@ -1059,9 +1077,9 @@ public class ClassImplProcessor
                             }
                             return "";
                         }).makeString("") +
-                        "            }\n" +
-                        "        }\n" +
-                        "        return this;\n" +
+                        (stateAndDeep ? "            }\n" +
+                                "        }\n" : "") +
+                        "        return " + (stateAndDeep ? "this" : "null") + ";\n" +
                         "    }\n";
     }
 

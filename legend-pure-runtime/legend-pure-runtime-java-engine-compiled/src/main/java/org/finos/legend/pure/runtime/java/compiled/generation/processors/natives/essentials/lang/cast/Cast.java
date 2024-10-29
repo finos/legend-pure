@@ -15,13 +15,16 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.cast;
 
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.NativeFunctionProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
@@ -44,21 +47,47 @@ public class Cast extends AbstractNative
     {
         ProcessorSupport processorSupport = processorContext.getSupport();
         ListIterable<? extends CoreInstance> parametersValues = Instance.getValueForMetaPropertyToManyResolved(functionExpression, M3Properties.parametersValues, processorSupport);
-        CoreInstance genericType = Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(1), M3Properties.genericType, processorSupport);
+        CoreInstance targetGenericType = Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(1), M3Properties.genericType, processorSupport);
         CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(0), M3Properties.multiplicity, processorSupport);
+
         String sourceObject = ValueSpecificationProcessor.processValueSpecification(topLevelElement, parametersValues.get(0), processorContext);
-        if ("null".equals(sourceObject) || !GenericType.isGenericTypeFullyConcrete(genericType, true, processorSupport))
+        SourceInformation sourceInformation = functionExpression.getSourceInformation();
+
+        CoreInstance targetRawType = Instance.getValueForMetaPropertyToOneResolved(targetGenericType, M3Properties.rawType, processorSupport);
+        if (Type.isExtendedPrimitiveType(targetRawType, processorSupport))
         {
-            String castType = TypeProcessor.typeToJavaObjectWithMul(genericType, multiplicity, processorSupport);
-            return "((" + castType + ")" + (Multiplicity.isToZeroOrOne(multiplicity) ? "" : "(Object)CompiledSupport.toPureCollection(") + sourceObject + ")" + (Multiplicity.isToZeroOrOne(multiplicity) ? "" : ")");
+            String runnable = "new Runnable(){public void run() {\n" +
+                    GenericType.getAllSuperTypesIncludingSelf(targetGenericType, processorSupport).collect(genericType ->
+                    {
+                        CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
+                        MutableList<String> vars = genericType.getValueForMetaPropertyToMany(M3Properties.typeVariableValues).collect(x -> x.getValueForMetaPropertyToMany(M3Properties.values).collect(CoreInstance::getName).makeString(",")).toList();
+                        vars.add(sourceObject);
+                        if (rawType.getValueForMetaPropertyToMany(M3Properties.constraints).notEmpty())
+                        {
+                            return JavaPackageAndImportBuilder.buildImplClassNameFromType(rawType, processorSupport) + "._validate(" + vars.makeString(", ") + ", " + NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + ", es);";
+                        }
+                        return "";
+                    }).makeString("\n")
+                    + "}}";
+            return "CompiledSupport.castExtendedPrimitive(" + sourceObject + ", " + runnable + ", " + NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + ")";
         }
         else
         {
-            SourceInformation sourceInformation = functionExpression.getSourceInformation();
-            String castType = TypeProcessor.typeToJavaObjectSingle(genericType, true, processorSupport);
-            String interfaceString = TypeProcessor.pureTypeToJava(genericType, false, false, true, processorSupport);
-            return "CompiledSupport.<" + castType + ">castWithExceptionHandling(" + (Multiplicity.isToZeroOrOne(multiplicity) ? "" : "CompiledSupport.toPureCollection(") + sourceObject + (Multiplicity.isToZeroOrOne(multiplicity) ? "," : "),") + interfaceString + ".class," +
-                    NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + ")";
+            if ("null".equals(sourceObject) || !GenericType.isGenericTypeFullyConcrete(targetGenericType, true, processorSupport))
+            {
+                String castType = TypeProcessor.typeToJavaObjectWithMul(targetGenericType, multiplicity, processorSupport);
+                return "((" + castType + ")" + (Multiplicity.isToZeroOrOne(multiplicity) ? "" : "(Object)CompiledSupport.toPureCollection(") + sourceObject + ")" + (Multiplicity.isToZeroOrOne(multiplicity) ? "" : ")");
+            }
+            else
+            {
+                String castType = TypeProcessor.typeToJavaObjectSingle(targetGenericType, true, processorSupport);
+                String interfaceString = TypeProcessor.pureTypeToJava(targetGenericType, false, false, true, processorSupport);
+                return "CompiledSupport.<" + castType + ">castWithExceptionHandling(" +
+                        (Multiplicity.isToZeroOrOne(multiplicity) ? "" : "CompiledSupport.toPureCollection(") + sourceObject + (Multiplicity.isToZeroOrOne(multiplicity) ? "," : "),") +
+                        interfaceString + ".class," +
+                        NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) +
+                        ")";
+            }
         }
     }
 

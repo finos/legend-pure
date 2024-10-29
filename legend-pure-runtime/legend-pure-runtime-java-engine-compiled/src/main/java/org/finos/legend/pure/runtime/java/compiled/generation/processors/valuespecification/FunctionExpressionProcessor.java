@@ -130,11 +130,18 @@ public class FunctionExpressionProcessor
         MutableList<String> result = Lists.mutable.empty();
 
         CoreInstance function = Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.func, support);
-        ListIterable<? extends CoreInstance> parameters = Instance.getValueForMetaPropertyToManyResolved(processorContext.getSupport().function_getFunctionType(function), M3Properties.parameters, processorContext.getSupport());
-        ListIterable<? extends CoreInstance> parameterValues = Instance.getValueForMetaPropertyToManyResolved(functionExpression, M3Properties.parametersValues, processorContext.getSupport());
+        MutableList<? extends CoreInstance> parameters = Instance.getValueForMetaPropertyToManyResolved(processorContext.getSupport().function_getFunctionType(function), M3Properties.parameters, processorContext.getSupport()).toList();
+        MutableList<CoreInstance> parameterValues = ((ListIterable<CoreInstance>) (Object) Instance.getValueForMetaPropertyToManyResolved(functionExpression, M3Properties.parametersValues, processorContext.getSupport())).toList();
+
+        if (qualifier)
+        {
+            ListIterable<? extends CoreInstance> typeVariableValues = parameterValues.get(0).getValueForMetaPropertyToOne(M3Properties.genericType).getValueForMetaPropertyToMany(M3Properties.typeVariableValues);
+            parameters = parameters.subList(typeVariableValues.size() + 1, parameters.size());
+            parameterValues = parameterValues.subList(1, parameterValues.size());
+        }
 
         int parameterCount = parameters.size();
-        int index = qualifier ? 1 : 0;
+        int index = 0;
         if (parameterCount > index)
         {
             for (; index < parameterCount; index++)

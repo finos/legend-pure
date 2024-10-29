@@ -185,6 +185,7 @@ import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.trim.RTrim;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.trim.Trim;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.tests.Assert;
+import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.tests.AssertError;
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar._boolean.equality.Eq;
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar._boolean.equality.Equal;
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar._boolean.equality.Is;
@@ -438,7 +439,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         //Lang
         this.nativeFunctions.put("removeOverride_T_1__T_1_", new RemoveOverride(this, repository));
         //  Cast
-        this.nativeFunctions.put("cast_Any_m__T_1__T_m_", new Cast(repository));
+        this.nativeFunctions.put("cast_Any_m__T_1__T_m_", new Cast(this, repository));
         this.nativeFunctions.put("toDecimal_Number_1__Decimal_1_", new ToDecimal(repository));
         this.nativeFunctions.put("toFloat_Number_1__Float_1_", new ToFloat(repository));
         this.nativeFunctions.put("toMultiplicity_T_MANY__Any_z__T_z_", new ToMultiplicity(this, repository));
@@ -568,6 +569,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
 
         // Tests
         this.nativeFunctions.put("assert_Boolean_1__Function_1__Boolean_1_", new Assert(this));
+        this.nativeFunctions.put("assertError_Function_1__String_1__Integer_$0_1$__Integer_$0_1$__Boolean_1_", new AssertError(this, repository));
     }
 
     public RepositoryCodeStorage getStorage()
@@ -726,7 +728,10 @@ public class FunctionExecutionInterpreted implements FunctionExecution
             if (signatureVars.size() != params.size())
             {
                 StringBuilder builder = new StringBuilder();
-                Function.print(builder, function, processorSupport);
+                if (function._functionName() != null)
+                {
+                    Function.print(builder, function, processorSupport);
+                }
                 String message = "Error executing the function:" + builder + ". Mismatch between the number of function parameters (" + signatureVars.size() + ") and the number of supplied arguments (" + params.size() + ")\n" + params.collect(i -> i.printWithoutDebug("", 3)).makeString("\n");
                 throw new PureExecutionException(functionExpressionToUseInStack == null ? null : functionExpressionToUseInStack.getSourceInformation(), message);
             }
@@ -822,7 +827,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         catch (PureAssertFailException e)
         {
             org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInfo = (functionExpressionToUseInStack == null ? null : functionExpressionToUseInStack.getSourceInformation());
-            if (sourceInfo != null && sourceInfo != e.getSourceInformation())
+            if (e.getSourceInformation() == null && sourceInfo != null)
             {
                 String testPurePlatformFileName = "/platform/pure/essential/tests/";
                 boolean allFromAssert = true;
@@ -850,7 +855,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
             if (functionExpressionToUseInStack != null)
             {
                 org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInfo = functionExpressionToUseInStack.getSourceInformation();
-                if (sourceInfo != null && !sourceInfo.equals(e.getSourceInformation()))
+                if (e.getSourceInformation() == null && sourceInfo != null)
                 {
                     throw new PureExecutionException(sourceInfo, e.getInfo(), e);
                 }
@@ -870,7 +875,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
                         throw new PureExecutionException(sourceInfo, e.getMessage(), e);
                     }
                 }
-                else if (sourceInfo != null && sourceInfo != pureException.getSourceInformation())
+                else if (pureException.getSourceInformation() == null && sourceInfo != null)
                 {
                     if (pureException instanceof PureAssertFailException)
                     {

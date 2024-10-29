@@ -56,7 +56,7 @@ public class M3AntlrPropertiesWalker extends org.finos.legend.pure.m3.serializat
     @Override
     public Void visitProperties(PropertiesContext ctx)
     {
-        this.antlrContextToM3Builder.propertyParser(ctx, this.properties, this.qualifiedProperties, Lists.mutable.<String>empty(), Lists.mutable.<String>empty(), this.typeOwner, this.importId, this.startingQualifiedPropertyIndex);
+        this.antlrContextToM3Builder.propertyParser(null, ctx, this.properties, this.qualifiedProperties, Lists.mutable.<String>empty(), Lists.mutable.<String>empty(), Lists.mutable.empty(), this.typeOwner, this.importId, this.startingQualifiedPropertyIndex);
         return null;
     }
 }

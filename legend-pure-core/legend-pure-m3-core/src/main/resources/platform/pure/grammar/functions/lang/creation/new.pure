@@ -14,6 +14,7 @@
 
 import meta::pure::test::pct::*;
 import meta::pure::functions::lang::tests::model::*;
+import meta::pure::functions::lang::tests::new::*;
 
 native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::lang::new<T>(class:Class<T>[1], id:String[1]):T[1];
 native function
@@ -106,4 +107,22 @@ function <<test.Test>> meta::pure::functions::lang::tests::new::testNewWithAssoc
 
     assertEquals($firmX, $bob.firm);
     assertSameElements([$bob, $pierre], $firmX.employees);
+}
+
+
+Class meta::pure::functions::lang::tests::new::MyClassWithTypeVariables(x:Integer[1])
+[
+   wx(~function:$this.text->size() < $x ~message:'Error '+$this.text->size()->toString()+' >= '+$x->toString())
+]
+{
+   res(){'1'+$x->toString()}:String[1];
+   res(z:String[1]){'1'+$x->toString()+$z}:String[1];
+   text : String[*];
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::new::testNewWithTypeVariables():Any[*]
+{
+   assertEquals('110', ^MyClassWithTypeVariables(10)(text = ['a', 'b']).res());
+   assertEquals('110z', ^MyClassWithTypeVariables(10)(text = ['a', 'b']).res('z'));
+   assertError(|^MyClassWithTypeVariables(1)(text = ['a', 'b']).res('z'), 'Constraint :[wx] violated in the Class MyClassWithTypeVariables, Message: Error 2 >= 1');
 }

@@ -40,7 +40,7 @@ public abstract class PrimitiveCoreInstance<T> extends AbstractCoreInstance
 
     private final T value;
     private final int internalSyntheticId;
-    private final CoreInstance classifier;
+    private CoreInstance classifier;
 
     protected PrimitiveCoreInstance(T value, CoreInstance classifier, int internalSyntheticId)
     {
@@ -91,7 +91,7 @@ public abstract class PrimitiveCoreInstance<T> extends AbstractCoreInstance
     @Override
     public void setClassifier(CoreInstance classifier)
     {
-        throw new UnsupportedOperationException();
+        this.classifier = classifier;
     }
 
     @Override

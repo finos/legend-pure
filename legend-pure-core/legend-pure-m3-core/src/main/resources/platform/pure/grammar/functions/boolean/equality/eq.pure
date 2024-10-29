@@ -140,3 +140,14 @@ function <<PCT.test>> meta::pure::functions::boolean::tests::equality::eq::testE
 
     assertFalse($f->eval(|eq($left11, $bot11)));
 }
+
+function <<PCT.test>> meta::pure::functions::boolean::tests::equality::eq::testEqPrimitiveExtension<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assert($f->eval(|eq(1, 1->cast(@ExtendedInteger))));
+    assert($f->eval(|eq(1->cast(@ExtendedInteger), 1)));
+    assertFalse($f->eval(|eq(1, 2->cast(@ExtendedInteger))));
+    assertFalse($f->eval(|eq(2->cast(@ExtendedInteger), 1)));
+    assertFalse($f->eval(|eq(^SideClass(stringId='firstSide', intId=1), 1->cast(@ExtendedInteger))));
+    assertFalse($f->eval(|eq(1->cast(@ExtendedInteger), ^SideClass(stringId='firstSide', intId=1))));
+}
+

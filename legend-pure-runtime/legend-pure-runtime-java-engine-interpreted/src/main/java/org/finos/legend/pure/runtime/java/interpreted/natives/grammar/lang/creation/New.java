@@ -100,6 +100,7 @@ public class New extends NativeFunction
         CoreInstance genericType = classifier.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToOne(M3Properties.typeArguments);
         ListIterable<? extends CoreInstance> typeArguments = Instance.getValueForMetaPropertyToManyResolved(genericType, M3Properties.typeArguments, processorSupport);
         ListIterable<? extends CoreInstance> multiplicityArguments = Instance.getValueForMetaPropertyToManyResolved(genericType, M3Properties.multiplicityArguments, processorSupport);
+        ListIterable<? extends CoreInstance> typeVariableValues = Instance.getValueForMetaPropertyToManyResolved(__genericType, M3Properties.typeVariableValues, processorSupport);
 
         // TODO should we start a repository transaction here?
         final CoreInstance instance = id.isEmpty() ? this.repository.newEphemeralAnonymousCoreInstance(functionExpressionToUseInStack.getSourceInformation(), classifier) : this.repository.newEphemeralCoreInstance(id, classifier, null);
@@ -116,6 +117,11 @@ public class New extends NativeFunction
             CoreInstance concreteMultiplicityArgument = Multiplicity.makeMultiplicityAsConcreteAsPossible(multiplicityArgument, resolvedMultiplicityParameters.peek().asUnmodifiable());
             Instance.addValueToProperty(classifierGenericType, M3Properties.multiplicityArguments, concreteMultiplicityArgument, processorSupport);
         }
+        for (CoreInstance typeVariableValue : typeVariableValues)
+        {
+            Instance.addValueToProperty(classifierGenericType, M3Properties.typeVariableValues, typeVariableValue, processorSupport);
+        }
+
         classifierGenericType = GenericType.makeTypeArgumentAsConcreteAsPossible(classifierGenericType, resolvedTypeParameters.peek().asUnmodifiable(), Maps.immutable.of(), processorSupport);
         Instance.addValueToProperty(instance, M3Properties.classifierGenericType, classifierGenericType, processorSupport);
 

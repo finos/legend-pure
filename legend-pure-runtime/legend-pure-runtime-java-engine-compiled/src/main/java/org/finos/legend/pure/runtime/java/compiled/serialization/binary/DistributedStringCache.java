@@ -25,7 +25,7 @@ import org.finos.legend.pure.m4.serialization.Writer;
 
 import java.util.Objects;
 
-class DistributedStringCache extends StringCache
+public class DistributedStringCache extends StringCache
 {
     private static final int PARTITION_SIZE = 32 * 1024; // must be a power of 2
     private static final int PARTITION_MASK = PARTITION_SIZE - 1;

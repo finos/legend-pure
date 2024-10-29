@@ -66,8 +66,8 @@ public abstract class StringJavaSource extends SimpleJavaFileObject
         return (compressedCodeBytes == null) ? new SimpleStringJavaSource(packageName, name, codeString) : new CompressedStringJavaSource(packageName, name, codeBytes.length, compressedCodeBytes);
     }
 
-    // package private for testing
-    static boolean hasPackageDeclaration(String code)
+    // public for testing
+    public static boolean hasPackageDeclaration(String code)
     {
         return PACKAGE_DECLARATION_PATTERN.matcher(code).find();
     }

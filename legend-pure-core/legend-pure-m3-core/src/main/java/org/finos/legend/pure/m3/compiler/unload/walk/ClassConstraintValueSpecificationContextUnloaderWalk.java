@@ -35,7 +35,7 @@ public class ClassConstraintValueSpecificationContextUnloaderWalk implements Mat
     @Override
     public void run(ClassConstraintValueSpecificationContext expressionSequenceValueSpecificationContext, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
-        CoreInstance _class = expressionSequenceValueSpecificationContext._classCoreInstance();
+        CoreInstance _class = expressionSequenceValueSpecificationContext._typeCoreInstance();
         matcher.fullMatch(_class, state);
     }
 }

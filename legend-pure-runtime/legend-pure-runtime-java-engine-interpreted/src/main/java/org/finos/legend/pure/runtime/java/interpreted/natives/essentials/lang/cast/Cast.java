@@ -26,10 +26,15 @@ import org.finos.legend.pure.m3.navigation.generictype.match.ParameterMatchBehav
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.type.Type;
+import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
+import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
+import org.finos.legend.pure.runtime.java.interpreted.natives.DefaultConstraintHandler;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
@@ -38,10 +43,12 @@ import java.util.Stack;
 
 public class Cast extends NativeFunction
 {
+    private FunctionExecutionInterpreted functionExecutionInterpreted;
     private ModelRepository repository;
 
-    public Cast(ModelRepository repository)
+    public Cast(FunctionExecutionInterpreted functionExecutionInterpreted, ModelRepository repository)
     {
+        this.functionExecutionInterpreted = functionExecutionInterpreted;
         this.repository = repository;
     }
 
@@ -56,32 +63,62 @@ public class Cast extends NativeFunction
         CoreInstance inst = this.repository.newAnonymousCoreInstance(functionExpressionToUseInStack.getSourceInformation(), processorSupport.getClassifier(valuesParam));
         Instance.addValueToProperty(inst, M3Properties.genericType, targetGenericType, processorSupport);
         Instance.addValueToProperty(inst, M3Properties.multiplicity, Instance.getValueForMetaPropertyToOneResolved(valuesParam, M3Properties.multiplicity, processorSupport), processorSupport);
-        if (GenericTypeMatch.genericTypeMatches(targetGenericType, sourceGenericType, true, ParameterMatchBehavior.MATCH_CAUTIOUSLY, ParameterMatchBehavior.MATCH_CAUTIOUSLY, processorSupport))
+
+        CoreInstance targetRawType = Instance.getValueForMetaPropertyToOneResolved(targetGenericType, M3Properties.rawType, processorSupport);
+        if (Type.isExtendedPrimitiveType(targetRawType, processorSupport))
         {
-            CoreInstance sourceRawType = Instance.getValueForMetaPropertyToOneResolved(sourceGenericType, M3Properties.rawType, processorSupport);
-            CoreInstance targetRawType = Instance.getValueForMetaPropertyToOneResolved(targetGenericType, M3Properties.rawType, processorSupport);
-            // If up-casting unit type to measure type, keep unit type.
-            if (sourceRawType instanceof Unit && targetRawType instanceof Measure)
-            {
-                Instance.setValueForProperty(inst, M3Properties.genericType, sourceGenericType, processorSupport);
-            }
-            // Up cast (e.g., List<Integer> to Any) - no further type checking required
-            Instance.setValuesForProperty(inst, M3Properties.values, valuesParam.getValueForMetaPropertyToMany(M3Properties.values), processorSupport);
+            return managePrimitiveTypeExtension(instantiationContext, executionSupport, processorSupport, valuesParam, targetGenericType, inst, functionExpressionToUseInStack.getSourceInformation());
         }
         else
         {
-            // Down cast (e.g., Number to Integer) - must check types of individual values
-            ListIterable<? extends CoreInstance> values = valuesParam.getValueForMetaPropertyToMany(M3Properties.values);
-            for (CoreInstance val : values)
+            if (GenericTypeMatch.genericTypeMatches(targetGenericType, sourceGenericType, true, ParameterMatchBehavior.MATCH_CAUTIOUSLY, ParameterMatchBehavior.MATCH_CAUTIOUSLY, processorSupport))
             {
-                CoreInstance valGenericType = Instance.extractGenericTypeFromInstance(val, processorSupport);
-                if (!GenericTypeMatch.genericTypeMatches(targetGenericType, valGenericType, true, ParameterMatchBehavior.MATCH_ANYTHING, ParameterMatchBehavior.MATCH_ANYTHING, processorSupport))
+                CoreInstance sourceRawType = Instance.getValueForMetaPropertyToOneResolved(sourceGenericType, M3Properties.rawType, processorSupport);
+                // If up-casting unit type to measure type, keep unit type.
+                if (sourceRawType instanceof Unit && targetRawType instanceof Measure)
                 {
-                    throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Cast exception: " + GenericType.print(valGenericType, processorSupport) + " cannot be cast to " + GenericType.print(targetGenericType, processorSupport));
+                    Instance.setValueForProperty(inst, M3Properties.genericType, sourceGenericType, processorSupport);
                 }
+                // Up cast (e.g., List<Integer> to Any) - no further type checking required
+                Instance.setValuesForProperty(inst, M3Properties.values, valuesParam.getValueForMetaPropertyToMany(M3Properties.values), processorSupport);
             }
-            Instance.setValuesForProperty(inst, M3Properties.values, valuesParam.getValueForMetaPropertyToMany(M3Properties.values), processorSupport);
+            else
+            {
+                // Down cast (e.g., Number to Integer) - must check types of individual values
+                ListIterable<? extends CoreInstance> values = valuesParam.getValueForMetaPropertyToMany(M3Properties.values);
+                for (CoreInstance val : values)
+                {
+                    CoreInstance valGenericType = Instance.extractGenericTypeFromInstance(val, processorSupport);
+                    if (!GenericTypeMatch.genericTypeMatches(targetGenericType, valGenericType, true, ParameterMatchBehavior.MATCH_ANYTHING, ParameterMatchBehavior.MATCH_ANYTHING, processorSupport))
+                    {
+                        throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Cast exception: " + GenericType.print(valGenericType, processorSupport) + " cannot be cast to " + GenericType.print(targetGenericType, processorSupport));
+                    }
+                }
+                Instance.setValuesForProperty(inst, M3Properties.values, valuesParam.getValueForMetaPropertyToMany(M3Properties.values), processorSupport);
+            }
+
+            return inst;
         }
+    }
+
+    private CoreInstance managePrimitiveTypeExtension(InstantiationContext instantiationContext, ExecutionSupport executionSupport, ProcessorSupport processorSupport, CoreInstance valuesParam, CoreInstance targetGenericType, CoreInstance inst, SourceInformation sourceInformation) throws PureExecutionException
+    {
+        for (CoreInstance genericType : GenericType.getAllSuperTypesIncludingSelf(targetGenericType, processorSupport))
+        {
+            CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
+            DefaultConstraintHandler.defaultHandleConstraints(rawType.getValueForMetaPropertyToMany(M3Properties.constraints), valuesParam, genericType, sourceInformation, functionExecutionInterpreted, instantiationContext, executionSupport);
+        }
+
+        // Special Handling for Primitive Extension.... Also modifies the type of the value itself (as if it were written in the grammar i.e. 1d or 1f)
+        ListIterable<CoreInstance> newRes = valuesParam.getValueForMetaPropertyToMany(M3Properties.values).collect(x ->
+        {
+            CoreInstance res = ((AbstractCoreInstance)x).copy();
+            res.setClassifier(Instance.getValueForMetaPropertyToOneResolved(targetGenericType, M3Properties.rawType, processorSupport));
+            //Instance.setValueForProperty(res, M3Properties.classifierGenericType, targetGenericType, processorSupport);
+            return res;
+        });
+
+        Instance.setValuesForProperty(inst, M3Properties.values, newRes, processorSupport);
         return inst;
     }
 

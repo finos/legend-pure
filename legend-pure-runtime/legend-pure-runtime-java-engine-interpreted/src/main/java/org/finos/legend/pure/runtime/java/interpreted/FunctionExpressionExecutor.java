@@ -16,6 +16,7 @@ package org.finos.legend.pure.runtime.java.interpreted;
 
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
@@ -50,7 +51,7 @@ class FunctionExpressionExecutor implements Executor
     {
         profiler.startExecutingFunctionExpression(instance, functionExpressionToUseInStack);
         FunctionExpression functionExpression = FunctionExpressionCoreInstanceWrapper.toFunctionExpression(instance);
-        ListIterable<? extends CoreInstance> params = (ListIterable<? extends CoreInstance>) functionExpression._parametersValues();
+        ListIterable<CoreInstance> params = (ListIterable<CoreInstance>) (Object) functionExpression._parametersValues();
         Function function = FunctionCoreInstanceWrapper.toFunction(functionExpression._func());
 
         MutableMap<String, CoreInstance> localResolvedTypeParameters = Maps.mutable.empty();
@@ -58,10 +59,10 @@ class FunctionExpressionExecutor implements Executor
         this.resolveLocalTypeAndMultiplicityParams(functionExpression, instance, processorSupport, params, function, localResolvedTypeParameters, localResolvedMultiplicityParameters);
         boolean deferExecution = Instance.instanceOf(function, M3Paths.NativeFunction, processorSupport) && functionExecutionInterpreted.getNativeFunction(function.getName()) != null && functionExecutionInterpreted.getNativeFunction(function.getName()).deferParameterExecution();
 
-        ListIterable<? extends CoreInstance> parameters;
+        MutableList<CoreInstance> parameters;
         if (deferExecution || params.isEmpty())
         {
-            parameters = params;
+            parameters = params.toList();
         }
         else
         {
@@ -69,7 +70,12 @@ class FunctionExpressionExecutor implements Executor
             {
                 Executor executor = FunctionExecutionInterpreted.findValueSpecificationExecutor(p, instance, processorSupport, functionExecutionInterpreted);
                 return executor.execute(p, resolvedTypeParameters, resolvedMultiplicityParameters, instance, variableContext, profiler, instantiationContext, executionSupport, functionExecutionInterpreted, processorSupport);
-            });
+            }).toList();
+        }
+
+        if (Instance.instanceOf(function, M3Paths.QualifiedProperty, processorSupport))
+        {
+            parameters.addAll(1, parameters.get(0).getValueForMetaPropertyToOne(M3Properties.genericType).getValueForMetaPropertyToMany(M3Properties.typeVariableValues).toList());
         }
 
         resolvedTypeParameters.push(this.resolveTypeParamsFromParent(resolvedTypeParameters, resolvedMultiplicityParameters, localResolvedTypeParameters, functionExpressionToUseInStack, processorSupport));

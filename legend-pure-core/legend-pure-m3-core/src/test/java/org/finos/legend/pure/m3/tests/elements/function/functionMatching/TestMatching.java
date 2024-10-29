@@ -457,6 +457,33 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
         repository.validate(new VoidM4StateListener());
     }
 
+    @Test
+    public void testSimplePureWithError()
+    {
+        try
+        {
+            runtime.createInMemorySource("fromString.pure", "###Pure\n" +
+                    "   Class Employee\n" +
+                    "   {\n" +
+                    "       s:String[1];\n" +
+                    "   }\n" +
+                    "\n" +
+                    "\n" +
+                    "###Pure\n" +
+                    "   function go():Nil[0]\n" +
+                    "   {\n" +
+                    "       printNotWorking('yeah!');\n" +
+                    "   }\n");
+            runtime.compile();
+            Assert.fail("Expected compilation exception");
+        }
+        catch (Exception e)
+        {
+            assertPureException(PureCompilationException.class, "The system can't find a match for the function: printNotWorking(_:String[1])", 11, 8, e);
+        }
+        repository.validate(new VoidM4StateListener());
+    }
+
     protected void assertFunctionExpressionFunction(CoreInstance expectedFunction, CoreInstance functionExpression)
     {
         CoreInstance func = Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.func, processorSupport);

@@ -33,7 +33,10 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ElementOve
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.GetterOverride;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
+import org.finos.legend.pure.m3.exception.PureAssertFailException;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.runtime.java.compiled.CoreHelper;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
@@ -367,5 +370,36 @@ public class CoreGen extends CoreHelper
     public static Double random()
     {
         return random.nextDouble();
+    }
+
+    public static boolean assertError(ExecutionSupport es, Function<?> func, String message, long line, long column, SourceInformation sourceInformation)
+    {
+        try
+        {
+            Pure.evaluate(es, func, bridge);
+            throw new PureAssertFailException(sourceInformation, "No error was thrown");
+        }
+        catch (PureExecutionException e)
+        {
+            if (!e.getInfo().equals(message))
+            {
+                throw new PureAssertFailException(sourceInformation, "Execution error message mismatch.\nThe actual message was \"" + e.getInfo() + "\"\nwhere the expected message was:\"" + message + "\"");
+            }
+            if (line != -1)
+            {
+                if (e.getSourceInformation().getLine() != line)
+                {
+                    throw new PureAssertFailException(sourceInformation, "Execution error line mismatch. Actual: " + e.getSourceInformation().getLine() + " where expected: " + line);
+                }
+            }
+            if (column != -1)
+            {
+                if (e.getSourceInformation().getColumn() != column)
+                {
+                    throw new PureAssertFailException(sourceInformation, "Execution error column mismatch. Actual: " + e.getSourceInformation().getColumn() + " where expected: " + column);
+                }
+            }
+        }
+        return true;
     }
 }

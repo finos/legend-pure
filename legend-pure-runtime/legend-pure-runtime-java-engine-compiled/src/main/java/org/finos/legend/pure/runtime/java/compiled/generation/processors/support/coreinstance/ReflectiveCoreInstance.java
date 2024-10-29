@@ -723,17 +723,17 @@ public abstract class ReflectiveCoreInstance extends AbstractCompiledCoreInstanc
         }
     }
 
-    protected static KeyIndexBuilder keyIndexBuilder()
+    public static KeyIndexBuilder keyIndexBuilder()
     {
         return new KeyIndexBuilder();
     }
 
-    protected static KeyIndexBuilder keyIndexBuilder(int keyCount)
+    public static KeyIndexBuilder keyIndexBuilder(int keyCount)
     {
         return new KeyIndexBuilder(keyCount);
     }
 
-    protected static class KeyIndexBuilder
+    public static class KeyIndexBuilder
     {
         private final MutableMap<String, ImmutableList<String>> realKeys;
 
@@ -811,7 +811,7 @@ public abstract class ReflectiveCoreInstance extends AbstractCompiledCoreInstanc
         }
     }
 
-    protected static class KeyIndex
+    public static class KeyIndex
     {
         private final MapIterable<String, ImmutableList<String>> realKeysByKey;
 

@@ -51,6 +51,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.ClassJs
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.FunctionProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.EnumProcessor;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.ExtendedPrimitiveTypeProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.ClassImplIncrementalCompilationProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.ClassImplProcessor;
@@ -435,8 +436,11 @@ public final class JavaSourceCodeGenerator
                         boolean addJavaSerializationSupport = this.javaSerializedClasses.contains(coreInstance);
                         RichIterable<CoreInstance> processedClasses = ClassProcessor.processClass(genericType, processorContext, addJavaSerializationSupport, this.externalAPIPackage);
                         this.processedClasses.addAllIterable(processedClasses);
-
                         ClassJsonFactoryProcessor.processClass(genericType, processorContext);
+                    }
+                    if (Type.isExtendedPrimitiveType(coreInstance, processorSupport))
+                    {
+                        ExtendedPrimitiveTypeProcessor.processExtendedPrimitiveType(coreInstance, processorContext);
                     }
                     if (Instance.instanceOf(coreInstance, M3Paths.Enumeration, this.processorSupport) && ClassProcessor.isPlatformClass(coreInstance))
                     {
@@ -457,6 +461,7 @@ public final class JavaSourceCodeGenerator
                     // We only want to execute if the related repository is available.
                     // Otherwise the type are not in the model and the instanceOf code will fail later.
                     this.extensions.select(c -> this.codeStorage.getRepository(c.getRelatedRepository()) != null).flatCollect(CompiledExtension::getExtraPackageableElementProcessors).forEach(e -> e.value(coreInstance, this, processorContext));
+
                 }
                 catch (PureCompilationException e)
                 {

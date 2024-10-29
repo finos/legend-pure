@@ -24,6 +24,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveT
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.linearization.C3Linearization;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstanceWrapper;
@@ -50,6 +51,22 @@ public class Type
     public static CoreInstance wrapGenericType(CoreInstance type, ProcessorSupport processorSupport)
     {
         return wrapGenericType(type, null, processorSupport);
+    }
+
+    public static boolean isExtendedPrimitiveType(CoreInstance type, ProcessorSupport processorSupport)
+    {
+        return isPrimitiveType(type, processorSupport) && type.getValueForMetaPropertyToOne(M3Properties.extended) != null && PrimitiveUtilities.getBooleanValue(type.getValueForMetaPropertyToOne(M3Properties.extended));
+    }
+
+    public static CoreInstance findPrimitiveTypeFromExtendedPrimitiveType(CoreInstance type, ProcessorSupport processorSupport)
+    {
+        ListIterable<CoreInstance> order = Type.getGeneralizationResolutionOrder(type, processorSupport);
+        return order.detect(x -> !Type.isExtendedPrimitiveType(x, processorSupport));
+    }
+
+    public static boolean isTopPrimitiveType(CoreInstance type, ProcessorSupport processorSupport)
+    {
+        return isPrimitiveType(type, processorSupport) && (type.getValueForMetaPropertyToOne(M3Properties.extended) == null || !PrimitiveUtilities.getBooleanValue(type.getValueForMetaPropertyToOne(M3Properties.extended)));
     }
 
     /**

@@ -24,6 +24,7 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -70,7 +71,7 @@ public class ReferenceUsage
      */
     public static void addReferenceUsage(CoreInstance used, CoreInstance user, String propertyName, int offset, ModelRepository repository, ProcessorSupport processorSupport, SourceInformation sourceInformationForUsage)
     {
-        if (!Instance.instanceOf(used, M3Paths.PrimitiveType, processorSupport))
+        if (!Type.isTopPrimitiveType(used, processorSupport))
         {
             addReferenceUsage_internal(used, user, propertyName, offset, repository, processorSupport, sourceInformationForUsage);
         }

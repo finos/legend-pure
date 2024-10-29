@@ -321,7 +321,8 @@ public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithC
                 "        Root instance Package\n" +
                 "    referenceUsages(Property):\n" +
                 "        Anonymous_StripedId instance ReferenceUsage\n" +
-                "            [... >0]", runtime.getCoreInstance("B").printWithoutDebug("", 0));
+                "            [... >0]\n" +
+                "    typeVariables(Property):", runtime.getCoreInstance("B").printWithoutDebug("", 0));
     }
 
     @Test

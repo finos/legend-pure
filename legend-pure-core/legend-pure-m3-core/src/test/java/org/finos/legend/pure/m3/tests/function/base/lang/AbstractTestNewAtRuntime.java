@@ -387,6 +387,22 @@ public abstract class AbstractTestNewAtRuntime extends AbstractPureTestWithCoreC
     }
 
     @Test
+    public void testNewWithTypeVariable()
+    {
+        String source =
+                "Class A(x:Integer[1])\n" +
+                        "{" +
+                        "   prop1(){$x}:Integer[1];\n" +
+                        "}\n" +
+                        "function test::testFn():Any[*] " +
+                        "{" +
+                        "   ^A(1)()" +
+                        "}\n";
+        compileTestSource("fromString.pure", source);
+        compileAndExecute("test::testFn():Any[*]");
+    }
+
+    @Test
     public abstract void testNewWithInheritenceAndOverriddenAssociationEndWithReverseOneToOneProperty();
 
     @Test

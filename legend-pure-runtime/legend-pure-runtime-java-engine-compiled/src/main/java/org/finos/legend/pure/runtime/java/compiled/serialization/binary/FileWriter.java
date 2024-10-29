@@ -16,7 +16,7 @@ package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
 import org.finos.legend.pure.m4.serialization.Writer;
 
-interface FileWriter
+public interface FileWriter
 {
     Writer getWriter(String path);
 }
