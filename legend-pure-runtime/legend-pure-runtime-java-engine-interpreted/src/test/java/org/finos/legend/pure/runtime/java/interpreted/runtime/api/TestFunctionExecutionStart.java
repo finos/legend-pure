@@ -122,6 +122,40 @@ public class TestFunctionExecutionStart extends AbstractPureTestWithCoreCompiled
         Assert.assertEquals("'yeah!'", functionExecution.getConsole().getLine(0));
     }
 
+    @Test
+    public void testCallStackInExecutionExceptionPure()
+    {
+        compileTestSource("fromString.pure",
+                "###Pure\n" +
+                        "   function go():Boolean[1]\n" +
+                        "   {\n" +
+                        "       nest();\n" +
+                        "       true;\n" +
+                        "   }\n" +
+                        "function nest():Boolean[1]" +
+                        "{" +
+                        "   fail();" +
+                        "}");
+        try
+        {
+            this.execute("go():Boolean[1]");
+        }
+        catch (PureExecutionException e)
+        {
+            StringBuffer buffer = new StringBuffer();
+            e.printPureStackTrace(buffer,"   ", functionExecution.getProcessorSupport());
+            Assert.assertEquals(
+                    "   1: resource:/platform/pure/essential/tests/assert.pure line:26 column:5\n" +
+                    "\n" +
+                    "   Full Stack:\n" +
+                    "       nest():Boolean[1]     <-     resource:fromString.pure line:4 column:8\n" +
+                    "       fail():Boolean[1]     <-     resource:fromString.pure line:7 column:31\n" +
+                    "       assert(Boolean[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/fail.pure line:19 column:5\n" +
+                    "       assert(Boolean[1], String[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/assert.pure line:31 column:5\n" +
+                    "       assert(Boolean[1], Function<{->String[1]}>[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/assert.pure line:26 column:5\n", buffer.toString());
+        }
+    }
+
 
     protected static FunctionExecution getFunctionExecution()
     {
