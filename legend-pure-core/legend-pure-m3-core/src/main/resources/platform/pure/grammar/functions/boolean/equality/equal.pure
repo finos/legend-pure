@@ -306,3 +306,13 @@ function <<PCT.test>> meta::pure::functions::boolean::tests::equality::equal::te
     assert([] == $top.nickName);
     assert(equal([], $top.nickName));
 }
+
+function <<PCT.test>> meta::pure::functions::boolean::tests::equality::equal::testEqualPrimitiveExtension<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assert($f->eval(|equal(1, 1->cast(@ExtendedInteger))));
+    assert($f->eval(|equal(1->cast(@ExtendedInteger), 1)));
+    assertFalse($f->eval(|equal(1, 2->cast(@ExtendedInteger))));
+    assertFalse($f->eval(|equal(2->cast(@ExtendedInteger), 1)));
+    assertFalse($f->eval(|equal(^SideClass(stringId='firstSide', intId=1), 1->cast(@ExtendedInteger))));
+    assertFalse($f->eval(|equal(1->cast(@ExtendedInteger), ^SideClass(stringId='firstSide', intId=1))));
+}

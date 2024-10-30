@@ -16,7 +16,7 @@ package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
 import org.finos.legend.pure.m4.serialization.Reader;
 
-class LazyStringIndex extends StringIndex
+public class LazyStringIndex extends StringIndex
 {
     private final String metadataName;
     private final FileReader fileReader;
@@ -60,7 +60,7 @@ class LazyStringIndex extends StringIndex
         }
     }
 
-    static LazyStringIndex fromFileReader(String metadataName, FileReader fileReader)
+    public static LazyStringIndex fromFileReader(String metadataName, FileReader fileReader)
     {
         String[] classifierIds = readClassifierIds(metadataName, fileReader);
         int otherStringCount = readOtherStringCount(metadataName, fileReader);

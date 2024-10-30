@@ -15,6 +15,7 @@
 package org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation;
 
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -26,7 +27,7 @@ public class PureCompiledExecutionException extends PureExecutionException
 
     public PureCompiledExecutionException(SourceInformation sourceInformation, String info, Throwable cause)
     {
-        super(sourceInformation, info, cause);
+        super(sourceInformation, info, cause, Stacks.mutable.empty());
         addStackTraceElement(sourceInformation);
     }
 

@@ -66,7 +66,7 @@ public class FunctionProcessor
                         CoreInstance definition = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.functionDefinition, processorContext.getSupport());
                         String eval = "(Boolean) " + ValueSpecificationProcessor.createFunctionForLambda(constraint, definition, processorContext.getSupport(), processorContext) + ".execute(Lists.mutable.with(" + stringParams + "),es)";
                         String ruleId = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.name, processorContext.getSupport()).getName();
-                        return "if(! (" + eval + ")){throw new org.finos.legend.pure.m3.exception.PureExecutionException(_sourceInformation, \"Constraint (PRE):[" + ruleId + "] violated. (Function:" + functionDefinition.getName() + ")\");}\n";
+                        return "if(! (" + eval + ")){throw new org.finos.legend.pure.m3.exception.PureExecutionException(_sourceInformation, \"Constraint (PRE):[" + ruleId + "] violated. (Function:" + functionDefinition.getName() + ")\", org.eclipse.collections.api.factory.Stacks.mutable.<org.finos.legend.pure.m4.coreinstance.CoreInstance>empty());}\n";
                     }).makeString("") +
                     "     final " + returnType + " _return = " + IdBuilder.sourceToId(functionDefinition.getSourceInformation()) + "." + functionNameToJava(functionDefinition) + "(" + functionType.getValueForMetaPropertyToMany("parameters").collect(ci -> "_" + ci.getValueForMetaPropertyToOne(M3Properties.name).getName()).makeString(", ") + ", es);\n" +
 
@@ -75,7 +75,7 @@ public class FunctionProcessor
                         CoreInstance definition = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.functionDefinition, processorContext.getSupport());
                         String eval = "(Boolean) " + ValueSpecificationProcessor.createFunctionForLambda(constraint, definition, processorContext.getSupport(), processorContext) + ".execute(Lists.mutable.with(" + stringParams + ",_return),es)";
                         String ruleId = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.name, processorContext.getSupport()).getName();
-                        return "if(! (" + eval + ")){throw new org.finos.legend.pure.m3.exception.PureExecutionException(_sourceInformation, \"Constraint (POST):[" + ruleId + "] violated. (Function:" + functionDefinition.getName() + ")\");}\n";
+                        return "if(! (" + eval + ")){throw new org.finos.legend.pure.m3.exception.PureExecutionException(_sourceInformation, \"Constraint (POST):[" + ruleId + "] violated. (Function:" + functionDefinition.getName() + ")\", org.eclipse.collections.api.factory.Stacks.mutable.<org.finos.legend.pure.m4.coreinstance.CoreInstance>empty());}\n";
                     }).makeString("") +
 
                     "return _return;" +
@@ -93,7 +93,13 @@ public class FunctionProcessor
         CoreInstance functionType = processorSupport.function_getFunctionType(func);
         ListIterable<? extends CoreInstance> params = Instance.getValueForMetaPropertyToManyResolved(functionType, M3Properties.parameters, processorSupport);
 
-        String stringParams = (tail ? ListHelper.tail(params) : params).collect(ci -> "final " + TypeProcessor.typeToJavaPrimitiveWithMul(Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.genericType, processorSupport), Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.multiplicity, processorSupport), typeParams, processorContext) + " _" + Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.name, processorSupport).getName()).makeString(", ");
+        MutableList<String> stringParamsItems = (tail ? ListHelper.tail(params) : params).collect(ci -> "final " + TypeProcessor.typeToJavaPrimitiveWithMul(Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.genericType, processorSupport), Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.multiplicity, processorSupport), typeParams, processorContext) + " _" + Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.name, processorSupport).getName()).toList();
+        if (Instance.instanceOf(func, M3Paths.QualifiedProperty, processorSupport))
+        {
+            ListIterable<? extends CoreInstance> typeVariableValues = params.get(0).getValueForMetaPropertyToOne(M3Properties.genericType).getValueForMetaPropertyToMany(M3Properties.typeVariableValues);
+            stringParamsItems = stringParamsItems.subList(typeVariableValues.size(), stringParamsItems.size());
+        }
+        String stringParams = stringParamsItems.makeString(", ");
 
         return TypeProcessor.typeToJavaPrimitiveWithMul(Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnType, processorSupport), Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, processorSupport), typeParams, processorContext) + " " + (fullName ? functionNameToJava(func) : JavaTools.makeValidJavaIdentifier(func.getValueForMetaPropertyToOne(M3Properties.functionName).getName())) + suffix + "(" +
 

@@ -22,7 +22,7 @@ import org.finos.legend.pure.m4.serialization.Writer;
 
 import java.util.Objects;
 
-class SimpleStringCache extends StringCache
+public class SimpleStringCache extends StringCache
 {
     private SimpleStringCache(ListIterable<String> classifierIds, ListIterable<String> otherStrings)
     {

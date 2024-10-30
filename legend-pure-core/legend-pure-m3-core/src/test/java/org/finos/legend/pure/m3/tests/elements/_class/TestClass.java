@@ -214,7 +214,8 @@ public class TestClass extends AbstractPureTestWithCoreCompiled
                 "                            propertyName(Property):\n" +
                 "                                typeArguments instance String\n" +
                 "            propertyName(Property):\n" +
-                "                rawType instance String", runtime.getCoreInstance("Table").printWithoutDebug("", 3));
+                "                rawType instance String\n" +
+                "    typeVariables(Property):", runtime.getCoreInstance("Table").printWithoutDebug("", 3));
 
         Assert.assertEquals("Column instance Class\n" +
                 "    classifierGenericType(Property):\n" +
@@ -293,7 +294,8 @@ public class TestClass extends AbstractPureTestWithCoreCompiled
                 "                        Anonymous_StripedId instance ReferenceUsage\n" +
                 "                            [... >2]\n" +
                 "            propertyName(Property):\n" +
-                "                rawType instance String", runtime.getCoreInstance("Column").printWithoutDebug("", 2));
+                "                rawType instance String\n" +
+                "    typeVariables(Property):", runtime.getCoreInstance("Column").printWithoutDebug("", 2));
     }
 
     @Test

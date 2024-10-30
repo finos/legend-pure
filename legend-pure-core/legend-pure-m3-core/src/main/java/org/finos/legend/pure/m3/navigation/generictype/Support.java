@@ -81,6 +81,7 @@ public class Support
         Instance.addValueToProperty(result, M3Properties.rawType, sourceRawType, processorSupport);
         Instance.getValueForMetaPropertyToManyResolved(source, M3Properties.typeArguments, processorSupport).forEach(typeArgument -> Instance.addValueToProperty(result, M3Properties.typeArguments, GenericType.makeTypeArgumentAsConcreteAsPossible(typeArgument, genericTypeByTypeParameterNames, sourceMulBinding, processorSupport), processorSupport));
         Instance.getValueForMetaPropertyToManyResolved(source, M3Properties.multiplicityArguments, processorSupport).forEach(multiplicityArgument -> Instance.addValueToProperty(result, M3Properties.multiplicityArguments, Multiplicity.makeMultiplicityAsConcreteAsPossible(multiplicityArgument, sourceMulBinding), processorSupport));
+        Instance.getValueForMetaPropertyToManyResolved(source, M3Properties.typeVariableValues, processorSupport).forEach(tvv -> Instance.addValueToProperty(result, M3Properties.typeVariableValues, tvv, processorSupport));
         return result;
     }
 

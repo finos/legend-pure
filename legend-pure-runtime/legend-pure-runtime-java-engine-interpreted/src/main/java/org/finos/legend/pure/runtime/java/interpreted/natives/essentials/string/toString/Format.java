@@ -16,6 +16,7 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -50,14 +51,14 @@ public class Format extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         String formatString = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport).getName();
         ListIterable<? extends CoreInstance> formatArgs = Instance.getValueForMetaPropertyToManyResolved(params.get(1), M3Properties.values, processorSupport);
-        return ValueSpecificationBootstrap.newStringLiteral(this.repository, format(formatString, formatArgs, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), functionExpressionToUseInStack, profiler, processorSupport, instantiationContext, executionSupport), processorSupport);
+        return ValueSpecificationBootstrap.newStringLiteral(this.repository, format(formatString, formatArgs, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), functionExpressionCallStack, profiler, processorSupport, instantiationContext, executionSupport), processorSupport);
     }
 
-    private String format(String formatString, ListIterable<? extends CoreInstance> formatArgs, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, ProcessorSupport processorSupport, InstantiationContext instantiationContext, ExecutionSupport executionSupport) throws PureExecutionException
+    private String format(String formatString, ListIterable<? extends CoreInstance> formatArgs, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, ProcessorSupport processorSupport, InstantiationContext instantiationContext, ExecutionSupport executionSupport) throws PureExecutionException
     {
         CoreInstance toStringFunction = processorSupport.package_getByUserPath("meta::pure::functions::string::toString_Any_1__String_1_");
         CoreInstance toRepresentationFunction = processorSupport.package_getByUserPath("meta::pure::functions::string::toRepresentation_Any_1__String_1_");
@@ -86,7 +87,7 @@ public class Format extends NativeFunction
                         {
                             CoreInstance arg = formatArgs.get(argCounter++);
                             ListIterable<CoreInstance> params = Lists.immutable.with(ValueSpecificationBootstrap.wrapValueSpecification(arg, true, processorSupport));
-                            CoreInstance argString = this.functionExecution.executeLambdaFromNative(toStringFunction, params, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+                            CoreInstance argString = this.functionExecution.executeLambdaFromNative(toStringFunction, params, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
                             builder.append(Instance.getValueForMetaPropertyToOneResolved(argString, M3Properties.values, processorSupport).getName());
                             break;
                         }
@@ -94,7 +95,7 @@ public class Format extends NativeFunction
                         {
                             CoreInstance arg = formatArgs.get(argCounter++);
                             ListIterable<CoreInstance> params = Lists.immutable.with(ValueSpecificationBootstrap.wrapValueSpecification(arg, true, processorSupport));
-                            CoreInstance argString = this.functionExecution.executeLambdaFromNative(toRepresentationFunction, params, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+                            CoreInstance argString = this.functionExecution.executeLambdaFromNative(toRepresentationFunction, params, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
                             builder.append(Instance.getValueForMetaPropertyToOneResolved(argString, M3Properties.values, processorSupport).getName());
                             break;
                         }
@@ -194,11 +195,11 @@ public class Format extends NativeFunction
         }
         catch (IndexOutOfBoundsException e)
         {
-            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Too few arguments passed to format function. Format expression \"" + formatString + "\", number of arguments [" + formatArgs.size() + "]");
+            throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "Too few arguments passed to format function. Format expression \"" + formatString + "\", number of arguments [" + formatArgs.size() + "]", functionExpressionCallStack);
         }
         if (argCounter < formatArgs.size())
         {
-            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Unused format args. [" + formatArgs.size() + "] arguments provided to expression \"" + formatString + "\"");
+            throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "Unused format args. [" + formatArgs.size() + "] arguments provided to expression \"" + formatString + "\"", functionExpressionCallStack);
         }
         return builder.toString();
     }

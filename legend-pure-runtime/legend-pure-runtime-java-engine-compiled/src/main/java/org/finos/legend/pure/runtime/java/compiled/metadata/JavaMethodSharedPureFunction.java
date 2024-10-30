@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.metadata;
 
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
@@ -48,7 +49,7 @@ public final class JavaMethodSharedPureFunction<R> implements SharedPureFunction
         }
         catch (IllegalArgumentException e)
         {
-            throw new PureExecutionException(this.sourceInformation, "Error during dynamic function evaluation. The type " + ((CompiledExecutionSupport) es).getProcessorSupport().getClassifier((CoreInstance) vars.get(0)).getName() + " is not compatible with the type " + CompiledSupport.getPureClassName(this.propertyMethod.getDeclaringClass()), e);
+            throw new PureExecutionException(this.sourceInformation, "Error during dynamic function evaluation. The type " + ((CompiledExecutionSupport) es).getProcessorSupport().getClassifier((CoreInstance) vars.get(0)).getName() + " is not compatible with the type " + CompiledSupport.getPureClassName(this.propertyMethod.getDeclaringClass()), e, Stacks.mutable.empty());
         }
         catch (Exception e)
         {
@@ -62,7 +63,7 @@ public final class JavaMethodSharedPureFunction<R> implements SharedPureFunction
             {
                 vars.asLazy().reject(v -> v instanceof ExecutionSupport).appendString(builder, " with params [", ", ", "]");
             }
-            throw new PureExecutionException(this.sourceInformation, builder.toString(), (e instanceof InvocationTargetException) ? e.getCause() : e);
+            throw new PureExecutionException(this.sourceInformation, builder.toString(), (e instanceof InvocationTargetException) ? e.getCause() : e, Stacks.mutable.empty());
         }
     }
 }

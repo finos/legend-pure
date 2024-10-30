@@ -16,6 +16,7 @@ package org.finos.legend.pure.runtime.java.extension.store.relational.compiled.n
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
@@ -122,7 +123,7 @@ public class ResultSetRowIterableProvider
 
                                 if (showCheckMaxRows && rowCount > maxRows)
                                 {
-                                    throw new PureExecutionException("Too many rows returned. PURE currently supports results with up to " + maxRows + " rows. Please add a filter or use the take or limit function to limit the rows returned");
+                                    throw new PureExecutionException("Too many rows returned. PURE currently supports results with up to " + maxRows + " rows. Please add a filter or use the take or limit function to limit the rows returned", Stacks.mutable.empty());
                                 }
                             }
                         }
@@ -192,7 +193,7 @@ public class ResultSetRowIterableProvider
                 // ignore logging exceptions
             }
 
-            throw new PureExecutionException(sourceInformation, SQLExceptionHandler.buildExceptionString(e, connection), e);
+            throw new PureExecutionException(sourceInformation, SQLExceptionHandler.buildExceptionString(e, connection), e, Stacks.mutable.empty());
         }
     }
 

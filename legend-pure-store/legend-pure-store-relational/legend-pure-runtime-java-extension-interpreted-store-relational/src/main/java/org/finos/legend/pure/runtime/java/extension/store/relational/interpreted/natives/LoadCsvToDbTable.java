@@ -20,6 +20,7 @@ import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.utility.LazyIterate;
@@ -60,7 +61,7 @@ public class LoadCsvToDbTable extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, final Context context, final ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, final Context context, final ProcessorSupport processorSupport) throws PureExecutionException
     {
         final String filePath = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport).getName();
         final CoreInstance table = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
@@ -70,20 +71,20 @@ public class LoadCsvToDbTable extends NativeFunction
         final ListIterable<? extends CoreInstance> columns = getColumns(table, processorSupport);
         final ListIterable<String> columnTypes = getColumnTypes(table, processorSupport);
 
-        Iterable<ListIterable<?>> values = getCsvIterable(this.codeStorage, functionExpressionToUseInStack.getSourceInformation(), filePath, table.getValueForMetaPropertyToOne(M3Properties.name).getName(), numberOfRows, columns, columnTypes, _500_MB_SIZE_LIMIT);
+        Iterable<ListIterable<?>> values = getCsvIterable(this.codeStorage, functionExpressionCallStack.peek().getSourceInformation(), filePath, table.getValueForMetaPropertyToOne(M3Properties.name).getName(), numberOfRows, columns, columnTypes, _500_MB_SIZE_LIMIT, functionExpressionCallStack);
 
-        new ExecuteInDb(this.repository, this.message, 0).bulkInsertInDb(connectionInformation, table, values, functionExpressionToUseInStack, processorSupport);
+        new ExecuteInDb(this.repository, this.message, 0).bulkInsertInDb(connectionInformation, table, values, functionExpressionCallStack, processorSupport);
         return ValueSpecificationBootstrap.wrapValueSpecification(Lists.immutable.<CoreInstance>with(), true, processorSupport);
     }
 
     public static Iterable<ListIterable<?>> getCsvIterable(RepositoryCodeStorage codeStorage, SourceInformation sourceInformation, final String filePath, final String tableName, CoreInstance numberOfRows,
-                                                           final ListIterable<? extends CoreInstance> columns, final ListIterable<String> columnTypes, int sizeLimitMb)
+                                                           final ListIterable<? extends CoreInstance> columns, final ListIterable<String> columnTypes, int sizeLimitMb, MutableStack<CoreInstance> functionExpressionCallStack)
     {
         Integer rowLimit = numberOfRows == null ? null : Integer.valueOf(numberOfRows.getName());
-        return collectIterable(LazyIterate.drop(CsvReader.readCsv(codeStorage, sourceInformation, filePath, sizeLimitMb, rowLimit), 1), filePath, tableName, columns, columnTypes);
+        return collectIterable(LazyIterate.drop(CsvReader.readCsv(codeStorage, sourceInformation, filePath, sizeLimitMb, rowLimit, functionExpressionCallStack), 1), filePath, tableName, columns, columnTypes, functionExpressionCallStack);
     }
 
-    public static Iterable<ListIterable<?>> collectIterable(LazyIterable iterable, final String filePath, final String tableName, final ListIterable<? extends CoreInstance> columns, final ListIterable<String> columnTypes)
+    public static Iterable<ListIterable<?>> collectIterable(LazyIterable iterable, final String filePath, final String tableName, final ListIterable<? extends CoreInstance> columns, final ListIterable<String> columnTypes, MutableStack<CoreInstance> functionExpressionCallStack)
     {
         return iterable.collect(new Function<Iterable<String>, ListIterable<?>>()
         {
@@ -126,7 +127,7 @@ public class LoadCsvToDbTable extends NativeFunction
                 {
                     throw new PureExecutionException("Failed to load CSV file " + filePath + " into DB table " + tableName +
                             ".\n Table requires a " + columnTypes.get(i) + " for column " + columns.get(i).getValueForMetaPropertyToOne(M3Properties.name).getName() +
-                            ". CSV row:" + (csvRecord instanceof CSVRecord ? ((CSVRecord)csvRecord).getRecordNumber() : "N/A") + " column:" + (i + 1) + " failed to convert to " + columnTypes.get(i) + " with error '" + ex.getMessage() + "'", ex);
+                            ". CSV row:" + (csvRecord instanceof CSVRecord ? ((CSVRecord)csvRecord).getRecordNumber() : "N/A") + " column:" + (i + 1) + " failed to convert to " + columnTypes.get(i) + " with error '" + ex.getMessage() + "'", ex, functionExpressionCallStack);
                 }
                 return result;
             }

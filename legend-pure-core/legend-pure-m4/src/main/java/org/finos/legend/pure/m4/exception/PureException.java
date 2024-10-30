@@ -272,7 +272,13 @@ public abstract class PureException extends RuntimeException
 
     private void writeSourceInformationMessage(SafeAppendable appendable, boolean includeParens)
     {
-        if (this.sourceInformation == null)
+        writeSourceInformationMessage(appendable, this.sourceInformation, includeParens);
+
+    }
+
+    protected void writeSourceInformationMessage(SafeAppendable appendable, SourceInformation sourceInformation, boolean includeParens)
+    {
+        if (sourceInformation == null)
         {
             appendable.append("??");
         }
@@ -282,8 +288,8 @@ public abstract class PureException extends RuntimeException
             {
                 appendable.append('(');
             }
-            appendable.append("resource:").append(this.sourceInformation.getSourceId());
-            printSourceInformationWithoutSourceId(appendable, this.sourceInformation);
+            appendable.append("resource:").append(sourceInformation.getSourceId());
+            printSourceInformationWithoutSourceId(appendable, sourceInformation);
             if (includeParens)
             {
                 appendable.append(')');

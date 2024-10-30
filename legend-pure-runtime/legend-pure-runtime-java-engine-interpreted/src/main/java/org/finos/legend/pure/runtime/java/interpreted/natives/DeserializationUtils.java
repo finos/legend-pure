@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.natives;
 
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -74,6 +75,6 @@ public class DeserializationUtils
         }
 
         // Multiplicity checks are skipped because they are performed in the forward process by the PropertyConverters
-        New.updateReverseProperties(instance, si, processorSupport, true);
+        New.updateReverseProperties(instance, si, Stacks.mutable.empty(), processorSupport, true);
     }
 }

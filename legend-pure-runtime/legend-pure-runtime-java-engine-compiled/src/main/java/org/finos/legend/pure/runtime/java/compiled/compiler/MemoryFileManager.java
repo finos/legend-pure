@@ -155,7 +155,8 @@ public class MemoryFileManager extends ForwardingJavaFileManager<StandardJavaFil
         return source;
     }
 
-    RichIterable<ClassJavaSource> getAllClassJavaSources(boolean includeClassesFromParent)
+    // public for testing
+    public RichIterable<ClassJavaSource> getAllClassJavaSources(boolean includeClassesFromParent)
     {
         if (!includeClassesFromParent || (this.parent == null))
         {

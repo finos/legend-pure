@@ -35,7 +35,7 @@ import org.finos.legend.pure.runtime.java.compiled.serialization.model.RValueCon
 import java.util.function.Consumer;
 import java.util.function.IntUnaryOperator;
 
-abstract class StringCache extends StringCacheOrIndex
+public abstract class StringCache extends StringCacheOrIndex
 {
     private final ObjectIntMap<String> classifierIds;
     private final ObjectIntMap<String> otherStrings;
@@ -70,12 +70,12 @@ abstract class StringCache extends StringCacheOrIndex
         return this.classifierIds.keysView();
     }
 
-    protected String[] getClassifierStringArray()
+    public String[] getClassifierStringArray()
     {
         return sequentialIdIndexToArray(this.classifierIds, StringCacheOrIndex::classifierIdStringIdToIndex);
     }
 
-    protected String[] getOtherStringsArray()
+    public String[] getOtherStringsArray()
     {
         return sequentialIdIndexToArray(this.otherStrings, StringCacheOrIndex::otherStringIdToIndex);
     }

@@ -16,7 +16,7 @@ package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
 import org.finos.legend.pure.m4.serialization.Reader;
 
-interface FileReader
+public interface FileReader
 {
     Reader getReader(String path);
 }

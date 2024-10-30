@@ -447,4 +447,27 @@ public class TestNewInstance extends AbstractPureTestWithCoreCompiledPlatform
                         "    ^ClassWrapper(classWithTypeParameter=a::b::c::SubclassWithoutTypeParameter);\n" +
                         "}\n");
     }
+
+
+    @Test
+    public void testNewInstanceWithExtendedPrimitiveType()
+    {
+
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("testModel.pure",
+                "Primitive a::P(x:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        "$this < $x\n" +
+                        "]\n" +
+                        "\n" +
+                        "Class a::Container2\n" +
+                        "{\n" +
+                        "    val : a::P(8)[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "function test():Any[*]\n" +
+                        "{" +
+                        "   assertEquals(1, ^a::Container2(val=1->cast(@a::P(2))).val);" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "Type Error: P(2) not a subtype of P(8)", "testModel.pure", 12, 39, 12, 39, 12, 39, e);
+    }
 }

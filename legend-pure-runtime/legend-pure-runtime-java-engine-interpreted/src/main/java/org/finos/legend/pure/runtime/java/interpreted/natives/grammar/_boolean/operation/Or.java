@@ -16,6 +16,7 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.grammar._boolean.
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -50,13 +51,13 @@ public class Or extends NativePredicate
     }
 
     @Override
-    protected boolean executeBoolean(Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, ListIterable<? extends CoreInstance> params, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, ProcessorSupport processorSupport) throws PureExecutionException
+    protected boolean executeBoolean(Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, ListIterable<? extends CoreInstance> params, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, ProcessorSupport processorSupport) throws PureExecutionException
     {
         VariableContext evalVarContext = getParentOrEmptyVariableContext(variableContext);
         for (CoreInstance param : params)
         {
-            Executor executor = FunctionExecutionInterpreted.findValueSpecificationExecutor(param, functionExpressionToUseInStack, processorSupport, this.functionExecution);
-            CoreInstance evaluatedParam = executor.execute(param, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, evalVarContext, profiler, instantiationContext, executionSupport, this.functionExecution, processorSupport);
+            Executor executor = FunctionExecutionInterpreted.findValueSpecificationExecutor(param, functionExpressionCallStack, processorSupport, this.functionExecution);
+            CoreInstance evaluatedParam = executor.execute(param, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionCallStack, evalVarContext, profiler, instantiationContext, executionSupport, this.functionExecution, processorSupport);
             if (PrimitiveUtilities.getBooleanValue(Instance.getValueForMetaPropertyToOneResolved(evaluatedParam, M3Properties.values, processorSupport)))
             {
                 return true;

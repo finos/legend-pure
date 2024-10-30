@@ -63,12 +63,13 @@ public class EqualityUtilities
 
         if ((left instanceof PrimitiveCoreInstance<?>) && (right instanceof PrimitiveCoreInstance<?>))
         {
-            return processorSupport.getClassifier(left).getName().equals(processorSupport.getClassifier(right).getName()) &&
+            return Type.findPrimitiveTypeFromExtendedPrimitiveType(processorSupport.getClassifier(left), processorSupport).getName()
+                    .equals(Type.findPrimitiveTypeFromExtendedPrimitiveType(processorSupport.getClassifier(right), processorSupport).getName()) &&
                     ((PrimitiveCoreInstance<?>) left).getValue().equals(((PrimitiveCoreInstance<?>) right).getValue());
         }
 
-        CoreInstance type = processorSupport.getClassifier(left);
-        if (type != processorSupport.getClassifier(right))
+        CoreInstance type = Type.findPrimitiveTypeFromExtendedPrimitiveType(processorSupport.getClassifier(left), processorSupport);
+        if (type != Type.findPrimitiveTypeFromExtendedPrimitiveType(processorSupport.getClassifier(right), processorSupport))
         {
             return false;
         }
@@ -92,21 +93,17 @@ public class EqualityUtilities
             return true;
         }
 
-        if ((left instanceof PrimitiveCoreInstance<?>) && (right instanceof PrimitiveCoreInstance<?>))
+        CoreInstance leftType = processorSupport.getClassifier(left);
+        CoreInstance rightType = processorSupport.getClassifier(right);
+
+        if (Type.isPrimitiveType(leftType, processorSupport) && Type.isPrimitiveType(rightType, processorSupport))
         {
-            return processorSupport.getClassifier(left).getName().equals(processorSupport.getClassifier(right).getName()) &&
-                    ((PrimitiveCoreInstance<?>) left).getValue().equals(((PrimitiveCoreInstance<?>) right).getValue());
+            return eq(left, right, processorSupport);
         }
 
-        CoreInstance type = processorSupport.getClassifier(left);
-        if (type != processorSupport.getClassifier(right))
+        if (leftType != processorSupport.getClassifier(right))
         {
             return false;
-        }
-
-        if (Type.isPrimitiveType(type, processorSupport))
-        {
-            return left.getName().equals(right.getName());
         }
 
         if (Instance.instanceOf(left, M3Paths.InstanceValue, processorSupport))
@@ -114,7 +111,7 @@ public class EqualityUtilities
             return equal(ValueSpecification.getValues(left, processorSupport), ValueSpecification.getValues(right, processorSupport), processorSupport);
         }
 
-        ListIterable<CoreInstance> keys = _Class.getEqualityKeyProperties(type, processorSupport);
+        ListIterable<CoreInstance> keys = _Class.getEqualityKeyProperties(leftType, processorSupport);
         if (external.isEmpty() && keys.isEmpty())
         {
             return false;

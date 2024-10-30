@@ -96,6 +96,11 @@ public class FunctionDescriptor
         return writeFunctionDescriptor(new StringBuilder(), function, processorSupport).toString();
     }
 
+    public static <T extends Appendable> T writeFunctionDescriptor(T appendable, CoreInstance function, ProcessorSupport processorSupport)
+    {
+        return writeFunctionDescriptor(appendable, function, true, processorSupport);
+    }
+
     /**
      * Write the descriptor for a function to the given appendable.
      *
@@ -103,13 +108,13 @@ public class FunctionDescriptor
      * @param function         function
      * @param processorSupport processor support
      */
-    public static <T extends Appendable> T writeFunctionDescriptor(T appendable, CoreInstance function, ProcessorSupport processorSupport)
+    public static <T extends Appendable> T writeFunctionDescriptor(T appendable, CoreInstance function, boolean printPackages, ProcessorSupport processorSupport)
     {
         SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
 
         // Write package
         CoreInstance pkg = function.getValueForMetaPropertyToOne(M3Properties._package);
-        if ((pkg != null) && !M3Paths.Root.equals(pkg.getName()))
+        if (printPackages && (pkg != null) && !M3Paths.Root.equals(pkg.getName()))
         {
             PackageableElement.writeUserPathForPackageableElement(safeAppendable, pkg, PackageableElement.DEFAULT_PATH_SEPARATOR).append(PackageableElement.DEFAULT_PATH_SEPARATOR);
         }

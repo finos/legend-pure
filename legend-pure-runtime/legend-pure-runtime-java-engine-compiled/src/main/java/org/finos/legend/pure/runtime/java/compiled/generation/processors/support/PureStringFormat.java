@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support;
 
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
@@ -167,11 +168,11 @@ public class PureStringFormat
         }
         catch (NoSuchElementException e)
         {
-            throw new PureExecutionException("Too few arguments passed to format function. Format expression \"" + formatString + "\", number of arguments [" + Iterate.sizeOf(formatArgs) + "]");
+            throw new PureExecutionException("Too few arguments passed to format function. Format expression \"" + formatString + "\", number of arguments [" + Iterate.sizeOf(formatArgs) + "]", Stacks.mutable.empty());
         }
         if (argIterator.hasNext())
         {
-            throw new PureExecutionException("Unused format args. [" + Iterate.sizeOf(formatArgs) + "] arguments provided to expression \"" + formatString + "\"");
+            throw new PureExecutionException("Unused format args. [" + Iterate.sizeOf(formatArgs) + "] arguments provided to expression \"" + formatString + "\"", Stacks.mutable.empty());
         }
         return builder.toString();
     }

@@ -17,6 +17,7 @@ package org.finos.legend.pure.runtime.java.extension.store.relational.shared.con
 import java.sql.DriverManager;
 import org.apache.tomcat.dbcp.dbcp2.BasicDataSource;
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.multimap.MutableMultimap;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.tuple.Tuples;
@@ -69,7 +70,7 @@ public class TestDatabaseConnect extends PerThreadPoolableConnectionProvider
         }
         catch (SQLException ex)
         {
-            throw new PureExecutionException("Unable to create TestDatabaseConnection of type: H2 for user: " + user + ", message: " + ex.getMessage(), ex);
+            throw new PureExecutionException("Unable to create TestDatabaseConnection of type: H2 for user: " + user + ", message: " + ex.getMessage(), ex, Stacks.mutable.empty());
         }
 
         pcw.incrementBorrowedCounter();

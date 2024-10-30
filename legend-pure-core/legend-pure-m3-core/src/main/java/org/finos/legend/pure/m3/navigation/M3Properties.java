@@ -52,6 +52,7 @@ public class M3Properties
     public static final String excluded = "excluded";
     public static final String expression = "expression";
     public static final String expressionSequence = "expressionSequence";
+    public static final String extended = "extended";
     public static final String externalId = "externalId";
     public static final String first = "first";
     public static final String func = "func";
@@ -147,6 +148,8 @@ public class M3Properties
     public static final String typeArguments = "typeArguments";
     public static final String typeParameter = "typeParameter";
     public static final String typeParameters = "typeParameters";
+    public static final String typeVariables = "typeVariables";
+    public static final String typeVariableValues = "typeVariableValues";
     public static final String typeViews = "typeViews";
     public static final String upperBound = "upperBound";
     public static final String usageContext = "usageContext";

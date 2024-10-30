@@ -19,6 +19,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.map.primitive.ImmutableIntObjectMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.factory.primitive.IntObjectMaps;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
@@ -115,7 +116,7 @@ public class ExecuteInDb extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
 
         String sql = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport).getName();
@@ -124,11 +125,11 @@ public class ExecuteInDb extends NativeFunction
         Number timeOutInSeconds = PrimitiveUtilities.getIntegerValue(Instance.getValueForMetaPropertyToOneResolved(params.get(2), M3Properties.values, processorSupport));
         Number fetchSize = PrimitiveUtilities.getIntegerValue(Instance.getValueForMetaPropertyToOneResolved(params.get(3), M3Properties.values, processorSupport));
 
-        CoreInstance pureResult = this.executeInDb(connectionInformation, sql, timeOutInSeconds.intValue(), fetchSize.intValue(), functionExpressionToUseInStack, processorSupport);
+        CoreInstance pureResult = this.executeInDb(connectionInformation, sql, timeOutInSeconds.intValue(), fetchSize.intValue(), functionExpressionCallStack.peek(), functionExpressionCallStack, processorSupport);
         return ValueSpecificationBootstrap.wrapValueSpecification(pureResult, true, processorSupport);
     }
 
-    public CoreInstance executeInDb(CoreInstance connectionInformation, String sql, int timeOutInSeconds, int fetchSize, CoreInstance functionExpressionToUseInStack, ProcessorSupport processorSupport)
+    public CoreInstance executeInDb(CoreInstance connectionInformation, String sql, int timeOutInSeconds, int fetchSize, CoreInstance functionExpression, MutableStack<CoreInstance> functionExpressionCallStack, ProcessorSupport processorSupport)
     {
         CoreInstance resultSetClassifier = processorSupport.package_getByUserPath("meta::relational::metamodel::execute::ResultSet");
         if (resultSetClassifier == null)
@@ -141,7 +142,7 @@ public class ExecuteInDb extends NativeFunction
             throw new RuntimeException("'meta::relational::metamodel::execute::Row' is unknown");
         }
 
-        CoreInstance pureResult = this.repository.newAnonymousCoreInstance(functionExpressionToUseInStack.getSourceInformation(), resultSetClassifier);
+        CoreInstance pureResult = this.repository.newAnonymousCoreInstance(functionExpression.getSourceInformation(), resultSetClassifier);
 
         Connection connection = null;
         ConnectionWithDataSourceInfo connectionWithDataSourceInfo = null;
@@ -192,7 +193,7 @@ public class ExecuteInDb extends NativeFunction
 
                     ResultSet rs = statement.getResultSet();
 
-                    createPureResultSetFromDatabaseResultSet(pureResult, rs, functionExpressionToUseInStack, rowClassifier, tz, repository, start, this.maxRows, processorSupport);
+                    createPureResultSetFromDatabaseResultSet(pureResult, rs, functionExpression, rowClassifier, tz, repository, start, this.maxRows, processorSupport);
                 }
                 else
                 {
@@ -236,14 +237,14 @@ public class ExecuteInDb extends NativeFunction
         }
         catch (SQLException e)
         {
-            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), SQLExceptionHandler.buildExceptionString(e, connection), e);
+            throw new PureExecutionException(functionExpression.getSourceInformation(), SQLExceptionHandler.buildExceptionString(e, connection), e, functionExpressionCallStack);
         }
 
         this.message.setMessage("Executing SQL...[DONE]");
         return pureResult;
     }
 
-    public static void createPureResultSetFromDatabaseResultSet(CoreInstance pureResult, ResultSet rs, CoreInstance functionExpressionToUseInStack, CoreInstance rowClassifier, String tz, ModelRepository repository,
+    public static void createPureResultSetFromDatabaseResultSet(CoreInstance pureResult, ResultSet rs, CoreInstance functionExpression, CoreInstance rowClassifier, String tz, ModelRepository repository,
                                                                 long start, int maxRows, ProcessorSupport processorSupport) throws SQLException
     {
         ResultSetMetaData metaData = rs.getMetaData();
@@ -267,7 +268,7 @@ public class ExecuteInDb extends NativeFunction
             int rowNum = 0;
             do
             {
-                CoreInstance row = repository.newAnonymousCoreInstance(functionExpressionToUseInStack.getSourceInformation(), rowClassifier);
+                CoreInstance row = repository.newAnonymousCoreInstance(functionExpression.getSourceInformation(), rowClassifier);
                 Instance.addValueToProperty(row, "parent", pureResult, processorSupport);
                 GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone(tz));
 
@@ -416,12 +417,12 @@ public class ExecuteInDb extends NativeFunction
         }
     }
 
-    public void bulkInsertInDb(CoreInstance connectionInformation, CoreInstance table, Iterable<? extends Iterable<?>> values, CoreInstance functionExpressionToUseInStack, final ProcessorSupport processorSupport)
+    public void bulkInsertInDb(CoreInstance connectionInformation, CoreInstance table, Iterable<? extends Iterable<?>> values, MutableStack<CoreInstance> functionExpressionCallStack, final ProcessorSupport processorSupport)
     {
 
         if (!Instance.instanceOf(connectionInformation, "meta::external::store::relational::runtime::TestDatabaseConnection", processorSupport))
         {
-            throw new PureExecutionException("Bulk insert is only supported for the TestDatabaseConnection");
+            throw new PureExecutionException("Bulk insert is only supported for the TestDatabaseConnection", functionExpressionCallStack);
         }
 
         String tableName = Instance.getValueForMetaPropertyToOneResolved(table, M3Properties.name, processorSupport).getName();
@@ -468,7 +469,7 @@ public class ExecuteInDb extends NativeFunction
         }
         catch (SQLException e)
         {
-            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), SQLExceptionHandler.buildExceptionString(e, connection), e);
+            throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), SQLExceptionHandler.buildExceptionString(e, connection), e, functionExpressionCallStack);
         }
 
     }

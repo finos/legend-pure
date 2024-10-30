@@ -313,7 +313,7 @@ public final class RuntimeTestScriptBuilder extends RuntimeActionRunner
             try
             {
                 this.action.execute(pureRuntime, functionExecution);
-                Assert.fail();
+                Assert.fail("An exception was expected!");
             }
             catch (Exception e)
             {

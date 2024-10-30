@@ -906,7 +906,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                     PostProcessor.processElement(matcher, sourceType, state, processorSupport);
                     qualifiedProperties = _Class.findQualifiedPropertiesUsingGeneralization(sourceType, propertyName, processorSupport);
                 }
-                property = (AbstractProperty<?>) findSingleArgumentQualifiedProperty(qualifiedProperties, processorSupport);
+                property = (AbstractProperty<?>) findSingleArgumentQualifiedProperty(sourceType, qualifiedProperties, processorSupport);
                 if (property == null)
                 {
                     StringBuilder message = new StringBuilder();
@@ -976,12 +976,13 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
         milestonedPropertyMetaData.getTemporalDatePropertyNamesForStereotypes().appendString(message, "[ ", ", ", " ]");
     }
 
-    private static CoreInstance findSingleArgumentQualifiedProperty(RichIterable<? extends CoreInstance> qualifiedProperties, ProcessorSupport processorSupport)
+    private static CoreInstance findSingleArgumentQualifiedProperty(CoreInstance sourceType, RichIterable<? extends CoreInstance> qualifiedProperties, ProcessorSupport processorSupport)
     {
+        int toCheck = sourceType.getValueForMetaPropertyToMany(M3Properties.typeVariables).size() + 1;
         for (CoreInstance qualifiedProperty : qualifiedProperties)
         {
             FunctionType funcType = (FunctionType) processorSupport.function_getFunctionType(qualifiedProperty);
-            if (1 == funcType._parameters().size())
+            if (toCheck == funcType._parameters().size())
             {
                 return qualifiedProperty;
             }
@@ -1014,7 +1015,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
         firstParam._genericType(parametersValues.get(0)._genericType());
         firstParam._multiplicity((Multiplicity) processorSupport.package_getByUserPath(M3Paths.PureOne));
 
-        MutableList<ValueSpecification> params = Lists.mutable.<ValueSpecification>with(firstParam).withAll(ListHelper.tail(parametersValues));
+        MutableList<ValueSpecification> params = Lists.mutable.<ValueSpecification>with(firstParam).withAll(sourceGenericType._typeVariableValues()).withAll(ListHelper.tail(parametersValues));
         ListIterable<QualifiedProperty<?>> properties = _Class.findQualifiedPropertiesUsingGeneralization(sourceRawType, propertyName, processorSupport);
         SourceInformation sourceInformation = propertyFunction._qualifiedPropertyName().getSourceInformation();
         ListIterable<QualifiedProperty<?>> foundFunctions = FunctionExpressionMatcher.getFunctionMatches(properties, params, propertyName, sourceInformation, true, processorSupport);

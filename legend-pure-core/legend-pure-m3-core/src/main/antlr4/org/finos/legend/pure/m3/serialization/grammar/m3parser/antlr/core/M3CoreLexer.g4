@@ -55,6 +55,7 @@ FUNCTION: 'function';
 IMPORT: 'import';
 EXTENDS: 'extends';
 PROJECTS: 'projects';
+PRIMITIVE: 'Primitive';
 CLASS: 'Class';
 ASSOCIATION: 'Association';
 PROFILE: 'Profile';

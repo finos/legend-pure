@@ -40,7 +40,6 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecificat
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
@@ -264,7 +263,7 @@ public class TypeInference
             String templateParam = template._multiplicityParameter();
             if (fromInstance == null)
             {
-                throw new PureExecutionException("Cannot resolve multiplicity parameter: " + templateParam);
+                throw new PureCompilationException("Cannot resolve multiplicity parameter: " + templateParam);
             }
             String fromParam = fromInstance._multiplicityParameter();
             rmultiplicities.put(templateParam, (fromParam == null) ? fromInstance : multiplicities.get(fromParam));

@@ -92,7 +92,7 @@ public class ElementWithConstraintsProcessor extends Processor<ElementWithConstr
         {
             ClassConstraintValueSpecificationContext usageContext = (ClassConstraintValueSpecificationContext) processorSupport.newAnonymousCoreInstance(null, M3Paths.ClassConstraintValueSpecificationContext);
             usageContext._offset(offset);
-            usageContext._classCoreInstance(cls);
+            usageContext._typeCoreInstance(cls);
             expressionSequence._usageContext(usageContext);
         }
     }

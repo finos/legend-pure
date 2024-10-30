@@ -15,6 +15,7 @@
 package org.finos.legend.pure.runtime.java.compiled.metadata;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.factory.Maps;
@@ -126,7 +127,7 @@ public final class MetadataEager implements Metadata
 
         if (coreInstance == null)
         {
-            throw new PureExecutionException("Element " + id + " of type " + classifier + " does not exist");
+            throw new PureExecutionException("Element " + id + " of type " + classifier + " does not exist", Stacks.mutable.empty());
         }
 
         return coreInstance;

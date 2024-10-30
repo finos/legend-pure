@@ -18,7 +18,7 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.finos.legend.pure.m4.serialization.Reader;
 
-abstract class StringIndex extends StringCacheOrIndex
+public abstract class StringIndex extends StringCacheOrIndex
 {
     private final String[] classifierIds;
 

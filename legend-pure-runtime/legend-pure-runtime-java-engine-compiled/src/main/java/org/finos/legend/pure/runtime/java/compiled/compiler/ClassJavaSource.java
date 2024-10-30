@@ -54,7 +54,8 @@ public class ClassJavaSource extends SimpleJavaFileObject
         };
     }
 
-    byte[] getBytes()
+    // public for testing
+    public byte[] getBytes()
     {
         return this.bytes;
     }

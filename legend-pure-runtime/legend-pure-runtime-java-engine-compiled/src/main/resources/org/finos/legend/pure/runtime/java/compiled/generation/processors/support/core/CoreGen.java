@@ -19,6 +19,7 @@ import org.eclipse.collections.api.block.function.Function0;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List;
@@ -33,7 +34,11 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ElementOve
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.GetterOverride;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
+import org.finos.legend.pure.m3.exception.PureAssertFailException;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.runtime.java.compiled.CoreHelper;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
@@ -59,6 +64,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
+import java.util.Stack;
 
 public class CoreGen extends CoreHelper
 {
@@ -367,5 +373,36 @@ public class CoreGen extends CoreHelper
     public static Double random()
     {
         return random.nextDouble();
+    }
+
+    public static boolean assertError(ExecutionSupport es, Function<?> func, String message, long line, long column, SourceInformation sourceInformation)
+    {
+        try
+        {
+            Pure.evaluate(es, func, bridge);
+            throw new PureAssertFailException(sourceInformation, "No error was thrown", Stacks.mutable.<CoreInstance>empty());
+        }
+        catch (PureExecutionException e)
+        {
+            if (!e.getInfo().equals(message))
+            {
+                throw new PureAssertFailException(sourceInformation, "Execution error message mismatch.\nThe actual message was \"" + e.getInfo() + "\"\nwhere the expected message was:\"" + message + "\"", Stacks.mutable.<CoreInstance>empty());
+            }
+            if (line != -1)
+            {
+                if (e.getSourceInformation().getLine() != line)
+                {
+                    throw new PureAssertFailException(sourceInformation, "Execution error line mismatch. Actual: " + e.getSourceInformation().getLine() + " where expected: " + line, Stacks.mutable.<CoreInstance>empty());
+                }
+            }
+            if (column != -1)
+            {
+                if (e.getSourceInformation().getColumn() != column)
+                {
+                    throw new PureAssertFailException(sourceInformation, "Execution error column mismatch. Actual: " + e.getSourceInformation().getColumn() + " where expected: " + column, Stacks.mutable.<CoreInstance>empty());
+                }
+            }
+        }
+        return true;
     }
 }

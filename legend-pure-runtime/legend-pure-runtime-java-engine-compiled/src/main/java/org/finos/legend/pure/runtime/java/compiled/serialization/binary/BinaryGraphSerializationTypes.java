@@ -16,7 +16,8 @@ package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 
-class BinaryGraphSerializationTypes
+// public for testing
+public class BinaryGraphSerializationTypes
 {
     static final byte OBJ_REF = 1;
     static final byte ENUM_REF = 2;
@@ -31,7 +32,7 @@ class BinaryGraphSerializationTypes
     private static final int HAS_NAME = 0b10;
     private static final int HAS_SOURCE_INFO = 0b100;
 
-    static byte getObjSerializationCode(Obj obj)
+    public static byte getObjSerializationCode(Obj obj)
     {
         int code = 0;
         if (obj.isEnum())
@@ -49,17 +50,17 @@ class BinaryGraphSerializationTypes
         return (byte) code;
     }
 
-    static boolean isEnum(byte code)
+    public static boolean isEnum(byte code)
     {
         return hasFlag(code, IS_ENUM);
     }
 
-    static boolean hasName(byte code)
+    public static boolean hasName(byte code)
     {
         return hasFlag(code, HAS_NAME);
     }
 
-    static boolean hasSourceInfo(byte code)
+    public static boolean hasSourceInfo(byte code)
     {
         return hasFlag(code, HAS_SOURCE_INFO);
     }

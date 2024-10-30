@@ -15,6 +15,7 @@
 package org.finos.legend.pure.runtime.java.interpreted;
 
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -34,13 +35,13 @@ class VariableExpressionExecutor implements Executor
     }
 
     @Override
-    public CoreInstance execute(CoreInstance instance, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, CoreInstance functionExpressionToUseInStack, VariableContext variableContext, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, FunctionExecutionInterpreted functionExecutionInterpreted, ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(CoreInstance instance, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, MutableStack<CoreInstance> functionExpressionCallStack, VariableContext variableContext, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, FunctionExecutionInterpreted functionExecutionInterpreted, ProcessorSupport processorSupport) throws PureExecutionException
     {
         String varName = Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.name, processorSupport).getName();
         CoreInstance result = variableContext.getValue(varName);
         if (result == null)
         {
-            throw new PureExecutionException(instance.getSourceInformation(), "Variable '" + varName + "' is not defined in the current variable context");
+            throw new PureExecutionException(instance.getSourceInformation(), "Variable '" + varName + "' is not defined in the current variable context", functionExpressionCallStack);
         }
         return result;
     }

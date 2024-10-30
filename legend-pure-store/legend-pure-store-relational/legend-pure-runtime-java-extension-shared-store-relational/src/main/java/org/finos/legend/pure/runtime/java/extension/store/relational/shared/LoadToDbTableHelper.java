@@ -17,6 +17,7 @@ package org.finos.legend.pure.runtime.java.extension.store.relational.shared;
 import org.apache.commons.csv.CSVRecord;
 import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.utility.StringIterate;
@@ -59,7 +60,7 @@ public class LoadToDbTableHelper
                     throw new PureExecutionException("Failed to load CSV file " + filePath + " into DB table " + tableName +
                             ".\n Table requires a " + columnTypes.get(i) + " for column number " + i + ". CSV row:" +
                             (csvRecord instanceof CSVRecord ? ((CSVRecord) csvRecord).getRecordNumber() : "N/A") + " column:" + (i + 1) +
-                            " failed to convert to " + columnTypes.get(i) + " with error '" + ex.getMessage() + "'", ex);
+                            " failed to convert to " + columnTypes.get(i) + " with error '" + ex.getMessage() + "'", ex, Stacks.mutable.empty());
                 }
             }
             return result;

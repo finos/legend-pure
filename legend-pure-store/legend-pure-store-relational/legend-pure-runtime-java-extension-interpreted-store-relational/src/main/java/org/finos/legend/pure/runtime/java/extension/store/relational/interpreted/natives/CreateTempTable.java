@@ -17,6 +17,7 @@ package org.finos.legend.pure.runtime.java.extension.store.relational.interprete
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -52,7 +53,7 @@ public class CreateTempTable extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         CoreInstance tableName = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
         ListIterable<? extends CoreInstance> columns = Instance.getValueForMetaPropertyToManyResolved(params.get(1), M3Properties.values, processorSupport);
@@ -71,13 +72,13 @@ public class CreateTempTable extends NativeFunction
         }
         CoreInstance dbType = Instance.getValueForMetaPropertyToOneResolved(connection, "type", processorSupport);
 
-        CoreInstance sql = this.functionExecution.executeLambdaFromNative(toSql, Lists.immutable.with(ValueSpecificationBootstrap.wrapValueSpecification(tableName, false, processorSupport), ValueSpecificationBootstrap.wrapValueSpecification(columns, false, processorSupport), ValueSpecificationBootstrap.wrapValueSpecification(dbType, false, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
+        CoreInstance sql = this.functionExecution.executeLambdaFromNative(toSql, Lists.immutable.with(ValueSpecificationBootstrap.wrapValueSpecification(tableName, false, processorSupport), ValueSpecificationBootstrap.wrapValueSpecification(columns, false, processorSupport), ValueSpecificationBootstrap.wrapValueSpecification(dbType, false, processorSupport)), resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
         String sqlStr = Instance.getValueForMetaPropertyToOneResolved(sql, M3Properties.values, processorSupport).getName();
 
         final ExecuteInDb executeInDb = new ExecuteInDb(this.repository, this.message, 0);
-        executeInDb.executeInDb(connection, sqlStr, 0, 0, functionExpressionToUseInStack, processorSupport);
+        executeInDb.executeInDb(connection, sqlStr, 0, 0, functionExpressionCallStack.peek(), functionExpressionCallStack, processorSupport);
 
-        executionSupport.registerIdentifiableExecutionEndListener(new TempTableCleanup(tableName.getName(), relyOnFinallyForCleanup, executeInDb, connection, functionExpressionToUseInStack, processorSupport));
+        executionSupport.registerIdentifiableExecutionEndListener(new TempTableCleanup(tableName.getName(), relyOnFinallyForCleanup, executeInDb, connection, functionExpressionCallStack, processorSupport));
 
         return ValueSpecificationBootstrap.wrapValueSpecification(Lists.immutable.<CoreInstance>with(), true, processorSupport);
     }
@@ -88,10 +89,11 @@ public class CreateTempTable extends NativeFunction
         private final Runnable cleanUp;
         private final boolean relyOnFinallyForCleanup;
 
-        public TempTableCleanup(String tableName, CoreInstance relyOnFinallyForCleanup, ExecuteInDb executeInDb, CoreInstance connection, CoreInstance functionExpressionToUseInStack, ProcessorSupport processorSupport)
+        public TempTableCleanup(String tableName, CoreInstance relyOnFinallyForCleanup, ExecuteInDb executeInDb, CoreInstance connection, MutableStack<CoreInstance> functionExpressionCallStack, ProcessorSupport processorSupport)
         {
             this.tableName = tableName;
-            this.cleanUp = () -> executeInDb.executeInDb(connection, "drop table " + tableName, 0, 0, functionExpressionToUseInStack, processorSupport);
+            CoreInstance function = functionExpressionCallStack.peek();
+            this.cleanUp = () -> executeInDb.executeInDb(connection, "drop table " + tableName, 0, 0, function, functionExpressionCallStack, processorSupport);
             this.relyOnFinallyForCleanup = PrimitiveUtilities.getBooleanValue(relyOnFinallyForCleanup, false);
         }
 

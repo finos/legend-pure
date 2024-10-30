@@ -332,6 +332,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                                            specializations(Property):\n" +
                 "                                                Anonymous_StripedId instance Generalization\n" +
                 "                                                    [... >5]\n" +
+                "                                            typeVariables(Property):\n" +
                 "                    importGroup(Property):\n" +
                 "                        import_defaultValueSource_pure_1 instance ImportGroup\n" +
                 "                    multiplicity(Property):\n" +
@@ -359,6 +360,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                                            referenceUsages(Property):\n" +
                 "                                                Anonymous_StripedId instance ReferenceUsage\n" +
                 "                                                    [... >5]\n" +
+                "                                            typeVariableValues(Property):\n" +
                 "                            multiplicity(Property):\n" +
                 "                                PureOne instance PackageableMultiplicity\n" +
                 "                            usageContext(Property):\n" +
@@ -888,6 +890,7 @@ public class TestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
                 "                                            specific(Property):\n" +
                 "                                                exampleSubType instance Class\n" +
                 "                                                    [... >5]\n" +
+                "                                    typeVariables(Property):\n" +
                 "                    multiplicity(Property):\n" +
                 "                        Anonymous_StripedId instance Multiplicity\n" +
                 "                            lowerBound(Property):\n" +

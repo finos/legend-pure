@@ -17,9 +17,11 @@ package org.finos.legend.pure.runtime.java.extension.store.relational.shared;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 import java.io.File;
@@ -36,13 +38,13 @@ public class CsvReader
     protected static final long MEGA_BYTE = 1024 * 1024L;
 
     public static Iterable<CSVRecord> readCsv(RepositoryCodeStorage codeStorage, SourceInformation sourceForError, String filePath,
-                                              Integer rowLimit)
+                                              Integer rowLimit, MutableStack<CoreInstance> functionExpressionCallStack)
     {
-        return readCsv(codeStorage, sourceForError, filePath, ONE_MB_SIZE_LIMIT, rowLimit);
+        return readCsv(codeStorage, sourceForError, filePath, ONE_MB_SIZE_LIMIT, rowLimit, functionExpressionCallStack);
     }
 
     public static Iterable<CSVRecord> readCsv(RepositoryCodeStorage codeStorage, SourceInformation sourceForError, String filePath,
-                                              int sizeLimitMegabytes, Integer rowLimit)
+                                              int sizeLimitMegabytes, Integer rowLimit, MutableStack<CoreInstance> functionExpressionCallStack)
     {
         try
         {
@@ -53,7 +55,7 @@ public class CsvReader
                 String file = codeStorage.getContentAsText(filePath);
                 if (file.getBytes(StandardCharsets.UTF_8).length > sizeLimitBytes)
                 {
-                    throw new PureExecutionException("File is too large, file was " + String.format("%.2f", file.length() * 1.0 / MEGA_BYTE) + " Mb, limit is " + sizeLimitMegabytes + " Mb");
+                    throw new PureExecutionException("File is too large, file was " + String.format("%.2f", file.length() * 1.0 / MEGA_BYTE) + " Mb, limit is " + sizeLimitMegabytes + " Mb", functionExpressionCallStack);
                 }
                 csvParser = CSVParser.parse(file, CSVFormat.EXCEL);
             }
@@ -64,13 +66,13 @@ public class CsvReader
                 {
                     if (file.length() > sizeLimitBytes)
                     {
-                        throw new PureExecutionException("File is too large, file was " + String.format("%.2f", file.length() * 1.0 / MEGA_BYTE) + " Mb, limit is " + sizeLimitMegabytes + " Mb");
+                        throw new PureExecutionException("File is too large, file was " + String.format("%.2f", file.length() * 1.0 / MEGA_BYTE) + " Mb, limit is " + sizeLimitMegabytes + " Mb", functionExpressionCallStack);
                     }
                     csvParser = CSVParser.parse(file, Charset.defaultCharset(), CSVFormat.EXCEL);
                 }
                 else
                 {
-                    throw new PureExecutionException(sourceForError, "No CSV file found with path '" + filePath + "'");
+                    throw new PureExecutionException(sourceForError, "No CSV file found with path '" + filePath + "'", functionExpressionCallStack);
                 }
             }
 
@@ -79,7 +81,7 @@ public class CsvReader
         }
         catch (Exception e)
         {
-            throw new PureExecutionException(sourceForError, "Unable to read the CSV file '" + filePath + "' " + e.getMessage(), e);
+            throw new PureExecutionException(sourceForError, "Unable to read the CSV file '" + filePath + "' " + e.getMessage(), e, functionExpressionCallStack);
         }
     }
 
@@ -89,7 +91,7 @@ public class CsvReader
         return format.parse(csvReader);
     }
 
-    public static CSVParser readCsv(String csvString, SourceInformation sourceForError, CSVFormat csvFormat, long skipStartLines)
+    public static CSVParser readCsv(String csvString, SourceInformation sourceForError, CSVFormat csvFormat, long skipStartLines, MutableStack<CoreInstance> functionExpressionCallStack)
     {
         try
         {
@@ -99,7 +101,7 @@ public class CsvReader
         }
         catch (IOException e)
         {
-            throw new PureExecutionException(sourceForError, "Unable to read the CSV string " + e.getMessage(), e);
+            throw new PureExecutionException(sourceForError, "Unable to read the CSV string " + e.getMessage(), e, functionExpressionCallStack);
         }
     }
 

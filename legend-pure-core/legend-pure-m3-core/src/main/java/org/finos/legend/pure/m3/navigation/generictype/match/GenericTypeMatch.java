@@ -26,6 +26,7 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.generictype.GenericTypeWithXArguments;
 import org.finos.legend.pure.m3.navigation.multiplicity.MultiplicityMatch;
+import org.finos.legend.pure.m3.navigation.type.ExtendedPrimitiveType;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
@@ -297,6 +298,12 @@ public class GenericTypeMatch implements Comparable<GenericTypeMatch>
                 multArgumentMatches.add(multArgumentMatch);
             }
         }
+
+        if (!ExtendedPrimitiveType.testTypeVariableValuesCompatible(targetGenericType, valueGenericType, processorSupport))
+        {
+            return null;
+        }
+
         return new GenericTypeMatch(rawTypeMatch, typeArgumentMatches, multArgumentMatches);
     }
 

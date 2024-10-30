@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
-class DistributedMetadataHelper
+public class DistributedMetadataHelper
 {
     private static final String META_DATA_DIRNAME = "metadata/";
     private static final String SPECS_DIRNAME = META_DATA_DIRNAME + "specs/";
@@ -28,7 +28,7 @@ class DistributedMetadataHelper
 
     // Metadata name
 
-    static <T extends CharSequence> T validateMetadataName(T charSequence)
+    public static <T extends CharSequence> T validateMetadataName(T charSequence)
     {
         if (!isValidMetadataName(charSequence))
         {
@@ -37,7 +37,7 @@ class DistributedMetadataHelper
         return charSequence;
     }
 
-    static <T extends CharSequence> T validateMetadataNameIfPresent(T charSequence)
+    public static <T extends CharSequence> T validateMetadataNameIfPresent(T charSequence)
     {
         return (charSequence == null) ? null : validateMetadataName(charSequence);
     }
@@ -49,7 +49,7 @@ class DistributedMetadataHelper
      * @param charSequence character sequence
      * @return whether charSequence is a valid metadata name
      */
-    static boolean isValidMetadataName(CharSequence charSequence)
+    public static boolean isValidMetadataName(CharSequence charSequence)
     {
         return (charSequence != null) && isValidMetadataName_internal(charSequence, 0, charSequence.length());
     }
@@ -63,7 +63,7 @@ class DistributedMetadataHelper
      * @param end          end (exclusive)
      * @return whether the given region of charSequence is a valid metadata name
      */
-    static boolean isValidMetadataName(CharSequence charSequence, int start, int end)
+    public static boolean isValidMetadataName(CharSequence charSequence, int start, int end)
     {
         return (charSequence != null) &&
                 (start >= 0) &&
@@ -101,19 +101,19 @@ class DistributedMetadataHelper
                 (('a' <= c) && (c <= 'z'));   // lowercase letter
     }
 
-    static String getMetadataIdPrefix(String metadataName)
+    public static String getMetadataIdPrefix(String metadataName)
     {
         return (metadataName == null) ? null : ('$' + metadataName + '$');
     }
 
     // Metadata specification paths
 
-    static String getMetadataSpecificationsDirectory()
+    public static String getMetadataSpecificationsDirectory()
     {
         return SPECS_DIRNAME;
     }
 
-    static String getMetadataSpecificationFilePath(String metadataName)
+    public static String getMetadataSpecificationFilePath(String metadataName)
     {
         return SPECS_DIRNAME + metadataName + METADATA_SPEC_FILE_EXTENSION;
     }
@@ -136,14 +136,14 @@ class DistributedMetadataHelper
 
     // Metadata file paths
 
-    static String getMetadataClassifierIndexFilePath(String metadataName, String classifierName)
+    public static String getMetadataClassifierIndexFilePath(String metadataName, String classifierName)
     {
         return (metadataName == null) ?
                 (CLASSIFIERS_DIRNAME + classifierName.replace("::", "/") + INDEX_FILE_EXTENSION) :
                 (CLASSIFIERS_DIRNAME + metadataName + "/" + classifierName.replace("::", "/") + INDEX_FILE_EXTENSION);
     }
 
-    static String getMetadataPartitionBinFilePath(String metadataName, int partitionId)
+    public static String getMetadataPartitionBinFilePath(String metadataName, int partitionId)
     {
         return (metadataName == null) ?
                 (BINARIES_DIRNAME + partitionId + BIN_FILE_EXTENSION) :
@@ -152,21 +152,21 @@ class DistributedMetadataHelper
 
     // Strings
 
-    static String getClassifierIdStringsIndexFilePath(String metadataName)
+    public static String getClassifierIdStringsIndexFilePath(String metadataName)
     {
         return (metadataName == null) ?
                 (STRINGS_DIRNAME + "classifiers" + INDEX_FILE_EXTENSION) :
                 (STRINGS_DIRNAME + metadataName + "/classifiers" + INDEX_FILE_EXTENSION);
     }
 
-    static String getOtherStringsIndexFilePath(String metadataName)
+    public static String getOtherStringsIndexFilePath(String metadataName)
     {
         return (metadataName == null) ?
                 (STRINGS_DIRNAME + "other" + INDEX_FILE_EXTENSION) :
                 (STRINGS_DIRNAME + metadataName + "/other" + INDEX_FILE_EXTENSION);
     }
 
-    static String getOtherStringsIndexPartitionFilePath(String metadataName, int partitionId)
+    public static String getOtherStringsIndexPartitionFilePath(String metadataName, int partitionId)
     {
         return (metadataName == null) ?
                 (STRINGS_DIRNAME + "other-" + partitionId + INDEX_FILE_EXTENSION) :

@@ -17,6 +17,7 @@ package org.finos.legend.pure.generated;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.ImmutableMap;
@@ -29,6 +30,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Pure;
@@ -53,6 +55,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.GregorianCalendar;
+import java.util.Stack;
 import java.util.TimeZone;
 
 public class RelationalGen
@@ -155,7 +158,7 @@ public class RelationalGen
                 {
                     if (rowCount > rowLimit)
                     {
-                        throw new PureExecutionException("Too many rows returned. PURE currently supports results with up to " + rowLimit + " rows. Please add a filter or use the take or limit function to limit the rows returned");
+                        throw new PureExecutionException("Too many rows returned. PURE currently supports results with up to " + rowLimit + " rows. Please add a filter or use the take or limit function to limit the rows returned", Stacks.mutable.<org.finos.legend.pure.m4.coreinstance.CoreInstance>empty());
                     }
                     ;
                 }
@@ -197,7 +200,7 @@ public class RelationalGen
                 {
                 }
             }
-            throw new PureExecutionException(SQLExceptionHandler.buildExceptionString(e, connection), e);
+            throw new PureExecutionException(SQLExceptionHandler.buildExceptionString(e, connection), e, Stacks.mutable.<org.finos.legend.pure.m4.coreinstance.CoreInstance>empty());
         }
     }
 
@@ -254,7 +257,7 @@ public class RelationalGen
         }
         catch (SQLException e)
         {
-            throw new PureExecutionException(si, SQLExceptionHandler.buildExceptionString(e, connection), e);
+            throw new PureExecutionException(si, SQLExceptionHandler.buildExceptionString(e, connection), e, Stacks.mutable.<org.finos.legend.pure.m4.coreinstance.CoreInstance>empty());
         }
     }
 
@@ -314,7 +317,7 @@ public class RelationalGen
     {
         Integer rowLimit = numberOfRows == null ? null : numberOfRows.intValue();
         ListIterable<String> columnTypes = getColumnTypes(table, ((CompiledExecutionSupport) es).getProcessorSupport());
-        Iterable<ListIterable<?>> values = LoadToDbTableHelper.collectIterable(LazyIterate.drop(CsvReader.readCsv(((CompiledExecutionSupport) es).getCodeStorage(), null, filePath, 500, rowLimit), 1), columnTypes, filePath, table._name());
+        Iterable<ListIterable<?>> values = LoadToDbTableHelper.collectIterable(LazyIterate.drop(CsvReader.readCsv(((CompiledExecutionSupport) es).getCodeStorage(), null, filePath, 500, rowLimit, Stacks.mutable.<org.finos.legend.pure.m4.coreinstance.CoreInstance>empty()), 1), columnTypes, filePath, table._name());
         bulkInsertInDb(pureConnection, table, values, rowLimit, es);
         return Lists.mutable.empty();
     }
@@ -351,7 +354,7 @@ public class RelationalGen
     {
         if (!(pureConnection instanceof Root_meta_external_store_relational_runtime_TestDatabaseConnection))
         {
-            throw new PureExecutionException("Bulk insert is only supported for the TestDatabaseConnection");
+            throw new PureExecutionException("Bulk insert is only supported for the TestDatabaseConnection", Stacks.mutable.<org.finos.legend.pure.m4.coreinstance.CoreInstance>empty());
         }
 
         String schemaName = table._schema()._name();
@@ -405,7 +408,7 @@ public class RelationalGen
         }
         catch (SQLException e)
         {
-            throw new PureExecutionException(SQLExceptionHandler.buildExceptionString(e, connection), e);
+            throw new PureExecutionException(SQLExceptionHandler.buildExceptionString(e, connection), e, Stacks.mutable.<org.finos.legend.pure.m4.coreinstance.CoreInstance>empty());
         }
     }
 }

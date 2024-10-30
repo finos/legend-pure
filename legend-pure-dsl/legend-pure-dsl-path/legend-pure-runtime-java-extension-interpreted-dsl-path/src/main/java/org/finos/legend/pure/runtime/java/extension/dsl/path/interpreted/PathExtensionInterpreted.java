@@ -18,6 +18,7 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m2.inlinedsl.path.M2PathPaths;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.PropertyCoreInstanceWrapper;
@@ -50,7 +51,7 @@ public class PathExtensionInterpreted extends BaseInterpretedExtension
     }
 
     @Override
-    public CoreInstance getExtraFunctionExecution(Function<?> function, ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, ProcessorSupport processorSupport, FunctionExecutionInterpreted interpreted)
+    public CoreInstance getExtraFunctionExecution(Function<?> function, ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, ProcessorSupport processorSupport, FunctionExecutionInterpreted interpreted)
     {
         if (Instance.instanceOf(function, M2PathPaths.Path, processorSupport))
         {
@@ -62,7 +63,7 @@ public class PathExtensionInterpreted extends BaseInterpretedExtension
                         CoreInstance property = Instance.getValueForMetaPropertyToOneResolved(pathElement, M3Properties.property, processorSupport);
                         MutableList<CoreInstance> parameters = Lists.mutable.with(ValueSpecificationBootstrap.wrapValueSpecification(instance, executable, processorSupport));
                         parameters.addAllIterable(Instance.getValueForMetaPropertyToManyResolved(pathElement, M3Properties.parameters, processorSupport).collect(ci -> ValueSpecificationBootstrap.wrapValueSpecification(Instance.getValueForMetaPropertyToManyResolved(ci, M3Properties.values, processorSupport), executable, processorSupport)));
-                        return (Iterable<CoreInstance>) interpreted.executeFunction(false, PropertyCoreInstanceWrapper.toProperty(property), parameters, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport).getValueForMetaPropertyToMany(M3Properties.values);
+                        return (Iterable<CoreInstance>) interpreted.executeFunction(false, PropertyCoreInstanceWrapper.toProperty(property), parameters, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport).getValueForMetaPropertyToMany(M3Properties.values);
                     }));
             return ValueSpecificationBootstrap.wrapValueSpecification(res, executable, processorSupport);
         }

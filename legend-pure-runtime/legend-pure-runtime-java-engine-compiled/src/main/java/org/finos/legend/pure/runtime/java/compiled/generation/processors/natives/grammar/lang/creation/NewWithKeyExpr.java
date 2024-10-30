@@ -27,6 +27,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.DefaultValue;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification.ValueSpecificationProcessor;
 
 public class NewWithKeyExpr extends AbstractNative
 {
@@ -49,8 +50,9 @@ public class NewWithKeyExpr extends AbstractNative
         boolean addGenericType = Instance.getValueForMetaPropertyToManyResolved(genericType, M3Properties.typeArguments, processorSupport).notEmpty();
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
         return "new " + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class, processorSupport) + (addGenericType ? TypeProcessor.buildTypeArgumentsString(genericType, false, processorSupport) : "")
-                + "(\"" + newId + "\")" + (addGenericType ? "._classifierGenericType("
-                + InstantiationHelpers.buildGenericType(genericType, processorContext) + ")" : "")
+                + "(\"" + newId + "\")"
+                + _class.getValueForMetaPropertyToMany(M3Properties.typeVariables).zip(genericType.getValueForMetaPropertyToMany(M3Properties.typeVariableValues)).collect(x -> "._" + x.getOne().getValueForMetaPropertyToOne(M3Properties.name).getName() + "(" + ValueSpecificationProcessor.processValueSpecification(x.getTwo(), processorContext) + ")").makeString("")
+                + (addGenericType ? "._classifierGenericType(" + InstantiationHelpers.buildGenericType(genericType, processorContext) + ")" : "")
                 + DefaultValue.manageDefaultValues(this::formatDefaultValueString, Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), false, processorContext).makeString("")
                 + InstantiationHelpers.manageKeyValues(genericType, Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), keyValues, processorContext)
                 + (_Class.computeConstraintsInHierarchy(_class, processorSupport).isEmpty() ? "" : "._validate(false, " + SourceInfoProcessor.sourceInfoToString(functionExpression.getSourceInformation()) + ", es)");

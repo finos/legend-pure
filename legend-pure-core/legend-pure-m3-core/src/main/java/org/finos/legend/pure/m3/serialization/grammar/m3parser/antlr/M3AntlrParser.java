@@ -33,6 +33,7 @@ import org.finos.legend.pure.m3.compiler.postprocessing.processor.EnumerationPro
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.FunctionDefinitionProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.LambdaFunctionProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.MeasureProcessor;
+import org.finos.legend.pure.m3.compiler.postprocessing.processor.PrimitiveProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.PropertyOwnerProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.PropertyProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.QualifiedPropertyProcessor;
@@ -433,6 +434,7 @@ public class M3AntlrParser implements Parser
         return Lists.immutable.with(
                 new ElementWithConstraintsProcessor(),
                 new ClassProcessor(),
+                new PrimitiveProcessor(),
                 new ClassProjectionProcessor(),
                 new RootRouteNodePostProcessor(),
                 new EnumerationProcessor(),

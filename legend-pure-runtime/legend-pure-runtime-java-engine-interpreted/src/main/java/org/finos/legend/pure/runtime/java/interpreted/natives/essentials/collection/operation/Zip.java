@@ -18,6 +18,7 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -47,10 +48,10 @@ public class Zip extends NativeFunction
     }
 
     @Override
-    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
+    public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         CoreInstance pairClassifier = processorSupport.package_getByUserPath(M3Paths.Pair);
-        CoreInstance classifierGenericType = this.createPairClassifierGenericType(pairClassifier, params, functionExpressionToUseInStack, processorSupport);
+        CoreInstance classifierGenericType = this.createPairClassifierGenericType(pairClassifier, params, functionExpressionCallStack, processorSupport);
 
         // instance values
         boolean exec1 = ValueSpecification.isExecutable(params.get(0), processorSupport);
@@ -81,11 +82,11 @@ public class Zip extends NativeFunction
 
     private CoreInstance createPairClassifierGenericType(CoreInstance pairClassifier,
                                                          ListIterable<? extends CoreInstance> params,
-                                                         CoreInstance functionExpressionToUseInStack,
+                                                        MutableStack<CoreInstance> functionExpressionCallStack,
                                                          ProcessorSupport processorSupport)
     {
         CoreInstance genericTypeType = processorSupport.package_getByUserPath(M3Paths.GenericType);
-        CoreInstance classifierGenericType = this.repository.newAnonymousCoreInstance(functionExpressionToUseInStack.getSourceInformation(), genericTypeType);
+        CoreInstance classifierGenericType = this.repository.newAnonymousCoreInstance(functionExpressionCallStack.peek().getSourceInformation(), genericTypeType);
         Instance.addValueToProperty(classifierGenericType, M3Properties.rawType, pairClassifier, processorSupport);
         CoreInstance collection1Type = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.genericType, processorSupport);
         Instance.addValueToProperty(classifierGenericType, M3Properties.typeArguments, collection1Type, processorSupport);

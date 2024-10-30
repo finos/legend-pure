@@ -16,6 +16,7 @@ package org.finos.legend.pure.runtime.java.extension.store.relational.interprete
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -46,9 +47,9 @@ public abstract class AbstractFetchDbMetadata extends NativeFunction
     private static final IConnectionManagerHandler connectionManagerHandler = IConnectionManagerHandler.CONNECTION_MANAGER_HANDLER;
 
     @Override
-    public abstract CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException;
+    public abstract CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException;
 
-    protected CoreInstance loadDatabaseMetaData(CoreInstance connectionInformation, CoreInstance functionExpressionToUseInStack, ProcessorSupport processorSupport, SqlFunction<DatabaseMetaData, ResultSet> databaseMetadataFunction)
+    protected CoreInstance loadDatabaseMetaData(CoreInstance connectionInformation, MutableStack<CoreInstance> functionExpressionCallStack, ProcessorSupport processorSupport, SqlFunction<DatabaseMetaData, ResultSet> databaseMetadataFunction)
     {
         CoreInstance resultSetClassifier = processorSupport.package_getByUserPath("meta::relational::metamodel::execute::ResultSet");
         if (resultSetClassifier == null)
@@ -61,7 +62,7 @@ public abstract class AbstractFetchDbMetadata extends NativeFunction
             throw new RuntimeException("'meta::relational::metamodel::execute::Row' is unknown");
         }
 
-        CoreInstance pureResult = this.repository.newAnonymousCoreInstance(functionExpressionToUseInStack.getSourceInformation(), resultSetClassifier);
+        CoreInstance pureResult = this.repository.newAnonymousCoreInstance(functionExpressionCallStack.peek().getSourceInformation(), resultSetClassifier);
         Connection connection = null;
         ConnectionWithDataSourceInfo connectionWithDataSourceInfo = null;
         try
@@ -84,7 +85,7 @@ public abstract class AbstractFetchDbMetadata extends NativeFunction
                 DatabaseMetaData databaseMetaData = connection.getMetaData();
                 ResultSet rs = databaseMetadataFunction.valueOf(databaseMetaData);
 
-                ExecuteInDb.createPureResultSetFromDatabaseResultSet(pureResult, rs, functionExpressionToUseInStack, rowClassifier, tz, this.repository, start, this.maxRows, processorSupport);
+                ExecuteInDb.createPureResultSetFromDatabaseResultSet(pureResult, rs, functionExpressionCallStack.peek(), rowClassifier, tz, this.repository, start, this.maxRows, processorSupport);
 
                 CoreInstance dbType = Instance.getValueForMetaPropertyToOneResolved(connectionInformation, "type", processorSupport);
                 String dbHost = connectionWithDataSourceInfo.getDataSource().getHost();
@@ -118,7 +119,7 @@ public abstract class AbstractFetchDbMetadata extends NativeFunction
         }
         catch (SQLException e)
         {
-            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), SQLExceptionHandler.buildExceptionString(e, connection), e);
+            throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), SQLExceptionHandler.buildExceptionString(e, connection), e, functionExpressionCallStack);
         }
 
         this.message.setMessage("Getting Database Metadata...[DONE]");

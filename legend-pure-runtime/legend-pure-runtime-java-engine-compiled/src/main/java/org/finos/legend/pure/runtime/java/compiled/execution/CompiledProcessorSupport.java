@@ -17,6 +17,7 @@ package org.finos.legend.pure.runtime.java.compiled.execution;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
@@ -493,7 +494,7 @@ public class CompiledProcessorSupport implements ProcessorSupport
             return CompiledSupport.getType(any, this.metadataAccessor);
         }
 
-        throw new PureExecutionException("ERROR unhandled type for value: " + instance + " (instance of " + instance.getClass() + ")");
+        throw new PureExecutionException("ERROR unhandled type for value: " + instance + " (instance of " + instance.getClass() + ")", Stacks.mutable.empty());
     }
 
     @Override

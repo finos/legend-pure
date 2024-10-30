@@ -14,12 +14,14 @@
 
 package org.finos.legend.pure.runtime.java.shared.listeners;
 
+import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public class ExecutionEndListenerStateException extends PureExecutionException
 {
-    ExecutionEndListenerStateException(String info)
+    ExecutionEndListenerStateException(String info, MutableStack<CoreInstance> functionExpressionCallStack)
     {
-        super(info);
+        super(info, functionExpressionCallStack);
     }
 }

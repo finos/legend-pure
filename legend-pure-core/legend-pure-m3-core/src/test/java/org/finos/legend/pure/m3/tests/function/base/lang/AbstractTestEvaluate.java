@@ -272,7 +272,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
         }
         catch (RuntimeException e)
         {
-            this.assertExceptionInformation(e, "Failed", 3, 5, this.checkLineNumbers());
+            this.assertExceptionInformation(e, "Failed", 26, 5, this.checkLineNumbers());
         }
     }
 

@@ -44,6 +44,7 @@ public class New extends AbstractNative
         ListIterable<? extends CoreInstance> parametersValues = Instance.getValueForMetaPropertyToManyResolved(functionExpression, M3Properties.parametersValues, processorContext.getSupport());
 
         CoreInstance genericType = Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(0), M3Properties.genericType, M3Properties.typeArguments, processorSupport);
+
         boolean addGenericType = Instance.getValueForMetaPropertyToManyResolved(genericType, M3Properties.typeArguments, processorSupport).notEmpty();
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
         if (_class.equals(processorSupport.package_getByUserPath(M3Paths.Map)))
