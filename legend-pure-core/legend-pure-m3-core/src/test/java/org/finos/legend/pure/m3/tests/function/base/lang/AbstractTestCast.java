@@ -80,7 +80,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 
     protected void checkInvalidCastWithTypeParametersTopLevelException(PureExecutionException e)
     {
-        checkException(e, "Cast exception: List<X> cannot be cast to List<Y>", "fromString.pure", 3, 49);
+        checkException(e, "Cast exception: List<X> cannot be cast to List<Y>", "/test/cast.pure", 46, 11);
     }
 
     protected void checkInvalidCastWithTypeParametersRootException(PureExecutionException e)
@@ -116,7 +116,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 
     protected void checkPrimitiveConcreteOneTopLevelException(PureExecutionException e)
     {
-        checkException(e, "Cast exception: Integer cannot be cast to String", "fromString.pure", 3, 7);
+        checkException(e, "Cast exception: Integer cannot be cast to String", "/test/cast.pure", 31, 10);
     }
 
     protected void checkPrimitiveConcreteOneRootException(PureExecutionException e)
@@ -139,7 +139,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 
     protected void checkPrimitiveConcreteManyTopLevelException(PureExecutionException e)
     {
-        checkException(e, "Cast exception: String cannot be cast to Number", "fromString.pure", 3, 21);
+        checkException(e, "Cast exception: String cannot be cast to Number", "/test/cast.pure", 36, 13);
     }
 
     protected void checkPrimitiveConcreteManyRootException(PureExecutionException e)
@@ -162,7 +162,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 
     protected void checkNonPrimitiveConcreteOneTopLevelException(PureExecutionException e)
     {
-        checkException(e, "Cast exception: X cannot be cast to Y", "fromString.pure", 3, 10);
+        checkException(e, "Cast exception: X cannot be cast to Y", "/test/cast.pure", 41, 12);
     }
 
     protected void checkNonPrimitiveConcreteOneRootException(PureExecutionException e)
@@ -185,7 +185,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 
     protected void checkNonPrimitiveConcreteManyTopLevelException(PureExecutionException e)
     {
-        checkException(e, "Cast exception: X cannot be cast to Y", "fromString.pure", 3, 24);
+        checkException(e, "Cast exception: X cannot be cast to Y", "/test/cast.pure", 41, 12);
     }
 
     protected void checkNonPrimitiveConcreteManyRootException(PureExecutionException e)
@@ -208,7 +208,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 
     protected void checkPrimitiveNonConcreteOneTopLevelException(PureExecutionException e)
     {
-        checkException(e, "Cast exception: Integer cannot be cast to String", "fromString.pure", 3, 7);
+        checkException(e, "Cast exception: Integer cannot be cast to String", "/test/cast.pure", 67, 26);
     }
 
     protected void checkPrimitiveNonConcreteOneRootException(PureExecutionException e)
@@ -231,7 +231,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 
     protected void checkPrimitiveNonConcreteManyTopLevelException(PureExecutionException e)
     {
-        checkException(e, "Cast exception: String cannot be cast to Number", "fromString.pure", 3, 21);
+        checkException(e, "Cast exception: String cannot be cast to Number", "/test/cast.pure", 68, 17);
     }
 
     protected void checkPrimitiveNonConcreteManyRootException(PureExecutionException e)
@@ -254,7 +254,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 
     protected void checkNonPrimitiveNonConcreteOneTopLevelException(PureExecutionException e)
     {
-        checkException(e, "Cast exception: X cannot be cast to Y", "fromString.pure", 3, 10);
+        checkException(e, "Cast exception: X cannot be cast to Y", "/test/cast.pure", 67, 26);
     }
 
     protected void checkNonPrimitiveNonConcreteOneRootException(PureExecutionException e)
@@ -277,7 +277,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 
     protected void checkNonPrimitiveNonConcreteManyTopLevelException(PureExecutionException e)
     {
-        checkException(e, "Cast exception: X cannot be cast to Y", "fromString.pure", 3, 24);
+        checkException(e, "Cast exception: X cannot be cast to Y", "/test/cast.pure", 68, 17);
     }
 
     protected void checkNonPrimitiveNonConcreteManyRootException(PureExecutionException e)
@@ -300,7 +300,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 
     protected void checkEnumToStringCastTopLevelException(PureExecutionException e)
     {
-        checkException(e, "Cast exception: Month cannot be cast to String", "fromString.pure", 3, 21);
+        checkException(e, "Cast exception: Month cannot be cast to String", "/test/cast.pure", 31, 10);
     }
 
     protected void checkEnumToStringCastRootException(PureExecutionException e)
