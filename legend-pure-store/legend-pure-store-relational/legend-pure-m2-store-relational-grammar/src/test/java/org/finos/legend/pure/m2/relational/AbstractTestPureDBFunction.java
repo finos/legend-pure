@@ -122,6 +122,30 @@ public abstract class AbstractTestPureDBFunction extends AbstractPureTestWithCor
     }
 
     @Test
+    public void testInsertFloatInDb_H2()
+    {
+        compileTestSource(
+                TEST_SOURCE_ID,
+                "import meta::external::store::relational::runtime::*;\n" +
+                        "import meta::relational::metamodel::*;\n" +
+                        "import meta::relational::metamodel::execute::*;\n" +
+                        "import meta::relational::functions::toDDL::*;\n" +
+                        "function test():Any[0..1]\n" +
+                        "{\n" +
+                        "   let dbConnection = ^TestDatabaseConnection(type = meta::relational::runtime::DatabaseType.H2);\n" +
+                        "   executeInDb('drop table myTable IF EXISTS;', $dbConnection, 0, 1000);\n" +
+                        "   executeInDb('create table myTable(col1 FLOAT)', $dbConnection, 0, 1000);\n" +
+                        "   executeInDb('insert into myTable(col1) values (0.9)', $dbConnection, 0, 1000);\n" +
+                        "   let res  = executeInDb('select * from myTable', $dbConnection, 0, 1000);\n" +
+                        "    assertEquals(0.9 , $res.rows.values);\n" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database mydb()\n"
+        );
+        compileAndExecute("test():Any[0..1]");
+    }
+
+    @Test
     public void testExecuteInb_DuckDB()
     {
         compileTestSource(
