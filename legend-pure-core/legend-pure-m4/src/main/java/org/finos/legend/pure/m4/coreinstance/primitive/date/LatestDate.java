@@ -104,18 +104,6 @@ public class LatestDate implements PureDate
     }
 
     @Override
-    public String format(String formatString)
-    {
-        throw new UnsupportedOperationException("Invalid operation for LatestDate");
-    }
-
-    @Override
-    public void format(Appendable appendable, String formatString)
-    {
-        throw new UnsupportedOperationException("Invalid operation for LatestDate");
-    }
-
-    @Override
     public PureDate addYears(long years)
     {
         throw new UnsupportedOperationException("Invalid operation for LatestDate");
@@ -194,7 +182,13 @@ public class LatestDate implements PureDate
     }
 
     @Override
-    public void writeString(Appendable appendable)
+    public <T extends Appendable> T appendString(T appendable)
+    {
+        throw new UnsupportedOperationException("Invalid operation for LatestDate");
+    }
+
+    @Override
+    public <T extends Appendable> T appendFormat(T appendable, String formatString)
     {
         throw new UnsupportedOperationException("Invalid operation for LatestDate");
     }
@@ -215,12 +209,6 @@ public class LatestDate implements PureDate
     public String toString()
     {
         return latestDateConstant;
-    }
-
-    @Override
-    public LatestDate clone()
-    {
-        return this;
     }
 
     public static boolean isLatestDate(PureDate date)

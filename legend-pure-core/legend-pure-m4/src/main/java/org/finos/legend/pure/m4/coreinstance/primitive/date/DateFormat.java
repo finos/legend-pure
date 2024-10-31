@@ -14,6 +14,8 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
+import org.finos.legend.pure.m4.tools.SafeAppendable;
+
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -28,8 +30,9 @@ public class DateFormat
 
     private static final char DATE_PREFIX = '%';
 
-    public static void format(Appendable appendable, String formatString, PureDate date) throws IOException
+    public static <T extends Appendable> T format(T appendable, String formatString, PureDate date)
     {
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
         int length = formatString.length();
         GregorianCalendar calendar = null;
         int i = 0;
@@ -85,7 +88,7 @@ public class DateFormat
                     }
                     catch (RuntimeException e)
                     {
-                        throw new IllegalArgumentException("Unknown time zone: " + timeZoneId.toString());
+                        throw new IllegalArgumentException("Unknown time zone: " + timeZoneId);
                     }
 
                     if (date.hasHour())
@@ -110,11 +113,11 @@ public class DateFormat
                     int count = getCharCountFrom(character, formatString, i);
                     if (count < 3)
                     {
-                        appendTwoDigitInt(appendable, displayYear % 100);
+                        appendNonNegTwoDigitInt(safeAppendable, displayYear % 100);
                     }
                     else
                     {
-                        appendable.append(Integer.toString(displayYear));
+                        safeAppendable.append(displayYear);
                     }
                     i += count;
                     break;
@@ -128,7 +131,7 @@ public class DateFormat
                     }
                     int displayMonth = (calendar == null) ? date.getMonth() : (calendar.get(Calendar.MONTH) + 1);
                     int count = getCharCountFrom(character, formatString, i);
-                    appendZeroPaddedInt(appendable, displayMonth, count + 1);
+                    appendZeroPaddedInt(safeAppendable, displayMonth, count + 1);
                     i += count;
                     break;
                 }
@@ -141,7 +144,7 @@ public class DateFormat
                     }
                     int displayDay = (calendar == null) ? date.getDay() : calendar.get(Calendar.DAY_OF_MONTH);
                     int count = getCharCountFrom(character, formatString, i);
-                    appendZeroPaddedInt(appendable, displayDay, count + 1);
+                    appendZeroPaddedInt(safeAppendable, displayDay, count + 1);
                     i += count;
                     break;
                 }
@@ -155,7 +158,7 @@ public class DateFormat
                     int preDisplayHour = (calendar == null) ? date.getHour() : calendar.get(Calendar.HOUR_OF_DAY);
                     int displayHour = (preDisplayHour == 0) ? 12 : ((preDisplayHour > 12) ? (preDisplayHour - 12) : preDisplayHour);
                     int count = getCharCountFrom(character, formatString, i);
-                    appendZeroPaddedInt(appendable, displayHour, count + 1);
+                    appendZeroPaddedInt(safeAppendable, displayHour, count + 1);
                     i += count;
                     break;
                 }
@@ -168,7 +171,7 @@ public class DateFormat
                     }
                     int displayHour = (calendar == null) ? date.getHour() : calendar.get(Calendar.HOUR_OF_DAY);
                     int count = getCharCountFrom(character, formatString, i);
-                    appendZeroPaddedInt(appendable, displayHour, count + 1);
+                    appendZeroPaddedInt(safeAppendable, displayHour, count + 1);
                     i += count;
                     break;
                 }
@@ -180,7 +183,7 @@ public class DateFormat
                         throw new IllegalArgumentException("Date has no hour: " + date);
                     }
                     int displayHour = (calendar == null) ? date.getHour() : calendar.get(Calendar.HOUR_OF_DAY);
-                    appendable.append((displayHour < 12) ? "AM" : "PM");
+                    safeAppendable.append((displayHour < 12) ? "AM" : "PM");
                     break;
                 }
                 // Minute
@@ -192,7 +195,7 @@ public class DateFormat
                     }
                     int displayMinute = (calendar == null) ? date.getMinute() : calendar.get(Calendar.MINUTE);
                     int count = getCharCountFrom(character, formatString, i);
-                    appendZeroPaddedInt(appendable, displayMinute, count + 1);
+                    appendZeroPaddedInt(safeAppendable, displayMinute, count + 1);
                     i += count;
                     break;
                 }
@@ -204,7 +207,7 @@ public class DateFormat
                         throw new IllegalArgumentException("Date has no second: " + date);
                     }
                     int count = getCharCountFrom(character, formatString, i);
-                    appendZeroPaddedInt(appendable, date.getSecond(), count + 1);
+                    appendZeroPaddedInt(safeAppendable, date.getSecond(), count + 1);
                     i += count;
                     break;
                 }
@@ -222,20 +225,20 @@ public class DateFormat
                         int len = date.getSubsecond().length();
                         if (len <= maxLen)
                         {
-                            appendable.append(date.getSubsecond());
+                            safeAppendable.append(date.getSubsecond());
                         }
                         else
                         {
                             int j = 0;
                             while (j < maxLen)
                             {
-                                appendable.append(date.getSubsecond().charAt(j++));
+                                safeAppendable.append(date.getSubsecond().charAt(j++));
                             }
                         }
                     }
                     else
                     {
-                        appendable.append(date.getSubsecond());
+                        safeAppendable.append(date.getSubsecond());
                     }
                     i += count;
                     break;
@@ -247,13 +250,13 @@ public class DateFormat
                     // TODO
                     if (calendar == null)
                     {
-                        appendable.append("GMT");
+                        safeAppendable.append("GMT");
                     }
                     else
                     {
                         SimpleDateFormat dateFormat = new SimpleDateFormat("z");
                         dateFormat.setTimeZone(calendar.getTimeZone());
-                        appendable.append(dateFormat.format(calendar.getTime()));
+                        safeAppendable.append(dateFormat.format(calendar.getTime()));
                     }
                     i += count;
                     break;
@@ -264,13 +267,13 @@ public class DateFormat
                     int count = getCharCountFrom(character, formatString, i);
                     if (calendar == null)
                     {
-                        appendable.append("+0000");
+                        safeAppendable.append("+0000");
                     }
                     else
                     {
                         SimpleDateFormat dateFormat = new SimpleDateFormat("Z");
                         dateFormat.setTimeZone(calendar.getTimeZone());
-                        appendable.append(dateFormat.format(calendar.getTime()));
+                        safeAppendable.append(dateFormat.format(calendar.getTime()));
                     }
                     i += count;
                     break;
@@ -281,13 +284,13 @@ public class DateFormat
                     int count = getCharCountFrom(character, formatString, i);
                     if (calendar == null)
                     {
-                        appendable.append("Z");
+                        safeAppendable.append("Z");
                     }
                     else
                     {
                         SimpleDateFormat dateFormat = new SimpleDateFormat("X");
                         dateFormat.setTimeZone(calendar.getTimeZone());
-                        appendable.append(dateFormat.format(calendar.getTime()));
+                        safeAppendable.append(dateFormat.format(calendar.getTime()));
                     }
                     i += count;
                     break;
@@ -300,7 +303,7 @@ public class DateFormat
                 case ' ':
                 case '\t':
                 {
-                    appendable.append(character);
+                    safeAppendable.append(character);
                     break;
                 }
                 // Quote
@@ -313,7 +316,7 @@ public class DateFormat
                         char next = formatString.charAt(i++);
                         if (escaped)
                         {
-                            appendable.append(next);
+                            safeAppendable.append(next);
                             escaped = false;
                         }
                         else if (next == '"')
@@ -326,7 +329,7 @@ public class DateFormat
                         }
                         else
                         {
-                            appendable.append(next);
+                            safeAppendable.append(next);
                         }
                     }
                     if (!done)
@@ -341,52 +344,55 @@ public class DateFormat
                 }
             }
         }
+        return appendable;
     }
 
+    @Deprecated
     public static void write(Appendable appendable, PureDate date) throws IOException
     {
-        appendable.append(Integer.toString(date.getYear()));
+        append(appendable, date);
+    }
+
+    public static <T extends Appendable> T append(T appendable, PureDate date)
+    {
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+        safeAppendable.append(date.getYear());
         if (date.hasMonth())
         {
-            appendable.append(DATE_SEPARATOR);
-            appendTwoDigitInt(appendable, date.getMonth());
+            appendNonNegTwoDigitInt(safeAppendable.append(DATE_SEPARATOR), date.getMonth());
             if (date.hasDay())
             {
-                appendable.append(DATE_SEPARATOR);
-                appendTwoDigitInt(appendable, date.getDay());
+                appendNonNegTwoDigitInt(safeAppendable.append(DATE_SEPARATOR), date.getDay());
                 if (date.hasHour())
                 {
-                    appendable.append(DATE_TIME_SEPARATOR);
-                    appendTwoDigitInt(appendable, date.getHour());
+                    appendNonNegTwoDigitInt(safeAppendable.append(DATE_TIME_SEPARATOR), date.getHour());
                     if (date.hasMinute())
                     {
-                        appendable.append(TIME_SEPARATOR);
-                        appendTwoDigitInt(appendable, date.getMinute());
+                        appendNonNegTwoDigitInt(safeAppendable.append(TIME_SEPARATOR), date.getMinute());
                         if (date.hasSecond())
                         {
-                            appendable.append(TIME_SEPARATOR);
-                            appendTwoDigitInt(appendable, date.getSecond());
+                            appendNonNegTwoDigitInt(safeAppendable.append(TIME_SEPARATOR), date.getSecond());
                             if (date.hasSubsecond())
                             {
-                                appendable.append('.');
-                                appendable.append(date.getSubsecond());
+                                safeAppendable.append('.').append(date.getSubsecond());
                             }
                         }
-                        appendable.append("+0000");
+                        safeAppendable.append("+0000");
                     }
                 }
             }
         }
+        return appendable;
     }
 
     public static StrictDate parseStrictDate(String string)
     {
-        return (StrictDate)parsePureDate(string);
+        return (StrictDate) parsePureDate(string);
     }
 
     public static DateTime parseDateTime(String string)
     {
-        return (DateTime)parsePureDate(string);
+        return (DateTime) parsePureDate(string);
     }
 
     /**
@@ -547,8 +553,8 @@ public class DateFormat
         {
             // Time zone
             DateWithMinute date = DateWithMinute.newDateWithMinute(year, month, day, hour, minute);
-            date.setTimeZone(string, index - 1, end);
-            return date;
+            int offsetInMinutes = getTimeZoneOffsetInMinutes(string, index - 1, end);
+            return date.addMinutes(-offsetInMinutes);
         }
 
         // Second
@@ -569,7 +575,7 @@ public class DateFormat
             return DateWithSecond.newDateWithSecond(year, month, day, hour, minute, second);
         }
 
-        AbstractDateWithSecond date;
+        PureDate date;
         if (string.charAt(index) == '.')
         {
             // Subsecond
@@ -590,18 +596,61 @@ public class DateFormat
         if (index < end)
         {
             // Time zone
-            date.setTimeZone(string, index, end);
+            int offsetInMinutes = getTimeZoneOffsetInMinutes(string, index, end);
+            return date.addMinutes(-offsetInMinutes);
         }
+
         return date;
     }
 
 
-    private static void appendTwoDigitInt(Appendable appendable, int integer) throws IOException
+    private static int getTimeZoneOffsetInMinutes(String string, int start, int end)
     {
-        appendZeroPaddedInt(appendable, integer, 2);
+        if (((end - start) == 1) && (string.charAt(start) == 'Z'))
+        {
+            // time zone = Z, which means UTC: no adjustment necessary
+            return 0;
+        }
+
+        boolean negative;
+        switch (string.charAt(start++))
+        {
+            case '+':
+            {
+                negative = false;
+                break;
+            }
+            case '-':
+            {
+                negative = true;
+                break;
+            }
+            default:
+            {
+                throw new IllegalArgumentException("Invalid time zone: " + string.substring(start - 1, end));
+            }
+        }
+        if (end - start != 4)
+        {
+            throw new IllegalArgumentException("Invalid time zone: " + string.substring(start - 1, end));
+        }
+
+        int hourOffset = Integer.parseInt(string.substring(start, start + 2));
+        int minuteOffset = Integer.parseInt(string.substring(start + 2, end));
+        int totalOffset = (hourOffset * 60) + minuteOffset;
+        return negative ? -totalOffset : totalOffset;
     }
 
-    private static void appendZeroPaddedInt(Appendable appendable, int integer, int minLength) throws IOException
+    private static void appendNonNegTwoDigitInt(SafeAppendable appendable, int integer)
+    {
+        if (integer < 10)
+        {
+            appendable.append('0');
+        }
+        appendable.append(integer);
+    }
+
+    private static void appendZeroPaddedInt(SafeAppendable appendable, int integer, int minLength)
     {
         String string = Integer.toString(integer);
         for (int fill = minLength - string.length(); fill > 0; fill--)

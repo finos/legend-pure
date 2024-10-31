@@ -14,8 +14,15 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
+import java.time.LocalDate;
+
 public class DateWithSecond extends AbstractDateWithSecond
 {
+    private DateWithSecond(LocalDate date, int hour, int minute, int second)
+    {
+        super(date, hour, minute, second);
+    }
+
     private DateWithSecond(int year, int month, int day, int hour, int minute, int second)
     {
         super(year, month, day, hour, minute, second);
@@ -64,9 +71,9 @@ public class DateWithSecond extends AbstractDateWithSecond
     }
 
     @Override
-    public DateWithSecond clone()
+    protected PureDate newWith(LocalDate date, int hour, int minute, int second)
     {
-        return new DateWithSecond(getYear(), getMonth(), getDay(), getHour(), getMinute(), getSecond());
+        return new DateWithSecond(date, hour, minute, second);
     }
 
     public static DateWithSecond newDateWithSecond(int year, int month, int day, int hour, int minute, int second)
