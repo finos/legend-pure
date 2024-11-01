@@ -17,10 +17,15 @@ import meta::pure::test::pct::*;
 Profile meta::pure::test::pct::PCT
 {
     stereotypes : [test, adapter, function, platformOnly];
-    tags: [grammarDoc, grammarCharacters];
+    tags: [grammarDoc, grammarCharacters, adapterName];
 }
 
-function <<PCT.adapter>> meta::pure::test::pct::testAdapterForInMemoryExecution<X|o>(f:Function<{->X[o]}>[1]):X[o]
+function
+    <<PCT.adapter>>
+    {
+        PCT.adapterName='In-Memory'
+    }
+    meta::pure::test::pct::testAdapterForInMemoryExecution<X|o>(f:Function<{->X[o]}>[1]):X[o]
 {
   $f->eval();
 }
