@@ -62,6 +62,7 @@ public class TestRunner implements Runnable
 
     private final TestCollection tests;
     private final boolean includeAlloyOnlyTests;
+    private final String pctAdapter;
     private final FunctionExecution functionExecution;
     private final TestCallBack testCallBack;
     private final boolean shuffle;
@@ -76,8 +77,15 @@ public class TestRunner implements Runnable
 
     public TestRunner(TestCollection tests, boolean includeAlloyOnlyTests, FunctionExecution functionExecution, TestCallBack callBack, boolean shuffle)
     {
+        this(tests, includeAlloyOnlyTests, functionExecution, callBack, shuffle, null);
+    }
+
+    // TODO: consider refactoring this to use builder pattern
+    public TestRunner(TestCollection tests, boolean includeAlloyOnlyTests, FunctionExecution functionExecution, TestCallBack callBack, boolean shuffle, String pctAdapter)
+    {
         this.tests = tests;
         this.includeAlloyOnlyTests = includeAlloyOnlyTests;
+        this.pctAdapter = pctAdapter == null ? "meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_" : pctAdapter;
         this.functionExecution = functionExecution;
         this.testCallBack = callBack;
         this.shuffle = shuffle;
@@ -94,6 +102,11 @@ public class TestRunner implements Runnable
     public TestRunner(TestCollection tests, boolean includeAlloyOnlyTests, FunctionExecution functionExecution, TestCallBack callBack)
     {
         this(tests, includeAlloyOnlyTests, functionExecution, callBack, false);
+    }
+
+    public TestRunner(TestCollection tests, boolean includeAlloyOnlyTests, FunctionExecution functionExecution, TestCallBack callBack, String pctAdapter)
+    {
+        this(tests, includeAlloyOnlyTests, functionExecution, callBack, false, pctAdapter);
     }
 
     public TestRunner(String path, FunctionExecution functionExecution, ProcessorSupport processorSupport, TestCallBack callBack, boolean shuffle)
@@ -188,7 +201,7 @@ public class TestRunner implements Runnable
                 PureException exception = PureException.findPureException(t);
                 if ((exception != null) && (exception instanceof PureAssertFailException))
                 {
-                    this.testCallBack.executedTest(test, testCollection.getTestParameterizationId(), stream.toString(), new AssertFailTestStatus((PureAssertFailException)exception));
+                    this.testCallBack.executedTest(test, testCollection.getTestParameterizationId(), stream.toString(), new AssertFailTestStatus((PureAssertFailException) exception));
                 }
                 else
                 {
@@ -223,9 +236,7 @@ public class TestRunner implements Runnable
 
         if (isPCTTest(testFunc, functionExecution.getProcessorSupport()))
         {
-//            String adapterLocation = "meta::relational::tests::pct::testAdapterForRelationalWithH2Execution_Function_1__Any_1_";
-            String adapterLocation = "meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_";
-//            String adapterLocation = "meta::pure::executionPlan::platformBinding::legendJava::pct::testAdapterForJavaBindingExecution_Function_1__Any_1_";
+            String adapterLocation = this.pctAdapter;
             testFunctionParam = _Package.getByUserPath(adapterLocation, functionExecution.getProcessorSupport());
             if (testFunctionParam == null)
             {
@@ -273,7 +284,7 @@ public class TestRunner implements Runnable
             {
                 return;
             }
-            this.testCallBack.executedTest(test, testCollection.getTestParameterizationId(),"", status);
+            this.testCallBack.executedTest(test, testCollection.getTestParameterizationId(), "", status);
         }
     }
 

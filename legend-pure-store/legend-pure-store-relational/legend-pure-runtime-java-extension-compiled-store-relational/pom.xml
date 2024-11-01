@@ -25,7 +25,7 @@
 
     <artifactId>legend-pure-runtime-java-extension-compiled-store-relational</artifactId>
     <packaging>jar</packaging>
-    <name>Legend Pure - Runtime - Java Extension - Compiled - Store -Relational</name>
+    <name>Legend Pure - Runtime - Java Extension - Compiled - Store - Relational</name>
 
     <build>
         <plugins>
