@@ -723,14 +723,36 @@ public class Pure
         {
             Class<?> c = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.platformJavaPackage() + "." + Pure.elementToPath(aClass, "_", true) + "_Impl");
             Any result = (Any) c.getConstructor(String.class).newInstance(name);
-            // Set default values
+            MutableList<String> userAssignedParameters = Lists.mutable.empty();
+
+            root_meta_pure_functions_lang_keyExpressions.forEach(new CheckedProcedure<KeyExpression>()
+            {
+                @Override
+                public void safeValue(KeyExpression o) throws Exception
+                {
+                    Object res = reactivate(o._expression(), new PureMap(Maps.fixedSize.empty()), bridge, es);
+                    String key = (String) o._key()._values().getFirst();
+                    userAssignedParameters.add(key);
+                    Method m = c.getMethod("_" + key, RichIterable.class);
+                    if (res instanceof RichIterable)
+                    {
+                        m.invoke(result, res);
+                    }
+                    else
+                    {
+                        m.invoke(result, Lists.fixedSize.of(res));
+                    }
+
+                }
+            });
+
             RichIterable<CoreInstance> classProperties = _Class.getSimpleProperties(aClass, ((CompiledExecutionSupport) es).getProcessorSupport());
             classProperties.forEach(new CheckedProcedure<CoreInstance>()
             {
                 @Override
                 public void safeValue(CoreInstance p) throws Exception
                 {
-                    if (p instanceof Property<?, ?>)
+                    if (!userAssignedParameters.contains(p.getName()))
                     {
                         Property<?, ?> prop = (Property<?, ?>) p;
                         DefaultValue defaultValue = prop._defaultValue();
@@ -750,24 +772,7 @@ public class Pure
                     }
                 }
             });
-            root_meta_pure_functions_lang_keyExpressions.forEach(new CheckedProcedure<KeyExpression>()
-            {
-                @Override
-                public void safeValue(KeyExpression o) throws Exception
-                {
-                    Object res = reactivate(o._expression(), new PureMap(Maps.fixedSize.empty()), bridge, es);
-                    Method m = c.getMethod("_" + o._key()._values().getFirst(), RichIterable.class);
-                    if (res instanceof RichIterable)
-                    {
-                        m.invoke(result, res);
-                    }
-                    else
-                    {
-                        m.invoke(result, Lists.fixedSize.of(res));
-                    }
 
-                }
-            });
 
             return result;
         }
