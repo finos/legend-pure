@@ -387,6 +387,30 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     }
 
     @Test
+    public void testAssociationWithPropertyNameConflictFromOtherAssociation()
+    {
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "Class Class1\n" +
+                        "{\n" +
+                        "}\n" +
+                        "Class Class2\n" +
+                        "{\n" +
+                        "}\n" +
+                        "Association Association12\n" +
+                        "{\n" +
+                        "  prop:Class2[*];\n" +
+                        "  prop2:Class1[1];\n" +
+                        "}\n" +
+                        "Association Association21\n" +
+                        "{\n" +
+                        "  prop:Class2[*];\n" +
+                        "  prop3:Class1[1];\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "Property conflict on class Class1: property 'prop' defined more than once", "fromString.pure", 1, 1, 1, 7, 3, 1, e);
+    }
+
+    @Test
     public void testAssociationWithNonClass()
     {
         compileTestSource("fromString.pure", "Class Class1 {}");
