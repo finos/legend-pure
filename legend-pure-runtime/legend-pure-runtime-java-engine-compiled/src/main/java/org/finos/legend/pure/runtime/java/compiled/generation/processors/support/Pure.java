@@ -34,6 +34,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Concre
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.DefaultValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
@@ -55,6 +56,7 @@ import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -721,6 +723,33 @@ public class Pure
         {
             Class<?> c = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.platformJavaPackage() + "." + Pure.elementToPath(aClass, "_", true) + "_Impl");
             Any result = (Any) c.getConstructor(String.class).newInstance(name);
+            // Set default values
+            RichIterable<CoreInstance> classProperties = _Class.getSimpleProperties(aClass, ((CompiledExecutionSupport) es).getProcessorSupport());
+            classProperties.forEach(new CheckedProcedure<CoreInstance>()
+            {
+                @Override
+                public void safeValue(CoreInstance p) throws Exception
+                {
+                    if (p instanceof Property<?, ?>)
+                    {
+                        Property<?, ?> prop = (Property<?, ?>) p;
+                        DefaultValue defaultValue = prop._defaultValue();
+                        if (defaultValue != null)
+                        {
+                            Object res = reactivate(defaultValue._functionDefinition()._expressionSequence().getFirst(), new PureMap(Maps.fixedSize.empty()), bridge, es);
+                            Method method = c.getMethod("_" + prop._name(), RichIterable.class);
+                            if (res instanceof RichIterable)
+                            {
+                                method.invoke(result, res);
+                            }
+                            else
+                            {
+                                method.invoke(result, Lists.fixedSize.of(res));
+                            }
+                        }
+                    }
+                }
+            });
             root_meta_pure_functions_lang_keyExpressions.forEach(new CheckedProcedure<KeyExpression>()
             {
                 @Override
@@ -736,6 +765,7 @@ public class Pure
                     {
                         m.invoke(result, Lists.fixedSize.of(res));
                     }
+
                 }
             });
 
