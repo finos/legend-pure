@@ -16,6 +16,7 @@ package org.finos.legend.pure.m3.tests.elements.property;
 
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.Assert;
 import org.junit.Test;
 
 public abstract class AbstractTestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
@@ -132,19 +133,13 @@ public abstract class AbstractTestDefaultValue extends AbstractPureTestWithCoreC
     @Test
     public void testDefaultValueAssociationFailsCompile()
     {
-        try
-        {
-            compileTestSource(
-                    "defaultValueSource.pure",
-                     "Class test::A { i:Integer[1]; }\n" +
-                            "Class test::B { j:Integer[1]; }\n" +
-                            "Association test::AB { a : test::A[1]; b : test::B[1] = ^test::B(j=2);}"
-            );
-        }
-        catch (RuntimeException e)
-        {
-            assertPureException(PureCompilationException.class, "Association properties should not have default values defined. Error in property: b", "defaultValueSource.pure", 3, 19, 3, 71, e);
-        }
-    }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "defaultValueSource.pure",
+                "Class test::A { i:Integer[1]; }\n" +
+                        "Class test::B { j:Integer[1]; }\n" +
+                        "Association test::AB { a : test::A[1]; b : test::B[1] = ^test::B(j=2);}"
+        ));
 
+        assertPureException(PureCompilationException.class, "Association properties should not have default values defined. Error in property: b", "defaultValueSource.pure", 3, 19, 3, 71, e);
+    }
 }
