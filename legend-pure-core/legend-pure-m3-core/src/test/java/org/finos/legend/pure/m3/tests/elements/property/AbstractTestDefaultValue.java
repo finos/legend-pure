@@ -140,6 +140,6 @@ public abstract class AbstractTestDefaultValue extends AbstractPureTestWithCoreC
                         "Association test::AB { a : test::A[1]; b : test::B[1] = ^test::B(j=2);}"
         ));
 
-        assertPureException(PureCompilationException.class, "Association properties should not have default values defined. Error in property: b", "defaultValueSource.pure", 3, 19, 3, 71, e);
+        assertPureException(PureCompilationException.class, "Association properties must not have default values defined", "defaultValueSource.pure", 3, 40, 3, 70, e);
     }
 }
