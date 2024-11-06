@@ -79,9 +79,24 @@ public class SourceInformation implements Comparable<SourceInformation>
         return this.endColumn;
     }
 
+    /**
+     * Get the message describing the source information.
+     *
+     * @return message
+     */
     public String getMessage()
     {
         return appendMessage(new StringBuilder(this.sourceId.length() + 16)).toString();
+    }
+
+    /**
+     * Get the message describing the interval of the source information (not including the source id).
+     *
+     * @return interval message
+     */
+    public String getIntervalMessage()
+    {
+        return appendIntervalMessage(new StringBuilder()).toString();
     }
 
     /**
@@ -106,30 +121,47 @@ public class SourceInformation implements Comparable<SourceInformation>
      * Append the source information message to the given Appendable, and return the Appendable.
      *
      * @param appendable target appendable
+     * @param <T>        Appendable type
      * @return given appendable
      */
     public <T extends Appendable> T appendMessage(T appendable)
     {
-        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
-        safeAppendable.append(this.sourceId).append(':');
+        appendInterval(SafeAppendable.wrap(appendable).append(this.sourceId).append(':'));
+        return appendable;
+    }
+
+    /**
+     * Append the source interval message (not including the source id) to the given Appendable, and return the Appendable.
+     *
+     * @param appendable target appendable
+     * @param <T>        Appendable type
+     * @return given appendable
+     */
+    public <T extends Appendable> T appendIntervalMessage(T appendable)
+    {
+        appendInterval(SafeAppendable.wrap(appendable));
+        return appendable;
+    }
+
+    private void appendInterval(SafeAppendable appendable)
+    {
         if (this.startLine == this.endLine)
         {
-            safeAppendable.append(this.startLine);
+            appendable.append(this.startLine);
             if (this.startColumn == this.endColumn)
             {
-                safeAppendable.append('c').append(this.startColumn);
+                appendable.append('c').append(this.startColumn);
             }
             else
             {
-                safeAppendable.append("cc").append(this.startColumn).append('-').append(this.endColumn);
+                appendable.append("cc").append(this.startColumn).append('-').append(this.endColumn);
             }
         }
         else
         {
-            safeAppendable.append(this.startLine).append('c').append(this.startColumn).append('-')
+            appendable.append(this.startLine).append('c').append(this.startColumn).append('-')
                     .append(this.endLine).append('c').append(this.endColumn);
         }
-        return appendable;
     }
 
     public String toM4String()
@@ -189,34 +221,7 @@ public class SourceInformation implements Comparable<SourceInformation>
     @Override
     public int compareTo(SourceInformation other)
     {
-        if (this == other)
-        {
-            return 0;
-        }
-
-        // Compare source id
-        int sourceIdCmp = this.sourceId.compareTo(other.sourceId);
-        if (sourceIdCmp != 0)
-        {
-            return sourceIdCmp;
-        }
-
-        // Compare main line and column
-        int mainCmp = comparePositions(this.line, this.column, other.line, other.column);
-        if (mainCmp != 0)
-        {
-            return mainCmp;
-        }
-
-        // Compare start line and column
-        int startCmp = comparePositions(this.startLine, this.column, other.startLine, other.startColumn);
-        if (startCmp != 0)
-        {
-            return startCmp;
-        }
-
-        // Compare end line and column
-        return comparePositions(this.endLine, this.endColumn, other.endLine, other.endColumn);
+        return compare(this, other);
     }
 
     /**
@@ -411,5 +416,96 @@ public class SourceInformation implements Comparable<SourceInformation>
     public static boolean isNotAfter(int line1, int col1, int line2, int col2)
     {
         return (line1 < line2) || ((line1 == line2) && (col1 <= col2));
+    }
+
+    /**
+     * Compare two source infos by source id, then by main position, then by start position, and finally by end
+     * position. This is the comparison used for the natural order for SourceInformation.
+     *
+     * @param sourceInfo1 first source information
+     * @param sourceInfo2 second source information
+     * @return comparison
+     */
+    public static int compare(SourceInformation sourceInfo1, SourceInformation sourceInfo2)
+    {
+        if (sourceInfo1 == sourceInfo2)
+        {
+            return 0;
+        }
+
+        // Compare source id
+        int sourceIdCmp = compareBySourceId(sourceInfo1, sourceInfo2);
+        if (sourceIdCmp != 0)
+        {
+            return sourceIdCmp;
+        }
+
+        // Compare main line and column
+        int mainCmp = compareByMainPosition(sourceInfo1, sourceInfo2);
+        if (mainCmp != 0)
+        {
+            return mainCmp;
+        }
+
+        // Compare start line and column
+        int startCmp = compareByStartPosition(sourceInfo1, sourceInfo2);
+        if (startCmp != 0)
+        {
+            return startCmp;
+        }
+
+        // Compare end line and column
+        return compareByEndPosition(sourceInfo1, sourceInfo2);
+    }
+
+    /**
+     * Compare two source infos by source id.
+     *
+     * @param sourceInfo1 first source information
+     * @param sourceInfo2 second source information
+     * @return comparison
+     */
+    public static int compareBySourceId(SourceInformation sourceInfo1, SourceInformation sourceInfo2)
+    {
+        return sourceInfo1.sourceId.compareTo(sourceInfo2.sourceId);
+    }
+
+    /**
+     * Compare two source infos by start position. Note that this ignores source id. So this is mainly useful for
+     * comparing source infos which are known to have the same source id.
+     *
+     * @param sourceInfo1 first source information
+     * @param sourceInfo2 second source information
+     * @return comparison
+     */
+    public static int compareByStartPosition(SourceInformation sourceInfo1, SourceInformation sourceInfo2)
+    {
+        return comparePositions(sourceInfo1.startLine, sourceInfo1.startColumn, sourceInfo2.startLine, sourceInfo2.startColumn);
+    }
+
+    /**
+     * Compare two source infos by main position. Note that this ignores source id. So this is mainly useful for
+     * comparing source infos which are known to have the same source id.
+     *
+     * @param sourceInfo1 first source information
+     * @param sourceInfo2 second source information
+     * @return comparison
+     */
+    public static int compareByMainPosition(SourceInformation sourceInfo1, SourceInformation sourceInfo2)
+    {
+        return comparePositions(sourceInfo1.line, sourceInfo1.column, sourceInfo2.line, sourceInfo2.column);
+    }
+
+    /**
+     * Compare two source infos by end position. Note that this ignores source id. So this is mainly useful for
+     * comparing source infos which are known to have the same source id.
+     *
+     * @param sourceInfo1 first source information
+     * @param sourceInfo2 second source information
+     * @return comparison
+     */
+    public static int compareByEndPosition(SourceInformation sourceInfo1, SourceInformation sourceInfo2)
+    {
+        return comparePositions(sourceInfo1.endLine, sourceInfo1.endColumn, sourceInfo2.endLine, sourceInfo2.endColumn);
     }
 }

@@ -42,6 +42,358 @@ public class TestSourceInformation
     }
 
     @Test
+    public void testCompare()
+    {
+        String source11 = "/platform/test1/source1.pure";
+        String source12 = "/platform/test1/source2.pure";
+        String source21 = "/platform/test2/source1.pure";
+
+        SourceInformation source11_1_1_1_5_7_1 = new SourceInformation(source11, 1, 1, 1, 5, 7, 1);
+        SourceInformation source11_1_1_1_5_7_2 = new SourceInformation(source11, 1, 1, 1, 5, 7, 2);
+        SourceInformation source11_1_1_2_2_7_1 = new SourceInformation(source11, 1, 1, 2, 2, 7, 1);
+        SourceInformation source11_2_1_2_2_7_1 = new SourceInformation(source11, 2, 1, 2, 2, 7, 1);
+
+        SourceInformation source12_1_1_1_5_7_1 = new SourceInformation(source12, 1, 1, 1, 5, 7, 1);
+
+        SourceInformation source21_1_1_1_5_7_1 = new SourceInformation(source21, 1, 1, 1, 5, 7, 1);
+
+        // equal
+        Assert.assertEquals(0, SourceInformation.compare(source11_1_1_1_5_7_1, source11_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compare(source11_1_1_1_5_7_1, new SourceInformation(source11, 1, 1, 1, 5, 7, 1)));
+        Assert.assertEquals(0, SourceInformation.compare(source12_1_1_1_5_7_1, source12_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compare(source12_1_1_1_5_7_1, new SourceInformation(source12, 1, 1, 1, 5, 7, 1)));
+        Assert.assertEquals(0, SourceInformation.compare(source21_1_1_1_5_7_1, source21_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compare(source21_1_1_1_5_7_1, new SourceInformation(source21, 1, 1, 1, 5, 7, 1)));
+
+        // before
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compare(source11_1_1_1_5_7_1, source11_1_1_1_5_7_2)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compare(source11_1_1_1_5_7_1, source11_1_1_2_2_7_1)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compare(source11_1_1_1_5_7_1, source11_2_1_2_2_7_1)));
+
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compare(source11_1_1_1_5_7_1, source12_1_1_1_5_7_1)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compare(source11_1_1_1_5_7_2, source12_1_1_1_5_7_1)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compare(source11_1_1_2_2_7_1, source12_1_1_1_5_7_1)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compare(source11_2_1_2_2_7_1, source12_1_1_1_5_7_1)));
+
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compare(source11_1_1_1_5_7_1, source21_1_1_1_5_7_1)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compare(source11_1_1_1_5_7_2, source21_1_1_1_5_7_1)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compare(source11_1_1_2_2_7_1, source21_1_1_1_5_7_1)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compare(source11_2_1_2_2_7_1, source21_1_1_1_5_7_1)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compare(source12_1_1_1_5_7_1, source21_1_1_1_5_7_1)));
+
+        // after
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compare(source11_1_1_1_5_7_2, source11_1_1_1_5_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compare(source11_1_1_2_2_7_1, source11_1_1_1_5_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compare(source11_2_1_2_2_7_1, source11_1_1_1_5_7_1)));
+
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compare(source12_1_1_1_5_7_1, source11_1_1_1_5_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compare(source12_1_1_1_5_7_1, source11_1_1_1_5_7_2)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compare(source12_1_1_1_5_7_1, source11_1_1_2_2_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compare(source12_1_1_1_5_7_1, source11_2_1_2_2_7_1)));
+
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compare(source21_1_1_1_5_7_1, source11_1_1_1_5_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compare(source21_1_1_1_5_7_1, source11_1_1_1_5_7_2)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compare(source21_1_1_1_5_7_1, source11_1_1_2_2_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compare(source21_1_1_1_5_7_1, source11_2_1_2_2_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compare(source21_1_1_1_5_7_1, source12_1_1_1_5_7_1)));
+    }
+
+    @Test
+    public void testCompareTo()
+    {
+        String source11 = "/platform/test1/source1.pure";
+        String source12 = "/platform/test1/source2.pure";
+        String source21 = "/platform/test2/source1.pure";
+
+        SourceInformation source11_1_1_1_5_7_1 = new SourceInformation(source11, 1, 1, 1, 5, 7, 1);
+        SourceInformation source11_1_1_1_5_7_2 = new SourceInformation(source11, 1, 1, 1, 5, 7, 2);
+        SourceInformation source11_1_1_2_2_7_1 = new SourceInformation(source11, 1, 1, 2, 2, 7, 1);
+        SourceInformation source11_2_1_2_2_7_1 = new SourceInformation(source11, 2, 1, 2, 2, 7, 1);
+
+        SourceInformation source12_1_1_1_5_7_1 = new SourceInformation(source12, 1, 1, 1, 5, 7, 1);
+
+        SourceInformation source21_1_1_1_5_7_1 = new SourceInformation(source21, 1, 1, 1, 5, 7, 1);
+
+        // equal
+        Assert.assertEquals(0, source11_1_1_1_5_7_1.compareTo(source11_1_1_1_5_7_1));
+        Assert.assertEquals(0, source11_1_1_1_5_7_1.compareTo(new SourceInformation(source11, 1, 1, 1, 5, 7, 1)));
+        Assert.assertEquals(0, source12_1_1_1_5_7_1.compareTo(source12_1_1_1_5_7_1));
+        Assert.assertEquals(0, source12_1_1_1_5_7_1.compareTo(new SourceInformation(source12, 1, 1, 1, 5, 7, 1)));
+        Assert.assertEquals(0, source21_1_1_1_5_7_1.compareTo(source21_1_1_1_5_7_1));
+        Assert.assertEquals(0, source21_1_1_1_5_7_1.compareTo(new SourceInformation(source21, 1, 1, 1, 5, 7, 1)));
+
+        // before
+        Assert.assertEquals(-1, Integer.signum(source11_1_1_1_5_7_1.compareTo(source11_1_1_1_5_7_2)));
+        Assert.assertEquals(-1, Integer.signum(source11_1_1_1_5_7_1.compareTo(source11_1_1_2_2_7_1)));
+        Assert.assertEquals(-1, Integer.signum(source11_1_1_1_5_7_1.compareTo(source11_2_1_2_2_7_1)));
+
+        Assert.assertEquals(-1, Integer.signum(source11_1_1_1_5_7_1.compareTo(source12_1_1_1_5_7_1)));
+        Assert.assertEquals(-1, Integer.signum(source11_1_1_1_5_7_2.compareTo(source12_1_1_1_5_7_1)));
+        Assert.assertEquals(-1, Integer.signum(source11_1_1_2_2_7_1.compareTo(source12_1_1_1_5_7_1)));
+        Assert.assertEquals(-1, Integer.signum(source11_2_1_2_2_7_1.compareTo(source12_1_1_1_5_7_1)));
+
+        Assert.assertEquals(-1, Integer.signum(source11_1_1_1_5_7_1.compareTo(source21_1_1_1_5_7_1)));
+        Assert.assertEquals(-1, Integer.signum(source11_1_1_1_5_7_2.compareTo(source21_1_1_1_5_7_1)));
+        Assert.assertEquals(-1, Integer.signum(source11_1_1_2_2_7_1.compareTo(source21_1_1_1_5_7_1)));
+        Assert.assertEquals(-1, Integer.signum(source11_2_1_2_2_7_1.compareTo(source21_1_1_1_5_7_1)));
+        Assert.assertEquals(-1, Integer.signum(source12_1_1_1_5_7_1.compareTo(source21_1_1_1_5_7_1)));
+
+        // after
+        Assert.assertEquals(1, Integer.signum(source11_1_1_1_5_7_2.compareTo(source11_1_1_1_5_7_1)));
+        Assert.assertEquals(1, Integer.signum(source11_1_1_2_2_7_1.compareTo(source11_1_1_1_5_7_1)));
+        Assert.assertEquals(1, Integer.signum(source11_2_1_2_2_7_1.compareTo(source11_1_1_1_5_7_1)));
+
+        Assert.assertEquals(1, Integer.signum(source12_1_1_1_5_7_1.compareTo(source11_1_1_1_5_7_1)));
+        Assert.assertEquals(1, Integer.signum(source12_1_1_1_5_7_1.compareTo(source11_1_1_1_5_7_2)));
+        Assert.assertEquals(1, Integer.signum(source12_1_1_1_5_7_1.compareTo(source11_1_1_2_2_7_1)));
+        Assert.assertEquals(1, Integer.signum(source12_1_1_1_5_7_1.compareTo(source11_2_1_2_2_7_1)));
+
+        Assert.assertEquals(1, Integer.signum(source21_1_1_1_5_7_1.compareTo(source11_1_1_1_5_7_1)));
+        Assert.assertEquals(1, Integer.signum(source21_1_1_1_5_7_1.compareTo(source11_1_1_1_5_7_2)));
+        Assert.assertEquals(1, Integer.signum(source21_1_1_1_5_7_1.compareTo(source11_1_1_2_2_7_1)));
+        Assert.assertEquals(1, Integer.signum(source21_1_1_1_5_7_1.compareTo(source11_2_1_2_2_7_1)));
+        Assert.assertEquals(1, Integer.signum(source21_1_1_1_5_7_1.compareTo(source12_1_1_1_5_7_1)));
+    }
+
+    @Test
+    public void testCompareBySourceId()
+    {
+        String source11 = "/platform/test1/source1.pure";
+        String source12 = "/platform/test1/source2.pure";
+        String source21 = "/platform/test2/source1.pure";
+
+        SourceInformation source11_1_1_1_5_7_1 = new SourceInformation(source11, 1, 1, 1, 5, 7, 1);
+        SourceInformation source11_1_1_1_5_7_2 = new SourceInformation(source11, 1, 1, 1, 5, 7, 2);
+        SourceInformation source11_1_1_2_2_7_1 = new SourceInformation(source11, 1, 1, 2, 2, 7, 1);
+        SourceInformation source11_2_1_2_2_7_1 = new SourceInformation(source11, 2, 1, 2, 2, 7, 1);
+
+        SourceInformation source12_1_1_1_5_7_1 = new SourceInformation(source12, 1, 1, 1, 5, 7, 1);
+
+        SourceInformation source21_1_1_1_5_7_1 = new SourceInformation(source21, 1, 1, 1, 5, 7, 1);
+
+        // equal
+        Assert.assertEquals(0, SourceInformation.compareBySourceId(source11_1_1_1_5_7_1, source11_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareBySourceId(source11_1_1_1_5_7_1, source11_1_1_1_5_7_2));
+        Assert.assertEquals(0, SourceInformation.compareBySourceId(source11_1_1_1_5_7_1, source11_1_1_2_2_7_1));
+        Assert.assertEquals(0, SourceInformation.compareBySourceId(source11_1_1_1_5_7_1, source11_2_1_2_2_7_1));
+
+        Assert.assertEquals(0, SourceInformation.compareBySourceId(source12_1_1_1_5_7_1, source12_1_1_1_5_7_1));
+
+        Assert.assertEquals(0, SourceInformation.compareBySourceId(source21_1_1_1_5_7_1, source21_1_1_1_5_7_1));
+
+        // before
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareBySourceId(source11_1_1_1_5_7_1, source12_1_1_1_5_7_1)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareBySourceId(source11_1_1_1_5_7_2, source12_1_1_1_5_7_1)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareBySourceId(source11_1_1_2_2_7_1, source12_1_1_1_5_7_1)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareBySourceId(source11_2_1_2_2_7_1, source12_1_1_1_5_7_1)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareBySourceId(source12_1_1_1_5_7_1, source21_1_1_1_5_7_1)));
+
+        // after
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareBySourceId(source12_1_1_1_5_7_1, source11_1_1_1_5_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareBySourceId(source12_1_1_1_5_7_1, source11_1_1_1_5_7_2)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareBySourceId(source12_1_1_1_5_7_1, source11_1_1_2_2_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareBySourceId(source12_1_1_1_5_7_1, source11_2_1_2_2_7_1)));
+
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareBySourceId(source21_1_1_1_5_7_1, source11_1_1_1_5_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareBySourceId(source21_1_1_1_5_7_1, source11_1_1_1_5_7_2)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareBySourceId(source21_1_1_1_5_7_1, source11_1_1_2_2_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareBySourceId(source21_1_1_1_5_7_1, source11_2_1_2_2_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareBySourceId(source21_1_1_1_5_7_1, source12_1_1_1_5_7_1)));
+    }
+
+    @Test
+    public void testCompareByStartPosition()
+    {
+        String source11 = "/platform/test1/source1.pure";
+        String source12 = "/platform/test1/source2.pure";
+        String source21 = "/platform/test2/source1.pure";
+
+        SourceInformation source11_1_1_1_5_7_1 = new SourceInformation(source11, 1, 1, 1, 5, 7, 1);
+        SourceInformation source11_1_1_1_5_7_2 = new SourceInformation(source11, 1, 1, 1, 5, 7, 2);
+        SourceInformation source11_1_1_2_2_7_1 = new SourceInformation(source11, 1, 1, 2, 2, 7, 1);
+        SourceInformation source11_2_1_2_2_7_1 = new SourceInformation(source11, 2, 1, 2, 2, 7, 1);
+
+        SourceInformation source12_1_1_1_5_7_1 = new SourceInformation(source12, 1, 1, 1, 5, 7, 1);
+
+        SourceInformation source21_1_1_1_5_7_1 = new SourceInformation(source21, 1, 1, 1, 5, 7, 1);
+
+        // equal
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source11_1_1_1_5_7_1, source11_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source11_1_1_1_5_7_1, source11_1_1_1_5_7_2));
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source11_1_1_1_5_7_1, source11_1_1_2_2_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source11_1_1_1_5_7_1, source12_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source11_1_1_1_5_7_1, source21_1_1_1_5_7_1));
+
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source11_1_1_1_5_7_2, source11_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source11_1_1_1_5_7_2, source11_1_1_1_5_7_2));
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source11_1_1_1_5_7_2, source11_1_1_2_2_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source11_1_1_1_5_7_2, source12_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source11_1_1_1_5_7_2, source21_1_1_1_5_7_1));
+
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source11_1_1_2_2_7_1, source11_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source11_1_1_2_2_7_1, source11_1_1_1_5_7_2));
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source11_1_1_2_2_7_1, source11_1_1_2_2_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source11_1_1_2_2_7_1, source12_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source11_1_1_2_2_7_1, source21_1_1_1_5_7_1));
+
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source12_1_1_1_5_7_1, source11_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source12_1_1_1_5_7_1, source11_1_1_1_5_7_2));
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source12_1_1_1_5_7_1, source11_1_1_2_2_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source12_1_1_1_5_7_1, source12_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source12_1_1_1_5_7_1, source21_1_1_1_5_7_1));
+
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source21_1_1_1_5_7_1, source11_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source21_1_1_1_5_7_1, source11_1_1_1_5_7_2));
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source21_1_1_1_5_7_1, source11_1_1_2_2_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source21_1_1_1_5_7_1, source12_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByStartPosition(source21_1_1_1_5_7_1, source21_1_1_1_5_7_1));
+
+        // before
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareByStartPosition(source11_1_1_1_5_7_1, source11_2_1_2_2_7_1)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareByStartPosition(source11_1_1_1_5_7_2, source11_2_1_2_2_7_1)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareByStartPosition(source11_1_1_2_2_7_1, source11_2_1_2_2_7_1)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareByStartPosition(source12_1_1_1_5_7_1, source11_2_1_2_2_7_1)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareByStartPosition(source21_1_1_1_5_7_1, source11_2_1_2_2_7_1)));
+
+        // after
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareByStartPosition(source11_2_1_2_2_7_1, source11_1_1_1_5_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareByStartPosition(source11_2_1_2_2_7_1, source11_1_1_1_5_7_2)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareByStartPosition(source11_2_1_2_2_7_1, source11_1_1_2_2_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareByStartPosition(source11_2_1_2_2_7_1, source12_1_1_1_5_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareByStartPosition(source11_2_1_2_2_7_1, source21_1_1_1_5_7_1)));
+    }
+
+    @Test
+    public void testCompareByMainPosition()
+    {
+        String source11 = "/platform/test1/source1.pure";
+        String source12 = "/platform/test1/source2.pure";
+        String source21 = "/platform/test2/source1.pure";
+
+        SourceInformation source11_1_1_1_5_7_1 = new SourceInformation(source11, 1, 1, 1, 5, 7, 1);
+        SourceInformation source11_1_1_1_5_7_2 = new SourceInformation(source11, 1, 1, 1, 5, 7, 2);
+        SourceInformation source11_1_1_2_2_7_1 = new SourceInformation(source11, 1, 1, 2, 2, 7, 1);
+        SourceInformation source11_2_1_2_2_7_1 = new SourceInformation(source11, 2, 1, 2, 2, 7, 1);
+
+        SourceInformation source12_1_1_1_5_7_1 = new SourceInformation(source12, 1, 1, 1, 5, 7, 1);
+
+        SourceInformation source21_1_1_1_5_7_1 = new SourceInformation(source21, 1, 1, 1, 5, 7, 1);
+
+        // equal
+        Assert.assertEquals(0, SourceInformation.compareByMainPosition(source11_1_1_1_5_7_1, source11_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByMainPosition(source11_1_1_1_5_7_1, source11_1_1_1_5_7_2));
+        Assert.assertEquals(0, SourceInformation.compareByMainPosition(source11_1_1_1_5_7_1, source12_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByMainPosition(source11_1_1_1_5_7_1, source21_1_1_1_5_7_1));
+
+        Assert.assertEquals(0, SourceInformation.compareByMainPosition(source11_1_1_1_5_7_2, source11_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByMainPosition(source11_1_1_1_5_7_2, source11_1_1_1_5_7_2));
+        Assert.assertEquals(0, SourceInformation.compareByMainPosition(source11_1_1_1_5_7_2, source12_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByMainPosition(source11_1_1_1_5_7_2, source21_1_1_1_5_7_1));
+
+        Assert.assertEquals(0, SourceInformation.compareByMainPosition(source11_1_1_2_2_7_1, source11_1_1_2_2_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByMainPosition(source11_1_1_2_2_7_1, source11_2_1_2_2_7_1));
+
+        Assert.assertEquals(0, SourceInformation.compareByMainPosition(source11_2_1_2_2_7_1, source11_1_1_2_2_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByMainPosition(source11_2_1_2_2_7_1, source11_2_1_2_2_7_1));
+
+        Assert.assertEquals(0, SourceInformation.compareByMainPosition(source12_1_1_1_5_7_1, source11_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByMainPosition(source12_1_1_1_5_7_1, source11_1_1_1_5_7_2));
+        Assert.assertEquals(0, SourceInformation.compareByMainPosition(source12_1_1_1_5_7_1, source12_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByMainPosition(source12_1_1_1_5_7_1, source21_1_1_1_5_7_1));
+
+        Assert.assertEquals(0, SourceInformation.compareByMainPosition(source21_1_1_1_5_7_1, source11_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByMainPosition(source21_1_1_1_5_7_1, source11_1_1_1_5_7_2));
+        Assert.assertEquals(0, SourceInformation.compareByMainPosition(source21_1_1_1_5_7_1, source12_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByMainPosition(source21_1_1_1_5_7_1, source21_1_1_1_5_7_1));
+
+        // before
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareByMainPosition(source11_1_1_1_5_7_1, source11_1_1_2_2_7_1)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareByMainPosition(source11_1_1_1_5_7_1, source11_2_1_2_2_7_1)));
+
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareByMainPosition(source11_1_1_1_5_7_2, source11_1_1_2_2_7_1)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareByMainPosition(source11_1_1_1_5_7_2, source11_2_1_2_2_7_1)));
+
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareByMainPosition(source12_1_1_1_5_7_1, source11_1_1_2_2_7_1)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareByMainPosition(source12_1_1_1_5_7_1, source11_2_1_2_2_7_1)));
+
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareByMainPosition(source21_1_1_1_5_7_1, source11_1_1_2_2_7_1)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareByMainPosition(source21_1_1_1_5_7_1, source11_2_1_2_2_7_1)));
+
+        // after
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareByMainPosition(source11_1_1_2_2_7_1, source11_1_1_1_5_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareByMainPosition(source11_1_1_2_2_7_1, source11_1_1_1_5_7_2)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareByMainPosition(source11_1_1_2_2_7_1, source12_1_1_1_5_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareByMainPosition(source11_1_1_2_2_7_1, source21_1_1_1_5_7_1)));
+
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareByMainPosition(source11_2_1_2_2_7_1, source11_1_1_1_5_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareByMainPosition(source11_2_1_2_2_7_1, source11_1_1_1_5_7_2)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareByMainPosition(source11_2_1_2_2_7_1, source12_1_1_1_5_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareByMainPosition(source11_2_1_2_2_7_1, source21_1_1_1_5_7_1)));
+    }
+
+    @Test
+    public void testCompareByEndPosition()
+    {
+        String source11 = "/platform/test1/source1.pure";
+        String source12 = "/platform/test1/source2.pure";
+        String source21 = "/platform/test2/source1.pure";
+
+        SourceInformation source11_1_1_1_5_7_1 = new SourceInformation(source11, 1, 1, 1, 5, 7, 1);
+        SourceInformation source11_1_1_1_5_7_2 = new SourceInformation(source11, 1, 1, 1, 5, 7, 2);
+        SourceInformation source11_1_1_2_2_7_1 = new SourceInformation(source11, 1, 1, 2, 2, 7, 1);
+        SourceInformation source11_2_1_2_2_7_1 = new SourceInformation(source11, 2, 1, 2, 2, 7, 1);
+
+        SourceInformation source12_1_1_1_5_7_1 = new SourceInformation(source12, 1, 1, 1, 5, 7, 1);
+
+        SourceInformation source21_1_1_1_5_7_1 = new SourceInformation(source21, 1, 1, 1, 5, 7, 1);
+
+        // equal
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source11_1_1_1_5_7_1, source11_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source11_1_1_1_5_7_1, source11_1_1_2_2_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source11_1_1_1_5_7_1, source11_2_1_2_2_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source11_1_1_1_5_7_1, source12_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source11_1_1_1_5_7_1, source21_1_1_1_5_7_1));
+
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source11_1_1_2_2_7_1, source11_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source11_1_1_2_2_7_1, source11_1_1_2_2_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source11_1_1_2_2_7_1, source11_2_1_2_2_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source11_1_1_2_2_7_1, source12_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source11_1_1_2_2_7_1, source21_1_1_1_5_7_1));
+
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source11_2_1_2_2_7_1, source11_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source11_2_1_2_2_7_1, source11_1_1_2_2_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source11_2_1_2_2_7_1, source11_2_1_2_2_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source11_2_1_2_2_7_1, source12_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source11_2_1_2_2_7_1, source21_1_1_1_5_7_1));
+
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source12_1_1_1_5_7_1, source11_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source12_1_1_1_5_7_1, source11_1_1_2_2_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source12_1_1_1_5_7_1, source11_2_1_2_2_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source12_1_1_1_5_7_1, source12_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source12_1_1_1_5_7_1, source21_1_1_1_5_7_1));
+
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source21_1_1_1_5_7_1, source11_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source21_1_1_1_5_7_1, source11_1_1_2_2_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source21_1_1_1_5_7_1, source11_2_1_2_2_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source21_1_1_1_5_7_1, source12_1_1_1_5_7_1));
+        Assert.assertEquals(0, SourceInformation.compareByEndPosition(source21_1_1_1_5_7_1, source21_1_1_1_5_7_1));
+
+        // before
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareByEndPosition(source11_1_1_1_5_7_1, source11_1_1_1_5_7_2)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareByEndPosition(source11_1_1_2_2_7_1, source11_1_1_1_5_7_2)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareByEndPosition(source11_2_1_2_2_7_1, source11_1_1_1_5_7_2)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareByEndPosition(source12_1_1_1_5_7_1, source11_1_1_1_5_7_2)));
+        Assert.assertEquals(-1, Integer.signum(SourceInformation.compareByEndPosition(source21_1_1_1_5_7_1, source11_1_1_1_5_7_2)));
+
+        // after
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareByEndPosition(source11_1_1_1_5_7_2, source11_1_1_1_5_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareByEndPosition(source11_1_1_1_5_7_2, source11_1_1_2_2_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareByEndPosition(source11_1_1_1_5_7_2, source11_2_1_2_2_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareByEndPosition(source11_1_1_1_5_7_2, source12_1_1_1_5_7_1)));
+        Assert.assertEquals(1, Integer.signum(SourceInformation.compareByEndPosition(source11_1_1_1_5_7_2, source21_1_1_1_5_7_1)));
+    }
+
+    @Test
     public void testIsBefore()
     {
         // equal
@@ -176,6 +528,20 @@ public class TestSourceInformation
         Assert.assertEquals(source1 + ":1cc1-7", new SourceInformation(source1, 1, 1, 2, 5, 1, 7).getMessage());
         Assert.assertEquals(source1 + ":1c1-5c1", new SourceInformation(source1, 1, 1, 2, 1, 5, 1).getMessage());
         Assert.assertEquals(source2 + ":17c3-18c9", new SourceInformation(source2, 17, 3, 2, 1, 18, 9).getMessage());
+    }
+
+    @Test
+    public void testGetIntervalMessage()
+    {
+        String source1 = "/platform/test/source1.pure";
+        String source2 = "/platform/test/source2.pure";
+
+        Assert.assertEquals("1c1", new SourceInformation(source1, 1, 1, 1, 1, 1, 1).getIntervalMessage());
+        Assert.assertEquals("1cc1-7", new SourceInformation(source1, 1, 1, 2, 1, 1, 7).getIntervalMessage());
+        Assert.assertEquals("1cc1-7", new SourceInformation(source1, 1, 1, 2, 5, 1, 7).getIntervalMessage());
+        Assert.assertEquals("1c1-5c1", new SourceInformation(source1, 1, 1, 2, 1, 5, 1).getIntervalMessage());
+        Assert.assertEquals("17c3-18c9", new SourceInformation(source1, 17, 3, 2, 1, 18, 9).getIntervalMessage());
+        Assert.assertEquals("17c3-18c9", new SourceInformation(source2, 17, 3, 2, 1, 18, 9).getIntervalMessage());
     }
 
     @Test
