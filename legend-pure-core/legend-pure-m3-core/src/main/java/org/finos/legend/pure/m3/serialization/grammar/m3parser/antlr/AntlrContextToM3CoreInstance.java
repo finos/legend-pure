@@ -138,6 +138,7 @@ import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.Cl
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.CodeBlockContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.CombinedArithmeticOnlyContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.CombinedExpressionContext;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ComplexConstraintContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ComplexPropertyContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ConstraintContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ConstraintsContext;
@@ -196,6 +197,7 @@ import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.Pr
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.QualifiedNameContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.QualifiedPropertyContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.SignedExpressionContext;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.SimpleConstraintContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.SimplePropertyContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.SourceAndTargetMappingIdContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.StereotypeContext;
@@ -701,7 +703,7 @@ public class AntlrContextToM3CoreInstance
             {
                 expressions.add(this.expression(eCtx, exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, false, importId, addLines));
             }
-            result = this.doWrap(expressions, ctx.expressionsArray().getStart().getLine(), ctx.expressionsArray().getStart().getCharPositionInLine(), ctx.getStop().getLine(), ctx.getStop().getCharPositionInLine());
+            result = this.doWrap(expressions, ctx.expressionsArray().getStart().getLine(), ctx.expressionsArray().getStart().getCharPositionInLine() + 1, ctx.getStop().getLine(), ctx.getStop().getCharPositionInLine() + 1);
         }
         else
         {
@@ -2417,14 +2419,14 @@ public class AntlrContextToM3CoreInstance
 
         if (ctx.simpleConstraint() != null)
         {
-            org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.SimpleConstraintContext simpleConstraintContext = ctx.simpleConstraint();
+            SimpleConstraintContext simpleConstraintContext = ctx.simpleConstraint();
             constraintName = simpleConstraintContext.constraintId() != null ? simpleConstraintContext.constraintId().VALID_STRING().getText() : String.valueOf(position);
             constraintFunctionDefinition = this.combinedExpression(simpleConstraintContext.combinedExpression(), "", Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, "", true, importId, addLines);
             constraintSourceInformation = this.sourceInformation.getPureSourceInformation(simpleConstraintContext.getStart(), simpleConstraintContext.getStart(), simpleConstraintContext.getStop());
         }
         else
         {
-            org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ComplexConstraintContext complexConstraintContext = ctx.complexConstraint();
+            ComplexConstraintContext complexConstraintContext = ctx.complexConstraint();
             constraintSourceInformation = this.sourceInformation.getPureSourceInformation(complexConstraintContext.getStart(), complexConstraintContext.VALID_STRING().getSymbol(), complexConstraintContext.getStop());
             if (this.processorSupport.instance_instanceOf(owner, M3Paths.Type))
             {
@@ -3337,7 +3339,7 @@ public class AntlrContextToM3CoreInstance
             {
                 expressions.add(this.defaultValueExpression(eCtx, importId, lambdaContext));
             }
-            result = this.doWrap(expressions, ctx.defaultValueExpressionsArray().getStart().getLine(), ctx.defaultValueExpressionsArray().getStart().getCharPositionInLine(), ctx.getStop().getLine(), ctx.getStop().getCharPositionInLine());
+            result = this.doWrap(expressions, ctx.defaultValueExpressionsArray().getStart().getLine(), ctx.defaultValueExpressionsArray().getStart().getCharPositionInLine() + 1, ctx.getStop().getLine(), ctx.getStop().getCharPositionInLine() + 1);
         }
 
         if (ctx.propertyExpression() != null)
