@@ -55,40 +55,69 @@ public class AntlrSourceInformation
 
     public SourceInformation getPureSourceInformation(int beginLine, int beginColumn, int endLine, int endColumn)
     {
+        return getPureSourceInformation(beginLine, beginColumn, beginLine, beginColumn, endLine, endColumn);
+    }
+
+    public SourceInformation getPureSourceInformation(int beginLine, int beginColumn, int mainLine, int mainColumn, int endLine, int endColumn)
+    {
         if (!this.addLines)
         {
             return null;
         }
-        int offsetColumn = beginLine == 1 ? this.offsetColumn : 0;
-        int endColumnWithOffset = endColumn + offsetColumn + 1;
-        int beginLineWithOffset = beginLine + offsetLine;
-        int beginColumnWithOffset = beginColumn + 1 + offsetColumn;
-        int endLineWithOffset = endLine + offsetLine;
-        return new SourceInformation(this.sourceName, beginLineWithOffset, beginColumnWithOffset, beginLineWithOffset, beginColumnWithOffset, endLineWithOffset, endColumnWithOffset);
+
+        int adjustedBeginLine = adjustLine(beginLine);
+        int adjustedBeginCol = adjustColumn(beginLine, beginColumn);
+        int adjustedMainLine = adjustLine(mainLine);
+        int adjustedMainCol = adjustColumn(mainLine, mainColumn);
+        int adjustedEndLine = adjustLine(endLine);
+        int adjustedEndCol = adjustColumn(endLine, endColumn);
+        return new SourceInformation(this.sourceName, adjustedBeginLine, adjustedBeginCol, adjustedMainLine, adjustedMainCol, adjustedEndLine, adjustedEndCol);
     }
 
     public SourceInformation getPureSourceInformation(Token token)
     {
-        return this.getPureSourceInformation(token.getLine(), token.getCharPositionInLine(), token.getLine(), token.getCharPositionInLine() + token.getText().length() - 1);
+        int line = token.getLine();
+        int startCol = token.getCharPositionInLine() + 1;
+        int endCol = startCol + token.getText().length() - 1;
+        return getPureSourceInformation(line, startCol, line, endCol);
     }
 
     public SourceInformation getPureSourceInformation(Token firstToken, Token middleToken, Token endToken)
     {
-        if (!this.addLines)
-        {
-            return null;
-        }
-        int offsetColumn = firstToken.getLine() == 1 ? this.offsetColumn : 0;
-        return new SourceInformation(this.sourceName, firstToken.getLine() + this.offsetLine, firstToken.getCharPositionInLine() + 1 + offsetColumn, middleToken.getLine() + this.offsetLine, middleToken.getCharPositionInLine() + 1 + offsetColumn, endToken.getLine() + this.offsetLine, (endToken == middleToken ? endToken.getCharPositionInLine() + endToken.getText().length() - 1 : endToken.getCharPositionInLine()) + 1 + offsetColumn);
+        boolean useEndOfEndToken = endToken == middleToken; // for backward compatibility, but its appropriateness is questionable
+        return getPureSourceInformation(firstToken, middleToken, endToken, useEndOfEndToken);
+    }
+
+    public SourceInformation getPureSourceInformation(Token firstToken, Token middleToken, Token endToken, boolean useEndOfEndToken)
+    {
+        int beginLine = firstToken.getLine();
+        int beginCol = firstToken.getCharPositionInLine() + 1;
+        int mainLine = middleToken.getLine();
+        int mainCol = middleToken.getCharPositionInLine() + 1;
+        int endLine = endToken.getLine();
+        int endCol = endToken.getCharPositionInLine() + (useEndOfEndToken ? endToken.getText().length() : 1);
+        return getPureSourceInformation(beginLine, beginCol, mainLine, mainCol, endLine, endCol);
     }
 
     public SourceInformation getSourceInformationForUnknownErrorPosition(int line, int charPositionInLine)
     {
-        return new SourceInformation(this.sourceName, line + this.offsetLine, charPositionInLine + 1 + this.offsetColumn, line + this.offsetLine, charPositionInLine + 1 + this.offsetColumn);
+        int adjustedLine = adjustLine(line);
+        int adjustedCol = adjustColumn(line, charPositionInLine + 1);
+        return new SourceInformation(this.sourceName, adjustedLine, adjustedCol, adjustedLine, adjustedCol);
     }
 
     public SourceInformation getSourceInformationForOffendingToken(int line, int charPositionInLine, Token offendingToken)
     {
-        return new SourceInformation(this.sourceName, line + this.offsetLine, charPositionInLine + 1 + this.offsetColumn, offendingToken.getLine() + this.offsetLine, offendingToken.getStopIndex() + 1 + this.offsetColumn);
+        return new SourceInformation(this.sourceName, adjustLine(line), adjustColumn(line, charPositionInLine + 1), offendingToken.getLine() + this.offsetLine, offendingToken.getStopIndex() + 1 + this.offsetColumn);
+    }
+
+    private int adjustLine(int line)
+    {
+        return line + this.offsetLine;
+    }
+
+    private int adjustColumn(int line, int column)
+    {
+        return (line == 1) ? (column + this.offsetColumn) : column;
     }
 }

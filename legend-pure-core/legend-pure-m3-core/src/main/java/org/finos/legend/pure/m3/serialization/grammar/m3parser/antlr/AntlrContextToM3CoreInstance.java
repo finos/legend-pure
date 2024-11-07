@@ -2214,7 +2214,7 @@ public class AntlrContextToM3CoreInstance
         result._package(packageInstance);
         packageInstance._childrenAdd(result);
 
-        result.setSourceInformation(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop()));
+        result.setSourceInformation(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop(), true));
 
         result._name(ctx.qualifiedName().identifier().getText());
         result._extended(true);
