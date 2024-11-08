@@ -15,10 +15,9 @@
 package org.finos.legend.pure.runtime.java.interpreted.runtime.api;
 
 import org.eclipse.collections.api.factory.Lists;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
-import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.After;
@@ -28,12 +27,10 @@ import org.junit.Test;
 
 public class TestFunctionExecutionStart extends AbstractPureTestWithCoreCompiled
 {
-    static FunctionExecutionInterpreted functionExecution = new FunctionExecutionInterpreted();
-
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getFunctionExecution());
+        setUpRuntime(new FunctionExecutionInterpreted());
     }
 
     @After
@@ -50,32 +47,20 @@ public class TestFunctionExecutionStart extends AbstractPureTestWithCoreCompiled
         CoreInstance func = runtime.getFunction("testFn(String[1], String[1]):String[1]");
         Assert.assertNotNull(func);
 
-        try
-        {
-            functionExecution.start(func, Lists.immutable.with());
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureExecutionException.class, "Error executing the function:testFn(String[1], String[1]):String[1]. Mismatch between the number of function parameters (2) and the number of supplied arguments (0)\n", e);
-        }
+        PureExecutionException e1 = Assert.assertThrows(PureExecutionException.class, () -> functionExecution.start(func, Lists.immutable.with()));
+        assertPureException(PureExecutionException.class, "Error executing the function:testFn(String[1], String[1]):String[1]. Mismatch between the number of function parameters (2) and the number of supplied arguments (0)\n", e1);
 
-        try
-        {
-            functionExecution.start(func, Lists.immutable.with(ValueSpecificationBootstrap.newStringLiteral(repository, "string", processorSupport)));
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureExecutionException.class, "Error executing the function:testFn(String[1], String[1]):String[1]. Mismatch between the number of function parameters (2) and the number of supplied arguments (1)\n" +
-                    "Anonymous_StripedId instance InstanceValue\n" +
-                    "    genericType(Property):\n" +
-                    "        Anonymous_StripedId instance GenericType\n" +
-                    "            rawType(Property):\n" +
-                    "                String instance PrimitiveType\n" +
-                    "    multiplicity(Property):\n" +
-                    "        PureOne instance PackageableMultiplicity\n" +
-                    "    values(Property):\n" +
-                    "        string instance String", e);
-        }
+        PureExecutionException e2 = Assert.assertThrows(PureExecutionException.class, () -> functionExecution.start(func, Lists.immutable.with(ValueSpecificationBootstrap.newStringLiteral(repository, "string", processorSupport))));
+        assertPureException(PureExecutionException.class, "Error executing the function:testFn(String[1], String[1]):String[1]. Mismatch between the number of function parameters (2) and the number of supplied arguments (1)\n" +
+                "Anonymous_StripedId instance InstanceValue\n" +
+                "    genericType(Property):\n" +
+                "        Anonymous_StripedId instance GenericType\n" +
+                "            rawType(Property):\n" +
+                "                String instance PrimitiveType\n" +
+                "    multiplicity(Property):\n" +
+                "        PureOne instance PackageableMultiplicity\n" +
+                "    values(Property):\n" +
+                "        string instance String", e2);
     }
 
     @Test
@@ -84,23 +69,18 @@ public class TestFunctionExecutionStart extends AbstractPureTestWithCoreCompiled
         compileTestSource("fromString.pure", "function testFn():String[1] { 'the quick brown fox jumps over the lazy dog' }");
         CoreInstance func = runtime.getFunction("testFn():String[1]");
         Assert.assertNotNull(func);
-        try
-        {
-            functionExecution.start(func, Lists.mutable.with(ValueSpecificationBootstrap.newStringLiteral(repository, "string", processorSupport)));
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureExecutionException.class, "Error executing the function:testFn():String[1]. Mismatch between the number of function parameters (0) and the number of supplied arguments (1)\n" +
-                    "Anonymous_StripedId instance InstanceValue\n" +
-                    "    genericType(Property):\n" +
-                    "        Anonymous_StripedId instance GenericType\n" +
-                    "            rawType(Property):\n" +
-                    "                String instance PrimitiveType\n" +
-                    "    multiplicity(Property):\n" +
-                    "        PureOne instance PackageableMultiplicity\n" +
-                    "    values(Property):\n" +
-                    "        string instance String", e);
-        }
+
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> functionExecution.start(func, Lists.mutable.with(ValueSpecificationBootstrap.newStringLiteral(repository, "string", processorSupport))));
+        assertPureException(PureExecutionException.class, "Error executing the function:testFn():String[1]. Mismatch between the number of function parameters (0) and the number of supplied arguments (1)\n" +
+                "Anonymous_StripedId instance InstanceValue\n" +
+                "    genericType(Property):\n" +
+                "        Anonymous_StripedId instance GenericType\n" +
+                "            rawType(Property):\n" +
+                "                String instance PrimitiveType\n" +
+                "    multiplicity(Property):\n" +
+                "        PureOne instance PackageableMultiplicity\n" +
+                "    values(Property):\n" +
+                "        string instance String", e);
     }
 
     @Test
@@ -136,29 +116,17 @@ public class TestFunctionExecutionStart extends AbstractPureTestWithCoreCompiled
                         "{" +
                         "   fail();" +
                         "}");
-        try
-        {
-            this.execute("go():Boolean[1]");
-        }
-        catch (PureExecutionException e)
-        {
-            StringBuffer buffer = new StringBuffer();
-            e.printPureStackTrace(buffer,"   ", functionExecution.getProcessorSupport());
-            Assert.assertEquals(
-                    "   1: resource:/platform/pure/essential/tests/assert.pure line:26 column:5\n" +
-                    "\n" +
-                    "   Full Stack:\n" +
-                    "       nest():Boolean[1]     <-     resource:fromString.pure line:4 column:8\n" +
-                    "       fail():Boolean[1]     <-     resource:fromString.pure line:7 column:31\n" +
-                    "       assert(Boolean[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/fail.pure line:19 column:5\n" +
-                    "       assert(Boolean[1], String[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/assert.pure line:31 column:5\n" +
-                    "       assert(Boolean[1], Function<{->String[1]}>[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/assert.pure line:26 column:5\n", buffer.toString());
-        }
-    }
 
-
-    protected static FunctionExecution getFunctionExecution()
-    {
-        return functionExecution;
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("go():Boolean[1]"));
+        String trace = e.printPureStackTrace(new StringBuilder(), "   ", functionExecution.getProcessorSupport()).toString();
+        Assert.assertEquals(
+                "   1: resource:/platform/pure/essential/tests/assert.pure line:26 column:5\n" +
+                        "\n" +
+                        "   Full Stack:\n" +
+                        "       nest():Boolean[1]     <-     resource:fromString.pure line:4 column:8\n" +
+                        "       fail():Boolean[1]     <-     resource:fromString.pure line:7 column:31\n" +
+                        "       assert(Boolean[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/fail.pure line:19 column:5\n" +
+                        "       assert(Boolean[1], String[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/assert.pure line:31 column:5\n" +
+                        "       assert(Boolean[1], Function<{->String[1]}>[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/assert.pure line:26 column:5", trace);
     }
 }

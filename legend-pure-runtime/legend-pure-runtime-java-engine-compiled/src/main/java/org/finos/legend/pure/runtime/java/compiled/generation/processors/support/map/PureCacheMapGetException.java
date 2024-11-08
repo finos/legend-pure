@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map;
 
-import org.eclipse.collections.api.factory.Stacks;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m4.exception.PureException;
 
@@ -24,7 +23,7 @@ public class PureCacheMapGetException extends PureExecutionException
 
     PureCacheMapGetException(Object key, Throwable cause)
     {
-        super(generateInfo(key, cause), cause, Stacks.mutable.empty());
+        super(generateInfo(key, cause), cause);
         this.key = key;
     }
 

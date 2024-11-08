@@ -20,14 +20,19 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 /**
  * Indicates that an exception was thrown while we were writing to the response
  * during lazy streaming execution
- *
+ * <p>
  * This separate exception is provide, because we have already written data to the response,
  * so the error handling needs to be different
  */
 public class PureExecutionStreamingException extends PureExecutionException
 {
     public PureExecutionStreamingException(Throwable cause, MutableStack<CoreInstance> callStack)
-        {
-            super(cause, callStack);
-        }
+    {
+        super(cause, callStack);
+    }
+
+    public PureExecutionStreamingException(Throwable cause)
+    {
+        super(cause);
+    }
 }

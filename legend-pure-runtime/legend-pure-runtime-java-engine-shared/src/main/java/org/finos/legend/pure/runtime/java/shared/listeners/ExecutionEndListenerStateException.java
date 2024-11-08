@@ -24,4 +24,9 @@ public class ExecutionEndListenerStateException extends PureExecutionException
     {
         super(info, functionExpressionCallStack);
     }
+
+    ExecutionEndListenerStateException(String info)
+    {
+        super(info);
+    }
 }

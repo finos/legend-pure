@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.compiled.compiler;
 
-import org.eclipse.collections.api.factory.Stacks;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
@@ -22,37 +21,37 @@ public class PureDynamicReactivateException extends PureExecutionException
 {
     public PureDynamicReactivateException(SourceInformation sourceInformation, String info, Throwable cause)
     {
-        super(sourceInformation, info, cause, Stacks.mutable.empty());
+        super(sourceInformation, info, cause);
     }
 
     public PureDynamicReactivateException(SourceInformation sourceInformation, String info)
     {
-        super(sourceInformation, info, null);
+        super(sourceInformation, info);
     }
 
     public PureDynamicReactivateException(SourceInformation sourceInformation, Throwable cause)
     {
-        super(sourceInformation, null, cause, Stacks.mutable.empty());
+        super(sourceInformation, null, cause);
     }
 
     public PureDynamicReactivateException(String info, Throwable cause)
     {
-        super(info, cause, Stacks.mutable.empty());
+        super(info, cause);
     }
 
     public PureDynamicReactivateException(SourceInformation sourceInformation)
     {
-        super(sourceInformation, Stacks.mutable.empty());
+        super(sourceInformation);
     }
 
     public PureDynamicReactivateException(String info)
     {
-        super(info, Stacks.mutable.empty());
+        super(info);
     }
 
     public PureDynamicReactivateException(Throwable cause)
     {
-        super(cause, Stacks.mutable.empty());
+        super(cause);
     }
 
     public PureDynamicReactivateException()
