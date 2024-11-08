@@ -66,7 +66,7 @@ public class FunctionProcessor
                         CoreInstance definition = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.functionDefinition, processorContext.getSupport());
                         String eval = "(Boolean) " + ValueSpecificationProcessor.createFunctionForLambda(constraint, definition, processorContext.getSupport(), processorContext) + ".execute(Lists.mutable.with(" + stringParams + "),es)";
                         String ruleId = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.name, processorContext.getSupport()).getName();
-                        return "if(! (" + eval + ")){throw new org.finos.legend.pure.m3.exception.PureExecutionException(_sourceInformation, \"Constraint (PRE):[" + ruleId + "] violated. (Function:" + functionDefinition.getName() + ")\", org.eclipse.collections.api.factory.Stacks.mutable.<org.finos.legend.pure.m4.coreinstance.CoreInstance>empty());}\n";
+                        return "if(! (" + eval + ")){throw new org.finos.legend.pure.m3.exception.PureExecutionException(_sourceInformation, \"Constraint (PRE):[" + ruleId + "] violated. (Function:" + functionDefinition.getName() + ")\");}\n";
                     }).makeString("") +
                     "     final " + returnType + " _return = " + IdBuilder.sourceToId(functionDefinition.getSourceInformation()) + "." + functionNameToJava(functionDefinition) + "(" + functionType.getValueForMetaPropertyToMany("parameters").collect(ci -> "_" + ci.getValueForMetaPropertyToOne(M3Properties.name).getName()).makeString(", ") + ", es);\n" +
 
@@ -75,7 +75,7 @@ public class FunctionProcessor
                         CoreInstance definition = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.functionDefinition, processorContext.getSupport());
                         String eval = "(Boolean) " + ValueSpecificationProcessor.createFunctionForLambda(constraint, definition, processorContext.getSupport(), processorContext) + ".execute(Lists.mutable.with(" + stringParams + ",_return),es)";
                         String ruleId = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.name, processorContext.getSupport()).getName();
-                        return "if(! (" + eval + ")){throw new org.finos.legend.pure.m3.exception.PureExecutionException(_sourceInformation, \"Constraint (POST):[" + ruleId + "] violated. (Function:" + functionDefinition.getName() + ")\", org.eclipse.collections.api.factory.Stacks.mutable.<org.finos.legend.pure.m4.coreinstance.CoreInstance>empty());}\n";
+                        return "if(! (" + eval + ")){throw new org.finos.legend.pure.m3.exception.PureExecutionException(_sourceInformation, \"Constraint (POST):[" + ruleId + "] violated. (Function:" + functionDefinition.getName() + ")\");}\n";
                     }).makeString("") +
 
                     "return _return;" +
