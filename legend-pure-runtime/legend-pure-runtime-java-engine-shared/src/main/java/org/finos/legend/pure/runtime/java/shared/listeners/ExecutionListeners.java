@@ -17,7 +17,6 @@ package org.finos.legend.pure.runtime.java.shared.listeners;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 
 import java.util.Objects;
@@ -102,7 +101,7 @@ public class ExecutionListeners
                     throwables.add(state.getThrowable());
                 }
             });
-            ExecutionEndListenerStateException toThrow = new ExecutionEndListenerStateException(builder.toString(), Stacks.mutable.empty());
+            ExecutionEndListenerStateException toThrow = new ExecutionEndListenerStateException(builder.toString());
             throwables.forEach(toThrow::addSuppressed);
             throw toThrow;
         }

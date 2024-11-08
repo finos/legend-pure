@@ -28,9 +28,19 @@ public class PureAssertFailException extends PureExecutionException
         super(sourceInformation, info, cause, callStack);
     }
 
+    public PureAssertFailException(SourceInformation sourceInformation, String info, PureAssertFailException cause)
+    {
+        super(sourceInformation, info, cause);
+    }
+
     public PureAssertFailException(SourceInformation sourceInformation, String info, MutableStack<CoreInstance> callStack)
     {
         super(sourceInformation, info, callStack);
+    }
+
+    public PureAssertFailException(SourceInformation sourceInformation, String info)
+    {
+        super(sourceInformation, info);
     }
 
     public PureAssertFailException(SourceInformation sourceInformation, PureAssertFailException cause, MutableStack<CoreInstance> callStack)
@@ -38,14 +48,29 @@ public class PureAssertFailException extends PureExecutionException
         super(sourceInformation, cause, callStack);
     }
 
+    public PureAssertFailException(SourceInformation sourceInformation, PureAssertFailException cause)
+    {
+        super(sourceInformation, cause);
+    }
+
     public PureAssertFailException(String info, PureAssertFailException cause, MutableStack<CoreInstance> callStack)
     {
         super(info, cause, callStack);
     }
 
+    public PureAssertFailException(String info, PureAssertFailException cause)
+    {
+        super(info, cause);
+    }
+
     public PureAssertFailException(String info, MutableStack<CoreInstance> callStack)
     {
         super(info, callStack);
+    }
+
+    public PureAssertFailException(String info)
+    {
+        super(info);
     }
 
     public PureAssertFailException()
