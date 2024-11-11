@@ -36,81 +36,64 @@ public class TestFunctionReturnType extends AbstractPureTestWithCoreCompiledPlat
         runtime.delete("testSource1.pure");
         runtime.delete("testSource2.pure");
         runtime.delete("testSource3.pure");
+        runtime.compile();
     }
 
     @Test
     public void testSimpleReturnError()
     {
-        try
-        {
-            compileTestSource("testSource.pure",
-                    "Class A\n" +
-                            "{\n" +
-                            "   name : String[1];\n" +
-                            "}\n" +
-                            "Class B extends A\n" +
-                            "{\n" +
-                            "   moreName : String[1];\n" +
-                            "}\n" +
-                            "function funcWithReturn():B[1]\n" +
-                            "{\n" +
-                            "   ^A(name='aaa');\n" +
-                            "}\n");
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Return type error in function 'funcWithReturn'; found: A; expected: B", "testSource.pure", 11, 4, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testSource.pure",
+                "Class A\n" +
+                        "{\n" +
+                        "   name : String[1];\n" +
+                        "}\n" +
+                        "Class B extends A\n" +
+                        "{\n" +
+                        "   moreName : String[1];\n" +
+                        "}\n" +
+                        "function funcWithReturn():B[1]\n" +
+                        "{\n" +
+                        "   ^A(name='aaa');\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Return type error in function 'funcWithReturn'; found: A; expected: B", "testSource.pure", 11, 4, e);
     }
 
     @Test
     public void testSimpleReturnErrorSameClassNameInDifferentPackages()
     {
-        try
-        {
-            compileTestSource("testSource.pure",
-                    "Class b::A\n" +
-                            "{\n" +
-                            "   name : String[1];\n" +
-                            "}\n" +
-                            "Class c::A\n" +
-                            "{\n" +
-                            "   moreName : String[1];\n" +
-                            "}\n" +
-                            "function funcWithReturn():c::A[1]\n" +
-                            "{\n" +
-                            "   ^b::A(name='aaa');\n" +
-                            "}\n");
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Return type error in function 'funcWithReturn'; found: b::A; expected: c::A", "testSource.pure", 11, 4, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testSource.pure",
+                "Class b::A\n" +
+                        "{\n" +
+                        "   name : String[1];\n" +
+                        "}\n" +
+                        "Class c::A\n" +
+                        "{\n" +
+                        "   moreName : String[1];\n" +
+                        "}\n" +
+                        "function funcWithReturn():c::A[1]\n" +
+                        "{\n" +
+                        "   ^b::A(name='aaa');\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Return type error in function 'funcWithReturn'; found: b::A; expected: c::A", "testSource.pure", 11, 4, e);
     }
 
     @Test
     public void testReturnTypeWithGenerics()
     {
-        try
-        {
-            compileTestSource("testSource.pure",
-                    "import test::*;\n" +
-                            "Class test::TestClass<T>\n" +
-                            "{\n" +
-                            "   prop : T[1];\n" +
-                            "}\n" +
-                            "function funcWithReturn():TestClass<String>[1]\n" +
-                            "{\n" +
-                            "   ^TestClass<Integer>(prop=5);\n" +
-                            "}\n");
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Return type error in function 'funcWithReturn'; found: test::TestClass<Integer>; expected: test::TestClass<String>", "testSource.pure", 8, 4, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testSource.pure",
+                "import test::*;\n" +
+                        "Class test::TestClass<T>\n" +
+                        "{\n" +
+                        "   prop : T[1];\n" +
+                        "}\n" +
+                        "function funcWithReturn():TestClass<String>[1]\n" +
+                        "{\n" +
+                        "   ^TestClass<Integer>(prop=5);\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Return type error in function 'funcWithReturn'; found: test::TestClass<Integer>; expected: test::TestClass<String>", "testSource.pure", 8, 4, e);
     }
 
     @Test
@@ -130,20 +113,14 @@ public class TestFunctionReturnType extends AbstractPureTestWithCoreCompiledPlat
                         "  []\n" +
                         "}\n");
 
-        try
-        {
-            // This should not compile
-            compileTestSource("testSource3.pure",
-                    "function func3WithReturn<T>(t:T[*]):T[*]\n" +
-                            "{\n" +
-                            "  5\n" +
-                            "}\n");
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Return type error in function 'func3WithReturn'; found: Integer; expected: T", "testSource3.pure", 3, 3, e);
-        }
+        // This should not compile
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testSource3.pure",
+                "function func3WithReturn<T>(t:T[*]):T[*]\n" +
+                        "{\n" +
+                        "  5\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Return type error in function 'func3WithReturn'; found: Integer; expected: T", "testSource3.pure", 3, 3, e);
     }
 
     @Test
@@ -163,44 +140,31 @@ public class TestFunctionReturnType extends AbstractPureTestWithCoreCompiledPlat
                         "  ^List<Nil>()\n" +
                         "}\n");
 
-        try
-        {
-            // This should not compile
-            compileTestSource("testSource3.pure",
-                    "function func3WithReturn<T>(t:T[*]):List<T>[1]\n" +
-                            "{\n" +
-                            "  ^List<Integer>(values=5)\n" +
-                            "}\n");
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Return type error in function 'func3WithReturn'; found: meta::pure::functions::collection::List<Integer>; expected: meta::pure::functions::collection::List<T>", "testSource3.pure", 3, 3, e);
-        }
-
+        // This should not compile
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testSource3.pure",
+                "function func3WithReturn<T>(t:T[*]):List<T>[1]\n" +
+                        "{\n" +
+                        "  ^List<Integer>(values=5)\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Return type error in function 'func3WithReturn'; found: meta::pure::functions::collection::List<Integer>; expected: meta::pure::functions::collection::List<T>", "testSource3.pure", 3, 3, e);
     }
 
     @Test
     public void testReturnTypeWithFunctionType()
     {
-        try
-        {
-            compileTestSource("testSource.pure",
-                    "import test::*;\n" +
-                            "Class test::TestClass\n" +
-                            "{\n" +
-                            "  prop : String[1];\n" +
-                            "}\n" +
-                            "function funcWithReturn():FunctionDefinition<{TestClass[1]->Integer[1]}>[1]\n" +
-                            "{\n" +
-                            "   {tc:TestClass[1] | $tc.prop}\n" +
-                            "}\n");
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Return type error in function 'funcWithReturn'; found: meta::pure::metamodel::function::LambdaFunction<{test::TestClass[1]->String[1]}>; expected: meta::pure::metamodel::function::FunctionDefinition<{test::TestClass[1]->Integer[1]}>", "testSource.pure", 8, 5, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testSource.pure",
+                "import test::*;\n" +
+                        "Class test::TestClass\n" +
+                        "{\n" +
+                        "  prop : String[1];\n" +
+                        "}\n" +
+                        "function funcWithReturn():FunctionDefinition<{TestClass[1]->Integer[1]}>[1]\n" +
+                        "{\n" +
+                        "   {tc:TestClass[1] | $tc.prop}\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Return type error in function 'funcWithReturn'; found: meta::pure::metamodel::function::LambdaFunction<{test::TestClass[1]->String[1]}>; expected: meta::pure::metamodel::function::FunctionDefinition<{test::TestClass[1]->Integer[1]}>", "testSource.pure", 8, 5, e);
     }
 
     @Test
@@ -220,28 +184,22 @@ public class TestFunctionReturnType extends AbstractPureTestWithCoreCompiledPlat
                         "   pair('Key2', func1_Class_$0_1$__List_1_)\n" +
                         "  ]\n" +
                         "}\n");
-        try
-        {
-            // This should not compile
-            compileTestSourceM3("testSource2.pure",
-                    "import test::*;\n" +
-                            "function test::func2(c:Class<Type>[0..1]):List<Type>[1]\n" +
-                            "{\n" +
-                            "    ^List<Type>()\n" +
-                            "}\n" +
-                            "function test::funcPairs2():Pair<String, Function<{Class<Any>[0..1]->List<Any>[1]}>>[*]\n" +
-                            "{\n" +
-                            "  [\n" +
-                            "   pair('Key1', func2_Class_$0_1$__List_1_),\n" +
-                            "   pair('Key2', func2_Class_$0_1$__List_1_)\n" +
-                            "  ]\n" +
-                            "}\n");
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            //e.printStackTrace();
-            assertPureException(PureCompilationException.class, "Return type error in function 'funcPairs2'; found: meta::pure::functions::collection::Pair<String, meta::pure::metamodel::function::ConcreteFunctionDefinition<{meta::pure::metamodel::type::Class<meta::pure::metamodel::type::Type>[0..1]->meta::pure::functions::collection::List<meta::pure::metamodel::type::Type>[1]}>>; expected: meta::pure::functions::collection::Pair<String, meta::pure::metamodel::function::Function<{meta::pure::metamodel::type::Class<meta::pure::metamodel::type::Any>[0..1]->meta::pure::functions::collection::List<meta::pure::metamodel::type::Any>[1]}>>", "testSource2.pure", 8, 3, e);
-        }
+
+        // This should not compile
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSourceM3(
+                "testSource2.pure",
+                "import test::*;\n" +
+                        "function test::func2(c:Class<Type>[0..1]):List<Type>[1]\n" +
+                        "{\n" +
+                        "    ^List<Type>()\n" +
+                        "}\n" +
+                        "function test::funcPairs2():Pair<String, Function<{Class<Any>[0..1]->List<Any>[1]}>>[*]\n" +
+                        "{\n" +
+                        "  [\n" +
+                        "   pair('Key1', func2_Class_$0_1$__List_1_),\n" +
+                        "   pair('Key2', func2_Class_$0_1$__List_1_)\n" +
+                        "  ]\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Return type error in function 'funcPairs2'; found: meta::pure::functions::collection::Pair<String, meta::pure::metamodel::function::ConcreteFunctionDefinition<{meta::pure::metamodel::type::Class<meta::pure::metamodel::type::Type>[0..1]->meta::pure::functions::collection::List<meta::pure::metamodel::type::Type>[1]}>>; expected: meta::pure::functions::collection::Pair<String, meta::pure::metamodel::function::Function<{meta::pure::metamodel::type::Class<meta::pure::metamodel::type::Any>[0..1]->meta::pure::functions::collection::List<meta::pure::metamodel::type::Any>[1]}>>", "testSource2.pure", 8, 3, e);
     }
 }
