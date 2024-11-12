@@ -15,20 +15,19 @@
 package org.finos.legend.pure.m3.tests.incremental.function;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompiledPlatform
+public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
@@ -38,12 +37,9 @@ public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompile
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
-        MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
-        CodeRepository system = GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform", "core_functions_unclassified");
-        CodeRepository test = GenericCodeRepository.build("test", "test(::.*)?", "platform", "system", "core_functions_unclassified");
-        repositories.add(system);
-        repositories.add(test);
-        return repositories;
+        return Lists.mutable.<CodeRepository>withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories())
+                .with(GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform", "core_functions_unclassified"))
+                .with(GenericCodeRepository.build("test", "test(::.*)?", "platform", "system", "core_functions_unclassified"));
     }
 
     @After
@@ -95,7 +91,6 @@ public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompile
                 runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
-
     @Test
     public void testPureRuntimeFunctionAllFunctionsIncludingLambdaInNew()
     {
@@ -113,7 +108,6 @@ public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompile
                         .createInMemorySource("sourceId.pure", source)
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
-
     }
 
     @Test
@@ -129,7 +123,6 @@ public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompile
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
     }
-
 
     @Test
     public void testPureRuntimeFunctionLambdaWithinIf()
