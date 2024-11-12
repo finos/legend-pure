@@ -34,6 +34,9 @@ Class meta::external::store::relational::runtime::DatabaseConnection extends Con
    {doc.doc = 'Defaults to false'}
    quoteIdentifiers : Boolean[0..1];
 
+   {doc.doc = 'Defaults to 3600'}
+   queryTimeOutInSeconds : Integer[0..1];
+
    sqlQueryPostProcessors: Function<{SelectSQLQuery[1]->Result<SelectSQLQuery|1>[1]}>[*];
 
    sqlQueryPostProcessorsConnectionAware: Function<{SelectSQLQuery[1],DatabaseConnection[1]->Result<SelectSQLQuery|1>[1]}>[*];
