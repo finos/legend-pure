@@ -15,6 +15,7 @@
 package org.finos.legend.pure.m3.tests;
 
 import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class TestM3CoreCompiledStateIntegrity extends AbstractCompiledStateIntegrityTest
 {
@@ -22,5 +23,11 @@ public class TestM3CoreCompiledStateIntegrity extends AbstractCompiledStateInteg
     public static void initialize()
     {
         initialize("platform");
+    }
+
+    @Test
+    public void testPackagedElementsContainAllOthers()
+    {
+        super.testPackagedElementsContainAllOthers();
     }
 }

@@ -16,6 +16,7 @@ package org.finos.legend.pure.m2.inlinedsl.tds;
 
 import org.finos.legend.pure.m3.tests.AbstractCompiledStateIntegrityTest;
 import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class TestM2TDSCompiledStateIntegrity extends AbstractCompiledStateIntegrityTest
 {
@@ -23,5 +24,11 @@ public class TestM2TDSCompiledStateIntegrity extends AbstractCompiledStateIntegr
     public static void initialize()
     {
         initialize("platform_dsl_tds");
+    }
+
+    @Test
+    public void testPackagedElementsContainAllOthers()
+    {
+        super.testPackagedElementsContainAllOthers();
     }
 }
