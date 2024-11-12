@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.m3.tests.incremental.profile;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
@@ -22,7 +22,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiledPlatform
+public class TestPureRuntimeStereotype extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
