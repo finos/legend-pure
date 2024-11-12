@@ -19,7 +19,7 @@ import org.eclipse.collections.api.map.ImmutableMap;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation._class._Class;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -29,7 +29,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWithCoreCompiledPlatform
+public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()

@@ -16,33 +16,22 @@ package org.finos.legend.pure.runtime.java.compiled.incremental._class;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.tuple.Pair;
+import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
-import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.incremental._class.TestPureRuntimeClass_AsFunctionReturn;
+import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.runtime.CompiledClassloaderStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.runtime.CompiledMetadataStateVerifier;
-import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
-import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
 
 public class TestPureRuntimeClass_AsFunctionReturnCompiled extends TestPureRuntimeClass_AsFunctionReturn
 {
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getFunctionExecution(), new CompositeCodeStorage(new ClassLoaderCodeStorage(getCodeRepositories())), JavaModelFactoryRegistryLoader.loader(), getOptions(), getExtra());
-    }
-
-    @Test
-    @Ignore
-    public void testPureRuntimeClassAsQualifiedPropertyReturn()
-    {
-        testPureRuntimeClassAsQualifiedPropertyReturn();
+        setUpRuntime(getFunctionExecution(), new CompositeCodeStorage(new ClassLoaderCodeStorage(getCodeRepositories())), getFactoryRegistryOverride());
     }
 
     protected static FunctionExecution getFunctionExecution()
@@ -54,10 +43,5 @@ public class TestPureRuntimeClass_AsFunctionReturnCompiled extends TestPureRunti
     protected ListIterable<RuntimeVerifier.FunctionExecutionStateVerifier> getAdditionalVerifiers()
     {
         return Lists.fixedSize.of(new CompiledMetadataStateVerifier(), new CompiledClassloaderStateVerifier());
-    }
-
-    public static Pair<String, String> getExtra()
-    {
-        return null;
     }
 }

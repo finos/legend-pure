@@ -14,14 +14,14 @@
 
 package org.finos.legend.pure.m3.tests.incremental._class;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestPureRuntimeClass_InCopy extends AbstractPureTestWithCoreCompiledPlatform
+public class TestPureRuntimeClass_InCopy extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
@@ -38,7 +38,7 @@ public class TestPureRuntimeClass_InCopy extends AbstractPureTestWithCoreCompile
     }
 
     @Test
-    public void testPureRuntimeClassUsedInCopy() throws Exception
+    public void testPureRuntimeClassUsedInCopy()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{name:String[1];} function getA():A[1]{^A(name='ok')}")
                         .createInMemorySource("userId.pure", "function test():String[1]{let a = getA(); ^$a(name='test'); 'tst';}")
@@ -52,7 +52,7 @@ public class TestPureRuntimeClass_InCopy extends AbstractPureTestWithCoreCompile
     }
 
     @Test
-    public void testPureRuntimeClassUsedInCopyWithWrongProperty() throws Exception
+    public void testPureRuntimeClassUsedInCopyWithWrongProperty()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{name:String[1];} function getA():A[1]{^A(name='ok')}")
                         .createInMemorySource("userId.pure", "function test():String[1]{let a = getA();^$a(name='test'); 'tst';}")

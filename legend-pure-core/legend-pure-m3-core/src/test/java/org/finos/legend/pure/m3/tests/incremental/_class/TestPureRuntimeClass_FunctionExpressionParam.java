@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.m3.tests.incremental._class;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
@@ -22,7 +22,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTestWithCoreCompiledPlatform
+public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
@@ -41,7 +41,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
     }
 
     @Test
-    public void testPureRuntimeClassAsFunctionExpressionParameter() throws Exception
+    public void testPureRuntimeClassAsFunctionExpressionParameter()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
                         .createInMemorySource("userId.pure", "function f(c:Class<Any>[1]):String[0..1]{$c.name}" +
@@ -57,7 +57,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
 
 
     @Test
-    public void testPureRuntimeClassAsFunctionExpressionParameterError() throws Exception
+    public void testPureRuntimeClassAsFunctionExpressionParameterError()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
                         .createInMemorySource("userId.pure", "function f(c:Class<Any>[1]):String[0..1]{$c.name}" +
@@ -74,7 +74,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
     }
 
     @Test
-    public void testPureRuntimeClassParameterUsageCleanUp() throws Exception
+    public void testPureRuntimeClassParameterUsageCleanUp()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "function f(c:Class<Any>[1]):Any[1]{$c} function k():Nil[0]{f(A);[];}")
                         .createInMemorySource("userId.pure", "Class A{}")
@@ -104,7 +104,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
     }
 
     @Test
-    public void testPureRuntimeClassUsedInNew() throws Exception
+    public void testPureRuntimeClassUsedInNew()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("other.pure", "Class XX{ok:String[1];}")
                         .createInMemorySource("sourceId.pure", "function test():Nil[0]{^XX(ok='1');[];}" +
@@ -119,7 +119,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
     }
 
     @Test
-    public void testPureRuntimeClassUsedInNewReverse() throws Exception
+    public void testPureRuntimeClassUsedInNewReverse()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("other.pure", "Class XX{ok:String[1];}")
                         .createInMemorySource("sourceId.pure", "function test():Nil[0]{^XX(ok='1');[];}" +
@@ -135,7 +135,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
     }
 
     @Test
-    public void testPureRuntimeClassUsedInNewOther() throws Exception
+    public void testPureRuntimeClassUsedInNewOther()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("other.pure", "function test():Nil[0]{^XX(ok='1');[];}")
                         .createInMemorySource("sourceId.pure", "Class XX{ok:String[1];}\n" +
@@ -161,7 +161,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
     }
 
     @Test
-    public void testPureRuntimeClassProperty_GenericsLambdaModify() throws Exception
+    public void testPureRuntimeClassProperty_GenericsLambdaModify()
     {
         String sourceId2 = "import meta::relational::tests::mapping::enumeration::model::domain::*;\n" +
                 "function go():Any[*]\n" +
@@ -187,7 +187,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
 
 
     @Test
-    public void testPureRuntimeClassProperty_NestedGenericsModify() throws Exception
+    public void testPureRuntimeClassProperty_NestedGenericsModify()
     {
         String sourceId2 = "import meta::relational::tests::mapping::enumeration::model::domain::*;\n" +
                 "\n" +
@@ -236,7 +236,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
 
 
     @Test
-    public void testPureRuntimeClassProperty_NestedGenericsModifyProject() throws Exception
+    public void testPureRuntimeClassProperty_NestedGenericsModifyProject()
     {
         String sourceId2 = "import meta::relational::tests::mapping::enumeration::model::domain::*;\n" +
                 "Class meta::pure::tds::TabularDataSet\n" +

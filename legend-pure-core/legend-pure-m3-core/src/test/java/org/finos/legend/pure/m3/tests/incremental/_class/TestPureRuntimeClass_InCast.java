@@ -14,14 +14,14 @@
 
 package org.finos.legend.pure.m3.tests.incremental._class;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestPureRuntimeClass_InCast extends AbstractPureTestWithCoreCompiledPlatform
+public class TestPureRuntimeClass_InCast extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
@@ -49,7 +49,6 @@ public class TestPureRuntimeClass_InCast extends AbstractPureTestWithCoreCompile
                         .createInMemorySource("sourceId.pure", "Class A{name:String[1];} Class B extends A{}")
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
-
     }
 
     @Test
