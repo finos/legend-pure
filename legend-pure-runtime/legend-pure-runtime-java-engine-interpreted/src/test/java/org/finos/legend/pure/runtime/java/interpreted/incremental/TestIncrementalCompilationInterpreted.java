@@ -18,7 +18,6 @@ import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.incremental.AbstractTestIncrementalCompilation;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.BeforeClass;
-import org.junit.Test;
 
 public class TestIncrementalCompilationInterpreted extends AbstractTestIncrementalCompilation
 {
@@ -26,27 +25,6 @@ public class TestIncrementalCompilationInterpreted extends AbstractTestIncrement
     public static void setUp()
     {
         setUpRuntime(getFunctionExecution(), getCodeStorage());
-    }
-
-    @Test
-    @Override
-    public void test14()
-    {
-        super.test14();
-    }
-
-    @Test
-    @Override
-    public void test20()
-    {
-        super.test20();
-    }
-
-    @Test
-    @Override
-    public void test21()
-    {
-        super.test21();
     }
 
     protected static FunctionExecution getFunctionExecution()
