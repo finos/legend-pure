@@ -14,21 +14,27 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
 public class DateWithSubsecond extends AbstractDateWithSubsecond
 {
+    private DateWithSubsecond(LocalDate date, int hour, int minute, int second, String subsecond)
+    {
+        super(date, hour, minute, second, subsecond);
+    }
+
     private DateWithSubsecond(int year, int month, int day, int hour, int minute, int second, String subsecond)
     {
         super(year, month, day, hour, minute, second, subsecond);
     }
 
     @Override
-    public DateWithSubsecond clone()
+    protected PureDate newWith(LocalDate date, int hour, int minute, int second, String subsecond)
     {
-        return new DateWithSubsecond(getYear(), getMonth(), getDay(), getHour(), getMinute(), getSecond(), getSubsecond());
+        return new DateWithSubsecond(date, hour, minute, second, subsecond);
     }
 
     public static DateWithSubsecond newDateWithSubsecond(int year, int month, int day, int hour, int minute, int second, String subsecond)

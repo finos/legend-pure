@@ -14,14 +14,41 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
-abstract class AbstractDateWithDay extends AbstractDateWithMonth
+import java.time.LocalDate;
+import java.util.Objects;
+
+abstract class AbstractDateWithDay extends AbstractPureDate
 {
-    private int day;
+    protected final LocalDate date;
+
+    protected AbstractDateWithDay(LocalDate localDate)
+    {
+        this.date = Objects.requireNonNull(localDate);
+    }
 
     protected AbstractDateWithDay(int year, int month, int day)
     {
-        super(year, month);
-        this.day = day;
+        DateFunctions.validateMonth(month);
+        DateFunctions.validateDay(year, month, day);
+        this.date = LocalDate.of(year, month, day);
+    }
+
+    @Override
+    public int getYear()
+    {
+        return this.date.getYear();
+    }
+
+    @Override
+    public boolean hasMonth()
+    {
+        return true;
+    }
+
+    @Override
+    public int getMonth()
+    {
+        return this.date.getMonthValue();
     }
 
     @Override
@@ -33,71 +60,75 @@ abstract class AbstractDateWithDay extends AbstractDateWithMonth
     @Override
     public int getDay()
     {
-        return this.day;
+        return this.date.getDayOfMonth();
     }
 
     @Override
     public PureDate addYears(long years)
     {
-        PureDate result = super.addYears(years);
-        if ((result.getMonth() == 2) && (result.getDay() == 29) && !DateFunctions.isLeapYear(result.getYear()))
-        {
-            ((AbstractDateWithDay)result).day = 28;
-        }
-        return result;
+        return (years == 0L) ? this : newWith(addYearsToDatePart(years));
     }
 
     @Override
     public PureDate addMonths(long months)
     {
-        PureDate result = super.addMonths(months);
-        if (result != this)
+        return (months == 0L) ? this : newWith(addMonthsToDatePart(months));
+    }
+
+    @Override
+    public PureDate addWeeks(long weeks)
+    {
+        if (weeks == 0L)
         {
-            int daysInMonth = DateFunctions.getDaysInMonth(result.getYear(), result.getMonth());
-            AbstractDateWithDay resultWithDay = (AbstractDateWithDay)result;
-            if (resultWithDay.day > daysInMonth)
-            {
-                resultWithDay.day = daysInMonth;
-            }
+            return this;
         }
-        return result;
+
+        LocalDate localDate = this.date;
+        if (weeks > 0)
+        {
+            long limit = Long.MAX_VALUE / 7L;
+            long limitDays = limit * 7L;
+            while (weeks > limit)
+            {
+                localDate = addDays(localDate, limitDays);
+                weeks -= limit;
+            }
+            localDate = addDays(localDate, weeks * 7L);
+        }
+        else
+        {
+            long limit = Long.MIN_VALUE / 7L;
+            long limitDays = limit * 7L;
+            while (weeks < limit)
+            {
+                localDate = addDays(localDate, limitDays);
+                weeks -= limit;
+            }
+            localDate = addDays(localDate, weeks * 7L);
+        }
+        return newWith(localDate);
     }
 
     @Override
     public PureDate addDays(long days)
     {
-        if (days == 0)
-        {
-            return this;
-        }
-
-        AbstractDateWithDay copy = clone();
-        copy.incrementDay(days);
-        return copy;
+        return (days == 0L) ? this : newWith(addDaysToDatePart(days));
     }
 
-    @Override
-    public abstract AbstractDateWithDay clone();
-
-    void incrementDay(long delta)
+    protected LocalDate addYearsToDatePart(long years)
     {
-        long remDelta = Math.addExact(this.day, delta);
-        if (delta < 0)
-        {
-            while (remDelta < 1)
-            {
-                incrementMonth(-1);
-                remDelta += DateFunctions.getDaysInMonth(this.getYear(), this.getMonth());
-            }
-        }
-        else if (delta > 0)
-        {
-            for (int maxDay = DateFunctions.getDaysInMonth(getYear(), getMonth()); remDelta > maxDay; maxDay = DateFunctions.getDaysInMonth(getYear(), getMonth()))
-            {
-                remDelta -= maxDay;
-                incrementMonth(1);
-            }
-        }
-        this.day = (int) remDelta;
+        return addYears(this.date, years);
     }
+
+    protected LocalDate addMonthsToDatePart(long months)
+    {
+        return addMonths(this.date, months);
+    }
+
+    protected LocalDate addDaysToDatePart(long days)
+    {
+        return addDays(this.date, days);
+    }
+
+    protected abstract PureDate newWith(LocalDate newDate);
 }

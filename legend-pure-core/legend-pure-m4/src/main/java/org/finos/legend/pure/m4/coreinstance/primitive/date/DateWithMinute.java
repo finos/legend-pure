@@ -14,11 +14,17 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
+import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
 public final class DateWithMinute extends AbstractDateWithMinute
 {
+    private DateWithMinute(LocalDate date, int hour, int minute)
+    {
+        super(date, hour, minute);
+    }
+
     private DateWithMinute(int year, int month, int day, int hour, int minute)
     {
         super(year, month, day, hour, minute);
@@ -85,9 +91,9 @@ public final class DateWithMinute extends AbstractDateWithMinute
     }
 
     @Override
-    public DateWithMinute clone()
+    protected PureDate newWith(LocalDate date, int hour, int minute)
     {
-        return new DateWithMinute(getYear(), getMonth(), getDay(), getHour(), getMinute());
+        return new DateWithMinute(date, hour, minute);
     }
 
     public static DateWithMinute newDateWithMinute(int year, int month, int day, int hour, int minute)

@@ -73,74 +73,32 @@ public class TestPureDate
         PureDate date = DateFunctions.newPureDate(2014, 1, 1, 1, 1, 1, "070004235");
         Assert.assertEquals("2013-12-31 20:01:01.070-0500", date.format("[EST]yyyy-MM-dd HH:mm:ss.SSSZ"));
         Assert.assertEquals("2013-12-31 20:01:01.070-0500", date.format("[EST]yyyy-MM-dd [EST]HH:mm:ss.SSSZ"));
-        try
-        {
-            date.format("[EST]yyyy-MM-dd [CST] HH:mm:ss.SSSZ");
-            Assert.fail();
-        }
-        catch (IllegalArgumentException e)
-        {
-            Assert.assertEquals("Cannot set multiple timezones: EST, CST", e.getMessage());
-        }
+        IllegalArgumentException e = Assert.assertThrows(IllegalArgumentException.class, () -> date.format("[EST]yyyy-MM-dd [CST] HH:mm:ss.SSSZ"));
+        Assert.assertEquals("Cannot set multiple timezones: EST, CST", e.getMessage());
     }
 
     @Test
     public void testFormatRefersToNonexistentComponent()
     {
         PureDate date = DateFunctions.newPureDate(2014, 1, 1);
-        try
-        {
-            date.format("[EST]yyyy-MM-dd [CST] HH:mm:ss.SSSZ");
-            Assert.fail();
-        }
-        catch (IllegalArgumentException e)
-        {
-            Assert.assertEquals("Date has no hour: 2014-01-01", e.getMessage());
-        }
+        IllegalArgumentException e = Assert.assertThrows(IllegalArgumentException.class, () -> date.format("[EST]yyyy-MM-dd [CST] HH:mm:ss.SSSZ"));
+        Assert.assertEquals("Date has no hour: 2014-01-01", e.getMessage());
     }
 
     @Test
     public void testInvalidSubseconds()
     {
-        try
-        {
-            DateFunctions.newPureDate(2016, 5, 17, 10, 26, 33, null);
-            Assert.fail("Expected exception");
-        }
-        catch (IllegalArgumentException e)
-        {
-            Assert.assertEquals("Invalid subsecond value: null", e.getMessage());
-        }
+        IllegalArgumentException e1 = Assert.assertThrows(IllegalArgumentException.class, () -> DateFunctions.newPureDate(2016, 5, 17, 10, 26, 33, null));
+        Assert.assertEquals("Invalid subsecond value: null", e1.getMessage());
 
-        try
-        {
-            DateFunctions.newPureDate(2016, 5, 17, 10, 26, 33, "");
-            Assert.fail("Expected exception");
-        }
-        catch (IllegalArgumentException e)
-        {
-            Assert.assertEquals("Invalid subsecond value: \"\"", e.getMessage());
-        }
+        IllegalArgumentException e2 = Assert.assertThrows(IllegalArgumentException.class, () -> DateFunctions.newPureDate(2016, 5, 17, 10, 26, 33, ""));
+        Assert.assertEquals("Invalid subsecond value: \"\"", e2.getMessage());
 
-        try
-        {
-            DateFunctions.newPureDate(2016, 5, 17, 10, 26, 33, "789as9898");
-            Assert.fail("Expected exception");
-        }
-        catch (IllegalArgumentException e)
-        {
-            Assert.assertEquals("Invalid subsecond value: \"789as9898\"", e.getMessage());
-        }
+        IllegalArgumentException e3 = Assert.assertThrows(IllegalArgumentException.class, () -> DateFunctions.newPureDate(2016, 5, 17, 10, 26, 33, "789as9898"));
+        Assert.assertEquals("Invalid subsecond value: \"789as9898\"", e3.getMessage());
 
-        try
-        {
-            DateFunctions.newPureDate(2016, 5, 17, 10, 26, 33, "-789");
-            Assert.fail("Expected exception");
-        }
-        catch (IllegalArgumentException e)
-        {
-            Assert.assertEquals("Invalid subsecond value: \"-789\"", e.getMessage());
-        }
+        IllegalArgumentException e4 = Assert.assertThrows(IllegalArgumentException.class, () -> DateFunctions.newPureDate(2016, 5, 17, 10, 26, 33, "-789"));
+        Assert.assertEquals("Invalid subsecond value: \"-789\"", e4.getMessage());
     }
 
     @Test
@@ -150,7 +108,7 @@ public class TestPureDate
         Assert.assertEquals(DateFunctions.newPureDate(2020, 2, 29), DateFunctions.newPureDate(2016, 2, 29).addYears(4));
 
         RuntimeException e = Assert.assertThrows(RuntimeException.class, () -> DateFunctions.newPureDate(2016, 2, 29).addYears(12345678912L));
-        Assert.assertEquals("Year incremented beyond supported bounds", e.getMessage());
+        Assert.assertEquals("Date incremented beyond supported bounds", e.getMessage());
     }
 
     @Test

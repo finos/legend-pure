@@ -14,11 +14,36 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
-public final class YearMonth extends AbstractDateWithMonth
+public final class YearMonth extends AbstractPureDate
 {
-    YearMonth(int year, int month)
+    private final java.time.YearMonth yearMonth;
+
+    private YearMonth(java.time.YearMonth yearMonth)
     {
-        super(year, month);
+        this.yearMonth = yearMonth;
+    }
+
+    private YearMonth(int year, int month)
+    {
+        this(java.time.YearMonth.of(year, month));
+    }
+
+    @Override
+    public int getYear()
+    {
+        return this.yearMonth.getYear();
+    }
+
+    @Override
+    public boolean hasMonth()
+    {
+        return true;
+    }
+
+    @Override
+    public int getMonth()
+    {
+        return this.yearMonth.getMonthValue();
     }
 
     @Override
@@ -82,6 +107,24 @@ public final class YearMonth extends AbstractDateWithMonth
     }
 
     @Override
+    public PureDate addYears(long years)
+    {
+        return (years == 0L) ? this : new YearMonth(addYears(this.yearMonth, years));
+    }
+
+    @Override
+    public PureDate addMonths(long months)
+    {
+        return (months == 0L) ? this : new YearMonth(addMonths(this.yearMonth, months));
+    }
+
+    @Override
+    public PureDate addWeeks(long weeks)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public PureDate addDays(long days)
     {
         throw new UnsupportedOperationException();
@@ -135,14 +178,9 @@ public final class YearMonth extends AbstractDateWithMonth
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public YearMonth clone()
-    {
-        return new YearMonth(getYear(), getMonth());
-    }
-
     public static YearMonth newYearMonth(int year, int month)
     {
+        DateFunctions.validateYear(year);
         DateFunctions.validateMonth(month);
         return new YearMonth(year, month);
     }

@@ -14,9 +14,17 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
+import java.time.LocalDate;
+
 abstract class AbstractDateWithSecond extends AbstractDateWithMinute
 {
-    private int second;
+    protected final int second;
+
+    protected AbstractDateWithSecond(LocalDate date, int hour, int minute, int second)
+    {
+        super(date, hour, minute);
+        this.second = second;
+    }
 
     protected AbstractDateWithSecond(int year, int month, int day, int hour, int minute, int second)
     {
@@ -39,32 +47,58 @@ abstract class AbstractDateWithSecond extends AbstractDateWithMinute
     @Override
     public PureDate addSeconds(long seconds)
     {
-        if (seconds == 0)
+        if (seconds == 0L)
         {
             return this;
         }
 
-        AbstractDateWithSecond copy = clone();
-        copy.incrementSecond(seconds);
-        return copy;
+        long minutesToAdd = seconds / 60L;
+        int newSecond = this.second + (int) (seconds % 60L);
+        if (newSecond < 0)
+        {
+            minutesToAdd -= 1L;
+            newSecond += 60;
+        }
+        else if (newSecond > 59)
+        {
+            minutesToAdd += 1L;
+            newSecond -= 60;
+        }
+
+        long hoursToAdd = minutesToAdd / 60L;
+        int newMinute = this.minute + (int) (minutesToAdd % 60L);
+        if (newMinute < 0)
+        {
+            hoursToAdd -= 1;
+            newMinute += 60;
+        }
+        else if (newMinute > 59)
+        {
+            hoursToAdd += 1;
+            newMinute -= 60;
+        }
+
+        long daysToAdd = hoursToAdd / 24L;
+        int newHour = this.hour + (int) (hoursToAdd % 24L);
+        if (newHour < 0)
+        {
+            daysToAdd -= 1;
+            newHour += 24;
+        }
+        else if (newHour > 23)
+        {
+            daysToAdd += 1;
+            newHour -= 24;
+        }
+
+        return newWith(addDaysToDatePart(daysToAdd), newHour, newMinute, newSecond);
     }
 
     @Override
-    public abstract AbstractDateWithSecond clone();
-
-    void incrementSecond(long delta)
+    protected PureDate newWith(LocalDate date, int hour, int minute)
     {
-        incrementMinute(delta / 60);
-        this.second += (delta % 60);
-        if (this.second < 0)
-        {
-            incrementMinute(-1);
-            this.second += 60;
-        }
-        else if (this.second > 59)
-        {
-            incrementMinute(1);
-            this.second -= 60;
-        }
+        return newWith(date, hour, minute, this.second);
     }
+
+    protected abstract PureDate newWith(LocalDate date, int hour, int minute, int second);
 }
