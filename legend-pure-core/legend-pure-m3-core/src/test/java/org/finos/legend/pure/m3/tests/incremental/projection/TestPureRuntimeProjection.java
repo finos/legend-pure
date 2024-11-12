@@ -17,7 +17,7 @@ package org.finos.legend.pure.m3.tests.incremental.projection;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.execution.VoidFunctionExecution;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.tests.TrackingTransactionObserver;
@@ -33,7 +33,7 @@ import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
-public class TestPureRuntimeProjection extends AbstractPureTestWithCoreCompiledPlatform
+public class TestPureRuntimeProjection extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
