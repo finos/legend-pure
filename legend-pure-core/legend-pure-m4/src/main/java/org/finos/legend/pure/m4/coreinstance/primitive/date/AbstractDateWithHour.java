@@ -14,9 +14,17 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
+import java.time.LocalDate;
+
 abstract class AbstractDateWithHour extends AbstractDateWithDay implements DateTime
 {
-    private int hour;
+    protected final int hour;
+
+    protected AbstractDateWithHour(LocalDate date, int hour)
+    {
+        super(date);
+        this.hour = hour;
+    }
 
     protected AbstractDateWithHour(int year, int month, int day, int hour)
     {
@@ -39,38 +47,38 @@ abstract class AbstractDateWithHour extends AbstractDateWithDay implements DateT
     @Override
     public PureDate addHours(long hours)
     {
-        if (hours == 0)
+        if (hours == 0L)
         {
             return this;
         }
 
-        AbstractDateWithHour copy = clone();
-        copy.incrementHour(hours);
-        return copy;
+        long daysToAdd = hours / 24L;
+        int newHour = this.hour + (int) (hours % 24L);
+        if (newHour < 0)
+        {
+            daysToAdd -= 1;
+            newHour += 24;
+        }
+        else if (newHour > 23)
+        {
+            daysToAdd += 1;
+            newHour -= 24;
+        }
+
+        return newWith(addDaysToDatePart(daysToAdd), newHour);
     }
 
     @Override
     public StrictDate datePart()
     {
-        return StrictDate.newStrictDate(getYear(), getMonth(), getDay());
+        return StrictDate.fromLocalDate(this.date);
     }
 
     @Override
-    public abstract AbstractDateWithHour clone();
-
-    void incrementHour(long delta)
+    protected PureDate newWith(LocalDate newDate)
     {
-        incrementDay(delta / 24);
-        this.hour += (delta % 24);
-        if (this.hour < 0)
-        {
-            incrementDay(-1);
-            this.hour += 24;
-        }
-        else if (this.hour > 23)
-        {
-            incrementDay(1);
-            this.hour -= 24;
-        }
+        return newWith(newDate, this.hour);
     }
+
+    protected abstract PureDate newWith(LocalDate newDate, int newHour);
 }

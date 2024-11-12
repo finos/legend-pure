@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.chrono.IsoChronology;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -28,6 +29,9 @@ import java.util.TimeZone;
 
 public class DateFunctions extends TimeFunctions
 {
+    private static final int MAX_YEAR = java.time.Year.MAX_VALUE;
+    private static final int MIN_YEAR = java.time.Year.MIN_VALUE;
+
     static final TimeZone GMT_TIME_ZONE = TimeZone.getTimeZone("GMT");
 
     public static PureDate newPureDate(int year)
@@ -276,7 +280,7 @@ public class DateFunctions extends TimeFunctions
      */
     public static boolean isLeapYear(int year)
     {
-        return (year % 400 == 0) || ((year % 4 == 0) && (year % 100 != 0));
+        return IsoChronology.INSTANCE.isLeapYear(year);
     }
 
     /**
@@ -295,20 +299,17 @@ public class DateFunctions extends TimeFunctions
             {
                 return isLeapYear(year) ? 29 : 28;
             }
-            case 1:
-            case 3:
-            case 5:
-            case 7:
-            case 8:
-            case 10:
-            case 12:
+            case 4:
+            case 6:
+            case 9:
+            case 11:
             {
-                return 31;
+                return 30;
             }
             default:
             {
                 validateMonth(month);
-                return 30;
+                return 31;
             }
         }
     }
@@ -322,6 +323,14 @@ public class DateFunctions extends TimeFunctions
     public static PureDate parsePureDate(String string)
     {
         return DateFormat.parsePureDate(string, 0, string.length());
+    }
+
+    static void validateYear(int year)
+    {
+        if ((year < MIN_YEAR) || (year > MAX_YEAR))
+        {
+            throw new IllegalArgumentException(String.format("Invalid year (valid [%,d, %,d]): %,d", MIN_YEAR, MAX_YEAR, year));
+        }
     }
 
     static void validateMonth(int month)
@@ -342,5 +351,118 @@ public class DateFunctions extends TimeFunctions
         {
             throw new IllegalArgumentException("Invalid day: " + year + "-" + month + "-" + day);
         }
+    }
+
+    public static int compare(PureDate date1, PureDate date2)
+    {
+        if (date1 == date2)
+        {
+            return 0;
+        }
+
+        // Compare year
+        int cmp = Integer.compare(date1.getYear(), date2.getYear());
+        if (cmp != 0)
+        {
+            return cmp;
+        }
+
+        // Compare month
+        if (!date1.hasMonth())
+        {
+            return date2.hasMonth() ? -1 : 0;
+        }
+        if (!date2.hasMonth())
+        {
+            return 1;
+        }
+        cmp = Integer.compare(date1.getMonth(), date2.getMonth());
+        if (cmp != 0)
+        {
+            return cmp;
+        }
+
+        // Compare day
+        if (!date1.hasDay())
+        {
+            return date2.hasDay() ? -1 : 0;
+        }
+        if (!date2.hasDay())
+        {
+            return 1;
+        }
+        cmp = Integer.compare(date1.getDay(), date2.getDay());
+        if (cmp != 0)
+        {
+            return cmp;
+        }
+
+        // Compare hour
+        if (!date1.hasHour())
+        {
+            return date2.hasHour() ? -1 : 0;
+        }
+        if (!date2.hasHour())
+        {
+            return 1;
+        }
+        cmp = Integer.compare(date1.getHour(), date2.getHour());
+        if (cmp != 0)
+        {
+            return cmp;
+        }
+
+        // Compare minute
+        if (!date1.hasMinute())
+        {
+            return date2.hasMinute() ? -1 : 0;
+        }
+        if (!date2.hasMinute())
+        {
+            return 1;
+        }
+        cmp = Integer.compare(date1.getMinute(), date2.getMinute());
+        if (cmp != 0)
+        {
+            return cmp;
+        }
+
+        // Compare second
+        if (!date1.hasSecond())
+        {
+            return date2.hasSecond() ? -1 : 0;
+        }
+        if (!date2.hasSecond())
+        {
+            return 1;
+        }
+        cmp = Integer.compare(date1.getSecond(), date2.getSecond());
+        if (cmp != 0)
+        {
+            return cmp;
+        }
+
+        // Compare subsecond
+        if (!date1.hasSubsecond())
+        {
+            return date2.hasSubsecond() ? -1 : 0;
+        }
+        if (!date2.hasSubsecond())
+        {
+            return 1;
+        }
+        String subsecond1 = date1.getSubsecond();
+        String subsecond2 = date2.getSubsecond();
+        int length1 = subsecond1.length();
+        int length2 = subsecond2.length();
+        for (int i = 0, minLength = Math.min(length1, length2); i < minLength; i++)
+        {
+            cmp = Integer.compare(subsecond1.charAt(i), subsecond2.charAt(i));
+            if (cmp != 0)
+            {
+                return cmp;
+            }
+        }
+        return Integer.compare(length1, length2);
     }
 }

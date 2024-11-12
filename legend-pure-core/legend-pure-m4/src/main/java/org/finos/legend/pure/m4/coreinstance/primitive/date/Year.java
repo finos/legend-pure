@@ -14,11 +14,19 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
-public final class Year extends AbstractDateWithYear
+public final class Year extends AbstractPureDate
 {
-    private Year(int year)
+    private final java.time.Year year;
+
+    private Year(java.time.Year year)
     {
-        super(year);
+        this.year = year;
+    }
+
+    @Override
+    public int getYear()
+    {
+        return this.year.getValue();
     }
 
     @Override
@@ -94,7 +102,19 @@ public final class Year extends AbstractDateWithYear
     }
 
     @Override
+    public PureDate addYears(long years)
+    {
+        return (years == 0L) ? this : new Year(addYears(this.year, years));
+    }
+
+    @Override
     public PureDate addMonths(long months)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public PureDate addWeeks(long weeks)
     {
         throw new UnsupportedOperationException();
     }
@@ -153,14 +173,9 @@ public final class Year extends AbstractDateWithYear
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public Year clone()
-    {
-        return new Year(getYear());
-    }
-
     public static Year newYear(int year)
     {
-        return new Year(year);
+        DateFunctions.validateYear(year);
+        return new Year(java.time.Year.of(year));
     }
 }

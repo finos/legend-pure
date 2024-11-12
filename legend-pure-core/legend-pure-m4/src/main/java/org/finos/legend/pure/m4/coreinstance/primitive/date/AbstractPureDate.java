@@ -14,12 +14,14 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
-import org.eclipse.collections.impl.block.factory.Comparators;
-
-import java.io.IOException;
 import java.io.Serializable;
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.Year;
+import java.time.YearMonth;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.Objects;
 
 abstract class AbstractPureDate implements PureDate, Serializable
 {
@@ -45,7 +47,7 @@ abstract class AbstractPureDate implements PureDate, Serializable
                 (this.getHour() == that.getHour()) &&
                 (this.getMinute() == that.getMinute()) &&
                 (this.getSecond() == that.getSecond()) &&
-                Comparators.nullSafeEquals(this.getSubsecond(), that.getSubsecond());
+                Objects.equals(this.getSubsecond(), that.getSubsecond());
     }
 
     @Override
@@ -57,177 +59,14 @@ abstract class AbstractPureDate implements PureDate, Serializable
         hash = 31 * hash + getHour();
         hash = 31 * hash + getMinute();
         hash = 31 * hash + getSecond();
-        hash = 31 * hash + (hasSubsecond() ? getSubsecond().hashCode() : 0);
+        hash = 31 * hash + Objects.hashCode(getSubsecond());
         return hash;
-    }
-
-    @Override
-    public int compareTo(PureDate other)
-    {
-        if (this == other)
-        {
-            return 0;
-        }
-
-        // Compare year
-        int cmp = Integer.compare(getYear(), other.getYear());
-        if (cmp != 0)
-        {
-            return cmp;
-        }
-
-        // Compare month
-        if (!hasMonth())
-        {
-            return other.hasMonth() ? -1 : 0;
-        }
-        if (!other.hasMonth())
-        {
-            return 1;
-        }
-        cmp = Integer.compare(getMonth(), other.getMonth());
-        if (cmp != 0)
-        {
-            return cmp;
-        }
-
-        // Compare day
-        if (!hasDay())
-        {
-            return other.hasDay() ? -1 : 0;
-        }
-        if (!other.hasDay())
-        {
-            return 1;
-        }
-        cmp = Integer.compare(getDay(), other.getDay());
-        if (cmp != 0)
-        {
-            return cmp;
-        }
-
-        // Compare hour
-        if (!hasHour())
-        {
-            return other.hasHour() ? -1 : 0;
-        }
-        if (!other.hasHour())
-        {
-            return 1;
-        }
-        cmp = Integer.compare(getHour(), other.getHour());
-        if (cmp != 0)
-        {
-            return cmp;
-        }
-
-        // Compare minute
-        if (!hasMinute())
-        {
-            return other.hasMinute() ? -1 : 0;
-        }
-        if (!other.hasMinute())
-        {
-            return 1;
-        }
-        cmp = Integer.compare(getMinute(), other.getMinute());
-        if (cmp != 0)
-        {
-            return cmp;
-        }
-
-        // Compare second
-        if (!hasSecond())
-        {
-            return other.hasSecond() ? -1 : 0;
-        }
-        if (!other.hasSecond())
-        {
-            return 1;
-        }
-        cmp = Integer.compare(getSecond(), other.getSecond());
-        if (cmp != 0)
-        {
-            return cmp;
-        }
-
-        // Compare subsecond
-        if (!hasSubsecond())
-        {
-            return other.hasSubsecond() ? -1 : 0;
-        }
-        if (!other.hasSubsecond())
-        {
-            return 1;
-        }
-        String thisSubsecond = getSubsecond();
-        String otherSubsecond = other.getSubsecond();
-        int thisLength = thisSubsecond.length();
-        int otherLength = otherSubsecond.length();
-        int minLength = Math.min(thisLength, otherLength);
-        for (int i = 0; i < minLength; i++)
-        {
-            cmp = Integer.compare(thisSubsecond.charAt(i), otherSubsecond.charAt(i));
-            if (cmp != 0)
-            {
-                return cmp;
-            }
-        }
-        return Integer.compare(thisLength, otherLength);
-    }
-
-    @Override
-    public PureDate addWeeks(long weeks)
-    {
-        return addDays(Math.multiplyExact(7L, weeks));
-    }
-
-    @Override
-    public long dateDifference(PureDate otherDate, String unit)
-    {
-        return DateFunctions.dateDifference(this, otherDate, unit);
-    }
-
-    @Override
-    public String format(String formatString)
-    {
-        StringBuilder builder = new StringBuilder(32);
-        format(builder, formatString);
-        return builder.toString();
-    }
-
-    @Override
-    public void format(Appendable appendable, String formatString)
-    {
-        try
-        {
-            DateFormat.format(appendable, formatString, this);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
     public String toString()
     {
-        StringBuilder builder = new StringBuilder(32);
-        writeString(builder);
-        return builder.toString();
-    }
-
-    @Override
-    public void writeString(Appendable appendable)
-    {
-        try
-        {
-            DateFormat.write(appendable, this);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        return appendString(new StringBuilder(32)).toString();
     }
 
     @Override
@@ -250,35 +89,108 @@ abstract class AbstractPureDate implements PureDate, Serializable
         if (hasSubsecond())
         {
             String subsecond = getSubsecond();
-            String millisecond;
-            int length = subsecond.length();
-            switch (length)
+            int millisecond;
+            switch (subsecond.length())
             {
                 case 1:
                 {
-                    millisecond = subsecond + "00";
+                    millisecond = 100 * Integer.parseInt(subsecond);
                     break;
                 }
                 case 2:
                 {
-                    millisecond = subsecond + "0";
+                    millisecond = 10 * Integer.parseInt(subsecond);
                     break;
                 }
                 case 3:
                 {
-                    millisecond = subsecond;
+                    millisecond = Integer.parseInt(subsecond);
                     break;
                 }
                 default:
                 {
-                    millisecond = subsecond.substring(0, 3);
+                    millisecond = Integer.parseInt(subsecond.substring(0, 3));
                 }
             }
-            calendar.set(Calendar.MILLISECOND, Integer.valueOf(millisecond));
+            calendar.set(Calendar.MILLISECOND, millisecond);
         }
         return calendar;
     }
 
-    @Override
-    public abstract AbstractPureDate clone();
+    protected static Year addYears(Year year, long years)
+    {
+        try
+        {
+            return year.plusYears(years);
+        }
+        catch (DateTimeException e)
+        {
+            throw handleDateTimeException(e);
+        }
+    }
+
+    protected static YearMonth addYears(YearMonth yearMonth, long years)
+    {
+        try
+        {
+            return yearMonth.plusYears(years);
+        }
+        catch (DateTimeException e)
+        {
+            throw handleDateTimeException(e);
+        }
+    }
+
+    protected static LocalDate addYears(LocalDate date, long years)
+    {
+        try
+        {
+            return date.plusYears(years);
+        }
+        catch (DateTimeException e)
+        {
+            throw handleDateTimeException(e);
+        }
+    }
+
+    protected static YearMonth addMonths(YearMonth yearMonth, long months)
+    {
+        try
+        {
+            return yearMonth.plusMonths(months);
+        }
+        catch (DateTimeException e)
+        {
+            throw handleDateTimeException(e);
+        }
+    }
+
+    protected static LocalDate addMonths(LocalDate date, long months)
+    {
+        try
+        {
+            return date.plusMonths(months);
+        }
+        catch (DateTimeException e)
+        {
+            throw handleDateTimeException(e);
+        }
+    }
+
+    protected static LocalDate addDays(LocalDate date, long days)
+    {
+        try
+        {
+            return date.plusDays(days);
+        }
+        catch (DateTimeException e)
+        {
+            throw handleDateTimeException(e);
+        }
+    }
+
+    private static IllegalStateException handleDateTimeException(DateTimeException e)
+    {
+        return new IllegalStateException("Date incremented beyond supported bounds", e);
+    }
 }

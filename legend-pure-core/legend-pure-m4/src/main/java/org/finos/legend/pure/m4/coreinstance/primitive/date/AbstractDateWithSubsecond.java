@@ -14,9 +14,17 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
+import java.time.LocalDate;
+
 abstract class AbstractDateWithSubsecond extends AbstractDateWithSecond
 {
-    private String subsecond;
+    private final String subsecond;
+
+    protected AbstractDateWithSubsecond(LocalDate date, int hour, int minute, int second, String subsecond)
+    {
+        super(date, hour, minute, second);
+        this.subsecond = subsecond;
+    }
 
     protected AbstractDateWithSubsecond(int year, int month, int day, int hour, int minute, int second, String subsecond)
     {
@@ -51,107 +59,55 @@ abstract class AbstractDateWithSubsecond extends AbstractDateWithSecond
     @Override
     public PureDate addMilliseconds(long milliseconds)
     {
-        if (milliseconds == 0)
+        if (milliseconds == 0L)
         {
             return this;
         }
 
-        String subsecond = getSubsecond();
-        if (subsecond.length() < 3)
+        if (this.subsecond.length() < 3)
         {
-            throw new UnsupportedOperationException("Cannot add milliseconds to a date that does not have milliseconds: " + this);
+            throw new UnsupportedOperationException(appendString(new StringBuilder("Cannot add milliseconds to a date that does not have milliseconds: ")).toString());
         }
 
-        AbstractDateWithSubsecond copy = clone();
-        long seconds = milliseconds / 1000;
-        if (seconds != 0)
-        {
-            copy.incrementSecond(seconds);
-            milliseconds %= 1000;
-        }
-        if (milliseconds < 0)
-        {
-            copy.decrementSubsecond(String.format("%03d", -milliseconds), 0, 3);
-        }
-        else if (milliseconds != 0)
-        {
-            copy.incrementSubsecond(String.format("%03d", milliseconds), 0, 3);
-        }
-        return copy;
+        long secondsToAdd = milliseconds / 1000L;
+        String subseconds = String.format("%03d", Math.abs(milliseconds % 1000L));
+        return adjustSubseconds(subseconds, milliseconds > 0).addSeconds(secondsToAdd);
     }
 
     @Override
     public PureDate addMicroseconds(long microseconds)
     {
-        if (microseconds == 0)
+        if (microseconds == 0L)
         {
             return this;
         }
 
-        String subsecond = getSubsecond();
-        if (subsecond.length() < 6)
+        if (this.subsecond.length() < 6)
         {
-            throw new UnsupportedOperationException("Cannot add microseconds to a date that does not have microseconds: " + this);
+            throw new UnsupportedOperationException(appendString(new StringBuilder("Cannot add microseconds to a date that does not have microseconds: ")).toString());
         }
 
-        AbstractDateWithSubsecond copy = clone();
-        long seconds = microseconds / 1_000_000;
-        if (seconds != 0)
-        {
-            copy.incrementSecond(seconds);
-            microseconds %= 1_000_000;
-        }
-        if (microseconds < 0)
-        {
-            copy.decrementSubsecond(String.format("%06d", -microseconds), 0, 6);
-        }
-        else if (microseconds != 0)
-        {
-            copy.incrementSubsecond(String.format("%06d", microseconds), 0, 6);
-        }
-        return copy;
+        long secondsToAdd = microseconds / 1_000_000L;
+        String subseconds = String.format("%06d", Math.abs(microseconds % 1_000_000L));
+        return adjustSubseconds(subseconds, microseconds > 0).addSeconds(secondsToAdd);
     }
 
     @Override
     public PureDate addNanoseconds(long nanoseconds)
     {
-        if (nanoseconds == 0)
+        if (nanoseconds == 0L)
         {
             return this;
         }
 
-        String subsecond = getSubsecond();
-        if (subsecond.length() < 9)
+        if (this.subsecond.length() < 9)
         {
-            throw new UnsupportedOperationException("Cannot add nanoseconds to a date that does not have nanoseconds: " + this);
+            throw new UnsupportedOperationException(appendString(new StringBuilder("Cannot add nanoseconds to a date that does not have nanoseconds: ")).toString());
         }
 
-        AbstractDateWithSubsecond copy = clone();
-        long seconds = nanoseconds / 1_000_000_000;
-        if (seconds != 0)
-        {
-            if ((seconds > Integer.MAX_VALUE) || (seconds < Integer.MIN_VALUE))
-            {
-                long days = seconds / 86_400;
-                if ((days > Integer.MAX_VALUE) || (days < Integer.MIN_VALUE))
-                {
-                    throw new IllegalArgumentException(String.format("Cannot add %,d nanoseconds: too large", nanoseconds));
-                }
-                copy.incrementDay((int)days);
-                seconds %= 86_400;
-            }
-            copy.incrementSecond((int)seconds);
-            nanoseconds %= 1_000_000_000;
-        }
-        if (nanoseconds < 0)
-        {
-            copy.decrementSubsecond(String.format("%09d", -nanoseconds), 0, 9);
-        }
-        else if (nanoseconds != 0)
-        {
-            copy.incrementSubsecond(String.format("%09d", nanoseconds), 0, 9);
-        }
-        return copy;
+        long secondsToAdd = nanoseconds / 1_000_000_000L;
+        String subseconds = String.format("%09d", Math.abs(nanoseconds % 1_000_000_000L));
+        return adjustSubseconds(subseconds, nanoseconds > 0).addSeconds(secondsToAdd);
     }
 
     private PureDate adjustSubseconds(String subseconds, boolean add)
@@ -168,7 +124,7 @@ abstract class AbstractDateWithSubsecond extends AbstractDateWithSecond
 
         if (start == end)
         {
-            // adjusting by zero seconds, nothing to change
+            // adjusting by zero, nothing to change
             return this;
         }
 
@@ -177,76 +133,104 @@ abstract class AbstractDateWithSubsecond extends AbstractDateWithSecond
             throw new UnsupportedOperationException("Cannot " + (add ? "add" : "subtract") + " subseconds with " + (end - start) + " digits of precision " + (add ? "to" : "from") + " a date that has subseconds to only " + this.subsecond.length() + " digits of precision");
         }
 
-        AbstractDateWithSubsecond copy = clone();
+        char[] digits = this.subsecond.toCharArray();
+        int newSecond = this.second;
         if (add)
         {
-            copy.incrementSubsecond(subseconds, start, end);
+            boolean carry = false;
+            for (int i = (end - start) - 1; i >= 0; i--)
+            {
+                int sum = (int) digits[i] + (int) subseconds.charAt(i + start) - 96;
+                if (carry)
+                {
+                    sum += 1;
+                }
+                if (sum >= 10)
+                {
+                    carry = true;
+                    sum -= 10;
+                }
+                else
+                {
+                    carry = false;
+                }
+                digits[i] = (char) (sum + 48);
+            }
+            if (carry)
+            {
+                newSecond += 1;
+            }
         }
         else
         {
-            copy.decrementSubsecond(subseconds, start, end);
+            boolean carry = false;
+            for (int i = (end - start) - 1; i >= 0; i--)
+            {
+                int difference = (int) digits[i] - (int) subseconds.charAt(i + start);
+                if (carry)
+                {
+                    difference -= 1;
+                }
+                if (difference < 0)
+                {
+                    carry = true;
+                    difference = 10 + difference;
+                }
+                else
+                {
+                    carry = false;
+                }
+                digits[i] = (char) (difference + 48);
+            }
+            if (carry)
+            {
+                newSecond -= 1;
+            }
         }
-        return copy;
+
+        String newSubsecond = new String(digits);
+        int newMinute = this.minute;
+        int newHour = this.hour;
+        int daysToAdd = 0;
+        if (newSecond < 0)
+        {
+            newMinute -= 1;
+            newSecond += 60;
+            if (newMinute < 0)
+            {
+                newHour -= 1;
+                newMinute += 60;
+                if (newHour < 0)
+                {
+                    daysToAdd -= 1;
+                    newHour += 24;
+                }
+            }
+        }
+        else if (newSecond > 59)
+        {
+            newMinute += 1;
+            newSecond -= 60;
+            if (newMinute > 59)
+            {
+                newHour += 1;
+                newMinute -= 60;
+                if (newHour > 23)
+                {
+                    daysToAdd += 1;
+                    newHour -= 24;
+                }
+            }
+        }
+
+        return newWith(addDaysToDatePart(daysToAdd), newHour, newMinute, newSecond, newSubsecond);
     }
 
     @Override
-    public abstract AbstractDateWithSubsecond clone();
-
-    private void incrementSubsecond(String delta, int start, int end)
+    protected PureDate newWith(LocalDate date, int hour, int minute, int second)
     {
-        char[] digits = this.subsecond.toCharArray();
-        boolean carry = false;
-        for (int i = (end - start) - 1; i >= 0; i--)
-        {
-            int sum = (int)digits[i] + (int)delta.charAt(i + start) - 96;
-            if (carry)
-            {
-                sum += 1;
-            }
-            if (sum >= 10)
-            {
-                carry = true;
-                sum -= 10;
-            }
-            else
-            {
-                carry = false;
-            }
-            digits[i] = (char)(sum + 48);
-        }
-        if (carry)
-        {
-            incrementSecond(1);
-        }
-        this.subsecond = new String(digits);
+        return newWith(date, hour, minute, second, this.subsecond);
     }
 
-    private void decrementSubsecond(String delta, int start, int end)
-    {
-        char[] digits = this.subsecond.toCharArray();
-        boolean carry = false;
-        for (int i = (end - start) - 1; i >= 0; i--)
-        {
-            int difference = (int)digits[i] - (int)delta.charAt(i + start);
-            if (carry)
-            {
-                difference -= 1;
-            }
-            if (difference < 0)
-            {
-                carry = true;
-                difference = 10 + difference;
-            }
-            else
-            {
-                carry = false;
-            }
-            digits[i] = (char)(difference + 48);
-        }
-        if (carry)
-        {
-            incrementSecond(-1);
-        }
-        this.subsecond = new String(digits);
-    }
+    protected abstract PureDate newWith(LocalDate date, int hour, int minute, int second, String subsecond);
 }

@@ -44,10 +44,6 @@ public interface PureDate extends Comparable<PureDate>
 
     String getSubsecond();
 
-    String format(String formatString);
-
-    void format(Appendable appendable, String formatString);
-
     PureDate addYears(long years);
 
     PureDate addMonths(long months);
@@ -81,11 +77,39 @@ public interface PureDate extends Comparable<PureDate>
      */
     GregorianCalendar getCalendar();
 
-    void writeString(Appendable appendable);
+    default <T extends Appendable> T appendString(T appendable)
+    {
+        return DateFormat.append(appendable, this);
+    }
 
-    long dateDifference(PureDate otherDate, String unit);
+    default <T extends Appendable> T appendFormat(T appendable, String formatString)
+    {
+        return DateFormat.format(appendable, formatString, this);
+    }
 
-    int compareTo(PureDate pureDate);
+    default void writeString(Appendable appendable)
+    {
+        appendString(appendable);
+    }
 
-    PureDate clone();
+    default String format(String formatString)
+    {
+        return appendFormat(new StringBuilder(32), formatString).toString();
+    }
+
+    default void format(Appendable appendable, String formatString)
+    {
+        appendFormat(appendable, formatString);
+    }
+
+    default long dateDifference(PureDate otherDate, String unit)
+    {
+        return DateFunctions.dateDifference(this, otherDate, unit);
+    }
+
+    @Override
+    default int compareTo(PureDate pureDate)
+    {
+        return DateFunctions.compare(this, pureDate);
+    }
 }

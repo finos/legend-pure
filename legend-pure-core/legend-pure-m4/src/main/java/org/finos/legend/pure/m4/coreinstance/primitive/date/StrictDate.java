@@ -20,6 +20,11 @@ import java.util.GregorianCalendar;
 
 public final class StrictDate extends AbstractDateWithDay
 {
+    private StrictDate(LocalDate date)
+    {
+        super(date);
+    }
+
     private StrictDate(int year, int month, int day)
     {
         super(year, month, day);
@@ -122,9 +127,9 @@ public final class StrictDate extends AbstractDateWithDay
     }
 
     @Override
-    public StrictDate clone()
+    protected StrictDate newWith(LocalDate newDate)
     {
-        return new StrictDate(getYear(), getMonth(), getDay());
+        return fromLocalDate(newDate);
     }
 
     public static StrictDate newStrictDate(int year, int month, int day)
@@ -148,6 +153,6 @@ public final class StrictDate extends AbstractDateWithDay
 
     static StrictDate fromLocalDate(LocalDate date)
     {
-        return new StrictDate(date.getYear(), date.getMonthValue(), date.getDayOfMonth());
+        return new StrictDate(date);
     }
 }

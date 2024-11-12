@@ -14,11 +14,17 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
+import java.time.LocalDate;
+
 abstract class AbstractDateWithMinute extends AbstractDateWithHour
 {
-    private static final char ISO_UTC = 'Z';
+    protected final int minute;
 
-    private int minute;
+    protected AbstractDateWithMinute(LocalDate date, int hour, int minute)
+    {
+        super(date, hour);
+        this.minute = minute;
+    }
 
     protected AbstractDateWithMinute(int year, int month, int day, int hour, int minute)
     {
@@ -41,81 +47,45 @@ abstract class AbstractDateWithMinute extends AbstractDateWithHour
     @Override
     public PureDate addMinutes(long minutes)
     {
-        if (minutes == 0)
+        if (minutes == 0L)
         {
             return this;
         }
 
-        AbstractDateWithMinute copy = clone();
-        copy.incrementMinute(minutes);
-        return copy;
+        long hoursToAdd = minutes / 60L;
+        int newMinute = this.minute + (int) (minutes % 60L);
+        if (newMinute < 0)
+        {
+            hoursToAdd -= 1L;
+            newMinute += 60;
+        }
+        else if (newMinute > 59)
+        {
+            hoursToAdd += 1L;
+            newMinute -= 60;
+        }
+
+        long daysToAdd = hoursToAdd / 24L;
+        int newHour = this.hour + (int) (hoursToAdd % 24L);
+        if (newHour < 0)
+        {
+            daysToAdd -= 1L;
+            newHour += 24;
+        }
+        else if (newHour > 23)
+        {
+            daysToAdd += 1L;
+            newHour -= 24;
+        }
+
+        return newWith(addDaysToDatePart(daysToAdd), newHour, newMinute);
     }
 
     @Override
-    public abstract AbstractDateWithMinute clone();
-
-    void incrementMinute(long delta)
+    protected PureDate newWith(LocalDate date, int hour)
     {
-        incrementHour(delta / 60);
-        this.minute += (delta % 60);
-        if (this.minute < 0)
-        {
-            incrementHour(-1);
-            this.minute += 60;
-        }
-        else if (this.minute > 59)
-        {
-            incrementHour(1);
-            this.minute -= 60;
-        }
+        return newWith(date, hour, this.minute);
     }
 
-    void setTimeZone(String string, int start, int end)
-    {
-        char first = string.charAt(start++);
-        if ((first == ISO_UTC) && (start == end))
-        {
-            // time zone = Z, which means UTC: no adjustment necessary
-            return;
-        }
-
-        boolean negative;
-        switch (first)
-        {
-            case '+':
-            {
-                negative = false;
-                break;
-            }
-            case '-':
-            {
-                negative = true;
-                break;
-            }
-            default:
-            {
-                throw new IllegalArgumentException("Invalid time zone: " + string.substring(start - 1, end));
-            }
-        }
-        if (end - start != 4)
-        {
-            throw new IllegalArgumentException("Invalid time zone: " + string.substring(start - 1, end));
-        }
-
-        int hourOffset = Integer.parseInt(string.substring(start, start + 2));
-        int minuteOffset = Integer.parseInt(string.substring(start + 2, end));
-
-        if ((hourOffset != 0) || (minuteOffset != 0))
-        {
-            // Adjust to UTC
-            if (!negative)
-            {
-                // Offset is from UTC, so we need to reverse the direction
-                hourOffset = -hourOffset;
-                minuteOffset = -minuteOffset;
-            }
-            incrementHour(hourOffset);
-            incrementMinute(minuteOffset);
-        }
-    }
+    protected abstract PureDate newWith(LocalDate date, int hour, int minute);
 }

@@ -58,8 +58,8 @@ function <<PCT.test>> meta::pure::functions::date::tests::testAdjustByMonths<Z|y
 
 function <<PCT.test>> meta::pure::functions::date::tests::testAdjustByMonthsBigNumber<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals(%1028808592-02-29, $f->eval(|%2016-02-29->adjust(12345678912, DurationUnit.MONTHS)));
-    assertEquals(%-1028804560-02-29, $f->eval(|%2016-02-29->adjust(-12345678912, DurationUnit.MONTHS)));
+    assertEquals(%800002016-02-29, $f->eval(|%2016-02-29->adjust(9600000000, DurationUnit.MONTHS)));
+    assertEquals(%-799997984-02-29, $f->eval(|%2016-02-29->adjust(-9600000000, DurationUnit.MONTHS)));
 }
 
 function <<PCT.test>> meta::pure::functions::date::tests::testAdjustByWeeks<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
