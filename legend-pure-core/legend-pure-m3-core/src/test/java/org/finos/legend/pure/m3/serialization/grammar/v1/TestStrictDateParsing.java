@@ -26,9 +26,9 @@ public class TestStrictDateParsing extends AbstractPrimitiveParsingTest
         assertParsesTo("2014-02-07", "%2014-2-7");
 
         assertFailsToParse("%2014-02-1b");
-        assertFailsToParse("Invalid Pure Date: '%2014-02-53'", "%2014-02-53");
-        assertFailsToParse("Invalid Pure Date: '%2014-02-29'", "%2014-02-29");
-        assertFailsToParse("Invalid Pure Date: '%2016-06-31'", "%2016-06-31");
+        assertFailsToParse("Invalid Pure Date: '%2014-02-53'", 1, 11, "%2014-02-53");
+        assertFailsToParse("Invalid Pure Date: '%2014-02-29'", 1, 11, "%2014-02-29");
+        assertFailsToParse("Invalid Pure Date: '%2016-06-31'", 1, 11, "%2016-06-31");
     }
 
     @Override
