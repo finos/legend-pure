@@ -61,7 +61,7 @@ public class TestNavigateForRelationalAndMappingFromCoordinates extends Abstract
         );
         this.runtime.compile();
 
-        CoreInstance found = source.navigate(19, 17, this.processorSupport);
+        CoreInstance found = source.navigate(18, 33, this.processorSupport);
         Assert.assertTrue(found instanceof Filter);
         Assert.assertEquals("GoldmanSachsFilter", ((FilterInstance)found)._name());
         Assert.assertEquals("filterMappingSample.pure", found.getSourceInformation().getSourceId());
