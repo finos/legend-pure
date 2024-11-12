@@ -16,14 +16,13 @@ package org.finos.legend.pure.runtime.java.compiled.runtime.modeling.function;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
@@ -118,11 +117,8 @@ public class TestLambdaAsInstanceValue extends AbstractPureTestWithCoreCompiled
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
-        MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
-        CodeRepository system = GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform");
-        CodeRepository test = GenericCodeRepository.build("test", "test(::.*)?", "platform", "system");
-        repositories.add(system);
-        repositories.add(test);
-        return repositories;
+        return Lists.mutable.<CodeRepository>withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories())
+                .with(GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform"))
+                .with(GenericCodeRepository.build("test", "test(::.*)?", "platform", "system"));
     }
 }
