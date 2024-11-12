@@ -1086,10 +1086,10 @@ public class ClassImplProcessor
         {
             CoreInstance expression = Instance.getValueForMetaPropertyToOneResolved(definition, M3Properties.expressionSequence, processorSupport);
             CoreInstance constraintClass = Instance.getValueForMetaPropertyToOneResolved(expression, M3Properties.usageContext, processorSupport).getValueForMetaPropertyToOne(M3Properties.type);
-
+            String constraintName = StringEscapeUtils.escapeJava(constraintClass.getValueForMetaPropertyToOne(M3Properties.name).getName());
             String errorMessage = message == null ?
-                    "\"Constraint :[" + ruleId + "] violated in the Class " + constraintClass.getValueForMetaPropertyToOne(M3Properties.name).getName() + "\"" :
-                    "\"Constraint :[" + ruleId + "] violated in the Class " + constraintClass.getValueForMetaPropertyToOne(M3Properties.name).getName() + ", Message: \" + (String) " + messageJavaFunction + ".execute(vars,es)";
+                    "\"Constraint :[" + ruleId + "] violated in the Class " + constraintName +  "\"" :
+                    "\"Constraint :[" + ruleId + "] violated in the Class " + constraintName + ", Message: \" + (String) " + messageJavaFunction + ".execute(vars,es)";
 
             return
                     "\n" +
