@@ -130,10 +130,10 @@ public class PureExecutionException extends PureException
         if ((this.callStack != null) && this.callStack.notEmpty())
         {
             SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
-            safeAppendable.append('\n').append(indent).append("Full Stack:");
-            this.callStack.toList().reverseForEach(x ->
+            safeAppendable.append('\n').append(indent).append("Full stacktrace:");
+            this.callStack.toList().forEach(x ->
             {
-                safeAppendable.append('\n').append(indent).append("    ");
+                safeAppendable.append('\n').append(indent).append("  at ");
                 CoreInstance func = x.getValueForMetaPropertyToOne(M3Properties.func);
                 if (func != null)
                 {
@@ -143,7 +143,8 @@ public class PureExecutionException extends PureException
                 {
                     safeAppendable.append("NULL / TODO");
                 }
-                writeSourceInformationMessage(safeAppendable.append("     <-     "), x.getSourceInformation(), false);
+                writeSourceInformationMessage(safeAppendable.append(" ("), x.getSourceInformation(), false);
+                safeAppendable.append(")");
             });
         }
         return appendable;
