@@ -14,17 +14,15 @@
 
 package org.finos.legend.pure.runtime.java.compiled.incremental;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.tests.incremental.enumeration.AbstractPureRuntimeEnumerationTest;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
-import org.finos.legend.pure.runtime.java.compiled.runtime.CompiledClassloaderStateVerifier;
-import org.finos.legend.pure.runtime.java.compiled.runtime.CompiledMetadataStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
-import org.junit.After;
+import org.finos.legend.pure.runtime.java.compiled.runtime.CompiledClassloaderStateVerifier;
+import org.finos.legend.pure.runtime.java.compiled.runtime.CompiledMetadataStateVerifier;
 import org.junit.BeforeClass;
 
 public class TestPureRuntimeEnumerationCompiled extends AbstractPureRuntimeEnumerationTest
@@ -35,26 +33,10 @@ public class TestPureRuntimeEnumerationCompiled extends AbstractPureRuntimeEnume
         setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
     }
 
-    @After
-    public void cleanRuntime()
-    {
-        runtime.delete("sourceId.pure");
-        runtime.delete("userId.pure");
-        try
-        {
-            runtime.compile();
-        }
-        catch (PureCompilationException e)
-        {
-            setUp();
-        }
-    }
-
     @Override
     protected ListIterable<RuntimeVerifier.FunctionExecutionStateVerifier> getAdditionalVerifiers()
     {
-        return Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of(new CompiledMetadataStateVerifier(),
-                new CompiledClassloaderStateVerifier());
+        return Lists.immutable.of(new CompiledMetadataStateVerifier(), new CompiledClassloaderStateVerifier());
     }
 
     protected static FunctionExecution getFunctionExecution()

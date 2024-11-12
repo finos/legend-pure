@@ -17,12 +17,21 @@ package org.finos.legend.pure.m3.tests.incremental.enumeration;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
+import org.junit.After;
 import org.junit.Test;
 
 public abstract class AbstractPureRuntimeEnumerationTest extends AbstractPureTestWithCoreCompiled
 {
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("userId.pure");
+        runtime.delete("sourceId.pure");
+        runtime.compile();
+    }
+
     @Test
-    public void testPureRuntimeEnumerationAsReference() throws Exception
+    public void testPureRuntimeEnumerationAsReference()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Enum myEnum{VAL1, VAL2}")
                         .createInMemorySource("userId.pure", "function test():Any[1]{myEnum.VAL1;}")
@@ -32,11 +41,11 @@ public abstract class AbstractPureRuntimeEnumerationTest extends AbstractPureTes
                         .compileWithExpectedCompileFailure("myEnum has not been defined!", "userId.pure", 1, 24)
                         .createInMemorySource("sourceId.pure", "Enum myEnum{VAL1, VAL2}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testPureRuntimeEnumerationAsReferenceValueError() throws Exception
+    public void testPureRuntimeEnumerationAsReferenceValueError()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Enum test::myEnum{VAL1, VAL2}")
                         .createInMemorySource("userId.pure", "function test():Any[1]{test::myEnum.VAL1;}")
@@ -48,11 +57,11 @@ public abstract class AbstractPureRuntimeEnumerationTest extends AbstractPureTes
                         .compileWithExpectedCompileFailure("The enum value 'VAL1' can't be found in the enumeration test::myEnum", "userId.pure", 1, 37)
                         .updateSource("sourceId.pure", "Enum test::myEnum{VAL1, VAL2}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testPureRuntimeEnumerationAsReferenceTypeError() throws Exception
+    public void testPureRuntimeEnumerationAsReferenceTypeError()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Enum myEnum{VAL1, VAL2}")
                         .createInMemorySource("userId.pure", "function test():Any[1]{myEnum.VAL1;}")
@@ -64,11 +73,11 @@ public abstract class AbstractPureRuntimeEnumerationTest extends AbstractPureTes
                         .compileWithExpectedCompileFailure("myEnum has not been defined!", "userId.pure", 1, 24)
                         .updateSource("sourceId.pure", "Enum myEnum{VAL1, VAL2}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testPureRuntimeEnumerationAsReturn() throws Exception
+    public void testPureRuntimeEnumerationAsReturn()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Enum myEnum{VAL1, VAL2}")
                         .createInMemorySource("userId.pure", "function func():myEnum[1]{myEnum.VAL2}" +
@@ -79,11 +88,11 @@ public abstract class AbstractPureRuntimeEnumerationTest extends AbstractPureTes
                         .compileWithExpectedCompileFailure("myEnum has not been defined!", "userId.pure", 1, 17)
                         .createInMemorySource("sourceId.pure", "Enum myEnum{VAL1, VAL2}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testPureRuntimeEnumerationAsReturnError() throws Exception
+    public void testPureRuntimeEnumerationAsReturnError()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Enum test::myEnum{VAL1, VAL2}")
                         .createInMemorySource("userId.pure", "function func():test::myEnum[1]{test::myEnum.VAL2}\n" +
@@ -96,12 +105,12 @@ public abstract class AbstractPureRuntimeEnumerationTest extends AbstractPureTes
                         .compileWithExpectedCompileFailure("The enum value 'VAL2' can't be found in the enumeration test::myEnum", "userId.pure", 1, 46)
                         .updateSource("sourceId.pure", "Enum test::myEnum{VAL1, VAL2}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
     @Test
-    public void testPureRuntimeEnumerationAsParameter() throws Exception
+    public void testPureRuntimeEnumerationAsParameter()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Enum myEnum{VAL1, VAL2}")
                         .createInMemorySource("userId.pure", "function func(f:myEnum[1]):Boolean[1]{true}" +
@@ -112,13 +121,13 @@ public abstract class AbstractPureRuntimeEnumerationTest extends AbstractPureTes
                         .compileWithExpectedCompileFailure("myEnum has not been defined!", "userId.pure", 1, 17)
                         .createInMemorySource("sourceId.pure", "Enum myEnum{VAL1, VAL2}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
     }
 
 
     @Test
-    public void testPureRuntimeEnumerationAsParameterError() throws Exception
+    public void testPureRuntimeEnumerationAsParameterError()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Enum test::myEnum{VAL1, VAL2}")
                         .createInMemorySource("userId.pure", "function func(f:test::myEnum[1]):Boolean[1]{true}\n" +
@@ -131,11 +140,11 @@ public abstract class AbstractPureRuntimeEnumerationTest extends AbstractPureTes
                         .compileWithExpectedCompileFailure("The enum value 'VAL1' can't be found in the enumeration test::myEnum", "userId.pure", 2, 42)
                         .updateSource("sourceId.pure", "Enum test::myEnum{VAL1, VAL2}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testPureRuntimeDeleteEnumeration() throws Exception
+    public void testPureRuntimeDeleteEnumeration()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder(),
                 new RuntimeTestScriptBuilder()
@@ -145,22 +154,20 @@ public abstract class AbstractPureRuntimeEnumerationTest extends AbstractPureTes
                         .deleteSource("sourceId.pure")
                         .deleteSource("userId.pure")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
-
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testPureRuntimeModifyEnumerationWithTaggedValue() throws Exception
+    public void testPureRuntimeModifyEnumerationWithTaggedValue()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Enum myEnum{ {testProfile.t1='bb'} VAL1, VAL2}")
-                .createInMemorySource("userId.pure", "Profile testProfile{tags:[t1,t2];}")
-                .compile(),
+                        .createInMemorySource("userId.pure", "Profile testProfile{tags:[t1,t2];}")
+                        .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("sourceId.pure", "////Some comment\n" +
                                 "Enum myEnum{ {testProfile.t1='bb'} VAL1, VAL2}")
                         .compile(),
 
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
-
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 }
