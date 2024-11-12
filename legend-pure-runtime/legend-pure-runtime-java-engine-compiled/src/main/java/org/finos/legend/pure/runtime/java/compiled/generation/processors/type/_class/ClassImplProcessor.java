@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class;
 
-import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.predicate.Predicate2;
