@@ -1013,14 +1013,13 @@ public class ClassImplProcessor
                                 "        {\n" : "") +
                         allConstraints.collect(constraint ->
                         {
-                            String ruleId = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.name, processorSupport).getName();
+                            CoreInstance definition = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.functionDefinition, processorSupport);
                             CoreInstance owner = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.owner, processorSupport);
                            if (owner == null || "Global".equals(owner.getName()))
                             {
-                                validateItems.accumulateAndGet(validateItem(constraint, _class, processorContext, extraValues) + "\n",
+                                validateItems.accumulateAndGet(validateItem(stateAndDeep, constraint, _class, processorContext, extraValues) + "\n",
                                         (existing, newValue) -> existing + newValue);
-                                //call the validation
-                               return  "_validate"+ruleId + "(sourceInformation,  es);\n";
+                               return  "           _validate_" + definition.getName() + "(" + (extraValues == null ? "Lists.mutable.with(this)" : extraValues) + ",sourceInformation,es);\n";
                            }
                             else
                             {
@@ -1066,7 +1065,7 @@ public class ClassImplProcessor
 
     }
 
-    private static String validateItem(CoreInstance constraint, CoreInstance _class, ProcessorContext processorContext, String extraValues)
+    private static String validateItem(boolean stateAndDeep, CoreInstance constraint, CoreInstance _class, ProcessorContext processorContext, String extraValues)
     {
         ProcessorSupport processorSupport = processorContext.getSupport();
         SetIterable<? extends CoreInstance> localConstraints = Sets.immutable.withAll(_class.getValueForMetaPropertyToMany(M3Properties.constraints));
@@ -1074,8 +1073,7 @@ public class ClassImplProcessor
         String ruleId = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.name, processorSupport).getName();
         CoreInstance owner = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.owner, processorSupport);
         CoreInstance definition = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.functionDefinition, processorSupport);
-        String eval = "(Boolean) " + ValueSpecificationProcessor.createFunctionForLambda(constraint, definition, registerLambdas, processorSupport, processorContext) + ".execute(" + (extraValues == null ? "Lists.mutable.with(this)" : extraValues) + ",es)";
-
+        String eval = "(Boolean) " + ValueSpecificationProcessor.createFunctionForLambda(constraint, definition, registerLambdas, processorSupport, processorContext) + ".execute(vars,es)";
         String messageJavaFunction = null;
         CoreInstance message = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.messageFunction, processorSupport);
         if (message != null)
@@ -1090,16 +1088,17 @@ public class ClassImplProcessor
 
             String errorMessage = message == null ?
                     "\"Constraint :[" + ruleId + "] violated in the Class " + constraintClass.getValueForMetaPropertyToOne(M3Properties.name).getName() + "\"" :
-                    "\"Constraint :[" + ruleId + "] violated in the Class " + constraintClass.getValueForMetaPropertyToOne(M3Properties.name).getName() + ", Message: \" + (String) " + messageJavaFunction + ".execute(" + (extraValues == null ? "Lists.mutable.with(this)" : extraValues) + ",es)";
+                    "\"Constraint :[" + ruleId + "] violated in the Class " + constraintClass.getValueForMetaPropertyToOne(M3Properties.name).getName() + ", Message: \" + (String) " + messageJavaFunction + ".execute(vars,es)";
 
             return
-                    "public void  _validate"+ruleId + "(org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInformation, final ExecutionSupport es)\n" +
-                            "    {\n" +
-                            "    if (!(" + eval + "))\n" +
-                            "            {\n" +
-                            "                throw new org.finos.legend.pure.m3.exception.PureExecutionException(sourceInformation, " + errorMessage + ");\n" +
-                            "            }\n"+
-            "            }\n";
+                    "\n" +
+                    "public " + (stateAndDeep ? "" : "static ") + "void _validate_" + definition.getName() + "(ListIterable<?> vars, org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInformation, final ExecutionSupport es)\n" +
+                    "    {\n" +
+                    "    if (!(" + eval + "))\n" +
+                    "            {\n" +
+                    "                throw new org.finos.legend.pure.m3.exception.PureExecutionException(sourceInformation, " + errorMessage + ");\n" +
+                    "            }\n" +
+                    "    }\n";
         }
         else
         {
