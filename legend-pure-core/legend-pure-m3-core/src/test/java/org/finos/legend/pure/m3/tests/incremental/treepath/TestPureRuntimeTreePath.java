@@ -17,14 +17,14 @@ package org.finos.legend.pure.m3.tests.incremental.treepath;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.impl.tuple.Tuples;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestPureRuntimeTreePath extends AbstractPureTestWithCoreCompiledPlatform
+public class TestPureRuntimeTreePath extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
