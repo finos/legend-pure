@@ -14,14 +14,14 @@
 
 package org.finos.legend.pure.m3.tests.incremental._package;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestPureRuntimePackage extends AbstractPureTestWithCoreCompiledPlatform
+public class TestPureRuntimePackage extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
@@ -32,7 +32,10 @@ public class TestPureRuntimePackage extends AbstractPureTestWithCoreCompiledPlat
     @After
     public void cleanRuntime()
     {
-        setUp();
+        runtime.delete("source.pure");
+        runtime.delete("source1.pure");
+        runtime.delete("source2.pure");
+        runtime.compile();
     }
 
     @Test
@@ -144,15 +147,8 @@ public class TestPureRuntimePackage extends AbstractPureTestWithCoreCompiledPlat
         Assert.assertNotNull(runtime.getCoreInstance("test_package1::test_package3::testFn__Package_1_"));
 
         runtime.delete("source1.pure");
-        try
-        {
-            runtime.compile();
-            Assert.fail("Expected compile exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "test_package1::test_package2 has not been defined!", "source2.pure", 3, 19, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "test_package1::test_package2 has not been defined!", "source2.pure", 3, 19, e);
     }
 
     @Test
