@@ -16,7 +16,6 @@ package org.finos.legend.pure.runtime.java.compiled.runtime.modeling._class;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
@@ -212,11 +211,8 @@ public class TestQualifiedProperty extends AbstractPureTestWithCoreCompiled
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
-        MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
-        CodeRepository system = GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform");
-        CodeRepository test = GenericCodeRepository.build("test", "test(::.*)?", "platform", "system");
-        repositories.add(system);
-        repositories.add(test);
-        return repositories;
+        return Lists.mutable.<CodeRepository>withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories())
+                .with(GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform"))
+                .with(GenericCodeRepository.build("test", "test(::.*)?", "platform", "system"));
     }
 }
