@@ -14,14 +14,14 @@
 
 package org.finos.legend.pure.m3.tests.incremental.association;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestPureRuntimeAssociation_UseProperty extends AbstractPureTestWithCoreCompiledPlatform
+public class TestPureRuntimeAssociation_UseProperty extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
@@ -34,10 +34,11 @@ public class TestPureRuntimeAssociation_UseProperty extends AbstractPureTestWith
     {
         runtime.delete("userId.pure");
         runtime.delete("sourceId.pure");
+        runtime.compile();
     }
 
     @Test
-    public void testPureRuntimeAssociation_UseProperty() throws Exception
+    public void testPureRuntimeAssociation_UseProperty()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Association a {a:test::A[0..1];b:test::B[0..1];}")
                         .createInMemorySource("userId.pure", "import test::*;\n" +
@@ -51,12 +52,11 @@ public class TestPureRuntimeAssociation_UseProperty extends AbstractPureTestWith
                         .createInMemorySource("sourceId.pure", "Association a {a:test::A[0..1];b:test::B[0..1];}")
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
-
     }
 
 
     @Test
-    public void testPureRuntimeAssociation_UsePropertyError() throws Exception
+    public void testPureRuntimeAssociation_UsePropertyError()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Association a {a:test::A[0..1];b:test::B[0..1];}")
                         .createInMemorySource("userId.pure", "import test::*;\n" +
@@ -72,6 +72,5 @@ public class TestPureRuntimeAssociation_UseProperty extends AbstractPureTestWith
                         .updateSource("sourceId.pure", "Association a {a:test::A[0..1];b:test::B[0..1];}")
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
-
     }
 }

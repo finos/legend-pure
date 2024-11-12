@@ -21,7 +21,7 @@ import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeReposito
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.composite.CompositeCodeStorage;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
@@ -30,19 +30,12 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestPureRuntimeAssociation extends AbstractPureTestWithCoreCompiledPlatform
+public class TestPureRuntimeAssociation extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
     {
         setUpRuntime(getFunctionExecution(), new CompositeCodeStorage(new ClassLoaderCodeStorage(getCodeRepositories())), getFactoryRegistryOverride(), getOptions(), getExtra());
-    }
-
-    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
-    {
-        return Lists.immutable.with(CodeRepositoryProviderHelper.findPlatformCodeRepository(),
-                GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform"),
-                GenericCodeRepository.build("test", "test(::.*)?", "platform", "system"));
     }
 
     @After
@@ -51,6 +44,13 @@ public class TestPureRuntimeAssociation extends AbstractPureTestWithCoreCompiled
         runtime.delete("userId.pure");
         runtime.delete("sourceId.pure");
         runtime.compile();
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
+    {
+        return Lists.immutable.with(CodeRepositoryProviderHelper.findPlatformCodeRepository(),
+                GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform"),
+                GenericCodeRepository.build("test", "test(::.*)?", "platform", "system"));
     }
 
     @Test
@@ -100,27 +100,15 @@ public class TestPureRuntimeAssociation extends AbstractPureTestWithCoreCompiled
         for (int i = 0; i < 10; i++)
         {
             runtime.delete("sourceId.pure");
-            try
-            {
-                runtime.compile();
-                Assert.fail();
-            }
-            catch (Exception e)
-            {
-                assertPureException(PureCompilationException.class, "The property 'b' can't be found in the type 'A' or in its hierarchy.", "userId.pure", 1, 54, e);
-            }
+            PureCompilationException e1 = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+            assertPureException(PureCompilationException.class, "The property 'b' can't be found in the type 'A' or in its hierarchy.", "userId.pure", 1, 54, e1);
 
-            try
-            {
-                runtime.createInMemorySource("sourceId.pure", "Association a {xx:A[0..1];yy:B[0..1];}");
-                runtime.compile();
-                Assert.fail();
-            }
-            catch (Exception e)
-            {
-                Assert.assertTrue("Compilation error at (resource:userId.pure line:1 column:54), \"The property 'b' can't be found in the type 'A' or in its hierarchy.\"".equals(e.getMessage()) ||
-                        "Compilation error at (resource:userId.pure line:1 column:74), \"The property 'a' can't be found in the type 'B' or in its hierarchy.\"".equals(e.getMessage()));
-            }
+            runtime.createInMemorySource("sourceId.pure", "Association a {xx:A[0..1];yy:B[0..1];}");
+            PureCompilationException e2 = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+            String possible1 = "Compilation error at (resource:userId.pure line:1 column:54), \"The property 'b' can't be found in the type 'A' or in its hierarchy.\"";
+            String possible2 = "Compilation error at (resource:userId.pure line:1 column:74), \"The property 'a' can't be found in the type 'B' or in its hierarchy.\"";
+            String actual = e2.getMessage();
+            Assert.assertTrue(actual, possible1.equals(actual) || possible2.equals(actual));
         }
 
         runtime.modify("sourceId.pure", "Association a {a:A[0..1];b:B[0..1];}");
