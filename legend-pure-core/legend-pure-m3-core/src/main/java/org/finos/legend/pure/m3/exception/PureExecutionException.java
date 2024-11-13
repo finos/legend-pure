@@ -137,7 +137,14 @@ public class PureExecutionException extends PureException
                 CoreInstance func = x.getValueForMetaPropertyToOne(M3Properties.func);
                 if (func != null)
                 {
-                    FunctionDescriptor.writeFunctionDescriptor(appendable, func, false, processorSupport);
+                    try
+                    {
+                        FunctionDescriptor.writeFunctionDescriptor(appendable, func, false, processorSupport);
+                    }
+                    catch (IllegalArgumentException e)
+                    {
+                        safeAppendable.append("NULL / TODO");
+                    }
                 }
                 else
                 {
