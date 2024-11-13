@@ -1006,20 +1006,19 @@ public class ClassImplProcessor
     {
         ProcessorSupport processorSupport = processorContext.getSupport();
         ListIterable<CoreInstance> allConstraints = _Class.computeConstraintsInHierarchy(_class, processorSupport);
-       StringBuilder validateItems = new StringBuilder();
+        StringBuilder validateItems = new StringBuilder();
         String validate =         "    public " + (stateAndDeep ? "" : "static ") + className + " _validate(" + (stateAndDeep ? "boolean goDeep," : "") + (extraParameters == null ? "" : extraParameters + ",") + " org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInformation, final ExecutionSupport es)\n" +
                         "    {\n" +
                         (stateAndDeep ? "        if (!this.hasCompileState(CompiledSupport.CONSTRAINTS_VALIDATED))\n" +
                                 "        {\n" : "") +
-                        allConstraints.collect(constraint ->
+                        allConstraints.collectWithIndex((constraint, index) ->
                         {
                             CoreInstance owner = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.owner, processorSupport);
-                           String index = String.valueOf(allConstraints.indexOf(constraint));
                             if (owner == null || "Global".equals(owner.getName()))
                             {
                                 validateItems.append(validateItem(stateAndDeep, constraint, _class, processorContext, extraValues, index)).append("\n");
 
-                               return  "           _validate_" + index + "(" + (extraValues == null ? "Lists.mutable.with(this)" : extraValues) + ",sourceInformation,es);\n";
+                               return  "           _validate_" + index + "(" + (extraValues == null ? "Lists.mutable.with(this)" : extraValues) + ", sourceInformation, es);\n";
                            }
                             else
                             {
@@ -1065,7 +1064,7 @@ public class ClassImplProcessor
 
     }
 
-    private static String validateItem(boolean stateAndDeep, CoreInstance constraint, CoreInstance _class, ProcessorContext processorContext, String extraValues, String constraintIndex)
+    private static String validateItem(boolean stateAndDeep, CoreInstance constraint, CoreInstance _class, ProcessorContext processorContext, String extraValues, int constraintIndex)
     {
         ProcessorSupport processorSupport = processorContext.getSupport();
         SetIterable<? extends CoreInstance> localConstraints = Sets.immutable.withAll(_class.getValueForMetaPropertyToMany(M3Properties.constraints));
