@@ -15,7 +15,6 @@
 package org.finos.legend.pure.m3.tests.function.base.lang;
 
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
@@ -317,9 +316,7 @@ public abstract class AbstractTestDynamicNew extends AbstractPureTestWithCoreCom
 
     protected static MutableRepositoryCodeStorage getCodeStorage()
     {
-        MutableList<CodeRepository> repositories = Lists.mutable.withAll(org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories()));
-        CodeRepository test = new GenericCodeRepository("test", null, "platform", "core_functions_unclassified");
-        repositories.add(test);
-        return new CompositeCodeStorage(new ClassLoaderCodeStorage(repositories));
+        return new CompositeCodeStorage(new ClassLoaderCodeStorage(Lists.mutable.<CodeRepository>withAll(getCodeRepositories())
+                .with(new GenericCodeRepository("test", null, "platform", "core_functions_unclassified"))));
     }
 }

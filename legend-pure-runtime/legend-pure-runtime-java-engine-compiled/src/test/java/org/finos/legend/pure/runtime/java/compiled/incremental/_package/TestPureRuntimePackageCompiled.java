@@ -19,10 +19,9 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.tests.incremental._package.TestPureRuntimePackage;
-import org.finos.legend.pure.runtime.java.compiled.runtime.CompiledClassloaderStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
-import org.junit.After;
+import org.finos.legend.pure.runtime.java.compiled.runtime.CompiledClassloaderStateVerifier;
 import org.junit.BeforeClass;
 
 public class TestPureRuntimePackageCompiled extends TestPureRuntimePackage
@@ -31,12 +30,6 @@ public class TestPureRuntimePackageCompiled extends TestPureRuntimePackage
     public static void setUp()
     {
         setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
-    }
-
-    @After
-    public void cleanRuntime()
-    {
-        setUp();
     }
 
     protected static FunctionExecution getFunctionExecution()

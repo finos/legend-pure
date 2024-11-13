@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.m3.tests.function.base.lang;
 
-import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
@@ -27,7 +27,6 @@ import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
-
 
 public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 {
@@ -347,9 +346,8 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 
     protected static MutableRepositoryCodeStorage getCodeStorage()
     {
-        MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
-        repositories.add(new GenericCodeRepository("test", null, "platform", "core_functions_unclassified"));
-        return new CompositeCodeStorage(new ClassLoaderCodeStorage(repositories));
+        return new CompositeCodeStorage(new ClassLoaderCodeStorage(Lists.mutable.<CodeRepository>withAll(getCodeRepositories())
+                .with(new GenericCodeRepository("test", null, "platform", "core_functions_unclassified"))));
     }
 
     public static Pair<String, String> getExtra()

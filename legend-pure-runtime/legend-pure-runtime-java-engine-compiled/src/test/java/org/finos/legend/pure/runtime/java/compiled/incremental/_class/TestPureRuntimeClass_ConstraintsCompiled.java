@@ -43,5 +43,4 @@ public class TestPureRuntimeClass_ConstraintsCompiled extends TestPureRuntimeCla
     {
         return Lists.fixedSize.of(new CompiledMetadataStateVerifier(), new CompiledClassloaderStateVerifier());
     }
-
 }

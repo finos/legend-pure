@@ -25,7 +25,6 @@ import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 
 
@@ -33,16 +32,11 @@ public abstract class AbstractTestIncrementalCompilation extends AbstractPureTes
 {
     protected static MutableRepositoryCodeStorage getCodeStorage()
     {
-        MutableList<CodeRepository> repositories = org.eclipse.collections.impl.factory.Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
-        CodeRepository platform = repositories.detect(x -> x.getName().equals("platform"));
-        CodeRepository core = new GenericCodeRepository("x_core", null, "platform");
-        CodeRepository system = new GenericCodeRepository("system", null, "platform", "x_core");
-        CodeRepository model = new GenericCodeRepository("model", null, "platform", "x_core", "system");
-        CodeRepository other = new GenericCodeRepository("datamart_other", null, "platform", "x_core", "system", "model");
-        repositories.add(core);
-        repositories.add(system);
-        repositories.add(model);
-        repositories.add(other);
+        MutableList<CodeRepository> repositories = Lists.mutable.<CodeRepository>withAll(getCodeRepositories())
+                .with(new GenericCodeRepository("x_core", null, "platform"))
+                .with(new GenericCodeRepository("system", null, "platform", "x_core"))
+                .with(new GenericCodeRepository("model", null, "platform", "x_core", "system"))
+                .with(new GenericCodeRepository("datamart_other", null, "platform", "x_core", "system", "model"));
         return new CompositeCodeStorage(new ClassLoaderCodeStorage(repositories));
     }
 
@@ -756,7 +750,6 @@ public abstract class AbstractTestIncrementalCompilation extends AbstractPureTes
     }
 
     @Test
-    @Ignore("Inconsistency of new operator in compiled vs interpreted mode")
     public void test14()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId1.pure", "Class my::enterprise::Vehicle\n" +
@@ -1148,7 +1141,6 @@ public abstract class AbstractTestIncrementalCompilation extends AbstractPureTes
     }
 
     @Test
-    @Ignore("Inconsistency of new operator in compiled vs interpreted mode")
     public void test20()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("/system/tests/sourceId1.pure", "Class A\n" +
@@ -1219,7 +1211,6 @@ public abstract class AbstractTestIncrementalCompilation extends AbstractPureTes
     }
 
     @Test
-    @Ignore("Inconsistency of new operator in compiled vs interpreted mode")
     public void test21()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("/system/tests/sourceId1.pure", "Class A\n" +

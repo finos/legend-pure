@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.m3.tests.incremental._class;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
@@ -22,7 +22,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestPureRuntimeClass_AsPointer extends AbstractPureTestWithCoreCompiledPlatform
+public class TestPureRuntimeClass_AsPointer extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
@@ -39,7 +39,7 @@ public class TestPureRuntimeClass_AsPointer extends AbstractPureTestWithCoreComp
     }
 
     @Test
-    public void testPureRuntimeClassPointer() throws Exception
+    public void testPureRuntimeClassPointer()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
                         .createInMemorySource("userId.pure", "function f():Class<Any>[1]{A}" +
@@ -54,7 +54,7 @@ public class TestPureRuntimeClass_AsPointer extends AbstractPureTestWithCoreComp
     }
 
     @Test
-    public void testPureRuntimeClassPointerInArray() throws Exception
+    public void testPureRuntimeClassPointerInArray()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
                         .createInMemorySource("userId.pure", "function f():Class<Any>[*]{[A,A]}" +
@@ -69,7 +69,7 @@ public class TestPureRuntimeClass_AsPointer extends AbstractPureTestWithCoreComp
     }
 
     @Test
-    public void testPureRuntimeClassPointerError() throws Exception
+    public void testPureRuntimeClassPointerError()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{}")
                         .createInMemorySource("userId.pure", "function f():Class<Any>[1]{A}" +
@@ -87,7 +87,7 @@ public class TestPureRuntimeClass_AsPointer extends AbstractPureTestWithCoreComp
     }
 
     @Test
-    public void testPureRuntimeClassReferenceUsageCleanUp() throws Exception
+    public void testPureRuntimeClassReferenceUsageCleanUp()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "function f():Class<Any>[1]{A}")
                         .createInMemorySource("userId.pure", "Class A{}")

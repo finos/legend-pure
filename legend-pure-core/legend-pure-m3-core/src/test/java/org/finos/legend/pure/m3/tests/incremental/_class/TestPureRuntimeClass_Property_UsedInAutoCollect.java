@@ -14,14 +14,14 @@
 
 package org.finos.legend.pure.m3.tests.incremental._class;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestPureRuntimeClass_Property_UsedInAutoCollect extends AbstractPureTestWithCoreCompiledPlatform
+public class TestPureRuntimeClass_Property_UsedInAutoCollect extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
@@ -38,7 +38,7 @@ public class TestPureRuntimeClass_Property_UsedInAutoCollect extends AbstractPur
     }
 
     @Test
-    public void testPureRuntimeClass_Property() throws Exception
+    public void testPureRuntimeClass_Property()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{name:String[1];}")
                         .createInMemorySource("userId.pure", "function test():String[*]{A.all().name}")
@@ -51,9 +51,8 @@ public class TestPureRuntimeClass_Property_UsedInAutoCollect extends AbstractPur
                 runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
-
     @Test
-    public void testPureRuntimeClass_QualifiedProperty() throws Exception
+    public void testPureRuntimeClass_QualifiedProperty()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class my::A{name(prefix:String[1]){ $prefix + ' Bob';}:String[1];}")
                         .createInMemorySource("userId.pure", "function test():String[*]{my::A.all().name('Mr')}")
@@ -66,7 +65,7 @@ public class TestPureRuntimeClass_Property_UsedInAutoCollect extends AbstractPur
     }
 
     @Test
-    public void testPureRuntimeClass_QualifiedPropertyOpenVariable() throws Exception
+    public void testPureRuntimeClass_QualifiedPropertyOpenVariable()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class my::A{name(prefix:String[1]){ $prefix + ' Bob';}:String[1];}")
                         .createInMemorySource("userId.pure", "function test():String[*]{ let b = 'Mr'; my::A.all().name($b);}")
@@ -79,7 +78,7 @@ public class TestPureRuntimeClass_Property_UsedInAutoCollect extends AbstractPur
     }
 
     @Test
-    public void testPureRuntimeClass_QualifiedPropertyOpenVariableForceUnbindAndReprocess() throws Exception
+    public void testPureRuntimeClass_QualifiedPropertyOpenVariableForceUnbindAndReprocess()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class my::A{name(prefix:String[1]){ $prefix + ' Bob';}:String[1];}")
                         .createInMemorySource("userId.pure", "function test():String[*]{ let b = 'Mr'; my::A.all().name($b);}")
@@ -89,7 +88,5 @@ public class TestPureRuntimeClass_Property_UsedInAutoCollect extends AbstractPur
                         .createInMemorySource("sourceId.pure", "Class my::A{name(prefix:String[1]){ $prefix + ' Bob';}:String[1];}")
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
-
     }
-
 }

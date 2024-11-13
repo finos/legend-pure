@@ -14,14 +14,14 @@
 
 package org.finos.legend.pure.m3.tests.incremental.extendedPrimitive;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestPureRuntimeExtendedPrimitive_InCast extends AbstractPureTestWithCoreCompiledPlatform
+public class TestPureRuntimeExtendedPrimitive_InCast extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
@@ -49,7 +49,6 @@ public class TestPureRuntimeExtendedPrimitive_InCast extends AbstractPureTestWit
                         .createInMemorySource("sourceId.pure", "Primitive x::SmallInt(x:Integer[1]) extends Integer [$this < $x]")
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
-
     }
 
     @Test
@@ -64,6 +63,5 @@ public class TestPureRuntimeExtendedPrimitive_InCast extends AbstractPureTestWit
                         .createInMemorySource("sourceId.pure", "function test():String[1]{1->cast(@x::SmallInt(2));'ok';}")
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
-
     }
 }

@@ -15,7 +15,7 @@
 package org.finos.legend.pure.m3.tests.incremental._class;
 
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.tools.test.ToFix;
@@ -24,7 +24,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithCoreCompiledPlatform
+public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
@@ -42,7 +42,7 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
     }
 
     @Test
-    public void testPureRuntimeClassGeneralization() throws Exception
+    public void testPureRuntimeClassGeneralization()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class B{}")
                         .createInMemorySource("userId.pure", "Class A extends B{}" +
@@ -80,7 +80,7 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
 
 
     @Test
-    public void testPureRuntimeClassGeneralizationError() throws Exception
+    public void testPureRuntimeClassGeneralizationError()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class B{}")
                         .createInMemorySource("userId.pure", "Class A extends B{}" +
@@ -98,7 +98,7 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
 
 
     @Test
-    public void testPureRuntimeClassGeneralizationPropertyError() throws Exception
+    public void testPureRuntimeClassGeneralizationPropertyError()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class test::B{property:String[1];}")
                         .createInMemorySource("userId.pure", "import test::*;\n" +
@@ -116,7 +116,7 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
     }
 
     @Test
-    public void testPureRuntimeClassGeneralizationFunctionMatchingParameter() throws Exception
+    public void testPureRuntimeClassGeneralizationFunctionMatchingParameter()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A extends B{}")
                         .createInMemorySource("userId.pure", "Class B{}" +
@@ -133,7 +133,7 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
 
 
     @Test
-    public void testPureRuntimeClassGeneralizationFunctionMatchingParameterError() throws Exception
+    public void testPureRuntimeClassGeneralizationFunctionMatchingParameterError()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A extends B{}")
                         .createInMemorySource("userId.pure", "Class B{}" +
@@ -155,7 +155,7 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
 
 
     @Test
-    public void testPureRuntimeClassGeneralizationFunctionMatchingReturn() throws Exception
+    public void testPureRuntimeClassGeneralizationFunctionMatchingReturn()
     {
 
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class B extends C{}")
@@ -175,7 +175,7 @@ public class TestPureRuntimeClass_InGeneralization extends AbstractPureTestWithC
 
 
     @Test
-    public void testPureRuntimeClassGeneralizationFunctionMatchingOtherReturnError() throws Exception
+    public void testPureRuntimeClassGeneralizationFunctionMatchingOtherReturnError()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class B extends C{}")
                         .createInMemorySource("userId.pure", "Class D{}" +

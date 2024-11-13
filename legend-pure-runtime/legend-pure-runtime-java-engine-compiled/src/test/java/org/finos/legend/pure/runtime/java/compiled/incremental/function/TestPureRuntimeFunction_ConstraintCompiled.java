@@ -19,12 +19,11 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier.FunctionExecutionStateVerifier;
 import org.finos.legend.pure.m3.tests.incremental.function.TestPureRuntimeFunction_Constraint;
-import org.finos.legend.pure.runtime.java.compiled.runtime.CompiledClassloaderStateVerifier;
-import org.finos.legend.pure.runtime.java.compiled.runtime.CompiledMetadataStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
+import org.finos.legend.pure.runtime.java.compiled.runtime.CompiledClassloaderStateVerifier;
+import org.finos.legend.pure.runtime.java.compiled.runtime.CompiledMetadataStateVerifier;
 import org.junit.BeforeClass;
-import org.junit.Test;
 
 public class TestPureRuntimeFunction_ConstraintCompiled extends TestPureRuntimeFunction_Constraint
 {
@@ -32,13 +31,6 @@ public class TestPureRuntimeFunction_ConstraintCompiled extends TestPureRuntimeF
     public static void setUp()
     {
         setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
-    }
-
-    @Override
-    @Test
-    public void testPureRuntimeFunctionConstraint() throws Exception
-    {
-        super.testPureRuntimeFunctionConstraint();
     }
 
     protected static FunctionExecution getFunctionExecution()

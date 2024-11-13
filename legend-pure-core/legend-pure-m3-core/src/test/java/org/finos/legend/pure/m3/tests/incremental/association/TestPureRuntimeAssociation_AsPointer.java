@@ -14,14 +14,14 @@
 
 package org.finos.legend.pure.m3.tests.incremental.association;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestPureRuntimeAssociation_AsPointer extends AbstractPureTestWithCoreCompiledPlatform
+public class TestPureRuntimeAssociation_AsPointer extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
@@ -34,10 +34,11 @@ public class TestPureRuntimeAssociation_AsPointer extends AbstractPureTestWithCo
     {
         runtime.delete("userId.pure");
         runtime.delete("sourceId.pure");
+        runtime.compile();
     }
 
     @Test
-    public void testPureRuntimeAssociation() throws Exception
+    public void testPureRuntimeAssociation()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Association a {a:A[1];b:B[1];}")
                         .createInMemorySource("userId.pure", "Class A{}" +
@@ -52,9 +53,8 @@ public class TestPureRuntimeAssociation_AsPointer extends AbstractPureTestWithCo
                 runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
-
     @Test
-    public void testPureRuntimeAssociationError() throws Exception
+    public void testPureRuntimeAssociationError()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Association a {a:A[1];b:B[1];}")
                         .createInMemorySource("userId.pure", "Class A{}" +

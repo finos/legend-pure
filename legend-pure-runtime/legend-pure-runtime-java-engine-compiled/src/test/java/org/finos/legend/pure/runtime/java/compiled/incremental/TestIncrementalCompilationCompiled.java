@@ -24,6 +24,8 @@ import org.finos.legend.pure.runtime.java.compiled.runtime.CompiledMetadataState
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class TestIncrementalCompilationCompiled extends AbstractTestIncrementalCompilation
 {
@@ -36,6 +38,22 @@ public class TestIncrementalCompilationCompiled extends AbstractTestIncrementalC
     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
+    }
+
+    @Test
+    @Ignore("Inconsistency of new operator in compiled vs interpreted mode")
+    @Override
+    public void test14()
+    {
+        super.test14();
+    }
+
+    @Test
+    @Ignore("Inconsistency of new operator in compiled vs interpreted mode")
+    @Override
+    public void test21()
+    {
+        super.test21();
     }
 
     @Override

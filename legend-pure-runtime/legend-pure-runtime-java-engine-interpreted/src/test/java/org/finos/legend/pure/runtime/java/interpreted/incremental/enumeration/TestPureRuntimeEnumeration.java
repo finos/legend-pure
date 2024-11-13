@@ -15,8 +15,6 @@
 package org.finos.legend.pure.runtime.java.interpreted.incremental.enumeration;
 
 import org.finos.legend.pure.m3.tests.incremental.enumeration.AbstractPureRuntimeEnumerationTest;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
-import org.junit.After;
 import org.junit.BeforeClass;
 
 public class TestPureRuntimeEnumeration extends AbstractPureRuntimeEnumerationTest
@@ -25,20 +23,5 @@ public class TestPureRuntimeEnumeration extends AbstractPureRuntimeEnumerationTe
     public static void setUp()
     {
         setUpRuntime();
-    }
-
-    @After
-    public void cleanRuntime()
-    {
-        runtime.delete("sourceId.pure");
-        runtime.delete("userId.pure");
-        try
-        {
-            runtime.compile();
-        }
-        catch (PureCompilationException e)
-        {
-            setUp();
-        }
     }
 }

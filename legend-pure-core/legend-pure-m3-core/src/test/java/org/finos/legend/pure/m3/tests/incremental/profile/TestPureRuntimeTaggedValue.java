@@ -14,14 +14,14 @@
 
 package org.finos.legend.pure.m3.tests.incremental.profile;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestPureRuntimeTaggedValue extends AbstractPureTestWithCoreCompiledPlatform
+public class TestPureRuntimeTaggedValue extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
@@ -34,10 +34,11 @@ public class TestPureRuntimeTaggedValue extends AbstractPureTestWithCoreCompiled
     {
         runtime.delete("userId.pure");
         runtime.delete("sourceId.pure");
+        runtime.compile();
     }
 
     @Test
-    public void testPureRuntimeProfileTaggedValueClass() throws Exception
+    public void testPureRuntimeProfileTaggedValueClass()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Profile testProfile{tags:[t1,t2];}")
                         .createInMemorySource("userId.pure", "Class {testProfile.t1='bb'} A{}")
@@ -51,7 +52,7 @@ public class TestPureRuntimeTaggedValue extends AbstractPureTestWithCoreCompiled
     }
 
     @Test
-    public void testPureRuntimeProfileTaggedValueClassError() throws Exception
+    public void testPureRuntimeProfileTaggedValueClassError()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Profile testProfile{tags:[t1,t2];}")
                         .createInMemorySource("userId.pure", "Class {testProfile.t1='bb'} A{}")
@@ -64,12 +65,11 @@ public class TestPureRuntimeTaggedValue extends AbstractPureTestWithCoreCompiled
                         .updateSource("sourceId.pure", "Profile testProfile{tags:[t1,t2];}")
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
-
     }
 
 
     @Test
-    public void testPureRuntimeProfileStereotypeClassValueError() throws Exception
+    public void testPureRuntimeProfileStereotypeClassValueError()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Profile testProfile{tags:[t1,t2];}")
                         .createInMemorySource("userId.pure", "Class {testProfile.t1='bb'} A{}")
@@ -85,7 +85,7 @@ public class TestPureRuntimeTaggedValue extends AbstractPureTestWithCoreCompiled
     }
 
     @Test
-    public void testPureRuntimeProfileTaggedValueClassInverse() throws Exception
+    public void testPureRuntimeProfileTaggedValueClassInverse()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class {testProfile.t1='bb'} A{}")
                         .createInMemorySource("userId.pure", "Profile testProfile{tags:[t1,t2];}")
@@ -98,9 +98,8 @@ public class TestPureRuntimeTaggedValue extends AbstractPureTestWithCoreCompiled
                 runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
-
     @Test
-    public void testPureRuntimeProfileTaggedValueEnumeration() throws Exception
+    public void testPureRuntimeProfileTaggedValueEnumeration()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Profile testProfile{tags:[t1,t2];}")
                         .createInMemorySource("userId.pure", "Enum {testProfile.t1='bb'} A{ VAL1 }")
@@ -111,11 +110,10 @@ public class TestPureRuntimeTaggedValue extends AbstractPureTestWithCoreCompiled
                         .createInMemorySource("sourceId.pure", "Profile testProfile{tags:[t1,t2];}")
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
-
     }
 
     @Test
-    public void testPureRuntimeProfileTaggedValueEnum() throws Exception
+    public void testPureRuntimeProfileTaggedValueEnum()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Profile testProfile{tags:[t1,t2];}")
                         .createInMemorySource("userId.pure", "Enum A{ {testProfile.t1='bb'} VAL1 }")

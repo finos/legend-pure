@@ -15,7 +15,7 @@
 package org.finos.legend.pure.m3.tests.incremental.function;
 
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
@@ -26,7 +26,7 @@ import org.junit.Test;
 
 import java.util.regex.Pattern;
 
-public class TestPureRuntimeFunction_Lambda extends AbstractPureTestWithCoreCompiledPlatform
+public class TestPureRuntimeFunction_Lambda extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
@@ -40,10 +40,11 @@ public class TestPureRuntimeFunction_Lambda extends AbstractPureTestWithCoreComp
         runtime.delete("other.pure");
         runtime.delete("userId.pure");
         runtime.delete("sourceId.pure");
+        runtime.compile();
     }
 
     @Test
-    public void testPureRuntimeFunctionLambdaCollection() throws Exception
+    public void testPureRuntimeFunctionLambdaCollection()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class Test{} Class B{a:A[1];} Class A{} function f(a:A[1]):String[1]{'ok1'}")
                         .createInMemorySource("userId.pure", "function go():Any[1]{^B(a=^A())->match([b:B[1]|f($b.a)+'ok2']);}\n")
@@ -58,12 +59,10 @@ public class TestPureRuntimeFunction_Lambda extends AbstractPureTestWithCoreComp
                         .createInMemorySource("sourceId.pure", "Class Test{} Class B{a:A[1];} Class A{} function f(a:A[1]):String[1]{'ok1'}")
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
-
     }
 
-
     @Test
-    public void testPureRuntimeFunctionLambdaCollectionError() throws Exception
+    public void testPureRuntimeFunctionLambdaCollectionError()
     {
         //TODO
 /*
@@ -88,29 +87,16 @@ public class TestPureRuntimeFunction_Lambda extends AbstractPureTestWithCoreComp
         for (int i = 0; i < 10; i++)
         {
             runtime.delete("sourceId.pure");
-            try
-            {
-                runtime.createInMemorySource("sourceId.pure", "function sourceFunction():Integer[1]{1}");
-                runtime.compile();
-                Assert.fail();
-            }
-            catch (Exception e)
-            {
-                assertPureException(PureCompilationException.class, Pattern.compile("(A|B) has not been defined!"), e);
-            }
+            runtime.createInMemorySource("sourceId.pure", "function sourceFunction():Integer[1]{1}");
+            PureCompilationException e1 = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+            assertPureException(PureCompilationException.class, Pattern.compile("(A|B) has not been defined!"), e1);
 
-            try
-            {
-                runtime.modify("sourceId.pure", "Class Test{} Class C{} Class B{a:C[1];} Class A{}");
-                runtime.compile();
-            }
-            catch (Exception e)
-            {
-                assertPureException(PureCompilationException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "fz(_:C[1])\n" +
-                        PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_IMPORTED_MESSAGE +
-                        "\tfz(A[1]):String[1]\n" +
-                        PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE, "userId.pure", 1, 48, e);
-            }
+            runtime.modify("sourceId.pure", "Class Test{} Class C{} Class B{a:C[1];} Class A{}");
+            PureCompilationException e2 = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+            assertPureException(PureCompilationException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "fz(_:C[1])\n" +
+                    PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_IMPORTED_MESSAGE +
+                    "\tfz(A[1]):String[1]\n" +
+                    PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE, "userId.pure", 1, 48, e2);
         }
         runtime.modify("sourceId.pure", "Class Test{} Class B{a:A[1];} Class A{}");
         runtime.compile();

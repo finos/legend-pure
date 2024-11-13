@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.m3.tests.incremental.function;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
@@ -23,7 +23,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestPureRuntimeFunction_Constraint extends AbstractPureTestWithCoreCompiledPlatform
+public class TestPureRuntimeFunction_Constraint extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()

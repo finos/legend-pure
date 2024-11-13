@@ -17,17 +17,15 @@ package org.finos.legend.pure.runtime.java.compiled.incremental.profile;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.tests.incremental.profile.TestPureRuntimeStereotype;
-import org.finos.legend.pure.runtime.java.compiled.runtime.CompiledClassloaderStateVerifier;
-import org.finos.legend.pure.runtime.java.compiled.runtime.CompiledMetadataStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
+import org.finos.legend.pure.runtime.java.compiled.runtime.CompiledClassloaderStateVerifier;
+import org.finos.legend.pure.runtime.java.compiled.runtime.CompiledMetadataStateVerifier;
 import org.junit.BeforeClass;
 
 public class TestPureRuntimeStereotypeCompiled extends TestPureRuntimeStereotype
@@ -40,10 +38,8 @@ public class TestPureRuntimeStereotypeCompiled extends TestPureRuntimeStereotype
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
-        MutableList<CodeRepository> repositories = Lists.mutable.withAll(AbstractPureTestWithCoreCompiled.getCodeRepositories());
-        CodeRepository system = GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform");
-        repositories.add(system);
-        return repositories;
+        return Lists.mutable.<CodeRepository>withAll(TestPureRuntimeStereotype.getCodeRepositories())
+                .with(GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", "platform"));
     }
 
     protected static FunctionExecution getFunctionExecution()
@@ -54,6 +50,6 @@ public class TestPureRuntimeStereotypeCompiled extends TestPureRuntimeStereotype
     @Override
     protected ListIterable<RuntimeVerifier.FunctionExecutionStateVerifier> getAdditionalVerifiers()
     {
-        return Lists.fixedSize.of(new CompiledMetadataStateVerifier(), new CompiledClassloaderStateVerifier());
+        return Lists.immutable.of(new CompiledMetadataStateVerifier(), new CompiledClassloaderStateVerifier());
     }
 }
