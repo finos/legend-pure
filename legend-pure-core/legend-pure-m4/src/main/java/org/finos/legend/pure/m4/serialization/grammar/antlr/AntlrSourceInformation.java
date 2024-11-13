@@ -53,6 +53,11 @@ public class AntlrSourceInformation
         return this.offsetColumn;
     }
 
+    public SourceInformation getPureSourceInformation(int line, int column)
+    {
+        return getPureSourceInformation(line, column, line, column, line, column);
+    }
+
     public SourceInformation getPureSourceInformation(int beginLine, int beginColumn, int endLine, int endColumn)
     {
         return getPureSourceInformation(beginLine, beginColumn, beginLine, beginColumn, endLine, endColumn);
@@ -101,14 +106,12 @@ public class AntlrSourceInformation
 
     public SourceInformation getSourceInformationForUnknownErrorPosition(int line, int charPositionInLine)
     {
-        int adjustedLine = adjustLine(line);
-        int adjustedCol = adjustColumn(line, charPositionInLine + 1);
-        return new SourceInformation(this.sourceName, adjustedLine, adjustedCol, adjustedLine, adjustedCol);
+        return getPureSourceInformation(line, charPositionInLine + 1);
     }
 
     public SourceInformation getSourceInformationForOffendingToken(int line, int charPositionInLine, Token offendingToken)
     {
-        return new SourceInformation(this.sourceName, adjustLine(line), adjustColumn(line, charPositionInLine + 1), offendingToken.getLine() + this.offsetLine, offendingToken.getStopIndex() + 1 + this.offsetColumn);
+        return getPureSourceInformation(line, charPositionInLine + 1, offendingToken.getLine(), offendingToken.getCharPositionInLine() + offendingToken.getText().length());
     }
 
     private int adjustLine(int line)

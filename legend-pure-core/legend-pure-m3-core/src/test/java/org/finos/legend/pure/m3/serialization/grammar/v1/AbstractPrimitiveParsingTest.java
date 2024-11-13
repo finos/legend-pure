@@ -17,7 +17,7 @@ package org.finos.legend.pure.m3.serialization.grammar.v1;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
@@ -26,7 +26,7 @@ import org.junit.BeforeClass;
 
 import java.util.UUID;
 
-public abstract class AbstractPrimitiveParsingTest extends AbstractPureTestWithCoreCompiledPlatform
+public abstract class AbstractPrimitiveParsingTest extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
@@ -52,25 +52,57 @@ public abstract class AbstractPrimitiveParsingTest extends AbstractPureTestWithC
 
     protected void assertFailsToParse(String expectedInfo, String string)
     {
+        assertFailsToParse(expectedInfo, null, null, string);
+    }
+
+    protected void assertFailsToParse(Integer expectedStart, Integer expectedEnd, String string)
+    {
+        assertFailsToParse(null, expectedStart, expectedEnd, string);
+    }
+
+    protected void assertFailsToParse(String expectedInfo, Integer expectedStart, Integer expectedEnd, String string)
+    {
         PureParserException e = Assert.assertThrows(PureParserException.class, () -> parsePrimitiveValue(string));
 
         assertPureException(PureParserException.class, expectedInfo, null, 3, null, 3, null, 3, null, e);
         SourceInformation sourceInfo = e.getSourceInformation();
-        int start = 5;
-        if (sourceInfo.getStartColumn() < start)
+        if (expectedStart == null)
         {
-            Assert.fail("Expected start column to be at least " + start + ", got: " + sourceInfo.getStartColumn() + ", string: \"" + string + "\"");
+            if (sourceInfo.getStartColumn() <= 0)
+            {
+                Assert.fail("Expected start column to be at least 1, got: " + sourceInfo.getStartColumn() + ", string: \"" + string + "\", source info: " + sourceInfo.getMessage());
+            }
+            if (sourceInfo.getColumn() <= 0)
+            {
+                Assert.fail("Expected column to be at least 1, got: " + sourceInfo.getStartColumn() + ", string: \"" + string + "\", source info: " + sourceInfo.getMessage());
+            }
         }
-        if (sourceInfo.getColumn() < start)
+        else
         {
-            Assert.fail("Expected column to be at least " + start + ", got: " + sourceInfo.getStartColumn() + ", string: \"" + string + "\"");
+            if (sourceInfo.getStartColumn() != expectedStart)
+            {
+                Assert.fail("Expected start column to be " + expectedStart + ", got: " + sourceInfo.getStartColumn() + ", string: \"" + string + "\", source info: " + sourceInfo.getMessage());
+            }
+            if (sourceInfo.getColumn() != expectedStart)
+            {
+                Assert.fail("Expected start column to be " + expectedStart + ", got: " + sourceInfo.getStartColumn() + ", string: \"" + string + "\", source info: " + sourceInfo.getMessage());
+            }
         }
-        // TODO re-enable
-//        int end = string.length() + 5;
-//        if (sourceInfo.getEndColumn() > end)
-//        {
-//            Assert.fail("Expected end column to be at most " + end + ", got: " + sourceInfo.getEndColumn() + ", string: \"" + string + "\"");
-//        }
+
+        if (expectedEnd == null)
+        {
+            if (sourceInfo.getEndColumn() > string.length())
+            {
+                Assert.fail("Expected end column to be at most " + string.length() + ", got: " + sourceInfo.getEndColumn() + ", string: \"" + string + "\", source info: " + sourceInfo.getMessage());
+            }
+        }
+        else
+        {
+            if (sourceInfo.getEndColumn() != expectedEnd)
+            {
+                Assert.fail("Expected end column to be " + expectedEnd + ", got: " + sourceInfo.getEndColumn() + ", string: \"" + string + "\", source info: " + sourceInfo.getMessage());
+            }
+        }
     }
 
     private CoreInstance parsePrimitiveValue(String string)
@@ -80,7 +112,7 @@ public abstract class AbstractPrimitiveParsingTest extends AbstractPureTestWithC
         String functionSignature = functionName + "():" + typeString + "[1]";
         String testFunctionString = "function " + functionSignature + "\n" +
                 "{\n" +
-                "    " + string + "\n" +
+                string + "\n" +
                 "}\n";
         compileTestSource(testFunctionString);
         CoreInstance function = runtime.getFunction(functionSignature);

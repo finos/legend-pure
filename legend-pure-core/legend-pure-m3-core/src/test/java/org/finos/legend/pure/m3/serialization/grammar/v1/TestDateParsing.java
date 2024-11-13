@@ -36,8 +36,8 @@ public class TestDateParsing extends AbstractPrimitiveParsingTest
         assertParsesTo("2014-02", "%2014-02");
         assertParsesTo("2014-02", "%2014-2");
 
-        assertFailsToParse("%2014-1b");
-        assertFailsToParse("Invalid Pure Date: '%2014-34'", "%2014-34");
+        assertFailsToParse(8, 8, "%2014-1b");
+        assertFailsToParse("Invalid Pure Date: '%2014-34'", 1, 8, "%2014-34");
     }
 
     @Override

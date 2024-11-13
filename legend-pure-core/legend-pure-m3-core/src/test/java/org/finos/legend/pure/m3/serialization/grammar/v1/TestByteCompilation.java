@@ -33,6 +33,7 @@ public class TestByteCompilation extends AbstractPureTestWithCoreCompiledPlatfor
     public void clearRuntime()
     {
         runtime.delete("fromString.pure");
+        runtime.compile();
     }
 
     @Test

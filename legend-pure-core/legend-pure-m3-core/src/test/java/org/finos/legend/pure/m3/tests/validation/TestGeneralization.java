@@ -69,7 +69,7 @@ public class TestGeneralization extends AbstractPureTestWithCoreCompiledPlatform
     {
         compileTestSource("fromString.pure", "Enum test::TestEnum {A, B, C}");
         PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource("testSource.pure", "Enum test::TestEnum2 extends test::TestEnum {}"));
-        assertPureException(PureParserException.class, "expected: '{' found: 'extends'", "testSource.pure", 1, 22, 1, 22, 1, 29, e);
+        assertPureException(PureParserException.class, "expected: '{' found: 'extends'", "testSource.pure", 1, 22, 1, 22, 1, 28, e);
     }
 
     @Test

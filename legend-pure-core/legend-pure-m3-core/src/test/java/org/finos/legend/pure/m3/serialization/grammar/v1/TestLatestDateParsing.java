@@ -22,7 +22,7 @@ public class TestLatestDateParsing extends AbstractPrimitiveParsingTest
     @Test
     public void testLatestDateIsNotGenerallyUsable()
     {
-        assertFailsToParse("%latest");
+        assertFailsToParse(1, 7, "%latest");
     }
 
     @Override

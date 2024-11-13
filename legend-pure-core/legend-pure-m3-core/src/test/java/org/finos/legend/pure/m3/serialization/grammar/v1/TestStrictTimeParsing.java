@@ -17,8 +17,6 @@ package org.finos.legend.pure.m3.serialization.grammar.v1;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.junit.Test;
 
-
-
 public class TestStrictTimeParsing extends AbstractPrimitiveParsingTest
 {
     @Test
@@ -29,7 +27,7 @@ public class TestStrictTimeParsing extends AbstractPrimitiveParsingTest
         assertParsesTo("17:04", "%17:04");
 
         assertFailsToParse("expected: a valid identifier text; found: '%'","%b:09");
-        assertFailsToParse("Invalid Pure StrictTime: '%55:09'", "%55:09");
+        assertFailsToParse("Invalid Pure StrictTime: '%55:09'", 1, 6, "%55:09");
     }
 
     @Test
@@ -40,8 +38,8 @@ public class TestStrictTimeParsing extends AbstractPrimitiveParsingTest
         assertParsesTo("07:03", "%7:0000003");
 
         assertFailsToParse("expected: '}' found: ':'","%07:b");
-        assertFailsToParse("Invalid Pure StrictTime: '%19:99'", "%19:99");
-        assertFailsToParse("Invalid Pure StrictTime: '%20:95'","%20:95");
+        assertFailsToParse("Invalid Pure StrictTime: '%19:99'", 1, 6, "%19:99");
+        assertFailsToParse("Invalid Pure StrictTime: '%20:95'",1, 6, "%20:95");
     }
 
     @Test
@@ -52,7 +50,7 @@ public class TestStrictTimeParsing extends AbstractPrimitiveParsingTest
         assertParsesTo("07:03:01", "%7:3:000000001");
 
         assertFailsToParse("expected: '}' found: ':'","%07:03:b");
-        assertFailsToParse("Invalid Pure StrictTime: '%07:03:95'", "%07:03:95");
+        assertFailsToParse("Invalid Pure StrictTime: '%07:03:95'", 1, 9, "%07:03:95");
     }
 
     @Test

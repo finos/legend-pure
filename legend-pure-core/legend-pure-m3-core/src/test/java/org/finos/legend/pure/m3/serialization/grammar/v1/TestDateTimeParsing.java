@@ -27,7 +27,7 @@ public class TestDateTimeParsing extends AbstractPrimitiveParsingTest
         assertParsesTo("2014-02-07T07", "%2014-2-7T000007");
 
         assertFailsToParse("%2014-02-07Tb");
-        assertFailsToParse("Invalid Pure Date: '%2014-02-07T55'", "%2014-02-07T55");
+        assertFailsToParse("Invalid Pure Date: '%2014-02-07T55'", 1, 14, "%2014-02-07T55");
     }
 
     @Test
@@ -38,7 +38,7 @@ public class TestDateTimeParsing extends AbstractPrimitiveParsingTest
         assertParsesTo("2014-02-07T07:03+0000", "%2014-2-7T7:0000003");
 
         assertFailsToParse("%2014-02-07T07:b");
-        assertFailsToParse("%2014-02-07T07:95");
+        assertFailsToParse(1, 17, "%2014-02-07T07:95");
     }
 
     @Test
@@ -49,7 +49,7 @@ public class TestDateTimeParsing extends AbstractPrimitiveParsingTest
         assertParsesTo("2014-02-07T07:03:01+0000", "%2014-2-7T7:3:000000001");
 
         assertFailsToParse("%2014-02-07T07:03:b");
-        assertFailsToParse("Invalid Pure Date: '%2014-02-07T07:03:95'", "%2014-02-07T07:03:95");
+        assertFailsToParse("Invalid Pure Date: '%2014-02-07T07:03:95'", 1, 20, "%2014-02-07T07:03:95");
     }
 
     @Test
@@ -58,7 +58,7 @@ public class TestDateTimeParsing extends AbstractPrimitiveParsingTest
         assertParsesTo("2014-02-07T07:03:01.0003742635+0000", "%2014-02-07T07:03:01.0003742635");
         assertParsesTo("2014-02-07T07:03:01.000374263500000000+0000", "%2014-2-7T7:3:1.000374263500000000");
 
-        assertFailsToParse("%2014-02-07T07:03:01.95b6");
+        assertFailsToParse(24, 25, "%2014-02-07T07:03:01.95b6");
     }
 
     @Test
@@ -69,7 +69,7 @@ public class TestDateTimeParsing extends AbstractPrimitiveParsingTest
         assertParsesTo("2014-03-01T01:48:01.0003742635+0000", "%2014-02-28T20:03:01.0003742635-0545");
         assertParsesTo("2012-02-29T01:48:01.0003742635+0000", "%2012-02-28T20:03:01.0003742635-0545");
 
-        assertFailsToParse("%2014-02-07T07:03:01.0132-43252342");
+        assertFailsToParse(31, 34, "%2014-02-07T07:03:01.0132-43252342");
     }
 
     @Override
