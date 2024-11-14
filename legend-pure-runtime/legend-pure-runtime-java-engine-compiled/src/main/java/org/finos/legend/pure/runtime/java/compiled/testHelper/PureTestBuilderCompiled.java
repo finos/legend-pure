@@ -23,6 +23,7 @@ import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
@@ -56,6 +57,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Objects;
+import java.util.Set;
 
 import static org.finos.legend.pure.m3.pct.shared.PCTTools.isPCTTest;
 import static org.junit.Assert.fail;
@@ -189,7 +191,8 @@ public class PureTestBuilderCompiled extends TestSuite
 
     public static CompiledExecutionSupport getClassLoaderExecutionSupport(ClassLoader classLoader)
     {
-        RichIterable<CodeRepository> codeRepos = CodeRepositoryProviderHelper.findCodeRepositories().select(r -> !r.getName().equals("test_generic_repository") && !r.getName().equals("other_test_generic_repository"));
+        ImmutableSet<String> testRepos = Sets.immutable.of("test_generic_repository", "other_test_generic_repository", "test_milestoning_repository");
+        RichIterable<CodeRepository> codeRepos = CodeRepositoryProviderHelper.findCodeRepositories().select(r -> !testRepos.contains(r.getName()));
         return new CompiledExecutionSupport(
                 new JavaCompilerState(null, classLoader),
                 new CompiledProcessorSupport(classLoader, MetadataLazy.fromClassLoader(classLoader, codeRepos.collect(CodeRepository::getName)), Sets.mutable.empty()),
