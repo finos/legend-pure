@@ -66,7 +66,7 @@ public class DefaultConstraintHandler
         }
         catch (VariableContext.VariableNameConflictException e)
         {
-            throw new PureExecutionException(null, e.getMessage(), functionExpressionCallStack);
+            throw new PureExecutionException(sourceInformation, e.getMessage(), functionExpressionCallStack);
         }
 
         for (CoreInstance constraint : constraints)

@@ -90,7 +90,7 @@ public class GenericTypeValidator implements MatchRunner<GenericType>
     private static void validateGenericTypeRecursive(GenericType genericType,
                                                      boolean validateFullyDefined, ProcessorSupport processorSupport)
     {
-        validateGenericTypeRecursive(
+         validateGenericTypeRecursive(
                 ImportStub.withImportStubByPass(genericType._rawTypeCoreInstance(), processorSupport),
                 (ListIterable) genericType._typeArguments(),
                 (ListIterable) genericType._multiplicityArguments(),
@@ -110,6 +110,8 @@ public class GenericTypeValidator implements MatchRunner<GenericType>
     {
         if (rawType != null)
         {
+            validateTypeVariables(rawType, typeArguments, multiplicityArguments, typeVariableValues, sourceInformationForError, processorSupport);
+
             if (rawType instanceof Class)
             {
                 RichIterable<? extends TypeParameter> typeParameters = ((Class) rawType)._typeParameters();
@@ -161,11 +163,6 @@ public class GenericTypeValidator implements MatchRunner<GenericType>
                     org.finos.legend.pure.m3.navigation.generictype.GenericType.print(message, rawType, typeVariableValues, typeArguments, multiplicityArguments, processorSupport);
                     throw new PureCompilationException(sourceInformationForError, message.toString());
                 }
-                validateTypeVariables(rawType, typeArguments, multiplicityArguments, typeVariableValues, sourceInformationForError, processorSupport);
-            }
-            else if (Type.isExtendedPrimitiveType(rawType, processorSupport))
-            {
-                validateTypeVariables(rawType, typeArguments, multiplicityArguments, typeVariableValues, sourceInformationForError, processorSupport);
             }
             else if (org.finos.legend.pure.m3.navigation.function.FunctionType.isFunctionType(rawType, processorSupport))
             {

@@ -54,47 +54,6 @@ public class TestFunction_TesterHelper_Interpreted extends PureExpressionTest
         this.execute("test():Any[*]");
         runtime.delete("fromString.pure");
     }
-
-    @Test
-    public void testX()
-    {
-        compileTestSource("fromString.pure",
-                "Class MyClass(x:Integer[1])" +
-                        "[" +
-                        "   wx(~function:$this.text->size() < $x ~message:'ee'+$x->toString())" +
-                        "]" +
-                        "{" +
-                        "   res(){'1'+$x->toString()}:String[1];" +
-                        "   res(z:String[1]){'1'+$x->toString()+$z}:String[1];" +
-                        "   text : String[*];" +
-                        "}" +
-                        "function test():Any[*]\n" +
-                        "{" +
-                        "   print(^MyClass(10)(text = ['a', 'b']).res()+'\\n',1);" +
-                        "   print(^MyClass(10)(text = ['a', 'b']).res('z')+'\\n',1);" +
-                        "   print('1', 0);" +
-                        "}");
-        this.execute("test():Any[*]");
-        runtime.delete("fromString.pure");
-    }
-
-    @Test
-    public void testWX()
-    {
-        compileTestSource("fromString.pure",
-                "Primitive XX extends Integer" +
-                        "[" +
-                        "   $this < 10" +
-                        "]" +
-                        "function test():Any[*]\n" +
-                        "{" +
-                        "   1->cast(@XX);" +
-                        "   print('1', 0);" +
-                        "}");
-        this.execute("test():Any[*]");
-        runtime.delete("fromString.pure");
-    }
-
 }
 
 

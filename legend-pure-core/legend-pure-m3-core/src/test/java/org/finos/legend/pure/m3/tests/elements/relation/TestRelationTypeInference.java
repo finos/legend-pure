@@ -466,6 +466,7 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                             "  $r->filter(x|$x.col2 > 1);\n" +
                             "}" +
                             "native function filter<T>(rel:Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1];");
+            fail();
         }
         catch (Exception e)
         {
@@ -616,11 +617,12 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                             "    $t->test(~strx->ascending());\n" +
                             "}" +
                             "native function test<X>(x:Relation<X>[1], rel:SortInfo<(?:?)⊆X>[1]):String[1];" +
-                             "function <<functionType.NormalizeRequiredFunction>> meta::pure::functions::relation::ascending<SW> (column:ColSpec<SW>[1]):SortInfo<SW>[1]\n" +
+                            "function <<functionType.NormalizeRequiredFunction>> meta::pure::functions::relation::ascending<SW> (column:ColSpec<SW>[1]):SortInfo<SW>[1]\n" +
                             "{\n" +
                             "   ^SortInfo<T>(column=$column, direction=SortType.ASC)\n" +
                             "}"
             );
+            fail();
         }
         catch (Exception e)
         {
@@ -655,6 +657,7 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                             "    $t->test();\n" +
                             "}" +
                             "native function test<T,X,Z>(x:Relation<(value:Integer, str:String)>[1]):Boolean[1];");
+            fail();
         }
         catch (Exception e)
         {
@@ -790,11 +793,27 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                             "{\n" +
                             "    |$r->cast(@Relation<(a:Integer, f:String)>)->test(~id);\n" +
                             "}");
+            fail();
         }
         catch (Exception e)
         {
             Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:5 column:55), \"The column 'id' can't be found in the relation (a:Integer, f:String)\"", e.getMessage());
         }
+    }
+
+
+    @Test
+    public void testSingleColumn()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "native function test<T>(val:T[1], rel:Relation<(?:T)>[1]):Boolean[1];\n" +
+                        "function x<T>(r:Relation<T>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    let x = {|1->test($r->cast(@Relation<(a:Integer)>))};" +
+                        "    true;\n" +
+                        "}"
+        );
     }
 
     private void compileInferenceTest(String source)

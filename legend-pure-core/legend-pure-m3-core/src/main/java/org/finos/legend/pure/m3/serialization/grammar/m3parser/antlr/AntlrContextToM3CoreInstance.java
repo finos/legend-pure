@@ -2416,7 +2416,6 @@ public class AntlrContextToM3CoreInstance
         LambdaFunction<?> constraintMessageFunction = null;
         SourceInformation constraintSourceInformation;
 
-
         if (ctx.simpleConstraint() != null)
         {
             SimpleConstraintContext simpleConstraintContext = ctx.simpleConstraint();
@@ -2502,28 +2501,32 @@ public class AntlrContextToM3CoreInstance
         CoreInstance functionType = this.repository.newAnonymousCoreInstance(functionSourceInformation, this.processorSupport.package_getByUserPath(M3Paths.FunctionType), true);
         if (this.processorSupport.instance_instanceOf(owner, M3Paths.ElementWithConstraints))
         {
-            CoreInstance thisType = org.finos.legend.pure.m3.navigation.type.Type.isExtendedPrimitiveType(owner, processorSupport) ?
-                    org.finos.legend.pure.m3.navigation.type.Type.findPrimitiveTypeFromExtendedPrimitiveType(owner, processorSupport) :
-                    owner;
-            GenericType thisParamType = (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(thisType, this.processorSupport);
-            if (typeParameterNames.notEmpty())
+            GenericType thisParamType;
+            if (org.finos.legend.pure.m3.navigation.type.Type.isExtendedPrimitiveType(owner, processorSupport))
             {
-                MutableList<TypeParameter> typeParameters = typeParameterNames.collect(n -> TypeParameterInstance.createPersistent(this.repository, n));
-                Instance.setValuesForProperty(functionType, M3Properties.typeParameters, typeParameters, this.processorSupport);
-                MutableList<GenericType> typeArgs = typeParameters.collect(tp -> GenericTypeInstance.createPersistent(this.repository)._typeParameter(tp));
-                thisParamType._typeArguments(typeArgs);
+                thisParamType = (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(org.finos.legend.pure.m3.navigation.type.Type.findPrimitiveTypeFromExtendedPrimitiveType(owner, processorSupport), this.processorSupport);
             }
-            if (multiplicityParameterNames.notEmpty())
+            else
             {
-                Instance.setValuesForProperty(functionType, M3Properties.multiplicityParameters, multParamsToInstanceValues(multiplicityParameterNames), this.processorSupport);
-                MutableList<Multiplicity> multParameters = multiplicityParameterNames.collect(n -> MultiplicityInstance.createPersistent(this.repository, null, null)._multiplicityParameter(n));
-                thisParamType._multiplicityArguments(multParameters);
+                thisParamType = (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(owner, this.processorSupport);
+                if (typeParameterNames.notEmpty())
+                {
+                    MutableList<TypeParameter> typeParameters = typeParameterNames.collect(n -> TypeParameterInstance.createPersistent(this.repository, n));
+                    Instance.setValuesForProperty(functionType, M3Properties.typeParameters, typeParameters, this.processorSupport);
+                    MutableList<GenericType> typeArgs = typeParameters.collect(tp -> GenericTypeInstance.createPersistent(this.repository)._typeParameter(tp));
+                    thisParamType._typeArguments(typeArgs);
+                }
+                if (multiplicityParameterNames.notEmpty())
+                {
+                    Instance.setValuesForProperty(functionType, M3Properties.multiplicityParameters, multParamsToInstanceValues(multiplicityParameterNames), this.processorSupport);
+                    MutableList<Multiplicity> multParameters = multiplicityParameterNames.collect(n -> MultiplicityInstance.createPersistent(this.repository, null, null)._multiplicityParameter(n));
+                    thisParamType._multiplicityArguments(multParameters);
+                }
+                if (typeVariables.notEmpty())
+                {
+                    thisParamType._typeVariableValues(typeVariables);
+                }
             }
-            if (typeVariables.notEmpty())
-            {
-                thisParamType._typeVariableValues(typeVariables);
-            }
-
             CoreInstance param = VariableExpressionInstance.createPersistent(this.repository, functionSourceInformation, thisParamType, getPureOne(), "this");
             if (this.processorSupport.instance_instanceOf(owner, M3Paths.Type))
             {
@@ -3991,6 +3994,14 @@ public class AntlrContextToM3CoreInstance
         if (paths.isEmpty())
         {
             return false;
+        }
+        if (paths.size() == 1)
+        {
+            // Check Primitives
+            if (this.repository.getTopLevel(paths.getFirst()) != null)
+            {
+                return true;
+            }
         }
         CoreInstance instance = this.repository.getTopLevel(M3Paths.Root);
         for (String path : paths)

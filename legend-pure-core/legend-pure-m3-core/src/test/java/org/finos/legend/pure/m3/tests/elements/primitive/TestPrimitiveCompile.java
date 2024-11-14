@@ -45,6 +45,23 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
     }
 
     @Test
+    public void testPrimitiveFunctionMatching()
+    {
+        assertCompileError("Primitive test::Int8 extends Integer\n" +
+                "native function x(p:test::Int8[1]):Any[1];" +
+                "function test():Any[1]" +
+                "{" +
+                "   x(1);" +
+                "}", "Compilation error at (resource:fromString.pure line:2 column:69), \"The system can't find a match for the function: x(_:Integer[1])\n" +
+                "\n" +
+                "These functions, in packages already imported, would match the function call if you changed the parameters.\n" +
+                "\tx(Int8[1]):Any[1]\n" +
+                "\n" +
+                "No functions, in packages not imported, match the function name.\n" +
+                "\"");
+    }
+
+    @Test
     public void testPrimitiveWithConstraints()
     {
         compileTestSource("fromString.pure",
@@ -155,6 +172,22 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
                         " v : test::IntCap()[1];" +
                         "}",
                 "Compilation error at (resource:fromString.pure line:1 column:88), \"Type variable mismatch for the class IntCap (expected 1, got 0): IntCap\"");
+
+    }
+
+    @Test
+    public void testWrongPrimitiveTypeError()
+    {
+        assertCompileError(
+                "Primitive x::Decimal(x:Integer[1]) extends Decimal" +
+                        "[" +
+                        " $this < $x" +
+                        "]" +
+                        "Class x::A" +
+                        "{" +
+                        " v : Decimal(1)[1];" +
+                        "}",
+                "Compilation error at (resource:fromString.pure line:1 column:80), \"Type variable mismatch for the class Decimal (expected 0, got 1): Decimal(1)\"");
 
     }
 
