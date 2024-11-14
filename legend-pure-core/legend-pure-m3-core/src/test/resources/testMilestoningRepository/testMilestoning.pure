@@ -16,3 +16,21 @@
  {
    a : String[1];
  }
+
+ Class <<temporal.processingtemporal>> meta::test::milestoning::B
+ {
+   b : String[1];
+ }
+
+Class <<temporal.businesstemporal>> meta::test::milestoning::Account
+{
+}
+
+Class <<temporal.businesstemporal>> meta::test::milestoning::FirmAccount extends meta::test::milestoning::Account
+{
+}
+
+function meta::test::testSubClassOfBusinessTemporal():Any[*]
+{
+    let res = ^meta::test::milestoning::FirmAccount(businessDate=%2021);
+}
