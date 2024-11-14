@@ -16,7 +16,7 @@
 package org.finos.legend.pure.m3;
 
 import org.finos.legend.pure.m3.tests.AbstractCompiledStateIntegrityTest;
-import org.testng.annotations.BeforeClass;
+import org.junit.BeforeClass;
 
 public class TestMilestoningCompileStateIntegrityTest extends AbstractCompiledStateIntegrityTest
 {
