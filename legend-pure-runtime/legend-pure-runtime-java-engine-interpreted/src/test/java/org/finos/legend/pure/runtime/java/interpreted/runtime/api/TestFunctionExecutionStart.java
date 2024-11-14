@@ -122,11 +122,11 @@ public class TestFunctionExecutionStart extends AbstractPureTestWithCoreCompiled
         Assert.assertEquals(
                 "   1: resource:/platform/pure/essential/tests/assert.pure line:26 column:5\n" +
                         "\n" +
-                        "   Full Stack:\n" +
-                        "       nest():Boolean[1]     <-     resource:fromString.pure line:4 column:8\n" +
-                        "       fail():Boolean[1]     <-     resource:fromString.pure line:7 column:31\n" +
-                        "       assert(Boolean[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/fail.pure line:19 column:5\n" +
-                        "       assert(Boolean[1], String[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/assert.pure line:31 column:5\n" +
-                        "       assert(Boolean[1], Function<{->String[1]}>[1]):Boolean[1]     <-     resource:/platform/pure/essential/tests/assert.pure line:26 column:5", trace);
+                "   Full stacktrace:\n" +
+                "     at assert(Boolean[1], Function<{->String[1]}>[1]):Boolean[1] (resource:/platform/pure/essential/tests/assert.pure line:26 column:5)\n" +
+                "     at assert(Boolean[1], String[1]):Boolean[1] (resource:/platform/pure/essential/tests/assert.pure line:31 column:5)\n" +
+                "     at assert(Boolean[1]):Boolean[1] (resource:/platform/pure/essential/tests/fail.pure line:19 column:5)\n" +
+                "     at fail():Boolean[1] (resource:fromString.pure line:7 column:31)\n" +
+                "     at nest():Boolean[1] (resource:fromString.pure line:4 column:8)", trace);
     }
 }
