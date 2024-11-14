@@ -261,4 +261,10 @@ public class FunctionType
         safeAppendable.append('}');
         return appendable;
     }
+
+    public static boolean containsExtendedPrimitiveType(CoreInstance functionType, ProcessorSupport processorSupport)
+    {
+        return GenericType.testContainsExtendedPrimitiveTypes(functionType.getValueForMetaPropertyToOne(M3Properties.returnType), processorSupport) ||
+                functionType.getValueForMetaPropertyToMany(M3Properties.parameters).injectInto(false, (a, b) -> a || GenericType.testContainsExtendedPrimitiveTypes(b.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+    }
 }

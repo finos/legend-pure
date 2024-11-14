@@ -44,6 +44,7 @@ public class InstanceValueValidator implements MatchRunner<InstanceValue>
         ValidatorState validatorState = (ValidatorState)state;
         ProcessorSupport processorSupport = validatorState.getProcessorSupport();
         RichIterable<? extends CoreInstance> values = instanceValue._valuesCoreInstance();
+        GenericTypeValidator.validateGenericType(instanceValue._genericType(), processorSupport);
         if (values.size() > 1)
         {
             validateNoNestedCollections(values, processorSupport);

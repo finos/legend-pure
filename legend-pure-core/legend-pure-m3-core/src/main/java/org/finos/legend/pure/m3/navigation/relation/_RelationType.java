@@ -124,9 +124,11 @@ public class _RelationType
         MutableList<? extends Pair<? extends Column<?, ?>, ? extends Column<?, ?>>> wildCard = signatureColumns.zip(candidateColumns).select(c -> c.getOne()._nameWildCard(), Lists.mutable.empty());
         MutableList<Column<?, ?>> _candidateColumns = Lists.mutable.withAll(candidateColumns);
         _candidateColumns.removeAll(wildCard.collect(Pair::getTwo));
+        MutableList<Column<?, ?>> _signatureColumns = Lists.mutable.withAll(signatureColumns);
+        _signatureColumns.removeAll(wildCard.collect(Pair::getOne));
 
         // Sort both sets and keep the candidate that aligns to the signature.
-        MutableList<Column<?, ?>> sortedSignatures = Lists.mutable.<Column<?, ?>>withAll(signatureColumns).sortThisBy(FunctionAccessor::_name);
+        MutableList<Column<?, ?>> sortedSignatures = Lists.mutable.<Column<?, ?>>withAll(_signatureColumns).sortThisBy(FunctionAccessor::_name);
         MutableSet<String> signatureNames = sortedSignatures.collect(FunctionAccessor::_name, Sets.mutable.empty());
         MutableList<Column<?, ?>> sortedCandidateSub = _candidateColumns.select(c -> signatureNames.contains(c._name())).sortThisBy(FunctionAccessor::_name);
 
@@ -221,5 +223,11 @@ public class _RelationType
                 )
         );
         return res;
+    }
+
+    public static boolean containsExtendedPrimitiveType(CoreInstance relationType, ProcessorSupport processorSupport)
+    {
+        RelationType<?> rOne = RelationTypeCoreInstanceWrapper.toRelationType(relationType);
+        return rOne._columns().injectInto(false, (a,b) -> a || org.finos.legend.pure.m3.navigation.generictype.GenericType.testContainsExtendedPrimitiveTypes(_Column.getColumnType(b), processorSupport));
     }
 }

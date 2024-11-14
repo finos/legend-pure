@@ -86,5 +86,11 @@ function <<test.Test>> meta::pure::functions::lang::tests::cast::testSimpleConst
    assertError(|^Container4(val=10->cast(@OP8)), 'Constraint :[id] violated in the Class OP, Message: the value is greater than 8')
 }
 
+Primitive meta::pure::functions::lang::tests::cast::StringP extends String
+
+function <<test.Test>> meta::pure::functions::lang::tests::cast::testExtendedPrimitiveTypeError():Any[*]
+{
+   assertError(|10->cast(@StringP), 'Cast exception: Integer cannot be cast to StringP')
+}
 
 

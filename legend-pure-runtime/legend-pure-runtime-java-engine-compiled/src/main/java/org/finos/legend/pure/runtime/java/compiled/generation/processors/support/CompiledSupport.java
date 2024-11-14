@@ -72,6 +72,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ReflectiveCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ValCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.DefendedFunction0;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.ClassProcessor;
@@ -2008,10 +2009,13 @@ public class CompiledSupport
         return (sourceCollection == null) ? Lists.immutable.empty() : sourceCollection.collect(sourceObject -> castWithExceptionHandling(sourceObject, targetType, sourceInformation));
     }
 
-    public static <T> T castExtendedPrimitive(T sourceObject, Runnable run, SourceInformation sourceInformation)
+    public static Object castExtendedPrimitive(Object sourceObject, Class<?> targetType, String typeName, DefendedFunction0<Object> run, SourceInformation sourceInformation)
     {
-        run.run();
-        return sourceObject;
+        if (sourceObject != null && !targetType.isInstance(sourceObject))
+        {
+            throw new PureExecutionException(sourceInformation, "Cast exception: " + getPureClassName(sourceObject) + " cannot be cast to " + typeName, Stacks.mutable.empty());
+        }
+        return run.get();
     }
 
     @SuppressWarnings("unchecked")

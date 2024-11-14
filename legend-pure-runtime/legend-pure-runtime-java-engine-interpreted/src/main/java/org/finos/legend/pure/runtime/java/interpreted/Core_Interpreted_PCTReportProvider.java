@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.interpreted;
 
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.pct.shared.provider.PCTReportProvider;

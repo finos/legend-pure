@@ -26,7 +26,9 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.function.FunctionType;
 import org.finos.legend.pure.m3.navigation.linearization.C3Linearization;
+import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstanceWrapper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -56,6 +58,13 @@ public class Type
     public static boolean isExtendedPrimitiveType(CoreInstance type, ProcessorSupport processorSupport)
     {
         return isPrimitiveType(type, processorSupport) && type.getValueForMetaPropertyToOne(M3Properties.extended) != null && PrimitiveUtilities.getBooleanValue(type.getValueForMetaPropertyToOne(M3Properties.extended));
+    }
+
+    public static boolean containsExtendedPrimitiveType(CoreInstance type, ProcessorSupport processorSupport)
+    {
+        return isExtendedPrimitiveType(type, processorSupport)
+                || (FunctionType.isFunctionType(type, processorSupport) && FunctionType.containsExtendedPrimitiveType(type, processorSupport))
+                || (_RelationType.isRelationType(type, processorSupport) && _RelationType.containsExtendedPrimitiveType(type, processorSupport));
     }
 
     public static CoreInstance findPrimitiveTypeFromExtendedPrimitiveType(CoreInstance type, ProcessorSupport processorSupport)

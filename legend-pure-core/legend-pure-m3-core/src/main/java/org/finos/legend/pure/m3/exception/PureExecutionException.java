@@ -15,9 +15,12 @@
 package org.finos.legend.pure.m3.exception;
 
 import org.eclipse.collections.api.stack.MutableStack;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.function.Function;
 import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
+import org.finos.legend.pure.m3.navigation.function.FunctionType;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureException;
@@ -137,7 +140,33 @@ public class PureExecutionException extends PureException
                 CoreInstance func = x.getValueForMetaPropertyToOne(M3Properties.func);
                 if (func != null)
                 {
-                    FunctionDescriptor.writeFunctionDescriptor(appendable, func, false, processorSupport);
+                    if (processorSupport.instance_instanceOf(func, M3Paths.ConcreteFunctionDefinition) || processorSupport.instance_instanceOf(func, M3Paths.NativeFunction))
+                    {
+                        FunctionDescriptor.writeFunctionDescriptor(appendable, func, false, processorSupport);
+                    }
+                    else if (processorSupport.instance_instanceOf(func, M3Paths.LambdaFunction))
+                    {
+                        safeAppendable.append("Lambda ");
+                        FunctionType.print(appendable, Function.computeFunctionType(func, processorSupport), processorSupport);
+                    }
+                    else if (processorSupport.instance_instanceOf(func, M3Paths.Property))
+                    {
+                        safeAppendable.append("Property ");
+                        safeAppendable.append(func.getValueForMetaPropertyToOne(M3Properties.name).getName());
+                        FunctionType.print(appendable, Function.computeFunctionType(func, processorSupport), processorSupport);
+                    }
+                    else if (processorSupport.instance_instanceOf(func, M3Paths.Column))
+                    {
+                        safeAppendable.append("Column ");
+                        safeAppendable.append(func.getValueForMetaPropertyToOne(M3Properties.name).getName());
+                        FunctionType.print(appendable, Function.computeFunctionType(func, processorSupport), processorSupport);
+                    }
+                    else
+                    {
+                        safeAppendable.append("Unknown Function Type '");
+                        safeAppendable.append(func.getClassifier().getName());
+                        safeAppendable.append("'");
+                    }
                 }
                 else
                 {

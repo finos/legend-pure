@@ -56,20 +56,11 @@ public class Cast extends AbstractNative
         CoreInstance targetRawType = Instance.getValueForMetaPropertyToOneResolved(targetGenericType, M3Properties.rawType, processorSupport);
         if (Type.isExtendedPrimitiveType(targetRawType, processorSupport))
         {
-            String runnable = "new Runnable(){public void run() {\n" +
-                    GenericType.getAllSuperTypesIncludingSelf(targetGenericType, processorSupport).collect(genericType ->
-                    {
-                        CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
-                        MutableList<String> vars = genericType.getValueForMetaPropertyToMany(M3Properties.typeVariableValues).collect(x -> x.getValueForMetaPropertyToMany(M3Properties.values).collect(CoreInstance::getName).makeString(",")).toList();
-                        vars.add(sourceObject);
-                        if (rawType.getValueForMetaPropertyToMany(M3Properties.constraints).notEmpty())
-                        {
-                            return JavaPackageAndImportBuilder.buildImplClassNameFromType(rawType, processorSupport) + "._validate(" + vars.makeString(", ") + ", " + NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + ", es);";
-                        }
-                        return "";
-                    }).makeString("\n")
-                    + "}}";
-            return "CompiledSupport.castExtendedPrimitive(" + sourceObject + ", " + runnable + ", " + NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + ")";
+            String runnable = buildRunnableForExtendedPrimitiveType(sourceObject, targetGenericType, sourceInformation, processorSupport);
+            String castType = TypeProcessor.typeToJavaObjectWithMul(targetGenericType, multiplicity, processorSupport);
+            String typeName = targetRawType.getName();
+            String interfaceString = TypeProcessor.pureTypeToJava(targetGenericType, false, false, true, processorSupport);
+            return "((" + castType + ")" + "CompiledSupport.castExtendedPrimitive(" + sourceObject + ", " + interfaceString + ".class, \"" + typeName + "\", " + runnable + ", " + NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + "))";
         }
         else
         {
@@ -89,6 +80,23 @@ public class Cast extends AbstractNative
                         ")";
             }
         }
+    }
+
+    public static String buildRunnableForExtendedPrimitiveType(String sourceObject, CoreInstance targetGenericType, SourceInformation sourceInformation, ProcessorSupport processorSupport)
+    {
+        return "new DefendedFunction0<Object>(){public Object value() {\n" +
+                GenericType.getAllSuperTypesIncludingSelf(targetGenericType, processorSupport).collect(genericType ->
+                {
+                    CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
+                    MutableList<String> vars = genericType.getValueForMetaPropertyToMany(M3Properties.typeVariableValues).collect(x -> x.getValueForMetaPropertyToMany(M3Properties.values).collect(CoreInstance::getName).makeString(",")).toList();
+                    vars.add(sourceObject);
+                    if (rawType.getValueForMetaPropertyToMany(M3Properties.constraints).notEmpty())
+                    {
+                        return JavaPackageAndImportBuilder.buildImplClassNameFromType(rawType, processorSupport) + "._validate(" + vars.makeString(", ") + ", " + NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + ", es);";
+                    }
+                    return "";
+                }).makeString("\n")
+                + "return " + sourceObject + ";}}";
     }
 
     @Override
