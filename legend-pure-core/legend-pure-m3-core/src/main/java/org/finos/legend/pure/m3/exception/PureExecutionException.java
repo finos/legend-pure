@@ -21,6 +21,7 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.Function;
 import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
 import org.finos.legend.pure.m3.navigation.function.FunctionType;
+import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureException;
@@ -137,40 +138,39 @@ public class PureExecutionException extends PureException
             this.callStack.toList().reverseForEach(x ->
             {
                 safeAppendable.append('\n').append(indent).append("    ");
-                CoreInstance func = x.getValueForMetaPropertyToOne(M3Properties.func);
-                if (func != null)
+                try
                 {
-                    if (processorSupport.instance_instanceOf(func, M3Paths.ConcreteFunctionDefinition) || processorSupport.instance_instanceOf(func, M3Paths.NativeFunction))
+                    CoreInstance func = x.getValueForMetaPropertyToOne(M3Properties.func);
+                    if (func == null)
                     {
-                        FunctionDescriptor.writeFunctionDescriptor(appendable, func, false, processorSupport);
+                        safeAppendable.append("NULL / TODO");
+                    }
+                    else if (processorSupport.instance_instanceOf(func, M3Paths.ConcreteFunctionDefinition) || processorSupport.instance_instanceOf(func, M3Paths.NativeFunction))
+                    {
+                        FunctionDescriptor.writeFunctionDescriptor(safeAppendable, func, false, processorSupport);
                     }
                     else if (processorSupport.instance_instanceOf(func, M3Paths.LambdaFunction))
                     {
-                        safeAppendable.append("Lambda ");
-                        FunctionType.print(appendable, Function.computeFunctionType(func, processorSupport), processorSupport);
+                        FunctionType.print(safeAppendable.append("Lambda "), Function.computeFunctionType(func, processorSupport), processorSupport);
                     }
-                    else if (processorSupport.instance_instanceOf(func, M3Paths.Property))
+                    else if (Property.isProperty(func, processorSupport))
                     {
-                        safeAppendable.append("Property ");
-                        safeAppendable.append(func.getValueForMetaPropertyToOne(M3Properties.name).getName());
-                        FunctionType.print(appendable, Function.computeFunctionType(func, processorSupport), processorSupport);
+                        safeAppendable.append("Property ").append(Property.getPropertyName(func));
+                        FunctionType.print(safeAppendable, Function.computeFunctionType(func, processorSupport), processorSupport);
                     }
                     else if (processorSupport.instance_instanceOf(func, M3Paths.Column))
                     {
-                        safeAppendable.append("Column ");
-                        safeAppendable.append(func.getValueForMetaPropertyToOne(M3Properties.name).getName());
-                        FunctionType.print(appendable, Function.computeFunctionType(func, processorSupport), processorSupport);
+                        safeAppendable.append("Column ").append(func.getValueForMetaPropertyToOne(M3Properties.name).getName());
+                        FunctionType.print(safeAppendable, Function.computeFunctionType(func, processorSupport), processorSupport);
                     }
                     else
                     {
-                        safeAppendable.append("Unknown Function Type '");
-                        safeAppendable.append(func.getClassifier().getName());
-                        safeAppendable.append("'");
+                        safeAppendable.append("Unknown Function Type '").append(func.getClassifier().getName()).append("'");
                     }
                 }
-                else
+                catch (Exception ignore)
                 {
-                    safeAppendable.append("NULL / TODO");
+                    safeAppendable.append("Error Printing Function");
                 }
                 writeSourceInformationMessage(safeAppendable.append("     <-     "), x.getSourceInformation(), false);
             });
