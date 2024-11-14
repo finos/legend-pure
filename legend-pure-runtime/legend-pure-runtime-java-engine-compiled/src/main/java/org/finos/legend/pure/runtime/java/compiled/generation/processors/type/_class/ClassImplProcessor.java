@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.predicate.Predicate2;
 import org.eclipse.collections.api.factory.Lists;
@@ -1004,43 +1005,21 @@ public class ClassImplProcessor
     public static String validate(boolean stateAndDeep, CoreInstance _class, String className, CoreInstance classGenericType, ProcessorContext processorContext, RichIterable<CoreInstance> properties, String extraParameters, String extraValues)
     {
         ProcessorSupport processorSupport = processorContext.getSupport();
-        SetIterable<? extends CoreInstance> localConstraints = Sets.immutable.withAll(_class.getValueForMetaPropertyToMany(M3Properties.constraints));
         ListIterable<CoreInstance> allConstraints = _Class.computeConstraintsInHierarchy(_class, processorSupport);
-        return
-                "    public " + (stateAndDeep ? "" : "static ") + className + " _validate(" + (stateAndDeep ? "boolean goDeep," : "") + (extraParameters == null ? "" : extraParameters + ",") + " org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInformation, final ExecutionSupport es)\n" +
+        StringBuilder validateItems = new StringBuilder();
+        String validate =         "    public " + (stateAndDeep ? "" : "static ") + className + " _validate(" + (stateAndDeep ? "boolean goDeep," : "") + (extraParameters == null ? "" : extraParameters + ",") + " org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInformation, final ExecutionSupport es)\n" +
                         "    {\n" +
                         (stateAndDeep ? "        if (!this.hasCompileState(CompiledSupport.CONSTRAINTS_VALIDATED))\n" +
                                 "        {\n" : "") +
-                        allConstraints.collect(constraint ->
+                        allConstraints.collectWithIndex((constraint, index) ->
                         {
-                            boolean registerLambdas = localConstraints.contains(constraint);
-                            String ruleId = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.name, processorSupport).getName();
                             CoreInstance owner = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.owner, processorSupport);
-                            CoreInstance definition = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.functionDefinition, processorSupport);
-                            String eval = "(Boolean) " + ValueSpecificationProcessor.createFunctionForLambda(constraint, definition, registerLambdas, processorSupport, processorContext) + ".execute(" + (extraValues == null ? "Lists.mutable.with(this)" : extraValues) + ",es)";
-
-                            String messageJavaFunction = null;
-                            CoreInstance message = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.messageFunction, processorSupport);
-                            if (message != null)
-                            {
-                                messageJavaFunction = ValueSpecificationProcessor.createFunctionForLambda(constraint, message, registerLambdas, processorSupport, processorContext);
-                            }
-
                             if (owner == null || "Global".equals(owner.getName()))
                             {
-                                CoreInstance expression = Instance.getValueForMetaPropertyToOneResolved(definition, M3Properties.expressionSequence, processorSupport);
-                                CoreInstance constraintClass = Instance.getValueForMetaPropertyToOneResolved(expression, M3Properties.usageContext, processorSupport).getValueForMetaPropertyToOne(M3Properties.type);
+                                validateItems.append(validateItem(stateAndDeep, constraint, _class, processorContext, extraValues, index)).append("\n");
 
-                                String errorMessage = message == null ?
-                                        "\"Constraint :[" + ruleId + "] violated in the Class " + constraintClass.getValueForMetaPropertyToOne(M3Properties.name).getName() + "\"" :
-                                        "\"Constraint :[" + ruleId + "] violated in the Class " + constraintClass.getValueForMetaPropertyToOne(M3Properties.name).getName() + ", Message: \" + (String) " + messageJavaFunction + ".execute(" + (extraValues == null ? "Lists.mutable.with(this)" : extraValues) + ",es)";
-
-                                return
-                                        "            if (!(" + eval + "))\n" +
-                                                "            {\n" +
-                                                "                throw new org.finos.legend.pure.m3.exception.PureExecutionException(sourceInformation, " + errorMessage + ");\n" +
-                                                "            }\n";
-                            }
+                               return  "           _validate_" + index + "(" + (extraValues == null ? "Lists.mutable.with(this)" : extraValues) + ", sourceInformation, es);\n";
+                           }
                             else
                             {
                                 return "";
@@ -1081,6 +1060,50 @@ public class ClassImplProcessor
                                 "        }\n" : "") +
                         "        return " + (stateAndDeep ? "this" : "null") + ";\n" +
                         "    }\n";
+     return validate + validateItems.toString();
+
+    }
+
+    private static String validateItem(boolean stateAndDeep, CoreInstance constraint, CoreInstance _class, ProcessorContext processorContext, String extraValues, int constraintIndex)
+    {
+        ProcessorSupport processorSupport = processorContext.getSupport();
+        SetIterable<? extends CoreInstance> localConstraints = Sets.immutable.withAll(_class.getValueForMetaPropertyToMany(M3Properties.constraints));
+        boolean registerLambdas = localConstraints.contains(constraint);
+        String ruleId =  StringEscapeUtils.escapeJava(Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.name, processorSupport).getName());
+        CoreInstance owner = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.owner, processorSupport);
+        CoreInstance definition = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.functionDefinition, processorSupport);
+        String eval = "(Boolean) " + ValueSpecificationProcessor.createFunctionForLambda(constraint, definition, registerLambdas, processorSupport, processorContext) + ".execute(vars,es)";
+        String messageJavaFunction = null;
+        CoreInstance message = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.messageFunction, processorSupport);
+        if (message != null)
+        {
+            messageJavaFunction = ValueSpecificationProcessor.createFunctionForLambda(constraint, message, registerLambdas, processorSupport, processorContext);
+        }
+
+        if (owner == null || "Global".equals(owner.getName()))
+        {
+            CoreInstance expression = Instance.getValueForMetaPropertyToOneResolved(definition, M3Properties.expressionSequence, processorSupport);
+            CoreInstance constraintClass = Instance.getValueForMetaPropertyToOneResolved(expression, M3Properties.usageContext, processorSupport).getValueForMetaPropertyToOne(M3Properties.type);
+            String constraintName = StringEscapeUtils.escapeJava(constraintClass.getValueForMetaPropertyToOne(M3Properties.name).getName());
+            String errorMessage = message == null ?
+                    "\"Constraint :[" + ruleId + "] violated in the Class " + constraintName +  "\"" :
+                    "\"Constraint :[" + ruleId + "] violated in the Class " + constraintName + ", Message: \" + (String) " + messageJavaFunction + ".execute(vars,es)";
+
+            return
+                    "\n" +
+                    "public " + (stateAndDeep ? "" : "static ") + "void _validate_" + constraintIndex + "(ListIterable<?> vars, org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInformation, final ExecutionSupport es)\n" +
+                    "    {\n" +
+                    "    if (!(" + eval + "))\n" +
+                    "            {\n" +
+                    "                throw new org.finos.legend.pure.m3.exception.PureExecutionException(sourceInformation, " + errorMessage + ");\n" +
+                    "            }\n" +
+                    "    }\n";
+        }
+        else
+        {
+            return "";
+        }
+
     }
 
     public static String buildGetFullSystemPath()
