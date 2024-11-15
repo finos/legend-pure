@@ -34,8 +34,10 @@ import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class RelationStoreAccessor implements InlineDSL
 {
@@ -56,15 +58,13 @@ public class RelationStoreAccessor implements InlineDSL
     @Override
     public CoreInstance parse(String code, ImportGroup importId, String fileName, int columnOffset, int lineOffset, ModelRepository modelRepository, Context context)
     {
-        AntlrSourceInformation sourceInformation = new AntlrSourceInformation(lineOffset, columnOffset, fileName, true);
-
         ProcessorSupport processorSupport = new M3ProcessorSupport(context, modelRepository);
-        SourceInformation src = new SourceInformation(fileName, lineOffset, columnOffset, lineOffset, columnOffset + code.length());
+        SourceInformation src = getSourceInfo(code, fileName, columnOffset, lineOffset);
         String info = code.trim().substring(1).trim();
         String first = info.substring(0, 1);
         if (!"{".equals(first) && !"}".equals(info.substring(info.length() - 2, info.length() - 1)))
         {
-            throw new PureParserException(sourceInformation.getPureSourceInformation(0, 0, 0, code.length()), "RelationStoreAccessor must be of the form #>{a::Store.table}#");
+            throw new PureParserException(src, "RelationStoreAccessor must be of the form #>{a::Store.table}#");
         }
         info = info.substring(1, info.length() - 1);
 
@@ -114,5 +114,20 @@ public class RelationStoreAccessor implements InlineDSL
     public MilestoningDatesVarNamesExtractor getMilestoningDatesVarNamesExtractor()
     {
         return null;
+    }
+
+    private static SourceInformation getSourceInfo(String text, String fileName, int columnOffset, int lineOffset)
+    {
+        int endLine = lineOffset;
+        int endLineIndex = 0;
+        Matcher matcher = Pattern.compile("\\R").matcher(text);
+        while (matcher.find())
+        {
+            endLine++;
+            endLineIndex = matcher.end();
+        }
+
+        int endColumn = (endLine == lineOffset) ? (text.length() + columnOffset - 1) : (text.length() - endLineIndex);
+        return new SourceInformation(fileName, lineOffset, columnOffset, endLine, endColumn);
     }
 }
