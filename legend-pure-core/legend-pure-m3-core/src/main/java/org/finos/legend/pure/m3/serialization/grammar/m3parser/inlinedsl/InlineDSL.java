@@ -33,7 +33,7 @@ public interface InlineDSL extends CoreInstanceFactoriesRegistry
 
     boolean match(String code);
 
-    CoreInstance parse(String code, ImportGroup importId, String fileName, int offsetX, int offsetY, ModelRepository modelRepository, Context context);
+    CoreInstance parse(String code, ImportGroup importId, String fileName, int columnOffset, int lineOffset, ModelRepository modelRepository, Context context);
 
     RichIterable<MatchRunner> getProcessors();
 

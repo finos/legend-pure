@@ -34,8 +34,8 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public class NavigationPath implements InlineDSL
 {
-    private static VisibilityValidator VISIBILITY_VALIDATOR = new PathVisibilityValidator();
-    private static MilestoningDatesVarNamesExtractor MILESTONING_EXTRACTOR = new PathMilestoningDatesVarNamesExtractor();
+    private static final VisibilityValidator VISIBILITY_VALIDATOR = new PathVisibilityValidator();
+    private static final MilestoningDatesVarNamesExtractor MILESTONING_EXTRACTOR = new PathMilestoningDatesVarNamesExtractor();
 
     @Override
     public String getName()
@@ -50,9 +50,9 @@ public class NavigationPath implements InlineDSL
     }
 
     @Override
-    public CoreInstance parse(String code, ImportGroup importId, String fileName, int offsetX, int offsetY, ModelRepository modelRepository, Context context)
+    public CoreInstance parse(String code, ImportGroup importId, String fileName, int columnOffset, int lineOffset, ModelRepository modelRepository, Context context)
     {
-        return new NavigationParser().parse(code, importId, fileName, offsetX, offsetY, modelRepository, context);
+        return new NavigationParser().parse(code, importId, fileName, columnOffset, lineOffset, modelRepository, context);
     }
 
     @Override

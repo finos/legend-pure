@@ -39,7 +39,7 @@ import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 public class RelationStoreAccessor implements InlineDSL
 {
-    private static VisibilityValidator VISIBILITY_VALIDATOR = new RelationStoreAccessorValidation();
+    private static final VisibilityValidator VISIBILITY_VALIDATOR = new RelationStoreAccessorValidation();
 
     @Override
     public String getName()
@@ -54,12 +54,12 @@ public class RelationStoreAccessor implements InlineDSL
     }
 
     @Override
-    public CoreInstance parse(String code, ImportGroup importId, String fileName, int offsetX, int offsetY, ModelRepository modelRepository, Context context)
+    public CoreInstance parse(String code, ImportGroup importId, String fileName, int columnOffset, int lineOffset, ModelRepository modelRepository, Context context)
     {
-        AntlrSourceInformation sourceInformation = new AntlrSourceInformation(offsetX, offsetY, fileName, true);
+        AntlrSourceInformation sourceInformation = new AntlrSourceInformation(lineOffset, columnOffset, fileName, true);
 
         ProcessorSupport processorSupport = new M3ProcessorSupport(context, modelRepository);
-        SourceInformation src = new SourceInformation(fileName, offsetX, offsetY, offsetX, offsetY + code.length());
+        SourceInformation src = new SourceInformation(fileName, lineOffset, columnOffset, lineOffset, columnOffset + code.length());
         String info = code.trim().substring(1).trim();
         String first = info.substring(0, 1);
         if (!"{".equals(first) && !"}".equals(info.substring(info.length() - 2, info.length() - 1)))
@@ -70,10 +70,8 @@ public class RelationStoreAccessor implements InlineDSL
 
         String[] path = info.split("\\.");
 
-        org.finos.legend.pure.m3.coreinstance.meta.pure.store.RelationStoreAccessor<?> rel = ((org.finos.legend.pure.m3.coreinstance.meta.pure.store.RelationStoreAccessor<?>) processorSupport.newAnonymousCoreInstance(src, M2StorePaths.RelationStoreAccessor));
-        rel._path(Lists.mutable.with(path));
-
-        return rel;
+        return ((org.finos.legend.pure.m3.coreinstance.meta.pure.store.RelationStoreAccessor<?>) processorSupport.newAnonymousCoreInstance(src, M2StorePaths.RelationStoreAccessor))
+                ._path(Lists.mutable.with(path));
     }
 
     @Override
