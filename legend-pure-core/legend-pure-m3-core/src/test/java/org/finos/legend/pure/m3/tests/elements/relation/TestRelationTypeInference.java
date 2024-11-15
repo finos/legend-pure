@@ -15,13 +15,12 @@
 package org.finos.legend.pure.m3.tests.elements.relation;
 
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import static org.junit.Assert.fail;
 
 public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledPlatform
 {
@@ -222,53 +221,43 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testTypeParameterUnionForRelationTypeWithManyOperations()
     {
-        try
-        {
-            compileInferenceTest(
-                    "import meta::pure::metamodel::relation::*;" +
-                            "Class Firm{legalName:String[1];}" +
-                            "function f():Any[*]" +
-                            "{" +
-                            "   Firm.all()->project(~[legal:x|$x.legalName])->join(Firm.all()->project(~[legal:x|$x.legalName]))\n" +
-                            "}" +
-                            "\n" +
-                            "native function join<Z,T>(x:Relation<Z>[1], k:Relation<T>[1]):Relation<T+Z+Z>[1];" +
-                            "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];" +
-                            "\n");
-            fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:1 column:144), \"The relation contains duplicates: [legal]\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "Class Firm\n" +
+                        "{\n" +
+                        "   legalName:String[1];\n" +
+                        "}\n" +
+                        "function f():Any[*]\n" +
+                        "{\n" +
+                        "   Firm.all()->project(~[legal:x|$x.legalName])->join(Firm.all()->project(~[legal:x|$x.legalName]))\n" +
+                        "}\n" +
+                        "\n" +
+                        "native function join<Z,T>(x:Relation<Z>[1], k:Relation<T>[1]):Relation<T+Z+Z>[1];\n" +
+                        "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];\n"));
+        Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:8 column:50), \"The relation contains duplicates: [legal]\"", e.getMessage());
     }
 
     @Test
     public void testTypeParameterDifferenceForRelationType()
     {
-        try
-        {
-            compileInferenceTest(
-                    "import meta::pure::metamodel::relation::*;" +
-                            "Class Firm{legalName:String[1];}" +
-                            "function f():Any[*]" +
-                            "{" +
-                            "   Firm.all()->project(~[legal:x|$x.legalName, legal3:x|$x.legalName])->map(x|$x.legal3);\n" +
-                            "   Firm.all()->project(~[legal:x|$x.legalName, legal3:x|$x.legalName])->diff(Firm.all()->project(~[legal3:x|$x.legalName]))->map(x|$x.legal);\n" +
-                            "   Firm.all()->project(~[legal:x|$x.legalName, legal3:x|$x.legalName])->diff(Firm.all()->project(~[legal3:x|$x.legalName]))->map(x|$x.legal3);\n" +
-                            "}" +
-                            "\n" +
-                            "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];" +
-                            "native function diff<Z,T>(x:Relation<T>[1], k:Relation<Z>[1]):Relation<T-Z>[1];" +
-                            "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];" +
-                            "\n"
-            );
-            fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:135), \"The system can't find the column legal3 in the Relation (legal:String)\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "Class Firm\n" +
+                        "{\n" +
+                        "   legalName:String[1];\n" +
+                        "}\n" +
+                        "function f():Any[*]\n" +
+                        "{\n" +
+                        "   Firm.all()->project(~[legal:x|$x.legalName, legal3:x|$x.legalName])->map(x|$x.legal3);\n" +
+                        "   Firm.all()->project(~[legal:x|$x.legalName, legal3:x|$x.legalName])->diff(Firm.all()->project(~[legal3:x|$x.legalName]))->map(x|$x.legal);\n" +
+                        "   Firm.all()->project(~[legal:x|$x.legalName, legal3:x|$x.legalName])->diff(Firm.all()->project(~[legal3:x|$x.legalName]))->map(x|$x.legal3);\n" +
+                        "}\n" +
+                        "\n" +
+                        "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];\n" +
+                        "native function diff<Z,T>(x:Relation<T>[1], k:Relation<Z>[1]):Relation<T-Z>[1];\n" +
+                        "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];\n"
+        ));
+        Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:10 column:135), \"The system can't find the column legal3 in the Relation (legal:String)\"", e.getMessage());
     }
 
     @Test
@@ -305,27 +294,19 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testCastError()
     {
-        try
-        {
-            compileInferenceTest(
-                    "import meta::pure::metamodel::relation::*;" +
-                            "function f<T>(r:Relation<T>[1]):Any[*]\n" +
-                            "{\n" +
-                            "   $r->cast(@Relation<(a:Integer, f:String)>)->map(c|$c.z);\n" +
-                            "}" +
-                            "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];");
-            fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:57), \"The system can't find the column z in the Relation (a:Integer, f:String)\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "function f<T>(r:Relation<T>[1]):Any[*]\n" +
+                        "{\n" +
+                        "   $r->cast(@Relation<(a:Integer, f:String)>)->map(c|$c.z);\n" +
+                        "}" +
+                        "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];"));
+        Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:57), \"The system can't find the column z in the Relation (a:Integer, f:String)\"", e.getMessage());
     }
 
     @Test
     public void testTypeEqualityForMatching()
     {
-
         compileInferenceTest(
                 "import meta::pure::metamodel::relation::*;" +
                         "function f<T>(r:Relation<T>[1]):Integer[*]\n" +
@@ -405,29 +386,21 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testRelationTypeInParamsCompatibleSubsumesTypeMatchingFail()
     {
-        try
-        {
-            compileInferenceTest(
-                    "import meta::pure::metamodel::relation::*;" +
-                            "function f<T>(r:Relation<(a:Number)>[1]):Integer[*]\n" +
-                            "{\n" +
-                            "   $r->tt()->map(x|$x.a);\n" +
-                            "}" +
-                            "native function tt(rel:Relation<(a:Integer)>[1]):Relation<(a:Integer)>[1];" +
-                            "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];");
-            fail();
-
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:8), \"The system can't find a match for the function: tt(_:Relation<(a:Number)>[1])\n" +
-                    "\n" +
-                    "These functions, in packages already imported, would match the function call if you changed the parameters.\n" +
-                    "\ttt(Relation<(a:Integer)>[1]):Relation<(a:Integer)>[1]\n" +
-                    "\n" +
-                    "No functions, in packages not imported, match the function name.\n" +
-                    "\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f<T>(r:Relation<(a:Number)>[1]):Integer[*]\n" +
+                        "{\n" +
+                        "   $r->tt()->map(x|$x.a);\n" +
+                        "}\n" +
+                        "native function tt(rel:Relation<(a:Integer)>[1]):Relation<(a:Integer)>[1];\n" +
+                        "native function map<T,V>(rel:Relation<T>[1], f:Function<{T[1]->V[*]}>[1]):V[*];\n"));
+        Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:4 column:8), \"The system can't find a match for the function: tt(_:Relation<(a:Number)>[1])\n" +
+                "\n" +
+                "These functions, in packages already imported, would match the function call if you changed the parameters.\n" +
+                "\ttt(Relation<(a:Integer)>[1]):Relation<(a:Integer)>[1]\n" +
+                "\n" +
+                "No functions, in packages not imported, match the function name.\n" +
+                "\"", e.getMessage());
     }
 
     @Test
@@ -457,22 +430,15 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testRelationTypeInParamsAndInCompatibleReturn()
     {
-        try
-        {
-            compileInferenceTest(
-                    "import meta::pure::metamodel::relation::*;" +
-                            "function f(r:Relation<(col1:String, col2:Integer)>[1]):Relation<(col3:String)>[1]\n" +
-                            "{\n" +
-                            "  $r->filter(x|$x.col2 > 1);\n" +
-                            "}" +
-                            "native function filter<T>(rel:Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1];");
-            fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:7), \"Return type error in function 'f'; found: meta::pure::metamodel::relation::Relation<(col1:String, col2:Integer)>; expected: meta::pure::metamodel::relation::Relation<(col3:String)>\"", e.getMessage()
-            );
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(r:Relation<(col1:String, col2:Integer)>[1]):Relation<(col3:String)>[1]\n" +
+                        "{\n" +
+                        "  $r->filter(x|$x.col2 > 1);\n" +
+                        "}\n" +
+                        "native function filter<T>(rel:Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1];"));
+        Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:4 column:7), \"Return type error in function 'f'; found: meta::pure::metamodel::relation::Relation<(col1:String, col2:Integer)>; expected: meta::pure::metamodel::relation::Relation<(col3:String)>\"", e.getMessage()
+        );
     }
 
     @Test
@@ -505,21 +471,14 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testRelationTypeUsingSubsetForInferenceCollectionError()
     {
-        try
-        {
-            compileInferenceTest(
-                    "import meta::pure::metamodel::relation::*;" +
-                            "function f(t:Relation<(value:Integer,str:String,other:Boolean)>[1]):Relation<(value:Integer, str:String)>[1]\n" +
-                            "{\n" +
-                            "    $t->test(~[value, ster]);\n" +
-                            "}" +
-                            "native function test<T,X>(x:Relation<X>[1], rel:ColSpecArray<T⊆X>[1]):Relation<T>[1];");
-            fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:14), \"The column 'ster' can't be found in the relation (value:Integer, str:String, other:Boolean)\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(t:Relation<(value:Integer,str:String,other:Boolean)>[1]):Relation<(value:Integer, str:String)>[1]\n" +
+                        "{\n" +
+                        "    $t->test(~[value, ster]);\n" +
+                        "}\n" +
+                        "native function test<T,X>(x:Relation<X>[1], rel:ColSpecArray<T⊆X>[1]):Relation<T>[1];"));
+        Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:4 column:14), \"The column 'ster' can't be found in the relation (value:Integer, str:String, other:Boolean)\"", e.getMessage());
     }
 
     @Test
@@ -537,41 +496,27 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testRelationTypeUsingSubsetForInferenceErrorColName()
     {
-        try
-        {
-            compileInferenceTest(
-                    "import meta::pure::metamodel::relation::*;" +
-                            "function f(t:Relation<(value:Integer,str:String)>[1]):Integer[1]\n" +
-                            "{\n" +
-                            "    $t->test(~str);\n" +
-                            "}" +
-                            "native function test<T,X>(x:Relation<X>[1], rel:ColSpec<(e:T)⊆X>[1]):T[1];");
-            fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:14), \"(e:T) is not compatible with (str:String)\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;" +
+                        "function f(t:Relation<(value:Integer,str:String)>[1]):Integer[1]\n" +
+                        "{\n" +
+                        "    $t->test(~str);\n" +
+                        "}" +
+                        "native function test<T,X>(x:Relation<X>[1], rel:ColSpec<(e:T)⊆X>[1]):T[1];"));
+        Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:14), \"(e:T) is not compatible with (str:String)\"", e.getMessage());
     }
 
     @Test
     public void testRelationTypeUsingSubsetForInferenceErrorColCount()
     {
-        try
-        {
-            compileInferenceTest(
-                    "import meta::pure::metamodel::relation::*;" +
-                            "function f(t:Relation<(value:Integer,str:String)>[1]):Integer[1]\n" +
-                            "{\n" +
-                            "    $t->test(~str);\n" +
-                            "}" +
-                            "native function test<T,X>(x:Relation<X>[1], rel:ColSpec<(e:T,z:String)⊆X>[1]):T[1];");
-            fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:14), \"(e:T, z:String) is not compatible with (str:String)\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(t:Relation<(value:Integer,str:String)>[1]):Integer[1]\n" +
+                        "{\n" +
+                        "    $t->test(~str);\n" +
+                        "}\n" +
+                        "native function test<T,X>(x:Relation<X>[1], rel:ColSpec<(e:T,z:String)⊆X>[1]):T[1];"));
+        Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:4 column:14), \"(e:T, z:String) is not compatible with (str:String)\"", e.getMessage());
     }
 
     @Test
@@ -608,26 +553,19 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testRelationTypeUsingUnknwonOneColumnError()
     {
-        try
-        {
-            compileInferenceTest(
-                    "import meta::pure::metamodel::relation::*;" +
-                            "function f(t:Relation<(value:Integer,str:String)>[1]):String[1]\n" +
-                            "{\n" +
-                            "    $t->test(~strx->ascending());\n" +
-                            "}" +
-                            "native function test<X>(x:Relation<X>[1], rel:SortInfo<(?:?)⊆X>[1]):String[1];" +
-                            "function <<functionType.NormalizeRequiredFunction>> meta::pure::functions::relation::ascending<SW> (column:ColSpec<SW>[1]):SortInfo<SW>[1]\n" +
-                            "{\n" +
-                            "   ^SortInfo<T>(column=$column, direction=SortType.ASC)\n" +
-                            "}"
-            );
-            fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:3 column:14), \"The column 'strx' can't be found in the relation (value:Integer, str:String)\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function f(t:Relation<(value:Integer,str:String)>[1]):String[1]\n" +
+                        "{\n" +
+                        "    $t->test(~strx->ascending());\n" +
+                        "}\n" +
+                        "native function test<X>(x:Relation<X>[1], rel:SortInfo<(?:?)⊆X>[1]):String[1];\n" +
+                        "function <<functionType.NormalizeRequiredFunction>> meta::pure::functions::relation::ascending<SW> (column:ColSpec<SW>[1]):SortInfo<SW>[1]\n" +
+                        "{\n" +
+                        "   ^SortInfo<T>(column=$column, direction=SortType.ASC)\n" +
+                        "}"
+        ));
+        Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:4 column:14), \"The column 'strx' can't be found in the relation (value:Integer, str:String)\"", e.getMessage());
     }
 
     @Test
@@ -647,29 +585,23 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testRelationPartialMatchError()
     {
-        try
-        {
-            compileInferenceTest(
-                    "import meta::pure::metamodel::relation::*;" +
-                            "Class A<X,Y>{}\n" +
-                            "function f(t:Relation<(value:Integer)>[1]):Boolean[1]\n" +
-                            "{\n" +
-                            "    $t->test();\n" +
-                            "}" +
-                            "native function test<T,X,Z>(x:Relation<(value:Integer, str:String)>[1]):Boolean[1];");
-            fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:4 column:9), \"The system can't find a match for the function: test(_:Relation<(value:Integer)>[1])\n" +
-                    "\n" +
-                    "These functions, in packages already imported, would match the function call if you changed the parameters.\n" +
-                    "\ttest(Relation<(value:Integer, str:String)>[1]):Boolean[1]\n" +
-                    "\n" +
-                    "No functions, in packages not imported, match the function name.\n" +
-                    "\"", e.getMessage());
-        }
-
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "Class A<X,Y>\n" +
+                        "{\n" +
+                        "}\n" +
+                        "function f(t:Relation<(value:Integer)>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    $t->test();\n" +
+                        "}\n" +
+                        "native function test<T,X,Z>(x:Relation<(value:Integer, str:String)>[1]):Boolean[1];"));
+        Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:7 column:9), \"The system can't find a match for the function: test(_:Relation<(value:Integer)>[1])\n" +
+                "\n" +
+                "These functions, in packages already imported, would match the function call if you changed the parameters.\n" +
+                "\ttest(Relation<(value:Integer, str:String)>[1]):Boolean[1]\n" +
+                "\n" +
+                "No functions, in packages not imported, match the function name.\n" +
+                "\"", e.getMessage());
     }
 
     @Test
@@ -784,23 +716,15 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testColumnError()
     {
-        try
-        {
-            compileInferenceTest(
-                    "import meta::pure::metamodel::relation::*;\n" +
-                            "native function test<T,W>(r:Relation<T>[1], cols:ColSpec<W⊆T>[1]):Relation<T>[1];\n" +
-                            "function x<T>(r:Relation<T>[1]):Boolean[1]\n" +
-                            "{\n" +
-                            "    |$r->cast(@Relation<(a:Integer, f:String)>)->test(~id);\n" +
-                            "}");
-            fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:5 column:55), \"The column 'id' can't be found in the relation (a:Integer, f:String)\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "native function test<T,W>(r:Relation<T>[1], cols:ColSpec<W⊆T>[1]):Relation<T>[1];\n" +
+                        "function x<T>(r:Relation<T>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    |$r->cast(@Relation<(a:Integer, f:String)>)->test(~id);\n" +
+                        "}"));
+        Assert.assertEquals("Compilation error at (resource:inferenceTest.pure line:5 column:55), \"The column 'id' can't be found in the relation (a:Integer, f:String)\"", e.getMessage());
     }
-
 
     @Test
     public void testSingleColumn()
