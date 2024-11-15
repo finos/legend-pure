@@ -472,7 +472,7 @@ public abstract class AbstractCompiledStateIntegrityTest
                                     .forEach(classifierElementsPair ->
                                     {
                                         MutableList<CoreInstance> classifierElements = classifierElementsPair.getTwo();
-                                        builder.append("\n\t\t").append(sourceElementsPair.getOne()).append(" (").append(classifierElements.size()).append(')');
+                                        builder.append("\n\t\t").append(classifierElementsPair.getOne()).append(" (").append(classifierElements.size()).append(')');
                                         classifierElements.sortThisBy(CoreInstance::getSourceInformation).forEach(e ->
                                         {
                                             builder.append("\n\t\t\t").append(e);
