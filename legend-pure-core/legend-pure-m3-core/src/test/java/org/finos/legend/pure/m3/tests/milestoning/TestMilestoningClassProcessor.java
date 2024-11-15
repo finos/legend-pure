@@ -23,17 +23,10 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestMilestoningClassProcessor extends AbstractTestMilestoning
 {
-    @BeforeClass
-    public static void setUp()
-    {
-        setUpRuntime();
-    }
-
     @After
     public void cleanRuntime()
     {
@@ -48,11 +41,15 @@ public class TestMilestoningClassProcessor extends AbstractTestMilestoning
     @Test
     public void testNonTemporalStereotypeProcessing()
     {
-
         runtime.createInMemorySource("sourceId.pure",
-                "import meta::test::domain::*;" +
-                        "Profile testProfile{stereotypes:[s1,s2];}" +
-                        "Class <<testProfile.s1>> meta::test::milestoning::domain::NonTemporalClassWithStereotype{\n" +
+                "import meta::test::domain::*;\n" +
+                        "Profile testProfile\n" +
+                        "{\n" +
+                        "   stereotypes:[s1,s2];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class <<testProfile.s1>> meta::test::milestoning::domain::NonTemporalClassWithStereotype\n" +
+                        "{\n" +
                         "}"
         );
         runtime.compile();
@@ -62,19 +59,23 @@ public class TestMilestoningClassProcessor extends AbstractTestMilestoning
     public void testImportOfBusinessMilestonedClass()
     {
         runtime.createInMemorySource("sourceId.pure",
-                "import meta::test::milestoning::domain::*;" +
-                        "Class meta::test::domain::account::Account{\n" +
+                "import meta::test::milestoning::domain::*;\n" +
+                        "Class meta::test::domain::account::Account\n" +
+                        "{\n" +
                         "   orderId : Integer[1];\n" +
                         "}"
         );
         runtime.createInMemorySource("sourceId2.pure",
-                "import meta::test::domain::account::*;" +
-                        "Class <<temporal.businesstemporal>> meta::test::domain::account::Account_Request{\n" +
+                "import meta::test::domain::account::*;\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::domain::account::Account_Request\n" +
+                        "{\n" +
                         "   name : String[1];\n" +
-                        "}" +
-                        "Association meta::test::domain::account::Case_Accounts{" +
-                        "  Account_Request:meta::test::domain::account::Account_Request[*];" +
-                        "  Account:meta::test::domain::account::Account[1];" +
+                        "}\n" +
+                        "\n" +
+                        "Association meta::test::domain::account::Case_Accounts\n" +
+                        "{\n" +
+                        "  Account_Request:meta::test::domain::account::Account_Request[*];\n" +
+                        "  Account:meta::test::domain::account::Account[1];\n" +
                         "}"
         );
         runtime.compile();
@@ -84,15 +85,16 @@ public class TestMilestoningClassProcessor extends AbstractTestMilestoning
     public void testGeneratedMilestonedPropertyHasACorrectlyGeneratedImportGroup()
     {
         runtime.createInMemorySource("sourceId.pure",
-                "Class <<temporal.businesstemporal>> meta::test::domain::account::FirmAccount \n" +
-                        "{}"
+                "Class <<temporal.businesstemporal>> meta::test::domain::account::FirmAccount\n" +
+                        "{\n" +
+                        "}"
         );
         runtime.createInMemorySource("sourceId2.pure",
                 "###Pure\n" + //this increments the import group id; '_2' in this case
-                        "import meta::test::domain::account::*;" +
-                        "Class meta::test::domain::account::trade::Contract \n" +
+                        "import meta::test::domain::account::*;\n" +
+                        "Class meta::test::domain::account::trade::Contract\n" +
                         "{\n" +
-                        "   firmRiskAccount : FirmAccount[1];" +
+                        "   firmRiskAccount : FirmAccount[1];\n" +
                         "}"
         );
         runtime.compile();
@@ -101,13 +103,13 @@ public class TestMilestoningClassProcessor extends AbstractTestMilestoning
     @Test
     public void testConflictingStereotypesOnParent()
     {
-        String domain = "Class <<temporal.businesstemporal>> meta::relational::tests::milestoning::Product{}\n" +
-                "Class <<temporal.processingtemporal>> meta::relational::tests::milestoning::Instrument{}\n" +
-                "Class <<temporal.processingtemporal>> meta::relational::tests::milestoning::Stock extends meta::relational::tests::milestoning::Product, meta::relational::tests::milestoning::Instrument{}";
-
-        runtime.createInMemorySource("domain.pure", domain);
+        runtime.createInMemorySource("domain.pure",
+                "import meta::relational::tests::milestoning::*;\n" +
+                        "Class <<temporal.businesstemporal>> meta::relational::tests::milestoning::Product {}\n" +
+                        "Class <<temporal.processingtemporal>> meta::relational::tests::milestoning::Instrument {}\n" +
+                        "Class <<temporal.processingtemporal>> meta::relational::tests::milestoning::Stock extends Product, Instrument {}");
         PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
-        Assert.assertEquals("Compilation error at (resource:domain.pure line:3 column:77), \"A Type may only have one Temporal Stereotype, 'meta::relational::tests::milestoning::Stock' has [businesstemporal, processingtemporal]\"", e.getMessage());
+        Assert.assertEquals("Compilation error at (resource:domain.pure line:4 column:77), \"A Type may only have one Temporal Stereotype, 'meta::relational::tests::milestoning::Stock' has [businesstemporal, processingtemporal]\"", e.getMessage());
     }
 
     @Test
@@ -115,12 +117,8 @@ public class TestMilestoningClassProcessor extends AbstractTestMilestoning
     {
         runtime.createInMemorySource("sourceId.pure",
                 "import model::domain::subdom1::account::*;\n" +
-                        "Class <<temporal.businesstemporal>> model::domain::subdom1::account::Account{} \n" +
-                        "Class model::domain::subdom1::account::FirmAccount extends model::domain::subdom1::account::Account{} \n" +
-                        "function go():Any[*]\n" +
-                        "{\n" +
-                        "   let a = ^model::domain::subdom1::account::FirmAccount(businessDate=%2015);\n" +
-                        "}"
+                        "Class <<temporal.businesstemporal>> model::domain::subdom1::account::Account {}\n" +
+                        "Class model::domain::subdom1::account::FirmAccount extends Account {}"
         );
         PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
         Assert.assertEquals("Compilation error at (resource:sourceId.pure line:3 column:40), \"Temporal stereotypes must be applied at all levels in a temporal class hierarchy, top most supertype model::domain::subdom1::account::Account has milestoning stereotype: 'businesstemporal'\"", e.getMessage());
@@ -129,10 +127,9 @@ public class TestMilestoningClassProcessor extends AbstractTestMilestoning
     @Test
     public void testMilestoningStereotypeExistsAtAllLevelsInAClassHierarchy()
     {
-        String singleInheritance = "Class <<temporal.businesstemporal>> model::domain::subdom1::account::Account{} \n" +
-                "Class model::domain::subdom1::account::FirmAccount extends model::domain::subdom1::account::Account{} \n";
-
-        runtime.createInMemorySource("singleInheritance.pure", singleInheritance);
+        runtime.createInMemorySource("singleInheritance.pure",
+                "Class <<temporal.businesstemporal>> model::domain::subdom1::account::Account {}\n" +
+                        "Class model::domain::subdom1::account::FirmAccount extends model::domain::subdom1::account::Account {}");
         PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
         Assert.assertEquals("Compilation error at (resource:singleInheritance.pure line:2 column:40), \"Temporal stereotypes must be applied at all levels in a temporal class hierarchy, top most supertype model::domain::subdom1::account::Account has milestoning stereotype: 'businesstemporal'\"", e.getMessage());
     }
@@ -140,10 +137,9 @@ public class TestMilestoningClassProcessor extends AbstractTestMilestoning
     @Test
     public void testValidationOfMilestoningStereotypeConsistencyInAClassHierarchy()
     {
-        String singleInheritance = "Class <<temporal.businesstemporal>> model::domain::subdom1::account::Account{} \n" +
-                "Class <<temporal.processingtemporal>> model::domain::subdom1::account::FirmAccount extends model::domain::subdom1::account::Account{} \n";
-
-        runtime.createInMemorySource("singleInheritance.pure", singleInheritance);
+        runtime.createInMemorySource("singleInheritance.pure",
+                "Class <<temporal.businesstemporal>> model::domain::subdom1::account::Account {}\n" +
+                        "Class <<temporal.processingtemporal>> model::domain::subdom1::account::FirmAccount extends model::domain::subdom1::account::Account {}\n");
         PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
         Assert.assertEquals("Compilation error at (resource:singleInheritance.pure line:2 column:72), \"All temporal stereotypes in a hierarchy must be the same, class model::domain::subdom1::account::FirmAccount is processingtemporal, top most supertype model::domain::subdom1::account::Account has milestoning stereotype: 'businesstemporal'\"", e.getMessage());
     }
@@ -151,33 +147,39 @@ public class TestMilestoningClassProcessor extends AbstractTestMilestoning
     @Test
     public void testValidationOfMilestoningStereotypeConsistencyInAClassHierarchyNonTemporalSupertype()
     {
-        String singleInheritance = "Class model::domain::subdom1::account::Account{} \n" +
-                "Class <<temporal.processingtemporal>> model::domain::subdom1::account::FirmAccount extends model::domain::subdom1::account::Account{} \n";
-
-        runtime.createInMemorySource("singleInheritance.pure", singleInheritance);
+        runtime.createInMemorySource("singleInheritance.pure",
+                "Class model::domain::subdom1::account::Account {}\n" +
+                        "Class <<temporal.processingtemporal>> model::domain::subdom1::account::FirmAccount extends model::domain::subdom1::account::Account {}");
         PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
         Assert.assertEquals("Compilation error at (resource:singleInheritance.pure line:2 column:72), \"All temporal stereotypes in a hierarchy must be the same, class model::domain::subdom1::account::FirmAccount is processingtemporal, top most supertype model::domain::subdom1::account::Account is not temporal\"", e.getMessage());
     }
 
     @Test
-    public void testValidTemporalSpecificationInAClassHierarchyCompiles() throws Exception
+    public void testValidTemporalSpecificationInAClassHierarchyCompiles()
     {
-        String singleInheritance = "Class <<temporal.businesstemporal>> model::domain::subdom1::account::Account{} \n" +
-                "Class <<temporal.businesstemporal>> model::domain::subdom1::account::FirmAccount extends model::domain::subdom1::account::Account{} \n";
-
-        runtime.createInMemorySource("singleInheritance.pure", singleInheritance);
+        runtime.createInMemorySource("singleInheritance.pure",
+                "Class <<temporal.businesstemporal>> model::domain::subdom1::account::Account\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class <<temporal.businesstemporal>> model::domain::subdom1::account::FirmAccount extends model::domain::subdom1::account::Account\n" +
+                        "{\n" +
+                        "}");
         runtime.compile();
     }
 
     @Test
-    public void testParserGeneratedProcessingTemporalProperties() throws Exception
+    public void testParserGeneratedProcessingTemporalProperties()
     {
         runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::domain::*;\n" +
-                        "Class meta::test::milestoning::domain::Order{\n" +
+                        "Class meta::test::milestoning::domain::Order\n" +
+                        "{\n" +
                         "   orderId : Integer[1];\n" +
                         "}\n" +
-                        "Class <<temporal.processingtemporal>> meta::test::milestoning::domain::Product{\n" +
+                        "\n" +
+                        "Class <<temporal.processingtemporal>> meta::test::milestoning::domain::Product\n" +
+                        "{\n" +
                         "   name : String[1];\n" +
                         "}\n"
         );
@@ -192,26 +194,30 @@ public class TestMilestoningClassProcessor extends AbstractTestMilestoning
         Property<?, ?> processingDateProperty = parserGeneratedMilestoningProperties.detect(p -> "processingDate".equals(p._name()));
         Assert.assertEquals("Date", processingDateProperty._genericType()._rawType()._name());
         Assert.assertEquals("PureOne", processingDateProperty._multiplicity().getName());
+        Assert.assertEquals(milestonedClass.getSourceInformation(), processingDateProperty.getSourceInformation());
 
         Property<?, ?> milestoningProperty = parserGeneratedMilestoningProperties.detect(p -> "milestoning".equals(p._name()));
         Assert.assertEquals("meta::pure::milestoning::ProcessingDateMilestoning", PackageableElement.getUserPathForPackageableElement(milestoningProperty._genericType()._rawType()));
         Assert.assertEquals("ZeroOne", milestoningProperty._multiplicity().getName());
+        Assert.assertEquals(milestonedClass.getSourceInformation(), milestoningProperty.getSourceInformation());
 
         Class<?> nonMilestonedClass = (Class<?>) processorSupport.package_getByUserPath("meta::test::milestoning::domain::Order");
         Assert.assertTrue(nonMilestonedClass._properties().noneSatisfy(p -> MilestoningFunctions.isGeneratedMilestoningDateProperty(p, processorSupport)));
     }
 
     @Test
-    public void testParserGeneratedBusinessTemporalProperties() throws Exception
+    public void testParserGeneratedBusinessTemporalProperties()
     {
         runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::domain::*;\n" +
-                        "Class meta::test::milestoning::domain::Order{\n" +
+                        "Class meta::test::milestoning::domain::Order\n" +
+                        "{\n" +
                         "   orderId : Integer[1];\n" +
                         "}\n" +
-                        "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product\n" +
+                        "{\n" +
                         "   name : String[1];\n" +
-                        "}\n"
+                        "}"
         );
         runtime.compile();
 
@@ -224,24 +230,28 @@ public class TestMilestoningClassProcessor extends AbstractTestMilestoning
         Property<?, ?> businessDateProperty = parserGeneratedMilestoningProperties.detect(p -> "businessDate".equals(p._name()));
         Assert.assertEquals("Date", businessDateProperty._genericType()._rawType()._name());
         Assert.assertEquals("PureOne", businessDateProperty._multiplicity().getName());
+        Assert.assertEquals(milestonedClass.getSourceInformation(), businessDateProperty.getSourceInformation());
 
         Property<?, ?> milestoningProperty = parserGeneratedMilestoningProperties.detect(p -> "milestoning".equals(p._name()));
         Assert.assertEquals("meta::pure::milestoning::BusinessDateMilestoning", PackageableElement.getUserPathForPackageableElement(milestoningProperty._genericType()._rawType()));
         Assert.assertEquals("ZeroOne", milestoningProperty._multiplicity().getName());
+        Assert.assertEquals(milestonedClass.getSourceInformation(), milestoningProperty.getSourceInformation());
 
         Class<?> nonMilestonedClass = (Class<?>) processorSupport.package_getByUserPath("meta::test::milestoning::domain::Order");
         Assert.assertTrue(nonMilestonedClass._properties().noneSatisfy(p -> MilestoningFunctions.isGeneratedMilestoningDateProperty(p, processorSupport)));
     }
 
     @Test
-    public void testParserGeneratedBiTemporalProperties() throws Exception
+    public void testParserGeneratedBiTemporalProperties()
     {
         runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::domain::*;\n" +
-                        "Class meta::test::milestoning::domain::Order{\n" +
+                        "Class meta::test::milestoning::domain::Order\n" +
+                        "{\n" +
                         "   orderId : Integer[1];\n" +
                         "}\n" +
-                        "Class <<temporal.bitemporal>> meta::test::milestoning::domain::Product{\n" +
+                        "Class <<temporal.bitemporal>> meta::test::milestoning::domain::Product\n" +
+                        "{\n" +
                         "   name : String[1];\n" +
                         "}\n"
         );
@@ -256,14 +266,17 @@ public class TestMilestoningClassProcessor extends AbstractTestMilestoning
         Property<?, ?> processingDateProperty = parserGeneratedMilestoningProperties.detect(p -> "processingDate".equals(p._name()));
         Assert.assertEquals("Date", processingDateProperty._genericType()._rawType()._name());
         Assert.assertEquals("PureOne", processingDateProperty._multiplicity().getName());
+        Assert.assertEquals(milestonedClass.getSourceInformation(), processingDateProperty.getSourceInformation());
 
         Property<?, ?> businessDateProperty = parserGeneratedMilestoningProperties.detect(p -> "businessDate".equals(p._name()));
         Assert.assertEquals("Date", businessDateProperty._genericType()._rawType()._name());
         Assert.assertEquals("PureOne", businessDateProperty._multiplicity().getName());
+        Assert.assertEquals(milestonedClass.getSourceInformation(), businessDateProperty.getSourceInformation());
 
         Property<?, ?> milestoningProperty = parserGeneratedMilestoningProperties.detect(p -> "milestoning".equals(p._name()));
         Assert.assertEquals("meta::pure::milestoning::BiTemporalMilestoning", PackageableElement.getUserPathForPackageableElement(milestoningProperty._genericType()._rawType()));
         Assert.assertEquals("ZeroOne", milestoningProperty._multiplicity().getName());
+        Assert.assertEquals(milestonedClass.getSourceInformation(), milestoningProperty.getSourceInformation());
 
         Class<?> nonMilestonedClass = (Class<?>) processorSupport.package_getByUserPath("meta::test::milestoning::domain::Order");
         Assert.assertTrue(nonMilestonedClass._properties().noneSatisfy(p -> MilestoningFunctions.isGeneratedMilestoningDateProperty(p, processorSupport)));

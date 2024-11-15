@@ -118,7 +118,8 @@ public class M3ToJavaGenerator
 
     public static boolean isPlatformClass(CoreInstance _class)
     {
-        return !PLATFORM_EXCLUDED_FILES.contains(_class.getSourceInformation().getSourceId()) && !PLATFORM_EXCLUDED_CLASSES.contains(_class.getName());
+        return ((_class.getSourceInformation() == null) || !PLATFORM_EXCLUDED_FILES.contains(_class.getSourceInformation().getSourceId())) &&
+                !PLATFORM_EXCLUDED_CLASSES.contains(_class.getName());
     }
 
     public M3ToJavaGenerator(String outputDir, String factoryNamePrefix, boolean generateTypeFactoriesById)

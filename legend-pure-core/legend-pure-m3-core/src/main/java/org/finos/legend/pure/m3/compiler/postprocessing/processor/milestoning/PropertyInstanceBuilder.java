@@ -29,12 +29,13 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.G
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.imports.Imports;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
-import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 public class PropertyInstanceBuilder
 {
@@ -67,13 +68,17 @@ public class PropertyInstanceBuilder
 
     static ListIterable<AbstractProperty<?>> createMilestonedProperties(CoreInstance propertyOwner, ListIterable<MilestonePropertyCodeBlock> propertyCodeBlocks, Context context, ProcessorSupport processorSupport, ModelRepository modelRepository)
     {
-        ImportGroup importId = (ImportGroup) PackageableElement.findPackageableElement("system::imports::" + getImportIdForOwner(propertyOwner), modelRepository);
+        ImportGroup importId = getImportIdForOwner(propertyOwner, processorSupport);
         return createM3MilestonedProperties(propertyOwner, importId, propertyCodeBlocks, context, processorSupport, modelRepository);
     }
 
-    private static String getImportIdForOwner(CoreInstance owner)
+    private static ImportGroup getImportIdForOwner(CoreInstance owner, ProcessorSupport processorSupport)
     {
-        return Source.importForSourceName(owner.getSourceInformation().getSourceId()) + "_1";
+        SourceInformation sourceInfo = owner.getSourceInformation();
+        return (ImportGroup) Imports.getImportGroupsForSource(sourceInfo.getSourceId(), processorSupport)
+                .asLazy()
+                .select(ig -> ig.getSourceInformation().getStartLine() <= sourceInfo.getStartLine())
+                .maxBy(ig -> ig.getSourceInformation().getStartLine());
     }
 
 
@@ -91,7 +96,7 @@ public class PropertyInstanceBuilder
         String fileName = propertyOwner.getSourceInformation().getSourceId();
         MutableList<QualifiedProperty<? extends CoreInstance>> qps = Lists.mutable.empty();
         MutableList<Property<? extends CoreInstance, ?>> ps = Lists.mutable.empty();
-        new M3AntlrParser().parseProperties(propertyCodeBlock.getCodeBlock(), fileName, ps, qps, typeOwner, importId, true, modelRepository, context, startingQualifiedPropertyIndex);
+        new M3AntlrParser().parseProperties(propertyCodeBlock.getCodeBlock(), fileName, ps, qps, typeOwner, importId, false, modelRepository, context, startingQualifiedPropertyIndex);
         AbstractProperty<?> property = ps.isEmpty() ? qps.getLast() : ps.getLast();
         if (property != null)
         {

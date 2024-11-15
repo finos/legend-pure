@@ -15,41 +15,32 @@
 package org.finos.legend.pure.m3.tests.milestoning;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.multimap.list.ListMultimap;
-import org.eclipse.collections.impl.block.factory.Predicates;
-import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
-import org.eclipse.collections.impl.test.Verify;
-import org.eclipse.collections.impl.tuple.Tuples;
-import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PropertyOwner;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TaggedValue;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.SimpleFunctionExpression;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation._class._Class;
-import org.finos.legend.pure.m3.navigation._package._Package;
-import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
 {
-    @BeforeClass
-    public static void setUp()
-    {
-        setUpRuntime();
-    }
-
     @After
     public void cleanRuntime()
     {
@@ -63,246 +54,222 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
         runtime.compile();
     }
 
-    @Rule
-    public final ExpectedException expectedEx = ExpectedException.none();
-
     @Test
     public void testSynthesizedPropertiesMultiplicities()
     {
-        this.compileTestSourceM3("sourceId.pure",
-                "import meta::test::domain::*;" +
-                        "Class <<temporal.businesstemporal>> meta::test::domain::Order{\n" +
+        compileTestSourceM3("sourceId.pure",
+                "import meta::test::domain::*;\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::domain::Order\n" +
+                        "{\n" +
                         "   productOptional : Product[0..1];\n" +
                         "   productOne : Product[1];\n" +
                         "   productOneMany : Product[1..*];\n" +
                         "   productMany : Product[*];\n" +
                         "}\n" +
-                        "Class <<temporal.businesstemporal>> meta::test::domain::Product{\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::domain::Product\n" +
+                        "{\n" +
                         "   name : String[1];\n" +
                         "}"
         );
-        CoreInstance order = runtime.getCoreInstance("meta::test::domain::Order");
-        ListIterable<? extends CoreInstance> properties = Instance.getValueForMetaPropertyToManyResolved(order, M3Properties.properties, processorSupport);
-        assertMilestoningRegularProperty(properties.get(2), "productOptionalAllVersions", "Product", "*");
-        assertMilestoningRegularProperty(properties.get(3), "productOneAllVersions", "Product", "1..*");
-        assertMilestoningRegularProperty(properties.get(4), "productOneManyAllVersions", "Product", "1..*");
-        assertMilestoningRegularProperty(properties.get(5), "productManyAllVersions", "Product", "*");
 
-        ListIterable<? extends CoreInstance> qps = Instance.getValueForMetaPropertyToManyResolved(order, M3Properties.qualifiedProperties, processorSupport);
-        assertMilestoningQualifiedProperty(qps.get(0), "productOptional", "Product", "0..1", 0);
-        assertMilestoningQualifiedProperty(qps.get(1), "productOptional", "Product", "0..1", 1);
-        assertMilestoningQualifiedProperty(qps.get(2), "productOptionalAllVersionsInRange", "Product", "0..1", 2);
-        assertMilestoningQualifiedProperty(qps.get(3), "productOne", "Product", "1", 0);
-        assertMilestoningQualifiedProperty(qps.get(4), "productOne", "Product", "1", 1);
-        assertMilestoningQualifiedProperty(qps.get(5), "productOneAllVersionsInRange", "Product", "1", 2);
-        assertMilestoningQualifiedProperty(qps.get(6), "productOneMany", "Product", "1..*", 0);
-        assertMilestoningQualifiedProperty(qps.get(7), "productOneMany", "Product", "1..*", 1);
-        assertMilestoningQualifiedProperty(qps.get(8), "productOneManyAllVersionsInRange", "Product", "1..*", 2);
-        assertMilestoningQualifiedProperty(qps.get(9), "productMany", "Product", "*", 0);
-        assertMilestoningQualifiedProperty(qps.get(10), "productMany", "Product", "*", 1);
-        assertMilestoningQualifiedProperty(qps.get(11), "productManyAllVersionsInRange", "Product", "*", 2);
+        Class<?> order = getCoreInstance("meta::test::domain::Order");
+        ListIterable<? extends Property<?, ?>> properties = getProperties(order);
+        assertMilestoningRegularProperty(properties.get(2), "productOptionalAllVersions", "meta::test::domain::Product", "*");
+        assertMilestoningRegularProperty(properties.get(3), "productOneAllVersions", "meta::test::domain::Product", "1..*");
+        assertMilestoningRegularProperty(properties.get(4), "productOneManyAllVersions", "meta::test::domain::Product", "1..*");
+        assertMilestoningRegularProperty(properties.get(5), "productManyAllVersions", "meta::test::domain::Product", "*");
+
+        ListIterable<? extends QualifiedProperty<?>> qps = getQualifiedProperties(order);
+        assertMilestoningQualifiedProperty(qps.get(0), "productOptional", "meta::test::domain::Product", "0..1", 0);
+        assertMilestoningQualifiedProperty(qps.get(1), "productOptional", "meta::test::domain::Product", "0..1", 1);
+        assertMilestoningQualifiedProperty(qps.get(2), "productOptionalAllVersionsInRange", "meta::test::domain::Product", "0..1", 2);
+        assertMilestoningQualifiedProperty(qps.get(3), "productOne", "meta::test::domain::Product", "1", 0);
+        assertMilestoningQualifiedProperty(qps.get(4), "productOne", "meta::test::domain::Product", "1", 1);
+        assertMilestoningQualifiedProperty(qps.get(5), "productOneAllVersionsInRange", "meta::test::domain::Product", "1", 2);
+        assertMilestoningQualifiedProperty(qps.get(6), "productOneMany", "meta::test::domain::Product", "1..*", 0);
+        assertMilestoningQualifiedProperty(qps.get(7), "productOneMany", "meta::test::domain::Product", "1..*", 1);
+        assertMilestoningQualifiedProperty(qps.get(8), "productOneManyAllVersionsInRange", "meta::test::domain::Product", "1..*", 2);
+        assertMilestoningQualifiedProperty(qps.get(9), "productMany", "meta::test::domain::Product", "*", 0);
+        assertMilestoningQualifiedProperty(qps.get(10), "productMany", "meta::test::domain::Product", "*", 1);
+        assertMilestoningQualifiedProperty(qps.get(11), "productManyAllVersionsInRange", "meta::test::domain::Product", "*", 2);
     }
 
     @Test
     public void testAdditionOfSynthesizedQualifiedPropertiesForBusinessTemporalProperties()
     {
         runtime.createInMemorySource("sourceId.pure",
-                "import meta::test::domain::*;" +
-                        "Class meta::test::domain::Order{\n" +
+                "import meta::test::domain::*;\n" +
+                        "Class meta::test::domain::Order\n" +
+                        "{\n" +
                         "   orderId : Integer[1];\n" +
                         "   product : Product[1];\n" +
                         "}\n" +
-                        "Class <<temporal.businesstemporal>> meta::test::domain::Product{\n" +
+                        "\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::domain::Product\n" +
+                        "{\n" +
                         "   name : String[1];\n" +
                         "}"
         );
-
         runtime.compile();
-        CoreInstance order = runtime.getCoreInstance("meta::test::domain::Order");
-        ListIterable<? extends CoreInstance> orderProperties = Instance.getValueForMetaPropertyToManyResolved(order, M3Properties.properties, processorSupport);
-        ListIterable<String> productPropertiesAsStrings = orderProperties.collect(CoreInstance::getName);
-        Assert.assertEquals(Lists.mutable.with("orderId", "productAllVersions"), productPropertiesAsStrings);
 
-        ListIterable<? extends CoreInstance> srcOrderProperties = Instance.getValueForMetaPropertyToManyResolved(order, M3Properties.originalMilestonedProperties, processorSupport);
-        ListIterable<String> srcOrderPropertiesAsStrings = srcOrderProperties.collect(CoreInstance::getName);
-        Assert.assertEquals(Lists.mutable.with("product"), srcOrderPropertiesAsStrings);
+        Class<?> order = getCoreInstance("meta::test::domain::Order");
+        Assert.assertEquals(Lists.mutable.with("orderId", "productAllVersions"), order._properties().collect(CoreInstance::getName));
 
-        ListIterable<? extends CoreInstance> qualifiedProperties = Instance.getValueForMetaPropertyToManyResolved(order, M3Properties.qualifiedProperties, processorSupport);
-        Verify.assertSize(2, qualifiedProperties);
-        CoreInstance qualifiedProperty = qualifiedProperties.getFirst();
-        CoreInstance propertyName = Instance.getValueForMetaPropertyToManyResolved(qualifiedProperty, M3Properties.functionName, processorSupport).getFirst();
-        CoreInstance type = Instance.getValueForMetaPropertyToOneResolved(qualifiedProperty, M3Properties.genericType, M3Properties.rawType, processorSupport);
-        Assert.assertEquals("product", propertyName.getName());
-        Assert.assertEquals("Product", type.getName());
-        ListIterable<? extends CoreInstance> stereotypes = Instance.getValueForMetaPropertyToManyResolved(qualifiedProperty, M3Properties.stereotypes, processorSupport);
-        Verify.assertSize(1, stereotypes);
-        Assert.assertEquals(getGeneratedMilestoningStereotype(), stereotypes.getFirst());
-        CoreInstance allVersionsInRangeQualifiedProperty = qualifiedProperties.getLast();
-        CoreInstance allVersionsInRangePropertyName = Instance.getValueForMetaPropertyToManyResolved(allVersionsInRangeQualifiedProperty, M3Properties.functionName, processorSupport).getFirst();
-        CoreInstance allVersionsInRangePropertyType = Instance.getValueForMetaPropertyToOneResolved(allVersionsInRangeQualifiedProperty, M3Properties.genericType, M3Properties.rawType, processorSupport);
-        Assert.assertEquals("productAllVersionsInRange", allVersionsInRangePropertyName.getName());
-        Assert.assertEquals("Product", allVersionsInRangePropertyType.getName());
-        ListIterable<? extends CoreInstance> allVersionsInRangePropertyStereotypes = Instance.getValueForMetaPropertyToManyResolved(allVersionsInRangeQualifiedProperty, M3Properties.stereotypes, processorSupport);
-        Verify.assertSize(1, allVersionsInRangePropertyStereotypes);
-        Assert.assertEquals(this.getGeneratedMilestoningStereotype(), allVersionsInRangePropertyStereotypes.getFirst());
+        Assert.assertEquals(Lists.mutable.with("product"), order._originalMilestonedProperties().collect(CoreInstance::getName));
+
+        ListIterable<? extends QualifiedProperty<?>> qualifiedProperties = getQualifiedProperties(order);
+        Assert.assertEquals(Lists.fixedSize.with("product(Date[1])", "productAllVersionsInRange(Date[1],Date[1])"), qualifiedProperties.collect(QualifiedProperty::_id));
+        QualifiedProperty<?> productQP = qualifiedProperties.getFirst();
+        Assert.assertEquals("product", productQP._functionName());
+        assertGenericType("meta::test::domain::Product", productQP);
+        Assert.assertEquals(Lists.fixedSize.with(getGeneratedMilestoningStereotype()), productQP._stereotypes());
+
+        QualifiedProperty<?> allVersionsInRangeQP = qualifiedProperties.getLast();
+        Assert.assertEquals("productAllVersionsInRange", allVersionsInRangeQP._functionName());
+        assertGenericType("meta::test::domain::Product", allVersionsInRangeQP);
+        Assert.assertEquals(Lists.fixedSize.with(getGeneratedMilestoningStereotype()), allVersionsInRangeQP._stereotypes());
     }
 
     @Test
     public void testGeneratedMilestonedQualifiedPropertiesMultiplicity()
     {
         runtime.createInMemorySource("sourceId.pure",
-                "import meta::test::domain::*;" +
-                        "Class meta::test::domain::Order{\n" +
+                "import meta::test::domain::*;\n" +
+                        "Class meta::test::domain::Order\n" +
+                        "{\n" +
                         "   product : Product[1];\n" +
                         "   productOptional : Product[0..1];\n" +
                         "   productTwo : Product[2];\n" +
                         "   productMany : Product[*];\n" +
                         "   productRange : Product[2..3];\n" +
-
                         "}\n" +
-                        "Class <<temporal.businesstemporal>> meta::test::domain::Product{\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::domain::Product\n" +
+                        "{\n" +
                         "   name : String[1];\n" +
                         "}"
         );
-
         runtime.compile();
-        CoreInstance order = runtime.getCoreInstance("meta::test::domain::Order");
-        ListIterable<? extends CoreInstance> qualifiedProperties = Instance.getValueForMetaPropertyToManyResolved(order, M3Properties.qualifiedProperties, processorSupport);
-        ArrayAdapter.adapt(Tuples.pair("product_0", "[1]"), Tuples.pair("productOptional_0", "[0..1]"), Tuples.pair("productTwo_0", "[*]"), Tuples.pair("productMany_0", "[*]"), Tuples.pair("productRange_0", "[*]"))
-                .forEach(propertyNameToExpectedMultiplicity ->
-                {
-                    CoreInstance product = qualifiedProperties.detect(Predicates.attributeEqual(CoreInstance::getName, propertyNameToExpectedMultiplicity.getOne()));
-                    String multiplicityString = Multiplicity.print(product.getValueForMetaPropertyToOne(M3Properties.multiplicity));
-                    Assert.assertEquals(propertyNameToExpectedMultiplicity.getTwo(), multiplicityString);
-                });
+
+        Class<?> order = getCoreInstance("meta::test::domain::Order");
+        assertMultiplicity("1", getQualifiedProperty(order, "product(Date[1])"));
+        assertMultiplicity("0..1", getQualifiedProperty(order, "productOptional(Date[1])"));
+        assertMultiplicity("*", getQualifiedProperty(order, "productTwo(Date[1])"));
+        assertMultiplicity("*", getQualifiedProperty(order, "productMany(Date[1])"));
+        assertMultiplicity("*", getQualifiedProperty(order, "productRange(Date[1])"));
     }
 
     @Test
     public void testAdditionOfSynthesizedQualifiedPropertiesForProcessingTemporalProperties()
     {
         runtime.createInMemorySource("sourceId.pure",
-                "import meta::test::domain::*;" +
-                        "Class meta::test::domain::Order{\n" +
+                "import meta::test::domain::*;\n" +
+                        "Class meta::test::domain::Order\n" +
+                        "{\n" +
                         "   orderId : Integer[1];\n" +
                         "   product : Product[1];\n" +
-
                         "}\n" +
-                        "Class <<temporal.processingtemporal>> meta::test::domain::Product{\n" +
+                        "Class <<temporal.processingtemporal>> meta::test::domain::Product\n" +
+                        "{\n" +
                         "   name : String[1];\n" +
                         "}"
         );
 
         runtime.compile();
-        CoreInstance order = runtime.getCoreInstance("meta::test::domain::Order");
-        ListIterable<? extends CoreInstance> orderProperties = Instance.getValueForMetaPropertyToManyResolved(order, M3Properties.properties, processorSupport);
-        ListIterable<String> productPropertiesAsStrings = orderProperties.collect(CoreInstance::getName);
-        Assert.assertEquals(Lists.mutable.with("orderId", "productAllVersions"), productPropertiesAsStrings);
+        Class<?> order = getCoreInstance("meta::test::domain::Order");
 
-        ListIterable<? extends CoreInstance> qualifiedProperties = Instance.getValueForMetaPropertyToManyResolved(order, M3Properties.qualifiedProperties, processorSupport);
-        Verify.assertSize(2, qualifiedProperties);
-        CoreInstance qualifiedProperty = qualifiedProperties.getFirst();
-        CoreInstance propertyName = Instance.getValueForMetaPropertyToManyResolved(qualifiedProperty, M3Properties.functionName, processorSupport).getFirst();
-        CoreInstance type = Instance.getValueForMetaPropertyToOneResolved(qualifiedProperty, M3Properties.genericType, M3Properties.rawType, processorSupport);
-        Assert.assertEquals("product", propertyName.getName());
-        Assert.assertEquals("Product", type.getName());
-        ListIterable<? extends CoreInstance> stereotypes = Instance.getValueForMetaPropertyToManyResolved(qualifiedProperty, M3Properties.stereotypes, processorSupport);
-        Verify.assertSize(1, stereotypes);
-        Assert.assertEquals(getGeneratedMilestoningStereotype(), stereotypes.getFirst());
-        CoreInstance allVersionsInRangeQualifiedProperty = qualifiedProperties.getLast();
-        CoreInstance allVersionsInRangePropertyName = Instance.getValueForMetaPropertyToManyResolved(allVersionsInRangeQualifiedProperty, M3Properties.functionName, processorSupport).getFirst();
-        CoreInstance allVersionsInRangePropertyType = Instance.getValueForMetaPropertyToOneResolved(allVersionsInRangeQualifiedProperty, M3Properties.genericType, M3Properties.rawType, processorSupport);
-        Assert.assertEquals("productAllVersionsInRange", allVersionsInRangePropertyName.getName());
-        Assert.assertEquals("Product", allVersionsInRangePropertyType.getName());
-        ListIterable<? extends CoreInstance> allVersionsInRangePropertyStereotypes = Instance.getValueForMetaPropertyToManyResolved(allVersionsInRangeQualifiedProperty, M3Properties.stereotypes, processorSupport);
-        Verify.assertSize(1, allVersionsInRangePropertyStereotypes);
-        Assert.assertEquals(this.getGeneratedMilestoningStereotype(), allVersionsInRangePropertyStereotypes.getFirst());
+        Assert.assertEquals(Lists.fixedSize.with("orderId", "productAllVersions"), getProperties(order).collect(CoreInstance::getName));
+
+        ListIterable<? extends QualifiedProperty<?>> qualifiedProperties = getQualifiedProperties(order);
+        Assert.assertEquals(Lists.fixedSize.with("product(Date[1])", "productAllVersionsInRange(Date[1],Date[1])"), qualifiedProperties.collect(QualifiedProperty::_id));
+
+        QualifiedProperty<?> productQP = qualifiedProperties.get(0);
+        Assert.assertEquals("product", productQP._functionName());
+        assertGenericType("meta::test::domain::Product", productQP);
+        Assert.assertEquals(Lists.fixedSize.with(getGeneratedMilestoningStereotype()), productQP._stereotypes());
+
+        QualifiedProperty<?> allVersionsInRangeQP = qualifiedProperties.get(1);
+        Assert.assertEquals("productAllVersionsInRange", allVersionsInRangeQP._functionName());
+        assertGenericType("meta::test::domain::Product", allVersionsInRangeQP);
+        Assert.assertEquals(Lists.fixedSize.with(getGeneratedMilestoningStereotype()), allVersionsInRangeQP._stereotypes());
     }
 
     @Test
     public void testGeneratedPropertiesIncludeSourcePropertyTaggedValuesAndStereotypes()
     {
         runtime.createInMemorySource("sourceId.pure",
-                "import meta::test::domain::*;" +
-                        "Class meta::test::domain::Order{\n" +
-                        "   <<service.disableStreaming>> " +
-                        "   {service.contentType='HTTP'}" +
-                        "   product : Product[1];\n" +
+                "import meta::test::domain::*;\n" +
+                        "Class meta::test::domain::Order\n" +
+                        "{\n" +
+                        "   <<service.disableStreaming>> {service.contentType='HTTP'} product : Product[1];\n" +
                         "}\n" +
-                        "Class <<temporal.processingtemporal>> meta::test::domain::Product{\n" +
+                        "Class <<temporal.processingtemporal>> meta::test::domain::Product\n" +
+                        "{\n" +
                         "   name : String[1];\n" +
                         "}"
         );
-
         runtime.compile();
-        CoreInstance order = runtime.getCoreInstance("meta::test::domain::Order");
-        CoreInstance productProperty = Instance.getValueForMetaPropertyToOneResolved(order, M3Properties.properties, processorSupport);
-        Assert.assertEquals("productAllVersions", productProperty.getName());
+
+        Class<?> order = getCoreInstance("meta::test::domain::Order");
+        Assert.assertEquals(Lists.fixedSize.with("productAllVersions"), order._properties().collect(Property::_name));
+        Property<?, ?> productProperty = getProperties(order).getOnly();
 
         CoreInstance servicePackage = processorSupport.package_getByUserPath(M3Paths.service);
         CoreInstance disableStreamingStereotype = servicePackage.getValueForMetaPropertyToMany(M3Properties.p_stereotypes).detect(serviceStereotype -> "disableStreaming".equals(serviceStereotype.getName()));
 
-        ListIterable<? extends CoreInstance> stereotypes = Instance.getValueForMetaPropertyToManyResolved(productProperty, M3Properties.stereotypes, processorSupport);
-        Assert.assertEquals(2, stereotypes.size());
-        Assert.assertEquals(getGeneratedMilestoningStereotype(), stereotypes.get(0));
-        Assert.assertEquals(disableStreamingStereotype, stereotypes.get(1));
+        Assert.assertEquals(Lists.fixedSize.with(getGeneratedMilestoningStereotype(), disableStreamingStereotype), productProperty._stereotypes());
 
-        ListIterable<? extends CoreInstance> taggedValues = Instance.getValueForMetaPropertyToManyResolved(productProperty, M3Properties.taggedValues, processorSupport);
+        RichIterable<? extends TaggedValue> taggedValues = productProperty._taggedValues();
         Assert.assertEquals(1, taggedValues.size());
-        Assert.assertEquals("HTTP", taggedValues.get(0).getValueForMetaPropertyToOne(M3Properties.value).getName());
+        Assert.assertEquals("HTTP", taggedValues.getOnly()._value());
     }
 
     @Test
     public void testGeneratedPropertiesIncludeAggregationProperty()
     {
         runtime.createInMemorySource("sourceId.pure",
-                "import meta::test::domain::*;" +
-                        "Class meta::test::domain::Order{\n" +
-                        "   <<service.disableStreaming>> " +
-                        "   {service.contentType='HTTP'}" +
-                        "   (composite)" +
-                        "   orderDetailsComposite : OrderDetails[1];\n" +
-                        "   (composite)" +
-                        "   orderDetailsNonTemporalComposite : OrderDetailsNonTemporal[1];\n" +
-                        "   (shared)" +
-                        "   orderDetailsShared : OrderDetails[1];\n" +
-                        "   (shared)" +
-                        "   orderDetailsNonTemporalShared : OrderDetailsNonTemporal[1];\n" +
+                "import meta::test::domain::*;\n" +
+                        "Class meta::test::domain::Order\n" +
+                        "{\n" +
+                        "   <<service.disableStreaming>> {service.contentType='HTTP'} (composite) orderDetailsComposite : OrderDetails[1];\n" +
+                        "   (composite) orderDetailsNonTemporalComposite : OrderDetailsNonTemporal[1];\n" +
+                        "   (shared) orderDetailsShared : OrderDetails[1];\n" +
+                        "   (shared) orderDetailsNonTemporalShared : OrderDetailsNonTemporal[1];\n" +
                         "}\n" +
-                        "Class <<temporal.processingtemporal>> meta::test::domain::OrderDetails{\n" +
+                        "\n" +
+                        "Class <<temporal.processingtemporal>> meta::test::domain::OrderDetails\n" +
+                        "{\n" +
                         "   name : String[1];\n" +
-                        "}" +
-                        "Class meta::test::domain::OrderDetailsNonTemporal{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class meta::test::domain::OrderDetailsNonTemporal\n" +
+                        "{\n" +
                         "   name : String[1];\n" +
-                        "}" +
-                        "Association  meta::test::domain::Order_OrderDetails{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Association  meta::test::domain::Order_OrderDetails\n" +
+                        "{\n" +
                         "   order : Order[1];\n" +
-                        "   (composite)" +
-                        "   orderDetailsViaAssnComposite : OrderDetails[1];\n" +
+                        "   (composite) orderDetailsViaAssnComposite : OrderDetails[1];\n" +
                         "}"
         );
-
         runtime.compile();
-        CoreInstance order = runtime.getCoreInstance("meta::test::domain::Order");
-        ListIterable<? extends CoreInstance> orderProperties = Instance.getValueForMetaPropertyToManyResolved(order, M3Properties.properties, processorSupport);
 
-        CoreInstance orderDetailsNonTemporalCompositeProperty = orderProperties.detect(Predicates.attributeEqual(CoreInstance::getName, "orderDetailsNonTemporalComposite"));
-        CoreInstance compositeAggregation = orderDetailsNonTemporalCompositeProperty.getValueForMetaPropertyToOne(M3Properties.aggregation);
-        CoreInstance orderDetailsNonTemporalSharedProperty = orderProperties.detect(Predicates.attributeEqual(CoreInstance::getName, "orderDetailsNonTemporalShared"));
-        CoreInstance sharedAggregation = orderDetailsNonTemporalSharedProperty.getValueForMetaPropertyToOne(M3Properties.aggregation);
+        Class<?> order = getCoreInstance("meta::test::domain::Order");
 
-        CoreInstance orderDetailsTemporalCompositeProperty = orderProperties.detect(Predicates.attributeEqual(CoreInstance::getName, "orderDetailsCompositeAllVersions"));
-        CoreInstance orderDetailsTemporalSharedProperty = orderProperties.detect(Predicates.attributeEqual(CoreInstance::getName, "orderDetailsSharedAllVersions"));
-        CoreInstance orderDetailsTemporalCompositePropertyAgg = orderDetailsTemporalCompositeProperty.getValueForMetaPropertyToOne(M3Properties.aggregation);
-        CoreInstance orderDetailsTemporalSharedPropertyAgg = orderDetailsTemporalSharedProperty.getValueForMetaPropertyToOne(M3Properties.aggregation);
+        Property<?, ?> orderDetailsNonTemporalCompositeProperty = getProperty(order, "orderDetailsNonTemporalComposite");
+        CoreInstance compositeAggregation = orderDetailsNonTemporalCompositeProperty._aggregation();
+        Property<?, ?> orderDetailsNonTemporalSharedProperty = getProperty(order, "orderDetailsNonTemporalShared");
+        CoreInstance sharedAggregation = orderDetailsNonTemporalSharedProperty._aggregation();
 
-        Assert.assertEquals(compositeAggregation, orderDetailsTemporalCompositePropertyAgg);
-        Assert.assertEquals(sharedAggregation, orderDetailsTemporalSharedPropertyAgg);
+        Property<?, ?> orderDetailsTemporalCompositeProperty = getProperty(order, "orderDetailsCompositeAllVersions");
+        Property<?, ?> orderDetailsTemporalSharedProperty = getProperty(order, "orderDetailsSharedAllVersions");
 
-        CoreInstance orderDetailsAssn = runtime.getCoreInstance("meta::test::domain::Order_OrderDetails");
-        ListIterable<? extends CoreInstance> orderDetailsAssnProperties = Instance.getValueForMetaPropertyToManyResolved(orderDetailsAssn, M3Properties.properties, processorSupport);
-        CoreInstance orderDetailsViaAssnCompositeAllVersions = orderDetailsAssnProperties.detect(Predicates.attributeEqual(CoreInstance::getName, "orderDetailsViaAssnCompositeAllVersions"));
-        CoreInstance orderDetailsViaAssnCompositeAllVersionsAgg = orderDetailsViaAssnCompositeAllVersions.getValueForMetaPropertyToOne(M3Properties.aggregation);
-        Assert.assertEquals(compositeAggregation, orderDetailsViaAssnCompositeAllVersionsAgg);
+        Assert.assertEquals(compositeAggregation, orderDetailsTemporalCompositeProperty._aggregation());
+        Assert.assertEquals(sharedAggregation, orderDetailsTemporalSharedProperty._aggregation());
+
+        Association orderDetailsAssn = getCoreInstance("meta::test::domain::Order_OrderDetails");
+        Property<?, ?> orderDetailsViaAssnCompositeAllVersions = getProperty(orderDetailsAssn, "orderDetailsViaAssnCompositeAllVersions");
+        Assert.assertEquals(compositeAggregation, orderDetailsViaAssnCompositeAllVersions._aggregation());
     }
 
 
@@ -310,59 +277,53 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
     public void testAdditionOfSynthesizedQualifiedPropertiesForBusinessTemporalAssociations()
     {
         runtime.createInMemorySource("sourceId.pure",
-                "import meta::test::domain::*;" +
-                        "Class meta::test::domain::Order{\n" +
+                "import meta::test::domain::*;\n" +
+                        "Class meta::test::domain::Order\n" +
+                        "{\n" +
                         "}\n" +
-                        "Class <<temporal.businesstemporal>> meta::test::domain::Product{\n" +
-                        "}" +
-                        "Association meta::relational::tests::milestoning::OrderProduct{\n" +
+                        "\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::domain::Product\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Association meta::relational::tests::milestoning::OrderProduct\n" +
+                        "{\n" +
                         "   product : Product[1];\n" +
                         "   orders : Order[*];\n" +
                         "}"
         );
         runtime.compile();
 
-        CoreInstance orderClass = runtime.getCoreInstance("meta::test::domain::Order");
-        Assert.assertNotNull(orderClass);
+        Class<?> orderClass = getCoreInstance("meta::test::domain::Order");
 
-        CoreInstance productClass = runtime.getCoreInstance("meta::test::domain::Product");
-        Assert.assertNotNull(productClass);
+        Assert.assertEquals(Lists.mutable.with("productAllVersions"), getPropertiesFromAssociations(orderClass).collect(CoreInstance::getName));
 
-        ListIterable<? extends CoreInstance> orderProperties = Instance.getValueForMetaPropertyToManyResolved(orderClass, M3Properties.propertiesFromAssociations, processorSupport);
-        ListIterable<String> productPropertiesAsStrings = orderProperties.collect(CoreInstance::getName);
-        Assert.assertEquals(Lists.mutable.with("productAllVersions"), productPropertiesAsStrings);
+        ListIterable<? extends QualifiedProperty<?>> qualifiedProperties = getQualifiedPropertiesFromAssociations(orderClass);
+        Assert.assertEquals(Lists.fixedSize.with("product(Date[1])", "productAllVersionsInRange(Date[1],Date[1])"), qualifiedProperties.collect(QualifiedProperty::_id));
 
-        ListIterable<? extends CoreInstance> qualifiedProperties = Instance.getValueForMetaPropertyToManyResolved(orderClass, M3Properties.qualifiedPropertiesFromAssociations, processorSupport);
-        Verify.assertSize(2, qualifiedProperties);
-        CoreInstance qualifiedProperty = qualifiedProperties.getFirst();
-        CoreInstance propertyName = Instance.getValueForMetaPropertyToManyResolved(qualifiedProperty, M3Properties.functionName, processorSupport).getFirst();
-        CoreInstance type = Instance.getValueForMetaPropertyToOneResolved(qualifiedProperty, M3Properties.genericType, M3Properties.rawType, processorSupport);
-        Assert.assertEquals("product", propertyName.getName());
-        Assert.assertSame(productClass, type);
-        ListIterable<? extends CoreInstance> stereotypes = Instance.getValueForMetaPropertyToManyResolved(qualifiedProperty, M3Properties.stereotypes, processorSupport);
-        Verify.assertSize(1, stereotypes);
-        Assert.assertEquals(getGeneratedMilestoningStereotype(), stereotypes.getFirst());
-        CoreInstance allVersionsInRangeQualifiedProperty = qualifiedProperties.getLast();
-        CoreInstance allVersionsInRangePropertyName = Instance.getValueForMetaPropertyToManyResolved(allVersionsInRangeQualifiedProperty, M3Properties.functionName, processorSupport).getFirst();
-        CoreInstance allVersionsInRangePropertyType = Instance.getValueForMetaPropertyToOneResolved(allVersionsInRangeQualifiedProperty, M3Properties.genericType, M3Properties.rawType, processorSupport);
-        Assert.assertEquals("productAllVersionsInRange", allVersionsInRangePropertyName.getName());
-        Assert.assertSame(productClass, allVersionsInRangePropertyType);
-        ListIterable<? extends CoreInstance> allVersionsInRangePropertyStereotypes = Instance.getValueForMetaPropertyToManyResolved(allVersionsInRangeQualifiedProperty, M3Properties.stereotypes, processorSupport);
-        Verify.assertSize(1, allVersionsInRangePropertyStereotypes);
-        Assert.assertEquals(this.getGeneratedMilestoningStereotype(), allVersionsInRangePropertyStereotypes.getFirst());
+        QualifiedProperty<?> qualifiedProperty = qualifiedProperties.getFirst();
+        Assert.assertEquals("product", qualifiedProperty._functionName());
+        assertGenericType("meta::test::domain::Product", qualifiedProperty);
+        Assert.assertEquals(Lists.fixedSize.with(getGeneratedMilestoningStereotype()), qualifiedProperty._stereotypes());
+
+        QualifiedProperty<?> allVersionsInRangeQualifiedProperty = qualifiedProperties.getLast();
+        Assert.assertEquals("productAllVersionsInRange", allVersionsInRangeQualifiedProperty._functionName());
+        assertGenericType("meta::test::domain::Product", allVersionsInRangeQualifiedProperty);
+        Assert.assertEquals(Lists.fixedSize.with(getGeneratedMilestoningStereotype()), allVersionsInRangeQualifiedProperty._stereotypes());
     }
 
     @Test
     public void testQualifiedPropertyVisibility()
     {
         runtime.createInMemorySource("sourceId.pure",
-                "import meta::test::domain::*;" +
-                        "Class meta::test::domain::Order{\n" +
+                "import meta::test::domain::*;\n" +
+                        "Class meta::test::domain::Order\n" +
+                        "{\n" +
                         "   orderId : Integer[1];\n" +
                         "   product : Product[1];\n" +
-
                         "}\n" +
-                        "Class <<temporal.businesstemporal>> meta::test::domain::Product{\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::domain::Product\n" +
+                        "{\n" +
                         "   name : String[1];\n" +
                         "}"
         );
@@ -371,6 +332,9 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   let p = ^Product(name='test', businessDate=%2018-12-18T13:35:21);\n" +
+                        "   let o = ^Order(orderId=1, productAllVersions=$p);\n" +
+                        "   $o.product(%2018-12-18T13:35:21);\n" +
+                        "   $o.productAllVersionsInRange(%2018-12-1, %2018-12-31);\n" +
                         "}");
         runtime.compile();
     }
@@ -393,34 +357,22 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
                         "   mainToOther : test::OtherClass[*];\n" +
                         "}");
 
-        CoreInstance mainClass = runtime.getCoreInstance("test::MainClass");
-        Assert.assertNotNull(mainClass);
+        Class<?> mainClass = getCoreInstance("test::MainClass");
 
-        CoreInstance otherClass = runtime.getCoreInstance("test::OtherClass");
-        Assert.assertNotNull(otherClass);
+        Assert.assertEquals(Lists.mutable.with("mainToOtherAllVersions"), getPropertiesFromAssociations(mainClass).collect(Property::_name));
 
-        ListIterable<? extends CoreInstance> orderProperties = Instance.getValueForMetaPropertyToManyResolved(mainClass, M3Properties.propertiesFromAssociations, processorSupport);
-        ListIterable<String> productPropertiesAsStrings = orderProperties.collect(CoreInstance::getName);
-        Assert.assertEquals(Lists.mutable.with("mainToOtherAllVersions"), productPropertiesAsStrings);
+        ListIterable<? extends QualifiedProperty<?>> qualifiedProperties = getQualifiedPropertiesFromAssociations(mainClass);
+        Assert.assertEquals(Lists.fixedSize.with("mainToOther(Date[1])", "mainToOtherAllVersionsInRange(Date[1],Date[1])"), qualifiedProperties.collect(QualifiedProperty::_id));
 
-        ListIterable<? extends CoreInstance> qualifiedProperties = Instance.getValueForMetaPropertyToManyResolved(mainClass, M3Properties.qualifiedPropertiesFromAssociations, processorSupport);
-        Verify.assertSize(2, qualifiedProperties);
-        CoreInstance qualifiedProperty = qualifiedProperties.getFirst();
-        CoreInstance propertyName = Instance.getValueForMetaPropertyToManyResolved(qualifiedProperty, M3Properties.functionName, processorSupport).getFirst();
-        CoreInstance type = Instance.getValueForMetaPropertyToOneResolved(qualifiedProperty, M3Properties.genericType, M3Properties.rawType, processorSupport);
-        Assert.assertEquals("mainToOther", propertyName.getName());
-        Assert.assertSame(otherClass, type);
-        ListIterable<? extends CoreInstance> stereotypes = Instance.getValueForMetaPropertyToManyResolved(qualifiedProperty, M3Properties.stereotypes, processorSupport);
-        Verify.assertSize(1, stereotypes);
-        Assert.assertEquals(getGeneratedMilestoningStereotype(), stereotypes.getFirst());
-        CoreInstance allVersionsInRangeQualifiedProperty = qualifiedProperties.getLast();
-        CoreInstance allVersionsInRangePropertyName = Instance.getValueForMetaPropertyToManyResolved(allVersionsInRangeQualifiedProperty, M3Properties.functionName, processorSupport).getFirst();
-        CoreInstance allVersionsInRangePropertyType = Instance.getValueForMetaPropertyToOneResolved(allVersionsInRangeQualifiedProperty, M3Properties.genericType, M3Properties.rawType, processorSupport);
-        Assert.assertEquals("mainToOtherAllVersionsInRange", allVersionsInRangePropertyName.getName());
-        Assert.assertSame(otherClass, allVersionsInRangePropertyType);
-        ListIterable<? extends CoreInstance> allVersionsInRangePropertyStereotypes = Instance.getValueForMetaPropertyToManyResolved(allVersionsInRangeQualifiedProperty, M3Properties.stereotypes, processorSupport);
-        Verify.assertSize(1, allVersionsInRangePropertyStereotypes);
-        Assert.assertEquals(this.getGeneratedMilestoningStereotype(), allVersionsInRangePropertyStereotypes.getFirst());
+        QualifiedProperty<?> qualifiedProperty = qualifiedProperties.getFirst();
+        Assert.assertEquals("mainToOther", qualifiedProperty._functionName());
+        assertGenericType("test::OtherClass", qualifiedProperty);
+        Assert.assertEquals(Lists.fixedSize.with(getGeneratedMilestoningStereotype()), qualifiedProperty._stereotypes());
+
+        QualifiedProperty<?> allVersionsInRangeQualifiedProperty = qualifiedProperties.getLast();
+        Assert.assertEquals("mainToOtherAllVersionsInRange", allVersionsInRangeQualifiedProperty._functionName());
+        assertGenericType("test::OtherClass", allVersionsInRangeQualifiedProperty);
+        Assert.assertEquals(Lists.fixedSize.with(getGeneratedMilestoningStereotype()), allVersionsInRangeQualifiedProperty._stereotypes());
     }
 
 
@@ -430,7 +382,8 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
         compileTestSource("mainModel.pure",
                 "Class test::MainClass\n" +
                         "{\n" +
-                        "}" +
+                        "}\n" +
+                        "\n" +
                         "Class <<temporal.businesstemporal>> test::OtherClass\n" +
                         "{\n" +
                         "}\n" +
@@ -441,34 +394,21 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
                         "   mainToOther : test::OtherClass[*];\n" +
                         "}");
 
-        CoreInstance mainClass = runtime.getCoreInstance("test::MainClass");
-        Assert.assertNotNull(mainClass);
+        Class<?> mainClass = getCoreInstance("test::MainClass");
 
-        CoreInstance otherClass = runtime.getCoreInstance("test::OtherClass");
-        Assert.assertNotNull(otherClass);
+        Assert.assertEquals(Lists.mutable.with("mainToOtherAllVersions"), getPropertiesFromAssociations(mainClass).collect(Property::_name));
 
-        ListIterable<? extends CoreInstance> orderProperties = Instance.getValueForMetaPropertyToManyResolved(mainClass, M3Properties.propertiesFromAssociations, processorSupport);
-        ListIterable<String> productPropertiesAsStrings = orderProperties.collect(CoreInstance::getName);
-        Assert.assertEquals(Lists.mutable.with("mainToOtherAllVersions"), productPropertiesAsStrings);
+        ListIterable<? extends QualifiedProperty<?>> qualifiedProperties = getQualifiedPropertiesFromAssociations(mainClass);
+        Assert.assertEquals(Lists.fixedSize.with("mainToOther(Date[1])", "mainToOtherAllVersionsInRange(Date[1],Date[1])"), qualifiedProperties.collect(QualifiedProperty::_id));
+        QualifiedProperty<?> qualifiedProperty = qualifiedProperties.getFirst();
+        Assert.assertEquals("mainToOther", qualifiedProperty._functionName());
+        assertGenericType("test::OtherClass", qualifiedProperty);
+        Assert.assertEquals(Lists.fixedSize.with(getGeneratedMilestoningStereotype()), qualifiedProperty._stereotypes());
 
-        ListIterable<? extends CoreInstance> qualifiedProperties = Instance.getValueForMetaPropertyToManyResolved(mainClass, M3Properties.qualifiedPropertiesFromAssociations, processorSupport);
-        Verify.assertSize(2, qualifiedProperties);
-        CoreInstance qualifiedProperty = qualifiedProperties.getFirst();
-        CoreInstance propertyName = Instance.getValueForMetaPropertyToManyResolved(qualifiedProperty, M3Properties.functionName, processorSupport).getFirst();
-        CoreInstance type = Instance.getValueForMetaPropertyToOneResolved(qualifiedProperty, M3Properties.genericType, M3Properties.rawType, processorSupport);
-        Assert.assertEquals("mainToOther", propertyName.getName());
-        Assert.assertSame(otherClass, type);
-        ListIterable<? extends CoreInstance> stereotypes = Instance.getValueForMetaPropertyToManyResolved(qualifiedProperty, M3Properties.stereotypes, processorSupport);
-        Verify.assertSize(1, stereotypes);
-        Assert.assertEquals(getGeneratedMilestoningStereotype(), stereotypes.getFirst());
-        CoreInstance allVersionsInRangeQualifiedProperty = qualifiedProperties.getLast();
-        CoreInstance allVersionsInRangePropertyName = Instance.getValueForMetaPropertyToManyResolved(allVersionsInRangeQualifiedProperty, M3Properties.functionName, processorSupport).getFirst();
-        CoreInstance allVersionsInRangePropertyType = Instance.getValueForMetaPropertyToOneResolved(allVersionsInRangeQualifiedProperty, M3Properties.genericType, M3Properties.rawType, processorSupport);
-        Assert.assertEquals("mainToOtherAllVersionsInRange", allVersionsInRangePropertyName.getName());
-        Assert.assertSame(otherClass, allVersionsInRangePropertyType);
-        ListIterable<? extends CoreInstance> allVersionsInRangePropertyStereotypes = Instance.getValueForMetaPropertyToManyResolved(allVersionsInRangeQualifiedProperty, M3Properties.stereotypes, processorSupport);
-        Verify.assertSize(1, allVersionsInRangePropertyStereotypes);
-        Assert.assertEquals(this.getGeneratedMilestoningStereotype(), allVersionsInRangePropertyStereotypes.getFirst());
+        QualifiedProperty<?> allVersionsInRangeQualifiedProperty = qualifiedProperties.getLast();
+        Assert.assertEquals("mainToOtherAllVersionsInRange", allVersionsInRangeQualifiedProperty._functionName());
+        assertGenericType("test::OtherClass", allVersionsInRangeQualifiedProperty);
+        Assert.assertEquals(Lists.fixedSize.with(getGeneratedMilestoningStereotype()), allVersionsInRangeQualifiedProperty._stereotypes());
     }
 
     @Test
@@ -498,49 +438,36 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
         runtime.createInMemorySource(source1Id, source1Code);
         runtime.compile();
 
-        CoreInstance mainClass = runtime.getCoreInstance("model::domain::test::MainClass");
-        Assert.assertNotNull(mainClass);
+        Class<?> mainClass = getCoreInstance("model::domain::test::MainClass");
 
-        CoreInstance otherClass = runtime.getCoreInstance("model::domain::test::OtherClass");
-        Assert.assertNotNull(otherClass);
+        Assert.assertEquals(Lists.mutable.with("mainToOtherAllVersions"), getPropertiesFromAssociations(mainClass).collect(Property::_name));
 
-        ListIterable<? extends CoreInstance> orderProperties = Instance.getValueForMetaPropertyToManyResolved(mainClass, M3Properties.propertiesFromAssociations, processorSupport);
-        ListIterable<String> productPropertiesAsStrings = orderProperties.collect(CoreInstance::getName);
-        Assert.assertEquals(Lists.mutable.with("mainToOtherAllVersions"), productPropertiesAsStrings);
+        ListIterable<? extends QualifiedProperty<?>> qualifiedProperties = getQualifiedPropertiesFromAssociations(mainClass);
+        Assert.assertEquals(Lists.fixedSize.with("mainToOther(Date[1])", "mainToOtherAllVersionsInRange(Date[1],Date[1])"), qualifiedProperties.collect(QualifiedProperty::_id));
+        QualifiedProperty<?> qualifiedProperty = qualifiedProperties.getFirst();
+        Assert.assertEquals("mainToOther", qualifiedProperty._functionName());
+        assertGenericType("model::domain::test::OtherClass", qualifiedProperty);
+        Assert.assertEquals(Lists.fixedSize.with(getGeneratedMilestoningStereotype()), qualifiedProperty._stereotypes());
 
-        ListIterable<? extends CoreInstance> qualifiedProperties = Instance.getValueForMetaPropertyToManyResolved(mainClass, M3Properties.qualifiedPropertiesFromAssociations, processorSupport);
-        Verify.assertSize(2, qualifiedProperties);
-        CoreInstance qualifiedProperty = qualifiedProperties.getFirst();
-        CoreInstance propertyName = Instance.getValueForMetaPropertyToManyResolved(qualifiedProperty, M3Properties.functionName, processorSupport).getFirst();
-        CoreInstance type = Instance.getValueForMetaPropertyToOneResolved(qualifiedProperty, M3Properties.genericType, M3Properties.rawType, processorSupport);
-        Assert.assertEquals("mainToOther", propertyName.getName());
-        Assert.assertSame(otherClass, type);
-        ListIterable<? extends CoreInstance> stereotypes = Instance.getValueForMetaPropertyToManyResolved(qualifiedProperty, M3Properties.stereotypes, processorSupport);
-        Verify.assertSize(1, stereotypes);
-        Assert.assertEquals(getGeneratedMilestoningStereotype(), stereotypes.getFirst());
-        CoreInstance allVersionsInRangeQualifiedProperty = qualifiedProperties.getLast();
-        CoreInstance allVersionsInRangePropertyName = Instance.getValueForMetaPropertyToManyResolved(allVersionsInRangeQualifiedProperty, M3Properties.functionName, processorSupport).getFirst();
-        CoreInstance allVersionsInRangePropertyType = Instance.getValueForMetaPropertyToOneResolved(allVersionsInRangeQualifiedProperty, M3Properties.genericType, M3Properties.rawType, processorSupport);
-        Assert.assertEquals("mainToOtherAllVersionsInRange", allVersionsInRangePropertyName.getName());
-        Assert.assertSame(otherClass, allVersionsInRangePropertyType);
-        ListIterable<? extends CoreInstance> allVersionsInRangePropertyStereotypes = Instance.getValueForMetaPropertyToManyResolved(allVersionsInRangeQualifiedProperty, M3Properties.stereotypes, processorSupport);
-        Verify.assertSize(1, allVersionsInRangePropertyStereotypes);
-        Assert.assertEquals(this.getGeneratedMilestoningStereotype(), allVersionsInRangePropertyStereotypes.getFirst());
+        QualifiedProperty<?> allVersionsInRangeQualifiedProperty = qualifiedProperties.getLast();
+        Assert.assertEquals("mainToOtherAllVersionsInRange", allVersionsInRangeQualifiedProperty._functionName());
+        assertGenericType("model::domain::test::OtherClass", allVersionsInRangeQualifiedProperty);
+        Assert.assertEquals(Lists.fixedSize.with(getGeneratedMilestoningStereotype()), allVersionsInRangeQualifiedProperty._stereotypes());
     }
 
     @Test
     public void testRemovalOfOriginalMilestonedPropertyAndMilestonedPropertyGeneration()
     {
-        expectedEx.expect(PureCompilationException.class);
-        expectedEx.expectMessage("Compilation error at (resource:sourceId.pure line:8 column:7), \"The property 'account' is milestoned with stereotypes: [ businesstemporal ] and requires date parameters: [ businessDate ]");
         runtime.createInMemorySource("sourceId.pure",
-                "import model::domain::subdom1::account::*;" +
-                        "Class <<temporal.businesstemporal>> model::domain::subdom1::account::Account \n" +
-                        "{}" +
-                        "Class model::domain::trading::Order{" +
-                        "   account:model::domain::subdom1::account::Account[0..1];" +
-                        "} \n" +
-                        "" +
+                "import model::domain::subdom1::account::*;\n" +
+                        "Class <<temporal.businesstemporal>> model::domain::subdom1::account::Account\n" +
+                        "{\n" +
+                        "}\n" +
+                        "Class model::domain::trading::Order\n" +
+                        "{\n" +
+                        "   account:model::domain::subdom1::account::Account[0..1];\n" +
+                        "}\n" +
+                        "\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   let o = ^model::domain::trading::Order();\n" +
@@ -549,29 +476,26 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
                         "   $o.account;\n" +
                         "}"
         );
-        runtime.compile();
-
-        CoreInstance order = runtime.getCoreInstance("model::domain::trading::Order");
-        assertAllPropertiesInCompiledState(order, _Class.ALL_PROPERTIES_PROPERTIES);
-        assertAllPropertiesHaveOwnerSet(order, _Class.ALL_PROPERTIES_PROPERTIES);
-
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure line:15 column:7), \"The property 'account' is milestoned with stereotypes: [ businesstemporal ] and requires date parameters: [ businessDate ]\"", e.getMessage());
     }
 
     @Test
     public void testRemovalOfOriginalMilestonedPropertyAndGenerationOfAllPropertyViaAssociation()
     {
-        expectedEx.expect(PureCompilationException.class);
-        expectedEx.expectMessage("Compilation error at (resource:sourceId.pure line:8 column:7), \"The property 'account' is milestoned with stereotypes: [ businesstemporal ] and requires date parameters: [ businessDate ]");
         runtime.createInMemorySource("sourceId.pure",
-                "import model::domain::subdom1::account::*;" +
-                        "Class <<temporal.businesstemporal>> model::domain::subdom1::account::Account \n" +
-                        "{}" +
-                        "Class model::domain::trading::Order{} \n" +
-                        "" +
-                        "Association OrderAccount{" +
-                        "   account:model::domain::subdom1::account::Account[0..1];" +
-                        "   order:model::domain::trading::Order[0..1];" +
-                        "}" +
+                "import model::domain::subdom1::account::*;\n" +
+                        "Class <<temporal.businesstemporal>> model::domain::subdom1::account::Account\n" +
+                        "{\n" +
+                        "}\n" +
+                        "Class model::domain::trading::Order\n" +
+                        "{\n" +
+                        "}\n" +
+                        "Association OrderAccount\n" +
+                        "{\n" +
+                        "   account:model::domain::subdom1::account::Account[0..1];\n" +
+                        "   order:model::domain::trading::Order[0..1];\n" +
+                        "}\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   let o = ^model::domain::trading::Order();\n" +
@@ -580,47 +504,57 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
                         "   $o.account;\n" +
                         "}"
         );
-        runtime.compile();
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure line:18 column:7), \"The property 'account' is milestoned with stereotypes: [ businesstemporal ] and requires date parameters: [ businessDate ]\"", e.getMessage());
     }
 
     @Test
     public void testNoArgPropertyNotGeneratedWhenSourceClassIsNotTemporal()
     {
-        expectedEx.expectMessage("The property 'legalEntity' is milestoned with stereotypes: [ businesstemporal ] and requires date parameters: [ businessDate ]");
         runtime.createInMemorySource("sourceId.pure",
-                "import model::domain::subdom1::entity::*;" +
-                        "import model::domain::subdom1::product::*;" +
-                        "Class <<temporal.businesstemporal>> model::domain::subdom1::entity::LegalEntity \n" +
-                        "{}" +
-                        "Class model::domain::subdom1::product::Product \n" +
-                        "{legalEntity : LegalEntity[*];}" +
+                "import model::domain::subdom1::entity::*;\n" +
+                        "import model::domain::subdom1::product::*;\n" +
+                        "Class <<temporal.businesstemporal>> model::domain::subdom1::entity::LegalEntity\n" +
+                        "{\n" +
+                        "}\n" +
+                        "Class model::domain::subdom1::product::Product\n" +
+                        "{\n" +
+                        "  legalEntity : LegalEntity[*];\n" +
+                        "}\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   let p = ^model::domain::subdom1::product::Product();\n" +
                         "   $p.legalEntity;\n" +
                         "}"
         );
-        runtime.compile();
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure line:13 column:7), \"The property 'legalEntity' is milestoned with stereotypes: [ businesstemporal ] and requires date parameters: [ businessDate ]\"", e.getMessage());
     }
 
     @Test
     public void testGenerationOfNoArgQualifiedPropertyFromAssociationWhereTargetClassInheritsFromClassWithBusinessTemporalStereotype()
     {
         runtime.createInMemorySource("sourceId.pure",
-                "import model::domain::subdom1::account::*;" +
-                        "Class <<temporal.businesstemporal>> model::domain::subdom1::account::Account \n" +
-                        "{}" +
-                        "Class <<temporal.businesstemporal>> model::domain::subdom1::account::FirmAccount extends model::domain::subdom1::account::Account \n" +
-                        "{}" +
-                        "Class <<temporal.businesstemporal>>  model::domain::trading::Order{} \n" +
-                        "" +
-                        "Association OrderAccount{" +
-                        "   account:model::domain::subdom1::account::FirmAccount[0..1];" +
-                        "   order:model::domain::trading::Order[0..1];" +
-                        "}" +
+                "import model::domain::subdom1::account::*;\n" +
+                        "Class <<temporal.businesstemporal>> model::domain::subdom1::account::Account\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class <<temporal.businesstemporal>> model::domain::subdom1::account::FirmAccount extends model::domain::subdom1::account::Account\n" +
+                        "{\n" +
+                        "}\n" +
+                        "Class <<temporal.businesstemporal>>  model::domain::trading::Order\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Association OrderAccount\n" +
+                        "{\n" +
+                        "   account:model::domain::subdom1::account::FirmAccount[0..1];\n" +
+                        "   order:model::domain::trading::Order[0..1];\n" +
+                        "}\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
-                        "{|model::domain::trading::Order.all(%2016)->filter(o|$o.account->isEmpty())};" +
+                        "   {|model::domain::trading::Order.all(%2016)->filter(o|$o.account->isEmpty())};\n" +
                         "}"
         );
         runtime.compile();
@@ -630,28 +564,33 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
     public void testGenerationOfNoArgQualifiedPropertyFromAssociationWhereTargetClassInheritsFromClassWithBusinessTemporalStereotypeWithMultipleSources()
     {
         runtime.createInMemorySource("sourceId.pure",
-                "" +
-                        "Class <<temporal.businesstemporal>> model::domain::subdom1::account::Account \n" +
-                        "{}" +
-                        "Class <<temporal.businesstemporal>> model::domain::subdom1::account::FirmAccount extends model::domain::subdom1::account::Account \n" +
-                        "{}" +
-                        "Class <<temporal.businesstemporal>>  model::domain::trading::Order{" +
+                "Class <<temporal.businesstemporal>> model::domain::subdom1::account::Account\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class <<temporal.businesstemporal>> model::domain::subdom1::account::FirmAccount extends model::domain::subdom1::account::Account\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class <<temporal.businesstemporal>> model::domain::trading::Order\n" +
+                        "{\n" +
                         "   orderId : Integer[1];\n" +
                         "   orderIdQp(){$this.orderId} : Integer[1];\n" +
-                        "} \n"
+                        "}"
         );
         runtime.createInMemorySource("sourceId2.pure",
-                "import model::domain::subdom1::account::*;" +
-                        "Association OrderAccount{" +
-                        "   account : FirmAccount[0..1];" +
-                        "   order:model::domain::trading::Order[0..1];" +
+                "import model::domain::subdom1::account::*;\n" +
+                        "Association OrderAccount\n" +
+                        "{\n" +
+                        "   account : FirmAccount[0..1];\n" +
+                        "   order:model::domain::trading::Order[0..1];\n" +
                         "}"
         );
         runtime.createInMemorySource("sourceId3.pure",
-                "import model::domain::subdom1::account::*;" +
+                "import model::domain::subdom1::account::*;\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
-                        "{|model::domain::trading::Order.all(%2016)->filter(o|$o.account->isEmpty())};" +
+                        "   {|model::domain::trading::Order.all(%2016)->filter(o|$o.account->isEmpty())};\n" +
                         "}"
         );
         runtime.compile();
@@ -661,16 +600,20 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
     public void testPropertiesInterceptedAndTransformedToQualifiedPropertiesWhereSourceAndTargetAreBusinessTemporal()
     {
         runtime.createInMemorySource("sourceId.pure",
-                "import model::domain::subdom1::entity::*;" +
-                        "import model::domain::subdom1::product::*;" +
-                        "Class <<temporal.businesstemporal>> model::domain::subdom1::entity::LegalEntity \n" +
-                        "{}" +
-                        "Class <<temporal.businesstemporal>> model::domain::subdom1::product::Product \n" +
-                        "{legalEntity : LegalEntity[*];}" +
+                "import model::domain::subdom1::entity::*;\n" +
+                        "import model::domain::subdom1::product::*;\n" +
+                        "Class <<temporal.businesstemporal>> model::domain::subdom1::entity::LegalEntity\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class <<temporal.businesstemporal>> model::domain::subdom1::product::Product\n" +
+                        "{\n" +
+                        "   legalEntity : LegalEntity[*];\n" +
+                        "}\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
-                        "{|model::domain::subdom1::product::Product.all(%2016)->filter(o|$o.legalEntity->isEmpty())};" +
-                        "{|model::domain::subdom1::product::Product.all(%2016)->filter(o|$o.legalEntity(%2015)->isEmpty())};" +
+                        "   {|model::domain::subdom1::product::Product.all(%2016)->filter(o|$o.legalEntity->isEmpty())};\n" +
+                        "   {|model::domain::subdom1::product::Product.all(%2016)->filter(o|$o.legalEntity(%2015)->isEmpty())};\n" +
                         "}"
         );
         runtime.compile();
@@ -680,19 +623,23 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
     public void testValidationOfOverridenProperties()
     {
         runtime.createInMemorySource("sourceId.pure",
-                "import model::domain::subdom1::entity::*;" +
-                        "import model::domain::subdom1::product::*;" +
-                        "Class <<temporal.businesstemporal>> meta::relational::tests::milestoning::inheritance::VehicleOwner \n" +
-                        "{" +
-                        "vehicles : meta::relational::tests::milestoning::inheritance::Vehicle[*];" +
-                        "}" +
-                        "Class <<temporal.businesstemporal>> meta::relational::tests::milestoning::inheritance::Person extends meta::relational::tests::milestoning::inheritance::VehicleOwner \n" +
-                        "{}" +
+                "import model::domain::subdom1::entity::*;\n" +
+                        "import model::domain::subdom1::product::*;\n" +
+                        "Class <<temporal.businesstemporal>> meta::relational::tests::milestoning::inheritance::VehicleOwner\n" +
+                        "{\n" +
+                        "   vehicles : meta::relational::tests::milestoning::inheritance::Vehicle[*];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class <<temporal.businesstemporal>> meta::relational::tests::milestoning::inheritance::Person extends meta::relational::tests::milestoning::inheritance::VehicleOwner\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
                         "Class <<temporal.businesstemporal>> meta::relational::tests::milestoning::inheritance::Vehicle\n" +
                         "{\n" +
                         "   id : Integer[1];\n" +
                         "   description: String[1];\n" +
-                        "}" +
+                        "}\n" +
+                        "\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
                         "  print('go',1); \n" +
@@ -705,20 +652,26 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
     public void testPropertyOwnerSetOnMilestonedProperties()
     {
         runtime.createInMemorySource("sourceId.pure",
-                "import meta::test::domain::*;" +
-                        "Class meta::test::domain::Order{\n" +
-                        "   product : Product[1];" +
+                "import meta::test::domain::*;\n" +
+                        "Class meta::test::domain::Order\n" +
+                        "{\n" +
+                        "   product : Product[1];\n" +
                         "}\n" +
-                        "Class <<temporal.businesstemporal>> meta::test::domain::Product{\n" +
-                        "}" +
-                        "Association meta::relational::tests::milestoning::OrderProduct{\n" +
+                        "\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::domain::Product\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Association meta::relational::tests::milestoning::OrderProduct\n" +
+                        "{\n" +
                         "   assocProduct : Product[1];\n" +
                         "   orders : Order[*];\n" +
                         "}"
         );
         runtime.createInMemorySource("sourceId2.pure",
-                "import meta::test::domain::*;" +
-                        "Association meta::relational::tests::milestoning::OrderProduct2{\n" +
+                "import meta::test::domain::*;\n" +
+                        "Association meta::relational::tests::milestoning::OrderProduct2\n" +
+                        "{\n" +
                         "   assocProduct2 : Product[1];\n" +
                         "   orders2 : Order[*];\n" +
                         "}"
@@ -726,37 +679,40 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
         runtime.compile();
 
         //test Association
-        CoreInstance assn = runtime.getCoreInstance("meta::relational::tests::milestoning::OrderProduct");
-        ListIterable<? extends CoreInstance> assnProperties = Instance.getValueForMetaPropertyToManyResolved(assn, M3Properties.properties, processorSupport);
-        Verify.assertSize(2, assnProperties);
-        Verify.assertContainsAll(assnProperties.collect(CoreInstance::getName), "orders", "assocProductAllVersions");
+        Association assn = getCoreInstance("meta::relational::tests::milestoning::OrderProduct");
+        Assert.assertEquals(Lists.fixedSize.with("orders", "assocProductAllVersions"), getProperties(assn).collect(Property::_name));
 
         //test Order
-        CoreInstance orderClass = runtime.getCoreInstance("meta::test::domain::Order");
-
-        ListIterable<? extends CoreInstance> orderProperties = Instance.getValueForMetaPropertyToManyResolved(orderClass, M3Properties.properties, processorSupport);
-        ListIterable<String> orderPropertiesAsStrings = orderProperties.collect(CoreInstance::getName);
-        Verify.assertContainsAll(orderPropertiesAsStrings, "productAllVersions");
-        ListIterable<? extends CoreInstance> orderPropertiesFromAssociations = Instance.getValueForMetaPropertyToManyResolved(orderClass, M3Properties.propertiesFromAssociations, processorSupport);
-        ListIterable<String> orderPropertiesFromAssociationsAsStrings = orderPropertiesFromAssociations.collect(CoreInstance::getName);
-        Verify.assertContainsAll(orderPropertiesFromAssociationsAsStrings, "assocProduct2AllVersions", "assocProductAllVersions");
+        Class<?> orderClass = getCoreInstance("meta::test::domain::Order");
+        Assert.assertEquals(Lists.fixedSize.with("productAllVersions"), getProperties(orderClass).collect(Property::_name));
+        Assert.assertEquals(Lists.fixedSize.with("assocProductAllVersions", "assocProduct2AllVersions"), getPropertiesFromAssociations(orderClass).collect(Property::_name));
     }
 
     @Test
     public void testMilestoningPropertyGenerationFromInheritanceHierarchySource()
     {
         runtime.createInMemorySource("sourceId.pure",
-                "import meta::test::domain::*;" +
-                        "Class <<temporal.businesstemporal>> meta::test::domain::A{}\n" +
+                "import meta::test::domain::*;\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::domain::A\n" +
+                        "{\n" +
+                        "}\n" +
                         "\n" +
-                        "Class <<temporal.businesstemporal>> meta::test::domain::B extends A{}\n" +
-                        "Class <<temporal.businesstemporal>> meta::test::domain::C{\n" +
-                        "}" +
-                        "Association AC{\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::domain::B extends A\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::domain::C\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Association AC\n" +
+                        "{\n" +
                         "   c : C[1];\n" +
                         "   a : A[1];\n" +
-                        "}" +
-                        "Association BC{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Association BC\n" +
+                        "{\n" +
                         "   c : C[1];\n" +
                         "   b : B[1];\n" +
                         "}"
@@ -769,347 +725,507 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
     public void testQualifiedPropertyGenerationForAssociations()
     {
         runtime.createInMemorySource("sourceId.pure",
-                "import meta::test::domain::*;" +
-                        "Class <<temporal.businesstemporal>> meta::test::domain::A{}\n" +
+                "import meta::test::domain::*;\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::domain::A\n" +
+                        "{\n" +
+                        "}\n" +
                         "\n" +
-                        "Class <<temporal.businesstemporal>> meta::test::domain::B{\n" +
-                        "}" +
-                        "Association meta::test::domain::AC{\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::domain::B\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Association meta::test::domain::AC\n" +
+                        "{\n" +
                         "   b : B[1];\n" +
                         "   a : A[1];\n" +
                         "}"
-
         );
         runtime.compile();
 
-        CoreInstance orderClass = runtime.getCoreInstance("meta::test::domain::A");
+        Class<?> orderClass = getCoreInstance("meta::test::domain::A");
 
-        ListIterable<? extends CoreInstance> aProperties = Instance.getValueForMetaPropertyToManyResolved(orderClass, M3Properties.propertiesFromAssociations, processorSupport);
-        ListIterable<String> aPropertiesAsStrings = aProperties.collect(CoreInstance::getName);
-        Verify.assertContainsAll(aPropertiesAsStrings, "bAllVersions");
+        Assert.assertEquals(Lists.fixedSize.with("bAllVersions"), getPropertiesFromAssociations(orderClass).collect(Property::_name));
 
-        ListIterable<? extends CoreInstance> aQpProperties = Instance.getValueForMetaPropertyToManyResolved(orderClass, M3Properties.qualifiedPropertiesFromAssociations, processorSupport);
-        ListIterable<String> orderPropertiesAsStrings = aQpProperties.collect(CoreInstance::getName);
-        Assert.assertEquals(Lists.immutable.with("b_0", "b_1", "bAllVersionsInRange_2"), orderPropertiesAsStrings);
+        Assert.assertEquals(
+                Lists.fixedSize.with("b()", "b(Date[1])", "bAllVersionsInRange(Date[1],Date[1])"),
+                getQualifiedPropertiesFromAssociations(orderClass).collect(QualifiedProperty::_id));
 
-        CoreInstance assn = runtime.getCoreInstance("meta::test::domain::AC");
-        ListIterable<? extends CoreInstance> assnProperties = Instance.getValueForMetaPropertyToManyResolved(assn, M3Properties.properties, processorSupport);
-        Verify.assertSize(2, assnProperties);
-        ListIterable<String> assnPopertiesAsStrings = assnProperties.collect(CoreInstance::getName);
-        Verify.assertContainsAll(assnPopertiesAsStrings, "aAllVersions", "bAllVersions");
-        ListIterable<? extends CoreInstance> assnQualifiedProperties = Instance.getValueForMetaPropertyToManyResolved(assn, M3Properties.qualifiedProperties, processorSupport);
-        ListIterable<String> assnQualifiedPropertiesAsStrings = assnQualifiedProperties.collect(CoreInstance::getName);
-        Verify.assertContainsAll(assnQualifiedPropertiesAsStrings, "a_3", "b_0");
+        Association assn = getCoreInstance("meta::test::domain::AC");
+        Assert.assertEquals(Lists.fixedSize.with("bAllVersions", "aAllVersions"), getProperties(assn).collect(Property::_name));
+        Assert.assertEquals(
+                Lists.fixedSize.with("b()", "b(Date[1])", "bAllVersionsInRange(Date[1],Date[1])",
+                        "a()", "a(Date[1])", "aAllVersionsInRange(Date[1],Date[1])"),
+                getQualifiedProperties(assn).collect(QualifiedProperty::_id));
     }
 
     @Test
     public void testQualifiedPropertyGenerationForAssociationsInDifferentSources()
     {
         runtime.createInMemorySource("sourceId.pure",
-                "import meta::test::domain::*;" +
-                        "Class <<temporal.businesstemporal>> meta::test::domain::A{}\n" +
+                "import meta::test::domain::*;\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::domain::A\n" +
+                        "{\n" +
+                        "}\n" +
                         "\n" +
-                        "Class <<temporal.businesstemporal>> meta::test::domain::B{\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::domain::B\n" +
+                        "{\n" +
                         "}");
 
         runtime.compile();
 
         runtime.createInMemorySource("sourceId2.pure",
-                "import meta::test::domain::*;" +
-                        "Association meta::test::domain::AC{\n" +
+                "import meta::test::domain::*;\n" +
+                        "Association meta::test::domain::AC\n" +
+                        "{\n" +
                         "   b : B[*];\n" +
                         "   a : A[*];\n" +
                         "}"
         );
-        //Class's are not part of the set of instances in scope for post processing this time
+        //Classes are not part of the set of instances in scope for post processing this time
         //Rely on returning/processing the generated QualifiedProperties from AssociationProcessor
         runtime.compile();
 
-        CoreInstance aCi = runtime.getCoreInstance("meta::test::domain::A");
-        CoreInstance acCi = runtime.getCoreInstance("meta::test::domain::AC");
+        Class<?> aClass = getCoreInstance("meta::test::domain::A");
+        Class<?> bClass = getCoreInstance("meta::test::domain::B");
+        Association acAssn = getCoreInstance("meta::test::domain::AC");
 
         //validate edge point properties
-        ListIterable<? extends CoreInstance> aProperties = Instance.getValueForMetaPropertyToManyResolved(aCi, M3Properties.propertiesFromAssociations, processorSupport);
-        ListIterable<String> aPropertiesAsStrings = aProperties.collect(CoreInstance::getName);
-        Assert.assertEquals(1, aPropertiesAsStrings.size());
-        Verify.assertContainsAll(aPropertiesAsStrings, "bAllVersions");
-        Assert.assertEquals(acCi, aProperties.getFirst().getValueForMetaPropertyToOne(M3Properties.owner));
+        ListIterable<? extends Property<?, ?>> aProperties = getPropertiesFromAssociations(aClass);
+        Assert.assertEquals(Lists.fixedSize.with("bAllVersions"), aProperties.collect(Property::_name));
+        Assert.assertSame(acAssn, aProperties.getFirst()._owner());
 
-        CoreInstance bCi = runtime.getCoreInstance("meta::test::domain::B");
-        ListIterable<? extends CoreInstance> bProperties = Instance.getValueForMetaPropertyToManyResolved(bCi, M3Properties.propertiesFromAssociations, processorSupport);
-        ListIterable<String> bPropertiesAsStrings = bProperties.collect(CoreInstance::getName);
-        Assert.assertEquals(1, bPropertiesAsStrings.size());
-        Verify.assertContainsAll(bPropertiesAsStrings, "aAllVersions");
+        ListIterable<? extends Property<?, ?>> bProperties = getPropertiesFromAssociations(bClass);
+        Assert.assertEquals(Lists.fixedSize.with("aAllVersions"), bProperties.collect(Property::_name));
+        Assert.assertSame(acAssn, bProperties.getFirst()._owner());
 
-        ListIterable<? extends CoreInstance> aQpProperties = Instance.getValueForMetaPropertyToManyResolved(aCi, M3Properties.qualifiedPropertiesFromAssociations, processorSupport);
-        ListIterable<String> orderPropertiesAsStrings = aQpProperties.collect(CoreInstance::getName);
-        Assert.assertEquals(Lists.immutable.with("b_0", "b_1", "bAllVersionsInRange_2"), orderPropertiesAsStrings);
-        ListIterable<CoreInstance> qpExprSeqFunc = aQpProperties.collect(qp -> qp.getValueForMetaPropertyToOne(M3Properties.expressionSequence).getValueForMetaPropertyToOne(M3Properties.func));
-        Assert.assertEquals(3, qpExprSeqFunc.size());
-        Assert.assertEquals(Sets.mutable.with("filter_T_MANY__Function_1__T_MANY_"), qpExprSeqFunc.toSet().collect(CoreInstance::getName));
+        ListIterable<? extends QualifiedProperty<?>> aQPs = getQualifiedPropertiesFromAssociations(aClass);
+        Assert.assertEquals(Lists.fixedSize.with("b()", "b(Date[1])", "bAllVersionsInRange(Date[1],Date[1])"), aQPs.collect(QualifiedProperty::_id));
+        Assert.assertEquals(
+                Lists.fixedSize.with("filter_T_MANY__Function_1__T_MANY_", "filter_T_MANY__Function_1__T_MANY_", "filter_T_MANY__Function_1__T_MANY_"),
+                aQPs.collect(qp -> ((SimpleFunctionExpression) qp._expressionSequence().getOnly())._func().getName()));
 
-        CoreInstance assn = runtime.getCoreInstance("meta::test::domain::AC");
-        ListIterable<? extends CoreInstance> assnProperties = Instance.getValueForMetaPropertyToManyResolved(assn, M3Properties.properties, processorSupport);
-        Assert.assertEquals(2, assnProperties.size());
-        ListIterable<String> assnPopertiesAsStrings = assnProperties.collect(CoreInstance::getName);
-        Verify.assertContainsAll(assnPopertiesAsStrings, "bAllVersions", "aAllVersions");
-        ListIterable<? extends CoreInstance> assnQualifiedProperties = Instance.getValueForMetaPropertyToManyResolved(assn, M3Properties.qualifiedProperties, processorSupport);
-        ListIterable<String> assnQualifiedPropertiesAsStrings = assnQualifiedProperties.collect(CoreInstance::getName);
-        Verify.assertContainsAll(assnQualifiedPropertiesAsStrings, "b_0", "a_3");
+        Association assn = getCoreInstance("meta::test::domain::AC");
+        Assert.assertEquals(Lists.fixedSize.with("bAllVersions", "aAllVersions"), getProperties(assn).collect(Property::_name));
+        Assert.assertEquals(
+                Lists.fixedSize.with("b()", "b(Date[1])", "bAllVersionsInRange(Date[1],Date[1])",
+                        "a()", "a(Date[1])", "aAllVersionsInRange(Date[1],Date[1])"),
+                getQualifiedProperties(assn).collect(QualifiedProperty::_id));
     }
 
     @Test
     public void testEdgePointPropertyOwnerIsNotOverriddenWhenMultiplePropertiesAreProcessedViaAssociation()
     {
         runtime.createInMemorySource("sourceId.pure",
-                "import meta::test::domain::*;" +
-                        "Class <<temporal.businesstemporal>> meta::test::domain::A{}\n" +
+                "import meta::test::domain::*;\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::domain::A\n" +
+                        "{\n" +
+                        "}\n" +
                         "\n" +
-                        "Class meta::test::domain::B{\n" +
-                        "}" +
-                        "Association meta::test::domain::AB{\n" +
+                        "Class meta::test::domain::B\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Association meta::test::domain::AB\n" +
+                        "{\n" +
                         "   a : A[*];\n" +
                         "   b1 : B[*];\n" +
                         "}");
 
         runtime.compile();
-        CoreInstance assnAB = runtime.getCoreInstance("meta::test::domain::AB");
-        CoreInstance b = runtime.getCoreInstance("meta::test::domain::B");
-        ListIterable<? extends CoreInstance> bAssnProperties = Instance.getValueForMetaPropertyToManyResolved(b, M3Properties.propertiesFromAssociations, processorSupport);
-        Assert.assertEquals(1, bAssnProperties.size());
-        Assert.assertEquals(assnAB, bAssnProperties.getFirst().getValueForMetaPropertyToOne(M3Properties.owner));
+
+        Association assnAB = getCoreInstance("meta::test::domain::AB");
+        Class<?> b = getCoreInstance("meta::test::domain::B");
+
+        Assert.assertEquals(Lists.fixedSize.with("aAllVersions"), getPropertiesFromAssociations(b).collect(Property::_name));
+        Assert.assertSame(assnAB, getPropertiesFromAssociations(b).getOnly()._owner());
 
         runtime.createInMemorySource("sourceId2.pure",
-                "import meta::test::domain::*;" +
-                        "Class <<temporal.businesstemporal>> meta::test::domain::C{}\n" +
+                "import meta::test::domain::*;\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::domain::C\n" +
+                        "{\n" +
+                        "}\n" +
                         "\n" +
-                        "Association meta::test::domain::AC{\n" +
+                        "Association meta::test::domain::AC\n" +
+                        "{\n" +
                         "   b2 : B[*];\n" +
                         "   c : C[*];\n" +
                         "}"
         );
         runtime.compile();
-        CoreInstance assnAC = runtime.getCoreInstance("meta::test::domain::AC");
-        b = runtime.getCoreInstance("meta::test::domain::B");
-        bAssnProperties = Instance.getValueForMetaPropertyToManyResolved(b, M3Properties.propertiesFromAssociations, processorSupport);
-        Assert.assertEquals(2, bAssnProperties.size());
-        CoreInstance propA = bAssnProperties.detect(Predicates.attributeEqual(CoreInstance::getName, "aAllVersions"));
-        CoreInstance propc = bAssnProperties.detect(Predicates.attributeEqual(CoreInstance::getName, "cAllVersions"));
 
-        Assert.assertEquals(assnAB, propA.getValueForMetaPropertyToOne(M3Properties.owner));
-        Assert.assertEquals(assnAC, propc.getValueForMetaPropertyToOne(M3Properties.owner));
+        Association assnAC = getCoreInstance("meta::test::domain::AC");
+
+        Assert.assertEquals(Lists.fixedSize.with("aAllVersions", "cAllVersions"), getPropertiesFromAssociations(b).collect(Property::_name));
+        Assert.assertEquals(assnAB, getPropertiesFromAssociations(b).get(0)._owner());
+        Assert.assertEquals(assnAC, getPropertiesFromAssociations(b).get(1)._owner());
     }
 
     @Test
     public void testSourceInformationOfGeneratedMilestonedProperties()
     {
-        Function<Boolean, String> source = isBTemporal ->
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::domain::*;\n" +
-                        "Class meta::test::domain::A{\n" +
-                        "b : B[*];}\n" +
-                        "Association AB{ a2:A[0..1]; b2:B[0..1];}\n" +
-                        "Class " + (isBTemporal ? "<<temporal.businesstemporal>>" : "") + "meta::test::domain::B{}\n" +
-                        "function go():Any[*]{let a = ^A();" + (isBTemporal ? "$a.bAllVersions;$a.b(%2015);$a.b2AllVersions;$a.b2(%2015);" : "$a.b;$a.b2;") + "}\n";
-        runtime.createInMemorySource("sourceId.pure", source.valueOf(false));
+                        "Class meta::test::domain::A\n" +
+                        "{\n" +
+                        "   b : B[*];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Association meta::test::domain::AB\n" +
+                        "{\n" +
+                        "   a2:A[0..1];\n" +
+                        "   b2:B[0..1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::domain::B\n" +
+                        "{\n" +
+                        "}");
         runtime.compile();
-        CoreInstance goFunction = runtime.getFunction("go__Any_MANY_");
-        CoreInstance property = goFunction.getValueForMetaPropertyToMany(M3Properties.expressionSequence).get(1).getValueForMetaPropertyToOne(M3Properties.func);
-        CoreInstance assnProperty = goFunction.getValueForMetaPropertyToMany(M3Properties.expressionSequence).get(2).getValueForMetaPropertyToOne(M3Properties.func);
 
-        SourceInformation srcPropertySourceInformation = property.getSourceInformation();
-        SourceInformation srcAssnPropertySourceInformation = assnProperty.getSourceInformation();
+        Class<?> aClass = getCoreInstance("meta::test::domain::A");
+        Association abAssn = getCoreInstance("meta::test::domain::AB");
 
-        runtime.delete("sourceId.pure");
-        runtime.createInMemorySource("sourceId.pure", source.valueOf(true));
-        runtime.compile();
-        goFunction = runtime.getFunction("go__Any_MANY_");
-        ListIterable expressions = goFunction.getValueForMetaPropertyToMany(M3Properties.expressionSequence);
-        ListIterable<ListIterable<CoreInstance>> propertyAndAssnExpressions = ListHelper.tail(expressions).chunk(2).toList();
-        for (CoreInstance expressionSequence : propertyAndAssnExpressions.get(0))
-        {
-            property = expressionSequence.getValueForMetaPropertyToOne(M3Properties.func);
-            SourceInformation milestonedPropertySourceInformation = property.getSourceInformation();
-            Assert.assertEquals(srcPropertySourceInformation, milestonedPropertySourceInformation);
-        }
+        Property<?, ?> originalB = getOriginalMilestonedProperty(aClass, "b");
+        Assert.assertEquals(originalB.getSourceInformation(), getProperty(aClass, "bAllVersions").getSourceInformation());
+        Assert.assertEquals(originalB.getSourceInformation(), getQualifiedProperty(aClass, "b(Date[1])").getSourceInformation());
+        Assert.assertEquals(originalB.getSourceInformation(), getQualifiedProperty(aClass, "bAllVersionsInRange(Date[1],Date[1])").getSourceInformation());
 
-        for (CoreInstance expressionSequence : propertyAndAssnExpressions.get(1))
-        {
-            property = expressionSequence.getValueForMetaPropertyToOne(M3Properties.func);
-            SourceInformation milestonedAssnPropertySourceInformation = property.getSourceInformation();
-            Assert.assertEquals(srcAssnPropertySourceInformation, milestonedAssnPropertySourceInformation);
-        }
+        Property<?, ?> originalB2 = getOriginalMilestonedProperty(abAssn, "b2");
+        Assert.assertEquals(originalB2.getSourceInformation(), getProperty(abAssn, "b2AllVersions").getSourceInformation());
+        Assert.assertEquals(originalB2.getSourceInformation(), getPropertyFromAssociation(aClass, "b2AllVersions").getSourceInformation());
+        Assert.assertEquals(originalB2.getSourceInformation(), getQualifiedProperty(abAssn, "b2(Date[1])").getSourceInformation());
+        Assert.assertEquals(originalB2.getSourceInformation(), getQualifiedPropertyFromAssociation(aClass, "b2(Date[1])").getSourceInformation());
+        Assert.assertEquals(originalB2.getSourceInformation(), getQualifiedProperty(abAssn, "b2AllVersionsInRange(Date[1],Date[1])").getSourceInformation());
+        Assert.assertEquals(originalB2.getSourceInformation(), getQualifiedPropertyFromAssociation(aClass, "b2AllVersionsInRange(Date[1],Date[1])").getSourceInformation());
     }
 
     @Test
     public void testAssociationPropertiesWithSamePropertyNameProcessTypeArgumentsCorrectly()
     {
         runtime.createInMemorySource("sourceId.pure",
-                "import meta::test::domain::*;" +
-                        "Class <<temporal.businesstemporal>> meta::test::domain::A{}\n" +
+                "import meta::test::domain::*;\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::domain::A\n" +
+                        "{\n" +
+                        "}\n" +
                         "\n" +
-                        "Class <<temporal.businesstemporal>> meta::test::domain::B{\n" +
-                        "}" +
-                        "Association meta::test::domain::AB{\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::domain::B\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Association meta::test::domain::AB\n" +
+                        "{\n" +
                         "   a : A[*];\n" +
                         "   a : B[*];\n" +
                         "}");
 
         runtime.compile();
 
-        CoreInstance a = runtime.getCoreInstance("meta::test::domain::A");
-        ListIterable<? extends CoreInstance> aQualifiedProperties = Instance.getValueForMetaPropertyToManyResolved(a, M3Properties.qualifiedPropertiesFromAssociations, processorSupport);
-        CoreInstance bGenericType = aQualifiedProperties.getFirst().getValueForMetaPropertyToOne(M3Properties.genericType);
-        CoreInstance bRawType = Instance.getValueForMetaPropertyToOneResolved(bGenericType, M3Properties.rawType, processorSupport);
+        Class<?> a = getCoreInstance("meta::test::domain::A");
+        Class<?> b = getCoreInstance("meta::test::domain::B");
+        Association ab = getCoreInstance("meta::test::domain::AB");
 
-        CoreInstance b = runtime.getCoreInstance("meta::test::domain::B");
-        ListIterable<? extends CoreInstance> bQualifiedProperties = Instance.getValueForMetaPropertyToManyResolved(b, M3Properties.qualifiedPropertiesFromAssociations, processorSupport);
-        CoreInstance aGenericType = bQualifiedProperties.getFirst().getValueForMetaPropertyToOne(M3Properties.genericType);
-        CoreInstance aRawType = Instance.getValueForMetaPropertyToOneResolved(aGenericType, M3Properties.rawType, processorSupport);
+        // properties on A
+        ListIterable<? extends Property<?, ?>> aProps = getProperties(a);
+        Assert.assertEquals(Lists.fixedSize.with("businessDate", "milestoning"), aProps.collect(Property::_name));
+        assertGenericType(M3Paths.Date, aProps.get(0));
+        assertGenericType(M3Paths.Property + "<meta::test::domain::A, Date|1>", aProps.get(0)._classifierGenericType());
+        assertGenericType("meta::pure::milestoning::BusinessDateMilestoning", aProps.get(1));
+        assertGenericType(M3Paths.Property + "<meta::test::domain::A, meta::pure::milestoning::BusinessDateMilestoning|0..1>", aProps.get(1)._classifierGenericType());
 
-        assertQualifiedPropertyThisTypeArgumentParamsHaveCorrectGenericType(aQualifiedProperties, aRawType);
-        assertQualifiedPropertyThisTypeArgumentParamsHaveCorrectGenericType(bQualifiedProperties, bRawType);
+        ListIterable<? extends Property<?, ?>> aPropsFromAssocs = getPropertiesFromAssociations(a);
+        Assert.assertEquals(Lists.fixedSize.with("aAllVersions"), aPropsFromAssocs.collect(Property::_name));
+        assertGenericType("meta::test::domain::B", aPropsFromAssocs.get(0));
+        assertGenericType(M3Paths.Property + "<meta::test::domain::A, meta::test::domain::B|*>", aPropsFromAssocs.get(0)._classifierGenericType());
 
-        CoreInstance assn = runtime.getCoreInstance("meta::test::domain::AB");
-        ListIterable<CoreInstance> associationPropertyATypeArguments = Lists.mutable.with(bRawType, aRawType);
+        ListIterable<? extends QualifiedProperty<?>> aQProps = getQualifiedProperties(a);
+        Assert.assertEquals(Lists.fixedSize.empty(), aQProps);
 
-        ListIterable<? extends CoreInstance> originalMilestonedProperties = Instance.getValueForMetaPropertyToManyResolved(assn, M3Properties.originalMilestonedProperties, processorSupport);
-        ListIterable<ListIterable<CoreInstance>> propertiesTypeArguments = originalMilestonedProperties.collect(ci -> ci.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToMany(M3Properties.typeArguments).collect(ci1 -> Instance.getValueForMetaPropertyToOneResolved(ci1, M3Properties.rawType, processorSupport)));
+        ListIterable<? extends QualifiedProperty<?>> aQPropsFromAssocs = getQualifiedPropertiesFromAssociations(a);
+        Assert.assertEquals(Lists.fixedSize.with("a()", "a(Date[1])", "aAllVersionsInRange(Date[1],Date[1])"), aQPropsFromAssocs.collect(QualifiedProperty::_id));
+        assertGenericType("meta::test::domain::B", aQPropsFromAssocs.get(0));
+        assertGenericType(M3Paths.QualifiedProperty + "<{meta::test::domain::A[1]->meta::test::domain::B[*]}>", aQPropsFromAssocs.get(0)._classifierGenericType());
+        assertGenericType("meta::test::domain::B", aQPropsFromAssocs.get(1));
+        assertGenericType(M3Paths.QualifiedProperty + "<{meta::test::domain::A[1], Date[1]->meta::test::domain::B[*]}>", aQPropsFromAssocs.get(1)._classifierGenericType());
+        assertGenericType("meta::test::domain::B", aQPropsFromAssocs.get(2));
+        assertGenericType(M3Paths.QualifiedProperty + "<{meta::test::domain::A[1], Date[1], Date[1]->meta::test::domain::B[*]}>", aQPropsFromAssocs.get(2)._classifierGenericType());
 
-        Assert.assertEquals(associationPropertyATypeArguments, propertiesTypeArguments.get(0));
-        Assert.assertEquals(associationPropertyATypeArguments.asReversed().toList(), propertiesTypeArguments.get(1));
+        // properties on B
+        ListIterable<? extends Property<?, ?>> bProps = getProperties(b);
+        Assert.assertEquals(Lists.fixedSize.with("businessDate", "milestoning"), bProps.collect(Property::_name));
+        assertGenericType(M3Paths.Date, bProps.get(0));
+        assertGenericType(M3Paths.Property + "<meta::test::domain::B, Date|1>", bProps.get(0)._classifierGenericType());
+        assertGenericType("meta::pure::milestoning::BusinessDateMilestoning", bProps.get(1));
+        assertGenericType(M3Paths.Property + "<meta::test::domain::B, meta::pure::milestoning::BusinessDateMilestoning|0..1>", bProps.get(1)._classifierGenericType());
 
-        assertAllPropertiesInCompiledState(assn, Lists.mutable.with(M3Properties.properties, M3Properties.qualifiedProperties, M3Properties.originalMilestonedProperties));
-        assertAllPropertiesHaveOwnerSet(assn, Lists.mutable.with(M3Properties.properties, M3Properties.qualifiedProperties, M3Properties.originalMilestonedProperties));
+        ListIterable<? extends Property<?, ?>> bPropsFromAssocs = getPropertiesFromAssociations(b);
+        Assert.assertEquals(Lists.fixedSize.with("aAllVersions"), bPropsFromAssocs.collect(Property::_name));
+        assertGenericType("meta::test::domain::A", bPropsFromAssocs.get(0));
+        assertGenericType(M3Paths.Property + "<meta::test::domain::B, meta::test::domain::A|*>", bPropsFromAssocs.get(0)._classifierGenericType());
+
+        ListIterable<? extends QualifiedProperty<?>> bQProps = getQualifiedProperties(b);
+        Assert.assertEquals(Lists.fixedSize.empty(), bQProps);
+
+        ListIterable<? extends QualifiedProperty<?>> bQPropsFromAssocs = getQualifiedPropertiesFromAssociations(b);
+        Assert.assertEquals(Lists.fixedSize.with("a()", "a(Date[1])", "aAllVersionsInRange(Date[1],Date[1])"), bQPropsFromAssocs.collect(QualifiedProperty::_id));
+        assertGenericType("meta::test::domain::A", bQPropsFromAssocs.get(0));
+        assertGenericType(M3Paths.QualifiedProperty + "<{meta::test::domain::B[1]->meta::test::domain::A[*]}>", bQPropsFromAssocs.get(0)._classifierGenericType());
+        assertGenericType("meta::test::domain::A", bQPropsFromAssocs.get(1));
+        assertGenericType(M3Paths.QualifiedProperty + "<{meta::test::domain::B[1], Date[1]->meta::test::domain::A[*]}>", bQPropsFromAssocs.get(1)._classifierGenericType());
+        assertGenericType("meta::test::domain::A", bQPropsFromAssocs.get(2));
+        assertGenericType(M3Paths.QualifiedProperty + "<{meta::test::domain::B[1], Date[1], Date[1]->meta::test::domain::A[*]}>", bQPropsFromAssocs.get(2)._classifierGenericType());
+
+        // properties on AB
+        ListIterable<? extends Property<?, ?>> abOriginalProps = getOriginalMilestonedProperties(ab);
+        Assert.assertEquals(Lists.fixedSize.with("a", "a"), abOriginalProps.collect(Property::_name));
+        assertGenericType("meta::test::domain::A", abOriginalProps.get(0));
+        assertGenericType(M3Paths.Property + "<meta::test::domain::B, meta::test::domain::A|*>", abOriginalProps.get(0)._classifierGenericType());
+        assertGenericType("meta::test::domain::B", abOriginalProps.get(1));
+        assertGenericType(M3Paths.Property + "<meta::test::domain::A, meta::test::domain::B|*>", abOriginalProps.get(1)._classifierGenericType());
+        abOriginalProps.forEach(p -> Assert.assertSame(p._name(), ab, p._owner()));
+        abOriginalProps.forEach(p -> Assert.assertTrue(p._name(), p.hasCompileState(CompileState.PROCESSED)));
+
+        ListIterable<? extends Property<?, ?>> abProps = getProperties(ab);
+        Assert.assertEquals(Lists.fixedSize.with("aAllVersions", "aAllVersions"), abProps.collect(Property::_name));
+        assertGenericType("meta::test::domain::A", abProps.get(0));
+        assertGenericType(M3Paths.Property + "<meta::test::domain::B, meta::test::domain::A|*>", abProps.get(0)._classifierGenericType());
+        assertGenericType("meta::test::domain::B", abProps.get(1));
+        assertGenericType(M3Paths.Property + "<meta::test::domain::A, meta::test::domain::B|*>", abProps.get(1)._classifierGenericType());
+        getProperties(ab).forEach(p -> Assert.assertSame(p._name(), ab, p._owner()));
+        getProperties(ab).forEach(p -> Assert.assertTrue(p._name(), p.hasCompileState(CompileState.PROCESSED)));
+
+        ListIterable<? extends QualifiedProperty<?>> abQProps = getQualifiedProperties(ab);
+        Assert.assertEquals(
+                Lists.fixedSize.with("a()", "a(Date[1])", "aAllVersionsInRange(Date[1],Date[1])",
+                        "a()", "a(Date[1])", "aAllVersionsInRange(Date[1],Date[1])"),
+                abQProps.collect(QualifiedProperty::_id));
+        assertGenericType("meta::test::domain::A", abQProps.get(0));
+        assertGenericType(M3Paths.QualifiedProperty + "<{meta::test::domain::B[1]->meta::test::domain::A[*]}>", abQProps.get(0)._classifierGenericType());
+        assertGenericType("meta::test::domain::A", abQProps.get(1));
+        assertGenericType(M3Paths.QualifiedProperty + "<{meta::test::domain::B[1], Date[1]->meta::test::domain::A[*]}>", abQProps.get(1)._classifierGenericType());
+        assertGenericType("meta::test::domain::A", abQProps.get(2));
+        assertGenericType(M3Paths.QualifiedProperty + "<{meta::test::domain::B[1], Date[1], Date[1]->meta::test::domain::A[*]}>",abQProps.get(2)._classifierGenericType());
+        assertGenericType("meta::test::domain::B", abQProps.get(3));
+        assertGenericType(M3Paths.QualifiedProperty + "<{meta::test::domain::A[1]->meta::test::domain::B[*]}>", abQProps.get(3)._classifierGenericType());
+        assertGenericType("meta::test::domain::B", abQProps.get(4));
+        assertGenericType(M3Paths.QualifiedProperty + "<{meta::test::domain::A[1], Date[1]->meta::test::domain::B[*]}>", abQProps.get(4)._classifierGenericType());
+        assertGenericType("meta::test::domain::B", abQProps.get(5));
+        assertGenericType(M3Paths.QualifiedProperty + "<{meta::test::domain::A[1], Date[1], Date[1]->meta::test::domain::B[*]}>",abQProps.get(5)._classifierGenericType());
+        getQualifiedProperties(ab).forEach(p -> Assert.assertSame(p._name(), ab, p._owner()));
+        getQualifiedProperties(ab).forEach(p -> Assert.assertTrue(p._name(), p.hasCompileState(CompileState.PROCESSED)));
     }
 
     @Test
     public void testPropertyConflictsExistingPropertiesVsGeneratedProperties()
     {
-        String domain = "import meta::relational::tests::milestoning::*;" +
-                "Class <<temporal.bitemporal>> meta::relational::tests::milestoning::Order { other(s:String[1]){'other'}:String[1]; \n" +
-                "                                                                            other2(s:String[1]){'other'}:String[1];" +
-                "                                                                                    createdLocation : Location[*]; \n" +
-                "                                                                            createdLocation(processingDate:Date[1], businessDate:Date[1], s:String[1]){$this.createdLocation(%latest, %latest)}: Location[*]; }\n";
-        String domain2 = "Class <<temporal.bitemporal>> meta::relational::tests::milestoning::Location{ place : String[1];}";
-
-        runtime.createInMemorySource("domain.pure", domain);
-        runtime.createInMemorySource("domain2.pure", domain2);
+        runtime.createInMemorySource("domain.pure",
+                "import meta::relational::tests::milestoning::*;\n" +
+                        "Class <<temporal.bitemporal>> meta::relational::tests::milestoning::Order\n" +
+                        "{\n" +
+                        "   other(s:String[1])\n" +
+                        "   {\n" +
+                        "      'other'\n" +
+                        "   }:String[1];\n" +
+                        "   other2(s:String[1])\n" +
+                        "   {\n" +
+                        "      'other'\n" +
+                        "   }:String[1];\n" +
+                        "   createdLocation : Location[*];\n" +
+                        "   createdLocation(processingDate:Date[1], businessDate:Date[1], s:String[1])\n" +
+                        "   {\n" +
+                        "      $this.createdLocation(%latest, %latest)\n" +
+                        "   }:Location[*];\n" +
+                        "}\n");
+        runtime.createInMemorySource("domain2.pure",
+                "Class <<temporal.bitemporal>> meta::relational::tests::milestoning::Location\n" +
+                        "{\n" +
+                        "   place : String[1];\n" +
+                        "}");
         runtime.compile();
-        CoreInstance order = runtime.getCoreInstance("meta::relational::tests::milestoning::Order");
-        ListIterable<? extends CoreInstance> orderQps = Instance.getValueForMetaPropertyToManyResolved(order, M3Properties.qualifiedProperties, processorSupport);
-        ListMultimap<String, ? extends CoreInstance> qualifiedPropertiesByName = orderQps.groupBy(CoreInstance::getName);
 
-        Verify.assertContainsAll(qualifiedPropertiesByName.keysView(), "other_0", "other2_1", "createdLocation_2", "createdLocation_3", "createdLocation_4", "createdLocation_5");
+        Class<?> order = getCoreInstance("meta::relational::tests::milestoning::Order");
+        Assert.assertEquals(
+                Lists.fixedSize.with("other(String[1])", "other2(String[1])", "createdLocation(Date[1],Date[1],String[1])",
+                        "createdLocation(Date[1],Date[1])", "createdLocation(Date[1])", "createdLocation()"),
+                getQualifiedProperties(order).collect(QualifiedProperty::_id));
     }
 
     @Test
     public void testBiTemporalPropertyGeneration()
     {
-        String domain = "import meta::relational::tests::milestoning::*;" +
-                "Class meta::relational::tests::milestoning::Order { createdLocation : Location[0..1]; }\n" +
-                "Class <<temporal.bitemporal>> meta::relational::tests::milestoning::Exchange { basedIn : Location[0..1]; }\n" +
-                "Class <<temporal.businesstemporal>> meta::relational::tests::milestoning::LegalEntity {}\n" +
-                "Class <<temporal.processingtemporal>> meta::relational::tests::milestoning::LegalEntityPt {}\n" +
-                "Class <<temporal.bitemporal>> meta::relational::tests::milestoning::Location{ place : String[1];}" +
-                "Association LegalEntity_Location{ registeredIn : Location[0..1]; legalEntity: LegalEntity[0..1]; }" +
-                "Association LegalEntityPt_Location{ registeredInPt : Location[0..1]; legalEntityPt: LegalEntityPt[0..1]; }";
-
-        runtime.createInMemorySource("domain.pure", domain);
+        runtime.createInMemorySource("domain.pure",
+                "import meta::relational::tests::milestoning::*;\n" +
+                        "Class meta::relational::tests::milestoning::Order\n" +
+                        "{\n" +
+                        "   createdLocation : Location[0..1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class <<temporal.bitemporal>> meta::relational::tests::milestoning::Exchange\n" +
+                        "{\n" +
+                        "   basedIn : Location[0..1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class <<temporal.businesstemporal>> meta::relational::tests::milestoning::LegalEntity\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class <<temporal.processingtemporal>> meta::relational::tests::milestoning::LegalEntityPt\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class <<temporal.bitemporal>> meta::relational::tests::milestoning::Location\n" +
+                        "{\n" +
+                        "   place : String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Association LegalEntity_Location\n" +
+                        "{\n" +
+                        "   registeredIn : Location[0..1];\n" +
+                        "   legalEntity: LegalEntity[0..1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Association LegalEntityPt_Location\n" +
+                        "{\n" +
+                        "   registeredInPt : Location[0..1];\n" +
+                        "   legalEntityPt: LegalEntityPt[0..1];\n" +
+                        "}");
         runtime.compile();
-        CoreInstance order = runtime.getCoreInstance("meta::relational::tests::milestoning::Order");
-        ListIterable<? extends CoreInstance> orderQps = Instance.getValueForMetaPropertyToManyResolved(order, M3Properties.qualifiedProperties, processorSupport);
-        Assert.assertEquals(1, orderQps.size());
-        assertMilestoningQualifiedProperty(orderQps.getFirst(), "createdLocation", "Location", "0..1", 2);
 
-        CoreInstance exchange = runtime.getCoreInstance("meta::relational::tests::milestoning::Exchange");
-        ListIterable<? extends CoreInstance> exchangeQps = Instance.getValueForMetaPropertyToManyResolved(exchange, M3Properties.qualifiedProperties, processorSupport);
-        Assert.assertEquals(3, exchangeQps.size());
-        assertMilestoningQualifiedProperty(exchangeQps.get(0), "basedIn", "Location", "0..1", 2);
-        assertMilestoningQualifiedProperty(exchangeQps.get(1), "basedIn", "Location", "0..1", 1);
-        assertMilestoningQualifiedProperty(exchangeQps.get(2), "basedIn", "Location", "0..1", 0);
+        Class<?> order = getCoreInstance("meta::relational::tests::milestoning::Order");
+        ListIterable<? extends QualifiedProperty<?>> orderQps = getQualifiedProperties(order);
 
-        CoreInstance legalEntity = runtime.getCoreInstance("meta::relational::tests::milestoning::LegalEntity");
-        ListIterable<? extends CoreInstance> legalEntityQps = Instance.getValueForMetaPropertyToManyResolved(legalEntity, M3Properties.qualifiedPropertiesFromAssociations, processorSupport);
-        Assert.assertEquals(2, legalEntityQps.size());
-        assertMilestoningQualifiedProperty(legalEntityQps.get(0), "registeredIn", "Location", "0..1", 2);
-        assertMilestoningQualifiedProperty(legalEntityQps.get(1), "registeredIn", "Location", "0..1", 1);
+        Assert.assertEquals(Lists.fixedSize.with("createdLocation(Date[1],Date[1])"), orderQps.collect(QualifiedProperty::_id));
+        assertMilestoningQualifiedProperty(orderQps.get(0), "createdLocation", "meta::relational::tests::milestoning::Location", "0..1", 2);
 
-        CoreInstance legalEntityPt = runtime.getCoreInstance("meta::relational::tests::milestoning::LegalEntityPt");
-        ListIterable<? extends CoreInstance> legalEntityPtQps = Instance.getValueForMetaPropertyToManyResolved(legalEntityPt, M3Properties.qualifiedPropertiesFromAssociations, processorSupport);
-        Assert.assertEquals(2, legalEntityPtQps.size());
-        assertMilestoningQualifiedProperty(legalEntityPtQps.get(0), "registeredInPt", "Location", "0..1", 2);
-        assertMilestoningQualifiedProperty(legalEntityPtQps.get(1), "registeredInPt", "Location", "0..1", 1);
+        Class<?> exchange = getCoreInstance("meta::relational::tests::milestoning::Exchange");
+        ListIterable<? extends QualifiedProperty<?>> exchangeQps = getQualifiedProperties(exchange);
+        Assert.assertEquals(Lists.fixedSize.with("basedIn(Date[1],Date[1])", "basedIn(Date[1])", "basedIn()"), exchangeQps.collect(QualifiedProperty::_id));
+        assertMilestoningQualifiedProperty(exchangeQps.get(0), "basedIn", "meta::relational::tests::milestoning::Location", "0..1", 2);
+        assertMilestoningQualifiedProperty(exchangeQps.get(1), "basedIn", "meta::relational::tests::milestoning::Location", "0..1", 1);
+        assertMilestoningQualifiedProperty(exchangeQps.get(2), "basedIn", "meta::relational::tests::milestoning::Location", "0..1", 0);
 
+        Class<?> legalEntity = getCoreInstance("meta::relational::tests::milestoning::LegalEntity");
+        ListIterable<? extends QualifiedProperty<?>> legalEntityQps = getQualifiedPropertiesFromAssociations(legalEntity);
+        Assert.assertEquals(Lists.fixedSize.with("registeredIn(Date[1],Date[1])", "registeredIn(Date[1])"), legalEntityQps.collect(QualifiedProperty::_id));
+        assertMilestoningQualifiedProperty(legalEntityQps.get(0), "registeredIn", "meta::relational::tests::milestoning::Location", "0..1", 2);
+        assertMilestoningQualifiedProperty(legalEntityQps.get(1), "registeredIn", "meta::relational::tests::milestoning::Location", "0..1", 1);
 
-        CoreInstance location = runtime.getCoreInstance("meta::relational::tests::milestoning::Location");
-        ListIterable<? extends CoreInstance> locationQps = Instance.getValueForMetaPropertyToManyResolved(location, M3Properties.qualifiedPropertiesFromAssociations, processorSupport);
+        Class<?> legalEntityPt = getCoreInstance("meta::relational::tests::milestoning::LegalEntityPt");
+        ListIterable<? extends QualifiedProperty<?>> legalEntityPtQps = getQualifiedPropertiesFromAssociations(legalEntityPt);
+        Assert.assertEquals(Lists.fixedSize.with("registeredInPt(Date[1],Date[1])", "registeredInPt(Date[1])"), legalEntityPtQps.collect(QualifiedProperty::_id));
+        assertMilestoningQualifiedProperty(legalEntityPtQps.get(0), "registeredInPt", "meta::relational::tests::milestoning::Location", "0..1", 2);
+        assertMilestoningQualifiedProperty(legalEntityPtQps.get(1), "registeredInPt", "meta::relational::tests::milestoning::Location", "0..1", 1);
+
+        Class<?> location = getCoreInstance("meta::relational::tests::milestoning::Location");
+        ListIterable<? extends QualifiedProperty<?>> locationQps = getQualifiedPropertiesFromAssociations(location);
         Assert.assertEquals(6, locationQps.size());
-        assertMilestoningQualifiedProperty(locationQps.get(0), "legalEntity", "LegalEntity", "0..1", 0);
-        assertMilestoningQualifiedProperty(locationQps.get(1), "legalEntity", "LegalEntity", "0..1", 1);
-        assertMilestoningQualifiedProperty(locationQps.get(2), "legalEntityAllVersionsInRange", "LegalEntity", "0..1", 2);
-        assertMilestoningQualifiedProperty(locationQps.get(3), "legalEntityPt", "LegalEntityPt", "0..1", 0);
-        assertMilestoningQualifiedProperty(locationQps.get(4), "legalEntityPt", "LegalEntityPt", "0..1", 1);
-        assertMilestoningQualifiedProperty(locationQps.get(5), "legalEntityPtAllVersionsInRange", "LegalEntityPt", "0..1", 2);
+        Assert.assertEquals(
+                Lists.fixedSize.with("legalEntity()", "legalEntity(Date[1])", "legalEntityAllVersionsInRange(Date[1],Date[1])",
+                        "legalEntityPt()", "legalEntityPt(Date[1])", "legalEntityPtAllVersionsInRange(Date[1],Date[1])"),
+                locationQps.collect(QualifiedProperty::_id));
+        assertMilestoningQualifiedProperty(locationQps.get(0), "legalEntity", "meta::relational::tests::milestoning::LegalEntity", "0..1", 0);
+        assertMilestoningQualifiedProperty(locationQps.get(1), "legalEntity", "meta::relational::tests::milestoning::LegalEntity", "0..1", 1);
+        assertMilestoningQualifiedProperty(locationQps.get(2), "legalEntityAllVersionsInRange", "meta::relational::tests::milestoning::LegalEntity", "0..1", 2);
+        assertMilestoningQualifiedProperty(locationQps.get(3), "legalEntityPt", "meta::relational::tests::milestoning::LegalEntityPt", "0..1", 0);
+        assertMilestoningQualifiedProperty(locationQps.get(4), "legalEntityPt", "meta::relational::tests::milestoning::LegalEntityPt", "0..1", 1);
+        assertMilestoningQualifiedProperty(locationQps.get(5), "legalEntityPtAllVersionsInRange", "meta::relational::tests::milestoning::LegalEntityPt", "0..1", 2);
     }
 
-    private void assertMilestoningRegularProperty(CoreInstance property, String propertyName, String genericType, String multiplicity)
+    private void assertMilestoningRegularProperty(Property<?, ?> property, String propertyName, String genericType, String multiplicity)
     {
-        Assert.assertEquals(propertyName, Instance.getValueForMetaPropertyToManyResolved(property, M3Properties.name, processorSupport).getFirst().getName());
-        assertMilestoningProperty(property, genericType, multiplicity);
+        Assert.assertEquals(propertyName, property._name());
+        assertGenericType(genericType, property);
+        assertMultiplicity(multiplicity, property);
     }
 
-    private void assertMilestoningQualifiedProperty(CoreInstance property, String propertyName, String genericType, String multiplicity, int dateParamSize)
+    private void assertMilestoningQualifiedProperty(QualifiedProperty<?> property, String propertyName, String genericType, String multiplicity, int dateParamSize)
     {
-        Assert.assertEquals(propertyName, Instance.getValueForMetaPropertyToManyResolved(property, M3Properties.functionName, processorSupport).getFirst().getName());
-        CoreInstance functionType = property.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToOne(M3Properties.typeArguments).getValueForMetaPropertyToOne(M3Properties.rawType);
-        RichIterable<? extends CoreInstance> params = ListHelper.tail(functionType.getValueForMetaPropertyToMany(M3Properties.parameters));
-        Assert.assertTrue(params.allSatisfy(ci -> ci.getValueForMetaPropertyToOne(M3Properties.genericType).getValueForMetaPropertyToOne(M3Properties.rawType) == _Package.getByUserPath(M3Paths.Date, processorSupport)));
+        Assert.assertEquals(propertyName, property._functionName());
+
+        FunctionType functionType = (FunctionType) property._classifierGenericType()._typeArguments().getOnly()._rawType();
+        RichIterable<? extends CoreInstance> params = ListHelper.tail(functionType._parameters());
+        Assert.assertEquals(Lists.immutable.empty(), functionType._parameters().asLazy().drop(1).reject(p -> p._genericType()._rawType() == getCoreInstance(M3Paths.Date)).collect(VariableExpression::_name, Lists.mutable.empty()));
         Assert.assertEquals(dateParamSize, params.size());
-        assertMilestoningProperty(property, genericType, multiplicity);
+        assertGenericType(genericType, property);
+        assertMultiplicity(multiplicity, property);
     }
 
-    private void assertMilestoningProperty(CoreInstance property, String genericType, String multiplicity)
+    private void assertGenericType(String expected, AbstractProperty<?> property)
     {
-        Assert.assertEquals(genericType, Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.genericType, M3Properties.rawType, processorSupport).getName());
-        Assert.assertEquals(multiplicity, Multiplicity.print(property.getValueForMetaPropertyToOne(M3Properties.multiplicity), false));
+        assertGenericType(expected, property._genericType());
     }
 
-    private void assertAllPropertiesInCompiledState(CoreInstance assn, ListIterable<String> propertyKeys)
+    private void assertGenericType(String expected, GenericType genericType)
     {
-        for (String propertyKey : propertyKeys)
-        {
-            for (CoreInstance propertyValue : Instance.getValueForMetaPropertyToManyResolved(assn, propertyKey, processorSupport))
-            {
-                Assert.assertTrue(propertyValue.hasCompileState(CompileState.PROCESSED));
-            }
-        }
+        Assert.assertEquals(expected, org.finos.legend.pure.m3.navigation.generictype.GenericType.print(genericType, true, processorSupport));
     }
 
-    private void assertAllPropertiesHaveOwnerSet(CoreInstance assn, ListIterable<String> propertyKeys)
+    private void assertMultiplicity(String expected, AbstractProperty<?> property)
     {
-        for (String propertyKey : propertyKeys)
-        {
-            for (CoreInstance propertyValue : Instance.getValueForMetaPropertyToManyResolved(assn, propertyKey, processorSupport))
-            {
-                Assert.assertNotNull(propertyValue.getValueForMetaPropertyToOne(M3Properties.owner));
-            }
-        }
+        assertMultiplicity(expected, property._multiplicity());
     }
 
-    private void assertQualifiedPropertyThisTypeArgumentParamsHaveCorrectGenericType(ListIterable<? extends CoreInstance> qualifiedProperties, final CoreInstance expectedRawType)
+    private void assertMultiplicity(String expected, Multiplicity multiplicity)
     {
-        qualifiedProperties.forEach(bQualifiedProperty ->
-        {
-            CoreInstance functionType = bQualifiedProperty.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToOne(M3Properties.typeArguments).getValueForMetaPropertyToOne(M3Properties.rawType);
-            ListIterable<? extends CoreInstance> functionTypeParams = functionType.getValueForMetaPropertyToMany(M3Properties.parameters);
-            functionTypeParams.select(functionTypeParam -> Instance.instanceOf(functionTypeParam, M3Paths.VariableExpression, processorSupport) && "this".equals(functionTypeParam.getValueForMetaPropertyToOne(M3Properties.name).getName()))
-                    .forEach(functionTypeParam ->
-                            {
-                                CoreInstance functionTypeParamGenericType = functionTypeParam.getValueForMetaPropertyToOne(M3Properties.genericType);
-                                CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(functionTypeParamGenericType, M3Properties.rawType, processorSupport);
-                                Assert.assertEquals(expectedRawType, rawType);
-                            }
-                    );
-        });
+        Assert.assertEquals(expected, org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(multiplicity, false));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends CoreInstance> T getCoreInstance(String path)
+    {
+        T result = (T) runtime.getCoreInstance(path);
+        Assert.assertNotNull(path, result);
+        return result;
+    }
+
+    private ListIterable<? extends Property<?, ?>> getProperties(PropertyOwner owner)
+    {
+        RichIterable<? extends Property<?, ?>> props = (owner instanceof Class<?>) ? ((Class<?>) owner)._properties() : ((Association) owner)._properties();
+        return ListHelper.wrapListIterable(props);
+    }
+
+    private ListIterable<? extends Property<?, ?>> getPropertiesFromAssociations(Class<?> owner)
+    {
+        return ListHelper.wrapListIterable(owner._propertiesFromAssociations());
+    }
+
+    private ListIterable<? extends QualifiedProperty<?>> getQualifiedProperties(PropertyOwner owner)
+    {
+        RichIterable<? extends QualifiedProperty<?>> props = (owner instanceof Class<?>) ? ((Class<?>) owner)._qualifiedProperties() : ((Association) owner)._qualifiedProperties();
+        return ListHelper.wrapListIterable(props);
+    }
+
+    private ListIterable<? extends QualifiedProperty<?>> getQualifiedPropertiesFromAssociations(Class<?> owner)
+    {
+        return ListHelper.wrapListIterable(owner._qualifiedPropertiesFromAssociations());
+    }
+
+    private ListIterable<? extends Property<?, ?>> getOriginalMilestonedProperties(PropertyOwner owner)
+    {
+        RichIterable<? extends Property<?, ?>> props = (owner instanceof Class<?>) ? ((Class<?>) owner)._originalMilestonedProperties() : ((Association) owner)._originalMilestonedProperties();
+        return ListHelper.wrapListIterable(props);
+    }
+
+    private Property<?, ?> getProperty(PropertyOwner owner, String name)
+    {
+        return getProperties(owner).detect(p -> name.equals(p._name()));
+    }
+
+    private Property<?, ?> getPropertyFromAssociation(Class<?> owner, String name)
+    {
+        return getPropertiesFromAssociations(owner).detect(p -> name.equals(p._name()));
+    }
+
+    private QualifiedProperty<?> getQualifiedProperty(PropertyOwner owner, String id)
+    {
+        return getQualifiedProperties(owner).detect(p -> id.equals(p._id()));
+    }
+
+    private QualifiedProperty<?> getQualifiedPropertyFromAssociation(Class<?> owner, String id)
+    {
+        return getQualifiedPropertiesFromAssociations(owner).detect(p -> id.equals(p._id()));
+    }
+
+    private Property<?, ?> getOriginalMilestonedProperty(PropertyOwner owner, String name)
+    {
+        return getOriginalMilestonedProperties(owner).detect(p -> name.equals(p._name()));
     }
 }
