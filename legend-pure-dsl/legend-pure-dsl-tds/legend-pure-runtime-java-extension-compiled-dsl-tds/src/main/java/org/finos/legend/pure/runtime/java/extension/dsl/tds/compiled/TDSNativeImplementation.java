@@ -23,6 +23,6 @@ public class TDSNativeImplementation
 {
     public static TDS<?> parse(String tdsString, ExecutionSupport compiledExecutionSupport)
     {
-        return TDSExtension.parse(tdsString, null, ((CompiledExecutionSupport) compiledExecutionSupport).getProcessorSupport());
+        return TDSExtension.parse(tdsString, ((CompiledExecutionSupport) compiledExecutionSupport).getProcessorSupport());
     }
 }

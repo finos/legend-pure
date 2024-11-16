@@ -18,6 +18,7 @@ import io.deephaven.csv.CsvSpecs;
 import io.deephaven.csv.parsers.DataType;
 import io.deephaven.csv.reading.CsvReader;
 import io.deephaven.csv.sinks.SinkFactory;
+import io.deephaven.csv.util.CsvReaderException;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.impl.utility.ArrayIterate;
@@ -46,10 +47,13 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TDSExtension implements InlineDSL
 {
-    private static VisibilityValidator VISIBILITY_VALIDATOR = new TDSVisibilityValidator();
+    private static final VisibilityValidator VISIBILITY_VALIDATOR = new TDSVisibilityValidator();
 
     @Override
     public String getName()
@@ -64,86 +68,12 @@ public class TDSExtension implements InlineDSL
     }
 
     @Override
-    public CoreInstance parse(String code, ImportGroup importId, String fileName, int offsetX, int offsetY, ModelRepository modelRepository, Context context)
+    public CoreInstance parse(String code, ImportGroup importId, String fileName, int columnOffset, int lineOffset, ModelRepository modelRepository, Context context)
     {
-        String val = code.substring("TDS".length()).trim();
+        String text = code.substring("TDS".length()).trim();
+        SourceInformation sourceInfo = getSourceInfo(code, fileName, columnOffset, lineOffset);
         ProcessorSupport processorSupport = new M3ProcessorSupport(context, modelRepository);
-        return parse(val, fileName, processorSupport);
-    }
-
-    private static SinkFactory makeMySinkFactory()
-    {
-        return SinkFactory.arrays(
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                Long.MIN_VALUE,
-                Long.MIN_VALUE);
-    }
-
-    public static TDS<?> parse(String val, String fileName, ProcessorSupport processorSupport)
-    {
-        final CsvReader.Result result;
-
-        try
-        {
-            result = CsvReader.read(CsvSpecs.csv(), new ByteArrayInputStream(val.getBytes()), makeMySinkFactory());
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-
-        SourceInformation src = new SourceInformation(fileName, 0, 0, 0, 0);
-        Class<?> tdsType = (Class<?>) processorSupport.package_getByUserPath(M2TDSPaths.TDS);
-        TDS<?> tds = ((TDS<?>) processorSupport.newEphemeralAnonymousCoreInstance(M2TDSPaths.TDS));
-        GenericType tdsGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
-        tdsGenericType._rawType(tdsType);
-        GenericType typeParam = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
-        typeParam._rawType(_RelationType.build(ArrayIterate.collect(result.columns(), c -> _Column.getColumnInstance(c.name(), false, convertType(c.dataType()), (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport), src, processorSupport)), src, processorSupport));
-        tdsGenericType._typeArgumentsAdd(typeParam);
-        tds._classifierGenericType(tdsGenericType);
-        tds._csv(val);
-
-        return tds;
-    }
-
-    private static String convertType(DataType dataType)
-    {
-        String value = "";
-        switch (dataType)
-        {
-            case BOOLEAN_AS_BYTE:
-                value = "Boolean";
-                break;
-            case BYTE:
-            case SHORT:
-            case INT:
-            case LONG:
-                value = "Integer";
-                break;
-            case DATETIME_AS_LONG:
-                value = "Date";
-                break;
-            case FLOAT:
-            case DOUBLE:
-                value = "Float";
-                break;
-            case STRING:
-            case CHAR:
-                value = "String";
-                break;
-            case TIMESTAMP_AS_LONG:
-            case CUSTOM:
-                throw new RuntimeException("Not possible");
-        }
-        return value;
+        return parse(text, sourceInfo, processorSupport);
     }
 
     @Override
@@ -186,5 +116,112 @@ public class TDSExtension implements InlineDSL
     public MilestoningDatesVarNamesExtractor getMilestoningDatesVarNamesExtractor()
     {
         return null;
+    }
+
+    public static TDS<?> parse(String text, ProcessorSupport processorSupport)
+    {
+        return parse(text, (SourceInformation) null, processorSupport);
+    }
+
+    public static TDS<?> parse(String text, String fileName, ProcessorSupport processorSupport)
+    {
+        return parse(text, (fileName == null) ? null : getSourceInfo(text, fileName, 0, 0), processorSupport);
+    }
+
+    public static TDS<?> parse(String text, SourceInformation sourceInfo, ProcessorSupport processorSupport)
+    {
+        CsvReader.Result result;
+        try
+        {
+            result = CsvReader.read(CsvSpecs.csv(), new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)), makeMySinkFactory());
+        }
+        catch (CsvReaderException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        Class<?> tdsType = (Class<?>) processorSupport.package_getByUserPath(M2TDSPaths.TDS);
+        GenericType typeParam = ((GenericType) processorSupport.newAnonymousCoreInstance(sourceInfo, M3Paths.GenericType))
+                ._rawType(_RelationType.build(ArrayIterate.collect(result.columns(), c -> _Column.getColumnInstance(c.name(), false, convertType(c.dataType()), (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport), sourceInfo, processorSupport)), sourceInfo, processorSupport));
+        GenericType tdsGenericType = ((GenericType) processorSupport.newAnonymousCoreInstance(sourceInfo, M3Paths.GenericType))
+                ._rawType(tdsType)
+                ._typeArgumentsAdd(typeParam);
+
+        return ((TDS<?>) processorSupport.newAnonymousCoreInstance(sourceInfo, M2TDSPaths.TDS))
+                ._classifierGenericType(tdsGenericType)
+                ._csv(text);
+    }
+
+    private static SourceInformation getSourceInfo(String text, String fileName, int columnOffset, int lineOffset)
+    {
+        int endLine = lineOffset;
+        int endLineIndex = 0;
+        Matcher matcher = Pattern.compile("\\R").matcher(text);
+        while (matcher.find())
+        {
+            endLine++;
+            endLineIndex = matcher.end();
+        }
+
+        int endColumn = (endLine == lineOffset) ? (text.length() + columnOffset - 1) : (text.length() - endLineIndex);
+        return new SourceInformation(fileName, lineOffset, columnOffset, endLine, endColumn);
+    }
+
+    private static String convertType(DataType dataType)
+    {
+        switch (dataType)
+        {
+            case BOOLEAN_AS_BYTE:
+            {
+                return M3Paths.Boolean;
+            }
+            case BYTE:
+            case SHORT:
+            case INT:
+            case LONG:
+            {
+                return M3Paths.Integer;
+            }
+            case DATETIME_AS_LONG:
+            {
+                return M3Paths.Date;
+            }
+            case FLOAT:
+            case DOUBLE:
+            {
+                return M3Paths.Float;
+            }
+            case STRING:
+            case CHAR:
+            {
+                return M3Paths.String;
+            }
+            case TIMESTAMP_AS_LONG:
+            case CUSTOM:
+            {
+                throw new RuntimeException("Not possible");
+            }
+            default:
+            {
+                // TODO is this correct?
+                return "";
+            }
+        }
+    }
+
+    private static SinkFactory makeMySinkFactory()
+    {
+        return SinkFactory.arrays(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                Long.MIN_VALUE,
+                Long.MIN_VALUE);
     }
 }

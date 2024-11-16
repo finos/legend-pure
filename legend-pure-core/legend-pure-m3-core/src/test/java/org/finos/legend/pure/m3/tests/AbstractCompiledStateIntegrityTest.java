@@ -404,7 +404,6 @@ public abstract class AbstractCompiledStateIntegrityTest
     }
 
     @Test
-    @Ignore
     public void testPackagedElementsContainAllOthers()
     {
         CoreInstance packageClass = runtime.getCoreInstance(M3Paths.Package);

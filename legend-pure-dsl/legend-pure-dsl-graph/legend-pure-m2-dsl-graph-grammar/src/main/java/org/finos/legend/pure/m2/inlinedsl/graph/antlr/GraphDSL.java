@@ -33,7 +33,7 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public class GraphDSL implements InlineDSL
 {
-    private static RootGraphFetchTreeVisibilityValidator ROOTGRAPHFETCHTREE_VISIBILITYVALIDATOR = new RootGraphFetchTreeVisibilityValidator();
+    private static final RootGraphFetchTreeVisibilityValidator ROOTGRAPHFETCHTREE_VISIBILITYVALIDATOR = new RootGraphFetchTreeVisibilityValidator();
 
     @Override
     public String getName()
@@ -48,9 +48,9 @@ public class GraphDSL implements InlineDSL
     }
 
     @Override
-    public CoreInstance parse(String code, ImportGroup importId, String fileName, int offsetX, int offsetY, ModelRepository modelRepository, Context context)
+    public CoreInstance parse(String code, ImportGroup importId, String fileName, int columnOffset, int lineOffset, ModelRepository modelRepository, Context context)
     {
-        return new GraphAntlrParser().parse(code, importId, fileName, offsetX, offsetY, modelRepository, context);
+        return new GraphAntlrParser().parse(code, importId, fileName, columnOffset, lineOffset, modelRepository, context);
     }
 
     @Override
