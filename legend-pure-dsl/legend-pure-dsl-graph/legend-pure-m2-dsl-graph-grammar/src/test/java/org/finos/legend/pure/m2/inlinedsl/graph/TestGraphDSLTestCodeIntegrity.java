@@ -28,7 +28,6 @@ public class TestGraphDSLTestCodeIntegrity extends AbstractCompiledStateIntegrit
     }
 
     @Test
-    @Ignore
     @Override
     public void testReferenceUsages()
     {

@@ -216,12 +216,10 @@ public class RootGraphFetchTreeProcessor extends Processor<RootGraphFetchTree<?>
 
     private void populateReferenceUsagesForPropertyGraphFetchTrees(PropertyGraphFetchTree propertyGraphFetchTree, RootGraphFetchTree<?> mainTree, ModelRepository repository, ProcessorSupport processorSupport)
     {
-        // TODO fix this reference usage: the reference should be to propertyGraphFetchTree, not mainTree
-        this.addReferenceUsageForToOneProperty(mainTree, propertyGraphFetchTree._propertyCoreInstance(), M2GraphProperties.property, repository, processorSupport, propertyGraphFetchTree._propertyCoreInstance().getSourceInformation());
+        this.addReferenceUsageForToOneProperty(propertyGraphFetchTree, propertyGraphFetchTree._propertyCoreInstance(), M2GraphProperties.property, repository, processorSupport, propertyGraphFetchTree._propertyCoreInstance().getSourceInformation());
         if (propertyGraphFetchTree._subTypeCoreInstance() != null)
         {
-            // TODO fix this reference usage: the reference should be to propertyGraphFetchTree, not mainTree
-            this.addReferenceUsageForToOneProperty(mainTree, propertyGraphFetchTree._subTypeCoreInstance(), M2GraphProperties.subType, repository, processorSupport, propertyGraphFetchTree._subTypeCoreInstance().getSourceInformation());
+            this.addReferenceUsageForToOneProperty(propertyGraphFetchTree, propertyGraphFetchTree._subTypeCoreInstance(), M2GraphProperties.subType, repository, processorSupport, propertyGraphFetchTree._subTypeCoreInstance().getSourceInformation());
         }
         for (GraphFetchTree subTree : propertyGraphFetchTree._subTrees())
         {
