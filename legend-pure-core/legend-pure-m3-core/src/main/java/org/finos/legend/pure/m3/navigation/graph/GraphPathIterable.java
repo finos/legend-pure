@@ -201,7 +201,7 @@ public class GraphPathIterable extends AbstractLazySpliterable<ResolvedGraphPath
                         CoreInstance value = values.get(0);
                         if (!pathNodeSet.contains(value))
                         {
-                            possiblyEnqueue(path.withToOneProperty(key), pathNodeList.newWith(value));
+                            possiblyEnqueue(path.withToOnePropertyUnsafe(key), pathNodeList.newWith(value));
                         }
                     }
                     else if (values.notEmpty())
@@ -210,7 +210,7 @@ public class GraphPathIterable extends AbstractLazySpliterable<ResolvedGraphPath
                         {
                             if (!pathNodeSet.contains(value))
                             {
-                                possiblyEnqueue(path.withToManyPropertyValueAtIndex(key, i), pathNodeList.newWith(value));
+                                possiblyEnqueue(path.withToManyPropertyValueAtIndexUnsafe(key, i), pathNodeList.newWith(value));
                             }
                         });
                     }
