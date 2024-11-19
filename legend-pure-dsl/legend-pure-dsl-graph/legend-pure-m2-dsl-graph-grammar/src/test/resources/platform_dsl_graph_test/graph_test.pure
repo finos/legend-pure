@@ -1,0 +1,62 @@
+import meta::pure::graphFetch::test::*;
+
+Class meta::pure::graphFetch::test::A
+{
+  a : String[1];
+}
+
+function meta::pure::graphFetch::test::simpleFetchTree():Any[*]
+{
+    print(#{meta::pure::graphFetch::test::A{a}}#, 2);
+}
+
+Class meta::pure::graphFetch::test::Person
+{
+    firstName: String[1];
+    lastName: String[1];
+    address: Address[1];
+
+    nameWithTitle(title:String[1])
+    {
+        $title + ' ' + $this.firstName + ' ' + $this.lastName + ' ';
+    } : String[1];
+
+    nameWithPrefixAndSuffix(prefix:String[0..1], suffixes:String[*])
+                                {
+                                    if($prefix->isEmpty(),
+                                       | if($suffixes->isEmpty(),
+                                            | $this.firstName + ' ' + $this.lastName,
+                                            | $this.firstName + ' ' + $this.lastName + ', ' + $suffixes->joinStrings(', ')),
+                                       | if($suffixes->isEmpty(),
+                                            | $prefix->toOne() + ' ' + $this.firstName + ' ' + $this.lastName,
+                                            | $prefix->toOne() + ' ' + $this.firstName + ' ' + $this.lastName + ', ' + $suffixes->joinStrings(', ')))
+                                }:String[1];
+}
+
+Class meta::pure::graphFetch::test::Address
+{
+}
+
+Class meta::pure::graphFetch::test::PersonAddress extends Address
+{
+}
+
+Class meta::pure::graphFetch::test::FirmAddress extends Address
+{
+}
+
+Class meta::pure::graphFetch::test::Firm
+{
+    a: Address[1];
+    employees: Person[*];
+}
+
+function meta::pure::graphFetch::test::subTypeInTree():Any[*]
+{
+    print(#{Firm{employees{address->subType(@PersonAddress)}}}#, 2);
+}
+
+function meta::pure::graphFetch::test::graphPropertyParameter():Any[*]
+{
+    print(#{Person { nameWithTitle('Ms')}}#, 2);
+}
