@@ -42,6 +42,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -80,6 +81,7 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
 import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
+import org.finos.legend.pure.m4.tools.GraphWalkFilterResult;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -406,80 +408,102 @@ public abstract class AbstractCompiledStateIntegrityTest
     @Test
     public void testPackagedElementsContainAllOthers()
     {
-        CoreInstance packageClass = runtime.getCoreInstance(M3Paths.Package);
-        MutableMap<String, MutableList<CoreInstance>> elementsBySource = Maps.mutable.empty();
-        repository.getTopLevels().forEach(e ->
+        MutableMap<String, MutableList<Pair<CoreInstance, MutableSet<CoreInstance>>>> elementsBySource = Maps.mutable.empty();
+        CompiledStateIntegrityTestTools.getTopLevelAndPackagedIterable(repository).forEach(e ->
         {
-            if (e.getClassifier() != packageClass)
-            {
-                elementsBySource.getIfAbsentPut(e.getSourceInformation().getSourceId(), Lists.mutable::empty).add(e);
-            }
-        });
-        PackageTreeIterable.newRootPackageTreeIterable(processorSupport).forEach(pkg ->
-        {
-            if (pkg.getSourceInformation() != null)
-            {
-                elementsBySource.getIfAbsentPut(pkg.getSourceInformation().getSourceId(), Lists.mutable::empty).add(pkg);
-            }
-            pkg._children().forEach(element ->
-            {
-                if (element.getClassifier() != packageClass)
-                {
-                    elementsBySource.getIfAbsentPut(element.getSourceInformation().getSourceId(), Lists.mutable::empty).add(element);
-                }
-            });
-        });
-        elementsBySource.forEachValue(list -> list.sortThis((e1, e2) -> SourceInformation.compareByStartPosition(e1.getSourceInformation(), e2.getSourceInformation())));
-        MutableMap<String, MutableList<CoreInstance>> uncontainedBySource = Maps.mutable.empty();
-        GraphNodeIterable.fromModelRepository(repository).forEach(node ->
-        {
-            SourceInformation sourceInfo = node.getSourceInformation();
+            SourceInformation sourceInfo = e.getSourceInformation();
             if (sourceInfo != null)
             {
-                MutableList<CoreInstance> sourceElements = elementsBySource.get(sourceInfo.getSourceId());
-                if ((sourceElements == null) || sourceElements.noneSatisfy(e -> (node == e) || e.getSourceInformation().subsumes(sourceInfo)))
-                {
-                    uncontainedBySource.getIfAbsentPut(sourceInfo.getSourceId(), Lists.mutable::empty).add(node);
-                }
+                MutableSet<CoreInstance> componentInstances = CompiledStateIntegrityTestTools.componentInstances(e).reject(n -> n.getSourceInformation() == null).toSet();
+                elementsBySource.getIfAbsentPut(sourceInfo.getSourceId(), Lists.mutable::empty).add(Tuples.pair(e, componentInstances));
             }
         });
-        if (uncontainedBySource.notEmpty())
-        {
-            StringBuilder builder = new StringBuilder("There are ").append(uncontainedBySource.valuesView().collectInt(Collection::size).sum())
-                    .append(" uncontained instances in ").append(uncontainedBySource.size()).append(" sources:");
-            uncontainedBySource.keyValuesView()
-                    .toSortedListBy(Pair::getOne)
-                    .forEach(sourceElementsPair ->
+
+        MutableMap<String, MutableList<CoreInstance>> uncontainedBySource = Maps.mutable.empty();
+        MutableMap<String, MutableList<Pair<CoreInstance, CoreInstance>>> miscontainedBySource = Maps.mutable.empty();
+        GraphNodeIterable.builder()
+                .withStartingNodes(repository.getTopLevels())
+                .withKeyFilter((instance, key) -> !M3Properties.referenceUsages.equals(key) || !M3PropertyPaths.referenceUsages.equals(instance.getRealKeyByName(key)))
+                .withNodeFilter(n -> GraphWalkFilterResult.get((n.getSourceInformation() != null) && !ReferenceUsage.isReferenceUsage(n, processorSupport), true))
+                .build()
+                .forEach(node ->
+                {
+                    SourceInformation sourceInfo = node.getSourceInformation();
+                    MutableList<Pair<CoreInstance, MutableSet<CoreInstance>>> sourceElements = elementsBySource.get(sourceInfo.getSourceId());
+                    Pair<CoreInstance, MutableSet<CoreInstance>> found = (sourceElements == null) ? null : sourceElements.detect(pair -> (node == pair.getOne()) || pair.getOne().getSourceInformation().subsumes(sourceInfo));
+                    if (found == null)
                     {
-                        MutableList<CoreInstance> sourceUncontained = sourceElementsPair.getTwo();
-                        builder.append("\n\t").append(sourceElementsPair.getOne()).append(" (").append(sourceUncontained.size()).append(')');
-                        if (sourceUncontained.size() <= 10)
+                        uncontainedBySource.getIfAbsentPut(sourceInfo.getSourceId(), Lists.mutable::empty).add(node);
+                    }
+                    else if (!found.getTwo().contains(node))
+                    {
+                        miscontainedBySource.getIfAbsentPut(sourceInfo.getSourceId(), Lists.mutable::empty).add(Tuples.pair(node, found.getOne()));
+                    }
+                });
+        if (uncontainedBySource.notEmpty() || miscontainedBySource.notEmpty())
+        {
+            StringBuilder builder = new StringBuilder();
+            if (uncontainedBySource.notEmpty())
+            {
+                builder.append("There are ").append(uncontainedBySource.valuesView().collectInt(Collection::size).sum())
+                        .append(" uncontained instances in ").append(uncontainedBySource.size()).append(" sources:");
+                uncontainedBySource.keyValuesView()
+                        .toSortedListBy(Pair::getOne)
+                        .forEach(sourceElementsPair ->
                         {
-                            sourceUncontained.sortThisBy(CoreInstance::getSourceInformation).forEach(e ->
+                            MutableList<CoreInstance> sourceUncontained = sourceElementsPair.getTwo();
+                            builder.append("\n\t").append(sourceElementsPair.getOne()).append(" (").append(sourceUncontained.size()).append(')');
+                            if (sourceUncontained.size() <= 10)
                             {
-                                builder.append("\n\t\t").append(e);
-                                e.getSourceInformation().appendIntervalMessage(builder.append(" (")).append(')');
-                            });
-                        }
-                        else
-                        {
-                            MutableMap<CoreInstance, MutableList<CoreInstance>> byClassifier = Maps.mutable.empty();
-                            sourceUncontained.forEach(e -> byClassifier.getIfAbsentPut(e.getClassifier(), Lists.mutable::empty).add(e));
-                            byClassifier.keyValuesView()
-                                    .collect(p -> Tuples.pair(PackageableElement.getUserPathForPackageableElement(p.getOne()), p.getTwo()), Lists.mutable.ofInitialCapacity(byClassifier.size()))
-                                    .sortThisBy(Pair::getOne)
-                                    .forEach(classifierElementsPair ->
-                                    {
-                                        MutableList<CoreInstance> classifierElements = classifierElementsPair.getTwo();
-                                        builder.append("\n\t\t").append(classifierElementsPair.getOne()).append(" (").append(classifierElements.size()).append(')');
-                                        classifierElements.sortThisBy(CoreInstance::getSourceInformation).forEach(e ->
+                                sourceUncontained.sortThisBy(CoreInstance::getSourceInformation).forEach(e ->
+                                {
+                                    builder.append("\n\t\t").append(e);
+                                    e.getSourceInformation().appendIntervalMessage(builder.append(" (")).append(')');
+                                });
+                            }
+                            else
+                            {
+                                MutableMap<CoreInstance, MutableList<CoreInstance>> byClassifier = Maps.mutable.empty();
+                                sourceUncontained.forEach(e -> byClassifier.getIfAbsentPut(e.getClassifier(), Lists.mutable::empty).add(e));
+                                byClassifier.keyValuesView()
+                                        .collect(p -> Tuples.pair(PackageableElement.getUserPathForPackageableElement(p.getOne()), p.getTwo()), Lists.mutable.ofInitialCapacity(byClassifier.size()))
+                                        .sortThisBy(Pair::getOne)
+                                        .forEach(classifierElementsPair ->
                                         {
-                                            builder.append("\n\t\t\t").append(e);
-                                            e.getSourceInformation().appendIntervalMessage(builder.append(" (")).append(')');
+                                            MutableList<CoreInstance> classifierElements = classifierElementsPair.getTwo();
+                                            builder.append("\n\t\t").append(classifierElementsPair.getOne()).append(" (").append(classifierElements.size()).append(')');
+                                            classifierElements.sortThisBy(CoreInstance::getSourceInformation).forEach(e ->
+                                            {
+                                                builder.append("\n\t\t\t").append(e);
+                                                e.getSourceInformation().appendIntervalMessage(builder.append(" (")).append(')');
+                                            });
                                         });
-                                    });
-                        }
-                    });
+                            }
+                        });
+            }
+            if (miscontainedBySource.notEmpty())
+            {
+                if (uncontainedBySource.notEmpty())
+                {
+                    builder.append("\n");
+                }
+                builder.append("There are ").append(miscontainedBySource.valuesView().collectInt(Collection::size).sum())
+                        .append(" mis-contained instances in ").append(miscontainedBySource.size()).append(" sources:");
+                miscontainedBySource.keyValuesView()
+                        .toSortedListBy(Pair::getOne)
+                        .forEach(sourceElementsPair ->
+                        {
+                            MutableList<Pair<CoreInstance, CoreInstance>> sourceMiscontained = sourceElementsPair.getTwo();
+                            builder.append("\n\t").append(sourceElementsPair.getOne()).append(" (").append(sourceMiscontained.size()).append(')');
+                            sourceMiscontained.sortThisBy(p -> p.getOne().getSourceInformation()).forEach(pair ->
+                            {
+                                builder.append("\n\t\t").append(pair.getOne());
+                                pair.getOne().getSourceInformation().appendIntervalMessage(builder.append(" (")).append(") -> ");
+                                PackageableElement.writeUserPathForPackageableElement(builder, pair.getTwo());
+                                pair.getTwo().getSourceInformation().appendIntervalMessage(builder.append(" (")).append(')');
+                            });
+                        });
+            }
             Assert.fail(builder.toString());
         }
     }
@@ -925,18 +949,18 @@ public abstract class AbstractCompiledStateIntegrityTest
                 {
                     ListIterable<? extends CoreInstance> typeParams = node.getValueForMetaPropertyToMany(M3Properties.typeParameters);
                     ListIterable<CoreInstance> expectedSourceTypeArgs = typeParams.isEmpty() ?
-                            null :
-                            typeParams.collect(typeParam ->
-                            {
-                                CoreInstance typeArg = processorSupport.newGenericType(null, typeParam, false);
-                                Instance.addValueToProperty(typeArg, M3Properties.typeParameter, typeParam, processorSupport);
-                                return typeArg;
-                            });
+                                                                        null :
+                                                                        typeParams.collect(typeParam ->
+                                                                        {
+                                                                            CoreInstance typeArg = processorSupport.newGenericType(null, typeParam, false);
+                                                                            Instance.addValueToProperty(typeArg, M3Properties.typeParameter, typeParam, processorSupport);
+                                                                            return typeArg;
+                                                                        });
 
                     ListIterable<? extends CoreInstance> multParams = node.getValueForMetaPropertyToMany(M3Properties.multiplicityParameters);
                     ListIterable<CoreInstance> expectedSourceMultArgs = multParams.isEmpty() ?
-                            null :
-                            multParams.collect(multParamInstanceValue -> Multiplicity.newMultiplicity(PrimitiveUtilities.getStringValue(multParamInstanceValue.getValueForMetaPropertyToOne(M3Properties.values)), processorSupport));
+                                                                        null :
+                                                                        multParams.collect(multParamInstanceValue -> Multiplicity.newMultiplicity(PrimitiveUtilities.getStringValue(multParamInstanceValue.getValueForMetaPropertyToOne(M3Properties.values)), processorSupport));
 
                     SourceInformation classSourceInfo = node.getSourceInformation();
                     Maps.fixedSize.with(
