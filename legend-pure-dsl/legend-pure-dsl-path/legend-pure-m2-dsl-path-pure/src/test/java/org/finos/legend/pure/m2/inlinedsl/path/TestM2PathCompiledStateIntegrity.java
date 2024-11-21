@@ -16,7 +16,6 @@ package org.finos.legend.pure.m2.inlinedsl.path;
 
 import org.finos.legend.pure.m3.tests.AbstractCompiledStateIntegrityTest;
 import org.junit.BeforeClass;
-import org.junit.Test;
 
 public class TestM2PathCompiledStateIntegrity extends AbstractCompiledStateIntegrityTest
 {
@@ -24,11 +23,5 @@ public class TestM2PathCompiledStateIntegrity extends AbstractCompiledStateInteg
     public static void initialize()
     {
         initialize("platform_dsl_path");
-    }
-
-    @Test
-    public void testPackagedElementsContainAllOthers()
-    {
-        super.testPackagedElementsContainAllOthers();
     }
 }

@@ -230,9 +230,19 @@ public class GraphPath
         return extend().addToOneProperty(property).build();
     }
 
+    GraphPath withToOnePropertyUnsafe(String property)
+    {
+        return new GraphPath(this.startNodePath, this.edges.newWith(new ToOnePropertyEdge(property)));
+    }
+
     public GraphPath withToManyPropertyValueAtIndex(String property, int index)
     {
         return extend().addToManyPropertyValueAtIndex(property, index).build();
+    }
+
+    GraphPath withToManyPropertyValueAtIndexUnsafe(String property, int index)
+    {
+        return new GraphPath(this.startNodePath, this.edges.newWith(new ToManyPropertyAtIndexEdge(property, index)));
     }
 
     public GraphPath withToManyPropertyValueWithName(String property, String valueName)
@@ -548,7 +558,12 @@ public class GraphPath
 
         public Builder addToOneProperty(String property)
         {
-            return addEdge(new ToOnePropertyEdge(validateProperty(property)));
+            return addToOnePropertyUnsafe(validateProperty(property));
+        }
+
+        Builder addToOnePropertyUnsafe(String property)
+        {
+            return addEdge(new ToOnePropertyEdge(property));
         }
 
         public Builder addToOneProperties(String... properties)
@@ -565,7 +580,12 @@ public class GraphPath
 
         public Builder addToManyPropertyValueAtIndex(String property, int index)
         {
-            return addEdge(new ToManyPropertyAtIndexEdge(validateProperty(property), validateIndex(index)));
+            return addToManyPropertyValueAtIndexUnsafe(validateProperty(property), validateIndex(index));
+        }
+
+        Builder addToManyPropertyValueAtIndexUnsafe(String property, int index)
+        {
+            return addEdge(new ToManyPropertyAtIndexEdge(property, index));
         }
 
         public Builder addToManyPropertyValueWithName(String property, String valueName)
@@ -575,7 +595,12 @@ public class GraphPath
 
         public Builder addToManyPropertyValueWithKey(String property, String keyProperty, String key)
         {
-            return addEdge(new ToManyPropertyWithStringKeyEdge(validateProperty(property), validateKeyProperty(keyProperty), validateKey(key)));
+            return addToManyPropertyValueWithKeyUnsafe(validateProperty(property), validateKeyProperty(keyProperty), validateKey(key));
+        }
+
+        Builder addToManyPropertyValueWithKeyUnsafe(String property, String keyProperty, String key)
+        {
+            return addEdge(new ToManyPropertyWithStringKeyEdge(property, keyProperty, key));
         }
 
         private Builder addEdge(Edge pathElement)

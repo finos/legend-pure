@@ -14,35 +14,40 @@
 
 package org.finos.legend.pure.m3.tests;
 
+import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
-import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.utility.Iterate;
+import org.eclipse.collections.impl.utility.LazyIterate;
+import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
-import org.finos.legend.pure.m3.navigation.graph.GraphPath;
 import org.finos.legend.pure.m3.navigation.graph.GraphPathIterable;
 import org.finos.legend.pure.m3.navigation.graph.ResolvedGraphPath;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.property.Property;
-import org.finos.legend.pure.m3.tools.GraphStatistics;
+import org.finos.legend.pure.m3.tools.PackageTreeIterable;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.tools.GraphNodeIterable;
 import org.finos.legend.pure.m4.tools.GraphWalkFilterResult;
 import org.junit.Assert;
 
 import java.util.Formatter;
+import java.util.Objects;
 import java.util.function.BiConsumer;
-import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -176,65 +181,38 @@ public class CompiledStateIntegrityTestTools
         testHasSourceInformation(instances, instanceDescription, (sb, t) -> sb.append(instancePrinter.apply(t)), findPaths, processorSupport);
     }
 
-    @SuppressWarnings("unchecked")
     public static <T extends CoreInstance> void testHasSourceInformation(Iterable<T> instances, String instanceDescription, BiConsumer<? super StringBuilder, ? super T> instancePrinter, boolean findPaths, ProcessorSupport processorSupport)
     {
-        MutableSet<T> noSourceInfo = Iterate.select(instances, i -> i.getSourceInformation() == null, Sets.mutable.empty());
+        MutableList<T> noSourceInfo = Iterate.select(instances, i -> i.getSourceInformation() == null, Lists.mutable.empty());
         if (noSourceInfo.notEmpty())
         {
             MutableList<String> errorMessages = Lists.mutable.empty();
             BiConsumer<? super StringBuilder, ? super T> resolvedInstancePrinter = (instancePrinter == null) ? StringBuilder::append : instancePrinter;
             if (findPaths)
             {
-                MutableMap<T, GraphPath> graphPaths = Maps.mutable.withInitialCapacity(noSourceInfo.size());
-                BiPredicate<ResolvedGraphPath, String> propertyFilter = (resolvedGraphPath, prop) -> !M3Properties.applications.equals(prop) && !M3Properties.referenceUsages.equals(prop) && !M3Properties._package.equals(prop);
-                Function<? super ResolvedGraphPath, ? extends GraphWalkFilterResult> pathFilter = resolvedGraphPath ->
-                {
-                    CoreInstance endNode = resolvedGraphPath.getLastResolvedNode();
-                    if ((noSourceInfo.size() == 1) && noSourceInfo.contains(endNode))
-                    {
-                        return GraphWalkFilterResult.ACCEPT_AND_STOP;
-                    }
-                    if ((endNode instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) && (((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) endNode)._package() != null))
-                    {
-                        return GraphWalkFilterResult.ACCEPT_AND_STOP;
-                    }
-                    return GraphWalkFilterResult.ACCEPT_AND_CONTINUE;
-                };
-                // We resolve the set of starts to a list up front to conserve memory during the graph path searches
-                for (String start : GraphStatistics.allTopLevelAndPackagedElementPaths(processorSupport).toList())
-                {
-                    for (ResolvedGraphPath resolvedGraphPath : GraphPathIterable.build(start, pathFilter, propertyFilter, processorSupport))
-                    {
-                        CoreInstance node = resolvedGraphPath.getLastResolvedNode();
-                        if (noSourceInfo.remove(node))
-                        {
-                            graphPaths.put((T) node, resolvedGraphPath.getGraphPath().reduce(processorSupport));
-                            if (noSourceInfo.isEmpty())
-                            {
-                                break;
-                            }
-                        }
-                    }
-                    if (noSourceInfo.isEmpty())
-                    {
-                        break;
-                    }
-                }
-                graphPaths.forEachKeyValue((instance, path) ->
+                MutableSet<T> remaining = forEachInstancePath(noSourceInfo, processorSupport, (instance, path) ->
                 {
                     StringBuilder builder = new StringBuilder((instanceDescription == null) ? "Instance" : instanceDescription).append(": ");
                     resolvedInstancePrinter.accept(builder, instance);
-                    path.writeDescription(builder.append("\n\t\tpath: "));
+                    path.getGraphPath().writeDescription(builder.append("\n\t\tpath: "));
+                    errorMessages.add(builder.toString());
+                });
+                remaining.forEach(instance ->
+                {
+                    StringBuilder builder = new StringBuilder((instanceDescription == null) ? "Instance" : instanceDescription).append(": ");
+                    resolvedInstancePrinter.accept(builder, instance);
                     errorMessages.add(builder.toString());
                 });
             }
-            noSourceInfo.forEach(instance ->
+            else
             {
-                StringBuilder builder = new StringBuilder((instanceDescription == null) ? "Instance" : instanceDescription).append(": ");
-                resolvedInstancePrinter.accept(builder, instance);
-                errorMessages.add(builder.toString());
-            });
+                noSourceInfo.forEach(instance ->
+                {
+                    StringBuilder builder = new StringBuilder((instanceDescription == null) ? "Instance" : instanceDescription).append(": ");
+                    resolvedInstancePrinter.accept(builder, instance);
+                    errorMessages.add(builder.toString());
+                });
+            }
             int errorCount = errorMessages.size();
             StringBuilder message = new StringBuilder(errorCount * 128).append("There ").append((errorCount == 1) ? "is" : "are");
             new Formatter(message).format(" %,d", errorCount);
@@ -251,6 +229,123 @@ public class CompiledStateIntegrityTestTools
             errorMessages.appendString(message, "\n\t");
             Assert.fail(message.toString());
         }
+    }
+
+    static <T extends CoreInstance> MutableSet<T> forEachInstancePath(Iterable<T> instances, ProcessorSupport processorSupport, BiConsumer<? super T, ? super ResolvedGraphPath> consumer)
+    {
+        return forEachInstancePath(instances, null, processorSupport, consumer);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T extends CoreInstance> MutableSet<T> forEachInstancePath(Iterable<T> instances, Iterable<? extends CoreInstance> startNodes, ProcessorSupport processorSupport, BiConsumer<? super T, ? super ResolvedGraphPath> consumer)
+    {
+        MutableSet<T> remaining = Sets.mutable.withAll(instances);
+        for (CoreInstance startNode : (startNodes == null) ? getTopLevelAndPackagedIterable(processorSupport).select(n -> n.getSourceInformation() != null) : LazyIterate.adapt(startNodes))
+        {
+            for (ResolvedGraphPath rgp : internalGraphPaths(startNode, processorSupport))
+            {
+                CoreInstance node = rgp.getLastResolvedNode();
+                if (remaining.remove(node))
+                {
+                    consumer.accept((T) node, rgp);
+                    if (remaining.isEmpty())
+                    {
+                        return remaining;
+                    }
+                }
+            }
+        }
+        return remaining;
+    }
+
+    static LazyIterable<CoreInstance> getTopLevelAndPackagedIterable(ModelRepository repository)
+    {
+        return repository.getTopLevels()
+                .asLazy()
+                .concatenate(PackageTreeIterable.newRootPackageTreeIterable(repository)
+                        .flatCollect(pkg -> Lists.mutable.withAll(pkg._children())));
+    }
+
+    static LazyIterable<CoreInstance> getTopLevelAndPackagedIterable(ProcessorSupport processorSupport)
+    {
+        return PrimitiveUtilities.getPrimitiveTypes(processorSupport, Lists.mutable.empty())
+                .with(processorSupport.repository_getTopLevel(M3Paths.Package))
+                .with(processorSupport.repository_getTopLevel(M3Paths.Root))
+                .asLazy()
+                .concatenate(PackageTreeIterable.newRootPackageTreeIterable(processorSupport)
+                        .flatCollect(pkg -> Lists.mutable.withAll(pkg._children())));
+    }
+
+    private static GraphPathIterable internalGraphPaths(CoreInstance element, ProcessorSupport processorSupport)
+    {
+        SourceInformation sourceInfo = element.getSourceInformation();
+        return GraphPathIterable.builder(processorSupport)
+                .withStartNode(element)
+                .withPropertyFilter((rgp, property) ->
+                {
+                    switch (property)
+                    {
+                        case M3Properties._package:
+                        {
+                            return !M3PropertyPaths._package.equals(rgp.getLastResolvedNode().getRealKeyByName(property));
+                        }
+                        case M3Properties.children:
+                        {
+                            return !M3PropertyPaths.children.equals(rgp.getLastResolvedNode().getRealKeyByName(property));
+                        }
+                        default:
+                        {
+                            return true;
+                        }
+                    }
+                })
+                .withPathFilter(rgp ->
+                {
+                    CoreInstance node = rgp.getLastResolvedNode();
+                    if (node == element)
+                    {
+                        return GraphWalkFilterResult.ACCEPT_AND_CONTINUE;
+                    }
+                    if (node instanceof Package)
+                    {
+                        return GraphWalkFilterResult.REJECT_AND_STOP;
+                    }
+
+                    SourceInformation nodeSourceInfo = node.getSourceInformation();
+                    return ((nodeSourceInfo == null) || sourceInfo.subsumes(nodeSourceInfo)) ?
+                           GraphWalkFilterResult.ACCEPT_AND_CONTINUE :
+                           GraphWalkFilterResult.REJECT_AND_STOP;
+                })
+                .build();
+    }
+
+    static LazyIterable<CoreInstance> componentInstances(CoreInstance element)
+    {
+        SourceInformation sourceInfo = Objects.requireNonNull(element.getSourceInformation(), "element source information may not be null");
+        return GraphNodeIterable.builder()
+                .withStartingNode(element)
+                .withKeyFilter((n, k) ->
+                {
+                    switch (k)
+                    {
+                        case M3Properties._package:
+                        {
+                            return !M3PropertyPaths._package.equals(n.getRealKeyByName(k));
+                        }
+                        case M3Properties.children:
+                        {
+                            return !M3PropertyPaths.children.equals(n.getRealKeyByName(k));
+                        }
+                        default:
+                        {
+                            return true;
+                        }
+                    }
+                })
+                .withNodeFilter(n -> ((n.getSourceInformation() == null) || sourceInfo.subsumes(n.getSourceInformation())) ?
+                                     GraphWalkFilterResult.ACCEPT_AND_CONTINUE :
+                                     GraphWalkFilterResult.REJECT_AND_STOP)
+                .build();
     }
 
     private static void runIntegrityTest(Iterable<? extends CoreInstance> instances, String violationDescription, BiConsumer<CoreInstance, Consumer<? super String>> test)

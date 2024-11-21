@@ -37,6 +37,7 @@ public class M3PropertyPaths
     public static final ImmutableList<String> functionName_Function = makePropertyPath(M3Paths.Function, M3Properties.functionName);
     public static final ImmutableList<String> general = makePropertyPath(M3Paths.Generalization, M3Properties.general);
     public static final ImmutableList<String> generalizations = makePropertyPath(M3Paths.Type, M3Properties.generalizations);
+    public static final ImmutableList<String> left = makePropertyPath(M3Paths.GenericTypeOperation, M3Properties.left);
     public static final ImmutableList<String> modelElements = makePropertyPath(M3Paths.Annotation, M3Properties.modelElements);
     public static final ImmutableList<String> multiplicityArguments = makePropertyPath(M3Paths.GenericType, M3Properties.multiplicityArguments);
     public static final ImmutableList<String> multiplicityParameters = makePropertyPath(M3Paths.Class, M3Properties.multiplicityParameters);
@@ -53,12 +54,14 @@ public class M3PropertyPaths
     public static final ImmutableList<String> qualifiedPropertiesFromAssociations = makePropertyPath(M3Paths.Class, M3Properties.qualifiedPropertiesFromAssociations);
     public static final ImmutableList<String> rawType = makePropertyPath(M3Paths.GenericType, M3Properties.rawType);
     public static final ImmutableList<String> referenceUsages = makePropertyPath(M3Paths.Referenceable, M3Properties.referenceUsages);
+    public static final ImmutableList<String> right = makePropertyPath(M3Paths.GenericTypeOperation, M3Properties.right);
     public static final ImmutableList<String> specializations = makePropertyPath(M3Paths.Type, M3Properties.specializations);
     public static final ImmutableList<String> specific = makePropertyPath(M3Paths.Generalization, M3Properties.specific);
+    public static final ImmutableList<String> stereotypes = makePropertyPath(M3Paths.ElementWithStereotypes, M3Properties.stereotypes);
+    public static final ImmutableList<String> type_GenericTypeOperation = makePropertyPath(M3Paths.GenericTypeOperation, M3Properties.type);
     public static final ImmutableList<String> typeArguments = makePropertyPath(M3Paths.GenericType, M3Properties.typeArguments);
     public static final ImmutableList<String> typeParameter = makePropertyPath(M3Paths.GenericType, M3Properties.typeParameter);
     public static final ImmutableList<String> typeParameters = makePropertyPath(M3Paths.Class, M3Properties.typeParameters);
-    public static final ImmutableList<String> stereotypes = makePropertyPath(M3Paths.ElementWithStereotypes, M3Properties.stereotypes);
     public static final ImmutableList<String> taggedValues = makePropertyPath(M3Paths.ElementWithTaggedValues, M3Properties.taggedValues);
 
     @SuppressWarnings("unchecked")

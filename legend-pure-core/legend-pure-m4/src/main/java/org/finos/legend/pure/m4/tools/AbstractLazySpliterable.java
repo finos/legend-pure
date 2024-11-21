@@ -18,6 +18,7 @@ import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.block.procedure.Procedure;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.impl.Counter;
 import org.eclipse.collections.impl.lazy.AbstractLazyIterable;
 
 import java.util.Iterator;
@@ -31,6 +32,21 @@ import java.util.stream.StreamSupport;
 
 public abstract class AbstractLazySpliterable<T> extends AbstractLazyIterable<T>
 {
+    @Override
+    public int size()
+    {
+        Counter counter = new Counter();
+        Spliterator<T> spliterator = spliterator();
+        while (spliterator.tryAdvance(n -> counter.increment()))
+        {
+            if (counter.getCount() == Integer.MAX_VALUE)
+            {
+                return Integer.MAX_VALUE;
+            }
+        }
+        return counter.getCount();
+    }
+
     @Override
     public void each(Procedure<? super T> procedure)
     {
