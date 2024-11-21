@@ -35,6 +35,7 @@ import org.finos.legend.pure.m3.pct.shared.PCTTools;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.StringCoreInstance;
 
+import static org.finos.legend.pure.m3.fct.shared.FCTTools.isFCTTest;
 import static org.finos.legend.pure.m3.pct.shared.PCTTools.isPCTTest;
 
 public class TestCollection
@@ -408,6 +409,10 @@ public class TestCollection
                         this.subCollections.add(pureTestCollectionGenerator.apply(child));
                     }
                     else if (PCTTools.isPCTTest(child, processorSupport))
+                    {
+                        this.testFunctions.add(child);
+                    }
+                    else if (isFCTTest(child, processorSupport))
                     {
                         this.testFunctions.add(child);
                     }
