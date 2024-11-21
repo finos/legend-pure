@@ -135,7 +135,8 @@ public abstract class AbstractNativeFunctionGeneric extends AbstractNative
             {
                 String typeName = getClassName(type);
                 String parameterType = type instanceof Class && ((Class<?>) type).isArray() ? "ListIterable<" + typeName + ">" : typeName;
-                parameterAccessStrings.add("(" + parameterType + ")vars.get(" + index + ")");
+                boolean isCollection = type instanceof Class && Iterable.class.isAssignableFrom(((Class<?>) type));
+                parameterAccessStrings.add("(" + parameterType + ")" + (!isCollection ? "CompiledSupport.toOne(" : "") + "vars.get(" + index + ")" + (!isCollection ? ", null)" : ""));
             });
         }
 

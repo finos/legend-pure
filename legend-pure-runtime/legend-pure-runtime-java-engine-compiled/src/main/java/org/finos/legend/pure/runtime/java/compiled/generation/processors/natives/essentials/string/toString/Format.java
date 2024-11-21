@@ -14,34 +14,13 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.toString;
 
-import org.eclipse.collections.api.list.ListIterable;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
+import org.finos.legend.pure.m3.execution.ExecutionSupport;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
 
-public class Format extends AbstractNative
+public class Format extends AbstractNativeFunctionGeneric
 {
     public Format()
     {
-        super("format_String_1__Any_MANY__String_1_");
-    }
-
-    @Override
-    public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
-    {
-        return "CoreGen.format(" + transformedParams.get(0) + ", " + transformedParams.get(1) + ", es)";
-    }
-
-    @Override
-    public String buildBody()
-    {
-        return "new DefendedPureFunction2<String, Object, Object>()\n" +
-                "        {\n" +
-                "            @Override\n" +
-                "            public Object value(String formatString, Object formatArgs, ExecutionSupport es)\n" +
-                "            {\n" +
-                "               return CoreGen.format(formatString, formatArgs, es);\n" +
-                "            }\n" +
-                "        }";
+        super("CoreGen.format", new Class[]{String.class, Object.class, ExecutionSupport.class}, false, true, false, "format_String_1__Any_MANY__String_1_");
     }
 }
