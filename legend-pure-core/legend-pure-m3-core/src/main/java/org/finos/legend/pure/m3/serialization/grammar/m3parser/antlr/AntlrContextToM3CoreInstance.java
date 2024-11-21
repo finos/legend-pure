@@ -963,7 +963,7 @@ public class AntlrContextToM3CoreInstance
             List<Boolean> nonFunctions = ListIterate.collect(ctx.columnBuilders().oneColSpec(), x -> x.type() != null | x.COLON() == null).distinct();
             if (isArray && nonFunctions.size() > 1)
             {
-                throw new PureCompilationException("Can't mix column types");
+                throw new PureParserException(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), "Can't mix column types");
             }
             boolean nonFunction = nonFunctions.get(0);
 
