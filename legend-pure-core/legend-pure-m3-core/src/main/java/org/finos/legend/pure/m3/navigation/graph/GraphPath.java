@@ -222,7 +222,12 @@ public class GraphPath
 
     public Builder extend()
     {
-        return new Builder(this);
+        return extend(true);
+    }
+
+    public Builder extend(boolean validate)
+    {
+        return new Builder(this, validate);
     }
 
     public GraphPath withToOneProperty(String property)
@@ -351,22 +356,42 @@ public class GraphPath
 
     public static Builder builder()
     {
-        return new Builder();
+        return builder(true);
+    }
+
+    public static Builder builder(boolean validate)
+    {
+        return new Builder(validate);
     }
 
     public static Builder builder(int initEdgeCapacity)
     {
-        return new Builder(initEdgeCapacity);
+        return builder(initEdgeCapacity, true);
+    }
+
+    public static Builder builder(int initEdgeCapacity, boolean validate)
+    {
+        return new Builder(initEdgeCapacity, validate);
     }
 
     public static Builder builder(String startNodePath)
     {
-        return builder().withStartNodePath(startNodePath);
+        return builder(startNodePath, true);
+    }
+
+    public static Builder builder(String startNodePath, boolean validate)
+    {
+        return builder(validate).withStartNodePath(startNodePath);
     }
 
     public static Builder builder(GraphPath path)
     {
-        return new Builder(Objects.requireNonNull(path, "path may not be null"));
+        return builder(path, true);
+    }
+
+    public static Builder builder(GraphPath path, boolean validate)
+    {
+        return new Builder(Objects.requireNonNull(path, "path may not be null"), validate);
     }
 
     @Deprecated
@@ -389,7 +414,12 @@ public class GraphPath
 
     public static GraphPath buildPath(String startNodePath)
     {
-        return builder().withStartNodePath(startNodePath).build();
+        return buildPath(startNodePath, true);
+    }
+
+    public static GraphPath buildPath(String startNodePath, boolean validate)
+    {
+        return new GraphPath(validate ? new ParserValidator().validateStartNodePath(startNodePath) : startNodePath, Lists.immutable.empty());
     }
 
     public static GraphPath buildPath(String startNodePath, String... toOneProperties)
@@ -452,24 +482,27 @@ public class GraphPath
 
     public static class Builder
     {
-        private final ParserValidator parserValidator = new ParserValidator();
         private String startNodePath;
         private final MutableList<Edge> pathElements;
+        private final ParserValidator parserValidator;
 
-        private Builder()
+        private Builder(boolean validate)
         {
             this.pathElements = Lists.mutable.empty();
+            this.parserValidator = validate ? new ParserValidator() : null;
         }
 
-        private Builder(int initEdgeCapacity)
+        private Builder(int initEdgeCapacity, boolean validate)
         {
             this.pathElements = Lists.mutable.withInitialCapacity(initEdgeCapacity);
+            this.parserValidator = validate ? new ParserValidator() : null;
         }
 
-        private Builder(GraphPath path)
+        private Builder(GraphPath path, boolean validate)
         {
             this.startNodePath = path.startNodePath;
             this.pathElements = Lists.mutable.withAll(path.edges);
+            this.parserValidator = validate ? new ParserValidator() : null;
         }
 
         public String getStartNodePath()
@@ -479,7 +512,7 @@ public class GraphPath
 
         public void setStartNodePath(String path)
         {
-            this.startNodePath = this.parserValidator.validateStartNodePath(path);
+            this.startNodePath = (this.parserValidator == null) ? path : this.parserValidator.validateStartNodePath(path);
         }
 
         public Builder withStartNodePath(String path)
@@ -505,7 +538,7 @@ public class GraphPath
 
         public Builder fromDescription(String description)
         {
-            return this.parserValidator.parseDescription(description, this);
+            return ((this.parserValidator == null) ? new ParserValidator() : this.parserValidator).parseDescription(description, this);
         }
 
         public String getPureExpression()

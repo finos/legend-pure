@@ -303,7 +303,7 @@ public class GraphPathIterable extends AbstractLazySpliterable<ResolvedGraphPath
                 throw new IllegalArgumentException("Invalid start node: " + element);
             }
             String path = PackageableElement.getUserPathForPackageableElement(element);
-            this.startPaths.add(new ResolvedGraphPath(GraphPath.buildPath(path), Lists.immutable.with(element)));
+            this.startPaths.add(new ResolvedGraphPath(GraphPath.buildPath(path, false), Lists.immutable.with(element)));
             return this;
         }
 
