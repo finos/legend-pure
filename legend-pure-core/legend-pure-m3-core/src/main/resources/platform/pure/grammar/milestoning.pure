@@ -57,6 +57,226 @@ native function <<functionType.SideEffectFunction>> meta::pure::functions::colle
 native function <<functionType.SideEffectFunction>> meta::pure::functions::collection::getAll<T>(type:Class<T>[1], milestoningDate:Date[1]):T[*];
 native function <<functionType.SideEffectFunction>> meta::pure::functions::collection::getAll<T>(type:Class<T>[1], processingDate:Date[1], businessDate:Date[1]):T[*];
 
+Class meta::pure::test::model::ClassWithNoMilestoning
+{
+  toClass1 : meta::pure::test::model::ClassWithMilestoning1[0..1];
+  toClass2 : meta::pure::test::model::ClassWithMilestoning2[0..1];
+  toClass3 : meta::pure::test::model::ClassWithMilestoning3[0..1];
+}
+
+Class <<temporal.businesstemporal>> meta::pure::test::model::ClassWithMilestoning1
+{
+  toClass2 : meta::pure::test::model::ClassWithMilestoning2[0..1];
+  toClass3 : meta::pure::test::model::ClassWithMilestoning3[*];
+}
+
+Class <<temporal.processingtemporal>> meta::pure::test::model::ClassWithMilestoning2
+{
+  toClass1 : meta::pure::test::model::ClassWithMilestoning1[0..1];
+  toClass3 : meta::pure::test::model::ClassWithMilestoning3[*];
+}
+
+Class <<temporal.bitemporal>> meta::pure::test::model::ClassWithMilestoning3
+{
+  toClass1 : meta::pure::test::model::ClassWithMilestoning1[0..1];
+  toClass2 : meta::pure::test::model::ClassWithMilestoning2[0..1];
+}
+
+Association meta::pure::test::model::AssociationWithMilestoning1
+{
+  toClass1A : meta::pure::test::model::ClassWithMilestoning1[*];
+  toClass2A : meta::pure::test::model::ClassWithMilestoning2[*];
+}
+
+
+Association meta::pure::test::model::AssociationWithMilestoning2
+{
+  toClass1B : meta::pure::test::model::ClassWithMilestoning1[*];
+  toClass3B : meta::pure::test::model::ClassWithMilestoning3[*];
+}
+
+Association meta::pure::test::model::AssociationWithMilestoning3
+{
+  toClass2C : meta::pure::test::model::ClassWithMilestoning2[*];
+  toClass3C : meta::pure::test::model::ClassWithMilestoning3[*];
+}
+
+function <<test.Test>> meta::pure::test::model::TestNonTemporalClass():Any[*]
+{
+  let cls = meta::pure::test::model::ClassWithNoMilestoning;
+
+  let props = $cls.properties;
+  assertEquals(3, $props->size());
+
+  let qualifiedProperties = $cls.qualifiedProperties;
+
+  assertEquals('toClass1(Date[1])', $qualifiedProperties->at(0).id);
+  assertEquals(2, $qualifiedProperties->at(0)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass1AllVersionsInRange(Date[1],Date[1])', $qualifiedProperties->at(1).id);
+  assertEquals(3, $qualifiedProperties->at(1)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass2(Date[1])', $qualifiedProperties->at(2).id);
+  assertEquals('toClass2AllVersionsInRange(Date[1],Date[1])', $qualifiedProperties->at(3).id);
+  assertEquals('toClass3(Date[1],Date[1])', $qualifiedProperties->at(4).id);
+}
+
+function <<test.Test>> meta::pure::test::model::TestBusinessTemporalClass():Any[*]
+{
+  let cls = meta::pure::test::model::ClassWithMilestoning1;
+
+  let props = $cls.properties;
+  assertEquals(4, $props->size());
+
+  assertEquals('businessDate', $props->at(0).name);
+  assertEquals('milestoning', $props->at(1).name);
+  assertEquals('toClass2AllVersions', $props->at(2).name);
+  assertEquals('toClass3AllVersions', $props->at(3).name);
+
+  let propertiesFromAssociations = $cls.propertiesFromAssociations;
+
+  assertEquals('toClass2AAllVersions', $propertiesFromAssociations->at(0).name);
+  assertEquals('toClass3BAllVersions', $propertiesFromAssociations->at(1).name);
+
+  let qualifiedProperties = $cls.qualifiedProperties;
+
+  assertEquals('toClass2(Date[1])', $qualifiedProperties->at(0).id);
+  assertEquals(2, $qualifiedProperties->at(0)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass2AllVersionsInRange(Date[1],Date[1])', $qualifiedProperties->at(1).id);
+  assertEquals(3, $qualifiedProperties->at(1)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass3(Date[1],Date[1])', $qualifiedProperties->at(2).id);
+  assertEquals(3, $qualifiedProperties->at(2)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass3(Date[1])', $qualifiedProperties->at(3).id);
+  assertEquals(2, $qualifiedProperties->at(3)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  let qpFromAssociations = $cls.qualifiedPropertiesFromAssociations;
+
+  assertEquals('toClass2A(Date[1])', $qpFromAssociations->at(0).id);
+  assertEquals(2, $qpFromAssociations->at(0)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass2AAllVersionsInRange(Date[1],Date[1])', $qpFromAssociations->at(1).id);
+  assertEquals(3, $qpFromAssociations->at(1)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass3B(Date[1],Date[1])', $qpFromAssociations->at(2).id);
+  assertEquals(3, $qpFromAssociations->at(2)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass3B(Date[1])', $qpFromAssociations->at(3).id);
+  assertEquals(2, $qpFromAssociations->at(3)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+}
+
+function <<test.Test>> meta::pure::test::model::TestProcessingTemporalClass():Any[*]
+{
+  let cls = meta::pure::test::model::ClassWithMilestoning2;
+
+  let props = $cls.properties;
+  assertEquals(4, $props->size());
+
+  assertEquals('processingDate', $props->at(0).name);
+  assertEquals('milestoning', $props->at(1).name);
+  assertEquals('toClass1AllVersions', $props->at(2).name);
+  assertEquals('toClass3AllVersions', $props->at(3).name);
+
+  let propertiesFromAssociations = $cls.propertiesFromAssociations;
+
+  assertEquals('toClass1AAllVersions', $propertiesFromAssociations->at(0).name);
+  assertEquals('toClass3CAllVersions', $propertiesFromAssociations->at(1).name);
+
+  let qualifiedProperties = $cls.qualifiedProperties;
+
+  assertEquals('toClass1(Date[1])', $qualifiedProperties->at(0).id);
+  assertEquals(2, $qualifiedProperties->at(0)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass1AllVersionsInRange(Date[1],Date[1])', $qualifiedProperties->at(1).id);
+  assertEquals(3, $qualifiedProperties->at(1)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass3(Date[1],Date[1])', $qualifiedProperties->at(2).id);
+  assertEquals(3, $qualifiedProperties->at(2)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass3(Date[1])', $qualifiedProperties->at(3).id);
+  assertEquals(2, $qualifiedProperties->at(3)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  let qpFromAssociations = $cls.qualifiedPropertiesFromAssociations;
+  assertEquals('toClass1A(Date[1])', $qpFromAssociations->at(0).id);
+  assertEquals(2, $qpFromAssociations->at(0)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass1AAllVersionsInRange(Date[1],Date[1])', $qpFromAssociations->at(1).id);
+  assertEquals(3, $qpFromAssociations->at(1)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass3C(Date[1],Date[1])', $qpFromAssociations->at(2).id);
+  assertEquals(3, $qpFromAssociations->at(2)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass3C(Date[1])', $qpFromAssociations->at(3).id);
+  assertEquals(2, $qpFromAssociations->at(3)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+}
+
+
+function <<test.Test>> meta::pure::test::model::TestBiTemporalClass():Any[*]
+{
+  let cls = meta::pure::test::model::ClassWithMilestoning3;
+
+  let props = $cls.properties;
+  assertEquals(5, $props->size());
+  assertEquals('processingDate', $props->at(0).name);
+  assertEquals('businessDate', $props->at(1).name);
+  assertEquals('milestoning', $props->at(2).name);
+  assertEquals('toClass1AllVersions', $props->at(3).name);
+  assertEquals('toClass2AllVersions', $props->at(4).name);
+
+  let propertiesFromAssociations = $cls.propertiesFromAssociations;
+
+  assertEquals('toClass2CAllVersions', $propertiesFromAssociations->at(0).name);
+  assertEquals('toClass1BAllVersions', $propertiesFromAssociations->at(1).name);
+
+  let qualifiedProperties = $cls.qualifiedProperties;
+  assertEquals('toClass1()', $qualifiedProperties->at(0).id);
+  assertEquals(1, $qualifiedProperties->at(0)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass1(Date[1])', $qualifiedProperties->at(1).id);
+  assertEquals(2, $qualifiedProperties->at(1)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass1AllVersionsInRange(Date[1],Date[1])', $qualifiedProperties->at(2).id);
+  assertEquals(3, $qualifiedProperties->at(2)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass2()', $qualifiedProperties->at(3).id);
+  assertEquals(1, $qualifiedProperties->at(3)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass2(Date[1])', $qualifiedProperties->at(4).id);
+  assertEquals(2, $qualifiedProperties->at(4)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass2AllVersionsInRange(Date[1],Date[1])', $qualifiedProperties->at(5).id);
+  assertEquals(3, $qualifiedProperties->at(5)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  let qpFromAssociations = $cls.qualifiedPropertiesFromAssociations;
+  assertEquals('toClass2C()', $qpFromAssociations->at(0).id);
+  assertEquals(1, $qpFromAssociations->at(0)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass2C(Date[1])', $qpFromAssociations->at(1).id);
+  assertEquals(2, $qpFromAssociations->at(1)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass2CAllVersionsInRange(Date[1],Date[1])', $qpFromAssociations->at(2).id);
+  assertEquals(3, $qpFromAssociations->at(2)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass1B()', $qpFromAssociations->at(3).id);
+  assertEquals(1, $qpFromAssociations->at(3)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass1B(Date[1])', $qpFromAssociations->at(4).id);
+  assertEquals(2, $qpFromAssociations->at(4)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+
+  assertEquals('toClass1BAllVersionsInRange(Date[1],Date[1])', $qpFromAssociations->at(5).id);
+  assertEquals(3, $qpFromAssociations->at(5)->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).parameters->size());
+}
+
+function <<test.Test>> meta::pure::test::model::TestMilestoning():Boolean[1]
+{
+    let instances = ^meta::pure::test::model::ClassWithMilestoning1(businessDate = %2020-01-01);
+    let result1 = meta::pure::test::model::ClassWithMilestoning1.all(%2020-01-01);
+    assertEquals(1, $result1->size());
+}
+
 
 
 
