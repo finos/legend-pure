@@ -222,37 +222,57 @@ public class GraphPath
 
     public Builder extend()
     {
-        return new Builder(this);
+        return extend(true);
+    }
+
+    public Builder extend(boolean validate)
+    {
+        return new Builder(this, validate);
     }
 
     public GraphPath withToOneProperty(String property)
     {
-        return extend().addToOneProperty(property).build();
+        return withToOneProperty(property, true);
     }
 
-    GraphPath withToOnePropertyUnsafe(String property)
+    public GraphPath withToOneProperty(String property, boolean validate)
     {
-        return new GraphPath(this.startNodePath, this.edges.newWith(new ToOnePropertyEdge(property)));
+        return withEdge(newToOnePropertyEdge(property, validate ? new ParserValidator() : null));
     }
 
     public GraphPath withToManyPropertyValueAtIndex(String property, int index)
     {
-        return extend().addToManyPropertyValueAtIndex(property, index).build();
+        return withToManyPropertyValueAtIndex(property, index, true);
     }
 
-    GraphPath withToManyPropertyValueAtIndexUnsafe(String property, int index)
+    public GraphPath withToManyPropertyValueAtIndex(String property, int index, boolean validate)
     {
-        return new GraphPath(this.startNodePath, this.edges.newWith(new ToManyPropertyAtIndexEdge(property, index)));
+        return withEdge(newToManyPropertyAtIndexEdge(property, index, validate ? new ParserValidator() : null));
     }
 
     public GraphPath withToManyPropertyValueWithName(String property, String valueName)
     {
-        return extend().addToManyPropertyValueWithName(property, valueName).build();
+        return withToManyPropertyValueWithName(property, valueName, true);
+    }
+
+    public GraphPath withToManyPropertyValueWithName(String property, String valueName, boolean validate)
+    {
+        return withEdge(newToManyPropertyWithNameEdge(property, valueName, validate ? new ParserValidator() : null));
     }
 
     public GraphPath withToManyPropertyValueWithKey(String property, String keyProperty, String key)
     {
-        return extend().addToManyPropertyValueWithKey(property, keyProperty, key).build();
+        return withToManyPropertyValueWithKey(property, keyProperty, key, true);
+    }
+
+    public GraphPath withToManyPropertyValueWithKey(String property, String keyProperty, String key, boolean validate)
+    {
+        return withEdge(newToManyPropertyWithStringKeyEdge(property, keyProperty, key, validate ? new ParserValidator() : null));
+    }
+
+    private GraphPath withEdge(Edge edge)
+    {
+        return new GraphPath(this.startNodePath, this.edges.newWith(edge));
     }
 
     @Override
@@ -336,22 +356,42 @@ public class GraphPath
 
     public static Builder builder()
     {
-        return new Builder();
+        return builder(true);
+    }
+
+    public static Builder builder(boolean validate)
+    {
+        return new Builder(validate);
     }
 
     public static Builder builder(int initEdgeCapacity)
     {
-        return new Builder(initEdgeCapacity);
+        return builder(initEdgeCapacity, true);
+    }
+
+    public static Builder builder(int initEdgeCapacity, boolean validate)
+    {
+        return new Builder(initEdgeCapacity, validate);
     }
 
     public static Builder builder(String startNodePath)
     {
-        return builder().withStartNodePath(startNodePath);
+        return builder(startNodePath, true);
+    }
+
+    public static Builder builder(String startNodePath, boolean validate)
+    {
+        return builder(validate).withStartNodePath(startNodePath);
     }
 
     public static Builder builder(GraphPath path)
     {
-        return new Builder(Objects.requireNonNull(path, "path may not be null"));
+        return builder(path, true);
+    }
+
+    public static Builder builder(GraphPath path, boolean validate)
+    {
+        return new Builder(Objects.requireNonNull(path, "path may not be null"), validate);
     }
 
     @Deprecated
@@ -374,7 +414,12 @@ public class GraphPath
 
     public static GraphPath buildPath(String startNodePath)
     {
-        return builder().withStartNodePath(startNodePath).build();
+        return buildPath(startNodePath, true);
+    }
+
+    public static GraphPath buildPath(String startNodePath, boolean validate)
+    {
+        return new GraphPath(validate ? new ParserValidator().validateStartNodePath(startNodePath) : startNodePath, Lists.immutable.empty());
     }
 
     public static GraphPath buildPath(String startNodePath, String... toOneProperties)
@@ -411,27 +456,53 @@ public class GraphPath
         return appendable;
     }
 
+    private static ToOnePropertyEdge newToOnePropertyEdge(String property, ParserValidator parserValidator)
+    {
+        return new ToOnePropertyEdge((parserValidator == null) ? property : parserValidator.validateProperty(property));
+    }
+
+    private static ToManyPropertyAtIndexEdge newToManyPropertyAtIndexEdge(String property, int index, ParserValidator parserValidator)
+    {
+        return (parserValidator == null) ?
+               new ToManyPropertyAtIndexEdge(property, index) :
+               new ToManyPropertyAtIndexEdge(parserValidator.validateProperty(property), parserValidator.validateIndex(index));
+    }
+
+    private static ToManyPropertyWithStringKeyEdge newToManyPropertyWithNameEdge(String property, String valueName, ParserValidator parserValidator)
+    {
+        return newToManyPropertyWithStringKeyEdge(property, M3Properties.name, valueName, parserValidator);
+    }
+
+    private static ToManyPropertyWithStringKeyEdge newToManyPropertyWithStringKeyEdge(String property, String keyProperty, String key, ParserValidator parserValidator)
+    {
+        return (parserValidator == null) ?
+               new ToManyPropertyWithStringKeyEdge(property, keyProperty, key) :
+               new ToManyPropertyWithStringKeyEdge(parserValidator.validateProperty(property), parserValidator.validateKeyProperty(keyProperty), parserValidator.validateKey(key));
+    }
+
     public static class Builder
     {
-        private M3Lexer lexer;
-        private M3Parser parser;
         private String startNodePath;
         private final MutableList<Edge> pathElements;
+        private final ParserValidator parserValidator;
 
-        private Builder()
+        private Builder(boolean validate)
         {
             this.pathElements = Lists.mutable.empty();
+            this.parserValidator = validate ? new ParserValidator() : null;
         }
 
-        private Builder(int initEdgeCapacity)
+        private Builder(int initEdgeCapacity, boolean validate)
         {
             this.pathElements = Lists.mutable.withInitialCapacity(initEdgeCapacity);
+            this.parserValidator = validate ? new ParserValidator() : null;
         }
 
-        private Builder(GraphPath path)
+        private Builder(GraphPath path, boolean validate)
         {
             this.startNodePath = path.startNodePath;
             this.pathElements = Lists.mutable.withAll(path.edges);
+            this.parserValidator = validate ? new ParserValidator() : null;
         }
 
         public String getStartNodePath()
@@ -441,25 +512,7 @@ public class GraphPath
 
         public void setStartNodePath(String path)
         {
-            initParser(path);
-            M3Parser.GraphPathStartNodeContext context;
-            try
-            {
-                context = this.parser.graphPathStartNode();
-            }
-            catch (Exception e)
-            {
-                throw new IllegalArgumentException("Invalid GraphPath start node path '" + StringEscape.escape(path) + "'", (e instanceof ParseCancellationException) ? e.getCause() : e);
-            }
-
-            // check that there's nothing more in the string (except possibly whitespace)
-            int nonWhitespace = TextTools.indexOfNonWhitespace(path, context.getStop().getStopIndex() + 1);
-            if (nonWhitespace != -1)
-            {
-                throw new IllegalArgumentException("Invalid GraphPath start node path '" + StringEscape.escape(path) + "': error at index " + nonWhitespace);
-            }
-
-            this.startNodePath = context.getText();
+            this.startNodePath = (this.parserValidator == null) ? path : this.parserValidator.validateStartNodePath(path);
         }
 
         public Builder withStartNodePath(String path)
@@ -485,65 +538,7 @@ public class GraphPath
 
         public Builder fromDescription(String description)
         {
-            // parse
-            initParser(description);
-            M3Parser.GraphPathContext context;
-            try
-            {
-                context = this.parser.graphPath();
-            }
-            catch (Exception e)
-            {
-                throw new IllegalArgumentException("Invalid GraphPath description '" + StringEscape.escape(description) + "'", (e instanceof ParseCancellationException) ? e.getCause() : e);
-            }
-
-            // check that there's nothing more in the string (except possibly whitespace)
-            int nonWhitespace = TextTools.indexOfNonWhitespace(description, context.getStop().getStopIndex() + 1);
-            if (nonWhitespace != -1)
-            {
-                throw new IllegalArgumentException("Invalid GraphPath description '" + StringEscape.escape(description) + "': error at index " + nonWhitespace);
-            }
-
-            // build graph path
-            MutableList<Edge> edges = Lists.mutable.empty();
-            List<M3Parser.GraphPathEdgeContext> edgeContexts = context.graphPathEdge();
-            if (edgeContexts != null)
-            {
-                edgeContexts.forEach(edgeContext ->
-                {
-                    List<M3Parser.PropertyNameContext> propertyNameContexts = edgeContext.propertyName();
-                    String property = propertyNameContexts.get(0).getText();
-                    if (edgeContext.INTEGER() != null)
-                    {
-                        int index;
-                        try
-                        {
-                            index = Integer.parseInt(edgeContext.INTEGER().getText());
-                        }
-                        catch (NumberFormatException e)
-                        {
-                            throw new IllegalArgumentException("Invalid GraphPath description '" + StringEscape.escape(description) + "': index at " + edgeContext.INTEGER().getSymbol().getStartIndex() + " invalid", e);
-                        }
-                        edges.add(new ToManyPropertyAtIndexEdge(property, validateIndex(index)));
-                    }
-                    else if (edgeContext.STRING() != null)
-                    {
-                        String withQuote = StringEscape.unescape(edgeContext.STRING().getText());
-                        String key = withQuote.substring(1, withQuote.length() - 1);
-                        String keyProperty = (propertyNameContexts.size() == 1) ? M3Properties.name : propertyNameContexts.get(1).getText();
-                        edges.add(new ToManyPropertyWithStringKeyEdge(property, keyProperty, key));
-                    }
-                    else
-                    {
-                        edges.add(new ToOnePropertyEdge(property));
-                    }
-                });
-            }
-
-            this.startNodePath = context.graphPathStartNode().getText();
-            this.pathElements.clear();
-            this.pathElements.addAll(edges);
-            return this;
+            return ((this.parserValidator == null) ? new ParserValidator() : this.parserValidator).parseDescription(description, this);
         }
 
         public String getPureExpression()
@@ -558,12 +553,7 @@ public class GraphPath
 
         public Builder addToOneProperty(String property)
         {
-            return addToOnePropertyUnsafe(validateProperty(property));
-        }
-
-        Builder addToOnePropertyUnsafe(String property)
-        {
-            return addEdge(new ToOnePropertyEdge(property));
+            return addEdge(newToOnePropertyEdge(property, this.parserValidator));
         }
 
         public Builder addToOneProperties(String... properties)
@@ -580,118 +570,23 @@ public class GraphPath
 
         public Builder addToManyPropertyValueAtIndex(String property, int index)
         {
-            return addToManyPropertyValueAtIndexUnsafe(validateProperty(property), validateIndex(index));
-        }
-
-        Builder addToManyPropertyValueAtIndexUnsafe(String property, int index)
-        {
-            return addEdge(new ToManyPropertyAtIndexEdge(property, index));
+            return addEdge(newToManyPropertyAtIndexEdge(property, index, this.parserValidator));
         }
 
         public Builder addToManyPropertyValueWithName(String property, String valueName)
         {
-            return addToManyPropertyValueWithKey(property, M3Properties.name, valueName);
+            return addEdge(newToManyPropertyWithNameEdge(property, valueName, this.parserValidator));
         }
 
         public Builder addToManyPropertyValueWithKey(String property, String keyProperty, String key)
         {
-            return addToManyPropertyValueWithKeyUnsafe(validateProperty(property), validateKeyProperty(keyProperty), validateKey(key));
-        }
-
-        Builder addToManyPropertyValueWithKeyUnsafe(String property, String keyProperty, String key)
-        {
-            return addEdge(new ToManyPropertyWithStringKeyEdge(property, keyProperty, key));
+            return addEdge(newToManyPropertyWithStringKeyEdge(property, keyProperty, key, this.parserValidator));
         }
 
         private Builder addEdge(Edge pathElement)
         {
             this.pathElements.add(pathElement);
             return this;
-        }
-
-        private String validateProperty(String property)
-        {
-            initParser(Objects.requireNonNull(property, "property may not be null"));
-            M3Parser.PropertyNameContext context;
-            try
-            {
-                context = this.parser.propertyName();
-            }
-            catch (Exception e)
-            {
-                throw new IllegalArgumentException("Invalid property name '" + StringEscape.escape(property) + "'", (e instanceof ParseCancellationException) ? e.getCause() : e);
-            }
-
-            // check that there's nothing more in the string (except possibly whitespace)
-            int nonWhitespace = TextTools.indexOfNonWhitespace(property, context.getStop().getStopIndex() + 1);
-            if (nonWhitespace != -1)
-            {
-                throw new IllegalArgumentException("Invalid property name '" + StringEscape.escape(property) + "': error at index " + nonWhitespace);
-            }
-
-            return context.getText();
-        }
-
-        private int validateIndex(int index)
-        {
-            if (index < 0)
-            {
-                throw new IllegalArgumentException("Index must be non-negative: " + index);
-            }
-            return index;
-        }
-
-        private String validateKeyProperty(String keyProperty)
-        {
-            initParser(Objects.requireNonNull(keyProperty, "key property may not be null"));
-            M3Parser.PropertyNameContext context;
-            try
-            {
-                context = this.parser.propertyName();
-            }
-            catch (Exception e)
-            {
-                throw new IllegalArgumentException("Invalid key property name '" + StringEscape.escape(keyProperty) + "'", (e instanceof ParseCancellationException) ? e.getCause() : e);
-            }
-
-            // check that there's nothing more in the string (except possibly whitespace)
-            int nonWhitespace = TextTools.indexOfNonWhitespace(keyProperty, context.getStop().getStopIndex() + 1);
-            if (nonWhitespace != -1)
-            {
-                throw new IllegalArgumentException("Invalid key property name '" + StringEscape.escape(keyProperty) + "': error at index " + nonWhitespace);
-            }
-
-            return context.getText();
-        }
-
-        private String validateKey(String key)
-        {
-            return Objects.requireNonNull(key, "key name may not be null");
-        }
-
-        private void initParser(String text)
-        {
-            if (this.lexer == null)
-            {
-                this.lexer = new M3Lexer(CharStreams.fromString(text));
-                this.lexer.removeErrorListeners();
-            }
-            else
-            {
-                this.lexer.setInputStream(CharStreams.fromString(text));
-            }
-
-            if (this.parser == null)
-            {
-                this.parser = new M3Parser(new CommonTokenStream(this.lexer));
-                this.parser.removeErrorListeners();
-                this.parser.setErrorHandler(new BailErrorStrategy());
-                this.parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
-            }
-            else
-            {
-                this.parser.setTokenStream(new CommonTokenStream(this.lexer));
-            }
         }
     }
 
@@ -986,6 +881,187 @@ public class GraphPath
         protected void accept(ToManyPropertyWithStringKeyEdge edge)
         {
             // do nothing by default
+        }
+    }
+
+    private static class ParserValidator
+    {
+        private M3Lexer lexer;
+        private M3Parser parser;
+
+        private ParserValidator()
+        {
+        }
+
+        String validateProperty(String property)
+        {
+            init(Objects.requireNonNull(property, "property may not be null"));
+            M3Parser.PropertyNameContext context;
+            try
+            {
+                context = this.parser.propertyName();
+            }
+            catch (Exception e)
+            {
+                throw new IllegalArgumentException("Invalid property name '" + StringEscape.escape(property) + "'", (e instanceof ParseCancellationException) ? e.getCause() : e);
+            }
+
+            // check that there's nothing more in the string (except possibly whitespace)
+            int nonWhitespace = TextTools.indexOfNonWhitespace(property, context.getStop().getStopIndex() + 1);
+            if (nonWhitespace != -1)
+            {
+                throw new IllegalArgumentException("Invalid property name '" + StringEscape.escape(property) + "': error at index " + nonWhitespace);
+            }
+
+            return context.getText();
+        }
+
+        int validateIndex(int index)
+        {
+            if (index < 0)
+            {
+                throw new IllegalArgumentException("Index must be non-negative: " + index);
+            }
+            return index;
+        }
+
+        String validateKeyProperty(String keyProperty)
+        {
+            init(Objects.requireNonNull(keyProperty, "key property may not be null"));
+            M3Parser.PropertyNameContext context;
+            try
+            {
+                context = this.parser.propertyName();
+            }
+            catch (Exception e)
+            {
+                throw new IllegalArgumentException("Invalid key property name '" + StringEscape.escape(keyProperty) + "'", (e instanceof ParseCancellationException) ? e.getCause() : e);
+            }
+
+            // check that there's nothing more in the string (except possibly whitespace)
+            int nonWhitespace = TextTools.indexOfNonWhitespace(keyProperty, context.getStop().getStopIndex() + 1);
+            if (nonWhitespace != -1)
+            {
+                throw new IllegalArgumentException("Invalid key property name '" + StringEscape.escape(keyProperty) + "': error at index " + nonWhitespace);
+            }
+
+            return context.getText();
+        }
+
+        String validateKey(String key)
+        {
+            return Objects.requireNonNull(key, "key name may not be null");
+        }
+
+        String validateStartNodePath(String path)
+        {
+            init(path);
+            M3Parser.GraphPathStartNodeContext context;
+            try
+            {
+                context = this.parser.graphPathStartNode();
+            }
+            catch (Exception e)
+            {
+                throw new IllegalArgumentException("Invalid GraphPath start node path '" + StringEscape.escape(path) + "'", (e instanceof ParseCancellationException) ? e.getCause() : e);
+            }
+
+            // check that there's nothing more in the string (except possibly whitespace)
+            int nonWhitespace = TextTools.indexOfNonWhitespace(path, context.getStop().getStopIndex() + 1);
+            if (nonWhitespace != -1)
+            {
+                throw new IllegalArgumentException("Invalid GraphPath start node path '" + StringEscape.escape(path) + "': error at index " + nonWhitespace);
+            }
+
+            return context.getText();
+        }
+
+        public Builder parseDescription(String description, Builder builder)
+        {
+            // parse
+            init(description);
+            M3Parser.GraphPathContext context;
+            try
+            {
+                context = this.parser.graphPath();
+            }
+            catch (Exception e)
+            {
+                throw new IllegalArgumentException("Invalid GraphPath description '" + StringEscape.escape(description) + "'", (e instanceof ParseCancellationException) ? e.getCause() : e);
+            }
+
+            // check that there's nothing more in the string (except possibly whitespace)
+            int nonWhitespace = TextTools.indexOfNonWhitespace(description, context.getStop().getStopIndex() + 1);
+            if (nonWhitespace != -1)
+            {
+                throw new IllegalArgumentException("Invalid GraphPath description '" + StringEscape.escape(description) + "': error at index " + nonWhitespace);
+            }
+
+            // build graph path
+            MutableList<Edge> edges = Lists.mutable.empty();
+            List<M3Parser.GraphPathEdgeContext> edgeContexts = context.graphPathEdge();
+            if (edgeContexts != null)
+            {
+                edgeContexts.forEach(edgeContext ->
+                {
+                    List<M3Parser.PropertyNameContext> propertyNameContexts = edgeContext.propertyName();
+                    String property = propertyNameContexts.get(0).getText();
+                    if (edgeContext.INTEGER() != null)
+                    {
+                        int index;
+                        try
+                        {
+                            index = Integer.parseInt(edgeContext.INTEGER().getText());
+                        }
+                        catch (NumberFormatException e)
+                        {
+                            throw new IllegalArgumentException("Invalid GraphPath description '" + StringEscape.escape(description) + "': index at " + edgeContext.INTEGER().getSymbol().getStartIndex() + " invalid", e);
+                        }
+                        edges.add(new ToManyPropertyAtIndexEdge(property, validateIndex(index)));
+                    }
+                    else if (edgeContext.STRING() != null)
+                    {
+                        String withQuote = StringEscape.unescape(edgeContext.STRING().getText());
+                        String key = withQuote.substring(1, withQuote.length() - 1);
+                        String keyProperty = (propertyNameContexts.size() == 1) ? M3Properties.name : propertyNameContexts.get(1).getText();
+                        edges.add(new ToManyPropertyWithStringKeyEdge(property, keyProperty, key));
+                    }
+                    else
+                    {
+                        edges.add(new ToOnePropertyEdge(property));
+                    }
+                });
+            }
+
+            builder.startNodePath = context.graphPathStartNode().getText();
+            builder.pathElements.clear();
+            builder.pathElements.addAll(edges);
+            return builder;
+        }
+
+        private void init(String text)
+        {
+            if (this.lexer == null)
+            {
+                this.lexer = new M3Lexer(CharStreams.fromString(text));
+                this.lexer.removeErrorListeners();
+            }
+            else
+            {
+                this.lexer.setInputStream(CharStreams.fromString(text));
+            }
+
+            if (this.parser == null)
+            {
+                this.parser = new M3Parser(new CommonTokenStream(this.lexer));
+                this.parser.removeErrorListeners();
+                this.parser.setErrorHandler(new BailErrorStrategy());
+                this.parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
+            }
+            else
+            {
+                this.parser.setTokenStream(new CommonTokenStream(this.lexer));
+            }
         }
     }
 
