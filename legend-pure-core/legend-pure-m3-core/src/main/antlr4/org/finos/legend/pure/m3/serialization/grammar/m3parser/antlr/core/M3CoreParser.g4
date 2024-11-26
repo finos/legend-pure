@@ -165,8 +165,7 @@ graphPathStartNode: (PATH_SEPARATOR | qualifiedName)
 graphPathEdge: propertyName (BRACKET_OPEN (INTEGER | ((propertyName EQUAL)? STRING)) BRACKET_CLOSE)?
 ;
 
-expression:
-    (
+nonArrowOrEqualExpression:
         (
             sliceExpression
             |
@@ -177,16 +176,19 @@ expression:
             signedExpression
             |
             expressionsArray
+            |
+            ( GROUP_OPEN combinedExpression GROUP_CLOSE )
+
         )
+;
+expression:
         (
+            nonArrowOrEqualExpression
             (
                 propertyOrFunctionExpression
             )*
             (equalNotEqual)?
         )
-    )
-    |
-    ( GROUP_OPEN combinedExpression GROUP_CLOSE )
 ;
 
 instanceBlock: BRACKET_OPEN (instance (COMMA instance)* )? BRACKET_CLOSE
