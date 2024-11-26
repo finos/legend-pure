@@ -85,7 +85,7 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         " 2->cast(@test::IntCap(1));\n" +
                         "}",
-                "Compilation error at (resource:fromString.pure line:6 column:26), \"Type variable mismatch for the class IntCap (expected 2, got 1): IntCap(1)\"");
+                "Compilation error at (resource:fromString.pure line:6 column:26), \"Type variable mismatch for the class IntCap(x:Integer,z:String) (expected 2, got 1): IntCap(1)\"");
     }
 
     @Test
@@ -101,7 +101,7 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         " [];\n" +
                         "}",
-                "Compilation error at (resource:fromString.pure line:6 column:26), \"Type variable type mismatch for the class IntCap (expected Integer, got String): \"");
+                "Compilation error at (resource:fromString.pure line:6 column:26), \"Type variable type mismatch for the class IntCap(x:Integer) (expected Integer, got String): \"");
     }
 
     @Test
@@ -171,7 +171,7 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
                         "{" +
                         " v : test::IntCap()[1];" +
                         "}",
-                "Compilation error at (resource:fromString.pure line:1 column:88), \"Type variable mismatch for the class IntCap (expected 1, got 0): IntCap\"");
+                "Compilation error at (resource:fromString.pure line:1 column:88), \"Type variable mismatch for the class IntCap(x:Integer) (expected 1, got 0): IntCap\"");
 
     }
 
