@@ -673,7 +673,7 @@ public class AntlrContextToM3CoreInstance
         return sfe;
     }
 
-    private CoreInstance expression(ExpressionContext ctx, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
+    private CoreInstance nonArrowOrEqual(M3Parser.NonArrowOrEqualExpressionContext ctx, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
         CoreInstance result = null;
         CoreInstance end = null;
@@ -750,6 +750,16 @@ public class AntlrContextToM3CoreInstance
             sfe._parametersValues(params);
             result = sfe;
         }
+        return result;
+    }
+
+    private CoreInstance expression(ExpressionContext ctx, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
+    {
+        CoreInstance result;
+
+        MutableList<ValueSpecification> parameters = Lists.mutable.empty();
+
+        result = nonArrowOrEqual(ctx.nonArrowOrEqualExpression(), exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
         if (ctx.propertyOrFunctionExpression() != null)
         {
             for (PropertyOrFunctionExpressionContext pfCtx : ctx.propertyOrFunctionExpression())

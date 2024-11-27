@@ -89,6 +89,19 @@ public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
     }
 
     @Test
+    public void testBracketsAndArrowPrecedence()
+    {
+        String code = "function meta::pure::test() : Any[*]\n" +
+                "{\n" +
+                "   let a = {|(10)->times(2)};\n" +
+                "   let b = {| !(true == false)->makeString()};\n" +
+                "   let c = {| 1->makeString()};\n" +
+                "   let d = {| [1,2,3]->makeString()};\n" +
+                "}\n";
+        new M3AntlrParser(null).parse(code, "test" + i++, true, 0, repository, this.newInstances, this.stateListener, context, 0, null);
+    }
+
+    @Test
     public void testClassClassRef()
     {
         String code = "Class meta::pure::mapping::test::Mapping extends PackageableElement\n" +
