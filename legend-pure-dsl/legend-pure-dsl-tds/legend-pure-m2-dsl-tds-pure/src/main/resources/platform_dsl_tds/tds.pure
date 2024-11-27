@@ -23,7 +23,7 @@ Class meta::pure::metamodel::relation::TDSRelationAccessor<T> extends meta::pure
 [
   sourceElementExists
   (
-    ~function: $this.sourceElement->isNotEmpty() && $this.sourceElement->instanceOf(meta::pure::metamodel::relation::TDS<T>)
+    ~function: $this.sourceElement->isNotEmpty() && $this.sourceElement->instanceOf(meta::pure::metamodel::relation::TDS)
     ~enforcementLevel: Error
     ~message: 'Source element needs to exist and to be type of TDS'
   )
