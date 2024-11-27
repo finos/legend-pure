@@ -15,12 +15,12 @@
 package org.finos.legend.pure.m3.tests.function.base.meta;
 
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
-public abstract class AbstractTestReactivate extends AbstractPureTestWithCoreCompiled
+public abstract class AbstractTestReactivate extends AbstractPureTestWithCoreCompiledPlatform
 {
     @After
     public void cleanRuntime()
@@ -185,5 +185,83 @@ public abstract class AbstractTestReactivate extends AbstractPureTestWithCoreCom
                         "  test::pkg1->map(p | $p)->deactivate()->reactivate(^Map<String, List<Any>>())->toOne()\n" +
                         "}\n");
         Assert.assertEquals(runtime.getCoreInstance("test::pkg1"), ((InstanceValue) execute("test::pkg1::test():Any[1]"))._values().getOnly());
+    }
+
+    @Test
+    public void testReactivateNewDefaultValues()
+    {
+        compileTestSource("testSource.pure",
+                "Class test::A\n" +
+                        "{\n" +
+                        "  a:Boolean[1] = true;\n" +
+                        "  i:Integer[1] = 10;\n" +
+                        "  enumProperty:test::EnumWithDefault[1] = test::EnumWithDefault.DefaultValue;\n" +
+                        "}\n" +
+                        "\n" +
+                        "Enum test::EnumWithDefault\n" +
+                        "{\n" +
+                        "   DefaultValue,\n" +
+                        "   AnotherValue\n" +
+                        "}\n" +
+                        "\n" +
+                        "function test::f():Boolean[1]\n" +
+                        "{\n" +
+                        "  let l = {| ^test::A()};\n" +
+                        "  let a = $l.expressionSequence->evaluateAndDeactivate()->toOne()->reactivate()->cast(@test::A)->toOne();\n" +
+                        "  assert($a.a, | 'Default value for property a set to wrong value');\n" +
+                        "  assertEquals($a.i, 10);\n" +
+                        "  assertEquals($a.enumProperty, test::EnumWithDefault.DefaultValue);\n" +
+                        "}\n");
+        execute("test::f():Boolean[1]");
+    }
+
+    @Test
+    public void testReactivateNewOverrideDefaultValues()
+    {
+        compileTestSource("testSourceDefaultOverride.pure",
+                "Class test::A1\n" +
+                        "{\n" +
+                        "  a:Boolean[1] = true;\n" +
+                        "  i:Integer[1] = 10;\n" +
+                        "  enumProperty:test::EnumWithDefault1[1] = test::EnumWithDefault1.DefaultValue;\n" +
+                        "}\n" +
+                        "\n" +
+                        "Enum test::EnumWithDefault1\n" +
+                        "{\n" +
+                        "   DefaultValue,\n" +
+                        "   AnotherValue\n" +
+                        "}\n" +
+                        "\n" +
+                        "function test::f1():Boolean[1]\n" +
+                        "{\n" +
+                        "  let l = {| ^test::A1(a=false)};\n" +
+                        "  let a = $l.expressionSequence->evaluateAndDeactivate()->toOne()->reactivate()->cast(@test::A1)->toOne();\n" +
+                        "  assert(!$a.a, | 'Default value for property a set to wrong value');\n" +
+                        "  assertEquals($a.i, 10);\n" +
+                        "  assertEquals($a.enumProperty, test::EnumWithDefault1.DefaultValue);\n" +
+                        "}\n");
+        execute("test::f1():Boolean[1]");
+    }
+
+    @Test
+    public void testReactivateNewDefaultValueInheritance()
+    {
+        compileTestSource("testSource.pure",
+                "Class test::A\n" +
+                        "{\n" +
+                        "  a:Boolean[1] = true;\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class test::B extends test::A\n" +
+                        "{\n" +
+                        "  b:Boolean[1] = true;\n" +
+                        "}\n" +
+                        "function test::f():Boolean[1]\n" +
+                        "{\n" +
+                        "  let l = {| ^test::B()};\n" +
+                        "  let b = $l.expressionSequence->evaluateAndDeactivate()->toOne()->reactivate()->cast(@test::B)->toOne();\n" +
+                        "  assert($b.a, | 'Default value for property b set to wrong value');\n" +
+                        "}\n");
+        execute("test::f():Boolean[1]");
     }
 }
