@@ -19,21 +19,4 @@ Class meta::pure::metamodel::relation::TDS<T> extends meta::pure::metamodel::rel
     csv : String[1];
 }
 
-Class meta::pure::metamodel::relation::TDSRelationAccessor<T> extends meta::pure::metamodel::relation::RelationElementAccessor<T>
-[
-  sourceElementExists
-  (
-    ~function: $this.sourceElement->isNotEmpty() && $this.sourceElement->instanceOf(meta::pure::metamodel::relation::TDS)
-    ~enforcementLevel: Error
-    ~message: 'Source element needs to exist and to be type of TDS'
-  )
-]
-{
-}
-
-function meta::pure::metamodel::relation::newTDSRelationAccessor<T>(tds:TDS<T>[1]):TDSRelationAccessor<T>[1]
-{
-  ^TDSRelationAccessor<T>(sourceElement = $tds);
-}
-
 native function meta::pure::metamodel::relation::stringToTDS(s:String[1]):meta::pure::metamodel::relation::TDS<Any>[1];
