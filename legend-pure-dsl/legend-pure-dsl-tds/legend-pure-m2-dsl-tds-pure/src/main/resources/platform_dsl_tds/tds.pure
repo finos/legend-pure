@@ -21,9 +21,8 @@ Class meta::pure::metamodel::relation::TDS<T> extends meta::pure::metamodel::rel
 
 native function meta::pure::metamodel::relation::stringToTDS(s:String[1]):meta::pure::metamodel::relation::TDS<Any>[1];
 
-Class meta::pure::metamodel::relation::TDSRelationAccessor<T> extends meta::pure::metamodel::relation::RelationElementAccessor<T>
+Class meta::pure::metamodel::relation::TDSRelationAccessor<T> extends meta::pure::metamodel::relation::RelationElementAccessor<T> // sourceElement is of type TDS<T>
 {
-    getTds() {$this.sourceElement->cast(@TDS<T>)->toOne()}: TDS<Any>[1];
 }
 
 function meta::pure::metamodel::relation::newTDSRelationAccessor<T>(tds:TDS<T>[1]):TDSRelationAccessor<T>[1]
