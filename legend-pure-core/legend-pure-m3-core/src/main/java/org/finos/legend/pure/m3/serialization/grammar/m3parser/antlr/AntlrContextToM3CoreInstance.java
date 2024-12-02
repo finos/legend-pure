@@ -3379,6 +3379,7 @@ public class AntlrContextToM3CoreInstance
         profile.setSourceInformation(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().getStop(), ctx.getStop()));
         buildAndSetPackage(profile, ctx.qualifiedName().packagePath(), this.repository, this.sourceInformation);
         return profile._name(profileName)
+                ._classifierGenericType(GenericTypeInstance.createPersistent(this.repository)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Profile)))
                 ._p_stereotypes(buildStereoTypes(ctx.stereotypeDefinitions(), profile))
                 ._p_tags(buildTags(ctx.tagDefinitions(), profile));
     }

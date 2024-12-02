@@ -16,13 +16,12 @@ package org.finos.legend.pure.m3.tests.elements.profile;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.test.Verify;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Tag;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
@@ -70,25 +69,15 @@ public class TestProfile extends AbstractPureTestWithCoreCompiledPlatform
         Profile profile = (Profile) runtime.getCoreInstance("test::myProfile");
         Assert.assertNotNull(profile);
 
+        Assert.assertEquals(M3Paths.Profile, GenericType.print(profile._classifierGenericType(), true, processorSupport));
+
         ListIterable<? extends Stereotype> stereotypes = ListHelper.wrapListIterable(profile._p_stereotypes());
-        Verify.assertSize(2, stereotypes);
-        MutableSet<String> stereotypeValues = Sets.mutable.empty();
-        for (Stereotype stereotype : stereotypes)
-        {
-            Assert.assertSame(profile, stereotype._profile());
-            stereotypeValues.add(stereotype._value());
-        }
-        Verify.assertSetsEqual(Sets.mutable.with("st1", "st2"), stereotypeValues);
+        Assert.assertEquals(Lists.mutable.with("st1", "st2"), stereotypes.collect(Stereotype::_value));
+        stereotypes.forEach(st -> Assert.assertSame(st._value(), profile, st._profile()));
 
         ListIterable<? extends Tag> tags = ListHelper.wrapListIterable(profile._p_tags());
-        Verify.assertSize(3, tags);
-        MutableSet<String> tagValues = Sets.mutable.empty();
-        for (Tag tag : tags)
-        {
-            Assert.assertSame(profile, tag._profile());
-            tagValues.add(tag._value());
-        }
-        Verify.assertSetsEqual(Sets.mutable.with("t1", "t2", "t3"), tagValues);
+        Assert.assertEquals(Lists.mutable.with("t1", "t2", "t3"), tags.collect(Tag::_value));
+        tags.forEach(t -> Assert.assertSame(t._value(), profile, t._profile()));
     }
 
     @Test
@@ -104,7 +93,7 @@ public class TestProfile extends AbstractPureTestWithCoreCompiledPlatform
         Assert.assertNotNull(profile);
 
         ListIterable<? extends Stereotype> stereotypes = ListHelper.wrapListIterable(profile._p_stereotypes());
-        Verify.assertSize(3, stereotypes);
+        Assert.assertEquals(Lists.mutable.with("st1", "st2", "st3"), stereotypes.collect(Stereotype::_value));
 
         Stereotype st1 = (Stereotype) org.finos.legend.pure.m3.navigation.profile.Profile.findStereotype(profile, "st1");
         Assert.assertNotNull(st1);
@@ -139,7 +128,7 @@ public class TestProfile extends AbstractPureTestWithCoreCompiledPlatform
         Assert.assertNotNull(profile);
 
         ListIterable<? extends Tag> tags = ListHelper.wrapListIterable(profile._p_tags());
-        Verify.assertSize(3, tags);
+        Assert.assertEquals(Lists.mutable.with("t1", "t2", "t3"), tags.collect(Tag::_value));
 
         Tag t1 = (Tag) org.finos.legend.pure.m3.navigation.profile.Profile.findTag(profile, "t1");
         Assert.assertNotNull(t1);
