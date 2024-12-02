@@ -39,6 +39,7 @@ Class meta::relational::metamodel::Schema extends meta::pure::store::set::Namesp
     database : Database[1];
     tables : Table[*];
     views : View[*];
+    tabularFunctions: TabularFunction[*];
 }
 
 Class meta::relational::metamodel::relation::Relation extends meta::relational::metamodel::RelationalOperationElement, meta::pure::store::set::SetRelation
@@ -102,6 +103,11 @@ Class meta::relational::metamodel::relation::View extends NamedRelation, Relatio
     schema : Schema[1];
     primaryKey : Column[*];
     columnMappings : ColumnMapping[*];
+}
+
+Class meta::relational::metamodel::relation::TabularFunction extends NamedRelation
+{
+    schema : Schema[1];
 }
 
 Class meta::relational::mapping::ColumnMapping
