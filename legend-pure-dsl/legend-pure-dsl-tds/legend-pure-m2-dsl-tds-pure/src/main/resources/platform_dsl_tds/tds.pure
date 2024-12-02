@@ -20,3 +20,12 @@ Class meta::pure::metamodel::relation::TDS<T> extends meta::pure::metamodel::rel
 }
 
 native function meta::pure::metamodel::relation::stringToTDS(s:String[1]):meta::pure::metamodel::relation::TDS<Any>[1];
+
+Class meta::pure::metamodel::relation::TDSRelationAccessor<T> extends meta::pure::metamodel::relation::RelationElementAccessor<T> // sourceElement is of type TDS<T>
+{
+}
+
+function meta::pure::metamodel::relation::newTDSRelationAccessor<T>(tds:TDS<T>[1]):TDSRelationAccessor<T>[1]
+{
+  ^TDSRelationAccessor<T>(sourceElement = $tds);
+}
