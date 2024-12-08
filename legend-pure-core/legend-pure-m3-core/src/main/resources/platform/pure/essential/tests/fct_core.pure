@@ -12,16 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m2.dsl.diagram;
 
-import org.finos.legend.pure.m3.tests.AbstractCompiledStateIntegrityTest;
-import org.junit.BeforeClass;
-
-public class TestM2DiagramCompiledStateIntegrity extends AbstractCompiledStateIntegrityTest
+Profile meta::pure::test::fct::FCT
 {
-    @BeforeClass
-    public static void initialize()
-    {
-        initialize("platform_dsl_diagram");
-    }
+    stereotypes : [test, adapter];
 }

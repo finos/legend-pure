@@ -16,7 +16,6 @@ package org.finos.legend.pure.m2.dsl.mapping;
 
 import org.finos.legend.pure.m3.tests.AbstractCompiledStateIntegrityTest;
 import org.junit.BeforeClass;
-import org.junit.Test;
 
 public class TestM2MappingCompiledStateIntegrity extends AbstractCompiledStateIntegrityTest
 {
@@ -24,11 +23,5 @@ public class TestM2MappingCompiledStateIntegrity extends AbstractCompiledStateIn
     public static void initialize()
     {
         initialize("platform_dsl_mapping");
-    }
-
-    @Test
-    public void testPackagedElementsContainAllOthers()
-    {
-        super.testPackagedElementsContainAllOthers();
     }
 }

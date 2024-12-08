@@ -36,6 +36,7 @@ public class M3Properties
     public static final String _class = "class";
     public static final String classifierGenericType = "classifierGenericType";
     public static final String column = "column";
+    public static final String columns = "columns";
     public static final String constraints = "constraints";
     public static final String constraintsManager = "constraintsManager";
     public static final String contravariant = "contravariant";
@@ -79,6 +80,7 @@ public class M3Properties
     public static final String imports = "imports";
     public static final String instanceValue = "instanceValue";
     public static final String key = "key";
+    public static final String left = "left";
     public static final String line = "line";
     public static final String lowerBound = "lowerBound";
     public static final String mapping = "mapping";
@@ -130,6 +132,7 @@ public class M3Properties
     public static final String resolvedMultiplicityParameters = "resolvedMultiplicityParameters";
     public static final String returnMultiplicity = "returnMultiplicity";
     public static final String returnType = "returnType";
+    public static final String right = "right";
     public static final String root = "root";
     public static final String second = "second";
     public static final String setImplementation = "setImplementation";

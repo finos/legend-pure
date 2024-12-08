@@ -15,12 +15,12 @@
 package org.finos.legend.pure.m3.tests.elements.relation;
 
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import static org.junit.Assert.fail;
 
 public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
 {
@@ -34,23 +34,23 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     public void clearRuntime()
     {
         runtime.delete("fromString.pure");
+        runtime.compile();
     }
 
     @Test
     public void testSimpleColumnWithInferredType()
     {
         compileTestSource("fromString.pure",
-                "" +
-                        "function infFunc<T,X>(x:meta::pure::metamodel::relation::Relation<T>[1], c:meta::pure::metamodel::relation::ColSpec<X⊆T>[1]):meta::pure::metamodel::relation::Relation<X>[0..1]" +
-                        "{" +
-                        "   [];" +
-                        "}" +
-                        "function test():meta::pure::metamodel::relation::Relation<(colName:String)>[0..1]" +
-                        "{" +
-                        "   infFunc(" +
-                        "               []->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, colName:String)>)->toOne()," +
-                        "               ~colName" +
-                        "           );" +
+                "function infFunc<T,X>(x:meta::pure::metamodel::relation::Relation<T>[1], c:meta::pure::metamodel::relation::ColSpec<X⊆T>[1]):meta::pure::metamodel::relation::Relation<X>[0..1]\n" +
+                        "{\n" +
+                        "   [];\n" +
+                        "}\n" +
+                        "function test():meta::pure::metamodel::relation::Relation<(colName:String)>[0..1]\n" +
+                        "{\n" +
+                        "   infFunc(\n" +
+                        "               []->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, colName:String)>)->toOne(),\n" +
+                        "               ~colName\n" +
+                        "           );\n" +
                         "}");
     }
 
@@ -58,9 +58,9 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     public void testSimpleColumnWithType()
     {
         compileTestSource("fromString.pure",
-                "function test():meta::pure::metamodel::relation::ColSpec<(name:String)>[1]" +
-                        "{" +
-                        "   ~name:String;" +
+                "function test():meta::pure::metamodel::relation::ColSpec<(name:String)>[1]\n" +
+                        "{\n" +
+                        "   ~name:String;\n" +
                         "}");
     }
 
@@ -68,37 +68,35 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     public void testSimpleColumnWithTypeArray()
     {
         compileTestSource("fromString.pure",
-                "function test():meta::pure::metamodel::relation::ColSpecArray<(name:String, id:Integer)>[1]" +
-                        "{" +
-                        "   ~[name:String, id:Integer];" +
+                "function test():meta::pure::metamodel::relation::ColSpecArray<(name:String, id:Integer)>[1]\n" +
+                        "{\n" +
+                        "   ~[name:String, id:Integer];\n" +
                         "}");
     }
 
     @Test
     public void testSimpleColumnWithTypeFail()
     {
-        try
-        {
-            compileTestSource("fromString.pure",
-                    "function test():meta::pure::metamodel::relation::ColSpec<(name:Integer)>[1]" +
-                            "{" +
-                            "   ~name:String;" +
-                            "}");
-            fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:fromString.pure line:1 column:80), \"Return type error in function 'test'; found: meta::pure::metamodel::relation::ColSpec<(name:String)>; expected: meta::pure::metamodel::relation::ColSpec<(name:Integer)>\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "function test():meta::pure::metamodel::relation::ColSpec<(name:Integer)>[1]\n" +
+                        "{\n" +
+                        "   ~name:String;\n" +
+                        "}"));
+        assertPureException(
+                PureCompilationException.class,
+                "Return type error in function 'test'; found: meta::pure::metamodel::relation::ColSpec<(name:String)>; expected: meta::pure::metamodel::relation::ColSpec<(name:Integer)>",
+                "fromString.pure", 3, 4, 3, 4, 3, 4,
+                e);
     }
 
     @Test
     public void testSimpleColumnWithFunction()
     {
         compileTestSource("fromString.pure",
-                "function test<U>():meta::pure::metamodel::relation::FuncColSpec<{U[1]->Any[1]}, (name:String)>[1]" +
-                        "{" +
-                        "   ~name:x|'ok';" +
+                "function test<U>():meta::pure::metamodel::relation::FuncColSpec<{U[1]->Any[1]}, (name:String)>[1]\n" +
+                        "{\n" +
+                        "   ~name:x|'ok';\n" +
                         "}");
     }
 
@@ -107,9 +105,9 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     {
         compileTestSource("fromString.pure",
                 "import meta::pure::metamodel::relation::*;\n" +
-                        "function test<U>():meta::pure::metamodel::relation::FuncColSpec<{Relation<U>[1], _Window<U>[1], U[1]->Any[1]}, (name:String)>[1]" +
-                        "{" +
-                        "   ~name:{p,f,r|'ok'};" +
+                        "function test<U>():meta::pure::metamodel::relation::FuncColSpec<{Relation<U>[1], _Window<U>[1], U[1]->Any[1]}, (name:String)>[1]\n" +
+                        "{\n" +
+                        "   ~name:{p,f,r|'ok'};\n" +
                         "}");
     }
 
@@ -117,9 +115,9 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     public void testSimpleColumnWithFunctionArray()
     {
         compileTestSource("fromString.pure",
-                "function test<U>():meta::pure::metamodel::relation::FuncColSpecArray<{Nil[1]->Any[*]}, (name:String, val:Integer)>[1]" +
-                        "{" +
-                        "   ~[name:x|'ok', val:x|1];" +
+                "function test<U>():meta::pure::metamodel::relation::FuncColSpecArray<{Nil[1]->Any[*]}, (name:String, val:Integer)>[1]\n" +
+                        "{\n" +
+                        "   ~[name:x|'ok', val:x|1];\n" +
                         "}");
     }
 
@@ -128,76 +126,69 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     {
         compileTestSource("fromString.pure",
                 "import meta::pure::metamodel::relation::*;\n" +
-                        "function test<U>():meta::pure::metamodel::relation::FuncColSpecArray<{Relation<U>[1], _Window<U>[1], U[1]->Any[*]}, (name:String, val:Integer)>[1]" +
-                        "{" +
-                        "   ~[name:{w,f,x|'ok'}, val:{w,f,x|1}];" +
+                        "function test<U>():meta::pure::metamodel::relation::FuncColSpecArray<{Relation<U>[1], _Window<U>[1], U[1]->Any[*]}, (name:String, val:Integer)>[1]\n" +
+                        "{\n" +
+                        "   ~[name:{w,f,x|'ok'}, val:{w,f,x|1}];\n" +
                         "}");
     }
 
     @Test
     public void testSimpleColumnWithFunctionArray2ParamsFail()
     {
-        try
-        {
-            compileTestSource("fromString.pure",
-                    "import meta::pure::metamodel::relation::*;\n" +
-                            "function test<U>():meta::pure::metamodel::relation::FuncColSpecArray<{Relation<U>[1], _Window<U>[1], U[1]->Any[*]}, (name:String, val:Integer)>[1]\n" +
-                            "{\n" +
-                            "   ~[name:{p,f,r|'ok'}, val:{x|1}];" +
-                            "}");
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Parser error at (resource:fromString.pure line:4 column:4), All functions used in the col array should be of the same type.", e.getMessage());
-        }
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource(
+                "fromString.pure",
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function test<U>():meta::pure::metamodel::relation::FuncColSpecArray<{Relation<U>[1], _Window<U>[1], U[1]->Any[*]}, (name:String, val:Integer)>[1]\n" +
+                        "{\n" +
+                        "   ~[name:{p,f,r|'ok'}, val:{x|1}];\n" +
+                        "}"));
+        assertPureException(
+                PureParserException.class,
+                "All functions used in the col array should be of the same type.",
+                "fromString.pure", 4, 4, 4, 4, 4, 34,
+                e);
     }
 
     @Test
     public void testSimpleColumnWithFunctionFail()
     {
-        try
-        {
-            compileTestSource("fromString.pure",
-                    "function test<U>():meta::pure::metamodel::relation::FuncColSpec<{U[1]->Any[1]}, (name:String)>[1]" +
-                            "{" +
-                            "   ~name:x|1;" +
-                            "}");
-            fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:fromString.pure line:1 column:102), \"Return type error in function 'test'; found: meta::pure::metamodel::relation::FuncColSpec<{U[1]->meta::pure::metamodel::type::Any[1]}, (name:Integer)>; expected: meta::pure::metamodel::relation::FuncColSpec<{U[1]->meta::pure::metamodel::type::Any[1]}, (name:String)>\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "function test<U>():meta::pure::metamodel::relation::FuncColSpec<{U[1]->Any[1]}, (name:String)>[1]\n" +
+                        "{\n" +
+                        "   ~name:x|1;\n" +
+                        "}"));
+        assertPureException(
+                PureCompilationException.class,
+                "Return type error in function 'test'; found: meta::pure::metamodel::relation::FuncColSpec<{U[1]->meta::pure::metamodel::type::Any[1]}, (name:Integer)>; expected: meta::pure::metamodel::relation::FuncColSpec<{U[1]->meta::pure::metamodel::type::Any[1]}, (name:String)>",
+                "fromString.pure", 3, 4, 3, 4, 3, 4,
+                e);
     }
 
     @Test
     public void testMixColumnsFail()
     {
-        try
-        {
-            compileTestSource("fromString.pure",
-                    "function test<U>():meta::pure::metamodel::relation::FuncColSpec<{U[1]->Any[1]}, (name:String)>[1]" +
-                            "{" +
-                            "   ~[name:x|1, id:Integer];" +
-                            "}");
-            fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Parser error at (resource:fromString.pure line:-2), (Compilation error at ??, \"Can't mix column types\") in\n" +
-                    "'\n" +
-                    "function test<U>():meta::pure::metamodel::relation::FuncColSpec<{U[1]->Any[1]}, (name:String)>[1]{   ~[name:x|1, id:Integer];}'", e.getMessage());
-        }
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource(
+                "fromString.pure",
+                "function test<U>():meta::pure::metamodel::relation::FuncColSpec<{U[1]->Any[1]}, (name:String)>[1]\n" +
+                        "{\n" +
+                        "   ~[name:x|1, id:Integer];\n" +
+                        "}"));
+        assertPureException(
+                PureParserException.class,
+                "Can't mix column types",
+                "fromString.pure", 3, 4, 3, 4, 3, 26,
+                e);
     }
 
     @Test
     public void testColumnWithExtraReduceFunction()
     {
         compileTestSource("fromString.pure",
-                "native function sum(i:Integer[*]):Integer[1];" +
-                        "function test<U>():meta::pure::metamodel::relation::AggColSpec<{U[1]->Integer[0..1]}, {Integer[*]->Integer[0..1]}, (name:Integer)>[1]" +
-                        "{" +
-                        "   ~name: x|1 : y|$y->sum();" +
+                "native function sum(i:Integer[*]):Integer[1];\n" +
+                        "function test<U>():meta::pure::metamodel::relation::AggColSpec<{U[1]->Integer[0..1]}, {Integer[*]->Integer[0..1]}, (name:Integer)>[1]\n" +
+                        "{\n" +
+                        "   ~name: x|1 : y|$y->sum();\n" +
                         "}");
     }
 
@@ -206,10 +197,10 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     {
         compileTestSource("fromString.pure",
                 "import meta::pure::metamodel::relation::*;\n" +
-                        "native function sum(i:Integer[*]):Integer[1];" +
-                        "function test<U>():meta::pure::metamodel::relation::AggColSpec<{Relation<U>[1], _Window<U>[1], U[1]->Integer[0..1]}, {Integer[*]->Integer[0..1]}, (name:Integer)>[1]" +
-                        "{" +
-                        "   ~name: {p,f,r|1} : y|$y->sum();" +
+                        "native function sum(i:Integer[*]):Integer[1];\n" +
+                        "function test<U>():meta::pure::metamodel::relation::AggColSpec<{Relation<U>[1], _Window<U>[1], U[1]->Integer[0..1]}, {Integer[*]->Integer[0..1]}, (name:Integer)>[1]\n" +
+                        "{\n" +
+                        "   ~name: {p,f,r|1} : y|$y->sum();\n" +
                         "}");
     }
 
@@ -217,14 +208,13 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     public void testColumnFunctionInferenceWithExtraReduceFunction()
     {
         compileTestSource("fromString.pure",
-                "native function sum(i:Integer[*]):Integer[1];" +
+                "native function sum(i:Integer[*]):Integer[1];\n" +
                         "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpec<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
                         "\n" +
-                        "" +
-                        "function test():Boolean[1]" +
-                        "{" +
-                        "   []->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, ok:Integer)>)->toOne()->groupBy(~name: x|$x.ok : y|$y->sum());" +
-                        "   true;" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   []->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, ok:Integer)>)->toOne()->groupBy(~name: x|$x.ok : y|$y->sum());\n" +
+                        "   true;\n" +
                         "}");
     }
 
@@ -232,10 +222,10 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     public void testColumnWithExtraReduceFunctionArray()
     {
         compileTestSource("fromString.pure",
-                "native function sum(i:Integer[*]):Integer[1];" +
-                        "function test<U>():meta::pure::metamodel::relation::AggColSpecArray<{Nil[1]->Any[0..1]}, {Nil[*]->Any[0..1]}, (name:Integer, newO:String)>[1]" +
-                        "{" +
-                        "   ~[name: x|1 : y|$y->sum(), newO: z|'a' : y|$y->joinStrings(',')]" +
+                "native function sum(i:Integer[*]):Integer[1];\n" +
+                        "function test<U>():meta::pure::metamodel::relation::AggColSpecArray<{Nil[1]->Any[0..1]}, {Nil[*]->Any[0..1]}, (name:Integer, newO:String)>[1]\n" +
+                        "{\n" +
+                        "   ~[name: x|1 : y|$y->sum(), newO: z|'a' : y|$y->joinStrings(',')]\n" +
                         "}");
     }
 
@@ -244,10 +234,10 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     {
         compileTestSource("fromString.pure",
                 "import meta::pure::metamodel::relation::*;\n" +
-                        "native function sum(i:Integer[*]):Integer[1];" +
-                        "function test<U>():meta::pure::metamodel::relation::AggColSpecArray<{Relation<U>[1], _Window<U>[1], U[1]->Any[0..1]}, {Nil[*]->Any[0..1]}, (name:Integer, newO:String)>[1]" +
-                        "{" +
-                        "   ~[name: {p,f,r|1} : y|$y->sum(), newO: {p,f,r|'a'} : y|$y->joinStrings(',')]" +
+                        "native function sum(i:Integer[*]):Integer[1];\n" +
+                        "function test<U>():meta::pure::metamodel::relation::AggColSpecArray<{Relation<U>[1], _Window<U>[1], U[1]->Any[0..1]}, {Nil[*]->Any[0..1]}, (name:Integer, newO:String)>[1]\n" +
+                        "{\n" +
+                        "   ~[name: {p,f,r|1} : y|$y->sum(), newO: {p,f,r|'a'} : y|$y->joinStrings(',')]\n" +
                         "}");
     }
 
@@ -255,14 +245,13 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     public void testColumnFunctionInferenceWithExtraReduceFunctionArray()
     {
         compileTestSource("fromString.pure",
-                "native function sum(i:Integer[*]):Integer[1];" +
+                "native function sum(i:Integer[*]):Integer[1];\n" +
                         "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
                         "\n" +
-                        "" +
-                        "function test():Boolean[1]" +
-                        "{" +
-                        "   []->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.ok : y|$y->sum()]);" +
-                        "   true;" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   []->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.ok : y|$y->sum()]);\n" +
+                        "   true;\n" +
                         "}");
     }
 
@@ -270,14 +259,13 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     public void testColumnFunctionInferenceWithExtraReduceFunctionArrayMultiple()
     {
         compileTestSource("fromString.pure",
-                "native function sum(i:Integer[*]):Integer[1];" +
+                "native function sum(i:Integer[*]):Integer[1];\n" +
                         "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
                         "\n" +
-                        "" +
-                        "function test():Boolean[1]" +
-                        "{" +
-                        "   []->cast(@meta::pure::metamodel::relation::Relation<(id:String, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.ok : y|$y->sum(), otherOne : x|$x.id : y|$y->joinStrings(',')]);" +
-                        "   true;" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   []->cast(@meta::pure::metamodel::relation::Relation<(id:String, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.ok : y|$y->sum(), otherOne : x|$x.id : y|$y->joinStrings(',')]);\n" +
+                        "   true;\n" +
                         "}");
     }
 
@@ -285,116 +273,102 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     public void testColumnFunctionInferenceWithExtraReduceFunctionArrayMultipleChained()
     {
         compileTestSource("fromString.pure",
-                "native function sum(i:Integer[*]):Integer[1];" +
+                "native function sum(i:Integer[*]):Integer[1];\n" +
                         "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
                         "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
                         "\n" +
-                        "" +
-                        "function test():Boolean[1]" +
-                        "{" +
-                        "   []->cast(@meta::pure::metamodel::relation::Relation<(id:String, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.ok : y|$y->sum(), otherOne : x|$x.id : y|$y->joinStrings(',')])->filter(x|$x.otherOne == 'boom');" +
-                        "   true;" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   []->cast(@meta::pure::metamodel::relation::Relation<(id:String, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.ok : y|$y->sum(), otherOne : x|$x.id : y|$y->joinStrings(',')])->filter(x|$x.otherOne == 'boom');\n" +
+                        "   true;\n" +
                         "}");
     }
 
     @Test
     public void testColumnFunctionInferenceWithExtraReduceFunctionArrayMultipleChainedError()
     {
-        try
-        {
-            compileTestSource("fromString.pure",
-                    "native function sum(i:Integer[*]):Integer[1];" +
-                            "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
-                            "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
-                            "\n" +
-                            "" +
-                            "function test():Boolean[1]" +
-                            "{" +
-                            "   []->cast(@meta::pure::metamodel::relation::Relation<(id:String, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.ok : y|$y->sum(), otherOne : x|$x.id : y|$y->joinStrings(',')])->filter(x|$x.otherXne == 'boom');" +
-                            "   true;" +
-                            "}");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:fromString.pure line:4 column:217), \"The system can't find the column otherXne in the Relation (id:String, ok:Integer, name:Integer, otherOne:String)\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "native function sum(i:Integer[*]):Integer[1];\n" +
+                        "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                        "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
+                        "\n" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   []->cast(@meta::pure::metamodel::relation::Relation<(id:String, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.ok : y|$y->sum(), otherOne : x|$x.id : y|$y->joinStrings(',')])->filter(x|$x.otherXne == 'boom');\n" +
+                        "   true;\n" +
+                        "}"));
+        assertPureException(
+                PureCompilationException.class,
+                "The system can't find the column otherXne in the Relation (id:String, ok:Integer, name:Integer, otherOne:String)",
+                "fromString.pure", 7, 190, 7, 190, 7, 197,
+                e);
     }
 
     @Test
     public void testColumnFunctionInferenceWithExtraReduceFunctionArrayError()
     {
-        try
-        {
-            compileTestSource("fromString.pure",
-                    "native function sum(i:Integer[*]):Integer[1];" +
-                            "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
-                            "\n" +
-                            "" +
-                            "function test():Boolean[1]" +
-                            "{" +
-                            "   []->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.oke : y|$y->sum()]);" +
-                            "   true;" +
-                            "}");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:fromString.pure line:3 column:141), \"The system can't find the column oke in the Relation (id:Integer, ok:Integer)\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "native function sum(i:Integer[*]):Integer[1];\n" +
+                        "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                        "\n" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   []->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.oke : y|$y->sum()]);\n" +
+                        "   true;\n" +
+                        "}"));
+        assertPureException(
+                PureCompilationException.class,
+                "The system can't find the column oke in the Relation (id:Integer, ok:Integer)",
+                "fromString.pure", 6, 114, 6, 114, 6, 116,
+                e);
     }
 
     @Test
     public void testColumnFunctionInferenceWithExtraReduceFunctionArrayMultipleError()
     {
-        try
-        {
-            compileTestSource("fromString.pure",
-                    "native function sum(i:Integer[*]):Integer[1];" +
-                            "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
-                            "\n" +
-                            "" +
-                            "function test():Boolean[1]" +
-                            "{" +
-                            "   []->cast(@meta::pure::metamodel::relation::Relation<(id:String, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.ok : y|$y->sum(), otherOne : x|$x.icd : y|$y->joinStrings(',')]);" +
-                            "   true;" +
-                            "}");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:fromString.pure line:3 column:174), \"The system can't find the column icd in the Relation (id:String, ok:Integer)\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "native function sum(i:Integer[*]):Integer[1];\n" +
+                        "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                        "\n" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   []->cast(@meta::pure::metamodel::relation::Relation<(id:String, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.ok : y|$y->sum(), otherOne : x|$x.icd : y|$y->joinStrings(',')]);\n" +
+                        "   true;\n" +
+                        "}"));
+        assertPureException(
+                PureCompilationException.class,
+                "The system can't find the column icd in the Relation (id:String, ok:Integer)",
+                "fromString.pure", 6, 147, 6, 147, 6, 149,
+                e);
     }
 
 
     @Test
     public void testColumnFunctionInferenceWithExtraReduceFunctionArrayMultipleAggError()
     {
-        try
-        {
-            compileTestSource("fromString.pure",
-                    "native function sum(i:Integer[*]):Integer[1];" +
-                            "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
-                            "\n" +
-                            "" +
-                            "function test():Boolean[1]" +
-                            "{" +
-                            "   []->cast(@meta::pure::metamodel::relation::Relation<(id:String, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.ok : y|$y->sum(), otherOne : x|$x.id : y|$y->sum()]);" +
-                            "   true;" +
-                            "}");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:fromString.pure line:3 column:185), \"The system can't find a match for the function: sum(_:String[*])\n" +
-                    "\n" +
-                    "These functions, in packages already imported, would match the function call if you changed the parameters.\n" +
-                    "\tsum(Integer[*]):Integer[1]\n" +
-                    "\n" +
-                    "No functions, in packages not imported, match the function name.\n" +
-                    "\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "native function sum(i:Integer[*]):Integer[1];\n" +
+                        "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                        "\n" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   []->cast(@meta::pure::metamodel::relation::Relation<(id:String, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.ok : y|$y->sum(), otherOne : x|$x.id : y|$y->sum()]);\n" +
+                        "   true;\n" +
+                        "}"));
+        assertPureException(
+                PureCompilationException.class,
+                "The system can't find a match for the function: sum(_:String[*])\n" +
+                        "\n" +
+                        "These functions, in packages already imported, would match the function call if you changed the parameters.\n" +
+                        "\tsum(Integer[*]):Integer[1]\n" +
+                        "\n" +
+                        "No functions, in packages not imported, match the function name.\n",
+                "fromString.pure", 6, 158, 6, 158, 6, 160,
+                e);
     }
 
 
@@ -402,15 +376,14 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     public void testGroupByNullableAggregation()
     {
         compileTestSource("fromString.pure",
-                "native function max(i:Integer[*]):Integer[0..1];" +
+                "native function max(i:Integer[*]):Integer[0..1];\n" +
                         "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
-                        "function test():Boolean[1]" +
-                        "{" +
-                        "   []->cast(@meta::pure::metamodel::relation::Relation<(id:String, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.ok : y|$y->max(), otherOne : x|$x.id : y|$y->joinStrings(',')]);" +
-                        "   true;" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   []->cast(@meta::pure::metamodel::relation::Relation<(id:String, ok:Integer)>)->toOne()->groupBy(~[name: x|$x.ok : y|$y->max(), otherOne : x|$x.id : y|$y->joinStrings(',')]);\n" +
+                        "   true;\n" +
                         "}");
     }
-
 
     @Test
     public void testColumnSimpleFunctionInference()
@@ -418,11 +391,10 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
         compileTestSource("fromString.pure",
                 "native function meta::pure::functions::relation::extend<T,Z>(r:meta::pure::metamodel::relation::Relation<T>[1], f:meta::pure::metamodel::relation::FuncColSpec<{T[1]->Any[0..1]},Z>[1]):meta::pure::metamodel::relation::Relation<T+Z>[1];\n" +
                         "\n" +
-                        "" +
-                        "function test():Boolean[1]" +
-                        "{" +
-                        "   []->toOne()->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, ok:Integer)>)->extend(~name:c|$c.id->toOne());" +
-                        "   true;" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   []->toOne()->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, ok:Integer)>)->extend(~name:c|$c.id->toOne());\n" +
+                        "   true;\n" +
                         "}");
     }
 
@@ -433,14 +405,12 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
         compileTestSource("fromString.pure",
                 "native function meta::pure::functions::relation::extend<T,Z>(r:meta::pure::metamodel::relation::Relation<T>[1], f:meta::pure::metamodel::relation::FuncColSpec<{T[1]->Any[0..1]},Z>[1]):meta::pure::metamodel::relation::Relation<T+Z>[1];\n" +
                         "\n" +
-                        "" +
-                        "function test():Boolean[1]" +
-                        "{" +
-                        "   []->toOne()->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, ok:Integer)>)->extend(~name:c|$c.id->toOne());" +
-                        "   true;" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   []->toOne()->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, ok:Integer)>)->extend(~name:c|$c.id->toOne());\n" +
+                        "   true;\n" +
                         "}");
     }
-
 
     @Test
     public void testExtendWithColumnArray()
@@ -448,12 +418,10 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
         compileTestSource("fromString.pure",
                 "native function meta::pure::functions::relation::extend<T,Z>(r:meta::pure::metamodel::relation::Relation<T>[1], f:meta::pure::metamodel::relation::FuncColSpecArray<{T[1]->Any[*]},Z>[1]):meta::pure::metamodel::relation::Relation<T+Z>[1];\n" +
                         "\n" +
-                        "" +
-                        "function test():Boolean[1]" +
-                        "{" +
-                        "   []->toOne()->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, ok:Integer)>)->extend(~[name:c|$c.id->toOne()]);" +
-                        "   true;" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   []->toOne()->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, ok:Integer)>)->extend(~[name:c|$c.id->toOne()]);\n" +
+                        "   true;\n" +
                         "}");
     }
-
 }

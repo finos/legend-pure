@@ -27,6 +27,7 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.Objects;
 import java.util.Spliterator;
@@ -55,13 +56,13 @@ public class GraphNodeIterable extends AbstractLazySpliterable<CoreInstance>
     @Override
     public int size()
     {
-        return computeClosure().size();
+        return this.startingNodes.isEmpty() ? 0 : super.size();
     }
 
     @Override
     public boolean isEmpty()
     {
-        return this.startingNodes.isEmpty() || ((this.nodeFilter != null) && !stream().findAny().isPresent());
+        return this.startingNodes.isEmpty() || ((this.nodeFilter != null) && super.isEmpty());
     }
     
     @Override
@@ -107,36 +108,67 @@ public class GraphNodeIterable extends AbstractLazySpliterable<CoreInstance>
     @Override
     public MutableList<CoreInstance> toList()
     {
-        return Lists.mutable.withAll(computeClosure());
+        if (this.startingNodes.isEmpty())
+        {
+            return Lists.mutable.empty();
+        }
+        if (this.nodeFilter == null)
+        {
+            return Lists.mutable.withAll(computeClosure(this.startingNodes, this.keyFilter));
+        }
+        return computeClosure(this.startingNodes, this.keyFilter, this.nodeFilter, Lists.mutable.empty());
     }
 
     @Override
     public MutableSet<CoreInstance> toSet()
     {
-        return computeClosure();
+        if (this.startingNodes.isEmpty())
+        {
+            return Sets.mutable.empty();
+        }
+        if (this.nodeFilter == null)
+        {
+            return computeClosure(this.startingNodes, this.keyFilter);
+        }
+        return computeClosure(this.startingNodes, this.keyFilter, this.nodeFilter, Sets.mutable.empty());
     }
 
     @Override
     public Object[] toArray()
     {
-        return computeClosure().toArray();
+        if (this.startingNodes.isEmpty())
+        {
+            return new Object[0];
+        }
+        if (this.nodeFilter == null)
+        {
+            return computeClosure(this.startingNodes, this.keyFilter).toArray();
+        }
+        return computeClosure(this.startingNodes, this.keyFilter, this.nodeFilter, Lists.mutable.empty()).toArray();
     }
 
     @Override
     public <E> E[] toArray(E[] array)
     {
-        return computeClosure().toArray(array);
+        if (this.startingNodes.isEmpty())
+        {
+            if (array.length > 0)
+            {
+                array[0] = null;
+            }
+            return array;
+        }
+        if (this.nodeFilter == null)
+        {
+            return computeClosure(this.startingNodes, this.keyFilter).toArray(array);
+        }
+        return computeClosure(this.startingNodes, this.keyFilter, this.nodeFilter, Lists.mutable.empty()).toArray(array);
     }
 
     @Override
     public Spliterator<CoreInstance> spliterator()
     {
         return new GraphNodeSpliterator(this.startingNodes, this.keyFilter, this.nodeFilter);
-    }
-
-    private MutableSet<CoreInstance> computeClosure()
-    {
-        return computeClosure(this.startingNodes, this.keyFilter, this.nodeFilter);
     }
 
     @Deprecated
@@ -210,17 +242,26 @@ public class GraphNodeIterable extends AbstractLazySpliterable<CoreInstance>
 
     public static MutableSet<CoreInstance> allConnectedInstances(Iterable<? extends CoreInstance> startingNodes, BiPredicate<? super CoreInstance, ? super String> keyFilter, Function<? super CoreInstance, ? extends GraphWalkFilterResult> nodeFilter)
     {
-        return computeClosure(startingNodes, keyFilter, nodeFilter);
+        return (nodeFilter == null) ?
+               computeClosure(startingNodes, keyFilter) :
+               computeClosure(startingNodes, keyFilter, nodeFilter, Sets.mutable.empty());
     }
 
-    private static MutableSet<CoreInstance> computeClosure(Iterable<? extends CoreInstance> startingNodes, BiPredicate<? super CoreInstance, ? super String> keyFilter, Function<? super CoreInstance, ? extends GraphWalkFilterResult> nodeFilter)
+    private static MutableSet<CoreInstance> computeClosure(Iterable<? extends CoreInstance> startingNodes, BiPredicate<? super CoreInstance, ? super String> keyFilter)
     {
-        GraphNodeSpliterator spliterator = new GraphNodeSpliterator(startingNodes, keyFilter, nodeFilter);
+        GraphNodeSpliterator spliterator = new GraphNodeSpliterator(startingNodes, keyFilter, null);
         spliterator.forEachRemaining(n ->
         {
             // Do nothing: collect instances by side effect
         });
         return spliterator.visited;
+    }
+
+    private static <T extends Collection<? super CoreInstance>> T computeClosure(Iterable<? extends CoreInstance> startingNodes, BiPredicate<? super CoreInstance, ? super String> keyFilter, Function<? super CoreInstance, ? extends GraphWalkFilterResult> nodeFilter, T target)
+    {
+        GraphNodeSpliterator spliterator = new GraphNodeSpliterator(startingNodes, keyFilter, nodeFilter);
+        spliterator.forEachRemaining(target::add);
+        return target;
     }
 
     private static class GraphNodeSpliterator implements Spliterator<CoreInstance>

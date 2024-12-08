@@ -12,16 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m2.dsl.diagram;
+package org.finos.legend.pure.m3.fct.shared;
 
-import org.finos.legend.pure.m3.tests.AbstractCompiledStateIntegrityTest;
-import org.junit.BeforeClass;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.profile.Profile;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
-public class TestM2DiagramCompiledStateIntegrity extends AbstractCompiledStateIntegrityTest
+
+public class FCTTools
 {
-    @BeforeClass
-    public static void initialize()
+    public static final String FCT_PROFILE = "meta::pure::test::fct::FCT";
+
+    public static boolean isFCTTest(CoreInstance node, ProcessorSupport processorSupport)
     {
-        initialize("platform_dsl_diagram");
+        return Profile.hasStereotype(node, FCT_PROFILE, "test", processorSupport);
     }
 }

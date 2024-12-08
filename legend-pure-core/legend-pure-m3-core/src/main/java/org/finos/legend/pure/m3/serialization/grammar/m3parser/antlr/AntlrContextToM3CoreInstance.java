@@ -32,7 +32,6 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.eclipse.collections.impl.utility.Iterate;
@@ -55,6 +54,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.Propert
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.PropertyStubInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.constraint.Constraint;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.constraint.ConstraintInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.ProfileInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.StereotypeInstance;
@@ -384,9 +384,7 @@ public class AntlrContextToM3CoreInstance
                     if (thisInstance.getSourceInformation().getStartColumn() == newSourceInfo.getStartColumn())
                     {
                         offsetSourceInformationForInstanceAndChildren(thisInstance, newSourceInfo.getStartLine() - thisInstance.getSourceInformation().getStartLine(), newSourceInfoMap);
-                        Package packageInstance = buildPackage(getQualifiedName.apply(pCtx).packagePath(), repository, sourceInformation);
-                        ((PackageableElement) thisInstance)._package(packageInstance);
-                        packageInstance._childrenAdd((PackageableElement) thisInstance);
+                        buildAndSetPackage((PackageableElement) thisInstance, getQualifiedName.apply(pCtx).packagePath(), repository, sourceInformation);
                         result = thisInstance;
                     }
                     else
@@ -463,9 +461,8 @@ public class AntlrContextToM3CoreInstance
         {
             ImportGroup importGroup = ImportGroupInstance.createPersistent(this.repository, name, getImportGroupSourceInfo(imports))
                     ._name(name)
-                    ._package(systemImports)
                     ._imports(imports);
-            systemImports._childrenAdd(importGroup);
+            setPackage(importGroup, systemImports);
             return importGroup;
         }
 
@@ -673,7 +670,7 @@ public class AntlrContextToM3CoreInstance
         return sfe;
     }
 
-    private CoreInstance expression(ExpressionContext ctx, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
+    private CoreInstance nonArrowOrEqual(M3Parser.NonArrowOrEqualExpressionContext ctx, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
         CoreInstance result = null;
         CoreInstance end = null;
@@ -750,6 +747,16 @@ public class AntlrContextToM3CoreInstance
             sfe._parametersValues(params);
             result = sfe;
         }
+        return result;
+    }
+
+    private CoreInstance expression(ExpressionContext ctx, String exprName, MutableList<String> typeParametersNames, MutableList<String> multiplicityParameterNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
+    {
+        CoreInstance result;
+
+        MutableList<ValueSpecification> parameters = Lists.mutable.empty();
+
+        result = nonArrowOrEqual(ctx.nonArrowOrEqualExpression(), exprName, typeParametersNames, multiplicityParameterNames, lambdaContext, space, wrapFlag, importId, addLines);
         if (ctx.propertyOrFunctionExpression() != null)
         {
             for (PropertyOrFunctionExpressionContext pfCtx : ctx.propertyOrFunctionExpression())
@@ -963,7 +970,7 @@ public class AntlrContextToM3CoreInstance
             List<Boolean> nonFunctions = ListIterate.collect(ctx.columnBuilders().oneColSpec(), x -> x.type() != null | x.COLON() == null).distinct();
             if (isArray && nonFunctions.size() > 1)
             {
-                throw new PureCompilationException("Can't mix column types");
+                throw new PureParserException(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), "Can't mix column types");
             }
             boolean nonFunction = nonFunctions.get(0);
 
@@ -1273,8 +1280,7 @@ public class AntlrContextToM3CoreInstance
                 }
                 packagePath.add(ctx.qualifiedName(1).identifier());
             }
-            Package packageInstance = buildPackage(packagePath, repository, sourceInformation);
-            Instance.addValueToProperty(packageInstance, "children", instance, this.processorSupport);
+            Instance.addValueToProperty(buildPackage(packagePath, this.repository, this.sourceInformation), M3Properties.children, instance, this.processorSupport);
         }
         if (ctx.instancePropertyAssignment() != null)
         {
@@ -2064,9 +2070,7 @@ public class AntlrContextToM3CoreInstance
         EnumerationInstance enumerationInstance = EnumerationInstance.createPersistent(this.repository, ctx.qualifiedName().identifier().getText());
         enumerationInstance._name(ctx.qualifiedName().identifier().getText());
 
-        Package packageInstance = buildPackage(ctx.qualifiedName().packagePath(), repository, sourceInformation);
-        enumerationInstance._package(packageInstance);
-        packageInstance._childrenAdd(enumerationInstance);
+        buildAndSetPackage(enumerationInstance, ctx.qualifiedName().packagePath(), this.repository, this.sourceInformation);
 
         enumerationInstance._classifierGenericType(GenericTypeInstance.createPersistent(this.repository)
                 ._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Enumeration))
@@ -2104,9 +2108,7 @@ public class AntlrContextToM3CoreInstance
                 ._name(measureName)
                 ._classifierGenericType(GenericTypeInstance.createPersistent(this.repository, sourceInfo)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Measure)));
 
-        Package packageInstance = buildPackage(ctx.qualifiedName().packagePath(), repository, sourceInformation);
-        measure._package(packageInstance);
-        packageInstance._childrenAdd(measure);
+        buildAndSetPackage(measure, ctx.qualifiedName().packagePath(), this.repository, this.sourceInformation);
 
         ListIterable<CoreInstance> stereotypes = (ctx.stereotypes() == null) ? Lists.immutable.empty() : stereotypes(ctx.stereotypes(), importId);
         if (stereotypes.notEmpty())
@@ -2212,9 +2214,7 @@ public class AntlrContextToM3CoreInstance
 
         PrimitiveTypeInstance result = PrimitiveTypeInstance.createPersistent(this.repository, className);
 
-        Package packageInstance = buildPackage(ctx.qualifiedName().packagePath(), repository, sourceInformation);
-        result._package(packageInstance);
-        packageInstance._childrenAdd(result);
+        buildAndSetPackage(result, ctx.qualifiedName().packagePath(), this.repository, this.sourceInformation);
 
         result.setSourceInformation(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop(), true));
 
@@ -2285,9 +2285,7 @@ public class AntlrContextToM3CoreInstance
             classInstance = ClassInstance.createPersistent(this.repository, className);
             classInstance._typeVariables(typeVariables);
 
-            Package packageInstance = buildPackage(ctx.qualifiedName().packagePath(), repository, sourceInformation);
-            classInstance._package(packageInstance);
-            packageInstance._childrenAdd(classInstance);
+            buildAndSetPackage(classInstance, ctx.qualifiedName().packagePath(), this.repository, this.sourceInformation);
 
             String fullName = this.getQualifiedNameString(ctx.qualifiedName());
             ownerType = ImportStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().identifier().getStart()), fullName, importId);
@@ -2602,9 +2600,7 @@ public class AntlrContextToM3CoreInstance
         projection._name(name);
         rootNode._owner(projection);
 
-        Package packageInstance = buildPackage(ctx.qualifiedName().packagePath(), repository, sourceInformation);
-        projection._package(packageInstance);
-        packageInstance._childrenAdd(projection);
+        buildAndSetPackage(projection, ctx.qualifiedName().packagePath(), this.repository, this.sourceInformation);
 
         GenericTypeInstance classifierGT = GenericTypeInstance.createPersistent(this.repository);
         ClassInstance classType = (ClassInstance) this.processorSupport.package_getByUserPath(M3Paths.ClassProjection);
@@ -2653,7 +2649,6 @@ public class AntlrContextToM3CoreInstance
             tags = this.taggedValues(ctx.taggedValues(), importId);
         }
         this.checkExists(ctx.qualifiedName().packagePath(), ctx.qualifiedName().identifier(), null);
-        Package packageInstance = buildPackage(ctx.qualifiedName().packagePath(), repository, sourceInformation);
         if (ctx.associationProjection() != null)
         {
             AssociationProjectionContext apCtx = ctx.associationProjection();
@@ -2662,8 +2657,7 @@ public class AntlrContextToM3CoreInstance
             ImportStubInstance projectionTwo = ImportStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(apCtx.qualifiedName(2).getStart()), this.getQualifiedNameString(apCtx.qualifiedName(2)), importId);
             AssociationProjectionInstance projection = AssociationProjectionInstance.createPersistent(this.repository, ctx.qualifiedName().identifier().getText(), this.sourceInformation.getPureSourceInformation(ctx.ASSOCIATION().getSymbol(), ctx.qualifiedName().identifier().getStart(), ctx.associationProjection().getStop()), null);
             projection._name(ctx.qualifiedName().identifier().getText());
-            projection._package(packageInstance);
-            packageInstance._childrenAdd(projection);
+            buildAndSetPackage(projection, ctx.qualifiedName().packagePath(), this.repository, this.sourceInformation);
 
             projection._projectedAssociationCoreInstance(projectedAssociation);
             projection._projectionsCoreInstance(Lists.fixedSize.<CoreInstance>with(projectionOne, projectionTwo));
@@ -2683,8 +2677,7 @@ public class AntlrContextToM3CoreInstance
             String associationName = ctx.qualifiedName().identifier().getText();
             associationInstance = AssociationInstance.createPersistent(this.repository, associationName);
             associationInstance._name(ctx.qualifiedName().identifier().getText());
-            associationInstance._package(packageInstance);
-            packageInstance._childrenAdd(associationInstance);
+            buildAndSetPackage(associationInstance, ctx.qualifiedName().packagePath(), this.repository, this.sourceInformation);
 
             GenericTypeInstance classifierGT = GenericTypeInstance.createPersistent(this.repository);
             ClassInstance assocationType = (ClassInstance) this.processorSupport.package_getByUserPath(M3Paths.Association);
@@ -2968,18 +2961,13 @@ public class AntlrContextToM3CoreInstance
         FunctionType signature = functionTypeSignature(ctx.functionTypeSignature(), function, typeParametersNames, multiplicityParametersNames, importId, spacePlusTabs(space, 1));
 
         function._functionName(ctx.qualifiedName().identifier().getText());
-        Package packageInstance = buildPackage(ctx.qualifiedName().packagePath(), repository, sourceInformation);
+        buildAndSetPackage(function, ctx.qualifiedName().packagePath(), this.repository, this.sourceInformation);
 
-        function._package(packageInstance);
         function._stereotypesCoreInstance(stereotypes);
         function._taggedValues(tags);
-        packageInstance._childrenAdd(function);
-        GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
-        Type type = (Type) this.processorSupport.package_getByUserPath(M3Paths.NativeFunction);
-        genericTypeInstance._rawTypeCoreInstance(type);
-        GenericTypeInstance genericTypeInstanceTa = GenericTypeInstance.createPersistent(this.repository);
-        genericTypeInstanceTa._rawTypeCoreInstance(signature);
-        genericTypeInstance._typeArguments(Lists.mutable.<GenericType>of(genericTypeInstanceTa));
+        GenericType genericTypeInstance = GenericTypeInstance.createPersistent(this.repository)
+                ._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.NativeFunction))
+                ._typeArguments(Lists.immutable.of(GenericTypeInstance.createPersistent(this.repository)._rawTypeCoreInstance(signature)));
         function._classifierGenericType(genericTypeInstance);
         return function;
     }
@@ -3009,15 +2997,10 @@ public class AntlrContextToM3CoreInstance
         functionDefinition._stereotypesCoreInstance(stereotypes);
         functionDefinition._taggedValues(tags);
         functionDefinition._functionName(ctx.qualifiedName().identifier().getText());
-        Package packageInstance = buildPackage(ctx.qualifiedName().packagePath(), repository, sourceInformation);
-        functionDefinition._package(packageInstance);
-        packageInstance._childrenAdd(functionDefinition);
-        GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
-        Type type = (Type) this.processorSupport.package_getByUserPath(M3Paths.ConcreteFunctionDefinition);
-        genericTypeInstance._rawTypeCoreInstance(type);
-        GenericTypeInstance genericTypeInstanceTa = GenericTypeInstance.createPersistent(this.repository);
-        genericTypeInstanceTa._rawTypeCoreInstance(signature);
-        genericTypeInstance._typeArguments(Lists.mutable.<GenericType>of(genericTypeInstanceTa));
+        buildAndSetPackage(functionDefinition, ctx.qualifiedName().packagePath(), this.repository, this.sourceInformation);
+        GenericType genericTypeInstance = GenericTypeInstance.createPersistent(this.repository)
+                ._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.ConcreteFunctionDefinition))
+                ._typeArguments(Lists.immutable.of(GenericTypeInstance.createPersistent(this.repository)._rawTypeCoreInstance(signature)));
         functionDefinition._classifierGenericType(genericTypeInstance);
 
         MutableList<Constraint> preConstraints = Lists.mutable.empty();
@@ -3389,21 +3372,19 @@ public class AntlrContextToM3CoreInstance
         return builder.toString();
     }
 
-    private ProfileInstance profile(ProfileContext ctx)
+    private Profile profile(ProfileContext ctx)
     {
-        Package packageInstance = buildPackage(ctx.qualifiedName().packagePath(), repository, sourceInformation);
         String profileName = ctx.qualifiedName().identifier().getText();
-        ProfileInstance profileInstance = ProfileInstance.createPersistent(this.repository, profileName);
-        profileInstance._package(packageInstance);
-        packageInstance._childrenAdd(profileInstance);
-        profileInstance._name(profileName);
-        profileInstance.setSourceInformation(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().getStop(), ctx.getStop()));
-        profileInstance._p_stereotypes(this.buildStereoTypes(ctx.stereotypeDefinitions(), profileInstance));
-        profileInstance._p_tags(this.buildTags(ctx.tagDefinitions(), profileInstance));
-        return profileInstance;
+        Profile profile = ProfileInstance.createPersistent(this.repository, profileName);
+        profile.setSourceInformation(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().getStop(), ctx.getStop()));
+        buildAndSetPackage(profile, ctx.qualifiedName().packagePath(), this.repository, this.sourceInformation);
+        return profile._name(profileName)
+                ._classifierGenericType(GenericTypeInstance.createPersistent(this.repository)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Profile)))
+                ._p_stereotypes(buildStereoTypes(ctx.stereotypeDefinitions(), profile))
+                ._p_tags(buildTags(ctx.tagDefinitions(), profile));
     }
 
-    private ListIterable<Stereotype> buildStereoTypes(StereotypeDefinitionsContext ctx, ProfileInstance profileInstance)
+    private ListIterable<Stereotype> buildStereoTypes(StereotypeDefinitionsContext ctx, Profile profile)
     {
         if (ctx == null)
         {
@@ -3412,12 +3393,12 @@ public class AntlrContextToM3CoreInstance
         MutableList<Stereotype> stereotypes = Lists.mutable.empty();
         for (IdentifierContext identifierContext : ctx.identifier())
         {
-            stereotypes.add(StereotypeInstance.createPersistent(this.repository, identifierContext.getText(), this.sourceInformation.getPureSourceInformation(identifierContext.getStart()), profileInstance, identifierContext.getText()));
+            stereotypes.add(StereotypeInstance.createPersistent(this.repository, identifierContext.getText(), this.sourceInformation.getPureSourceInformation(identifierContext.getStart()), profile, identifierContext.getText()));
         }
         return stereotypes;
     }
 
-    private ListIterable<Tag> buildTags(TagDefinitionsContext ctx, ProfileInstance profileInstance)
+    private ListIterable<Tag> buildTags(TagDefinitionsContext ctx, Profile profile)
     {
         if (ctx == null)
         {
@@ -3426,7 +3407,7 @@ public class AntlrContextToM3CoreInstance
         MutableList<Tag> tags = Lists.mutable.empty();
         for (IdentifierContext identifierContext : ctx.identifier())
         {
-            tags.add(TagInstance.createPersistent(this.repository, identifierContext.getText(), this.sourceInformation.getPureSourceInformation(identifierContext.getStart()), profileInstance, identifierContext.getText()));
+            tags.add(TagInstance.createPersistent(this.repository, identifierContext.getText(), this.sourceInformation.getPureSourceInformation(identifierContext.getStart()), profile, identifierContext.getText()));
         }
         return tags;
     }
@@ -3582,15 +3563,20 @@ public class AntlrContextToM3CoreInstance
         return routeNodePropertyStub;
     }
 
+    private static void setPackage(PackageableElement element, Package pkg)
+    {
+        element._package(pkg);
+        pkg._childrenAdd(element);
+    }
+
+    private static void buildAndSetPackage(PackageableElement element, PackagePathContext paths, ModelRepository repository, AntlrSourceInformation sourceInformation)
+    {
+        setPackage(element, buildPackage(paths, repository, sourceInformation));
+    }
 
     private static Package buildPackage(PackagePathContext paths, ModelRepository repository, AntlrSourceInformation sourceInformation)
     {
         return buildPackage(paths == null ? Lists.immutable.empty() : paths.identifier(), repository, sourceInformation);
-    }
-
-    private static Package buildPackage(IdentifierContext[] paths, ModelRepository repository, AntlrSourceInformation sourceInformation)
-    {
-        return buildPackage(ArrayAdapter.adapt(paths), repository, sourceInformation);
     }
 
     private static Package buildPackage(Iterable<? extends IdentifierContext> paths, ModelRepository repository, AntlrSourceInformation sourceInformation)

@@ -38,7 +38,7 @@ import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ExternalReferenceSerializerLibrary;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
 import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
@@ -51,7 +51,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.Collection;
 import java.util.Set;
 
-public class TestBinaryModelSourceSerializer extends AbstractPureTestWithCoreCompiledPlatform
+public class TestBinaryModelSourceSerializer extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
@@ -118,7 +118,7 @@ public class TestBinaryModelSourceSerializer extends AbstractPureTestWithCoreCom
                         "    tags: [tag1];\n" +
                         "}\n");
         SetIterable<String> expectedInstances = Sets.mutable.with("test::profiles::MyProfile", "system::imports::import__test_model_testSource_pure_1");
-        SetIterable<String> expectedReferences = Sets.mutable.with("meta::pure::metamodel::extension::Profile", "meta::pure::metamodel::extension::Stereotype", "meta::pure::metamodel::extension::Tag", "meta::pure::metamodel::import::ImportGroup");
+        SetIterable<String> expectedReferences = Sets.mutable.with("meta::pure::metamodel::extension::Profile", "meta::pure::metamodel::extension::Stereotype", "meta::pure::metamodel::extension::Tag", "meta::pure::metamodel::import::ImportGroup", "meta::pure::metamodel::type::generics::GenericType");
 
         Pair<SourceSerializationResult, byte[]> serializationResult = serializeSource("/test/model/testSource.pure");
         SourceSerializationResult result = serializationResult.getOne();
@@ -505,7 +505,7 @@ public class TestBinaryModelSourceSerializer extends AbstractPureTestWithCoreCom
         if (missing.notEmpty())
         {
             StringBuilder message = new StringBuilder("Missing ").append(description == null ? "elements" : description).append(": ");
-            Iterate.collect(missing, Object::toString, Lists.mutable.empty()).sortThis().appendString(message, ", ");
+            missing.collect(Object::toString).sortThis().appendString(message, ", ");
             Assert.fail(message.toString());
         }
     }
