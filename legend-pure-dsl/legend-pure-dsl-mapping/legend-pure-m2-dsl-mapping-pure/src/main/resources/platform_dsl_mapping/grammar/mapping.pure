@@ -219,3 +219,13 @@ Class meta::pure::mapping::aggregationAware::AggregateSpecificationValueSpecific
 {
     aggregateSetImplementation: InstanceSetImplementation[1];
 }
+
+Class meta::pure::mapping::relation::RelationFunctionInstanceSetImplementation extends InstanceSetImplementation
+{
+  relationFunction: FunctionDefinition<Any>[1];
+}
+
+Class meta::pure::mapping::relation::RelationFunctionPropertyMapping extends PropertyMapping
+{
+  column: meta::pure::metamodel::relation::Column<Nil,Any|*>[1];
+}
