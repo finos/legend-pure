@@ -104,6 +104,7 @@ public class M3ToJavaGenerator
             StubDef.build("Association", "ImportStub"),
             StubDef.build("ClassProjection", "ImportStub"),
             StubDef.build("Function", "ImportStub"),
+            StubDef.build("FunctionDefinition", "ImportStub"),
             StubDef.build("Property", "PropertyStub", Sets.immutable.with("Class", "Association")),
             StubDef.build("Enum", "EnumStub", Sets.immutable.with("Enumeration"))
     ).groupByUniqueKey(StubDef::getClassName);
@@ -1840,7 +1841,9 @@ public class M3ToJavaGenerator
             {
                 CoreInstance generalGenericType = generalization.getValueForMetaPropertyToOne("general");
                 CoreInstance type = getTypeFromGenericType(generalGenericType);
-                return getInterfaceName(Objects.requireNonNull(type)) + getTypeArgs(type, generalGenericType, false, true);
+                String fullyQualifiedInterfaceName = getFullyQualifiedM3InterfaceForCompiledModel(type);
+                String finalInterfaceName = imports.shouldFullyQualify(fullyQualifiedInterfaceName) ? fullyQualifiedInterfaceName : getInterfaceName(type);
+                return finalInterfaceName + getTypeArgs(type, generalGenericType, false, true);
             }, Sets.mutable.empty()).makeString(", ");
         }
 

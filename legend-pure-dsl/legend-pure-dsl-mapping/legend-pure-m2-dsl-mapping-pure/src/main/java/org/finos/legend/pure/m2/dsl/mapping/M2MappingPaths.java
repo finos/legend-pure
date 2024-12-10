@@ -43,4 +43,6 @@ public class M2MappingPaths
     public static final String SubstituteStore = "meta::pure::mapping::SubstituteStore";
     public static final String ValueTransformer = "meta::pure::mapping::ValueTransformer";
     public static final String XStoreAssociationImplementation = "meta::pure::mapping::xStore::XStoreAssociationImplementation";
+    public static final String RelationFunctionPropertyMapping = "meta::pure::mapping::relation::RelationFunctionPropertyMapping";
+    public static final String RelationFunctionInstanceSetImplementation = "meta::pure::mapping::relation::RelationFunctionInstanceSetImplementation";
 }

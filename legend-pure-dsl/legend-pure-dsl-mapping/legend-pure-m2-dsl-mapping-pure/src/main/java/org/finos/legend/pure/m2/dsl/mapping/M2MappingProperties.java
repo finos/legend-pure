@@ -43,4 +43,5 @@ public class M2MappingProperties
     public static final String substitute = "substitute";
     public static final String targetSetImplementationId = "targetSetImplementationId";
     public static final String transform = "transform";
+    public static final String relationFunction = "relationFunction";
 }
