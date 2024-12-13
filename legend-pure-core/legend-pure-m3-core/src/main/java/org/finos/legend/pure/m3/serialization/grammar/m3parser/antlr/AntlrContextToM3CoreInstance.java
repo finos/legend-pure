@@ -940,7 +940,7 @@ public class AntlrContextToM3CoreInstance
             ListIterate.forEach(ctx.columnBuilders().oneColSpec(), oneColSpec ->
             {
                 M3Parser.ColumnNameContext colNameCtx = oneColSpec.columnName();
-                String colName = colNameCtx.STRING() != null ? this.removeQuotes(colNameCtx.STRING()) : colNameCtx.identifier().getText();
+                String colName = removeQuotes(colNameCtx.getText());
                 columnNames.add(this.repository.newStringCoreInstance(colName));
                 String returnType = null;
                 if (oneColSpec.anyLambda() != null)
@@ -2019,7 +2019,7 @@ public class AntlrContextToM3CoreInstance
                                     c ->
                                     {
                                         M3Parser.ColumnNameContext colNameCtx = c.mayColumnName().columnName();
-                                        String colName = colNameCtx != null ? colNameCtx.STRING() != null ? this.removeQuotes(colNameCtx.STRING()) : colNameCtx.identifier().getText() : "";
+                                        String colName = colNameCtx != null ? removeQuotes(colNameCtx.getText()) : "";
                                         return _Column.getColumnInstance(
                                                 c.mayColumnName().QUESTION() != null ? "" : colName,
                                                 c.mayColumnName().QUESTION() != null,
@@ -3270,7 +3270,7 @@ public class AntlrContextToM3CoreInstance
     private TaggedValue taggedValue(ImportGroup importId, TaggedValueContext ctx)
     {
         ImportStubInstance importStubInstance = ImportStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().getStart(), ctx.identifier().getStart(), ctx.identifier().getStop()), this.getQualifiedNameString(ctx.qualifiedName()) + "%" + ctx.identifier().getText(), importId);
-        return TaggedValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.STRING().get(0).getSymbol(), ctx.STRING().get(ctx.STRING().size() - 1).getSymbol()), importStubInstance, Lists.mutable.withAll(ctx.STRING()).collect(this::removeQuotes).makeString());
+        return TaggedValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.STRING().get(0).getSymbol(), ctx.STRING().get(ctx.STRING().size() - 1).getSymbol()), importStubInstance, Lists.mutable.withAll(ctx.STRING()).collect(AntlrContextToM3CoreInstance::removeQuotes).makeString());
     }
 
     private DefaultValue defaultValue(DefaultValueContext ctx, ImportStub isOwner, ImportGroup importId, String propertyName)
@@ -3335,9 +3335,9 @@ public class AntlrContextToM3CoreInstance
         return result;
     }
 
-    private String removeQuotes(TerminalNode stringNode)
+    public static String removeQuotes(TerminalNode stringNode)
     {
-        return stringNode.getText().substring(1, stringNode.getText().length() - 1);
+        return removeQuotes(stringNode.getText());
     }
 
     private String packageToString(PackagePathContext ctx)
@@ -3962,7 +3962,7 @@ public class AntlrContextToM3CoreInstance
         return this.doWrap(Lists.mutable.with(stringInstance), content.getStart());
     }
 
-    private static String removeQuotes(String name)
+    public static String removeQuotes(String name)
     {
         name = name.trim();
         return name.startsWith("'") ? name.substring(1, name.length() - 1) : name;

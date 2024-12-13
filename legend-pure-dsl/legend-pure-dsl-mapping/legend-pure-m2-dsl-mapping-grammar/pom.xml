@@ -39,6 +39,9 @@
                         <configuration>
                             <target>
                                 <copy todir="target/antlr">
+                                    <fileset dir="../../../legend-pure-core/legend-pure-m3-core/src/main/antlr4/org/finos/legend/pure/m3/serialization/grammar/m3parser/antlr/core" />
+                                </copy>
+                                <copy todir="target/antlr">
                                     <fileset dir="../../../legend-pure-core/legend-pure-m4/src/main/antlr4/org/finos/legend/pure/m4/serialization/grammar/core" />
                                 </copy>
                             </target>

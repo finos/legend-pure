@@ -124,6 +124,55 @@ public class TestPureRuntimeClassMapping extends AbstractPureRelationalTestWithC
                 ")";
     }
 
+    public static final String RELATION_MAPPING_CLASS_SOURCE = "###Pure\n" +
+            "Class my::Person\n" +
+            "{\n" +
+            "  firstName: String[1];\n" +
+            "  age: Integer[1];\n" +
+            "  firmId: Integer[1];\n" +
+            "}\n" +
+            "\n" +
+            "Class my::Firm\n" +
+            "{\n" +
+            "  id: Integer[1];\n" +
+            "  legalName: String[1];\n" +
+            "}\n" +
+            "\n" +
+            "Association my::Person_Firm\n" +
+            "{\n" +
+            "  employees: my::Person[*];\n" +
+            "  firm: my::Firm[1];\n" +
+            "}\n";
+
+    public static final String RELATION_MAPPING_DB_SOURCE = "###Relational\n" +
+            "Database my::DB\n" +
+            "(\n" +
+            "  Table personTable\n" +
+            "  (\n" +
+            "    FIRSTNAME VARCHAR(100) PRIMARY KEY,\n" +
+            "    AGE INTEGER,\n" +
+            "    FIRMID INTEGER\n" +
+            "  )\n" +
+            "\n" +
+            "  Table firmTable\n" +
+            "  (\n" +
+            "    ID INTEGER PRIMARY KEY,\n" +
+            "    LEGALNAME VARCHAR(100)\n" +
+            "  )\n" +
+            ")\n";
+
+    public static final String RELATION_MAPPING_FUNCTION_SOURCE = "###Pure\n" +
+            "import meta::pure::metamodel::relation::*;\n" +
+            "function my::personFunction(): Relation<Any>[1]\n" +
+            "{\n" +
+            "  #>{my::DB.personTable}#->filter(x|$x.AGE >= 20)\n" +
+            "}\n" +
+            "function my::firmFunction(): Relation<Any>[1]\n" +
+            "{\n" +
+            "  #>{my::DB.firmTable}#->filter(x|$x.ID != 1);\n" +
+            "}\n" +
+            "native function filter<T>(rel:Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1];\n";
+
     private static final String childOrgEmployeeCountAttr = "childOrgEmployeeCount : [myDB]@OrgParentOrg | max([myDB]orgTable.employeeCount)";
 
     private static final ImmutableMap<String, String> TEST_SOURCES = Maps.immutable.with(
@@ -195,7 +244,6 @@ public class TestPureRuntimeClassMapping extends AbstractPureRelationalTestWithC
     {
         for (Pair<String, String> source : sources.keyValuesView())
         {
-//            System.out.println("Deleting " + source.getOne());
             new RuntimeTestScriptBuilder().createInMemorySources(sources)
                     .createInMemorySource("functionSourceId.pure", testFunctionSource)
                     .compile().run(runtime, functionExecution);
@@ -508,6 +556,65 @@ public class TestPureRuntimeClassMapping extends AbstractPureRelationalTestWithC
                         .createInMemorySource("modelProductTemporal.pure", modelProductTemporal)
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
+    }
+
+    @Test
+    public void testDeleteAndReloadEachSourceWithRelationMapping()
+    {
+        String mappingSource = "###Mapping\n" +
+                "Mapping my::testMapping\n" +
+                "(\n" +
+                "  *my::Person[person]: Relation\n" +
+                "  {\n" +
+                "    ~func my::personFunction__Relation_1_\n" +
+                "    firstName: FIRSTNAME,\n" +
+                "    age: AGE\n" +
+                "  }\n" +
+                "  *my::Firm[firm]: Relation\n" +
+                "  {\n" +
+                "    ~func my::firmFunction__Relation_1_\n" +
+                "    id: ID,\n" +
+                "    legalName: LEGALNAME\n" +
+                "  }\n" +
+                ")\n";
+
+        this.testDeleteAndReloadEachSource(Maps.immutable.of("1.pure", RELATION_MAPPING_CLASS_SOURCE,
+                "2.pure", RELATION_MAPPING_DB_SOURCE,
+                "3.pure", RELATION_MAPPING_FUNCTION_SOURCE,
+                "4.pure", mappingSource),
+                "###Pure\n function test():Boolean[1]{assert(1 == my::testMapping.classMappings->size(), |'');}");
+    }
+
+    @Test
+    public void testDeleteAndReloadEachSourceWithRelationAndRelationalMappings()
+    {
+        String mappingSource = "###Mapping\n" +
+                "Mapping my::testMapping\n" +
+                "(\n" +
+                "  *my::Person[person]: Relation\n" +
+                "  {\n" +
+                "    ~func my::personFunction__Relation_1_\n" +
+                "    firstName: FIRSTNAME,\n" +
+                "    age: AGE,\n" +
+                "    firmId: FIRMID\n" +
+                "  }\n" +
+                "  *my::Firm[firm]: Relational\n" +
+                "  {\n" +
+                "    id: [my::DB]firmTable.ID,\n" +
+                "    legalName: [my::DB]firmTable.LEGALNAME\n" +
+                "  }\n" +
+                "  my::Person_Firm: XStore\n" +
+                "  {\n" +
+                "    employees[firm, person]: $this.id == $that.firmId,\n" +
+                "    firm[person, firm]: $this.firmId == $that.id\n" +
+                "  }\n" +
+                ")\n";
+
+        this.testDeleteAndReloadEachSource(Maps.immutable.of("1.pure", RELATION_MAPPING_CLASS_SOURCE,
+                "2.pure", RELATION_MAPPING_DB_SOURCE,
+                "3.pure", RELATION_MAPPING_FUNCTION_SOURCE,
+                "4.pure", mappingSource),
+                "###Pure\n function test():Boolean[1]{assert(1 == my::testMapping.classMappings->size(), |'');}");
     }
 
     private CoreInstance getPropertyMapping(RelationalGraphWalker graphWalker, String mappingName, String className, String attributeName)

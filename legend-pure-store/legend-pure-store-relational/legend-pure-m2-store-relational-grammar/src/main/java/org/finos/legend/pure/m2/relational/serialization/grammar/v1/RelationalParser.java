@@ -333,8 +333,35 @@ public class RelationalParser implements IRelationalParser
             }
             case "INT":
             case "INTEGER":
+            case "BIGINT":
             {
                 result = M3Paths.Integer;
+                break;
+            }
+            case "BIT":
+            {
+                result = M3Paths.Boolean;
+                break;
+            }
+            case "DOUBLE":
+            case "FLOAT":
+            {
+                result = M3Paths.Float;
+                break;
+            }
+            case "DECIMAL":
+            {
+                result = M3Paths.Decimal;
+                break;
+            }
+            case "DATE":
+            {
+                result = M3Paths.StrictDate;
+                break;
+            }
+            case "TIMESTAMP":
+            {
+                result = M3Paths.DateTime;
                 break;
             }
             default:
@@ -342,6 +369,7 @@ public class RelationalParser implements IRelationalParser
                 throw new RuntimeException(type.toUpperCase() + " not supported yet!");
             }
         }
+        
         return (GenericType) processorSupport.type_wrapGenericType(_Package.getByUserPath(result, processorSupport));
     }
 }
