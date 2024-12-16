@@ -365,8 +365,8 @@ buildMilestoningVariableExpression: LATEST_DATE | DATE | variable
 
 expressionInstance: NEW_SYMBOL
                           (variable | qualifiedName)
-                          (typeVariableValues)?
                           (LESSTHAN typeArguments? (PIPE multiplicityArguments)? GREATERTHAN)? (identifier)?
+                          (typeVariableValues)?
                           GROUP_OPEN
                               expressionInstanceParserPropertyAssignment? (COMMA expressionInstanceParserPropertyAssignment)*
                           GROUP_CLOSE
@@ -463,7 +463,7 @@ booleanPart:  AND expression
 functionVariableExpression: identifier COLON type multiplicity
 ;
 
-type: ( qualifiedName typeVariableValues? (LESSTHAN (typeArguments? (PIPE multiplicityArguments)?) GREATERTHAN)? )
+type: ( qualifiedName (LESSTHAN (typeArguments? (PIPE multiplicityArguments)?) GREATERTHAN)?) typeVariableValues?
       |
       (
         CURLY_BRACKET_OPEN

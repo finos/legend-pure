@@ -32,6 +32,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Objects;
 
 public class ValCoreInstance extends AbstractCompiledCoreInstance
 {
@@ -42,6 +43,23 @@ public class ValCoreInstance extends AbstractCompiledCoreInstance
     {
         this.val = val;
         this.type = type;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (!(o instanceof ValCoreInstance))
+        {
+            return false;
+        }
+        ValCoreInstance that = (ValCoreInstance) o;
+        return Objects.equals(val, that.val) && Objects.equals(type, that.type);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(super.hashCode(), val, type);
     }
 
     public Object getValue()
