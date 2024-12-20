@@ -219,13 +219,13 @@ public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
                 "   ret(){$x} :Integer[1];" +
                 "   values : U[1];" +
                 "}" +
-                "Class meta::pure::metamodel::path::test::ListStringMax200 extends List(200)<String>\n" +
+                "Class meta::pure::metamodel::path::test::ListStringMax200 extends List<String>(200)\n" +
                 "{\n" +
                 "}" +
                 "" +
                 "function meta::pure::metamodel::path::test::testFunc():Boolean[1]" +
                 "{" +
-                "   ^List(200)<String>(values = [1,2,3]);" +
+                "   ^List<String>(200)(values = [1,2,3]);" +
                 "   true;" +
                 "}";
         new M3AntlrParser(null).parse(code, "test" + i++, true, 0, repository, this.newInstances, this.stateListener, context, 0, null);

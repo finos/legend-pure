@@ -131,8 +131,10 @@ public class _Class
     {
         ListIterable<? extends CoreInstance> typeParameters = cls.getValueForMetaPropertyToMany(M3Properties.typeParameters);
         ListIterable<? extends CoreInstance> multiplicityParameters = cls.getValueForMetaPropertyToMany(M3Properties.multiplicityParameters);
+        ListIterable<? extends CoreInstance> typeVariables = cls.getValueForMetaPropertyToMany(M3Properties.typeVariables);
         boolean hasTypeParams = typeParameters.notEmpty();
         boolean hasMultParams = multiplicityParameters.notEmpty();
+        boolean hasTypeVariables = typeVariables.notEmpty();
 
         SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
         if (fullPaths)
@@ -180,6 +182,12 @@ public class _Class
                 }
             }
             safeAppendable.append('>');
+        }
+        if (hasTypeVariables)
+        {
+            safeAppendable.append("(");
+            safeAppendable.append(typeVariables.collect(x -> x.getValueForMetaPropertyToOne("name").getName() + ":" + x.getValueForMetaPropertyToOne(M3Properties.genericType).getValueForMetaPropertyToOne(M3Properties.rawType).getValueForMetaPropertyToOne(M3Properties.name).getName()).makeString(","));
+            safeAppendable.append(")");
         }
         return appendable;
     }
