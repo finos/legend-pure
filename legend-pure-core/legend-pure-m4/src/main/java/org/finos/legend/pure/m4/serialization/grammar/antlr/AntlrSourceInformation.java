@@ -33,9 +33,9 @@ public class AntlrSourceInformation
         this.addLines = addLines;
     }
 
-    public AntlrSourceInformation(int offsetColumn, int offsetLine, String sourceName)
+    public AntlrSourceInformation(int offsetLine, int offsetColumn, String sourceName)
     {
-        this(offsetColumn, offsetLine, sourceName, true);
+        this(offsetLine, offsetColumn, sourceName, true);
     }
 
     public String getSourceName()
