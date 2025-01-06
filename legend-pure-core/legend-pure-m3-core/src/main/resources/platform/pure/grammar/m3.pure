@@ -744,6 +744,7 @@
                     ,
                 ^Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[Property] specializations
                     {
+                        Root.children[meta].children[pure].children[metamodel].children[extension].children[ElementWithStereotypes].properties[stereotypes] : Root.children[meta].children[pure].children[metamodel].children[ProtocolInfo].p_stereotypes[inferred],
                         Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'specializations',
                         Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[Property].properties[aggregation] : Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[AggregationKind].values[None],
                         Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[AbstractProperty].properties[genericType] :  ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization]},
