@@ -7,7 +7,7 @@ options
     tokenVocab = RelationMappingLexer;
 }
 
-mapping:                                    RELATION_FUNCTION qualifiedName
+mapping:                                    RELATION_FUNCTION (functionDescriptor | qualifiedName)
                                             (singlePropertyMapping (COMMA singlePropertyMapping)*)?
                                             EOF
 ;

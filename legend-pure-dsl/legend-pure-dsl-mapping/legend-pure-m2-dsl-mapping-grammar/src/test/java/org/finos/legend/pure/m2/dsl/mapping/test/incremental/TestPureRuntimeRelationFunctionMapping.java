@@ -79,7 +79,7 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
                 "  }\n" +
                 "  *my::Firm[firm]: Relation\n" +
                 "  {\n" +
-                "    ~func my::firmFunction__Relation_1_\n" +
+                "    ~func my::firmFunction():Relation<Any>[1]\n" +
                 "    id: ID,\n" +
                 "    legalName: LEGALNAME\n" +
                 "  }\n" +
@@ -100,7 +100,7 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
                 "(\n" +
                 "  *my::Firm[firm]: Relation\n" +
                 "  {\n" +
-                "    ~func my::firmFunction__Relation_1_\n" +
+                "    ~func my::firmFunction():Relation<Any>[1]\n" +
                 "    id: ID,\n" +
                 "    +firmName: String[0..1]: LEGALNAME\n" +
                 "  }\n" +
@@ -182,7 +182,7 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
                     "(\n" +
                     "  *my::Firm[firm]: Relation\n" +
                     "  {\n" +
-                    "    ~func my::firmFunction__Relation_1_\n" +
+                    "    ~func my::firmFunction():Relation<Any>[1]\n" +
                     "    legalName: ID\n" +
                     "  }\n" +
                     ")\n";
@@ -334,6 +334,39 @@ public class TestPureRuntimeRelationFunctionMapping extends AbstractPureMappingT
         catch (Exception e)
         {
             assertPureException(PureParserException.class, "expected: '~func' found: 'firstName'", "3.pure", 6, 5, 6, 13, e);
+        }
+    }
+
+    @Test
+    public void testRelationMappingToRelationFunctionWithArguments()
+    {
+        try
+        {
+            String mappingSource = "###Pure\n" +
+                    "import meta::pure::metamodel::relation::*;\n" +
+                    "function my::personFunctionWithArg(i:Integer[1]): Relation<Any>[1]\n" +
+                    "{\n" +
+                    "  $i->cast(@Relation<(FIRSTNAME:String, AGE:Integer, FIRMID:Integer, CITY:String)>);\n" +
+                    "}\n" +
+                    "###Mapping\n" +
+                    "Mapping my::testMapping\n" +
+                    "(\n" +
+                    "  *my::Person[person]: Relation\n" +
+                    "  {\n" +
+                    "    ~func my::personFunctionWithArg(Integer[1]):Relation<Any>[1]\n" +
+                    "  }\n" +
+                    ")\n";
+
+            new RuntimeTestScriptBuilder().createInMemorySources(Maps.immutable.of("1.pure", RELATION_MAPPING_CLASS_SOURCE,
+                    "2.pure", RELATION_MAPPING_FUNCTION_SOURCE,
+                    "3.pure", mappingSource))
+                    .compile().run(runtime, functionExecution);
+
+            Assert.fail("Expected compilation exception");
+        }
+        catch (Exception e)
+        {
+            assertPureException(PureCompilationException.class, "Relation mapping function expecting arguments is not supported!", "3.pure", 3, 14, 6, 1, e);
         }
     }
 

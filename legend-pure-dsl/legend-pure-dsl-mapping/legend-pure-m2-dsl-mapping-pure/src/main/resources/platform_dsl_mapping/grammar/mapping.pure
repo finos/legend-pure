@@ -19,6 +19,7 @@ import meta::pure::tools::*;
 import meta::pure::functions::collection::*;
 import meta::pure::mapping::aggregationAware::*;
 import meta::pure::test::*;
+import meta::pure::metamodel::relation::*;
 
 // Mapping
 Class meta::pure::mapping::Mapping extends PackageableElement, Testable
@@ -222,7 +223,7 @@ Class meta::pure::mapping::aggregationAware::AggregateSpecificationValueSpecific
 
 Class meta::pure::mapping::relation::RelationFunctionInstanceSetImplementation extends InstanceSetImplementation
 {
-  relationFunction: FunctionDefinition<Any>[1];
+  relationFunction: FunctionDefinition<{->Relation<Any>[1]}>[1];
 }
 
 Class meta::pure::mapping::relation::RelationFunctionPropertyMapping extends PropertyMapping

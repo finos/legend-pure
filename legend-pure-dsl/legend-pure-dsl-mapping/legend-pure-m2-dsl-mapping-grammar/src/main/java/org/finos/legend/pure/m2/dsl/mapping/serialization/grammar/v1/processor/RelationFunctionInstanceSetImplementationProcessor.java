@@ -17,6 +17,7 @@ package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.processor;
 import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingProperties;
+import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.validator.RelationFunctionInstanceSetImplementationValidator;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.PostProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
@@ -29,18 +30,15 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.relation._Column;
 import org.finos.legend.pure.m3.navigation.relation._RelationType;
-import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 
 public class RelationFunctionInstanceSetImplementationProcessor extends Processor<RelationFunctionInstanceSetImplementation>
@@ -50,14 +48,9 @@ public class RelationFunctionInstanceSetImplementationProcessor extends Processo
     {
         CoreInstance relationFunction = ImportStub.withImportStubByPass(instance._relationFunctionCoreInstance(), processorSupport);
         PostProcessor.processElement(matcher, relationFunction, state, processorSupport);
-
+        RelationFunctionInstanceSetImplementationValidator.validateRelationFunction(relationFunction, processorSupport);
         GenericType lastExpressionType = (GenericType) relationFunction.getValueForMetaPropertyToMany(M3Properties.expressionSequence).getLast().getValueForMetaPropertyToOne(M3Properties.genericType);
-        if (!processorSupport.type_subTypeOf(lastExpressionType._rawType(), processorSupport.package_getByUserPath(M3Paths.Relation)))
-        {
-            throw new PureCompilationException(relationFunction.getSourceInformation(), "Relation mapping function should return a Relation! Found a " + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(lastExpressionType, processorSupport) + " instead.");
-        }
         RelationType<?> relationType = (RelationType<?>) Instance.getValueForMetaPropertyToOneResolved(lastExpressionType, M3Properties.typeArguments, M3Properties.rawType, processorSupport);
-        
         processPropertyMapping(instance, relationType, processorSupport);
     }
 
