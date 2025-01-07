@@ -18,13 +18,14 @@ import org.antlr.v4.runtime.Token;
 import org.eclipse.collections.impl.utility.ListIterate;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.RelationMappingParser;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.RelationMappingParserBaseVisitor;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
+import org.finos.legend.pure.m3.navigation.function.InvalidFunctionDescriptorException;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.AntlrContextToM3CoreInstance;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisitor<String>
 {
@@ -43,19 +44,27 @@ public class RelationMappingGraphBuilder extends RelationMappingParserBaseVisito
     
     public String visitMapping(RelationMappingParser.MappingContext ctx, String id, String extendsId, String setSourceInfo, boolean root, String classPath, String classSourceInfo, String mappingPath)
     {
-        Token startToken = ctx.qualifiedName().getStart();
-        String functionPath = ctx.qualifiedName().getText();
-        String propertyMappings = ctx.singlePropertyMapping() == null ? "" : ListIterate.collect(ctx.singlePropertyMapping(), c -> visitPropertyMapping(c, id)).makeString(",");
-        
-        return "^meta::pure::mapping::relation::RelationFunctionInstanceSetImplementation" + setSourceInfo + "(" +
-                (id == null ? "" : "id = '" + id + "',") +
-                (extendsId == null ? "" : "superSetImplementationId = '" + extendsId + "',") +
-                "root = " + root + "," +
-                "class = ^meta::pure::metamodel::import::ImportStub " + classSourceInfo + " (importGroup=system::imports::" + importId + ", idOrPath='" + classPath + "')," +
-                "parent = ^meta::pure::metamodel::import::ImportStub (importGroup=system::imports::" + importId + ", idOrPath='" + mappingPath + "')," +
-                "relationFunction = ^meta::pure::metamodel::import::ImportStub " + this.sourceInformation.getPureSourceInformation(startToken, startToken,  ctx.qualifiedName().getStop()).toM4String() + " (importGroup=system::imports::" + this.importId + ", idOrPath='" + functionPath + "')," +
-                "propertyMappings=[" + propertyMappings + "]" +
-                ")";
+        Token functionStartToken = ctx.functionDescriptor() != null ? ctx.functionDescriptor().getStart() : ctx.qualifiedName().getStart();
+        Token functionEndToken = ctx.functionDescriptor() != null ? ctx.functionDescriptor().getStop() : ctx.qualifiedName().getStop();
+        try
+        {
+            String functionId = ctx.functionDescriptor() != null ? FunctionDescriptor.functionDescriptorToId(ctx.functionDescriptor().getText()) : ctx.qualifiedName().getText();
+            String propertyMappings = ctx.singlePropertyMapping() == null ? "" : ListIterate.collect(ctx.singlePropertyMapping(), c -> visitPropertyMapping(c, id)).makeString(",");
+
+            return "^meta::pure::mapping::relation::RelationFunctionInstanceSetImplementation" + setSourceInfo + "(" +
+                    (id == null ? "" : "id = '" + id + "',") +
+                    (extendsId == null ? "" : "superSetImplementationId = '" + extendsId + "',") +
+                    "root = " + root + "," +
+                    "class = ^meta::pure::metamodel::import::ImportStub " + classSourceInfo + " (importGroup=system::imports::" + importId + ", idOrPath='" + classPath + "')," +
+                    "parent = ^meta::pure::metamodel::import::ImportStub (importGroup=system::imports::" + importId + ", idOrPath='" + mappingPath + "')," +
+                    "relationFunction = ^meta::pure::metamodel::import::ImportStub " + this.sourceInformation.getPureSourceInformation(functionStartToken, functionStartToken,  functionEndToken).toM4String() + " (importGroup=system::imports::" + this.importId + ", idOrPath='" + functionId + "')," +
+                    "propertyMappings=[" + propertyMappings + "]" +
+                    ")";
+        }
+        catch (InvalidFunctionDescriptorException e)
+        {
+            throw new PureParserException(this.sourceInformation.getPureSourceInformation(functionStartToken, functionStartToken,  functionEndToken), "Invalid function descriptor specified for relation function mapping!", e);
+        }
     }
 
     private String visitPropertyMapping(RelationMappingParser.SinglePropertyMappingContext ctx, String id)

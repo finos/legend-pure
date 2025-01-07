@@ -22,13 +22,16 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.relation.Relation
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.relation._Column;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
@@ -46,7 +49,7 @@ public class RelationFunctionInstanceSetImplementationValidator implements Match
         }
     }
 
-    private static void validateProperty(Property<?, ?> property, Column<?, ?> column, SourceInformation sourceInformation, ProcessorSupport processorSupport)
+    private void validateProperty(Property<?, ?> property, Column<?, ?> column, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
         Multiplicity propertyMultiplicity = property._multiplicity();
         if (!org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isToOne(propertyMultiplicity) && !org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isZeroToOne(propertyMultiplicity))
@@ -64,6 +67,19 @@ public class RelationFunctionInstanceSetImplementationValidator implements Match
         if (!processorSupport.type_subTypeOf(columnType, propertyType))
         {
             throw new PureCompilationException(sourceInformation, "Mismatching property and relation column types. Property type is " + propertyType._name() + ", but relation column it is mapped to has type " + columnType._name() + ".");
+        }
+    }
+    
+    public static void validateRelationFunction(CoreInstance relationFunction, ProcessorSupport processorSupport)
+    {
+        FunctionType functionType = (FunctionType) processorSupport.function_getFunctionType(relationFunction);
+        if (functionType._parameters().size() != 0)
+        {
+            throw new PureCompilationException(relationFunction.getSourceInformation(), "Relation mapping function expecting arguments is not supported!");
+        }
+        if (!processorSupport.type_subTypeOf(functionType._returnType()._rawType(), processorSupport.package_getByUserPath(M3Paths.Relation)))
+        {
+            throw new PureCompilationException(relationFunction.getSourceInformation(), "Relation mapping function should return a Relation! Found a " + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(functionType._returnType(), processorSupport) + " instead.");
         }
     }
 
