@@ -895,6 +895,10 @@ public class FunctionExecutionInterpreted implements FunctionExecution
             }
             throw e;
         }
+        catch (StackOverflowError stackOverflowError)
+        {
+            throw new PureExecutionException("Pure stackoverflow", stackOverflowError, functionExpressionCallStack);
+        }
     }
 
     public CoreInstance executeProperty(Property<?, ?> property, boolean route, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, Profiler profiler, ListIterable<? extends CoreInstance> parameters, MutableStack<CoreInstance> functionExpressionCallStack, InstantiationContext instantiationContext, ExecutionSupport executionSupport) throws PureExecutionException
