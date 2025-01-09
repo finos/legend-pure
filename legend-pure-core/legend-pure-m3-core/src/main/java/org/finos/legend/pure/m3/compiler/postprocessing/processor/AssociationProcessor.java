@@ -297,13 +297,13 @@ public class AssociationProcessor extends Processor<Association>
         Property<?, ?> leftSideOfFilterOtherProperty = assnProperties.detect(p -> !leftSideOfFilterProperty.equals(p));
         GenericType leftSideOfFilterOtherPropertyGenericType = leftSideOfFilterOtherProperty._genericType();
 
-        FunctionType functionType = (FunctionType) qualifiedProperty._classifierGenericType()._typeArguments().toList().getFirst()._rawTypeCoreInstance();
+        FunctionType functionType = (FunctionType) qualifiedProperty._classifierGenericType()._typeArguments().getOnly()._rawTypeCoreInstance();
         Iterable<? extends VariableExpression> functionTypeParams = functionType._parameters();
         for (VariableExpression functionTypeParam : functionTypeParams)
         {
             if (functionTypeParam != null && "this".equals(functionTypeParam._name()))
             {
-                GenericType genericTypeCopy = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(leftSideOfFilterOtherPropertyGenericType, processorSupport);
+                GenericType genericTypeCopy = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(leftSideOfFilterOtherPropertyGenericType, true, processorSupport);
                 functionTypeParam._genericType(genericTypeCopy);
                 context.update(functionTypeParam);
                 if (functionTypeParam.hasBeenValidated())
