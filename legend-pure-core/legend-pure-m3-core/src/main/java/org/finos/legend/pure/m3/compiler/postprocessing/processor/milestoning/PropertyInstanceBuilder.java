@@ -25,6 +25,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.proper
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
@@ -33,9 +34,14 @@ import org.finos.legend.pure.m3.navigation.imports.Imports;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
+import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.tools.GraphNodeIterable;
+import org.finos.legend.pure.m4.tools.GraphWalkFilterResult;
+
+import java.util.UUID;
 
 public class PropertyInstanceBuilder
 {
@@ -93,14 +99,15 @@ public class PropertyInstanceBuilder
     private static AbstractProperty<?> createM3Property(ImportGroup importId, PropertyOwner propertyOwner, MilestonePropertyCodeBlock propertyCodeBlock, ModelRepository modelRepository, Context context, ProcessorSupport processorSupport, int startingQualifiedPropertyIndex)
     {
         ImportStubInstance typeOwner = ImportStubInstance.createPersistent(modelRepository, null, propertyOwner.getSourceInformation(), PackageableElement.getUserPathForPackageableElement(propertyOwner), importId);
-        String fileName = propertyOwner.getSourceInformation().getSourceId();
+        // we create a unique filename for this, which we will use to replace source info after parsing
+        String fileName = UUID.randomUUID() + propertyOwner.getSourceInformation().getSourceId();
         MutableList<QualifiedProperty<? extends CoreInstance>> qps = Lists.mutable.empty();
         MutableList<Property<? extends CoreInstance, ?>> ps = Lists.mutable.empty();
-        new M3AntlrParser().parseProperties(propertyCodeBlock.getCodeBlock(), fileName, ps, qps, typeOwner, importId, false, modelRepository, context, startingQualifiedPropertyIndex);
+        new M3AntlrParser().parseProperties(propertyCodeBlock.getCodeBlock(), fileName, ps, qps, typeOwner, importId, true, modelRepository, context, startingQualifiedPropertyIndex);
         AbstractProperty<?> property = ps.isEmpty() ? qps.getLast() : ps.getLast();
         if (property != null)
         {
-            updatePropertySourceInformation(propertyCodeBlock, property, qps.notEmpty());
+            updatePropertySourceInformation(propertyCodeBlock, fileName, property, qps.notEmpty());
             property._owner(propertyOwner);
             property._stereotypesAddAll(propertyCodeBlock.getNonMilestonedStereotypes(processorSupport));
             property._taggedValuesAddAll(propertyCodeBlock.getTaggedValues());
@@ -114,24 +121,49 @@ public class PropertyInstanceBuilder
         return property;
     }
 
-    private static void updatePropertySourceInformation(MilestonePropertyCodeBlock propertyCodeBlock, AbstractProperty<?> property, boolean isQualifiedProperty)
+    private static void updatePropertySourceInformation(MilestonePropertyCodeBlock propertyCodeBlock, String fileName, AbstractProperty<?> property, boolean isQualifiedProperty)
     {
-        property.setSourceInformation(propertyCodeBlock.getPropertySourceInformation());
+        GraphNodeIterable.builder()
+                .withStartingNode(property)
+                .withNodeFilter(node ->
+                {
+                    SourceInformation sourceInfo = node.getSourceInformation();
+                    if (sourceInfo == null)
+                    {
+                        return GraphWalkFilterResult.REJECT_AND_CONTINUE;
+                    }
+                    if (fileName.equals(sourceInfo.getSourceId()))
+                    {
+                        return GraphWalkFilterResult.ACCEPT_AND_CONTINUE;
+                    }
+                    return GraphWalkFilterResult.REJECT_AND_STOP;
+                })
+                .build()
+                .forEach(node -> node.setSourceInformation(propertyCodeBlock.getPropertySourceInformation()));
+
         if (propertyCodeBlock.isPropertyGenericTypeSourceInformationIsAvailable())
         {
             GenericType genericType = property._genericType();
-            CoreInstance rawType = genericType._rawTypeCoreInstance();
+            genericType.setSourceInformation(propertyCodeBlock.getPropertyGenericTypeSourceInformation());
+            genericType._rawTypeCoreInstance().setSourceInformation(propertyCodeBlock.getPropertyGenericTypeSourceInformation());
             GenericType classifierGenericType = property._classifierGenericType();
-            if (!isQualifiedProperty && classifierGenericType != null)
+            if (classifierGenericType != null)
             {
-                ListIterable<? extends GenericType> typeArguments = classifierGenericType._typeArguments().toList();
-                if (typeArguments.size() == 2)
+                if (isQualifiedProperty)
                 {
-                    typeArguments.get(1)._rawTypeCoreInstance().setSourceInformation(propertyCodeBlock.getPropertyGenericTypeSourceInformation());
+                    GenericType typeArgument = classifierGenericType._typeArguments().getAny();
+                    FunctionType functionType = (FunctionType) typeArgument._rawType();
+                    functionType._returnType().setSourceInformation(propertyCodeBlock.getPropertyGenericTypeSourceInformation());
+                }
+                else
+                {
+                    ListIterable<? extends GenericType> typeArguments = ListHelper.wrapListIterable(classifierGenericType._typeArguments());
+                    if (typeArguments.size() == 2)
+                    {
+                        typeArguments.get(1)._rawTypeCoreInstance().setSourceInformation(propertyCodeBlock.getPropertyGenericTypeSourceInformation());
+                    }
                 }
             }
-            genericType.setSourceInformation(propertyCodeBlock.getPropertyGenericTypeSourceInformation());
-            rawType.setSourceInformation(propertyCodeBlock.getPropertyGenericTypeSourceInformation());
         }
     }
 }
