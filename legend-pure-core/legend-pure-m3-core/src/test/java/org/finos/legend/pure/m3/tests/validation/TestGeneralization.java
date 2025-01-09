@@ -116,7 +116,7 @@ public class TestGeneralization extends AbstractPureTestWithCoreCompiledPlatform
                 "import test::*;\n" +
                         "Class test::A<T> {}\n" +
                         "Class test::B extends A<B> {}\n"));
-        assertPureException(PureCompilationException.class, "Class B extends A<B> which contains a reference to B itself", "/test/testModel.pure", 3, 13, e);
+        assertPureException(PureCompilationException.class, "Class B extends A<B> which contains a reference to B itself", "/test/testModel.pure", 3, 23, e);
     }
 
     @Test
@@ -128,7 +128,7 @@ public class TestGeneralization extends AbstractPureTestWithCoreCompiledPlatform
                         "Class test::A<T> {}\n" +
                         "Class test::B<U> {}\n" +
                         "Class test::C extends A<B<C>> {}\n"));
-        assertPureException(PureCompilationException.class, "Class C extends A<B<C>> which contains a reference to C itself", "/test/testModel.pure", 4, 13, e);
+        assertPureException(PureCompilationException.class, "Class C extends A<B<C>> which contains a reference to C itself", "/test/testModel.pure", 4, 23, e);
     }
 
     @Test
@@ -140,7 +140,7 @@ public class TestGeneralization extends AbstractPureTestWithCoreCompiledPlatform
                         "Class test::A<T> {}\n" +
                         "Class test::B extends A<C> {}\n" +
                         "Class test::C extends B {}\n"));
-        assertPureException(PureCompilationException.class, "Class B extends A<C> which contains a reference to C which is a subtype of B", "/test/testModel.pure", 3, 13, e);
+        assertPureException(PureCompilationException.class, "Class B extends A<C> which contains a reference to C which is a subtype of B", "/test/testModel.pure", 3, 23, e);
     }
 
     @Test
@@ -153,6 +153,6 @@ public class TestGeneralization extends AbstractPureTestWithCoreCompiledPlatform
                         "Class test::B<U> {}\n" +
                         "Class test::C extends A<B<D>> {}\n" +
                         "Class test::D extends C {}\n"));
-        assertPureException(PureCompilationException.class, "Class C extends A<B<D>> which contains a reference to D which is a subtype of C", "/test/testModel.pure", 4, 13, e);
+        assertPureException(PureCompilationException.class, "Class C extends A<B<D>> which contains a reference to D which is a subtype of C", "/test/testModel.pure", 4, 23, e);
     }
 }
