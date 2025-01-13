@@ -37,7 +37,9 @@ import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.ReferenceUsage;
 import org.finos.legend.pure.m3.coreinstance.Package;
+import org.finos.legend.pure.m3.coreinstance.PackageAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.ModelElement;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.Referenceable;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -50,6 +52,7 @@ import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.navigation.function.FunctionType;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
+import org.finos.legend.pure.m3.navigation.graph.ResolvedGraphPath;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.measure.Measure;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
@@ -1438,6 +1441,84 @@ public abstract class AbstractCompiledStateIntegrityTest
             BinaryModelSourceSerializer.serialize(BinaryWriters.newBinaryWriter(stream), source, runtime);
             BinaryModelSourceDeserializer.deserialize(BinaryReaders.newBinaryReader(stream.toByteArray()), ExternalReferenceSerializerLibrary.newLibrary(runtime));
         });
+    }
+
+    @Test
+    public void testReferencerUsageOwners()
+    {
+        MutableList<String> errorMessages = Lists.mutable.empty();
+        PackageTreeIterable.newRootPackageTreeIterable(repository)
+                .flatCollect(PackageAccessor::_children)
+                .select(e -> e.getSourceInformation() != null)
+                .collect(e -> (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) e)
+                .concatenate(repository.getTopLevels().asLazy().collect(e -> (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) e))
+                .forEach(element ->
+                {
+                    SourceInformation elementSourceInfo = element.getSourceInformation();
+                    MutableSet<CoreInstance> internalNodes = GraphNodeIterable.builder()
+                            .withStartingNode(element)
+                            .withKeyFilter((node, key) -> !M3PropertyPaths.BACK_REFERENCE_PROPERTY_PATHS.contains(node.getRealKeyByName(key)))
+                            .withNodeFilter(node ->
+                            {
+                                SourceInformation nodeSourceInfo = node.getSourceInformation();
+                                return (nodeSourceInfo == null) || elementSourceInfo.subsumes(nodeSourceInfo) ? GraphWalkFilterResult.ACCEPT_AND_CONTINUE : GraphWalkFilterResult.REJECT_AND_STOP;
+                            })
+                            .build()
+                            .toSet();
+                    MutableMap<CoreInstance, MutableList<CoreInstance>> badRefUsages = Maps.mutable.empty();
+                    internalNodes.forEach(node ->
+                    {
+                        if (node instanceof Referenceable)
+                        {
+                            ((Referenceable) node)._referenceUsages().forEach(refUsage ->
+                            {
+                                CoreInstance owner = refUsage._ownerCoreInstance();
+                                if ((owner.getSourceInformation() == null) && !internalNodes.contains(owner))
+                                {
+                                    badRefUsages.getIfAbsentPut(node, Lists.mutable::empty).add(refUsage);
+                                }
+                            });
+                        }
+                    });
+                    badRefUsages.forEachKeyValue((node, refUsages) ->
+                    {
+                        StringBuilder builder = new StringBuilder();
+                        if (node == element)
+                        {
+                            PackageableElement.writeUserPathForPackageableElement(builder, node);
+                        }
+                        else
+                        {
+                            ResolvedGraphPath pathToNode = CompiledStateIntegrityTestTools.findPathToInstance(node, processorSupport);
+                            if (pathToNode == null)
+                            {
+                                builder.append(node);
+                            }
+                            else
+                            {
+                                pathToNode.getGraphPath().writeDescription(builder);
+                            }
+                        }
+                        SourceInformation nodeSourceInfo = node.getSourceInformation();
+                        if (nodeSourceInfo != null)
+                        {
+                            nodeSourceInfo.appendMessage(builder.append(" (")).append(')');
+                        }
+                        else
+                        {
+                            elementSourceInfo.appendMessage(builder.append(" (within ")).append(')');
+                        }
+                        builder.append(" [").append(refUsages.size()).append("]:");
+                        refUsages.forEach(refUsage -> ReferenceUsage.writeReferenceUsage(builder.append("\n\t\t"), refUsage));
+                        errorMessages.add(builder.toString());
+                    });
+                });
+        if (errorMessages.notEmpty())
+        {
+            StringBuilder builder = new StringBuilder("There are ").append(errorMessages.size()).append(" instances with ReferenceUsages with no owner source information");
+            errorMessages.forEach(m -> builder.append("\n\t").append(m));
+            Assert.fail(builder.toString());
+        }
     }
 
     @Test
