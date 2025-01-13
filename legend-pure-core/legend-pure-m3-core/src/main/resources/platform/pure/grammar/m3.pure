@@ -476,6 +476,7 @@
 
 ^Root.children[meta].children[pure].children[metamodel].children[type].children[Class] InferredGenericType @Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children
 {
+    Root.children[meta].children[pure].children[metamodel].children[extension].children[ElementWithStereotypes].properties[stereotypes] : Root.children[meta].children[pure].children[metamodel].children[ProtocolInfo].p_stereotypes[excluded],
     Root.children[meta].children[pure].children[metamodel].children[type].children[Any].properties[classifierGenericType] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[type].children[Class], Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[typeArguments]:[^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[InferredGenericType]}]},
     Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel].children[type].children[generics],
     Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'InferredGenericType',
@@ -519,6 +520,7 @@
 
 ^Root.children[meta].children[pure].children[metamodel].children[type].children[Class] Referenceable @Root.children[meta].children[pure].children[metamodel].children
 {
+    Root.children[meta].children[pure].children[metamodel].children[extension].children[ElementWithStereotypes].properties[stereotypes] : Root.children[meta].children[pure].children[metamodel].children[ProtocolInfo].p_stereotypes[excluded],
     Root.children[meta].children[pure].children[metamodel].children[type].children[Any].properties[classifierGenericType] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[type].children[Class], Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[typeArguments]:[^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[Referenceable]}]},
     Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel],
     Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'Referenceable',
@@ -1084,6 +1086,7 @@
 
 ^Root.children[meta].children[pure].children[metamodel].children[type].children[Class] Any @Root.children[meta].children[pure].children[metamodel].children[type].children
 {
+    Root.children[meta].children[pure].children[metamodel].children[extension].children[ElementWithStereotypes].properties[stereotypes] : Root.children[meta].children[pure].children[metamodel].children[ProtocolInfo].p_stereotypes[excluded],
     Root.children[meta].children[pure].children[metamodel].children[type].children[Any].properties[classifierGenericType] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[type].children[Class], Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[typeArguments]:[^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[type].children[Any]}]},
     Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel].children[type],
     Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'Any',
@@ -1719,6 +1722,7 @@
 
 ^Root.children[meta].children[pure].children[metamodel].children[type].children[Class] NonExecutableValueSpecification @Root.children[meta].children[pure].children[metamodel].children[valuespecification].children
 {
+    Root.children[meta].children[pure].children[metamodel].children[extension].children[ElementWithStereotypes].properties[stereotypes] : Root.children[meta].children[pure].children[metamodel].children[ProtocolInfo].p_stereotypes[excluded],
     Root.children[meta].children[pure].children[metamodel].children[type].children[Any].properties[classifierGenericType] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[type].children[Class], Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[typeArguments]:^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[valuespecification].children[NonExecutableValueSpecification]}},
     Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel].children[valuespecification],
     Root.children[meta].children[pure].children[metamodel].children[type].children[Class].properties[properties]:
@@ -3130,6 +3134,14 @@
     Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel].children[constraint],
     Root.children[meta].children[pure].children[metamodel].children[type].children[Class].properties[properties]:
         [
+            ^Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[Property] name
+            {
+                Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'name',
+                Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[Property].properties[aggregation] : Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[AggregationKind].values[None],
+                Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[AbstractProperty].properties[genericType] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:String},
+                Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[AbstractProperty].properties[multiplicity] : Root.children[meta].children[pure].children[metamodel].children[multiplicity].children[PureOne],
+                Root.children[meta].children[pure].children[metamodel].children[type].children[Any].properties[classifierGenericType] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[Property], Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[typeArguments]:[^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[constraint].children[Constraint]}, ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:String}], Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[multiplicityArguments]:Root.children[meta].children[pure].children[metamodel].children[multiplicity].children[PureOne]}
+            },
             ^Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[Property] owner
             {
                 Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'owner',
@@ -3176,7 +3188,7 @@
         [
             ^Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization]
             {
-                Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[general] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType] {Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType] : Root.children[meta].children[pure].children[metamodel].children[ModelElement]},
+                Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[general] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType] {Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType] : Root.children[meta].children[pure].children[metamodel].children[type].children[Any]},
                 Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[specific] : Root.children[meta].children[pure].children[metamodel].children[constraint].children[Constraint]
             }
         ]
@@ -3234,7 +3246,7 @@
         [
             ^Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization]
             {
-                Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[general] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType] {Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType] : Root.children[meta].children[pure].children[metamodel].children[ModelElement]},
+                Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[general] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType] {Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType] : Root.children[meta].children[pure].children[metamodel].children[type].children[Any]},
                 Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[specific] : Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[DefaultValue]
             }
         ]
