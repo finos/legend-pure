@@ -15,5 +15,5 @@
 
 Profile meta::pure::test::fct::FCT
 {
-    stereotypes : [test, adapter, mappingTest];
+    stereotypes : [test, adapter, testCollection];
 }
