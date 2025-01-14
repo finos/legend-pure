@@ -29,7 +29,6 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.proper
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.DataType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration;
@@ -41,8 +40,10 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class PropertyMappingProcessor
@@ -51,64 +52,61 @@ public class PropertyMappingProcessor
     {
     }
 
+    @SuppressWarnings("unchecked")
     public static void processPropertyMapping(PropertyMapping propertyMapping, ModelRepository repository, ProcessorSupport processorSupport, PropertyOwner propertyOwner, PropertyMappingsImplementation propertyMappingOwner) throws PureCompilationException
     {
         propertyMapping._owner(propertyMappingOwner);
 
-        Property property;
-        if (propertyMapping._localMappingProperty() != null &&  propertyMapping._localMappingProperty())
+        Property<?, ?> property;
+        if (propertyMapping._localMappingProperty() != null && propertyMapping._localMappingProperty())
         {
-            ClassInstance propertyClass = (ClassInstance) _Package.getByUserPath(M3Paths.Property, processorSupport);
-            ClassInstance genericTypeClass = (ClassInstance) _Package.getByUserPath(M3Paths.GenericType, processorSupport);
+            Class<?> propertyClass = (Class<?>) _Package.getByUserPath(M3Paths.Property, processorSupport);
+            Class<?> genericTypeClass = (Class<?>) _Package.getByUserPath(M3Paths.GenericType, processorSupport);
 
-            Property propertyInstance = (Property) repository.newAnonymousCoreInstance(propertyMapping.getSourceInformation(), propertyClass);
+            SourceInformation propertySourceInfo = propertyMapping.getSourceInformation();
+            Property<?, ?> propertyInstance = (Property<?, ?>) repository.newAnonymousCoreInstance(propertySourceInfo, propertyClass);
 
-            GenericType sourceGenericType = (GenericType) repository.newAnonymousCoreInstance(null, genericTypeClass);
+            GenericType sourceGenericType = (GenericType) repository.newAnonymousCoreInstance(propertySourceInfo, genericTypeClass);
             sourceGenericType._rawTypeCoreInstance(null);
 
-            GenericType targetGenericType = (GenericType) repository.newAnonymousCoreInstance(null, genericTypeClass);
+            GenericType targetGenericType = (GenericType) repository.newAnonymousCoreInstance(propertySourceInfo, genericTypeClass);
             targetGenericType._rawTypeCoreInstance(propertyMapping._localMappingPropertyTypeCoreInstance());
 
-            GenericType propertyGenericType = (GenericType) repository.newAnonymousCoreInstance(null, genericTypeClass);
-            propertyGenericType._rawTypeCoreInstance(propertyClass);
-            propertyGenericType._typeArguments(Lists.immutable.<GenericType>withAll(propertyGenericType._typeArguments()).newWith(sourceGenericType));
-            propertyGenericType._typeArguments(Lists.immutable.<GenericType>withAll(propertyGenericType._typeArguments()).newWith(targetGenericType));
+            GenericType propertyGenericType = (GenericType) repository.newAnonymousCoreInstance(propertySourceInfo, genericTypeClass);
+            propertyGenericType._rawType(propertyClass);
+            propertyGenericType._typeArgumentsAddAll(Lists.immutable.with(sourceGenericType, targetGenericType));
             // WRONG.. should come from grammar
-            propertyGenericType._multiplicityArguments(Lists.immutable.<Multiplicity>withAll(propertyGenericType._multiplicityArguments()).newWith(propertyMapping._localMappingPropertyMultiplicity()));
+            propertyGenericType._multiplicityArgumentsAdd(propertyMapping._localMappingPropertyMultiplicity());
 
-            propertyInstance._classifierGenericType(propertyGenericType);
-            propertyInstance._genericType(targetGenericType);
-            propertyInstance._name(ImportStub.withImportStubByPass(propertyMapping._propertyCoreInstance(), processorSupport).getName());
-
-            propertyInstance._aggregation((Enum)((Enumeration)_Package.getByUserPath(M3Paths.AggregationKind, processorSupport))._values().toList().get(0));
-
-            propertyInstance._multiplicity((Multiplicity) processorSupport.package_getByUserPath(M3Paths.PureOne));
+            propertyInstance._classifierGenericType(propertyGenericType)
+                    ._genericType(targetGenericType)
+                    ._name(ImportStub.withImportStubByPass(propertyMapping._propertyCoreInstance(), processorSupport).getName())
+                    ._aggregation(ListHelper.wrapListIterable(((Enumeration<? extends Enum>) _Package.getByUserPath(M3Paths.AggregationKind, processorSupport))._values()).get(0))
+                    ._multiplicity((Multiplicity) processorSupport.package_getByUserPath(M3Paths.PureOne));
             property = propertyInstance;
         }
         else
         {
             // Property
             String propertyName = ImportStub.withImportStubByPass(propertyMapping._propertyCoreInstance(), processorSupport).getName();
-            property = getEdgePointProperty(propertyOwner, propertyName, processorSupport);
-            if (property == null)
+            Property<?, ?> propertyInstance = getEdgePointProperty(propertyOwner, propertyName, processorSupport);
+            if (propertyInstance == null)
             {
-                property = (Property) processorSupport.class_findPropertyUsingGeneralization(propertyOwner, propertyName);
+                propertyInstance = (Property<?, ?>) processorSupport.class_findPropertyUsingGeneralization(propertyOwner, propertyName);
+                if (propertyInstance == null)
+                {
+                    StringBuilder message = new StringBuilder("The property '").append(propertyName).append("' is unknown in the Element '");
+                    PackageableElement.writeUserPathForPackageableElement(message, propertyOwner).append('\'');
+                    throw new PureCompilationException(propertyMapping.getSourceInformation(), message.toString());
+                }
             }
-            if (property == null)
-            {
-                StringBuilder message = new StringBuilder("The property '");
-                message.append(propertyName);
-                message.append("' is unknown in the Element '");
-                PackageableElement.writeUserPathForPackageableElement(message, propertyOwner);
-                message.append('\'');
-                throw new PureCompilationException(propertyMapping.getSourceInformation(), message.toString());
-            }
+            property = propertyInstance;
         }
-        propertyMapping._propertyCoreInstance(property);
+        propertyMapping._property(property);
 
         // TargetID
         String targetId = propertyMapping._targetSetImplementationId();
-        Type targetClass = (Type)ImportStub.withImportStubByPass(property._classifierGenericType()._typeArguments().toList().get(1)._rawTypeCoreInstance(), processorSupport);
+        Type targetClass = (Type) ImportStub.withImportStubByPass(property._classifierGenericType()._typeArguments().toList().get(1)._rawTypeCoreInstance(), processorSupport);
         if (targetId == null)
         {
             String targetIdString = targetClass instanceof DataType ? "" : PackageableElement.getUserPathForPackageableElement(targetClass, "_");
@@ -117,7 +115,7 @@ public class PropertyMappingProcessor
 
         // SourceId
         String sourceId = propertyMapping._sourceSetImplementationId();
-        Class sourceClass = propertyOwner instanceof Class ? (Class) propertyOwner : getSourceClassForAssociationProperty(processorSupport, propertyOwner, property.getName());
+        Class<?> sourceClass = propertyOwner instanceof Class ? (Class<?>) propertyOwner : getSourceClassForAssociationProperty(processorSupport, propertyOwner, property.getName());
         if (sourceId == null)
         {
             String sourceIdString = PackageableElement.getUserPathForPackageableElement(sourceClass, "_");
@@ -127,7 +125,7 @@ public class PropertyMappingProcessor
         if (propertyMapping instanceof PropertyMappingsImplementation)
         {
             PropertyMappingsImplementation propertyMappingsImplementation = (PropertyMappingsImplementation) propertyMapping;
-            Class propertyCls = property._genericType() == null ? null : (Class) ImportStub.withImportStubByPass(property._genericType()._rawTypeCoreInstance(), processorSupport);//Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.genericType, M3Properties.rawType, processorSupport);
+            Class<?> propertyCls = property._genericType() == null ? null : (Class<?>) ImportStub.withImportStubByPass(property._genericType()._rawTypeCoreInstance(), processorSupport);//Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.genericType, M3Properties.rawType, processorSupport);
             for (PropertyMapping childPropertyMapping : propertyMappingsImplementation._propertyMappings())
             {
                 processPropertyMapping(childPropertyMapping, repository, processorSupport, propertyCls, propertyMappingsImplementation);
@@ -136,18 +134,18 @@ public class PropertyMappingProcessor
 
             if (!mapping._classMappings().contains(propertyMapping))
             {
-                mapping._classMappings(Lists.immutable.<SetImplementation>withAll(mapping._classMappings()).newWithAll(Lists.immutable.with((SetImplementation)propertyMappingsImplementation)));
+                mapping._classMappings(Lists.immutable.<SetImplementation>withAll(mapping._classMappings()).newWithAll(Lists.immutable.with((SetImplementation) propertyMappingsImplementation)));
             }
         }
 
         if (propertyMapping instanceof OtherwiseEmbeddedSetImplementation)
         {
-            PropertyMapping otherwiseMapping = ((OtherwiseEmbeddedSetImplementation)propertyMapping)._otherwisePropertyMapping();
+            PropertyMapping otherwiseMapping = ((OtherwiseEmbeddedSetImplementation) propertyMapping)._otherwisePropertyMapping();
             otherwiseMapping._propertyCoreInstance(property);
             PropertyMappingsImplementation otherOwner = otherwiseMapping._owner();
             if (otherOwner == null)
             {
-                otherwiseMapping._owner((OtherwiseEmbeddedSetImplementation)propertyMapping);
+                otherwiseMapping._owner((OtherwiseEmbeddedSetImplementation) propertyMapping);
             }
         }
     }
@@ -159,7 +157,7 @@ public class PropertyMappingProcessor
 
         if (propertyMapping instanceof PropertyMappingsImplementation)
         {
-            for (PropertyMapping childPropertyMapping : ((PropertyMappingsImplementation)propertyMapping)._propertyMappings())
+            for (PropertyMapping childPropertyMapping : ((PropertyMappingsImplementation) propertyMapping)._propertyMappings())
             {
                 populateReferenceUsagesForPropertyMapping(childPropertyMapping, repository, processorSupport);
             }
@@ -174,7 +172,7 @@ public class PropertyMappingProcessor
 
     private static Class getSourceClassForAssociationProperty(ProcessorSupport processorSupport, PropertyOwner propertyOwner, String propertyName)
     {
-        RichIterable<? extends Property<?,?>> associationProperties = propertyOwner instanceof Class ? ((Class)propertyOwner)._properties() : ((Association)propertyOwner)._properties();
+        RichIterable<? extends Property<?, ?>> associationProperties = propertyOwner instanceof Class ? ((Class) propertyOwner)._properties() : ((Association) propertyOwner)._properties();
         Property otherProperty = associationProperties.detect(Predicates.attributeNotEqual(CoreInstance.GET_NAME, propertyName));
         return (Class) ImportStub.withImportStubByPass(otherProperty._classifierGenericType()._typeArguments().toList().get(1)._rawTypeCoreInstance(), processorSupport);
     }

@@ -42,6 +42,7 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 public class XStoreProcessor extends Processor<XStoreAssociationImplementation>
 {
@@ -70,9 +71,9 @@ public class XStoreProcessor extends Processor<XStoreAssociationImplementation>
 
                 Class<?> srcClass = getSetImplementationClass(sourceSetImpl, processorSupport);
                 Class<?> targetClass = getSetImplementationClass(targetSetImpl, processorSupport);
-                VariableExpression thisParam = buildParam("this", srcClass, repository, processorSupport);
-                VariableExpression thatParam = buildParam("that", targetClass, repository, processorSupport);
                 FunctionType fType = (FunctionType) ImportStub.withImportStubByPass(propertyMapping._crossExpression()._classifierGenericType()._typeArguments().getOnly()._rawTypeCoreInstance(), processorSupport);
+                VariableExpression thisParam = buildParam("this", srcClass, fType.getSourceInformation(), processorSupport);
+                VariableExpression thatParam = buildParam("that", targetClass, fType.getSourceInformation(), processorSupport);
                 fType._parametersAddAll(Lists.immutable.with(thisParam, thatParam));
                 matcher.fullMatch(propertyMapping._crossExpression(), state);
 
@@ -95,15 +96,13 @@ public class XStoreProcessor extends Processor<XStoreAssociationImplementation>
         return mappingClass == null ? (Class<?>) ImportStub.withImportStubByPass(setImplementation._classCoreInstance(), processorSupport) : mappingClass;
     }
 
-    private VariableExpression buildParam(String name, Class<?> type, ModelRepository repository, ProcessorSupport processorSupport)
+    private VariableExpression buildParam(String name, Class<?> type, SourceInformation sourceInfo, ProcessorSupport processorSupport)
     {
-        GenericType genericType = (GenericType) repository.newAnonymousCoreInstance(null, processorSupport.package_getByUserPath(M3Paths.GenericType));
-        genericType._rawTypeCoreInstance(type);
-        VariableExpression param = (VariableExpression) repository.newAnonymousCoreInstance(null, processorSupport.package_getByUserPath(M3Paths.VariableExpression));
-        param._name(name);
-        param._genericType(genericType);
-        param._multiplicity((Multiplicity) processorSupport.package_getByUserPath(M3Paths.PureOne));
-        return param;
+        GenericType genericType = (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(type, sourceInfo, processorSupport);
+        VariableExpression param = (VariableExpression) processorSupport.newAnonymousCoreInstance(sourceInfo, M3Paths.VariableExpression);
+        return param._name(name)
+                ._genericType(genericType)
+                ._multiplicity((Multiplicity) processorSupport.package_getByUserPath(M3Paths.PureOne));
     }
 
     @Override
