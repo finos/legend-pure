@@ -31,7 +31,7 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 
-public class ClassProjectionUnbind implements MatchRunner<ClassProjection>
+public class ClassProjectionUnbind implements MatchRunner<ClassProjection<?>>
 {
     @Override
     public String getClassName()
@@ -40,9 +40,8 @@ public class ClassProjectionUnbind implements MatchRunner<ClassProjection>
     }
 
     @Override
-    public void run(ClassProjection classProjection, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
+    public void run(ClassProjection<?> classProjection, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
-
         if (classProjection._properties().notEmpty())
         {
             classProjection._propertiesRemove();
@@ -58,10 +57,10 @@ public class ClassProjectionUnbind implements MatchRunner<ClassProjection>
             try
             {
                 Type projectedClass = (Type)ImportStub.withImportStubByPass(projectionSpecification._type()._rawTypeCoreInstance(), state.getProcessorSupport());
-                ProjectionUtil.removedCopiedAnnotations((AnnotatedElement)projectedClass, classProjection, state.getProcessorSupport());
-                ProjectionUtil.removedCopiedAnnotations(projectionSpecification, classProjection, state.getProcessorSupport());
+                ProjectionUtil.removeCopiedAnnotations((AnnotatedElement)projectedClass, classProjection, state.getProcessorSupport());
+                ProjectionUtil.removeCopiedAnnotations(projectionSpecification, classProjection, state.getProcessorSupport());
             }
-            catch (PureCompilationException pe)
+            catch (PureCompilationException ignore)
             {
                 //This might happen, the rawType might be unbound and cannot be resolved.
             }
