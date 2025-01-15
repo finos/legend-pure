@@ -1,0 +1,5 @@
+{
+  "name" : "test_milestoning_repository",
+  "pattern" : "(meta)(::.*)?",
+  "dependencies" : ["platform"]
+}
