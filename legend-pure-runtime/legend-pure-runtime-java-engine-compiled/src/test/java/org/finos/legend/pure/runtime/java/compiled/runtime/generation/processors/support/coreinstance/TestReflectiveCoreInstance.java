@@ -38,7 +38,7 @@ public class TestReflectiveCoreInstance
                 .withKey("Root::meta::pure::metamodel::extension::ElementWithConstraints", "constraints")
                 .withKey("Root::meta::pure::metamodel::extension::ElementWithStereotypes", "stereotypes")
                 .withKey("Root::meta::pure::metamodel::extension::ElementWithTaggedValues", "taggedValues")
-                .withKey("Root::meta::pure::metamodel::testable::Testable", "tests")
+                .withKey("Root::meta::pure::test::Testable", "tests")
                 .withKeys("Root::meta::pure::metamodel::type::Type", "generalizations", "name", "specializations")
                 .withKeys("Root::meta::pure::metamodel::type::Class", "multiplicityParameters", "originalMilestonedProperties", "properties", "propertiesFromAssociations", "qualifiedProperties", "qualifiedPropertiesFromAssociations", "typeParameters")
                 .withKeys("Root::meta::pure::metamodel::PackageableElement", "package", "referenceUsages")
@@ -62,7 +62,7 @@ public class TestReflectiveCoreInstance
                 index.getRealKeyByName("taggedValues"));
 
         Assert.assertEquals(
-                Lists.immutable.with("Root", "children", "meta", "children", "pure", "children", "metamodel", "children", "testable", "children", "Testable", "properties", "tests"),
+                Lists.immutable.with("Root", "children", "meta", "children", "pure", "children", "test", "children", "Testable", "properties", "tests"),
                 index.getRealKeyByName("tests"));
 
         Assert.assertEquals(

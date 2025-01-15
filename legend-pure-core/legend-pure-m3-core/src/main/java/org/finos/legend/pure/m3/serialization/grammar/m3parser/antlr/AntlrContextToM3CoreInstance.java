@@ -2562,7 +2562,7 @@ public class AntlrContextToM3CoreInstance
         Instance.setValueForProperty(constraintFunctionLambda, M3Properties.classifierGenericType, lambdaGenericType, this.processorSupport);
         Instance.setValueForProperty(functionType, M3Properties.function, constraintFunctionLambda, this.processorSupport);
 
-        Constraint constraint = ConstraintInstance.createPersistent(this.repository, null, null);
+        Constraint constraint = ConstraintInstance.createPersistent(this.repository, null, null, null);
         constraint.setSourceInformation(constraintSourceInformation);
         constraint._name(constraintName);
         if (constraintOwner != null)
