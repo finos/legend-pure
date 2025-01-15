@@ -1,0 +1,37 @@
+###Pure
+
+Class <<temporal.businesstemporal>> meta::relational::tests::milestoning::Product{
+   id : Integer[1];
+   name : String[1];
+   type : String[1];
+}
+
+
+###Relational
+Database meta::relational::tests::milestoning::distinct::milestoningdistinctdb(
+
+   Table ProductTable(
+            milestoning(
+               business(BUS_FROM=from_z, BUS_THRU=thru_z)
+            )
+            id Integer PRIMARY KEY,
+            name VARCHAR(200) PRIMARY KEY,
+            type VARCHAR(200),
+            from_z DATE PRIMARY KEY,
+            thru_z DATE)
+)
+
+
+###Mapping
+import meta::relational::tests::milestoning::distinct::*;
+import meta::relational::tests::milestoning::*;
+
+Mapping meta::relational::tests::milestoning::distinct::milestoningdistinctmapping
+(
+   Product : Relational{
+      ~distinct
+      id : [milestoningdistinctdb]ProductTable.id,
+      name : [milestoningdistinctdb]ProductTable.name,
+      type : [milestoningdistinctdb]ProductTable.type
+   }
+)
