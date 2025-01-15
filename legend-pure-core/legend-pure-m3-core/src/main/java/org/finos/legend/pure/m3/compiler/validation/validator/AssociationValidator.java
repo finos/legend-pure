@@ -55,6 +55,10 @@ public class AssociationValidator implements MatchRunner<Association>
             {
                 throw new PureCompilationException(property.getSourceInformation(), "Association properties must have concrete types");
             }
+            if (property._defaultValue() != null)
+            {
+                throw new PureCompilationException(property.getSourceInformation(), "Association properties must not have default values defined");
+            }
             Validator.validate(propertyRawType, validatorState, matcher, processorSupport);
         }
 
