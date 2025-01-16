@@ -40,12 +40,10 @@ import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
-import java.util.Iterator;
 import java.util.List;
 
 public class MappingGraphBuilder extends MappingParserBaseVisitor<String>
 {
-
     private final int count;
     private final ModelRepository repository;
     private final Context context;
@@ -72,7 +70,7 @@ public class MappingGraphBuilder extends MappingParserBaseVisitor<String>
     @Override
     public String visitDefinition(MappingParser.DefinitionContext ctx)
     {
-        final ImportGroup importGroup = imports(this.sourceInformation.getSourceName(), this.sourceInformation.getOffsetLine(), ctx.imports());
+        ImportGroup importGroup = imports(this.sourceInformation.getSourceName(), this.sourceInformation.getOffsetLine(), ctx.imports());
         this.importId = importGroup.getName();
         visitChildren(ctx);
         return sb.toString();
@@ -90,13 +88,17 @@ public class MappingGraphBuilder extends MappingParserBaseVisitor<String>
             throw new PureParserException(this.sourceInformation.getPureSourceInformation(ctx.tests().getStart()),
                     "Grammar Tests in Mapping currently not supported in Pure");
         }
-        this.sb.append("^meta::pure::mapping::Mapping ")
-                .append(mappingName).append(this.sourceInformation.getPureSourceInformation(ctx.MAPPING().getSymbol(), ctx.qualifiedName().identifier().getStart(), ctx.GROUP_CLOSE().getSymbol()).toM4String()).append(hasPackage ? "@" : "").append(packageName)
-                .append("(name='").append(mappingName).append("', package=").append(hasPackage ? packageName : "::")
-                .append(", includes = [").append(this.includes.makeString(",")).append("]")
-                .append(", enumerationMappings = [").append(this.results.get("enumerationMappings").makeString(",")).append("]")
-                .append(", classMappings = [").append(this.results.get("classMappings").makeString(",")).append("]")
-                .append(", associationMappings = [").append(this.results.get("associationMappings").makeString(",")).append("])");
+        this.sb.append("^meta::pure::mapping::Mapping ").append(mappingName);
+        this.sourceInformation.getPureSourceInformation(ctx.MAPPING().getSymbol(), ctx.qualifiedName().identifier().getStart(), ctx.GROUP_CLOSE().getSymbol()).appendM4String(this.sb);
+        if (hasPackage)
+        {
+            this.sb.append('@').append(packageName);
+        }
+        this.sb.append("(name='").append(mappingName).append("', package=").append(hasPackage ? packageName : "::");
+        this.includes.appendString(this.sb, ", includes = [", ",", "]");
+        this.results.get("enumerationMappings").appendString(this.sb, ", enumerationMappings = [", ",", "]");
+        this.results.get("classMappings").appendString(this.sb, ", classMappings = [", ",", "]");
+        this.results.get("associationMappings").appendString(this.sb, ", associationMappings = [", ",", "])");
         this.results.clear();
         this.includes.clear();
         return null;
@@ -107,39 +109,34 @@ public class MappingGraphBuilder extends MappingParserBaseVisitor<String>
     {
         StringBuilder builder = new StringBuilder();
         String sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().identifier().getStart()).toM4String();
-        builder.append("^meta::pure::mapping::MappingInclude");
-        builder.append(sourceInfo);
-        builder.append("(");
+        builder.append("^meta::pure::mapping::MappingInclude").append(sourceInfo).append("(");
 
         // owner mapping (we include a direct reference rather than an import stub since the Mapping owns the MappingInclude)
         builder.append("owner=").append(((MappingParser.MappingContext) ctx.getParent()).qualifiedName().getText());
 
         // included mapping
-        builder.append(", included=^meta::pure::metamodel::import::ImportStub");
-        builder.append(sourceInfo);
-        builder.append("(importGroup=system::imports::");
-        builder.append(this.importId);
-        builder.append(", idOrPath='").append(ctx.qualifiedName().getText()).append("')");
+        builder.append(", included=^meta::pure::metamodel::import::ImportStub").append(sourceInfo)
+                .append("(importGroup=system::imports::").append(this.importId)
+                .append(", idOrPath='").append(ctx.qualifiedName().getText()).append("')");
 
         // source substitutions
-        if (ctx.storeSubPath() != null)
+        List<MappingParser.StoreSubPathContext> storeSubPathContexts = ctx.storeSubPath();
+        if ((storeSubPathContexts != null) && !storeSubPathContexts.isEmpty())
         {
             builder.append(", storeSubstitutions=[");
-            Iterator<MappingParser.StoreSubPathContext> iterator = ctx.storeSubPath().iterator();
-            while (iterator.hasNext())
+            storeSubPathContexts.forEach(storeSubPathContext ->
             {
-                MappingParser.StoreSubPathContext storeSubPathContext = iterator.next();
-                builder.append("^meta::pure::mapping::SubstituteStore(original=^meta::pure::metamodel::import::ImportStub");
-                builder.append(this.sourceInformation.getPureSourceInformation(storeSubPathContext.sourceStore().qualifiedName().identifier().getStart()).toM4String());
+                builder.append("^meta::pure::mapping::SubstituteStore");
+                this.sourceInformation.getPureSourceInformation(storeSubPathContext.getStart(), storeSubPathContext.ARROW().getSymbol(), storeSubPathContext.getStop(), true).appendM4String(builder);
+                builder.append("(original=^meta::pure::metamodel::import::ImportStub");
+                this.sourceInformation.getPureSourceInformation(storeSubPathContext.sourceStore().qualifiedName().identifier().getStart()).appendM4String(builder);
                 builder.append("(importGroup=system::imports::").append(this.importId).append(", idOrPath='").append(storeSubPathContext.sourceStore().qualifiedName().getText()).append("')");
                 builder.append(", substitute=^meta::pure::metamodel::import::ImportStub");
-                builder.append(this.sourceInformation.getPureSourceInformation(storeSubPathContext.targetStore().qualifiedName().identifier().getStart()).toM4String());
+                this.sourceInformation.getPureSourceInformation(storeSubPathContext.targetStore().qualifiedName().identifier().getStart()).appendM4String(builder);
                 builder.append("(importGroup=system::imports::").append(this.importId).append(", idOrPath='").append(storeSubPathContext.targetStore().qualifiedName().getText()).append("'))");
-                if (iterator.hasNext())
-                {
-                    builder.append(", ");
-                }
-            }
+                builder.append(", ");
+            });
+            builder.setLength(builder.length() - 2);
             builder.append(']');
         }
 

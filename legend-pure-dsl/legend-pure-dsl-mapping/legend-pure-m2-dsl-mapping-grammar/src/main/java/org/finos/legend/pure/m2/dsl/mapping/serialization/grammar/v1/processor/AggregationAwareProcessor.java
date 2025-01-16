@@ -80,7 +80,7 @@ public class AggregationAwareProcessor extends Processor<AggregationAwareSetImpl
         PostProcessor.processElement(matcher, mainSetImplementation, state, processorSupport);
 
         MutableList<PropertyMapping> newPropertyMappings = mainSetImplementation._propertyMappings().collect(propertyMapping ->
-                AggregationAwarePropertyMappingInstance.createPersistent(repository, null, propertyMapping._sourceSetImplementationId(), propertyMapping._targetSetImplementationId())
+                AggregationAwarePropertyMappingInstance.createPersistent(repository, propertyMapping.getSourceInformation(), null, propertyMapping._sourceSetImplementationId(), propertyMapping._targetSetImplementationId())
                         ._propertyCoreInstance(propertyMapping._propertyCoreInstance())
                         ._owner(instance),
                 Lists.mutable.empty());

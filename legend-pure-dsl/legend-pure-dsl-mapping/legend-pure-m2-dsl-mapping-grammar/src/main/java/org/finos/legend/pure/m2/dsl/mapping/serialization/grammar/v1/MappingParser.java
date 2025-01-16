@@ -24,6 +24,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.SetIterable;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.MappingLexer;
+import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.MappingParser.DefinitionContext;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.antlr.MappingGraphBuilder;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.processor.AssociationImplementationProcessor;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.processor.MappingProcessor;
@@ -97,12 +98,12 @@ public class MappingParser implements IMappingParser
     private String parseDefinition(boolean useFastParser, String code, String sourceName, boolean addLines, int offset, ModelRepository repository, M3M4StateListener listener, Context context, int count)
     {
         AntlrSourceInformation sourceInformation = new AntlrSourceInformation(offset, 0, sourceName, addLines);
-        org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.MappingParser parser = this.initAntlrParser(useFastParser, code, sourceInformation);
+        org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.MappingParser parser = initAntlrParser(useFastParser, code, sourceInformation);
         try
         {
             MappingGraphBuilder visitor = new MappingGraphBuilder(repository, context, count, this.parserLibrary, sourceInformation);
-            org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.MappingParser.DefinitionContext c = parser.definition();
-            return visitor.visitDefinition(c);
+            DefinitionContext defCtx = parser.definition();
+            return visitor.visitDefinition(defCtx);
         }
         catch (Exception e)
         {
@@ -111,10 +112,7 @@ public class MappingParser implements IMappingParser
                 //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 return this.parseDefinition(false, code, sourceName, addLines, offset, repository, listener, context, count);
             }
-            else
-            {
-                throw e;
-            }
+            throw e;
         }
     }
 
@@ -122,7 +120,7 @@ public class MappingParser implements IMappingParser
     @Override
     public String parseMapping(String content, String id, String extendsId, String setSourceInfo, boolean root, String classPath, String classSourceInfo, String mappingPath, String sourceName, int offset, String importId, ModelRepository repository, Context context) throws PureParserException
     {
-        throw new RuntimeException("Not Supported");
+        throw new UnsupportedOperationException("Not Supported");
     }
 
     @Override
@@ -165,7 +163,7 @@ public class MappingParser implements IMappingParser
     @Override
     public RichIterable<ExternalReferenceSerializer> getExternalReferenceSerializers()
     {
-        return Lists.immutable.<ExternalReferenceSerializer>with(new EnumerationMappingReferenceSerializer(), new SetImplementationReferenceSerializer());
+        return Lists.immutable.with(new EnumerationMappingReferenceSerializer(), new SetImplementationReferenceSerializer());
     }
 
     @Override

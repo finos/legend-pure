@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.processor;
 
-import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingProperties;
 import org.finos.legend.pure.m3.compiler.Context;
@@ -52,7 +51,6 @@ public class PureInstanceSetImplementationProcessor extends Processor<PureInstan
     public void process(PureInstanceSetImplementation classMapping, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
     {
         Type srcClass = (Type) ImportStub.withImportStubByPass(classMapping._srcClassCoreInstance(), processorSupport);
-        SourceInformation srcGenericTypeSourceInfo = null;
 
         LambdaFunction<?> filter = classMapping._filter();
         if (filter != null)
@@ -62,7 +60,7 @@ public class PureInstanceSetImplementationProcessor extends Processor<PureInstan
                 if (srcClass != null)
                 {
                     FunctionType fType = getFunctionType(filter, processorSupport);
-                    fType._parameters(Lists.mutable.<VariableExpression>withAll(fType._parameters()).with(createSrcParameter(srcClass, srcGenericTypeSourceInfo, filter.getSourceInformation(), processorSupport)));
+                    fType._parametersAdd(createSrcParameter(srcClass, fType.getSourceInformation(), filter.getSourceInformation(), processorSupport));
                 }
                 matcher.fullMatch(filter, state);
             }
@@ -71,19 +69,20 @@ public class PureInstanceSetImplementationProcessor extends Processor<PureInstan
         int i = 0;
         for (PropertyMapping propertyMapping : classMapping._propertyMappings())
         {
+            PurePropertyMapping purePropertyMapping = (PurePropertyMapping) propertyMapping;
             try (VariableContextScope ignore = state.withNewVariableContext())
             {
-                if (((PurePropertyMapping) propertyMapping)._transformerCoreInstance() != null)
+                if (purePropertyMapping._transformerCoreInstance() != null)
                 {
-                    GrammarInfoStub transformerStub = (GrammarInfoStub) ((PurePropertyMapping) propertyMapping)._transformerCoreInstance();
+                    GrammarInfoStub transformerStub = (GrammarInfoStub) purePropertyMapping._transformerCoreInstance();
                     EnumerationMappingProcessor.processsEnumerationTransformer(transformerStub, propertyMapping, processorSupport);
                 }
 
-                LambdaFunction<?> transform = ((PurePropertyMapping) propertyMapping)._transform();
+                LambdaFunction<?> transform = purePropertyMapping._transform();
                 if (srcClass != null)
                 {
                     FunctionType fType = getFunctionType(transform, processorSupport);
-                    fType._parameters(Lists.mutable.<VariableExpression>withAll(fType._parameters()).with(createSrcParameter(srcClass, srcGenericTypeSourceInfo, propertyMapping.getSourceInformation(), processorSupport)));
+                    fType._parametersAdd(createSrcParameter(srcClass, fType.getSourceInformation(), propertyMapping.getSourceInformation(), processorSupport));
                 }
                 matcher.fullMatch(transform, state);
 
@@ -110,10 +109,9 @@ public class PureInstanceSetImplementationProcessor extends Processor<PureInstan
     {
         GenericType genericType = (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(srcClass, genericTypeSourceInfo, processorSupport);
         VariableExpression srcParam = (VariableExpression) processorSupport.newAnonymousCoreInstance(parameterSourceInformation, M3Paths.VariableExpression);
-        srcParam._name("src");
-        srcParam._genericType(genericType);
-        srcParam._multiplicity((Multiplicity) processorSupport.package_getByUserPath(M3Paths.PureOne));
-        return srcParam;
+        return srcParam._name("src")
+                ._genericType(genericType)
+                ._multiplicity((Multiplicity) processorSupport.package_getByUserPath(M3Paths.PureOne));
     }
 
     private FunctionType getFunctionType(LambdaFunction<?> lambdaFunction, ProcessorSupport processorSupport)

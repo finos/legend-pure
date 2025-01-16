@@ -14,8 +14,7 @@
 
 package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.processor;
 
-import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.list.ImmutableList;
+import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
 import org.finos.legend.pure.m3.compiler.Context;
@@ -33,7 +32,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.SetImplementation
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PropertyOwner;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -41,9 +40,11 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class SetImplementationProcessor extends Processor<SetImplementation>
@@ -66,17 +67,17 @@ public class SetImplementationProcessor extends Processor<SetImplementation>
 
         ensureSetImplementationHasId(classMapping, repository, processorSupport);
 
-        for (PropertyMapping propertyMapping : classMapping instanceof InstanceSetImplementation ? ((InstanceSetImplementation) classMapping)._propertyMappings() : Lists.immutable.<PropertyMapping>empty())
+        if (classMapping instanceof InstanceSetImplementation)
         {
-            PropertyMappingProcessor.processPropertyMapping(propertyMapping, repository, processorSupport, _class, (PropertyMappingsImplementation) classMapping);
+            ((InstanceSetImplementation) classMapping)._propertyMappings().forEach(pm -> PropertyMappingProcessor.processPropertyMapping(pm, repository, processorSupport, _class, (PropertyMappingsImplementation) classMapping));
         }
 
         this.buildMappingClassOutOfLocalProperties(repository, classMapping, state, matcher, processorSupport);
     }
 
-    private void buildMappingClassOutOfLocalProperties(final ModelRepository repository, SetImplementation classMapping, ProcessorState state, Matcher matcher, final ProcessorSupport processorSupport)
+    private void buildMappingClassOutOfLocalProperties(ModelRepository repository, SetImplementation classMapping, ProcessorState state, Matcher matcher, ProcessorSupport processorSupport)
     {
-        RichIterable<? extends PropertyMapping> localProperties = classMapping instanceof InstanceSetImplementation ? ((InstanceSetImplementation) classMapping)._propertyMappings().select(propertyMapping -> propertyMapping._localMappingProperty() != null ? propertyMapping._localMappingProperty() : false) : Lists.immutable.empty();
+        ListIterable<? extends PropertyMapping> localProperties = classMapping instanceof InstanceSetImplementation ? ((InstanceSetImplementation) classMapping)._propertyMappings().select(propertyMapping -> (propertyMapping._localMappingProperty() != null) && propertyMapping._localMappingProperty(), Lists.mutable.empty()) : Lists.immutable.empty();
 
         CoreInstance _class = ImportStub.withImportStubByPass(classMapping._classCoreInstance(), processorSupport);
 
@@ -85,40 +86,39 @@ public class SetImplementationProcessor extends Processor<SetImplementation>
         if (localProperties.notEmpty() || hasAggregateSpecification)
         {
             Mapping mapping = (Mapping) ImportStub.withImportStubByPass(classMapping._parentCoreInstance(), processorSupport);
-            MappingClass newClass = MappingClassCoreInstanceWrapper.toMappingClass(repository.newCoreInstance(_class.getName() + "_" + mapping.getName() + "_" + classMapping._id(), _Package.getByUserPath(M2MappingPaths.MappingClass, processorSupport), classMapping.getSourceInformation()));
+            SourceInformation sourceInfo = classMapping.getSourceInformation();
+            MappingClass newClass = MappingClassCoreInstanceWrapper.toMappingClass(repository.newCoreInstance(_class.getName() + "_" + mapping.getName() + "_" + classMapping._id(), _Package.getByUserPath(M2MappingPaths.MappingClass, processorSupport), sourceInfo));
 
             newClass._name(_class.getName() + "_" + mapping.getName() + "_" + classMapping._id());
-            ClassInstance genericTypeClass = (ClassInstance) _Package.getByUserPath(M3Paths.GenericType, processorSupport);
-            GenericType genericType = (GenericType) repository.newAnonymousCoreInstance(null, genericTypeClass);
-            genericType._rawTypeCoreInstance(_Package.getByUserPath(M2MappingPaths.MappingClass, processorSupport));
-            GenericType typeArg = (GenericType) repository.newAnonymousCoreInstance(null, genericTypeClass);
-            typeArg._rawTypeCoreInstance(newClass);
-            genericType._typeArguments(((ImmutableList<GenericType>) Lists.immutable.withAll(genericType._typeArguments())).newWithAll(Lists.immutable.with(typeArg)));
+            CoreInstance genericTypeClass = _Package.getByUserPath(M3Paths.GenericType, processorSupport);
+            GenericType genericType = (GenericType) repository.newAnonymousCoreInstance(sourceInfo, genericTypeClass);
+            genericType._rawType((Type) _Package.getByUserPath(M2MappingPaths.MappingClass, processorSupport));
+            GenericType typeArg = (GenericType) repository.newAnonymousCoreInstance(sourceInfo, genericTypeClass);
+            typeArg._rawType(newClass);
+            genericType._typeArgumentsAdd(typeArg);
             newClass._classifierGenericType(genericType);
 
-            GenericType superType = (GenericType) repository.newAnonymousCoreInstance(null, genericTypeClass);
+            GenericType superType = (GenericType) repository.newAnonymousCoreInstance(sourceInfo, genericTypeClass);
             superType._rawTypeCoreInstance(_class);
-            Generalization newGeneralization = (Generalization) repository.newAnonymousCoreInstance(null, _Package.getByUserPath(M3Paths.Generalization, processorSupport));
+            Generalization newGeneralization = (Generalization) repository.newAnonymousCoreInstance(sourceInfo, _Package.getByUserPath(M3Paths.Generalization, processorSupport));
             newGeneralization._specific(newClass);
             newGeneralization._general(superType);
             newClass._generalizations(Lists.immutable.with(newGeneralization));
 
-            newClass._properties(Lists.immutable.withAll(newClass._properties()).newWithAll(localProperties.collect(propertyMapping ->
-                    {
-                        Property property = (Property) ImportStub.withImportStubByPass(propertyMapping._propertyCoreInstance(), processorSupport);
-                        property._owner(newClass);
-                        GenericType src = property._classifierGenericType()._typeArguments().toList().get(0);
-                        src._rawTypeCoreInstance(newClass);
-                        return property;
-                    })
-            ));
+            newClass._propertiesAddAll(localProperties.collect(propertyMapping ->
+            {
+                Property property = (Property) ImportStub.withImportStubByPass(propertyMapping._propertyCoreInstance(), processorSupport);
+                property._owner(newClass);
+                GenericType src = ListHelper.wrapListIterable(property._classifierGenericType()._typeArguments()).get(0);
+                src._rawType(newClass);
+                return property;
+            }));
 
             SpecializationProcessor.process(newClass, processorSupport);
             PostProcessor.processElement(matcher, newClass, state, processorSupport);
 
             ((InstanceSetImplementation) classMapping)._mappingClass(newClass);
         }
-
     }
 
     @Override
