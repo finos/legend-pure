@@ -37,9 +37,10 @@ import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.ReferenceUsage;
 import org.finos.legend.pure.m3.coreinstance.Package;
-import org.finos.legend.pure.m3.coreinstance.PackageAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.ModelElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.Referenceable;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotatedElement;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -1179,6 +1180,53 @@ public abstract class AbstractCompiledStateIntegrityTest
         });
 
         Assert.assertEquals(expected, actual);
+
+        MutableMap<CoreInstance, MutableList<CoreInstance>> noSourceInfo = Maps.mutable.empty();
+        expected.forEachKeyValue((function, applications) ->
+        {
+            MutableList<CoreInstance> noSourceInfoApplications = applications.select(a -> a.getSourceInformation() == null, Lists.mutable.empty());
+            if (noSourceInfoApplications.notEmpty())
+            {
+                noSourceInfo.put(function, noSourceInfoApplications);
+            }
+        });
+        if (noSourceInfo.notEmpty())
+        {
+            StringBuilder builder = new StringBuilder("There are ").append(noSourceInfo.size()).append(" functions with applications with no source info:");
+            noSourceInfo.forEachKeyValue((function, applications) ->
+            {
+                builder.append("\n\t");
+                if (PackageableElement.isPackageableElement(function, processorSupport))
+                {
+                    PackageableElement.writeUserPathForPackageableElement(builder, function);
+                }
+                else
+                {
+                    builder.append(function);
+                }
+                SourceInformation sourceInfo = function.getSourceInformation();
+                if (sourceInfo == null)
+                {
+                    ResolvedGraphPath path = CompiledStateIntegrityTestTools.findPathToInstance(function, processorSupport);
+                    if (path != null)
+                    {
+                        path.getGraphPath().writeDescription(builder.append(" (")).append(')');
+                    }
+                }
+                else
+                {
+                    sourceInfo.appendMessage(builder.append(" (")).append(')');
+                }
+                builder.append(" [").append(applications.size()).append("]:");
+                MutableSet<CoreInstance> remaining = CompiledStateIntegrityTestTools.forEachInstancePath(applications, processorSupport, (application, path) ->
+                {
+                   builder.append("\n\t\t").append(application);
+                   path.getGraphPath().writeDescription(builder.append(" (")).append(')');
+                });
+                remaining.forEach(application -> builder.append("\n\t\t").append(application));
+            });
+            Assert.fail(builder.toString());
+        }
     }
 
     @Test
@@ -1444,75 +1492,170 @@ public abstract class AbstractCompiledStateIntegrityTest
     }
 
     @Test
+    public void testAnnotationModelElements()
+    {
+        MutableList<String> errorMessages = Lists.mutable.empty();
+        CompiledStateIntegrityTestTools.getTopLevelAndPackagedIterable(processorSupport).selectInstancesOf(Profile.class).forEach(profile ->
+        {
+            profile._p_stereotypes().forEach(st ->
+            {
+                MutableList<AnnotatedElement> missingStereotype = Lists.mutable.empty();
+                MutableList<AnnotatedElement> noSourceInfo = Lists.mutable.empty();
+                st._modelElements().forEach(e ->
+                {
+                    if (!e._stereotypes().contains(st))
+                    {
+                        missingStereotype.add(e);
+                    }
+                    if (e.getSourceInformation() == null)
+                    {
+                        noSourceInfo.add(e);
+                    }
+                });
+                if (noSourceInfo.notEmpty() || missingStereotype.notEmpty())
+                {
+                    StringBuilder builder = new StringBuilder("Stereotype ");
+                    PackageableElement.writeUserPathForPackageableElement(builder, profile).append('.').append(st._value());
+                    if (missingStereotype.notEmpty())
+                    {
+                        builder.append("\n\t\thas ").append(missingStereotype.size()).append(" modelElements without the stereotype:");
+                        missingStereotype.forEach(e ->
+                        {
+                            builder.append("\n\t\t\t").append(e);
+                            SourceInformation sourceInfo = e.getSourceInformation();
+                            if (sourceInfo != null)
+                            {
+                                sourceInfo.appendMessage(builder.append(" (")).append(')');
+                            }
+                        });
+                    }
+                    if (noSourceInfo.notEmpty())
+                    {
+                        builder.append("\n\t\thas ").append(missingStereotype.size()).append(" modelElements without no source info:");
+                        MutableSet<AnnotatedElement> remaining = CompiledStateIntegrityTestTools.forEachInstancePath(noSourceInfo, processorSupport,
+                                (instance, path) -> path.getGraphPath().writeDescription(builder.append("\n\t\t\t").append(instance).append(" (")).append(')'));
+                        remaining.forEach(instance -> builder.append("\n\t\t\t").append(instance).append(" (no path found)"));
+                    }
+                    errorMessages.add(builder.toString());
+                }
+            });
+            profile._p_tags().forEach(tag ->
+            {
+                MutableList<AnnotatedElement> noSourceInfo = Lists.mutable.empty();
+                MutableList<AnnotatedElement> missingTag = Lists.mutable.empty();
+                tag._modelElements().forEach(e ->
+                {
+                    if (e.getSourceInformation() == null)
+                    {
+                        noSourceInfo.add(e);
+                    }
+                    if (e._taggedValues().noneSatisfy(tv -> tag == tv._tag()))
+                    {
+                        missingTag.add(e);
+                    }
+                });
+                if (noSourceInfo.notEmpty() || missingTag.notEmpty())
+                {
+                    StringBuilder builder = new StringBuilder("Stereotype ");
+                    PackageableElement.writeUserPathForPackageableElement(builder, profile).append('.').append(tag._value());
+                    if (missingTag.notEmpty())
+                    {
+                        builder.append("\n\t\thas ").append(missingTag.size()).append(" modelElements without the tag:");
+                        missingTag.forEach(e ->
+                        {
+                            builder.append("\n\t\t\t").append(e);
+                            SourceInformation sourceInfo = e.getSourceInformation();
+                            if (sourceInfo != null)
+                            {
+                                sourceInfo.appendMessage(builder.append(" (")).append(')');
+                            }
+                        });
+                    }
+                    if (noSourceInfo.notEmpty())
+                    {
+                        builder.append("\n\t\thas ").append(missingTag.size()).append(" modelElements without no source info:");
+                        MutableSet<AnnotatedElement> remaining = CompiledStateIntegrityTestTools.forEachInstancePath(noSourceInfo, processorSupport,
+                                (instance, path) -> path.getGraphPath().writeDescription(builder.append("\n\t\t\t").append(instance).append(" (")).append(')'));
+                        remaining.forEach(instance -> builder.append("\n\t\t\t").append(instance).append(" (no path found)"));
+                    }
+                    errorMessages.add(builder.toString());
+                }
+            });
+        });
+        if (errorMessages.notEmpty())
+        {
+            StringBuilder builder = new StringBuilder("There are ").append(errorMessages.size()).append(" annotations with invalid model elements");
+            errorMessages.forEach(m -> builder.append("\n\t").append(m));
+            Assert.fail(builder.toString());
+        }
+    }
+
+    @Test
     public void testReferencerUsageOwners()
     {
         MutableList<String> errorMessages = Lists.mutable.empty();
-        PackageTreeIterable.newRootPackageTreeIterable(repository)
-                .flatCollect(PackageAccessor::_children)
-                .select(e -> e.getSourceInformation() != null)
-                .collect(e -> (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) e)
-                .concatenate(repository.getTopLevels().asLazy().collect(e -> (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) e))
-                .forEach(element ->
-                {
-                    SourceInformation elementSourceInfo = element.getSourceInformation();
-                    MutableSet<CoreInstance> internalNodes = GraphNodeIterable.builder()
-                            .withStartingNode(element)
-                            .withKeyFilter((node, key) -> !M3PropertyPaths.BACK_REFERENCE_PROPERTY_PATHS.contains(node.getRealKeyByName(key)))
-                            .withNodeFilter(node ->
-                            {
-                                SourceInformation nodeSourceInfo = node.getSourceInformation();
-                                return (nodeSourceInfo == null) || elementSourceInfo.subsumes(nodeSourceInfo) ? GraphWalkFilterResult.ACCEPT_AND_CONTINUE : GraphWalkFilterResult.REJECT_AND_STOP;
-                            })
-                            .build()
-                            .toSet();
-                    MutableMap<CoreInstance, MutableList<CoreInstance>> badRefUsages = Maps.mutable.empty();
-                    internalNodes.forEach(node ->
+        CompiledStateIntegrityTestTools.getTopLevelAndPackagedIterable(processorSupport).forEach(element ->
+        {
+            SourceInformation elementSourceInfo = element.getSourceInformation();
+            MutableSet<CoreInstance> internalNodes = GraphNodeIterable.builder()
+                    .withStartingNode(element)
+                    .withKeyFilter((node, key) -> !M3PropertyPaths.BACK_REFERENCE_PROPERTY_PATHS.contains(node.getRealKeyByName(key)))
+                    .withNodeFilter(node ->
                     {
-                        if (node instanceof Referenceable)
-                        {
-                            ((Referenceable) node)._referenceUsages().forEach(refUsage ->
-                            {
-                                CoreInstance owner = refUsage._ownerCoreInstance();
-                                if ((owner.getSourceInformation() == null) && !internalNodes.contains(owner))
-                                {
-                                    badRefUsages.getIfAbsentPut(node, Lists.mutable::empty).add(refUsage);
-                                }
-                            });
-                        }
-                    });
-                    badRefUsages.forEachKeyValue((node, refUsages) ->
-                    {
-                        StringBuilder builder = new StringBuilder();
-                        if (node == element)
-                        {
-                            PackageableElement.writeUserPathForPackageableElement(builder, node);
-                        }
-                        else
-                        {
-                            ResolvedGraphPath pathToNode = CompiledStateIntegrityTestTools.findPathToInstance(node, processorSupport);
-                            if (pathToNode == null)
-                            {
-                                builder.append(node);
-                            }
-                            else
-                            {
-                                pathToNode.getGraphPath().writeDescription(builder);
-                            }
-                        }
                         SourceInformation nodeSourceInfo = node.getSourceInformation();
-                        if (nodeSourceInfo != null)
+                        boolean internal = (nodeSourceInfo == null) ? !(node instanceof Package) : elementSourceInfo.subsumes(nodeSourceInfo);
+                        return internal ? GraphWalkFilterResult.ACCEPT_AND_CONTINUE : GraphWalkFilterResult.REJECT_AND_STOP;
+                    })
+                    .build()
+                    .toSet();
+            MutableMap<CoreInstance, MutableList<CoreInstance>> badRefUsages = Maps.mutable.empty();
+            internalNodes.forEach(node ->
+            {
+                if (node instanceof Referenceable)
+                {
+                    ((Referenceable) node)._referenceUsages().forEach(refUsage ->
+                    {
+                        CoreInstance owner = refUsage._ownerCoreInstance();
+                        if ((owner.getSourceInformation() == null) && !internalNodes.contains(owner))
                         {
-                            nodeSourceInfo.appendMessage(builder.append(" (")).append(')');
+                            badRefUsages.getIfAbsentPut(node, Lists.mutable::empty).add(refUsage);
                         }
-                        else
-                        {
-                            elementSourceInfo.appendMessage(builder.append(" (within ")).append(')');
-                        }
-                        builder.append(" [").append(refUsages.size()).append("]:");
-                        refUsages.forEach(refUsage -> ReferenceUsage.writeReferenceUsage(builder.append("\n\t\t"), refUsage));
-                        errorMessages.add(builder.toString());
                     });
-                });
+                }
+            });
+            badRefUsages.forEachKeyValue((node, refUsages) ->
+            {
+                StringBuilder builder = new StringBuilder();
+                if (node == element)
+                {
+                    PackageableElement.writeUserPathForPackageableElement(builder, node);
+                }
+                else
+                {
+                    ResolvedGraphPath pathToNode = CompiledStateIntegrityTestTools.findPathToInstance(node, processorSupport);
+                    if (pathToNode == null)
+                    {
+                        builder.append(node);
+                    }
+                    else
+                    {
+                        pathToNode.getGraphPath().writeDescription(builder);
+                    }
+                }
+                SourceInformation nodeSourceInfo = node.getSourceInformation();
+                if (nodeSourceInfo != null)
+                {
+                    nodeSourceInfo.appendMessage(builder.append(" (")).append(')');
+                }
+                else
+                {
+                    elementSourceInfo.appendMessage(builder.append(" (within ")).append(')');
+                }
+                builder.append(" [").append(refUsages.size()).append("]:");
+                refUsages.forEach(refUsage -> ReferenceUsage.writeReferenceUsage(builder.append("\n\t\t"), refUsage));
+                errorMessages.add(builder.toString());
+            });
+        });
         if (errorMessages.notEmpty())
         {
             StringBuilder builder = new StringBuilder("There are ").append(errorMessages.size()).append(" instances with ReferenceUsages with no owner source information");
