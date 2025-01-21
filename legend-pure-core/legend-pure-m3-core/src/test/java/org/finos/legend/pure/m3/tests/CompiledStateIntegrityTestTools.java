@@ -660,6 +660,20 @@ public class CompiledStateIntegrityTestTools
                         {
                             sourceInfo.appendMessage(message.append(" (")).append(')');
                         }
+                        ResolvedGraphPath path = findPathToInstance(instance, processorSupport);
+                        if (path != null)
+                        {
+                            if (sourceInfo == null)
+                            {
+                                message.append(" (");
+                            }
+                            else
+                            {
+                                message.setLength(message.length() - 1);
+                                message.append(", ");
+                            }
+                            path.getGraphPath().writeDescription(message).append(')');
+                        }
                         message.append("; property: ").append(propertyName);
                         message.append("; value: ").append(value);
                         message.append("; index: ").append(i);

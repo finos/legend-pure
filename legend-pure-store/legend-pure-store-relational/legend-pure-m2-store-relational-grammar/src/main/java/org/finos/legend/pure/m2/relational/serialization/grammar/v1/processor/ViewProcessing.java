@@ -31,6 +31,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.TreeNode;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.mapping.ColumnMapping;
+import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.AliasAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.DynaFunction;
@@ -127,7 +128,7 @@ public class ViewProcessing extends RelationalMappingSpecificationProcessing
     private static void processGroupByMapping(View view, Matcher matcher, ProcessorState processorState, ModelRepository repository, CoreInstance mainTable, ProcessorSupport processorSupport)
     {
         MutableSet<TableAlias> groupByTableAliases = processGroupByMapping(view, null, processorState, matcher, repository, processorSupport).getTwo();
-        SetIterable<RelationalOperationElement> groupByTables = groupByTableAliases.collect(RelationalInstanceSetImplementationProcessor.TABLE_ALIAS_TO_RELATIONAL_OPERATION_ELEMENT_FN, Sets.mutable.empty());
+        SetIterable<RelationalOperationElement> groupByTables = groupByTableAliases.collect(AliasAccessor::_relationalElement, Sets.mutable.empty());
         for (RelationalOperationElement groupByTable : groupByTables)
         {
             if (groupByTable != mainTable)
