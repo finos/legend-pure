@@ -238,7 +238,7 @@ Class meta::relational::metamodel::relation::SelectSQLQuery extends Relation, SQ
 Class meta::relational::metamodel::relation::CommonTableExpression extends RelationalOperationElement
 {
   name: String[1];
-  sqlQuery: SQLQuery[1];
+  sqlQuery: SelectSQLQuery[1];
 }
 
 Class meta::relational::metamodel::relation::CommonTableExpressionReference extends RelationalOperationElement
