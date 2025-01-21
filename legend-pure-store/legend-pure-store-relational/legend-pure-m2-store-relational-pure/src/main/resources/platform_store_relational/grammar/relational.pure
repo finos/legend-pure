@@ -232,6 +232,18 @@ Class meta::relational::metamodel::relation::SelectSQLQuery extends Relation, SQ
    savedFilteringOperation : Pair<RelationalTreeNode, RelationalOperationElement>[*];
    extraFilteringOperation : RelationalOperationElement[*];
    preIsolationCurrentTreeNode : RelationalTreeNode[0..1];
+   commonTableExpressions: CommonTableExpression[*];
+}
+
+Class meta::relational::metamodel::relation::CommonTableExpression extends RelationalOperationElement
+{
+  name: String[1];
+  sqlQuery: SelectSQLQuery[1];
+}
+
+Class meta::relational::metamodel::relation::CommonTableExpressionReference extends RelationalOperationElement
+{
+  name: String[1];
 }
 
 Class meta::relational::metamodel::relation::ViewSelectSQLQuery extends Table{
