@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m3.tools;
 
-import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.bag.Bag;
 import org.eclipse.collections.api.factory.Bags;
@@ -27,23 +26,14 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.factory.primitive.ObjectIntMaps;
-import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.helper.AnyStubHelper;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation._package._Package;
-import org.finos.legend.pure.m3.navigation.graph.GraphPath;
-import org.finos.legend.pure.m3.navigation.graph.GraphPathIterable;
-import org.finos.legend.pure.m3.navigation.graph.ResolvedGraphPath;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
-import org.finos.legend.pure.m4.tools.GraphWalkFilterResult;
 
 import java.util.Formatter;
-import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 
 public class GraphStatistics
@@ -148,77 +138,5 @@ public class GraphStatistics
                 }
             });
         }
-    }
-
-    public static LazyIterable<GraphPath> allPathsBetween(String startNodePath, CoreInstance endNode, ProcessorSupport processorSupport)
-    {
-        return allPathsBetween(Sets.immutable.with(startNodePath), endNode, processorSupport);
-    }
-
-    public static LazyIterable<GraphPath> allPathsBetween(String startNodePath, CoreInstance endNode, int maxPathLength, ProcessorSupport processorSupport)
-    {
-        return allPathsBetween(Sets.immutable.with(startNodePath), endNode, maxPathLength, processorSupport);
-    }
-
-    public static LazyIterable<GraphPath> allPathsBetween(Iterable<String> startNodePaths, CoreInstance endNode, ProcessorSupport processorSupport)
-    {
-        return allPathsBetween(startNodePaths, endNode, -1, processorSupport);
-    }
-
-    public static LazyIterable<GraphPath> allPathsBetween(Iterable<String> startNodePaths, CoreInstance endNode, int maxPathLength, ProcessorSupport processorSupport)
-    {
-        return allPathsBetween(startNodePaths, endNode::equals, maxPathLength, processorSupport);
-    }
-
-    public static LazyIterable<GraphPath> allPathsBetween(String startNodePath, Iterable<? extends CoreInstance> endNodes, ProcessorSupport processorSupport)
-    {
-        return allPathsBetween(Sets.immutable.with(startNodePath), endNodes, processorSupport);
-    }
-
-    public static LazyIterable<GraphPath> allPathsBetween(String startNodePath, Iterable<? extends CoreInstance> endNodes, int maxPathLength, ProcessorSupport processorSupport)
-    {
-        return allPathsBetween(Sets.immutable.with(startNodePath), endNodes, maxPathLength, processorSupport);
-    }
-
-    public static LazyIterable<GraphPath> allPathsBetween(Iterable<String> startNodePaths, Iterable<? extends CoreInstance> endNodes, ProcessorSupport processorSupport)
-    {
-        return allPathsBetween(startNodePaths, endNodes, -1, processorSupport);
-    }
-
-    public static LazyIterable<GraphPath> allPathsBetween(Iterable<String> startNodePaths, Iterable<? extends CoreInstance> endNodes, int maxPathLength, ProcessorSupport processorSupport)
-    {
-        Set<?> endNodesSet = (endNodes instanceof Set) ? (Set<?>) endNodes : Sets.mutable.withAll(endNodes);
-        return allPathsBetween(startNodePaths, endNodesSet::contains, maxPathLength, processorSupport);
-    }
-
-    private static LazyIterable<GraphPath> allPathsBetween(Iterable<String> startNodePaths, Predicate<? super CoreInstance> isEndNode, int maxPathLength, ProcessorSupport processorSupport)
-    {
-        return GraphPathIterable.builder(processorSupport)
-                .withStartNodePaths(startNodePaths)
-                .withPathFilter(rgp ->
-                {
-                    int len = rgp.getGraphPath().getEdgeCount();
-                    if (len > maxPathLength)
-                    {
-                        return GraphWalkFilterResult.REJECT_AND_STOP;
-                    }
-                    if ((len == maxPathLength) || isEndNode.test(rgp.getLastResolvedNode()))
-                    {
-                        return GraphWalkFilterResult.ACCEPT_AND_STOP;
-                    }
-                    return GraphWalkFilterResult.ACCEPT_AND_CONTINUE;
-                })
-                .build()
-                .select(path -> isEndNode.test(path.getLastResolvedNode()))
-                .collect(ResolvedGraphPath::getGraphPath);
-    }
-
-    public static LazyIterable<String> allTopLevelAndPackagedElementPaths(ProcessorSupport processorSupport)
-    {
-        LazyIterable<String> packagedElements = PackageTreeIterable.newRootPackageTreeIterable(processorSupport)
-                .flatCollect(Package::_children)
-                .reject(c -> c instanceof Package)
-                .collect(PackageableElement::getUserPathForPackageableElement);
-        return _Package.SPECIAL_TYPES.asLazy().concatenate(packagedElements);
     }
 }
