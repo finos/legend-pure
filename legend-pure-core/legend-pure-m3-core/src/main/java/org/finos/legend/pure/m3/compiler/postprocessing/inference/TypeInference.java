@@ -57,18 +57,12 @@ public class TypeInference
     public static boolean canProcessLambda(FunctionDefinition<?> lambda, ProcessorState processorState, ProcessorSupport processorSupport)
     {
         FunctionType functionType = lambda._classifierGenericType()._typeArguments().notEmpty() ? (FunctionType) ImportStub.withImportStubByPass(lambda._classifierGenericType()._typeArguments().getFirst()._rawType(), processorSupport) : null;
-        if (functionType != null)
+        return (functionType == null) || functionType._parameters().noneSatisfy(parameter ->
         {
-            for (VariableExpression parameter : functionType._parameters())
-            {
-                GenericType genericType = parameter._genericType();
-                if (genericType == null || (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(genericType) && !processorState.getTypeInferenceContext().isTypeParameterResolved(genericType)))
-                {
-                    return false;
-                }
-            }
-        }
-        return true;
+            GenericType genericType = parameter._genericType();
+            return (genericType == null) ||
+                    (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(genericType) && !processorState.getTypeInferenceContext().isTypeParameterResolved(genericType));
+        });
     }
 
     public static void storeInferredTypeParametersInFunctionExpression(FunctionExpression functionExpression, ProcessorState state, ProcessorSupport processorSupport, Function<?> foundFunction, TypeInferenceObserver observer) throws PureCompilationException
@@ -85,7 +79,8 @@ public class TypeInference
                 observer.updateFunctionResolvedTypeParameterValue(typeParameter, value);
                 if (value != null)
                 {
-                    functionExpression._resolvedTypeParametersAdd((GenericType) value);
+                    CoreInstance copy = org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(value, functionExpression.getSourceInformation(), processorSupport);
+                    functionExpression._resolvedTypeParametersAdd((GenericType) copy);
                 }
                 else if (typeInferenceContext.getParent() == null)
                 {
