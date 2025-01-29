@@ -346,7 +346,7 @@ public class PrintTypeInferenceObserver implements TypeInferenceObserver
         GenericType.print(this.appendable, templateGenType, this.processorState.getProcessorSupport());
         print(" <-> ");
         GenericType.print(this.appendable, genericType, this.processorState.getProcessorSupport());
-        print(" in ").print(typeInferenceContext.getId()).print("/").print(targetGenericsContext.getId()).print("   ");
+        print(" in ").print(typeInferenceContext.getId()).print("/").print(targetGenericsContext.getId());
         return printNewline();
     }
 
