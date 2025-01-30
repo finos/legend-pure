@@ -57,6 +57,26 @@ public class GraphPathIterable extends AbstractLazySpliterable<ResolvedGraphPath
     }
 
     @Override
+    public ResolvedGraphPath getAny()
+    {
+        if (this.startPaths.isEmpty())
+        {
+            return null;
+        }
+        if (this.pathFilter == null)
+        {
+            return this.startPaths.getAny();
+        }
+        return super.getAny();
+    }
+
+    @Override
+    public ResolvedGraphPath getFirst()
+    {
+        return this.startPaths.isEmpty() ? null : super.getFirst();
+    }
+
+    @Override
     public boolean contains(Object object)
     {
         if (!(object instanceof ResolvedGraphPath))

@@ -14,23 +14,19 @@
 
 package org.finos.legend.pure.m3.navigation.generictype;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.ImmutableMap;
-import org.eclipse.collections.api.map.MapIterable;
-import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-
-import java.io.IOException;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class GenericTypeWithXArguments
 {
@@ -40,7 +36,7 @@ public class GenericTypeWithXArguments
     public GenericTypeWithXArguments(CoreInstance genericType, ImmutableMap<String, CoreInstance> argumentsByParameterName)
     {
         this.genericType = genericType;
-        this.argumentsByParameterName = (argumentsByParameterName == null) ? Maps.immutable.<String, CoreInstance>empty() : argumentsByParameterName;
+        this.argumentsByParameterName = (argumentsByParameterName == null) ? Maps.immutable.empty() : argumentsByParameterName;
     }
 
     public CoreInstance getGenericType()
@@ -62,88 +58,64 @@ public class GenericTypeWithXArguments
     {
         CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(this.genericType, M3Properties.rawType, processorSupport);
         ListIterable<? extends CoreInstance> typeParams = rawType.getValueForMetaPropertyToMany(M3Properties.typeParameters);
-        if (typeParams.isEmpty())
-        {
-            return Lists.immutable.empty();
-        }
-
-        MutableList<CoreInstance> result = FastList.newList(typeParams.size());
-        for (CoreInstance typeParam : typeParams)
-        {
-            result.add(this.argumentsByParameterName.get(typeParam.getValueForMetaPropertyToOne(M3Properties.name).getName()));
-        }
-        return result;
+        return typeParams.isEmpty() ?
+               Lists.immutable.empty() :
+               typeParams.collect(tp -> this.argumentsByParameterName.get(PrimitiveUtilities.getStringValue(tp.getValueForMetaPropertyToOne(M3Properties.name))));
     }
 
     public ListIterable<CoreInstance> extractArgumentsAsMultiplicityParameters(ProcessorSupport processorSupport)
     {
         CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(this.genericType, M3Properties.rawType, processorSupport);
         ListIterable<? extends CoreInstance> multParams = rawType.getValueForMetaPropertyToMany(M3Properties.multiplicityParameters);
-        if (multParams.isEmpty())
-        {
-            return Lists.immutable.empty();
-        }
-
-        MapIterable<String, CoreInstance> multArgumentsByName = this.argumentsByParameterName;
-        MutableList<CoreInstance> result = FastList.newList(multParams.size());
-        for (CoreInstance multParam : multParams)
-        {
-            result.add(multArgumentsByName.get(multParam.getValueForMetaPropertyToOne(M3Properties.values).getName()));
-        }
-        return result;
+        return multParams.isEmpty() ?
+               Lists.immutable.empty() :
+               multParams.collect(mp -> this.argumentsByParameterName.get(PrimitiveUtilities.getStringValue(mp.getValueForMetaPropertyToOne(M3Properties.values))));
     }
 
-    public void print(Appendable appendable, ProcessorSupport processorSupport)
+    public <T extends Appendable> T print(T appendable, ProcessorSupport processorSupport)
     {
-        try
+        print(SafeAppendable.wrap(appendable), processorSupport);
+        return appendable;
+    }
+
+    private void print(SafeAppendable appendable, ProcessorSupport processorSupport)
+    {
+        GenericType.print(appendable, this.genericType, processorSupport).append("  /  {");
+        boolean[] first = {true};
+        this.argumentsByParameterName.forEachKeyValue((var, value) ->
         {
-            GenericType.print(appendable, this.genericType, processorSupport);
-            appendable.append("  /  {");
-            boolean first = true;
-            for (Pair<String, CoreInstance> varValue : this.argumentsByParameterName.keyValuesView())
+            if (first[0])
             {
-                if (first)
-                {
-                    first = false;
-                }
-                else
-                {
-                    appendable.append(", ");
-                }
-                String var = varValue.getOne();
-                CoreInstance value = varValue.getTwo();
-                appendable.append(var);
-                appendable.append(" = ");
-                if (value == null)
-                {
-                    appendable.append("null");
-                }
-                else if (Instance.instanceOf(value, M3Paths.GenericType, processorSupport))
-                {
-                    GenericType.print(appendable, value, processorSupport);
-                }
-                else if (Instance.instanceOf(value, M3Paths.Multiplicity, processorSupport))
-                {
-                    Multiplicity.print(appendable, value, true);
-                }
-                else
-                {
-                    appendable.append(value.toString());
-                }
+                first[0] = false;
             }
-            appendable.append('}');
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+            else
+            {
+                appendable.append(", ");
+            }
+            appendable.append(var).append(" = ");
+            if (value == null)
+            {
+                appendable.append("null");
+            }
+            else if (Instance.instanceOf(value, M3Paths.GenericType, processorSupport))
+            {
+                GenericType.print(appendable, value, processorSupport);
+            }
+            else if (Instance.instanceOf(value, M3Paths.Multiplicity, processorSupport))
+            {
+                Multiplicity.print(appendable, value, true);
+            }
+            else
+            {
+                appendable.append(value.toString());
+            }
+        });
+        appendable.append('}');
     }
 
     @Override
     public String toString()
     {
-        StringBuilder builder = new StringBuilder(64);
-        print(builder, new M3ProcessorSupport(this.genericType.getRepository()));
-        return builder.toString();
+        return print(new StringBuilder(64), new M3ProcessorSupport(this.genericType.getRepository())).toString();
     }
 }

@@ -1011,6 +1011,45 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
+    public void testGeneralizationWithTypeArguments()
+    {
+        compileInferenceTest(
+                "import test::*;\n" +
+                        "\n" +
+                        "Class test::IntStringPair extends Pair<Integer, String>\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "function test::getValue<X,Y>(pairs:Pair<X,Y>[*], key:X[1]):Y[1]\n" +
+                        "{\n" +
+                        "   $pairs->find(p | $key == $p.first)->toOne().second\n" +
+                        "}\n" +
+                        "\n" +
+                        "function test::process(key:Integer[1]):String[1]\n" +
+                        "{\n" +
+                        "  [\n" +
+                        "   ^IntStringPair(first=1, second='the quick brown fox'),\n" +
+                        "   ^IntStringPair(first=2, second='jumped over the'),\n" +
+                        "   ^IntStringPair(first=3, second='lazy dog')\n" +
+                        "  ]->getValue($key)\n" +
+                        "}\n");
+        ConcreteFunctionDefinition<?> processFn = (ConcreteFunctionDefinition<?>) runtime.getFunction("test::process(Integer[1]):String[1]");
+        SimpleFunctionExpression getValueExpr = (SimpleFunctionExpression) processFn._expressionSequence().getOnly();
+        assertGenericTypeEquals("String", getValueExpr._genericType());
+
+        ListIterable<? extends ValueSpecification> getValueArgs = ListHelper.wrapListIterable(getValueExpr._parametersValues());
+        Assert.assertEquals(2, getValueArgs.size());
+        assertGenericTypeEquals("test::IntStringPair", getValueArgs.get(0)._genericType());
+        assertGenericTypeEquals("Integer", getValueArgs.get(1)._genericType());
+
+        ListIterable<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType> resolvedTypeParams = ListHelper.wrapListIterable(getValueExpr._resolvedTypeParameters());
+        assertGenericTypeEquals("Integer", resolvedTypeParams.get(0));
+        Assert.assertEquals(getValueExpr.getSourceInformation(), resolvedTypeParams.get(0).getSourceInformation());
+        assertGenericTypeEquals("String", resolvedTypeParams.get(1));
+        Assert.assertEquals(getValueExpr.getSourceInformation(), resolvedTypeParams.get(1).getSourceInformation());
+    }
+
+    @Test
     public void testChainedFilters()
     {
         compileInferenceTest(

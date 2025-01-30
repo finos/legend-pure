@@ -19,6 +19,8 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
+import org.finos.legend.pure.m3.coreinstance.Package;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
@@ -26,11 +28,25 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstanceWrapper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public class _Package
 {
     public static final ImmutableSet<String> SPECIAL_TYPES = PrimitiveUtilities.getPrimitiveTypeNames().newWith(M3Paths.Package);
+
+    public static boolean isPackage(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        if (instance == null)
+        {
+            return false;
+        }
+        if (instance instanceof Package)
+        {
+            return true;
+        }
+        return (!(instance instanceof Any) || (instance instanceof AbstractCoreInstanceWrapper)) && processorSupport.instance_instanceOf(instance, M3Paths.Package);
+    }
 
     public static CoreInstance getByUserPath(String path, ProcessorSupport processorSupport)
     {

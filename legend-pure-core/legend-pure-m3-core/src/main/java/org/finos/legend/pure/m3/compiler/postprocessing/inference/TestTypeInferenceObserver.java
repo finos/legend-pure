@@ -17,6 +17,10 @@ package org.finos.legend.pure.m3.compiler.postprocessing.inference;
 import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.TypeParameter;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -151,6 +155,13 @@ public class TestTypeInferenceObserver implements TypeInferenceObserver
     }
 
     @Override
+    public TypeInferenceObserver tryingRegistration(GenericType templateGenType, GenericType genericType, TypeInferenceContext typeInferenceContext, TypeInferenceContext targetGenericsContext)
+    {
+        activeObserver().tryingRegistration(templateGenType, genericType, typeInferenceContext, targetGenericsContext);
+        return this;
+    }
+
+    @Override
     public TypeInferenceObserver registerMul(CoreInstance templateMul, CoreInstance valueMul, TypeInferenceContext context, TypeInferenceContext targetGenericsContext)
     {
         activeObserver().registerMul(templateMul, valueMul, context, targetGenericsContext);
@@ -231,6 +242,20 @@ public class TestTypeInferenceObserver implements TypeInferenceObserver
     public TypeInferenceObserver finishedProcessingFunctionExpression(CoreInstance functionExpression)
     {
         activeObserver().finishedProcessingFunctionExpression(functionExpression);
+        return this;
+    }
+
+    @Override
+    public TypeInferenceObserver updateFunctionResolvedTypeParameters(Function<?> foundFunction, FunctionType functionType)
+    {
+        activeObserver().updateFunctionResolvedTypeParameters(foundFunction, functionType);
+        return this;
+    }
+
+    @Override
+    public TypeInferenceObserver updateFunctionResolvedTypeParameterValue(TypeParameter typeParameter, CoreInstance value)
+    {
+        activeObserver().updateFunctionResolvedTypeParameterValue(typeParameter, value);
         return this;
     }
 }

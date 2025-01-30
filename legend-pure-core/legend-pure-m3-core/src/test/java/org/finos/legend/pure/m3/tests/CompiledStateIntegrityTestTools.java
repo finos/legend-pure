@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m3.tests;
 
-import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
@@ -22,31 +21,21 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.utility.Iterate;
-import org.finos.legend.pure.m3.coreinstance.Package;
-import org.finos.legend.pure.m3.coreinstance.PackageAccessor;
 import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
-import org.finos.legend.pure.m3.navigation.graph.GraphPathIterable;
 import org.finos.legend.pure.m3.navigation.graph.ResolvedGraphPath;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.property.Property;
-import org.finos.legend.pure.m3.tools.PackageTreeIterable;
-import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m3.tools.GraphTools;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.finos.legend.pure.m4.tools.GraphNodeIterable;
-import org.finos.legend.pure.m4.tools.GraphWalkFilterResult;
 import org.junit.Assert;
 
 import java.util.Formatter;
-import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -240,9 +229,9 @@ public class CompiledStateIntegrityTestTools
     static <T extends CoreInstance> MutableSet<T> forEachInstancePath(Iterable<T> instances, Iterable<? extends CoreInstance> startNodes, ProcessorSupport processorSupport, BiConsumer<? super T, ? super ResolvedGraphPath> consumer)
     {
         MutableSet<T> remaining = Sets.mutable.withAll(instances);
-        for (CoreInstance startNode : (startNodes == null) ? getTopLevelAndPackagedIterable(processorSupport).select(n -> n.getSourceInformation() != null) : startNodes)
+        for (CoreInstance startNode : (startNodes == null) ? GraphTools.getTopLevelAndPackagedElements(processorSupport).select(n -> n.getSourceInformation() != null) : startNodes)
         {
-            for (ResolvedGraphPath rgp : internalGraphPaths(startNode, processorSupport))
+            for (ResolvedGraphPath rgp : GraphTools.internalGraphPaths(startNode, processorSupport))
             {
                 CoreInstance node = rgp.getLastResolvedNode();
                 if (remaining.remove(node))
@@ -256,166 +245,6 @@ public class CompiledStateIntegrityTestTools
             }
         }
         return remaining;
-    }
-
-    static LazyIterable<CoreInstance> getTopLevelAndPackagedIterable(ModelRepository repository)
-    {
-        return repository.getTopLevels()
-                .asLazy()
-                .concatenate(PackageTreeIterable.newRootPackageTreeIterable(repository)
-                        .flatCollect(PackageAccessor::_children)
-                        .collect(e -> (CoreInstance) e));
-    }
-
-    static LazyIterable<CoreInstance> getTopLevelAndPackagedIterable(ProcessorSupport processorSupport)
-    {
-        return PrimitiveUtilities.getPrimitiveTypes(processorSupport, Lists.mutable.ofInitialCapacity(PrimitiveUtilities.getPrimitiveTypeNames().size() + 2))
-                .with(processorSupport.repository_getTopLevel(M3Paths.Package))
-                .with(processorSupport.repository_getTopLevel(M3Paths.Root))
-                .asLazy()
-                .concatenate(PackageTreeIterable.newRootPackageTreeIterable(processorSupport)
-                        .flatCollect(PackageAccessor::_children)
-                        .collect(e -> (CoreInstance) e));
-    }
-
-    static LazyIterable<CoreInstance> componentInstances(CoreInstance element)
-    {
-        SourceInformation sourceInfo = Objects.requireNonNull(element.getSourceInformation(), "element source information may not be null");
-        return GraphNodeIterable.builder()
-                .withStartingNode(element)
-                .withKeyFilter((node, key) ->
-                {
-                    switch (key)
-                    {
-                        case M3Properties._package:
-                        {
-                            return !M3PropertyPaths._package.equals(node.getRealKeyByName(key));
-                        }
-                        case M3Properties.children:
-                        {
-                            return !M3PropertyPaths.children.equals(node.getRealKeyByName(key));
-                        }
-                        default:
-                        {
-                            return true;
-                        }
-                    }
-                })
-                .withNodeFilter(node ->
-                {
-                    if (node == element)
-                    {
-                        return GraphWalkFilterResult.ACCEPT_AND_CONTINUE;
-                    }
-                    SourceInformation nodeSourceInfo = node.getSourceInformation();
-                    boolean internal = (nodeSourceInfo == null) ? !(node instanceof Package) : sourceInfo.subsumes(nodeSourceInfo);
-                    return internal ? GraphWalkFilterResult.ACCEPT_AND_CONTINUE : GraphWalkFilterResult.REJECT_AND_STOP;
-                })
-                .build();
-    }
-
-    static GraphPathIterable internalGraphPaths(CoreInstance element, ProcessorSupport processorSupport)
-    {
-        SourceInformation sourceInfo = Objects.requireNonNull(element.getSourceInformation(), "element source information may not be null");
-        return GraphPathIterable.builder(processorSupport)
-                .withStartNode(element)
-                .withPropertyFilter((rgp, property) ->
-                {
-                    switch (property)
-                    {
-                        case M3Properties._package:
-                        {
-                            return !M3PropertyPaths._package.equals(rgp.getLastResolvedNode().getRealKeyByName(property));
-                        }
-                        case M3Properties.children:
-                        {
-                            return !M3PropertyPaths.children.equals(rgp.getLastResolvedNode().getRealKeyByName(property));
-                        }
-                        default:
-                        {
-                            return true;
-                        }
-                    }
-                })
-                .withPathFilter(rgp ->
-                {
-                    CoreInstance node = rgp.getLastResolvedNode();
-                    if (node == element)
-                    {
-                        // all graph paths start from element and cannot contain loops: so this must be the starting path
-                        return GraphWalkFilterResult.ACCEPT_AND_CONTINUE;
-                    }
-                    SourceInformation nodeSourceInfo = node.getSourceInformation();
-                    boolean internal = (nodeSourceInfo == null) ? !(node instanceof Package) : sourceInfo.subsumes(nodeSourceInfo);
-                    return internal ? GraphWalkFilterResult.ACCEPT_AND_CONTINUE : GraphWalkFilterResult.REJECT_AND_STOP;
-                })
-                .build();
-    }
-
-    static ResolvedGraphPath findPathToInstance(CoreInstance instance, ProcessorSupport processorSupport)
-    {
-        return getTopLevelAndPackagedIterable(processorSupport)
-                .flatCollect(e -> Lists.immutable.with(findPathToInstanceWithinElement(e, instance, processorSupport)))
-                .detect(Objects::nonNull);
-    }
-
-    static ResolvedGraphPath findPathToInstanceWithinElement(CoreInstance element, CoreInstance instance, ProcessorSupport processorSupport)
-    {
-        SourceInformation sourceInfo = element.getSourceInformation();
-        if (sourceInfo == null)
-        {
-            return null;
-        }
-        SourceInformation instanceSourceInfo = instance.getSourceInformation();
-        if ((instanceSourceInfo != null) && !sourceInfo.subsumes(instanceSourceInfo))
-        {
-            return null;
-        }
-        MutableSet<CoreInstance> visited = Sets.mutable.empty();
-        return GraphPathIterable.builder(processorSupport)
-                .withStartNode(element)
-                .withPropertyFilter((rgp, property) ->
-                {
-                    switch (property)
-                    {
-                        case M3Properties._package:
-                        {
-                            return !M3PropertyPaths._package.equals(rgp.getLastResolvedNode().getRealKeyByName(property));
-                        }
-                        case M3Properties.children:
-                        {
-                            return !M3PropertyPaths.children.equals(rgp.getLastResolvedNode().getRealKeyByName(property));
-                        }
-                        default:
-                        {
-                            return true;
-                        }
-                    }
-                })
-                .withPathFilter(rgp ->
-                {
-                    CoreInstance node = rgp.getLastResolvedNode();
-                    if (node == instance)
-                    {
-                        return GraphWalkFilterResult.ACCEPT_AND_STOP;
-                    }
-                    if (node == element)
-                    {
-                        // all graph paths start from element and cannot contain loops: so this must be the starting path
-                        return GraphWalkFilterResult.REJECT_AND_CONTINUE;
-                    }
-                    if (visited.add(node))
-                    {
-                        SourceInformation nodeSourceInfo = node.getSourceInformation();
-                        if ((nodeSourceInfo == null) ? !(node instanceof Package) : sourceInfo.subsumes(nodeSourceInfo))
-                        {
-                            return GraphWalkFilterResult.REJECT_AND_CONTINUE;
-                        }
-                    }
-                    return GraphWalkFilterResult.REJECT_AND_STOP;
-                })
-                .build()
-                .getAny();
     }
 
     private static void runIntegrityTest(Iterable<? extends CoreInstance> instances, String violationDescription, BiConsumer<CoreInstance, Consumer<? super String>> test)
@@ -660,7 +489,7 @@ public class CompiledStateIntegrityTestTools
                         {
                             sourceInfo.appendMessage(message.append(" (")).append(')');
                         }
-                        ResolvedGraphPath path = findPathToInstance(instance, processorSupport);
+                        ResolvedGraphPath path = GraphTools.findPathToInstance(instance, processorSupport);
                         if (path != null)
                         {
                             if (sourceInfo == null)

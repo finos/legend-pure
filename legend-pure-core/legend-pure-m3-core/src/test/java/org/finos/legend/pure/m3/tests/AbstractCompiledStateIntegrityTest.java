@@ -78,6 +78,7 @@ import org.finos.legend.pure.m3.serialization.runtime.binary.BinaryModelSourceSe
 import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJar;
 import org.finos.legend.pure.m3.serialization.runtime.binary.SimplePureRepositoryJarLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ExternalReferenceSerializerLibrary;
+import org.finos.legend.pure.m3.tools.GraphTools;
 import org.finos.legend.pure.m3.tools.PackageTreeIterable;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -413,12 +414,12 @@ public abstract class AbstractCompiledStateIntegrityTest
     public void testPackagedElementsContainAllOthers()
     {
         MutableMap<String, MutableList<Pair<CoreInstance, MutableSet<CoreInstance>>>> elementsBySource = Maps.mutable.empty();
-        CompiledStateIntegrityTestTools.getTopLevelAndPackagedIterable(repository).forEach(e ->
+        GraphTools.getTopLevelAndPackagedElements(repository).forEach(e ->
         {
             SourceInformation sourceInfo = e.getSourceInformation();
             if (sourceInfo != null)
             {
-                MutableSet<CoreInstance> componentInstances = CompiledStateIntegrityTestTools.componentInstances(e).reject(n -> n.getSourceInformation() == null).toSet();
+                MutableSet<CoreInstance> componentInstances = GraphTools.getComponentInstances(e, processorSupport).reject(n -> n.getSourceInformation() == null).toSet();
                 elementsBySource.getIfAbsentPut(sourceInfo.getSourceId(), Lists.mutable::empty).add(Tuples.pair(e, componentInstances));
             }
         });
@@ -428,7 +429,7 @@ public abstract class AbstractCompiledStateIntegrityTest
         GraphNodeIterable.builder()
                 .withStartingNodes(repository.getTopLevels())
                 .withKeyFilter((instance, key) -> !M3Properties.referenceUsages.equals(key) || !M3PropertyPaths.referenceUsages.equals(instance.getRealKeyByName(key)))
-                .withNodeFilter(n -> GraphWalkFilterResult.get((n.getSourceInformation() != null) && !ReferenceUsage.isReferenceUsage(n, processorSupport), true))
+                .withNodeFilter(n -> GraphWalkFilterResult.cont((n.getSourceInformation() != null) && !ReferenceUsage.isReferenceUsage(n, processorSupport)))
                 .build()
                 .forEach(node ->
                 {
@@ -502,9 +503,18 @@ public abstract class AbstractCompiledStateIntegrityTest
                             sourceMiscontained.sortThisBy(p -> p.getOne().getSourceInformation()).forEach(pair ->
                             {
                                 builder.append("\n\t\t").append(pair.getOne());
-                                pair.getOne().getSourceInformation().appendIntervalMessage(builder.append(" (")).append(") -> ");
-                                PackageableElement.writeUserPathForPackageableElement(builder, pair.getTwo());
-                                pair.getTwo().getSourceInformation().appendIntervalMessage(builder.append(" (")).append(')');
+                                CoreInstance instance = pair.getOne();
+                                instance.getSourceInformation().appendIntervalMessage(builder.append(" (")).append(") is not contained in ");
+
+                                CoreInstance incorrectContainingElement = pair.getTwo();
+                                PackageableElement.writeUserPathForPackageableElement(builder, incorrectContainingElement);
+                                incorrectContainingElement.getSourceInformation().appendIntervalMessage(builder.append(" (")).append(')');
+
+                                ResolvedGraphPath path = GraphTools.findPathToInstance(instance, processorSupport, true);
+                                if (path != null)
+                                {
+                                    path.getGraphPath().writeDescription(builder.append("\n\t\t\tfound at: "));
+                                }
                             });
                         });
             }
@@ -1207,7 +1217,7 @@ public abstract class AbstractCompiledStateIntegrityTest
                 SourceInformation sourceInfo = function.getSourceInformation();
                 if (sourceInfo == null)
                 {
-                    ResolvedGraphPath path = CompiledStateIntegrityTestTools.findPathToInstance(function, processorSupport);
+                    ResolvedGraphPath path = GraphTools.findPathToInstance(function, processorSupport);
                     if (path != null)
                     {
                         path.getGraphPath().writeDescription(builder.append(" (")).append(')');
@@ -1495,7 +1505,7 @@ public abstract class AbstractCompiledStateIntegrityTest
     public void testAnnotationModelElements()
     {
         MutableList<String> errorMessages = Lists.mutable.empty();
-        CompiledStateIntegrityTestTools.getTopLevelAndPackagedIterable(processorSupport).selectInstancesOf(Profile.class).forEach(profile ->
+        GraphTools.getTopLevelAndPackagedElements(processorSupport).selectInstancesOf(Profile.class).forEach(profile ->
         {
             profile._p_stereotypes().forEach(st ->
             {
@@ -1594,7 +1604,7 @@ public abstract class AbstractCompiledStateIntegrityTest
     public void testReferencerUsageOwners()
     {
         MutableList<String> errorMessages = Lists.mutable.empty();
-        CompiledStateIntegrityTestTools.getTopLevelAndPackagedIterable(processorSupport).forEach(element ->
+        GraphTools.getTopLevelAndPackagedElements(processorSupport).forEach(element ->
         {
             SourceInformation elementSourceInfo = element.getSourceInformation();
             MutableSet<CoreInstance> internalNodes = GraphNodeIterable.builder()
@@ -1632,7 +1642,7 @@ public abstract class AbstractCompiledStateIntegrityTest
                 }
                 else
                 {
-                    ResolvedGraphPath pathToNode = CompiledStateIntegrityTestTools.findPathToInstance(node, processorSupport);
+                    ResolvedGraphPath pathToNode = GraphTools.findPathToInstance(node, processorSupport);
                     if (pathToNode == null)
                     {
                         builder.append(node);
