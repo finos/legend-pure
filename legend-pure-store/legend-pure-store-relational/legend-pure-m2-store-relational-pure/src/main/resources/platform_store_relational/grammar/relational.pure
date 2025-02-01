@@ -241,7 +241,7 @@ Class meta::relational::metamodel::relation::CommonTableExpression extends Relat
   sqlQuery: SelectSQLQuery[1];
 }
 
-Class meta::relational::metamodel::relation::CommonTableExpressionReference extends RelationalOperationElement
+Class meta::relational::metamodel::relation::CommonTableExpressionReference extends meta::relational::metamodel::relation::Relation
 {
   name: String[1];
 }
