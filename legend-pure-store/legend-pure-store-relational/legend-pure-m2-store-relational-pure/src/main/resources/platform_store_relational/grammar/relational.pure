@@ -510,16 +510,12 @@ Class meta::relational::metamodel::Window extends meta::relational::metamodel::R
 {
    <<equality.Key>> partition: RelationalOperationElement[*];
 
-   <<equality.Key>> sort: SortByInfo [*];
-
+   <<equality.Key>> sortBy: SortByInfo [*];
 }
 
 Class meta::relational::metamodel::SortByInfo extends meta::relational::metamodel::RelationalOperationElement
 {
 
-   sortBy: RelationalOperationElement [1];
+   sortByElement: RelationalOperationElement [1];
    sortDirection: meta::relational::metamodel::SortDirection[0..1] ;
 }
-
-
-
