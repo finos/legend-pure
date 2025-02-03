@@ -72,7 +72,10 @@ public class Match extends NativeFunction
             }
         }
 
-        throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "Match failure: " + (valueCount == 1 ? values.getFirst() : values.makeString("[", ", ", "]")), functionExpressionCallStack);
+        String typePrinted = GenericType.print(valueType, true, processorSupport);
+        String multiplicityPrinted = Multiplicity.print(Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.multiplicity, processorSupport));
+
+        throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "Match failure: " + typePrinted + multiplicityPrinted, functionExpressionCallStack);
     }
 }
 
