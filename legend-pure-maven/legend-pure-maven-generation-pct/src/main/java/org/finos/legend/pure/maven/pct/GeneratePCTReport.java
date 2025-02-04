@@ -48,7 +48,15 @@ public class GeneratePCTReport extends AbstractMojo
         getLog().info("Generating PCT report");
         assertPresentOrNotEmpty("mode", mode);
         assertPresentOrNotEmpty("PCTTestSuites", PCTTestSuites);
-
+        for (String testClass : PCTTestSuites) 
+        {
+            try 
+                {
+                Thread.currentThread().getContextClassLoader().loadClass(testClass);
+            } catch (ClassNotFoundException e) {
+                throw new MojoExecutionException("PCT test class not found: " + testClass);
+            }
+        }
         ClassLoader savedClassLoader = Thread.currentThread().getContextClassLoader();
         try
         {
