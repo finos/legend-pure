@@ -112,6 +112,25 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
+    public void testColumnFunctionCollectionInference2()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "Class Firm\n" +
+                        "{\n" +
+                        "   legalName:String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "function f():Relation<(name:String)>[1]\n" +
+                        "{\n" +
+                        "   Firm.all()->project(~[legal:x|$x.legalName])->project(~[name:x|$x.legal]);\n" +
+                        "}\n" +
+                        "\n" +
+                        "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];"
+        );
+    }
+
+    @Test
     public void testColumnFunctionCollectionChainedWithNewFunctionInference()
     {
         compileInferenceTest(
@@ -763,8 +782,8 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
 
     @Test
     @Ignore
-    // Test fails due to bug in type inference, potentially due to incorrect unbind. The type (RelationType) for the 
-    // only expression in the function f() is correctly inferred after first compile. However, the type parameters 
+    // Test fails due to bug in type inference, potentially due to incorrect unbind. The type (RelationType) for the
+    // only expression in the function f() is correctly inferred after first compile. However, the type parameters
     // remain unresolved post unbind and re-compile.
     public void testRelationTypeInferenceIntegrityWithSelect()
     {
@@ -775,22 +794,22 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                                 "}";
         String nativeFunctionSource = "import meta::pure::metamodel::relation::*;" +
                                       "native function select<T,X>(x:Relation<X>[1], rel:ColSpecArray<T⊆X>[1]):Relation<T>[1];";
-        
+
         ImmutableMap<String, String> sources = Maps.immutable.of("1.pure", functionSource, "2.pure", nativeFunctionSource);
-        
+
         new RuntimeTestScriptBuilder().createInMemorySources(sources).compile().run(runtime, functionExecution);
 
         RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(
-            runtime, 
+            runtime,
             functionExecution,
-            Lists.fixedSize.of(Tuples.pair("2.pure", nativeFunctionSource)), 
+            Lists.fixedSize.of(Tuples.pair("2.pure", nativeFunctionSource)),
             this.getAdditionalVerifiers()
         );
     }
 
     @Test
     @Ignore
-    // Test fails due to bug in type inference, potentially due to incorrect unbind. The column type for the renamed 
+    // Test fails due to bug in type inference, potentially due to incorrect unbind. The column type for the renamed
     // column in the RelationType returned by the function is set to null post unbind and re-compile.
     public void testRelationTypeInferenceIntegrityWithRename()
     {

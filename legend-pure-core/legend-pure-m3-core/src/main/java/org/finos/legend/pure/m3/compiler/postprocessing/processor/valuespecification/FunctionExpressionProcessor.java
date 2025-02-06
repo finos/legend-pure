@@ -300,6 +300,11 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                     String name = functionExpression._propertyName()._valuesCoreInstance().getAny().getName();
                     foundFunctions.add(_RelationType.findColumn((RelationType<?>) sourceGenericType._rawType(), name, functionExpression.getSourceInformation(), processorSupport));
                 }
+                else if (sourceGenericType._typeArguments().notEmpty() && _RelationType.isRelationType(sourceGenericType._typeArguments().getFirst()._rawType(), processorSupport))
+                {
+                    String name = functionExpression._propertyName()._valuesCoreInstance().getAny().getName();
+                    foundFunctions.add(_RelationType.findColumn((RelationType<?>) sourceGenericType._typeArguments().getFirst()._rawType(), name, functionExpression.getSourceInformation(), processorSupport));
+                }
                 else
                 {
                     Multiplicity sourceMultiplicity = source._multiplicity();
