@@ -18,14 +18,17 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.Objects;
+import java.util.zip.ZipOutputStream;
 
 class StreamBinaryWriter extends AbstractSimpleBinaryWriter
 {
     private final OutputStream stream;
+    private final boolean closeStreamOnClose;
 
-    StreamBinaryWriter(OutputStream stream)
+    StreamBinaryWriter(OutputStream stream, boolean closeStreamOnClose)
     {
         this.stream = Objects.requireNonNull(stream, "stream may not be null");
+        this.closeStreamOnClose = closeStreamOnClose;
     }
 
     @Override
@@ -58,13 +61,23 @@ class StreamBinaryWriter extends AbstractSimpleBinaryWriter
     @Override
     public synchronized void close()
     {
-        try
+        if (this.closeStreamOnClose)
         {
-            this.stream.close();
-        }
-        catch (IOException e)
-        {
-            throw new UncheckedIOException(e);
+            try
+            {
+                if (this.stream instanceof ZipOutputStream)
+                {
+                    ((ZipOutputStream) this.stream).closeEntry();
+                }
+                else
+                {
+                    this.stream.close();
+                }
+            }
+            catch (IOException e)
+            {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 }
