@@ -41,7 +41,7 @@ import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningClassProcessor;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.PackageInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpressionInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.KeyExpressionInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.EnumStubInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.Import;

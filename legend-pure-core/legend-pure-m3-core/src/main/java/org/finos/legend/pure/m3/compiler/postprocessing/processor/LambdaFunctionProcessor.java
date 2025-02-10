@@ -21,7 +21,7 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
 import org.finos.legend.pure.m3.compiler.postprocessing.inference.TypeInference;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.KeyExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
