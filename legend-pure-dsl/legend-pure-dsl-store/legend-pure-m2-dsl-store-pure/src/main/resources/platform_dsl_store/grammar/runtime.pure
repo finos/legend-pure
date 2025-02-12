@@ -32,8 +32,8 @@ Class meta::core::runtime::Connection
 
 Class meta::pure::runtime::ExecutionContext
 {
-   queryTimeOutInSeconds: Integer[0..1];
-   enableConstraints: Boolean[0..1];
+   <<equality.Key>> queryTimeOutInSeconds: Integer[0..1];
+   <<equality.Key>> enableConstraints: Boolean[0..1];
 }
 
 
