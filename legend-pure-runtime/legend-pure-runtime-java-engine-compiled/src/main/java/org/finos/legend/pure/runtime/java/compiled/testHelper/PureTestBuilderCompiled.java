@@ -16,6 +16,10 @@ package org.finos.legend.pure.runtime.java.compiled.testHelper;
 
 import io.opentracing.noop.NoopTracerFactory;
 import io.opentracing.util.GlobalTracer;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Objects;
 import junit.framework.TestSuite;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
@@ -51,21 +55,16 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.Functio
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataLazy;
 import org.junit.Assert;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Objects;
+import org.junit.jupiter.api.DynamicContainer;
 
 import static org.finos.legend.pure.m3.pct.shared.PCTTools.isPCTTest;
 import static org.junit.Assert.fail;
 
-public class PureTestBuilderCompiled extends TestSuite
+public class PureTestBuilderCompiled
 {
-    public static TestSuite buildSuite(TestCollection testCollection, ExecutionSupport executionSupport)
+    public static DynamicContainer buildTestContainer(String... all)
     {
-        PureTestBuilder.F2<CoreInstance, MutableList<Object>, Object> p = (a, b) -> executeFn(a, "meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_", Maps.mutable.empty(), executionSupport, b);
-        return PureTestBuilder.buildSuite(testCollection, p, executionSupport);
+        return PureTestBuilder.convertTestSuiteToDynamicContainer(buildSuite(all));
     }
 
     public static TestSuite buildSuite(String... all)
@@ -77,7 +76,7 @@ public class PureTestBuilderCompiled extends TestSuite
     {
         CompiledExecutionSupport executionSupport = getClassLoaderExecutionSupport();
         PureTestBuilder.F2<CoreInstance, MutableList<Object>, Object> p = (a, b) -> executeFn(a, executor, exclusions, executionSupport, b);
-        TestSuite suite = new TestSuite();
+        TestSuite suite = new TestSuite("suite");
         ArrayIterate.forEach(all, (path) ->
                 {
                     TestCollection col = TestCollection.collectTests(path, executionSupport.getProcessorSupport(),
@@ -91,13 +90,10 @@ public class PureTestBuilderCompiled extends TestSuite
         return suite;
     }
 
-    public static TestSuite buildPCTTestSuite(TestCollection collection, MutableMap<String, String> exclusions, String executor, CompiledExecutionSupport executionSupport)
+    public static DynamicContainer buildPCTTestContainer(ReportScope reportScope, MutableList<ExclusionSpecification> expectedFailures, Adapter adapter)
     {
-        TestCollection.validateExclusions(collection, exclusions);
-        PureTestBuilder.F2<CoreInstance, MutableList<Object>, Object> testExecutor = (a, b) -> executeFn(a, executor, exclusions, executionSupport, b);
-        TestSuite suite = new TestSuite();
-        suite.addTest(PureTestBuilder.buildSuite(collection, testExecutor, executionSupport));
-        return suite;
+        TestSuite testSuite = buildPCTTestSuite(reportScope, expectedFailures, adapter);
+        return PureTestBuilder.convertTestSuiteToDynamicContainer(testSuite);
     }
 
     public static TestSuite buildPCTTestSuite(ReportScope reportScope, MutableList<ExclusionSpecification> expectedFailures, Adapter adapter)
@@ -111,6 +107,13 @@ public class PureTestBuilderCompiled extends TestSuite
                 adapter.function,
                 executionSupport
         );
+    }
+
+    private static TestSuite buildPCTTestSuite(TestCollection collection, MutableMap<String, String> exclusions, String executor, CompiledExecutionSupport executionSupport)
+    {
+        TestCollection.validateExclusions(collection, exclusions);
+        PureTestBuilder.F2<CoreInstance, MutableList<Object>, Object> testExecutor = (a, b) -> executeFn(a, executor, exclusions, executionSupport, b);
+        return PureTestBuilder.buildSuite(collection, testExecutor, executionSupport);
     }
 
 

@@ -14,13 +14,15 @@
 
 package org.finos.legend.pure.runtime.java.compiled.pct.functions;
 
-import junit.framework.Test;
 import org.finos.legend.pure.runtime.java.compiled.testHelper.PureTestBuilderCompiled;
+import org.junit.jupiter.api.DynamicContainer;
+import org.junit.jupiter.api.TestFactory;
 
 public class TestCoreFunctions
 {
-    public static Test suite()
+    @TestFactory
+    public DynamicContainer tests()
     {
-        return PureTestBuilderCompiled.buildSuite("meta::pure::functions");
+        return PureTestBuilderCompiled.buildTestContainer("meta::pure::functions");
     }
 }

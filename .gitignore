@@ -15,3 +15,6 @@
 
 **/.DS_Store
 **/pure-duckDB-test-Db
+
+**/legend-pure-m3-core/gen/
+**/legend-pure-m3-core/src/main/antlr4/org/finos/legend/pure/m3/serialization/grammar/m3parser/antlr/core/gen/
