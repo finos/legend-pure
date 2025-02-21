@@ -14,10 +14,9 @@
 
 package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.validator;
 
-import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.set.mutable.UnifiedSet;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.validation.Validator;
@@ -37,11 +36,11 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.DataType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
@@ -72,31 +71,31 @@ public class PureInstanceSetImplementationValidator implements MatchRunner<PureI
             GenericType filterReturnType = ((FunctionType) processorSupport.function_getFunctionType(filter))._returnType();
             if (filterReturnType._rawTypeCoreInstance() != booleanType)
             {
-                throw new PureCompilationException(((RichIterable<ValueSpecification>) filter._expressionSequence()).toList().get(0).getSourceInformation(), "A filter should be a Boolean expression");
+                throw new PureCompilationException(ListHelper.wrapListIterable(filter._expressionSequence()).get(0).getSourceInformation(), "A filter should be a Boolean expression");
             }
         }
 
         MutableSet<String> requiredProperties = getRequiredProperties(mappedClass, processorSupport);
         for (PropertyMapping propertyMapping : classMapping._propertyMappings())
         {
-            Property property = (Property) ImportStub.withImportStubByPass(propertyMapping._propertyCoreInstance(), processorSupport);
+            Property<?, ?> property = (Property<?, ?>) ImportStub.withImportStubByPass(propertyMapping._propertyCoreInstance(), processorSupport);
             requiredProperties.remove(org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(property));
 
-            LambdaFunction transform = ((PurePropertyMapping) propertyMapping)._transform();
+            LambdaFunction<?> transform = ((PurePropertyMapping) propertyMapping)._transform();
             FunctionType fType = (FunctionType) processorSupport.function_getFunctionType(transform);
 
             Validator.validate(transform, (ValidatorState) state, matcher, processorSupport);
 
             GenericType expressionGenericType = fType._returnType();
-            GenericType propertyGenericType = ((Property) ImportStub.withImportStubByPass(propertyMapping._propertyCoreInstance(), processorSupport))._genericType();
+            GenericType propertyGenericType = ((Property<?, ?>) ImportStub.withImportStubByPass(propertyMapping._propertyCoreInstance(), processorSupport))._genericType();
 
             Multiplicity expressionMultiplicity = fType._returnMultiplicity();
-            Multiplicity propertyMultiplicity = ((Property) ImportStub.withImportStubByPass(propertyMapping._propertyCoreInstance(), processorSupport))._multiplicity();
+            Multiplicity propertyMultiplicity = ((Property<?, ?>) ImportStub.withImportStubByPass(propertyMapping._propertyCoreInstance(), processorSupport))._multiplicity();
 
             if (((PurePropertyMapping) propertyMapping)._transformerCoreInstance() != null)
             {
                 CoreInstance propertyRawType = ImportStub.withImportStubByPass(propertyGenericType._rawTypeCoreInstance(), processorSupport);
-                EnumerationMapping transformer = (EnumerationMapping) ImportStub.withImportStubByPass(((PurePropertyMapping) propertyMapping)._transformerCoreInstance(), processorSupport);
+                EnumerationMapping<?> transformer = (EnumerationMapping<?>) ImportStub.withImportStubByPass(((PurePropertyMapping) propertyMapping)._transformerCoreInstance(), processorSupport);
 
                 if (!propertyRawType.equals(transformer._enumeration()))
                 {
@@ -114,7 +113,7 @@ public class PureInstanceSetImplementationValidator implements MatchRunner<PureI
                         valTypeString = org.finos.legend.pure.m3.navigation.generictype.GenericType.print(expressionGenericType, true, processorSupport);
                         propertyTypeString = org.finos.legend.pure.m3.navigation.generictype.GenericType.print(propertyGenericType, true, processorSupport);
                     }
-                    throw new PureCompilationException(((RichIterable<ValueSpecification>) ((PurePropertyMapping) propertyMapping)._transform()._expressionSequence()).toList().get(0).getSourceInformation(),
+                    throw new PureCompilationException(ListHelper.wrapListIterable(transform._expressionSequence()).get(0).getSourceInformation(),
                             "Type Error: '" + valTypeString + "' not a subtype of '" + propertyTypeString + "'");
                 }
             }
@@ -131,15 +130,15 @@ public class PureInstanceSetImplementationValidator implements MatchRunner<PureI
                 Type expRawType = (Type) ImportStub.withImportStubByPass(expressionGenericType._rawTypeCoreInstance(), processorSupport);
                 if (srcClass != null && srcClass != expRawType)
                 {
-                    throw new PureCompilationException(((RichIterable<ValueSpecification>) ((PurePropertyMapping) propertyMapping)._transform()._expressionSequence()).toList().get(0).getSourceInformation(),
+                    throw new PureCompilationException(ListHelper.wrapListIterable(transform._expressionSequence()).get(0).getSourceInformation(),
                             "Type Error: '" + PackageableElement.getUserPathForPackageableElement(srcClass) + "' is not '" + PackageableElement.getUserPathForPackageableElement(expRawType) + "'");
                 }
             }
 
             if (!((PurePropertyMapping) propertyMapping)._explodeProperty() && !org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.subsumes(propertyMultiplicity, expressionMultiplicity))
             {
-                throw new PureCompilationException(((RichIterable<ValueSpecification>) transform._expressionSequence()).toList().get(0).getSourceInformation(),
-                        "Multiplicity Error ' The property '" + org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(propertyMapping._propertyCoreInstance())
+                throw new PureCompilationException(ListHelper.wrapListIterable(transform._expressionSequence()).get(0).getSourceInformation(),
+                        "Multiplicity Error: The property '" + org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(propertyMapping._propertyCoreInstance())
                                 + "' has a multiplicity range of " + org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(propertyMultiplicity)
                                 + " when the given expression has a multiplicity range of " + org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(expressionMultiplicity));
             }
@@ -158,7 +157,7 @@ public class PureInstanceSetImplementationValidator implements MatchRunner<PureI
     private MutableSet<String> getRequiredProperties(Class<?> mappedClass, ProcessorSupport processorSupport)
     {
         MapIterable<String, CoreInstance> classProperties = processorSupport.class_getSimplePropertiesByName(mappedClass);
-        final MutableSet<String> requiredProperties = UnifiedSet.newSet(classProperties.size());
+        MutableSet<String> requiredProperties = Sets.mutable.ofInitialCapacity(classProperties.size());
         classProperties.forEachKeyValue((propertyName, property) ->
         {
             Multiplicity multiplicity = ((Property<?, ?>) property)._multiplicity();
