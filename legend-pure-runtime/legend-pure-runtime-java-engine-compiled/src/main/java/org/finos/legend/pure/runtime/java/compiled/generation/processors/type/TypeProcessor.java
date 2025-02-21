@@ -217,6 +217,10 @@ public class TypeProcessor
             {
                 return "org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate";
             }
+            case M3Paths.StrictTime:
+            {
+                return "org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime";
+            }
             case M3Paths.DateTime:
             {
                 return "org.finos.legend.pure.m4.coreinstance.primitive.date.DateTime";
