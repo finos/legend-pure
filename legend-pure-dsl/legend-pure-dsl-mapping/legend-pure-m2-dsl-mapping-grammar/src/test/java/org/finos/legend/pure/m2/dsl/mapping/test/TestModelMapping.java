@@ -346,7 +346,7 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
 
         PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
         assertPureException(PureCompilationException.class,
-                "Multiplicity Error ' The property 'legalName' has a multiplicity range of [1] when the given expression has a multiplicity range of [2]",
+                "Multiplicity Error: The property 'legalName' has a multiplicity range of [1] when the given expression has a multiplicity range of [2]",
                 "mapping.pure", 5, 17, 5, 17, 5, 25, e);
     }
 

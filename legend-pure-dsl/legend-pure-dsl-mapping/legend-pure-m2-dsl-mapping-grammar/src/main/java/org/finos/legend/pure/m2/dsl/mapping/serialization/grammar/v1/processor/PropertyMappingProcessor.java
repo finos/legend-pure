@@ -15,8 +15,7 @@
 package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.processor;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.impl.block.factory.Predicates;
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.compiler.ReferenceUsage;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningFunctions;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping;
@@ -26,7 +25,6 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.PropertyMappingsI
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.SetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PropertyOwner;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.DataType;
@@ -42,7 +40,6 @@ import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
@@ -82,7 +79,7 @@ public class PropertyMappingProcessor
                     ._genericType(targetGenericType)
                     ._name(ImportStub.withImportStubByPass(propertyMapping._propertyCoreInstance(), processorSupport).getName())
                     ._aggregation(ListHelper.wrapListIterable(((Enumeration<? extends Enum>) _Package.getByUserPath(M3Paths.AggregationKind, processorSupport))._values()).get(0))
-                    ._multiplicity((Multiplicity) processorSupport.package_getByUserPath(M3Paths.PureOne));
+                    ._multiplicity(propertyMapping._localMappingPropertyMultiplicity());
             property = propertyInstance;
         }
         else
@@ -152,7 +149,7 @@ public class PropertyMappingProcessor
 
     static void populateReferenceUsagesForPropertyMapping(PropertyMapping propertyMapping, ModelRepository repository, ProcessorSupport processorSupport)
     {
-        Property property = (Property) ImportStub.withImportStubByPass(propertyMapping._propertyCoreInstance(), processorSupport);
+        Property<?, ?> property = (Property<?, ?>) ImportStub.withImportStubByPass(propertyMapping._propertyCoreInstance(), processorSupport);
         ReferenceUsage.addReferenceUsage(property, propertyMapping, M3Properties.property, 0, repository, processorSupport);
 
         if (propertyMapping instanceof PropertyMappingsImplementation)
@@ -164,16 +161,16 @@ public class PropertyMappingProcessor
         }
     }
 
-    private static Property getEdgePointProperty(PropertyOwner propertyOwner, String propertyName, ProcessorSupport processorSupport)
+    private static Property<?, ?> getEdgePointProperty(PropertyOwner propertyOwner, String propertyName, ProcessorSupport processorSupport)
     {
         String propertyEdgePointName = MilestoningFunctions.getEdgePointPropertyName(propertyName);
-        return (Property) processorSupport.class_findPropertyUsingGeneralization(propertyOwner, propertyEdgePointName);
+        return (Property<?, ?>) processorSupport.class_findPropertyUsingGeneralization(propertyOwner, propertyEdgePointName);
     }
 
-    private static Class getSourceClassForAssociationProperty(ProcessorSupport processorSupport, PropertyOwner propertyOwner, String propertyName)
+    private static Class<?> getSourceClassForAssociationProperty(ProcessorSupport processorSupport, PropertyOwner propertyOwner, String propertyName)
     {
-        RichIterable<? extends Property<?, ?>> associationProperties = propertyOwner instanceof Class ? ((Class) propertyOwner)._properties() : ((Association) propertyOwner)._properties();
-        Property otherProperty = associationProperties.detect(Predicates.attributeNotEqual(CoreInstance.GET_NAME, propertyName));
-        return (Class) ImportStub.withImportStubByPass(otherProperty._classifierGenericType()._typeArguments().toList().get(1)._rawTypeCoreInstance(), processorSupport);
+        RichIterable<? extends Property<?, ?>> associationProperties = propertyOwner instanceof Class ? ((Class<?>) propertyOwner)._properties() : ((Association) propertyOwner)._properties();
+        Property<?, ?> otherProperty = associationProperties.detect(p -> !propertyName.equals(p.getName()));
+        return (Class<?>) ImportStub.withImportStubByPass(otherProperty._classifierGenericType()._typeArguments().toList().get(1)._rawTypeCoreInstance(), processorSupport);
     }
 }

@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m2.dsl.mapping.test;
 
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -145,15 +146,8 @@ public class TestXStoreMapping extends AbstractPureMappingTestWithCoreCompiled
                         "      employees[f1, e] : $this.id == $that.firmId\n" +
                         "   }\n" +
                         ")\n");
-        try
-        {
-            runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:mapping.pure line:38 column:35), \"Strixng has not been defined!\"", e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "Strixng has not been defined!", "mapping.pure", 38, 35, e);
     }
 
     @Test
