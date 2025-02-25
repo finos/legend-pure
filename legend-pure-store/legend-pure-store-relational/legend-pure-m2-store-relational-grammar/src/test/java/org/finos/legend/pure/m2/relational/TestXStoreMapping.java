@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m2.relational;
 
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -22,7 +23,7 @@ public class TestXStoreMapping extends AbstractPureRelationalTestWithCoreCompile
     @Test
     public void testXStoreMapping()
     {
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "Class Firm\n" +
                         "{\n" +
                         "   legalName : String[1];\n" +
@@ -65,13 +66,13 @@ public class TestXStoreMapping extends AbstractPureRelationalTestWithCoreCompile
                         "   Table FirmTable (id INTEGER, legal_name VARCHAR(200))\n" +
                         "   Table PersonTable (firmId INTEGER, lastName VARCHAR(200))\n" +
                         ")");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void testXStoreMappingTypeError()
     {
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "Class Firm\n" +
                         "{\n" +
                         "   legalName : String[1];\n" +
@@ -114,42 +115,15 @@ public class TestXStoreMapping extends AbstractPureRelationalTestWithCoreCompile
                         "   Table FirmTable (id INTEGER, legal_name VARCHAR(200))\n" +
                         "   Table PersonTable (firmId INTEGER, lastName VARCHAR(200))\n" +
                         ")");
-        try
-        {
-            this.runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Parser error at (resource:mapping.pure line:14), (Not Found: Strixng) in\n" +
-                    "'\n" +
-                    "Mapping FirmMapping\n" +
-                    "(\n" +
-                    "   Firm[f1] : Relational\n" +
-                    "   {\n" +
-                    "      +id:String[1] : [db]FirmTable.id,\n" +
-                    "      legalName : [db]FirmTable.legal_name\n" +
-                    "   }\n" +
-                    "   \n" +
-                    "   Person[e] : Relational\n" +
-                    "   {\n" +
-                    "      +firmId:Strixng[1] : [db]PersonTable.firmId,\n" +
-                    "      lastName : [db]PersonTable.lastName\n" +
-                    "   }\n" +
-                    "   \n" +
-                    "   Firm_Person : XStore\n" +
-                    "   {\n" +
-                    "      firm[e, f1] : $this.firmId == $that.id,\n" +
-                    "      employees[f1, e] : $this.id == $that.firmId\n" +
-                    "   }\n" +
-                    ")'", e.getMessage());
-        }
+
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "Strixng has not been defined!", "mapping.pure", 27, 15, 27, 15, 27, 21, e);
     }
 
     @Test
     public void testXStoreMappingDiffMul()
     {
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "Class Firm\n" +
                         "{\n" +
                         "   legalName : String[1];\n" +
@@ -192,13 +166,13 @@ public class TestXStoreMapping extends AbstractPureRelationalTestWithCoreCompile
                         "   Table FirmTable (id INTEGER, legal_name VARCHAR(200))\n" +
                         "   Table PersonTable (firmId INTEGER, lastName VARCHAR(200))\n" +
                         ")");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void testXStoreMappingNotSetId()
     {
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "Class Firm\n" +
                         "{\n" +
                         "   legalName : String[1];\n" +
@@ -241,13 +215,13 @@ public class TestXStoreMapping extends AbstractPureRelationalTestWithCoreCompile
                         "   Table FirmTable (id INTEGER, legal_name VARCHAR(200))\n" +
                         "   Table PersonTable (firmId INTEGER, lastName VARCHAR(200))\n" +
                         ")");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void testXStoreMappingNaturalProperty()
     {
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "Class Firm\n" +
                         "{\n" +
                         "   id : Integer[1];\n" +
@@ -291,13 +265,13 @@ public class TestXStoreMapping extends AbstractPureRelationalTestWithCoreCompile
                         "   Table FirmTable (id INTEGER, legal_name VARCHAR(200))\n" +
                         "   Table PersonTable (firmId INTEGER, lastName VARCHAR(200))\n" +
                         ")");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void testXStoreMappingNaturalPropertyError()
     {
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "Class Firm\n" +
                         "{\n" +
                         "   id : Integer[1];\n" +
@@ -341,22 +315,14 @@ public class TestXStoreMapping extends AbstractPureRelationalTestWithCoreCompile
                         "   Table FirmTable (id INTEGER, legal_name VARCHAR(200))\n" +
                         "   Table PersonTable (firmId INTEGER, lastName VARCHAR(200))\n" +
                         ")");
-        try
-        {
-            this.runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:mapping.pure line:34 column:36), \"Can't find the property 'ixd' in the class Firm\"", e.getMessage());
-        }
-
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "Can't find the property 'ixd' in the class Firm", "mapping.pure", 34, 36, e);
     }
 
     @Test
     public void testXStoreMappingNaturalPropertyUsingInheritance()
     {
-        this.runtime.createInMemorySource("mapping.pure",
+        runtime.createInMemorySource("mapping.pure",
                 "Class SuperFirm" +
                         "{" +
                         "   id : Integer[1];\n" +
@@ -404,15 +370,15 @@ public class TestXStoreMapping extends AbstractPureRelationalTestWithCoreCompile
                         "   Table FirmTable (id INTEGER, legal_name VARCHAR(200))\n" +
                         "   Table PersonTable (firmId INTEGER, lastName VARCHAR(200))\n" +
                         ")");
-        this.runtime.compile();
+        runtime.compile();
     }
 
 
     @Test
     public void testXStoreMappingToMilestonedType()
     {
-        this.runtime.createInMemorySource("mapping.pure",
-                        "Class Firm\n" +
+        runtime.createInMemorySource("mapping.pure",
+                "Class Firm\n" +
                         "{\n" +
                         "   legalName : String[1];\n" +
                         "}\n" +
@@ -454,6 +420,6 @@ public class TestXStoreMapping extends AbstractPureRelationalTestWithCoreCompile
                         "   Table FirmTable (id INTEGER, legal_name VARCHAR(200))\n" +
                         "   Table PersonTable (firmId INTEGER, lastName VARCHAR(200))\n" +
                         ")");
-        this.runtime.compile();
+        runtime.compile();
     }
 }
