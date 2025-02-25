@@ -86,6 +86,7 @@ import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.Relati
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.ViewContext;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.processor.ColumnDataTypeFactory;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.processor.ColumnDataTypeFactory.ColumnDataTypeException;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.ParsingUtils;
@@ -227,7 +228,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
         return "^meta::relational::mapping::RelationalPropertyMapping" + sourceInformation.getPureSourceInformation(propertyName).toM4String() + "(" +
                 "        localMappingProperty = " + localMappingProperty + "," +
                 (localMappingPropertyType == null ? "" : "        localMappingPropertyType = " + localMappingPropertyType + ",") +
-                buildMul(localMappingPropertyFirstMul, localMappingPropertySecondMul) +
+                buildLocalPropertyMul(localMappingPropertyFirstMul, localMappingPropertySecondMul) +
                 "        property = '" + propertyName.getText() + "'," +
                 (id == null ? "" : "        sourceSetImplementationId = '" + id + "', ") +
                 (targetId == null ? "" : "        targetSetImplementationId = '" + targetId.getText() + "', ") +
@@ -236,15 +237,91 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
                 ")";
     }
 
-    private String buildMul(Token localMappingPropertyFirstMul, Token localMappingPropertySecondMul)
+    private String buildLocalPropertyMul(Token localMappingPropertyFirstMul, Token localMappingPropertySecondMul)
     {
-        Token secondOne = localMappingPropertySecondMul == null ? localMappingPropertyFirstMul : localMappingPropertySecondMul;
-        return localMappingPropertyFirstMul == null && localMappingPropertySecondMul == null ?
-                "" :
-                "localMappingPropertyMultiplicity = ^meta::pure::metamodel::multiplicity::Multiplicity(" +
-                        "   lowerBound=^meta::pure::metamodel::multiplicity::MultiplicityValue(value=" + (localMappingPropertySecondMul == null || localMappingPropertyFirstMul == null ? "0" : localMappingPropertyFirstMul.getText()) + ")," +
-                        "   upperBound=^meta::pure::metamodel::multiplicity::MultiplicityValue(" + (secondOne.getText().equals("*") ? "" : "value=" + secondOne.getText()) + ")" +
-                        "),";
+        if (localMappingPropertySecondMul != null)
+        {
+            return "localMappingPropertyMultiplicity = " + buildMultiplicity(localMappingPropertyFirstMul.getText(), localMappingPropertySecondMul.getText()) + ",";
+        }
+        if (localMappingPropertyFirstMul != null)
+        {
+            return "localMappingPropertyMultiplicity = " + buildMultiplicity(localMappingPropertyFirstMul.getText()) + ",";
+        }
+        return "";
+    }
+
+    private String buildMultiplicity(String value)
+    {
+        switch (value)
+        {
+            case "*":
+            {
+                return M3Paths.ZeroMany;
+            }
+            case "1":
+            {
+                return M3Paths.PureOne;
+            }
+            case "0":
+            {
+                return M3Paths.PureZero;
+            }
+            default:
+            {
+                return buildGenericMultiplicity(value, value);
+            }
+        }
+    }
+
+    private String buildMultiplicity(String lowerBound, String upperBound)
+    {
+        switch (upperBound)
+        {
+            case "*":
+            {
+                switch (lowerBound)
+                {
+                    case "0":
+                    {
+                        return M3Paths.ZeroMany;
+                    }
+                    case "1":
+                    {
+                        return M3Paths.OneMany;
+                    }
+                }
+                break;
+            }
+            case "1":
+            {
+                switch (lowerBound)
+                {
+                    case "0":
+                    {
+                        return M3Paths.ZeroOne;
+                    }
+                    case "1":
+                    {
+                        return M3Paths.PureOne;
+                    }
+                }
+                break;
+            }
+            case "0":
+            {
+                if ("0".equals(lowerBound))
+                {
+                    return M3Paths.PureZero;
+                }
+            }
+        }
+        return buildGenericMultiplicity(lowerBound, upperBound);
+    }
+
+    private String buildGenericMultiplicity(String lowerBound, String upperBound)
+    {
+        return "^meta::pure::metamodel::multiplicity::Multiplicity(lowerBound=^meta::pure::metamodel::multiplicity::MultiplicityValue(value=" + lowerBound +
+                "), upperBound=^meta::pure::metamodel::multiplicity::MultiplicityValue(" + ("*".equals(upperBound) ? "" : ("value=" + upperBound)) + "))";
     }
 
     private String visitTransformerBlock(TransformerContext ctx, String mappingPath)
