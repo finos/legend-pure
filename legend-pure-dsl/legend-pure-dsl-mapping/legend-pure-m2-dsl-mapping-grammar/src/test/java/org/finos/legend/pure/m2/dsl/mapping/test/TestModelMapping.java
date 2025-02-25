@@ -949,4 +949,60 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
                 "Merge validation function for class: Person has an invalid parameter. All parameters must be a src class of a merged set",
                 "mapping.pure", 24, 5, 24, 14, 27, 12, e);
     }
+
+    @Test
+    public void testLocalPropertyWithInvalidType()
+    {
+        runtime.createInMemorySource("model.pure",
+                "Class Firm\n" +
+                        "{\n" +
+                        "  legalName : String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class FirmSource\n" +
+                        "{\n" +
+                        "  allNames : String[1..*];\n" +
+                        "}\n");
+        runtime.createInMemorySource("mapping.pure",
+                "###Mapping\n" +
+                        "Mapping test::TestMapping\n" +
+                        "(\n" +
+                        "  Firm : Pure\n" +
+                        "  {\n" +
+                        "    ~src FirmSource\n" +
+                        "    legalName : $src.allNames->at(0),\n" +
+                        "    +otherNames:Strixng[*] : $src.allNames->tail()\n" +
+                        "  }\n" +
+                        ")");
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "Strixng has not been defined!", "mapping.pure", 8, 17, 8, 17, 8, 23, e);
+    }
+
+    @Test
+    public void testLocalPropertyTypeError()
+    {
+        runtime.createInMemorySource("model.pure",
+                "Class Firm\n" +
+                        "{\n" +
+                        "  legalName : String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class FirmSource\n" +
+                        "{\n" +
+                        "  allNames : String[1..*];\n" +
+                        "}\n");
+        runtime.createInMemorySource("mapping.pure",
+                "###Mapping\n" +
+                        "Mapping test::TestMapping\n" +
+                        "(\n" +
+                        "  Firm : Pure\n" +
+                        "  {\n" +
+                        "    ~src FirmSource\n" +
+                        "    legalName : $src.allNames->at(0),\n" +
+                        "    +otherNames:String[*] : $src.allNames->size()\n" +
+                        "  }\n" +
+                        ")");
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "Type Error: 'Integer' not a subtype of 'String'", "mapping.pure", 8, 44, e);
+    }
 }
