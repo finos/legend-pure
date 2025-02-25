@@ -2317,6 +2317,37 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
 
 
     @Test
+    public void testLocalPropertyWithInvalidType()
+    {
+        runtime.createInMemorySource("testSource.pure",
+                "Class Person\n" +
+                        "{\n" +
+                        "   lastName : String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "###Mapping\n" +
+                        "Mapping FirmMapping\n" +
+                        "(\n" +
+                        "   Person[e] : Relational\n" +
+                        "   {\n" +
+                        "      +firmId:Strixng[1] : [db]PersonTable.firmId,\n" +
+                        "      lastName : [db]PersonTable.lastName\n" +
+                        "   }\n" +
+                        ")\n" +
+                        "\n" +
+                        "###Relational\n" +
+                        "Database db\n" +
+                        "(\n" +
+                        "   Table FirmTable (id INTEGER, legal_name VARCHAR(200))\n" +
+                        "   Table PersonTable (firmId INTEGER, lastName VARCHAR(200))\n" +
+                        ")");
+
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "Strixng has not been defined!", "testSource.pure", 11, 15, 11, 15, 11, 21, e);
+    }
+
+
+    @Test
     public void testSelfJoin()
     {
         Loader.parseM3("import other::*;\n" +

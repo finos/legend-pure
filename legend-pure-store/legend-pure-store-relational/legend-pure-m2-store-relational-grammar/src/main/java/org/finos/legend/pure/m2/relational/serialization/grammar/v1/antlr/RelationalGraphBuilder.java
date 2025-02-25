@@ -20,7 +20,6 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.IRelationalParser;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.AssociationMappingContext;
@@ -89,7 +88,6 @@ import org.finos.legend.pure.m2.relational.serialization.grammar.v1.processor.Co
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.processor.ColumnDataTypeFactory.ColumnDataTypeException;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.AntlrContextToM3CoreInstance;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.ParsingUtils;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
@@ -225,7 +223,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
         {
             tx = visitTransformerBlock(ctx.transformer(), mappingPath);
         }
-        String relationalOperation = visitJoinColWithDbOrConstantBlock(ctx.joinColWithDbOrConstant(), "", FastList.<String>newList(), scopeInfo);
+        String relationalOperation = visitJoinColWithDbOrConstantBlock(ctx.joinColWithDbOrConstant(), "", Lists.mutable.empty(), scopeInfo);
         return "^meta::relational::mapping::RelationalPropertyMapping" + sourceInformation.getPureSourceInformation(propertyName).toM4String() + "(" +
                 "        localMappingProperty = " + localMappingProperty + "," +
                 (localMappingPropertyType == null ? "" : "        localMappingPropertyType = " + localMappingPropertyType + ",") +
@@ -256,8 +254,12 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
 
     private LocalMappingPropertyParseResult visitLocalMappingPropertyBlock(LocalMappingPropertyContext ctx)
     {
-        return new LocalMappingPropertyParseResult(ctx.qualifiedName().getText(), ctx.localMappingPropertyFirstMul().INTEGER() != null ? ctx.localMappingPropertyFirstMul().INTEGER().getSymbol() : ctx.localMappingPropertyFirstMul().STAR().getSymbol(), ctx.localMappingPropertySecondMul() != null ?
-                ctx.localMappingPropertySecondMul().INTEGER() != null ? ctx.localMappingPropertySecondMul().INTEGER().getSymbol() : ctx.localMappingPropertySecondMul().STAR().getSymbol() : null);
+        String type = "^meta::pure::metamodel::import::ImportStub " + this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().identifier().getStart()).toM4String() + " (importGroup=system::imports::" + this.importId + ", idOrPath='" + ctx.qualifiedName().getText() + "')";
+        Token firstMult = ctx.localMappingPropertyFirstMul().INTEGER() != null ? ctx.localMappingPropertyFirstMul().INTEGER().getSymbol() : ctx.localMappingPropertyFirstMul().STAR().getSymbol();
+        Token secondMult = ctx.localMappingPropertySecondMul() != null ?
+                           (ctx.localMappingPropertySecondMul().INTEGER() != null ? ctx.localMappingPropertySecondMul().INTEGER().getSymbol() : ctx.localMappingPropertySecondMul().STAR().getSymbol()) :
+                           null;
+        return new LocalMappingPropertyParseResult(type, firstMult, secondMult);
     }
 
     private String visitNonePlusSingleMappingLineBlock(NonePlusSingleMappingLineContext ctx, ScopeInfo scopeInfo, String id, String mappingPath)
@@ -441,7 +443,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
     {
         if (ctx != null)
         {
-            return "[" + visitJoinColWithDbOrConstantsBlock(ctx.joinColWithDbOrConstants(), db, FastList.<String>newList(), new ScopeInfo(db, null, null, null)) + "]";
+            return "[" + visitJoinColWithDbOrConstantsBlock(ctx.joinColWithDbOrConstants(), db, Lists.mutable.empty(), new ScopeInfo(db, null, null, null)) + "]";
         }
         return null;
     }
@@ -623,7 +625,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
         {
             for (TableContext tc : tables)
             {
-                MutableList<String> pk = FastList.newList();
+                MutableList<String> pk = Lists.mutable.empty();
                 sb.append(visitTableBlock(tc, pk));
                 sb.append(",");
             }
@@ -650,7 +652,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
 
     public String visitViewBlock(ViewContext ctx, ScopeInfo viewSchemaScopeInfo)
     {
-        MutableList<String> pks = FastList.newList();
+        MutableList<String> pks = Lists.mutable.empty();
         String filterBlock = visitFilterViewBlock(ctx.filterViewBlock(), viewSchemaScopeInfo.getDatabase());
         String groupByBlock = visitMappingBlockGroupByBlock(ctx.mappingBlockGroupBy(), viewSchemaScopeInfo.getDatabase());
         boolean distinct = ctx.DISTINCTCMD() != null;
@@ -813,7 +815,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
     private String visitColWithDbOrConstantBlock(ColWithDbOrConstantContext ctx, ScopeInfo scopeInfo)
     {
         String db = ctx.database() != null ? visitDatabase(ctx.database()) : "";
-        return ctx.op_column() != null ? visitOp_columnBlock(ctx.op_column(), db, FastList.<String>newList(), scopeInfo) : visitConstant(ctx.constant());
+        return ctx.op_column() != null ? visitOp_columnBlock(ctx.op_column(), db, Lists.mutable.empty(), scopeInfo) : visitConstant(ctx.constant());
     }
 
     private String visitOp_groupOperationBlock(Op_groupOperationContext ctx, String database, ScopeInfo scopeInfo)
@@ -841,7 +843,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
 
     public Pair<String, String> visitViewColumnMappingLine(ViewColumnMappingLineContext ctx, ScopeInfo scopeInfo, MutableList<String> pks)
     {
-        MutableList<String> tacPks = FastList.newList();
+        MutableList<String> tacPks = Lists.mutable.empty();
         String relationalOperation = visitJoinColWithDbOrConstantBlock(ctx.joinColWithDbOrConstant(), scopeInfo.getDatabase(), tacPks, scopeInfo);
         String column = "^meta::relational::metamodel::Column" + sourceInformation.getPureSourceInformation(ctx.identifier(0).getStart()).toM4String() + "(name='" + ctx.identifier(0).getText() + "')";
         String buffer = "^meta::relational::mapping::ColumnMapping" + sourceInformation.getPureSourceInformation(ctx.identifier(0).getStart()).toM4String() + "(" +
@@ -859,7 +861,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
     {
         if (ctx != null)
         {
-            String columns = visitJoinColWithDbOrConstantsBlock(ctx.joinColWithDbOrConstants(), db, FastList.<String>newList(), new ScopeInfo(db, null, null, null));
+            String columns = visitJoinColWithDbOrConstantsBlock(ctx.joinColWithDbOrConstants(), db, Lists.mutable.empty(), new ScopeInfo(db, null, null, null));
             return "^meta::relational::mapping::GroupByMapping " + sourceInformation.getPureSourceInformation(ctx.GROUP_OPEN().getSymbol()).toM4String() + "(columns = [" + columns + "])";
         }
         return null;
@@ -1159,7 +1161,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
 
     private AsciiNodeBuilder visitOneJoinBlock(OneJoinContext ctx, Token joinType, ScopeInfo scope, String db)
     {
-        MutableList<String> values = FastList.newListWith("INNER", "OUTER");
+        MutableList<String> values = Lists.mutable.with("INNER", "OUTER");
         if (joinType != null && !values.contains(joinType.getText().toUpperCase()))
         {
             throw new PureParserException(sourceInformation.getPureSourceInformation(joinType), "The joinType is not recognized. Valid join types are: " + values);
@@ -1168,7 +1170,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
                 "^meta::relational::metamodel::join::JoinTreeNode" + sourceInformation.getPureSourceInformation(ctx.identifier().getStart()).toM4String() + "(" +
                         (joinType == null ? "" : "           joinType='" + joinType.getText() + "',") +
                         "           joinName='" + ctx.identifier().getText() + "'" +
-                        ("".equals(db) ? scope == null || scope.getDatabase().equals("") ? "" : ", database=" + scope.getDatabase() : ", database=" + db));
+                        ("".equals(db) ? scope == null || "".equals(scope.getDatabase()) ? "" : ", database=" + scope.getDatabase() : ", database=" + db));
     }
 
     @Override
