@@ -147,10 +147,6 @@
             <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-runtime-java-extension-compiled-dsl-mapping</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-runtime-java-extension-compiled-dsl-store</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>org.eclipse.collections</groupId>

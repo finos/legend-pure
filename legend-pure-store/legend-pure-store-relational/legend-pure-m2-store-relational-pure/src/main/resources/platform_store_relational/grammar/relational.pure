@@ -26,14 +26,14 @@ import meta::relational::metamodel::relation::*;
 import meta::relational::runtime::*;
 import meta::external::store::relational::runtime::*;
 
-Class meta::relational::metamodel::Database extends meta::pure::store::set::SetBasedStore
+Class meta::relational::metamodel::Database extends meta::pure::store::set::SetBasedStore, AnnotatedElement
 {
     schemas : Schema[*];
     joins : Join[*];
     filters : Filter[*];
 }
 
-Class meta::relational::metamodel::Schema extends meta::pure::store::set::Namespace
+Class meta::relational::metamodel::Schema extends meta::pure::store::set::Namespace, AnnotatedElement
 {
     name : String[1];
     database : Database[1];
@@ -81,7 +81,7 @@ Class meta::relational::metamodel::relation::BusinessSnapshotMilestoning extends
    snapshotDate : Column[1];
 }
 
-Class meta::relational::metamodel::relation::Table extends NamedRelation
+Class meta::relational::metamodel::relation::Table extends NamedRelation, AnnotatedElement
 {
    schema : Schema[1];
    primaryKey : Column[*];
@@ -98,7 +98,7 @@ Class meta::relational::metamodel::RelationalMappingSpecification
     mainTableAlias : TableAlias[1];
 }
 
-Class meta::relational::metamodel::relation::View extends NamedRelation, RelationalMappingSpecification
+Class meta::relational::metamodel::relation::View extends NamedRelation, RelationalMappingSpecification, AnnotatedElement
 {
     schema : Schema[1];
     primaryKey : Column[*];
@@ -191,7 +191,7 @@ Class meta::relational::metamodel::TableAlias extends Alias
    relation(){$this.relationalElement->cast(@Relation)}:Relation[1];
 }
 
-Class meta::relational::metamodel::Column extends meta::relational::metamodel::RelationalOperationElement, meta::pure::store::set::SetColumn
+Class meta::relational::metamodel::Column extends meta::relational::metamodel::RelationalOperationElement, meta::pure::store::set::SetColumn, AnnotatedElement
 {
    <<equality.Key>> name : String[1];
    <<equality.Key>> type : meta::relational::metamodel::datatype::DataType[1];
