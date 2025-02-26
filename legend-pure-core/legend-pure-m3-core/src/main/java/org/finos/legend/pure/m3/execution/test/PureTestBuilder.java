@@ -14,6 +14,11 @@
 
 package org.finos.legend.pure.m3.execution.test;
 
+import java.net.URI;
+import java.net.URL;
+import java.util.Comparator;
+import java.util.Enumeration;
+import java.util.List;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -24,14 +29,73 @@ import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.junit.Ignore;
-
-import java.util.Comparator;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.junit.jupiter.api.DynamicContainer;
+import org.junit.jupiter.api.DynamicNode;
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.function.Executable;
 
 public class PureTestBuilder
 {
+    public static DynamicContainer buildTestContainer(TestCollection testCollection, F2<CoreInstance, MutableList<Object>, Object> executor, ExecutionSupport executionSupport)
+    {
+        return convertTestSuiteToDynamicContainer(buildSuite(testCollection, executor, executionSupport));
+    }
+
+    public static DynamicContainer convertTestSuiteToDynamicContainer(TestSuite testSuite)
+    {
+        Enumeration<Test> tests = testSuite.tests();
+
+        List<DynamicNode> nodes = Lists.mutable.empty();
+
+        while (tests.hasMoreElements())
+        {
+            Test test = tests.nextElement();
+
+            if (test instanceof TestSuite)
+            {
+                nodes.add(convertTestSuiteToDynamicContainer((TestSuite) test));
+            }
+            else
+            {
+                PureTestCase testCase = (PureTestCase) test;
+                SourceInformation sourceInformation = testCase.coreInstance.getSourceInformation();
+                URI sourceUri = getSourceUri(sourceInformation);
+
+                nodes.add(DynamicTest.dynamicTest(testCase.getName(), sourceUri, testCase));
+            }
+        }
+
+        return DynamicContainer.dynamicContainer(testSuite.getName(), nodes);
+    }
+
+    private static URI getSourceUri(SourceInformation sourceInformation)
+    {
+        try
+        {
+            URL sourceInfoResource = Thread.currentThread().getContextClassLoader().getResource(sourceInformation.getSourceId().substring(1));
+
+            String source;
+
+            if (sourceInfoResource != null && sourceInfoResource.getProtocol().equals("file"))
+            {
+                source = sourceInfoResource.toString();
+            }
+            else
+            {
+                source = "classpath:" + sourceInformation.getSourceId();
+            }
+            return URI.create(source + "?line=" + sourceInformation.getLine() + "&column=" + sourceInformation.getColumn());
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
+    }
+
     public static TestSuite buildSuite(TestCollection testCollection, F2<CoreInstance, MutableList<Object>, Object> executor, ExecutionSupport executionSupport)
     {
         MutableList<TestSuite> subSuites = Lists.mutable.empty();
@@ -56,8 +120,7 @@ public class PureTestBuilder
                                         RichIterable<CoreInstance> testFunctions, Object param, CoreInstance paramCustomizer, String parameterizationId,
                                         ListIterable<TestSuite> subSuites, F2<CoreInstance, MutableList<Object>, Object> executor, ExecutionSupport executionSupport)
     {
-        TestSuite suite = new TestSuite();
-        suite.setName(packageName + (parameterizationId == null ? "" : "[" + parameterizationId + "]"));
+        TestSuite suite = new TestSuite(packageName + (parameterizationId == null ? "" : "[" + parameterizationId + "]"));
         beforeFunctions.collect(fn -> new PureTestCase(fn, param, paramCustomizer, parameterizationId, executor, executionSupport)).each(suite::addTest);
         for (Test subSuite : subSuites.toSortedList(Comparator.comparing(TestSuite::getName)))
         {
@@ -72,8 +135,7 @@ public class PureTestBuilder
         return suite;
     }
 
-    @Ignore
-    public static class PureTestCase extends TestCase
+    public static class PureTestCase extends TestCase implements Executable
     {
         CoreInstance coreInstance;
         Object param;
@@ -81,18 +143,20 @@ public class PureTestBuilder
         ExecutionSupport executionSupport;
         F2<CoreInstance, MutableList<Object>, Object> executor;
 
-        public PureTestCase()
-        {
-        }
-
         PureTestCase(CoreInstance coreInstance, Object param, CoreInstance paramCustomizer, String parameterizationId, F2<CoreInstance, MutableList<Object>, Object> executor, ExecutionSupport executionSupport)
         {
-            super(coreInstance.getValueForMetaPropertyToOne("functionName").getName() + (parameterizationId == null ? "" : "[" + parameterizationId + "]"));
+            super(PackageableElement.getUserPathForPackageableElement(coreInstance) + (parameterizationId == null ? "" : "[" + parameterizationId + "]"));
             this.coreInstance = coreInstance;
             this.param = param;
             this.paramCustomizer = paramCustomizer;
             this.executionSupport = executionSupport;
             this.executor = executor;
+        }
+
+        @Override
+        public void execute() throws Throwable
+        {
+            this.runTest();
         }
 
         @Override
