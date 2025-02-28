@@ -327,18 +327,12 @@ public class GraphNodeIterable extends AbstractLazySpliterable<CoreInstance>
                 return null;
             }
 
-            int splitSize = this.deque.size() / 2;
-            Deque<CoreInstance> newDeque = new ArrayDeque<>(splitSize);
-            for (int i = 0; i < splitSize; i++)
-            {
-                newDeque.addFirst(this.deque.pollLast());
-            }
             // If we are going to split, we need to make sure the visited set is synchronized
             if (!(this.visited instanceof SynchronizedMutableSet))
             {
                 this.visited = SynchronizedMutableSet.of(this.visited, this.visited);
             }
-            return new GraphNodeSpliterator(newDeque, this.visited, this.keyFilter, this.nodeFilter);
+            return new GraphNodeSpliterator(splitDeque(this.deque), this.visited, this.keyFilter, this.nodeFilter);
         }
 
         @Override

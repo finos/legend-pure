@@ -38,9 +38,11 @@ import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.ReferenceUsage;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.ModelElement;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PropertyOwner;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.Referenceable;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotatedElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -80,6 +82,7 @@ import org.finos.legend.pure.m3.serialization.runtime.binary.SimplePureRepositor
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ExternalReferenceSerializerLibrary;
 import org.finos.legend.pure.m3.tools.GraphTools;
 import org.finos.legend.pure.m3.tools.PackageTreeIterable;
+import org.finos.legend.pure.m3.tools.PackageableElementIterable;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -346,29 +349,10 @@ public abstract class AbstractCompiledStateIntegrityTest
     @Test
     public void testPackagedElementsHaveNonOverlappingSourceInfo()
     {
-        CoreInstance packageClass = runtime.getCoreInstance(M3Paths.Package);
         MutableMap<String, MutableList<CoreInstance>> elementsBySource = Maps.mutable.empty();
-        repository.getTopLevels().forEach(e ->
-        {
-            if (e.getClassifier() != packageClass)
-            {
-                elementsBySource.getIfAbsentPut(e.getSourceInformation().getSourceId(), Lists.mutable::empty).add(e);
-            }
-        });
-        PackageTreeIterable.newRootPackageTreeIterable(processorSupport).forEach(pkg ->
-        {
-            if (pkg.getSourceInformation() != null)
-            {
-                elementsBySource.getIfAbsentPut(pkg.getSourceInformation().getSourceId(), Lists.mutable::empty).add(pkg);
-            }
-            pkg._children().forEach(element ->
-            {
-                if (element.getClassifier() != packageClass)
-                {
-                    elementsBySource.getIfAbsentPut(element.getSourceInformation().getSourceId(), Lists.mutable::empty).add(element);
-                }
-            });
-        });
+        PackageableElementIterable.fromProcessorSupport(processorSupport)
+                .select(e -> e.getSourceInformation() != null)
+                .forEach(e -> elementsBySource.getIfAbsentPut(e.getSourceInformation().getSourceId(), Lists.mutable::empty).add(e));
         MutableList<Pair<CoreInstance, CoreInstance>> overlappingSourceInfo = Lists.mutable.empty();
         elementsBySource.forEachValue(elements ->
         {
@@ -955,10 +939,8 @@ public abstract class AbstractCompiledStateIntegrityTest
     public void testPropertyClassifierGenericTypes()
     {
         MutableList<String> errorMessages = Lists.mutable.empty();
-        CoreInstance classClass = processorSupport.package_getByUserPath(M3Paths.Class);
-        PackageTreeIterable.newRootPackageTreeIterable(repository)
-                .flatCollect(pkg -> pkg.getValueForMetaPropertyToMany(M3Properties.children))
-                .select(node -> Instance.instanceOf(node, classClass, processorSupport))
+        PackageableElementIterable.fromProcessorSupport(processorSupport)
+                .select(node -> node instanceof Class)
                 .forEach(node ->
                 {
                     ListIterable<? extends CoreInstance> typeParams = node.getValueForMetaPropertyToMany(M3Properties.typeParameters);
@@ -1108,10 +1090,8 @@ public abstract class AbstractCompiledStateIntegrityTest
     public void testQualifiedPropertyNames()
     {
         MutableList<String> errorMessages = Lists.mutable.empty();
-        CoreInstance propertyOwnerClass = processorSupport.package_getByUserPath(M3Paths.PropertyOwner);
-        PackageTreeIterable.newRootPackageTreeIterable(repository)
-                .flatCollect(pkg -> pkg.getValueForMetaPropertyToMany(M3Properties.children))
-                .select(node -> Instance.instanceOf(node, propertyOwnerClass, processorSupport))
+        PackageableElementIterable.fromProcessorSupport(processorSupport)
+                .select(node -> node instanceof PropertyOwner)
                 .forEach(node ->
                 {
                     ListIterable<? extends CoreInstance> qualifiedProperties = node.getValueForMetaPropertyToMany(M3Properties.qualifiedProperties);
@@ -1230,8 +1210,8 @@ public abstract class AbstractCompiledStateIntegrityTest
                 builder.append(" [").append(applications.size()).append("]:");
                 MutableSet<CoreInstance> remaining = CompiledStateIntegrityTestTools.forEachInstancePath(applications, processorSupport, (application, path) ->
                 {
-                   builder.append("\n\t\t").append(application);
-                   path.getGraphPath().writeDescription(builder.append(" (")).append(')');
+                    builder.append("\n\t\t").append(application);
+                    path.getGraphPath().writeDescription(builder.append(" (")).append(')');
                 });
                 remaining.forEach(application -> builder.append("\n\t\t").append(application));
             });

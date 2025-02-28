@@ -174,18 +174,7 @@ public class PackageTreeIterable extends AbstractLazySpliterable<Package>
         @Override
         public Spliterator<Package> trySplit()
         {
-            if (this.deque.size() < 2)
-            {
-                return null;
-            }
-
-            int splitSize = this.deque.size() / 2;
-            Deque<Package> newDeque = new ArrayDeque<>(splitSize);
-            for (int i = 0; i < splitSize; i++)
-            {
-                newDeque.addFirst(this.deque.pollLast());
-            }
-            return new PackageTreeSpliterator(newDeque, this.filter, this.depthFirst);
+            return (this.deque.size() < 2) ? null : new PackageTreeSpliterator(splitDeque(this.deque), this.filter, this.depthFirst);
         }
 
         @Override
