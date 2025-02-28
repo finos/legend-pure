@@ -173,18 +173,7 @@ public class GraphPathIterable extends AbstractLazySpliterable<ResolvedGraphPath
         @Override
         public Spliterator<ResolvedGraphPath> trySplit()
         {
-            if (this.deque.size() < 2)
-            {
-                return null;
-            }
-
-            int splitSize = this.deque.size() / 2;
-            Deque<ResolvedGraphPath> newDeque = new ArrayDeque<>(splitSize);
-            for (int i = 0; i < splitSize; i++)
-            {
-                newDeque.addFirst(this.deque.pollLast());
-            }
-            return new GraphPathSpliterator(newDeque);
+            return (this.deque.size() < 2) ? null : new GraphPathSpliterator(splitDeque(this.deque));
         }
 
         @Override
