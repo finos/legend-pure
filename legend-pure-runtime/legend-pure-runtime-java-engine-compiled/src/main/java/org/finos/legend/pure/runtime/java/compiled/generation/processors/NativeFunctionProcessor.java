@@ -77,6 +77,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.has.HasSubsecondWithAtLeastPrecision;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.operation.AdjustDate;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.operation.DateDiff;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.date.operation.TimeBucket;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.io.Print;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.cast.Cast;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.lang.cast.ToDecimal;
@@ -420,6 +421,7 @@ public class NativeFunctionProcessor
         //  Operation
         registerNative(map, new AdjustDate());
         registerNative(map, new DateDiff());
+        registerNative(map, new TimeBucket());
 
         //IO
         registerNative(map, new Print());
