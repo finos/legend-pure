@@ -47,5 +47,6 @@
         <module>legend-pure-maven-generation-java</module>
         <module>legend-pure-maven-generation-par</module>
         <module>legend-pure-maven-generation-pct</module>
+        <module>legend-pure-compiler-maven-plugin</module>
     </modules>
 </project>

@@ -52,6 +52,17 @@
             </plugin>
             <plugin>
                 <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-compiler-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>compile-pure</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-maven-generation-par</artifactId>
                 <configuration>
                     <sourceDirectory>${project.basedir}/src/main/resources</sourceDirectory>
