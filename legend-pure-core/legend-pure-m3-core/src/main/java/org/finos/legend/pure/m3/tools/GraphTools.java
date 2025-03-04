@@ -15,16 +15,15 @@
 package org.finos.legend.pure.m3.tools;
 
 import org.eclipse.collections.api.LazyIterable;
+import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.utility.LazyIterate;
-import org.finos.legend.pure.m3.coreinstance.PackageAccessor;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.navigation.graph.GraphPathIterable;
@@ -41,41 +40,42 @@ import java.util.function.Predicate;
 
 public class GraphTools
 {
+    public static RichIterable<String> getTopLevelNames()
+    {
+        MutableList<String> result = Lists.mutable.ofInitialCapacity(_Package.SPECIAL_TYPES.size() + 1);
+        result.addAll(_Package.SPECIAL_TYPES.castToSet());
+        result.add(M3Paths.Root);
+        return result;
+    }
+
+    public static boolean isTopLevelName(String name)
+    {
+        return M3Paths.Root.equals(name) || _Package.SPECIAL_TYPES.contains(name);
+    }
+
+    public static RichIterable<CoreInstance> getTopLevels(ProcessorSupport processorSupport)
+    {
+        return getTopLevelNames().collect(processorSupport::repository_getTopLevel);
+    }
+
     public static LazyIterable<String> getTopLevelAndPackagedElementPaths(ModelRepository repository)
     {
-        return repository.getTopLevels().asLazy().collect(CoreInstance::getName)
-                .concatenate(PackageTreeIterable.newRootPackageTreeIterable(repository)
-                        .flatCollect(PackageAccessor::_children)
-                        .collect(PackageableElement::getUserPathForPackageableElement));
+        return getTopLevelAndPackagedElements(repository).collect(PackageableElement::getUserPathForPackageableElement);
     }
 
-    @SuppressWarnings("unchecked")
     public static LazyIterable<String> getTopLevelAndPackagedElementPaths(ProcessorSupport processorSupport)
     {
-        return LazyIterate.concatenate(
-                PrimitiveUtilities.getPrimitiveTypeNames().asLazy(),
-                Lists.immutable.with(M3Paths.Package, M3Paths.Root),
-                PackageTreeIterable.newRootPackageTreeIterable(processorSupport).flatCollect(PackageAccessor::_children).collect(PackageableElement::getUserPathForPackageableElement));
+        return getTopLevelAndPackagedElements(processorSupport).collect(PackageableElement::getUserPathForPackageableElement);
     }
 
-    public static LazyIterable<CoreInstance> getTopLevelAndPackagedElements(ModelRepository repository)
+    public static PackageableElementIterable getTopLevelAndPackagedElements(ModelRepository repository)
     {
-        return repository.getTopLevels()
-                .asLazy()
-                .concatenate(PackageTreeIterable.newRootPackageTreeIterable(repository)
-                        .flatCollect(PackageAccessor::_children)
-                        .collect(e -> (CoreInstance) e));
+        return PackageableElementIterable.builder().withTopLevels(repository).build();
     }
 
-    public static LazyIterable<CoreInstance> getTopLevelAndPackagedElements(ProcessorSupport processorSupport)
+    public static PackageableElementIterable getTopLevelAndPackagedElements(ProcessorSupport processorSupport)
     {
-        return PrimitiveUtilities.getPrimitiveTypes(processorSupport, Lists.mutable.ofInitialCapacity(PrimitiveUtilities.getPrimitiveTypeNames().size() + 2))
-                .with(processorSupport.repository_getTopLevel(M3Paths.Package))
-                .with(processorSupport.repository_getTopLevel(M3Paths.Root))
-                .asLazy()
-                .concatenate(PackageTreeIterable.newRootPackageTreeIterable(processorSupport)
-                        .flatCollect(PackageAccessor::_children)
-                        .collect(e -> (CoreInstance) e));
+        return PackageableElementIterable.builder().withTopLevels(processorSupport).build();
     }
 
     public static LazyIterable<CoreInstance> getComponentInstances(CoreInstance element, ProcessorSupport processorSupport)
