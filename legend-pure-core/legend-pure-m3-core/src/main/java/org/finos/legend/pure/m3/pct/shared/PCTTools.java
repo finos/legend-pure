@@ -69,7 +69,7 @@ public class PCTTools
             else
             {
                 debugHelper(testFunction, pctExecutor, true, e);
-                fail("The PCT test runner expected an error containing: \"" + message + "\" but the the error was: \"" + e.getMessage().replace("\"", "\\\"").replace("\n", "\\n") + "\"\nTrace:\n" + ExceptionUtils.getStackTrace(e))
+                fail("The PCT test runner expected an error containing: \"" + message + "\" but the the error was: \"" + checkNullMessage(e.getMessage()).replace("\"", "\\\"").replace("\n", "\\n") + "\"\nTrace:\n" + ExceptionUtils.getStackTrace(e))
                 ;
             }
         }
@@ -88,8 +88,14 @@ public class PCTTools
         }
     }
 
+    public static String checkNullMessage(String message)
+    {
+        return message == null ? "NullPointer exception" : message;
+    }
+
     private static String cleanMessage(String message)
     {
+        message = checkNullMessage(message);
         boolean shouldCut = message.contains("Execution error at ") || message.contains("Assert failure at ");
         message = shouldCut ? message.substring(message.indexOf("\"")) : message;
         return message.replace("\"", "\\\"").replace("\n", "\\n");

@@ -151,8 +151,8 @@ public class PureTestBuilderCompiled extends TestSuite
         {
             // Check if the error was expected
             String message = exclusions.get(PackageableElement.getUserPathForPackageableElement(coreInstance, "::"));
-            Throwable thrown = e.getCause().getMessage().contains("Unexpected error executing function with params") && e.getCause().getCause() != null ? e.getCause().getCause() : e.getCause();
-            if (message != null && thrown.getMessage().contains(message))
+            Throwable thrown = e.getCause().getMessage() != null && e.getCause().getMessage().contains("Unexpected error executing function with params") && e.getCause().getCause() != null ? e.getCause().getCause() : e.getCause();
+            if (message != null && PCTTools.checkNullMessage(thrown.getMessage()).contains(message))
             {
                 return null;
             }
