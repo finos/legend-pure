@@ -14,7 +14,12 @@
 
 import meta::pure::test::pct::*;
 
-native function <<PCT.function>> meta::pure::functions::date::timeBucket(date:DateTime[1], quantity:Integer[1], unit:DurationUnit[1]):DateTime[1];
+native function
+    <<PCT.function>>
+    {
+         doc.doc='calculates a time bucket for DateTime, where the bucket is of size quantity, unit (e.g. 5 Hour). Uses unix Epoch as the origin for the calculation.'
+    }
+    meta::pure::functions::date::timeBucket(date:DateTime[1], quantity:Integer[1], unit:DurationUnit[1]):DateTime[1];
 
 function <<PCT.test>> meta::pure::functions::date::tests::timeBucket::testTimeBucketSeconds<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
