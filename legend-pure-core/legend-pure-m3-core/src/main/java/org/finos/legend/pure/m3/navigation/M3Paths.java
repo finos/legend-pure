@@ -77,7 +77,7 @@ public class M3Paths
     public static final String Integer = ModelRepository.INTEGER_TYPE_NAME;
     public static final String InstanceValue = "meta::pure::metamodel::valuespecification::InstanceValue";
     public static final String InstanceValueSpecificationContext = "meta::pure::metamodel::valuespecification::InstanceValueSpecificationContext";
-    public static final String KeyExpression = "meta::pure::functions::lang::KeyExpression";
+    public static final String KeyExpression = "meta::pure::metamodel::function::KeyExpression";
     public static final String KeyValueValueSpecificationContext = "meta::pure::metamodel::valuespecification::KeyValueValueSpecificationContext";
     public static final String LambdaFunction = "meta::pure::metamodel::function::LambdaFunction";
     public static final String LatestDate = ModelRepository.LATEST_DATE_TYPE_NAME;

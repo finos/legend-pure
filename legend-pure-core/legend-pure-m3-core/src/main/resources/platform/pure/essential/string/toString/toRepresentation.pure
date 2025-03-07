@@ -19,6 +19,7 @@ function <<PCT.function, PCT.platformOnly>> meta::pure::functions::string::toRep
 {
     $any->match([
                  s:String[1] | '\'' + $s->replace('\'', '\\\'') + '\'',
+                 t:StrictTime[1] | '%' + $t->toString(),
                  d:Date[1] | '%' + $d->toString(),
                  d:Decimal[1] | $d->toString() + 'D',
                  n:Number[1] | $n->toString(),

@@ -45,7 +45,7 @@ import org.finos.legend.pure.m3.compiler.unload.Unbinder;
 import org.finos.legend.pure.m3.compiler.unload.unbind.UnbindState;
 import org.finos.legend.pure.m3.compiler.visibility.Visibility;
 import org.finos.legend.pure.m3.coreinstance.Package;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.KeyExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;

@@ -69,7 +69,7 @@ public class New extends AbstractNative
                 "            @Override\n" +
                 "            public Object value(" + FullJavaPaths.Class + " clazz, String name, ExecutionSupport es)\n" +
                 "            {\n" +
-                "                return CoreGen.newObject(clazz, name, Lists.immutable.<org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression>empty(), es);\n" +
+                "                return CoreGen.newObject(clazz, name, Lists.immutable.<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.KeyExpression>empty(), es);\n" +
                 "            }\n" +
                 "        }";
     }
