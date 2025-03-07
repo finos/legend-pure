@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
+import java.time.Instant;
 import java.util.GregorianCalendar;
 
 public interface PureDate extends Comparable<PureDate>
@@ -76,6 +77,11 @@ public interface PureDate extends Comparable<PureDate>
      * @return Gregorian calendar for Pure date
      */
     GregorianCalendar getCalendar();
+
+    default Instant toInstant()
+    {
+        return this.getCalendar().toZonedDateTime().toInstant();
+    }
 
     default <T extends Appendable> T appendString(T appendable)
     {
