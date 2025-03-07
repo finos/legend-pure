@@ -111,6 +111,65 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
         );
     }
 
+    @Ignore
+    @Test
+    public void testColumnFunctionCollectionInference3()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "Class Firm\n" +
+                        "{\n" +
+                        "   legalName:String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "function f():Boolean[1]\n" +
+                        "{\n" +
+                        "   Firm.all()->project(~[legal:x|$x.legalName])->wrapper(~[legal]);\n" +
+                        //if you remove the wrapper function, ths below does compile which is functionally identical
+//                        "   Firm.all()->project(~[legal:x|$x.legalName])->groupBy(~[legal], ~[size: x | $x : y | $y->size()])->filter(zz | $zz.size > 1)->size() == 0;\n" +
+                        // "Can't find the property 'size' in the class meta::pure::metamodel::relation::Relation"
+                        "}\n" +
+                        "function wrapper<Q,U>(r: Relation<Q>[1], cols:ColSpecArray<U⊆Q>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "   $r->groupBy($r->groupBy($cols, ~[size : x | $x : y | $y->size()])->filter(zz | $zz.size > 1)->size() == 0)->size() == 0\n" +
+                        "}\n" +
+                        "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];" +
+                        "\n" +
+                        "native function groupBy<T,Z,K,V,R>(r:Relation<T>[1], cols:ColSpecArray<Z⊆T>[1], agg:AggColSpecArray<{T[1]->K[0..1]},{K[*]->V[0..1]}, R>[1]):Relation<Z+R>[1];" +
+                        "\n" +
+                        "native function filter<T>(rel:Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1];" +
+                        "\n"
+        );
+    }
+    
+    @Ignore
+    @Test
+    public void testColumnFunctionCollectionInference4() // Stackoverflow
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "Class Firm\n" +
+                        "{\n" +
+                        "   legalName:String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "function f():Boolean[1]\n" +
+                        "{\n" +
+                        "   Firm.all()->project(~[legal:x|$x.legalName])->wrapper(~[legal]);\n" +
+                        "}\n" +
+                        "function wrapper<T,Z>(r: Relation<T>[1], cols:ColSpecArray<Z⊆T>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "   $r->groupBy($r->groupBy($cols, ~[size : x | $x : y | $y->size()])->filter(zz | $zz.size > 1)->size() == 0)->size() == 0\n" +
+                        "}\n" +
+                        "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];" +
+                        "\n" +
+                        "native function groupBy<T,Z,K,V,R>(r:Relation<T>[1], cols:ColSpecArray<Z⊆T>[1], agg:AggColSpecArray<{T[1]->K[0..1]},{K[*]->V[0..1]}, R>[1]):Relation<Z+R>[1];" +
+                        "\n" +
+                        "native function filter<T>(rel:Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):Relation<T>[1];" +
+                        "\n"
+        );
+    }
+    
     @Test
     public void testColumnFunctionCollectionChainedWithNewFunctionInference()
     {
