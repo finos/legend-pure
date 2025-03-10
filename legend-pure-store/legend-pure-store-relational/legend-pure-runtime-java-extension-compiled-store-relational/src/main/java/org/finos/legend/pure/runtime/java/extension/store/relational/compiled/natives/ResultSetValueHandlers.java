@@ -100,6 +100,16 @@ public final class ResultSetValueHandlers
         }
     };
 
+    private static final ResultSetValueHandler FLOAT = new ResultSetValueHandler()
+    {
+        @Override
+        public Object value(ResultSet rs, int i, CoreInstance nullSqlInstance, Calendar calendar) throws SQLException
+        {
+            float f = rs.getFloat(i);
+            return rs.wasNull() ? nullSqlInstance : Double.valueOf(f);
+        }
+    };
+
     private static final ResultSetValueHandler DOUBLE = new ResultSetValueHandler()
     {
         @Override
@@ -146,8 +156,8 @@ public final class ResultSetValueHandlers
         HANDLERS.put(Types.SMALLINT, LONG);
         HANDLERS.put(Types.INTEGER, LONG);
         HANDLERS.put(Types.BIGINT, LONG);
-        HANDLERS.put(Types.FLOAT, DOUBLE);
-        HANDLERS.put(Types.REAL, DOUBLE);
+        HANDLERS.put(Types.FLOAT, FLOAT);
+        HANDLERS.put(Types.REAL, FLOAT);
         HANDLERS.put(Types.DOUBLE, DOUBLE);
         HANDLERS.put(Types.DECIMAL, DECIMAL);
         HANDLERS.put(Types.NUMERIC, DECIMAL);
