@@ -78,11 +78,6 @@ public interface PureDate extends Comparable<PureDate>
      */
     GregorianCalendar getCalendar();
 
-    default Instant toInstant()
-    {
-        return this.getCalendar().toZonedDateTime().toInstant();
-    }
-
     default <T extends Appendable> T appendString(T appendable)
     {
         return DateFormat.append(appendable, this);

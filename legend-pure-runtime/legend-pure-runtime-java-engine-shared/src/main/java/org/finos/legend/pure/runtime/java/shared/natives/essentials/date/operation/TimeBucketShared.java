@@ -41,7 +41,7 @@ public class TimeBucketShared
         // date math in java.time requires TZ so adding back the UTC
         ZonedDateTime origin = Instant.ofEpochMilli(0).atZone(ZoneId.of("UTC"));
         // avoid dependency on older gregorianCalendar methods
-        ZonedDateTime dateTimeTz = dateTime.toInstant().atZone(ZoneId.of("UTC"));
+        ZonedDateTime dateTimeTz = dateTime.getCalendar().toZonedDateTime().toInstant().atZone(ZoneId.of("UTC"));
         if (unit.equals("WEEKS"))
         {
             // Gets the ISO week start (if the weekday of a date is element of [Mon, Thu] it belongs to prior Monday)
