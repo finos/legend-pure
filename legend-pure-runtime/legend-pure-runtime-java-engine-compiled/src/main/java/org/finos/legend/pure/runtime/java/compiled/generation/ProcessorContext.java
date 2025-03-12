@@ -70,7 +70,7 @@ public class ProcessorContext
         this.extraFunctionGenerator = compiledExtensions.collect(CompiledExtension::getExtraFunctionGeneration).select(Objects::nonNull);
         this.includePureStackTrace = includePureStackTrace;
         this.generator = M3CoreInstanceGenerator.generator(null, null, null);
-        this.idBuilder = (idBuilder == null) ? IdBuilder.newIdBuilder(this.support) : idBuilder;
+        this.idBuilder = (idBuilder == null) ? IdBuilder.newIdBuilder(this.support, false) : idBuilder;
     }
 
     @Deprecated

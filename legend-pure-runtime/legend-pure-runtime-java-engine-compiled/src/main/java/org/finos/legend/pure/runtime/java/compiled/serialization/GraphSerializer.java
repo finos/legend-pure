@@ -216,13 +216,13 @@ public class GraphSerializer
             {
                 return processPrimitiveTypeJava(value, m3ProcessorSupport);
             }
-            else if (Instance.instanceOf(value.getClassifier(), M3Paths.Enumeration, m3ProcessorSupport))
+            if (Instance.instanceOf(value.getClassifier(), M3Paths.Enumeration, m3ProcessorSupport))
             {
                 return metamodel.getEnum(MetadataJavaPaths.buildMetadataKeyFromType(value.getClassifier()), value.getName());
             }
-            else if (Instance.instanceOf(value, M3Paths.Class, m3ProcessorSupport))
+            if (Instance.instanceOf(value, M3Paths.Class, m3ProcessorSupport))
             {
-                return metamodel.getMetadata(MetadataJavaPaths.Class, PackageableElement.getSystemPathForPackageableElement(value, "::"));
+                return metamodel.getMetadata(MetadataJavaPaths.Class, PackageableElement.getUserPathForPackageableElement(value));
             }
         }
         return value;

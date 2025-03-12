@@ -22,7 +22,7 @@ public abstract class AbstractTestGeneralizationAtRuntime extends AbstractPureTe
     public void testSuperTypeStaticInstantiation()
     {
         compileTestSource(
-                "^meta::pure::metamodel::PackageableElement a (name='wee')" +
+                "^meta::pure::metamodel::PackageableElement a (name='a')" +
                 "function go():Any[*]" +
                 "{" +
                 "   assert(meta::pure::metamodel::PackageableElement.specializations->size() > 0, |'');\n" +
