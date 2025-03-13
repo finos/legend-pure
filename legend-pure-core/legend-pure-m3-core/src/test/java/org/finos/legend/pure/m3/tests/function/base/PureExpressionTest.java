@@ -139,12 +139,16 @@ public abstract class PureExpressionTest extends AbstractPureTestWithCoreCompile
                 "{\n" +
                 ArrayIterate.makeString(expression.split("\\R"), "        ", "\n        ", "\n") +
                 "}\n";
-        String sourceName = functionName + RepositoryCodeStorage.PURE_FILE_EXTENSION;
-        this.sourcesToDelete.add(sourceName);
-        compileTestSource(sourceName, testFunctionString);
+        compileSource(functionName + RepositoryCodeStorage.PURE_FILE_EXTENSION, testFunctionString);
         CoreInstance result = execute(functionSignature);
         return isReturnMultiplicityOne ?
                 Instance.getValueForMetaPropertyToOneResolved(result, M3Properties.values, processorSupport) :
                 Instance.getValueForMetaPropertyToManyResolved(result, M3Properties.values, processorSupport);
+    }
+
+    protected void compileSource(String sourceId, String source)
+    {
+        this.sourcesToDelete.add(sourceId);
+        compileTestSource(sourceId, source);
     }
 }

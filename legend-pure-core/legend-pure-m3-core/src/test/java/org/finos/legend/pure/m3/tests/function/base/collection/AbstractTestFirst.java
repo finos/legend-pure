@@ -22,25 +22,25 @@ public abstract class AbstractTestFirst extends PureExpressionTest
     @Test
     public void testBasic()
     {
-        compileTestSource("fromString.pure",
+        compileSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(1 == [1,2,3]->first(), |'');\n" +
                         "   assert(1 == 1->first(), |'');\n" +
                         "   assert([] == []->first(), |'');\n" +
                         "}\n");
-        this.execute("test():Boolean[1]");
+        execute("test():Boolean[1]");
     }
 
     @Test
     public void testEval()
     {
-        compileTestSource("fromString.pure",
+        compileSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(1 == first_T_MANY__T_$0_1$_->eval([1,2,3]), |'');\n" +
                         "   assert(1 == first_T_MANY__T_$0_1$_->eval(1), |'');\n" +
                         "}\n");
-        this.execute("test():Boolean[1]");
+        execute("test():Boolean[1]");
     }
 }
