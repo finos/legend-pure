@@ -19,7 +19,6 @@ import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.HashingStrategy;
 import org.eclipse.collections.api.block.predicate.Predicate;
-import org.eclipse.collections.api.block.procedure.Procedure;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Stacks;
@@ -28,7 +27,6 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.ordered.ReversibleIterable;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.lazy.AbstractLazyIterable;
 import org.eclipse.collections.impl.map.strategy.mutable.UnifiedMapWithHashingStrategy;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.LazyIterate;
@@ -59,15 +57,13 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureEqualsHashingStrategy;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
+import org.finos.legend.pure.runtime.java.shared.natives.essentials.date.operation.TimeBucketShared;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.TimeZone;
-import java.util.function.Consumer;
 
 public class CoreHelper
 {
@@ -231,6 +227,18 @@ public class CoreHelper
     public static long dateDiff(PureDate date1, PureDate date2, Enum unit)
     {
         return date1.dateDifference(date2, unit._name());
+    }
+
+    public static DateTime timeBucket(DateTime date, long quantity, Enum unit)
+    {
+        try
+        {
+            return TimeBucketShared.time_bucket(date, quantity, unit._name());
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new PureExecutionException(e.getMessage(), e.getCause(), Stacks.mutable.empty());
+        }
     }
 
     public static long year(PureDate date)
