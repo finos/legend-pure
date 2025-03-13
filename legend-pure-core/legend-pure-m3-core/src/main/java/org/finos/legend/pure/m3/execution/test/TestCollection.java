@@ -595,7 +595,12 @@ public class TestCollection
      */
     public static TestCollection collectTests(String pkgPath, ProcessorSupport processorSupport, Function<CoreInstance, TestCollection> pureTestCollectionGenerator, Predicate<? super CoreInstance> testFilter)
     {
-        return collectTests(processorSupport.package_getByUserPath(pkgPath), processorSupport, pureTestCollectionGenerator, testFilter);
+        CoreInstance pkg = processorSupport.package_getByUserPath(pkgPath);
+        if (pkg == null)
+        {
+            throw new RuntimeException("Cannot find package: " + pkgPath);
+        }
+        return collectTests(pkg, processorSupport, pureTestCollectionGenerator, testFilter);
     }
 
     /**
@@ -609,7 +614,12 @@ public class TestCollection
      */
     public static TestCollection collectTests(String pkgPath, ProcessorSupport processorSupport, Predicate<? super CoreInstance> testFilter)
     {
-        return collectTests(processorSupport.package_getByUserPath(pkgPath), processorSupport, testFilter);
+        CoreInstance pkg = processorSupport.package_getByUserPath(pkgPath);
+        if (pkg == null)
+        {
+            throw new RuntimeException("Cannot find package: " + pkgPath);
+        }
+        return collectTests(pkg, processorSupport, testFilter);
     }
 
     /**

@@ -16,6 +16,7 @@ package org.finos.legend.pure.m3.pct.reports.generation;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
@@ -32,6 +33,7 @@ import org.finos.legend.pure.m3.pct.reports.model.TestInfo;
 import org.finos.legend.pure.m3.pct.shared.generation.Shared;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 
 public class ReportGeneration
@@ -47,7 +49,13 @@ public class ReportGeneration
             }
             catch (Exception e)
             {
-                throw new RuntimeException(e);
+                StringBuilder builder = new StringBuilder("Error generating report for ").append(suiteClass);
+                String eMessage = e.getMessage();
+                if (eMessage != null)
+                {
+                    builder.append(": ").append(eMessage);
+                }
+                throw new RuntimeException(builder.toString(), e);
             }
         });
     }
@@ -69,26 +77,24 @@ public class ReportGeneration
         return new AdapterReport(
                 reportManager.getReportScope(),
                 new AdapterKey(reportManager.getAdapter(), reportManager.getPlatform()),
-                testResults.valuesView().toList()
+                Lists.mutable.withAll(testResults.values())
         );
-
     }
 
     public static void writeToTarget(String targetDir, MutableList<AdapterReport> reports)
     {
         reports.forEach(x ->
-                {
-                    try
-                    {
-                        String reportStr = JsonMapper.builder().build().setSerializationInclusion(JsonInclude.Include.NON_NULL).writerWithDefaultPrettyPrinter().writeValueAsString(x);
-                        Shared.writeStringToTarget(targetDir, ReportGeneration.getReportName(x) + ".json", reportStr);
-                    }
-                    catch (IOException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                }
-        );
+        {
+            try
+            {
+                String reportStr = JsonMapper.builder().build().setSerializationInclusion(JsonInclude.Include.NON_NULL).writerWithDefaultPrettyPrinter().writeValueAsString(x);
+                Shared.writeStringToTarget(targetDir, ReportGeneration.getReportName(x) + ".json", reportStr);
+            }
+            catch (IOException e)
+            {
+                throw new UncheckedIOException(e);
+            }
+        });
     }
 
     public static String getReportName(AdapterReport adapterReport)

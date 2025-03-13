@@ -28,12 +28,22 @@ public class BinaryWriters
 
     public static Writer newBinaryWriter(WritableByteChannel byteChannel)
     {
-        return new WritableByteChannelWriter(byteChannel);
+        return newBinaryWriter(byteChannel, true);
+    }
+
+    public static Writer newBinaryWriter(WritableByteChannel byteChannel, boolean closeChannelOnClose)
+    {
+        return new WritableByteChannelWriter(byteChannel, closeChannelOnClose);
     }
 
     public static Writer newBinaryWriter(OutputStream stream)
     {
-        return new StreamBinaryWriter(stream);
+        return newBinaryWriter(stream, true);
+    }
+
+    public static Writer newBinaryWriter(OutputStream stream, boolean closeStreamOnClose)
+    {
+        return new StreamBinaryWriter(stream, closeStreamOnClose);
     }
 
     public static Writer newBinaryWriter(MutableByteCollection byteCollection)

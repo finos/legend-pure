@@ -24,10 +24,12 @@ class WritableByteChannelWriter extends AbstractBinaryWriter
 {
     private final ByteBuffer byteBuffer = ByteBuffer.allocate(Math.max(Long.BYTES, Double.BYTES));
     private final WritableByteChannel byteChannel;
+    private final boolean closeChannelOnClose;
 
-    WritableByteChannelWriter(WritableByteChannel byteChannel)
+    WritableByteChannelWriter(WritableByteChannel byteChannel, boolean closeChannelOnClose)
     {
         this.byteChannel = Objects.requireNonNull(byteChannel, "byteChannel may not be null");
+        this.closeChannelOnClose = closeChannelOnClose;
     }
 
     @Override
@@ -88,13 +90,16 @@ class WritableByteChannelWriter extends AbstractBinaryWriter
     @Override
     public synchronized void close()
     {
-        try
+        if (this.closeChannelOnClose)
         {
-            this.byteChannel.close();
-        }
-        catch (IOException e)
-        {
-            throw new UncheckedIOException(e);
+            try
+            {
+                this.byteChannel.close();
+            }
+            catch (IOException e)
+            {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 
