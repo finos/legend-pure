@@ -59,7 +59,7 @@ public abstract class AbstractTestMatch extends PureExpressionTest
     @Test
     public void testMatchEnum()
     {
-        compileTestSource("Enum test::Enum1 { VALUE1, VALUE2 }\n" +
+        compileSource("fromString.pure", "Enum test::Enum1 { VALUE1, VALUE2 }\n" +
                 "Enum test::Enum2 { VALUE3, VALUE4 }\n" +
                 "Enum test::Enum3 { VALUE5 }\n");
         assertExpressionTrue("test::Enum1.VALUE1->match([e:test::Enum1[1] | true, e:test::Enum2[1] | false])");

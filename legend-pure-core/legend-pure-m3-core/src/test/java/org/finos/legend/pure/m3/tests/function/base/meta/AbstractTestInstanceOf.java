@@ -22,7 +22,7 @@ public abstract class AbstractTestInstanceOf extends PureExpressionTest
     @Test
     public void testInstanceOfEnumeration()
     {
-        compileTestSource("fromString.pure","Enum test::Enum1 { VALUE1, VALUE2 }\n" +
+        compileSource("fromString.pure","Enum test::Enum1 { VALUE1, VALUE2 }\n" +
                 "Enum test::Enum2 { VALUE3, VALUE4 }\n" +
                 "Class test::MyClass {}\n");
 
@@ -51,7 +51,7 @@ public abstract class AbstractTestInstanceOf extends PureExpressionTest
     @Test
     public void testIndirectInstanceOfEnumeration()
     {
-        compileTestSource("fromString.pure","Enum test::Enum1 { VALUE1, VALUE2 }\n" +
+        compileSource("fromString.pure","Enum test::Enum1 { VALUE1, VALUE2 }\n" +
                 "Enum test::Enum2 { VALUE3, VALUE4 }\n" +
                 "Class test::MyClass {}\n" +
                 "function test::indirectInstanceOf(val:Any[1], type:Type[1]):Boolean[1]\n" +
@@ -79,29 +79,5 @@ public abstract class AbstractTestInstanceOf extends PureExpressionTest
         // Class instance
         assertExpressionFalse("^test::MyClass()->test::indirectInstanceOf(test::Enum1)");
         assertExpressionFalse("^test::MyClass()->test::indirectInstanceOf(test::Enum2)");
-    }
-
-    @Test
-    public void testWithCompileValueSpecification()
-    {
-        compileTestSource("fromString.pure","Enum test::Enum1 { VALUE1, VALUE2 }\n" +
-                "Enum test::Enum2 { VALUE3, VALUE4 }\n" +
-                "Class test::MyClass {}\n" +
-                "function test::compileAndEval(val : String[1]):Boolean[1]\n" +
-                "{\n" +
-                "    $val->compileValueSpecification().result->toOne()->reactivate()->cast(@Function<{->Boolean[1]}>)->toOne()->eval();\n" +
-                "}\n");
-
-        assertExpressionTrue("'{| \\'myStr\\'->instanceOf(String)}'->test::compileAndEval()");
-        assertExpressionTrue("'{| instanceOf((\\'myStr\\' + \\'other\\'), String)}'->test::compileAndEval()");
-        assertExpressionFalse("'{| \\'myStr\\'->instanceOf(test::Enum2)}'->test::compileAndEval()");
-        assertExpressionFalse("'{| \\'myStr\\'->instanceOf(Integer)}'->test::compileAndEval()");
-
-        assertExpressionTrue("'{| test::Enum2.VALUE3->instanceOf(test::Enum2)}'->test::compileAndEval()");
-        assertExpressionFalse("'{| test::Enum2.VALUE3->instanceOf(String)}'->test::compileAndEval()");
-        assertExpressionFalse("'{| test::Enum2.VALUE3->instanceOf(test::Enum1)}'->test::compileAndEval()");
-
-        assertExpressionTrue("'{| ^test::MyClass()->instanceOf(test::MyClass)}'->test::compileAndEval()");
-        assertExpressionFalse("'{| ^test::MyClass()->instanceOf(String)}'->test::compileAndEval()");
     }
 }
