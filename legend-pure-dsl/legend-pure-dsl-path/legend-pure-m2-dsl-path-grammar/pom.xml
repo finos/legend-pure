@@ -19,7 +19,7 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure-dsl-path</artifactId>
-        <version>5.37.0</version>
+        <version>5.37.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
