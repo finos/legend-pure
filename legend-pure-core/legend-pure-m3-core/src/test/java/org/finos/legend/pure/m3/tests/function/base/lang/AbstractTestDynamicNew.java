@@ -26,7 +26,6 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.After;
 import org.junit.Test;
 
-
 public abstract class AbstractTestDynamicNew extends AbstractPureTestWithCoreCompiled
 {
     private static final String DECLARATION = "Enum myEnum{A,B}"
