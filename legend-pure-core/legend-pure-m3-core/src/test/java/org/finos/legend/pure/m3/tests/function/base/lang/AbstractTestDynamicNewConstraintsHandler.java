@@ -18,11 +18,18 @@ import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
 public abstract class AbstractTestDynamicNewConstraintsHandler extends AbstractPureTestWithCoreCompiled
 {
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+        runtime.compile();
+    }
 
     @Test
     public void testClassDefaultConstraintHandler()
@@ -541,5 +548,4 @@ public abstract class AbstractTestDynamicNewConstraintsHandler extends AbstractP
 
         this.execute("testNew():Any[*]");
     }
-
 }
