@@ -22,22 +22,22 @@ public abstract class AbstractTestTail extends PureExpressionTest
     @Test
     public void testBasic()
     {
-        compileTestSource("fromString.pure",
+        compileSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert([2,3] == [1,2,3]->tail(), |'');\n" +
                         "}\n");
-        this.execute("test():Boolean[1]");
+        execute("test():Boolean[1]");
     }
 
     @Test
     public void testEval()
     {
-        compileTestSource("fromString.pure",
+        compileSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert([2,3] == tail_T_MANY__T_MANY_->eval([1,2,3]), |'');\n" +
                         "}\n");
-        this.execute("test():Boolean[1]");
+        execute("test():Boolean[1]");
     }
 }

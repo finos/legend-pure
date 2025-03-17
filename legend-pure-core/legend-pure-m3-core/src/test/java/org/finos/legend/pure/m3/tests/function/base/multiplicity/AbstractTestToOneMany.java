@@ -29,36 +29,36 @@ public abstract class AbstractTestToOneMany extends PureExpressionTest
     @Test
     public void testBasic()
     {
-        compileTestSource("fromString.pure",
+        compileSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert([1] == [1]->toOneMany(), |'');\n" +
                         "   assert([1,2,3] == [1,2,3]->toOneMany(), |'');\n" +
                         "}\n");
-        this.execute("test():Boolean[1]");
+        execute("test():Boolean[1]");
     }
 
     @Test
     public void testEval()
     {
-        compileTestSource("fromString.pure",
+        compileSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert([1] == toOneMany_T_MANY__T_$1_MANY$_->eval([1]), |'');\n" +
                         "   assert([1,2,3] == toOneMany_T_MANY__T_$1_MANY$_->eval([1,2,3]), |'');\n" +
                         "}\n");
-        this.execute("test():Boolean[1]");
+        execute("test():Boolean[1]");
     }
 
     @Test
     public void testWithMessage()
     {
-        compileTestSource("fromString.pure",
+        compileSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert([1] == [1]->toOneMany(), |'');\n" +
                         "   assert([1,2,3] == [1,2,3]->toOneMany('Something wrong'), |'');\n" +
                         "}\n");
-        this.execute("test():Boolean[1]");
+        execute("test():Boolean[1]");
     }
 }

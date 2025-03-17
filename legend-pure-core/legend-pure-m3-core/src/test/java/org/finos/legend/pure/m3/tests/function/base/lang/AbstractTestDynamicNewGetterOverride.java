@@ -24,12 +24,13 @@ public abstract class AbstractTestDynamicNewGetterOverride extends AbstractPureT
     public void cleanRuntime()
     {
         runtime.delete("fromString.pure");
+        runtime.compile();
     }
 
     @Test
     public void testSimple()
     {
-        compileTestSource("fromString.pure","Enum myEnum{A,B}" +
+        compileTestSource("fromString.pure","Enum myEnum{A,B}\n" +
                 "Class A\n" +
                 "{\n" +
                 "   a: String[1];\n" +
@@ -39,13 +40,17 @@ public abstract class AbstractTestDynamicNewGetterOverride extends AbstractPureT
                 "   ds : D[*];" +
                 "   enum : myEnum[1];\n" +
                 "   enums : myEnum[*];\n" +
-                "}" +
-                "" +
-                "Class D" +
-                "{" +
-                "   name : String[1];" +
-                "}" +
+                "}\n" +
                 "\n" +
+                "Class D\n" +
+                "{\n" +
+                "   name : String[1];\n" +
+                "}\n" +
+                "\n" +
+                "function classPropertyByName(class:Class<Any>[1], name:String[1]):Property<Nil,Any|*>[0..1]\n" +
+                "{\n" +
+                "    $class.properties->filter(p | $p.name == $name)->first()\n" +
+                "}\n" +
                 "\n" +
                 "function getterOverrideToMany(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]\n" +
                 "{\n " +
@@ -108,13 +113,13 @@ public abstract class AbstractTestDynamicNewGetterOverride extends AbstractPureT
                 "   assert([myEnum.A,myEnum.B] == A->classPropertyByName('enums')->toOne()->eval($r), |'');\n" +
                 "   assert([myEnum.A,myEnum.B] == ^$r().enums, |'');\n" +
                 "}");
-        this.compileAndExecute("test():Any[*]");
+        compileAndExecute("test():Any[*]");
     }
 
     @Test
     public void testRemoveOverride()
     {
-        compileTestSource("fromString.pure","Enum myEnum{A,B}" +
+        compileTestSource("fromString.pure","Enum myEnum{A,B}\n" +
                 "Class A\n" +
                 "{\n" +
                 "   a: String[1];\n" +
@@ -124,13 +129,17 @@ public abstract class AbstractTestDynamicNewGetterOverride extends AbstractPureT
                 "   ds : D[*];" +
                 "   enum : myEnum[1];\n" +
                 "   enums : myEnum[*];\n" +
-                "}" +
-                "" +
-                "Class D" +
-                "{" +
-                "   name : String[1];" +
-                "}" +
+                "}\n" +
                 "\n" +
+                "Class D\n" +
+                "{\n" +
+                "   name : String[1];\n" +
+                "}\n" +
+                "\n" +
+                "function classPropertyByName(class:Class<Any>[1], name:String[1]):Property<Nil,Any|*>[0..1]\n" +
+                "{\n" +
+                "    $class.properties->filter(p | $p.name == $name)->first()\n" +
+                "}\n" +
                 "\n" +
                 "function getterOverrideToMany(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]\n" +
                 "{\n " +
@@ -189,14 +198,13 @@ public abstract class AbstractTestDynamicNewGetterOverride extends AbstractPureT
                 "   assert([myEnum.A,myEnum.B] == A->classPropertyByName('enums')->toOne()->eval($r), |'');\n" +
                 "   assert([myEnum.A,myEnum.B] == ^$r().enums, |'');\n" +
                 "}");
-        this.compileAndExecute("test():Any[*]");
+        compileAndExecute("test():Any[*]");
     }
-
 
     @Test
     public void testRemoveOverrideWithMay()
     {
-        compileTestSource("fromString.pure","Enum myEnum{A,B}" +
+        compileTestSource("fromString.pure","Enum myEnum{A,B}\n" +
                 "Class A\n" +
                 "{\n" +
                 "   a: String[1];\n" +
@@ -206,13 +214,17 @@ public abstract class AbstractTestDynamicNewGetterOverride extends AbstractPureT
                 "   ds : D[*];" +
                 "   enum : myEnum[1];\n" +
                 "   enums : myEnum[*];\n" +
-                "}" +
-                "" +
-                "Class D" +
-                "{" +
-                "   name : String[1];" +
-                "}" +
+                "}\n" +
                 "\n" +
+                "Class D\n" +
+                "{\n" +
+                "   name : String[1];\n" +
+                "}\n" +
+                "\n" +
+                "function classPropertyByName(class:Class<Any>[1], name:String[1]):Property<Nil,Any|*>[0..1]\n" +
+                "{\n" +
+                "    $class.properties->filter(p | $p.name == $name)->first()\n" +
+                "}\n" +
                 "\n" +
                 "function getterOverrideToMany(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]\n" +
                 "{\n " +
@@ -229,7 +241,7 @@ public abstract class AbstractTestDynamicNewGetterOverride extends AbstractPureT
                 "{\n" +
                 "   if ($value->isEmpty(),|$value,|$value->toOne()->removeOverride());\n" +
                 "}\n" +
-                "" +
+                "\n" +
                 "function test():Any[*]\n" +
                 "{\n" +
                 "  let a = A;\n" +
@@ -276,6 +288,6 @@ public abstract class AbstractTestDynamicNewGetterOverride extends AbstractPureT
                 "   assert([myEnum.A,myEnum.B] == A->classPropertyByName('enums')->toOne()->eval($r), |'');\n" +
                 "   assert([myEnum.A,myEnum.B] == ^$r().enums, |'');\n" +
                 "}");
-        this.compileAndExecute("test():Any[*]");
+        compileAndExecute("test():Any[*]");
     }
 }
