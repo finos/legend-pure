@@ -151,6 +151,31 @@ public class TestRelationAccessor extends AbstractPureRelationalTestWithCoreComp
         createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
     }
 
+
+    @Test
+    public void testMultyChainedFunctions()
+    {
+        String sourceCode =
+                "###Pure\n" +
+                        "native function meta::pure::functions::relation::filter<T>(rel:meta::pure::metamodel::relation::Relation<T>[1], f:Function<{T[1]->Boolean[1]}>[1]):meta::pure::metamodel::relation::Relation<T>[1];\n" +
+                        "native function meta::pure::functions::relation::select<T,Z>(r:meta::pure::metamodel::relation::Relation<T>[1], cols:meta::pure::metamodel::relation::ColSpecArray<Z⊆T>[1]):meta::pure::metamodel::relation::Relation<Z>[1];" +
+                        "native function meta::pure::functions::relation::extend<T,Z>(r:meta::pure::metamodel::relation::Relation<T>[1], f:meta::pure::metamodel::relation::FuncColSpec<{T[1]->Any[0..1]},Z>[1]):meta::pure::metamodel::relation::Relation<T+Z>[1];\n" +
+                        "native function meta::pure::functions::string::joinStrings(strings:String[*]):String[1];" +
+                        "function f():Any[1]" +
+                        "{" +
+                        "   {|#>{my::mainDb.PersonTable}#->select(~[FIRSTNAME, LASTNAME])->extend(~fullname:x|[$x.FIRSTNAME->meta::pure::functions::multiplicity::toOne(), $x.LASTNAME->meta::pure::functions::multiplicity::toOne()]->joinStrings())->filter(row2|$row2.FIRSTNAME->meta::pure::functions::collection::isNotEmpty()->meta::pure::functions::boolean::not())}" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database my::mainDb\n" +
+                        "( \n" +
+                        "   Table PersonTable(" +
+                        "       FIRSTNAME VARCHAR(200), " +
+                        "       LASTNAME VARCHAR(200)" +
+                        "   )\n" +
+                        ")\n";
+        createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
+    }
+
     private static void createAndCompileSourceCode(PureRuntime runtime, String sourceId, String sourceCode)
     {
         runtime.delete(sourceId);
