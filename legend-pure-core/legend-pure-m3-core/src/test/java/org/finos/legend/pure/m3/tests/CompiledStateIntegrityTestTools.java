@@ -68,7 +68,7 @@ public class CompiledStateIntegrityTestTools
                     forEachPropertyClassifierViolation(instance, violationConsumer, processorSupport);
                     forEachPropertyValueTypeViolation(instance, violationConsumer, processorSupport);
                     forEachPropertyValueMultiplicityViolation(instance, violationConsumer, processorSupport);
-                });
+                }, false, null);
     }
 
     /**
@@ -96,7 +96,7 @@ public class CompiledStateIntegrityTestTools
     public static void testInstanceClassifierGenericType(Iterable<? extends CoreInstance> instances, ProcessorSupport processorSupport)
     {
         runIntegrityTest(instances, "instance classifierGenericType integrity",
-                (instance, violationConsumer) -> forEachClassifierGenericTypeViolation(instance, violationConsumer, processorSupport));
+                (instance, violationConsumer) -> forEachClassifierGenericTypeViolation(instance, violationConsumer, processorSupport), false, null);
     }
 
     /**
@@ -129,7 +129,7 @@ public class CompiledStateIntegrityTestTools
                     forEachPropertyClassifierViolation(instance, violationConsumer, processorSupport);
                     forEachPropertyValueTypeViolation(instance, violationConsumer, processorSupport);
                     forEachPropertyValueMultiplicityViolation(instance, violationConsumer, processorSupport);
-                });
+                }, false, null);
     }
 
     public static void testClassifierProperties(CoreInstance instance, ProcessorSupport processorSupport)
@@ -140,29 +140,29 @@ public class CompiledStateIntegrityTestTools
     public static void testClassifierProperties(Iterable<? extends CoreInstance> instances, ProcessorSupport processorSupport)
     {
         runIntegrityTest(instances, "property classifier",
-                (instance, violationConsumer) -> forEachPropertyClassifierViolation(instance, violationConsumer, processorSupport));
+                (instance, violationConsumer) -> forEachPropertyClassifierViolation(instance, violationConsumer, processorSupport), false, null);
     }
 
     public static void testPropertyValueMultiplicities(CoreInstance instance, ProcessorSupport processorSupport)
     {
-        testPropertyValueMultiplicities(Lists.immutable.with(instance), processorSupport);
+        testPropertyValueMultiplicities(Lists.immutable.with(instance), processorSupport, null);
     }
 
-    public static void testPropertyValueMultiplicities(Iterable<? extends CoreInstance> instances, ProcessorSupport processorSupport)
+    public static void testPropertyValueMultiplicities(Iterable<? extends CoreInstance> instances, ProcessorSupport processorSupport, String baseRepository)
     {
         runIntegrityTest(instances, "property value multiplicity",
-                (instance, violationConsumer) -> forEachPropertyValueMultiplicityViolation(instance, violationConsumer, processorSupport));
+                (instance, violationConsumer) -> forEachPropertyValueMultiplicityViolation(instance, violationConsumer, processorSupport), true, baseRepository);
     }
 
-    public static void testPropertyValueTypes(CoreInstance instance, ProcessorSupport processorSupport)
+    public static void testPropertyValueTypes(CoreInstance instance, ProcessorSupport processorSupport, String baseRepository)
     {
-        testPropertyValueTypes(Lists.immutable.with(instance), processorSupport);
+        testPropertyValueTypes(Lists.immutable.with(instance), processorSupport, null);
     }
 
-    public static void testPropertyValueTypes(Iterable<? extends CoreInstance> instances, ProcessorSupport processorSupport)
+    public static void testPropertyValueTypes(Iterable<? extends CoreInstance> instances, ProcessorSupport processorSupport, String baseRepository)
     {
         runIntegrityTest(instances, "property value type",
-                (instance, violationConsumer) -> forEachPropertyValueTypeViolation(instance, violationConsumer, processorSupport));
+                (instance, violationConsumer) -> forEachPropertyValueTypeViolation(instance, violationConsumer, processorSupport), true, baseRepository);
     }
 
     public static <T extends CoreInstance> void testHasSourceInformation(Iterable<T> instances, String instanceDescription, Function<? super T, ? extends String> instancePrinter, boolean findPaths, ProcessorSupport processorSupport)
@@ -247,10 +247,27 @@ public class CompiledStateIntegrityTestTools
         return remaining;
     }
 
-    private static void runIntegrityTest(Iterable<? extends CoreInstance> instances, String violationDescription, BiConsumer<CoreInstance, Consumer<? super String>> test)
+    private static void runIntegrityTest(Iterable<? extends CoreInstance> instances, String violationDescription, BiConsumer<CoreInstance, Consumer<? super String>> test, boolean filterInstancesFromDependencyGraph, String baseRepository)
     {
         MutableList<String> errorMessages = Lists.mutable.empty();
-        instances.forEach(i -> test.accept(i, errorMessages::add));
+        if (filterInstancesFromDependencyGraph && baseRepository != null)
+        {
+            String prefix = "/" + baseRepository;
+            instances.forEach(instance ->
+            {
+                SourceInformation sourceInfo = instance.getSourceInformation();
+                if (sourceInfo != null && sourceInfo.getSourceId() != null &&
+                    sourceInfo.getSourceId().startsWith(prefix))
+                {
+                    test.accept(instance, errorMessages::add);
+                }
+            });
+        }
+        else
+        {
+            instances.forEach(instance -> test.accept(instance, errorMessages::add));
+        }
+
         int errorCount = errorMessages.size();
         if (errorCount > 0)
         {

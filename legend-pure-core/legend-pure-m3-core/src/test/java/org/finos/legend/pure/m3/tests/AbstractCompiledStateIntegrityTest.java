@@ -96,6 +96,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Objects;
 
@@ -108,6 +110,7 @@ public abstract class AbstractCompiledStateIntegrityTest
     protected static CoreInstance importStubClass;
     protected static CoreInstance propertyStubClass;
     protected static CoreInstance enumStubClass;
+    protected static final ThreadLocal<String> baseRepository = new ThreadLocal<>();
 
     @Deprecated
     protected static void initialize(MutableRepositoryCodeStorage codeStorage, RichIterable<? extends Parser> parsers, RichIterable<? extends InlineDSL> inlineDSLs)
@@ -117,11 +120,13 @@ public abstract class AbstractCompiledStateIntegrityTest
 
     protected static void initialize(String... repositories)
     {
+        Objects.requireNonNull(repositories);
         CodeRepositorySet repos = CodeRepositorySet.newBuilder()
                 .withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories())
                 .subset(repositories)
                 .build();
         initialize(new CompositeCodeStorage(new ClassLoaderCodeStorage(repos.getRepositories())));
+        baseRepository.set(repositories[0]);
     }
 
     protected static void initialize(MutableRepositoryCodeStorage codeStorage)
@@ -1134,13 +1139,17 @@ public abstract class AbstractCompiledStateIntegrityTest
     @Test
     public void testPropertyValueMultiplicities()
     {
-        CompiledStateIntegrityTestTools.testPropertyValueMultiplicities(GraphNodeIterable.fromModelRepository(repository), processorSupport);
+        Instant start = Instant.now();
+        CompiledStateIntegrityTestTools.testPropertyValueMultiplicities(GraphNodeIterable.fromModelRepository(repository), processorSupport, baseRepository.get());
+        System.out.println("====> testPropertyValueMultiplicities took " + Duration.between(start, Instant.now()).toMillis() + "ms <====");
     }
 
     @Test
     public void testPropertyValueTypes()
     {
-        CompiledStateIntegrityTestTools.testPropertyValueTypes(GraphNodeIterable.fromModelRepository(repository), processorSupport);
+        Instant start = Instant.now();
+        CompiledStateIntegrityTestTools.testPropertyValueTypes(GraphNodeIterable.fromModelRepository(repository), processorSupport, baseRepository.get());
+        System.out.println("====> testPropertyValueTypes took " + Duration.between(start, Instant.now()).toMillis() + "ms <====");
     }
 
     @Test
