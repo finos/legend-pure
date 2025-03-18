@@ -31,6 +31,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Relati
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -249,16 +250,16 @@ public class GenericType
             org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gLeft = resolveOperation((GenericTypeOperation) left, genericTypeByTypeParameterNames, sourceMulBinding, processorSupport);
             org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) copyGenericType(makeTypeArgumentAsConcreteAsPossible(operation._right(), genericTypeByTypeParameterNames, sourceMulBinding, processorSupport), false, processorSupport);
             return (isGenericTypeConcrete(gLeft) && isGenericTypeConcrete(gRight)) ?
-                   merge(operation, processorSupport, gLeft, gRight) :
-                   ((GenericTypeOperation) processorSupport.newAnonymousCoreInstance(null, M3Paths.GenericTypeOperation))._left(gLeft)._right(gRight)._type(operation._type());
+                    merge(operation, processorSupport, gLeft, gRight) :
+                    ((GenericTypeOperation) processorSupport.newAnonymousCoreInstance(null, M3Paths.GenericTypeOperation))._left(gLeft)._right(gRight)._type(operation._type());
         }
         else
         {
             org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gLeft = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) copyGenericType(resolveTypeParameter(left, genericTypeByTypeParameterNames, processorSupport), false, processorSupport);
             org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gRight = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) copyGenericType(makeTypeArgumentAsConcreteAsPossible(operation._right(), genericTypeByTypeParameterNames, sourceMulBinding, processorSupport), false, processorSupport);
             return (isGenericTypeConcrete(gLeft) && isGenericTypeConcrete(gRight)) ?
-                   merge(operation, processorSupport, gLeft, gRight) :
-                   ((GenericTypeOperation) processorSupport.newAnonymousCoreInstance(null, M3Paths.GenericTypeOperation))._left(gLeft)._right(gRight)._type(operation._type());
+                    merge(operation, processorSupport, gLeft, gRight) :
+                    ((GenericTypeOperation) processorSupport.newAnonymousCoreInstance(null, M3Paths.GenericTypeOperation))._left(gLeft)._right(gRight)._type(operation._type());
         }
     }
 
@@ -1111,7 +1112,27 @@ public class GenericType
         ListIterable<? extends CoreInstance> typeVariableValues = genericType.getValueForMetaPropertyToMany(M3Properties.typeVariableValues);
         if (typeVariableValues.notEmpty())
         {
-            Instance.setValuesForProperty(copy, M3Properties.typeVariableValues, typeVariableValues, processorSupport);
+            ListIterable<ValueSpecification> typeVariableValuesCopies = typeVariableValues.collect(x ->
+            {
+                if (x instanceof InstanceValue)
+                {
+                    InstanceValue instanceValue = (InstanceValue) processorSupport.newAnonymousCoreInstance(null, M3Paths.InstanceValue);
+                    instanceValue._genericType((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) copyGenericType(x.getValueForMetaPropertyToOne("genericType"), replaceSourceInfo, newSourceInfo, processorSupport, inferred));
+                    instanceValue._multiplicity((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) Multiplicity.copyMultiplicity(x.getValueForMetaPropertyToOne("multiplicity"), replaceSourceInfo, newSourceInfo, processorSupport));
+                    instanceValue._values(x.getValueForMetaPropertyToMany(M3Properties.values));
+                    return instanceValue;
+                }
+                else if (x instanceof VariableExpression)
+                {
+                    VariableExpression variableExpression = (VariableExpression) processorSupport.newAnonymousCoreInstance(null, M3Paths.VariableExpression);
+                    variableExpression._genericType((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) copyGenericType(x.getValueForMetaPropertyToOne("genericType"), replaceSourceInfo, newSourceInfo, processorSupport, inferred));
+                    variableExpression._multiplicity((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) Multiplicity.copyMultiplicity(x.getValueForMetaPropertyToOne("multiplicity"), replaceSourceInfo, newSourceInfo, processorSupport));
+                    variableExpression._name(x.getValueForMetaPropertyToOne(M3Properties.name).getName());
+                    return variableExpression;
+                }
+                throw new RuntimeException("Error");
+            });
+            Instance.setValuesForProperty(copy, M3Properties.typeVariableValues, typeVariableValuesCopies, processorSupport);
         }
         return copy;
     }
@@ -1297,8 +1318,8 @@ public class GenericType
         else
         {
             return covariant ?
-                   Support.getBestGenericTypeUsingCovariance(genericTypeSet, knownMostGeneralGenericTypeBound, replaceSourceInfo, newSourceInfo, processorSupport) :
-                   Support.getBestGenericTypeUsingContravariance(genericTypeSet, replaceSourceInfo, newSourceInfo, processorSupport);
+                    Support.getBestGenericTypeUsingCovariance(genericTypeSet, knownMostGeneralGenericTypeBound, replaceSourceInfo, newSourceInfo, processorSupport) :
+                    Support.getBestGenericTypeUsingContravariance(genericTypeSet, replaceSourceInfo, newSourceInfo, processorSupport);
         }
     }
 

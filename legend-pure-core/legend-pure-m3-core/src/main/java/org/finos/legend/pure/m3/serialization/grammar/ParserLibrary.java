@@ -28,6 +28,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElem
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.runtime.navigation.NavigationHandler;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 import java.util.Objects;
@@ -102,10 +103,10 @@ public class ParserLibrary
         return files;
     }
 
-    public Pair<?, RelationType<?>> resolveRelationElementAccessor(PackageableElement element, MutableList<? extends String> path, SourceInformation sourceInformation, ProcessorSupport processorSupport)
+    public Pair<?, RelationType<?>> resolveRelationElementAccessor(PackageableElement element, MutableList<? extends String> path, SourceInformation sourceInformation, ModelRepository repository, ProcessorSupport processorSupport)
     {
         MutableList<? extends Pair<?, RelationType<?>>> res = this.parsers.valuesView()
-                .collect(c -> c.resolveRelationElementAccessor(element, path, sourceInformation, processorSupport))
+                .collect(c -> c.resolveRelationElementAccessor(element, path, sourceInformation, repository, processorSupport))
                 .select(Objects::nonNull, Lists.mutable.empty());
         if (res.size() != 1)
         {
