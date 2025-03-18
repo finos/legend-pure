@@ -57,15 +57,12 @@ import org.finos.legend.pure.m3.coreinstance.RelationalStoreCoreInstanceFactoryR
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.Table;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.navigation.relation._Column;
 import org.finos.legend.pure.m3.navigation.relation._RelationType;
@@ -287,7 +284,7 @@ public class RelationalParser implements IRelationalParser
     }
 
     @Override
-    public Pair<?, RelationType<?>> resolveRelationElementAccessor(PackageableElement element, ListIterable<? extends String> path, SourceInformation sourceInformation, ModelRepository repository, ProcessorSupport processorSupport)
+    public Pair<?, RelationType<?>> resolveRelationElementAccessor(PackageableElement element, ListIterable<? extends String> path, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
         Database store = (Database) element;
 
@@ -311,7 +308,7 @@ public class RelationalParser implements IRelationalParser
                         table._columns().collect(c -> (CoreInstance) _Column.getColumnInstance(
                                         c.getValueForMetaPropertyToOne("name").getName(),
                                         false,
-                                        convertType(c.getValueForMetaPropertyToOne("type"), repository, processorSupport),
+                                        convertType(c.getValueForMetaPropertyToOne("type").getClassifier().getName(), processorSupport),
                                         (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(((Column) c)._nullable() ? 0 : 1, 1, processorSupport),
                                         sourceInformation,
                                         processorSupport
@@ -324,27 +321,22 @@ public class RelationalParser implements IRelationalParser
         );
     }
 
-    public GenericType convertType(CoreInstance type, ModelRepository repository, ProcessorSupport processorSupport)
+    public GenericType convertType(String type, ProcessorSupport processorSupport)
     {
         String result;
-        String typeStr = type.getClassifier().getName().toUpperCase();
-        switch (typeStr)
+        switch (type.toUpperCase())
         {
             case "VARCHAR":
             {
-                GenericType genType = (GenericType) processorSupport.newAnonymousCoreInstance(null, M3Paths.GenericType);
-                genType._rawType((Type) _Package.getByUserPath("meta::pure::precisePrimitives::Varchar", processorSupport));
-                genType._typeVariableValues(Lists.mutable.with((ValueSpecification)ValueSpecificationBootstrap.newIntegerLiteral(repository, Long.parseLong(type.getValueForMetaPropertyToOne("size").getName()), processorSupport)));
-                return genType;
+                result = M3Paths.String;
+                break;
             }
             case "INT":
             case "INTEGER":
-            {
-                return (GenericType) processorSupport.type_wrapGenericType(_Package.getByUserPath("meta::pure::precisePrimitives::Int", processorSupport));
-            }
             case "BIGINT":
             {
-                return (GenericType) processorSupport.type_wrapGenericType(_Package.getByUserPath("meta::pure::precisePrimitives::BigInt", processorSupport));
+                result = M3Paths.Integer;
+                break;
             }
             case "BIT":
             {
@@ -352,34 +344,29 @@ public class RelationalParser implements IRelationalParser
                 break;
             }
             case "DOUBLE":
-                return (GenericType) processorSupport.type_wrapGenericType(_Package.getByUserPath("meta::pure::precisePrimitives::Double", processorSupport));
             case "FLOAT":
             {
-                return (GenericType) processorSupport.type_wrapGenericType(_Package.getByUserPath("meta::pure::precisePrimitives::Float4", processorSupport));
+                result = M3Paths.Float;
+                break;
             }
             case "DECIMAL":
             {
-                GenericType genType = (GenericType) processorSupport.newAnonymousCoreInstance(null, M3Paths.GenericType);
-                genType._rawType((Type) _Package.getByUserPath("meta::pure::precisePrimitives::Decimal", processorSupport));
-                genType._typeVariableValues(
-                        Lists.mutable.with(
-                                (ValueSpecification)ValueSpecificationBootstrap.newIntegerLiteral(repository, Long.parseLong(type.getValueForMetaPropertyToOne("precision").getName()), processorSupport),
-                                (ValueSpecification)ValueSpecificationBootstrap.newIntegerLiteral(repository, Long.parseLong(type.getValueForMetaPropertyToOne("scale").getName()), processorSupport)
-                        )
-                );
-                return genType;
+                result = M3Paths.Decimal;
+                break;
             }
             case "DATE":
             {
-                return (GenericType) processorSupport.type_wrapGenericType(_Package.getByUserPath("meta::pure::precisePrimitives::Date", processorSupport));
+                result = M3Paths.StrictDate;
+                break;
             }
             case "TIMESTAMP":
             {
-                return (GenericType) processorSupport.type_wrapGenericType(_Package.getByUserPath("meta::pure::precisePrimitives::Timestamp", processorSupport));
+                result = M3Paths.DateTime;
+                break;
             }
             default:
             {
-                throw new RuntimeException(typeStr + " not supported yet!");
+                throw new RuntimeException(type.toUpperCase() + " not supported yet!");
             }
         }
         

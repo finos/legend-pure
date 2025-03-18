@@ -433,11 +433,6 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-m3-precisePrimitives</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-m3-bootstrap-generator</artifactId>
                 <version>${project.version}</version>
             </dependency>

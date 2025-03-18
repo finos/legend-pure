@@ -672,11 +672,10 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                             {
                                 throw new PureCompilationException(sourceInformation, "The column '" + colName + "' can't be found in the relation " + _RelationType.print(referenceRelation, processorSupport));
                             }
+                            Type foundColumnType = _Column.getColumnType(foundColumn)._rawType();
 
-                            GenericType foundColumnType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(_Column.getColumnType(foundColumn), processorSupport);
                             // Fill the type
-                            potentialEmptyType._rawType(foundColumnType._rawType());
-                            potentialEmptyType._typeVariableValues(foundColumnType._typeVariableValues());
+                            potentialEmptyType._rawType(foundColumnType);
 
                             CoreInstance left = org.finos.legend.pure.m3.navigation.generictype.GenericType.getLeftFromSubset(typeToAnalyze);
                             // Check if left is an EQUAL operation

@@ -46,7 +46,6 @@
     <modules>
         <module>legend-pure-m4</module>
         <module>legend-pure-m3-core</module>
-        <module>legend-pure-m3-precisePrimitives</module>
         <module>legend-pure-m3-bootstrap-generator</module>
     </modules>
 </project>
