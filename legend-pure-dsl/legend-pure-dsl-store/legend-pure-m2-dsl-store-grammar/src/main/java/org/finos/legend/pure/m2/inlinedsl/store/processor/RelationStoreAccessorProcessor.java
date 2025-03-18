@@ -53,7 +53,7 @@ public class RelationStoreAccessorProcessor extends Processor<RelationStoreAcces
 
         instance._store(store);
 
-        Pair<?, RelationType<?>> result = state.getParserLibrary().resolveRelationElementAccessor(store, path, instance.getSourceInformation(), repository, processorSupport);
+        Pair<?, RelationType<?>> result = state.getParserLibrary().resolveRelationElementAccessor(store, path, instance.getSourceInformation(), processorSupport);
 
         instance._sourceElement(result.getOne());
 
