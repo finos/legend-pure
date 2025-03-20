@@ -108,6 +108,7 @@ import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.date.ha
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.date.has.HasSubsecondWithAtLeastPrecision;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.date.operation.AdjustDate;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.date.operation.DateDiff;
+import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.date.operation.TimeBucket;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.io.Print;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.lang.cast.Cast;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.lang.cast.ToDecimal;
@@ -434,6 +435,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         //  Operation
         this.nativeFunctions.put("adjust_Date_1__Integer_1__DurationUnit_1__Date_1_", new AdjustDate(this, repository));
         this.nativeFunctions.put("dateDiff_Date_1__Date_1__DurationUnit_1__Integer_1_", new DateDiff(this, repository));
+        this.nativeFunctions.put("timeBucket_DateTime_1__Integer_1__DurationUnit_1__DateTime_1_", new TimeBucket(this, repository));
 
         //IO
         this.nativeFunctions.put("print_Any_MANY__Integer_1__Nil_0_", new Print(this, repository));
