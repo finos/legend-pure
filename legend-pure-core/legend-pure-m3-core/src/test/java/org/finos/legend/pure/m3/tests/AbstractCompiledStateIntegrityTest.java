@@ -18,6 +18,7 @@ import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.atn.PredictionMode;
+import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.factory.Lists;
@@ -27,6 +28,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.multimap.Multimap;
+import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.api.tuple.Pair;
@@ -108,6 +110,7 @@ public abstract class AbstractCompiledStateIntegrityTest
     protected static CoreInstance importStubClass;
     protected static CoreInstance propertyStubClass;
     protected static CoreInstance enumStubClass;
+    protected static ImmutableSet<String> baseRepositories;
 
     @Deprecated
     protected static void initialize(MutableRepositoryCodeStorage codeStorage, RichIterable<? extends Parser> parsers, RichIterable<? extends InlineDSL> inlineDSLs)
@@ -122,6 +125,7 @@ public abstract class AbstractCompiledStateIntegrityTest
                 .subset(repositories)
                 .build();
         initialize(new CompositeCodeStorage(new ClassLoaderCodeStorage(repos.getRepositories())));
+        baseRepositories = Sets.immutable.with(repositories);
     }
 
     protected static void initialize(MutableRepositoryCodeStorage codeStorage)
@@ -1134,13 +1138,25 @@ public abstract class AbstractCompiledStateIntegrityTest
     @Test
     public void testPropertyValueMultiplicities()
     {
-        CompiledStateIntegrityTestTools.testPropertyValueMultiplicities(GraphNodeIterable.fromModelRepository(repository), processorSupport);
+        CompiledStateIntegrityTestTools.testPropertyValueMultiplicities(filterDependenciesFromRepoUnderTest(), processorSupport);
     }
 
     @Test
     public void testPropertyValueTypes()
     {
-        CompiledStateIntegrityTestTools.testPropertyValueTypes(GraphNodeIterable.fromModelRepository(repository), processorSupport);
+        CompiledStateIntegrityTestTools.testPropertyValueTypes(filterDependenciesFromRepoUnderTest(), processorSupport);
+    }
+
+    private LazyIterable<? extends CoreInstance> filterDependenciesFromRepoUnderTest()
+    {
+        if (baseRepositories == null)
+        {
+            return GraphNodeIterable.fromModelRepository(repository);
+        }
+        return PackageableElementIterable.fromProcessorSupport(processorSupport)
+                .select(packagebleElement -> packagebleElement.getSourceInformation() != null)
+                .select(packagebleElement -> baseRepositories.contains(CompositeCodeStorage.getSourceRepoName(packagebleElement.getSourceInformation().getSourceId())))
+                .flatCollect(packageableElement -> GraphTools.getComponentInstances(packageableElement, processorSupport));
     }
 
     @Test
@@ -1473,12 +1489,15 @@ public abstract class AbstractCompiledStateIntegrityTest
     public void testSourceSerialization()
     {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        runtime.getSourceRegistry().getSources().forEach(source ->
-        {
-            stream.reset();
-            BinaryModelSourceSerializer.serialize(BinaryWriters.newBinaryWriter(stream), source, runtime);
-            BinaryModelSourceDeserializer.deserialize(BinaryReaders.newBinaryReader(stream.toByteArray()), ExternalReferenceSerializerLibrary.newLibrary(runtime));
-        });
+        runtime.getSourceRegistry().getSources()
+                .select(source -> source.getId() != null)
+                .select(source -> baseRepositories == null || baseRepositories.contains(CompositeCodeStorage.getSourceRepoName(source.getId())))
+                .forEach(source ->
+                {
+                    stream.reset();
+                    BinaryModelSourceSerializer.serialize(BinaryWriters.newBinaryWriter(stream), source, runtime);
+                    BinaryModelSourceDeserializer.deserialize(BinaryReaders.newBinaryReader(stream.toByteArray()), ExternalReferenceSerializerLibrary.newLibrary(runtime));
+                });
     }
 
     @Test
