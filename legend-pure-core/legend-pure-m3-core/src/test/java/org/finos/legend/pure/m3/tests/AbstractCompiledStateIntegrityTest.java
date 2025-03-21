@@ -1168,7 +1168,7 @@ public abstract class AbstractCompiledStateIntegrityTest
         MutableMap<CoreInstance, MutableSet<CoreInstance>> expected = Maps.mutable.empty();
         MutableMap<CoreInstance, MutableSet<CoreInstance>> actual = Maps.mutable.empty();
 
-        GraphNodeIterable.fromModelRepository(repository).forEach(instance ->
+        filterDependenciesFromRepoUnderTest().forEach(instance ->
         {
             if (Instance.instanceOf(instance, functionClass, processorSupport))
             {
@@ -1240,7 +1240,7 @@ public abstract class AbstractCompiledStateIntegrityTest
     {
         CoreInstance functionClass = runtime.getCoreInstance(M3Paths.Function);
         MutableList<String> errorMessages = Lists.mutable.empty();
-        GraphNodeIterable.fromModelRepository(repository)
+        filterDependenciesFromRepoUnderTest()
                 .select(instance -> Instance.instanceOf(instance, functionClass, processorSupport))
                 .forEach(instance ->
                 {
@@ -1408,7 +1408,7 @@ public abstract class AbstractCompiledStateIntegrityTest
         MutableMap<String, MutableSet<String>> expected = Maps.mutable.empty();
         MutableMap<String, MutableSet<String>> actual = Maps.mutable.empty();
 
-        GraphNodeIterable.fromModelRepository(repository)
+        filterDependenciesFromRepoUnderTest()
                 .select(instance -> Instance.instanceOf(instance, typeClass, processorSupport))
                 .forEach(type ->
                 {
