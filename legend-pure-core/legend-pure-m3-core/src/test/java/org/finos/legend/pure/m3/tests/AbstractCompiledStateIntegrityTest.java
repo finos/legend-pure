@@ -1094,7 +1094,7 @@ public abstract class AbstractCompiledStateIntegrityTest
     public void testQualifiedPropertyNames()
     {
         MutableList<String> errorMessages = Lists.mutable.empty();
-        PackageableElementIterable.fromProcessorSupport(processorSupport)
+        filterDependenciesFromRepoUnderTest()
                 .select(node -> node instanceof PropertyOwner)
                 .forEach(node ->
                 {
@@ -1132,7 +1132,7 @@ public abstract class AbstractCompiledStateIntegrityTest
     @Test
     public void testPropertyIntegrity()
     {
-        CompiledStateIntegrityTestTools.testClassifierProperties(GraphNodeIterable.fromModelRepository(repository), processorSupport);
+        CompiledStateIntegrityTestTools.testClassifierProperties(filterDependenciesFromRepoUnderTest(), processorSupport);
     }
 
     @Test
@@ -1168,7 +1168,7 @@ public abstract class AbstractCompiledStateIntegrityTest
         MutableMap<CoreInstance, MutableSet<CoreInstance>> expected = Maps.mutable.empty();
         MutableMap<CoreInstance, MutableSet<CoreInstance>> actual = Maps.mutable.empty();
 
-        GraphNodeIterable.fromModelRepository(repository).forEach(instance ->
+        filterDependenciesFromRepoUnderTest().forEach(instance ->
         {
             if (Instance.instanceOf(instance, functionClass, processorSupport))
             {
@@ -1240,7 +1240,7 @@ public abstract class AbstractCompiledStateIntegrityTest
     {
         CoreInstance functionClass = runtime.getCoreInstance(M3Paths.Function);
         MutableList<String> errorMessages = Lists.mutable.empty();
-        GraphNodeIterable.fromModelRepository(repository)
+        filterDependenciesFromRepoUnderTest()
                 .select(instance -> Instance.instanceOf(instance, functionClass, processorSupport))
                 .forEach(instance ->
                 {
@@ -1292,7 +1292,7 @@ public abstract class AbstractCompiledStateIntegrityTest
     {
         MutableMap<String, MutableList<CoreInstance>> lambdasByName = Maps.mutable.empty();
         CoreInstance lambdaFunctionClass = runtime.getCoreInstance(M3Paths.LambdaFunction);
-        GraphNodeIterable.fromModelRepository(repository)
+        filterDependenciesFromRepoUnderTest()
                 .select(n -> lambdaFunctionClass == n.getClassifier())
                 .forEach(lambda -> lambdasByName.getIfAbsentPut(lambda.getName(), Lists.mutable::empty).add(lambda));
 
@@ -1336,7 +1336,7 @@ public abstract class AbstractCompiledStateIntegrityTest
     {
         CoreInstance functionTypeClass = runtime.getCoreInstance(M3Paths.FunctionType);
         CompiledStateIntegrityTestTools.testHasSourceInformation(
-                GraphNodeIterable.fromModelRepository(repository).select(n -> functionTypeClass == n.getClassifier()),
+                filterDependenciesFromRepoUnderTest().select(n -> functionTypeClass == n.getClassifier()),
                 "FunctionType",
                 (sb, ft) -> org.finos.legend.pure.m3.navigation.function.FunctionType.print(sb, ft, true, processorSupport),
                 findPaths,
@@ -1408,7 +1408,7 @@ public abstract class AbstractCompiledStateIntegrityTest
         MutableMap<String, MutableSet<String>> expected = Maps.mutable.empty();
         MutableMap<String, MutableSet<String>> actual = Maps.mutable.empty();
 
-        GraphNodeIterable.fromModelRepository(repository)
+        filterDependenciesFromRepoUnderTest()
                 .select(instance -> Instance.instanceOf(instance, typeClass, processorSupport))
                 .forEach(type ->
                 {
