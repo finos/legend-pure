@@ -17,7 +17,7 @@ package org.finos.legend.pure.m4.coreinstance.primitive.date;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
@@ -60,7 +60,7 @@ public class DateWithSubsecond extends AbstractDateWithSubsecond
 
     public static DateTime fromInstant(Instant instant, int subsecondPrecision)
     {
-        return fromLocalDateTime(LocalDateTime.from(instant.atZone(ZoneId.of("UTC"))), subsecondPrecision);
+        return fromLocalDateTime(LocalDateTime.ofInstant(instant, ZoneOffset.UTC), subsecondPrecision);
     }
 
     static DateTime fromLocalDateTime(LocalDateTime time, int subsecondPrecision)
