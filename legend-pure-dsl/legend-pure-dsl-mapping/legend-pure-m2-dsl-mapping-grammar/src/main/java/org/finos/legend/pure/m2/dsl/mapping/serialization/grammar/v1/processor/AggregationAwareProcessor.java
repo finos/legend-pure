@@ -32,6 +32,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.aggregationAware.
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.aggregationAware.AggregationFunctionSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.aggregationAware.GroupByFunctionSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PropertyOwner;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
@@ -45,6 +46,7 @@ import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class AggregationAwareProcessor extends Processor<AggregationAwareSetImplementation>
@@ -98,43 +100,40 @@ public class AggregationAwareProcessor extends Processor<AggregationAwareSetImpl
         int i = 0;
         for (GroupByFunctionSpecification groupByFunctionSpecification : aggregateSpecification._groupByFunctions())
         {
+            LambdaFunction<?> groupByFn = groupByFunctionSpecification._groupByFn();
+            SourceInformation groupByFnSourceInfo = groupByFn.getSourceInformation();
+            VariableExpression thisParam = VariableExpressionInstance.createPersistent(repository, groupByFnSourceInfo, (GenericType) Type.wrapGenericType(_class, groupByFnSourceInfo, processorSupport), (Multiplicity) processorSupport.package_getByUserPath(M3Paths.PureOne), "this");
+            FunctionType functionType = (FunctionType) groupByFn._classifierGenericType()._typeArguments().getOnly()._rawType();
+            functionType._parameters(Lists.mutable.<VariableExpression>withAll(functionType._parameters()).with(thisParam));
             try (VariableContextScope ignore = state.withNewVariableContext())
             {
-                VariableExpression thisParam = VariableExpressionInstance.createPersistent(repository, aggregateSpecification.getSourceInformation(), (GenericType) Type.wrapGenericType(_class, processorSupport), (Multiplicity) processorSupport.package_getByUserPath(M3Paths.PureOne), "this");
-                FunctionType functionType = (FunctionType) ImportStub.withImportStubByPass(groupByFunctionSpecification._groupByFn()._classifierGenericType()._typeArguments().toList().get(0)._rawTypeCoreInstance(), processorSupport);
-                functionType._parameters(Lists.mutable.<VariableExpression>withAll(functionType._parameters()).with(thisParam));
-                matcher.fullMatch(groupByFunctionSpecification._groupByFn(), state);
-
-                ValueSpecification groupByFnExpressionSequence = groupByFunctionSpecification._groupByFn()._expressionSequence().toList().getFirst();
-                this.addAggregateSpecificationUsageContext(groupByFnExpressionSequence, setImplementation, i, processorSupport);
-                i++;
+                matcher.fullMatch(groupByFn, state);
+                addAggregateSpecificationUsageContext(groupByFn._expressionSequence().getOnly(), setImplementation, i++, processorSupport);
             }
         }
 
         for (AggregationFunctionSpecification aggregationFunctionSpecification : aggregateSpecification._aggregateValues())
         {
-            VariableExpression thisParam = VariableExpressionInstance.createPersistent(repository, aggregateSpecification.getSourceInformation(), (GenericType) Type.wrapGenericType(_class, processorSupport), (Multiplicity) processorSupport.package_getByUserPath(M3Paths.PureOne), "this");
-            FunctionType mapFnType = (FunctionType) ImportStub.withImportStubByPass(aggregationFunctionSpecification._mapFn()._classifierGenericType()._typeArguments().toList().get(0)._rawTypeCoreInstance(), processorSupport);
+            LambdaFunction<?> mapFn = aggregationFunctionSpecification._mapFn();
+            SourceInformation mapFnSourceInfo = mapFn.getSourceInformation();
+            VariableExpression thisParam = VariableExpressionInstance.createPersistent(repository, mapFnSourceInfo, (GenericType) Type.wrapGenericType(_class, mapFnSourceInfo, processorSupport), (Multiplicity) processorSupport.package_getByUserPath(M3Paths.PureOne), "this");
+            FunctionType mapFnType = (FunctionType) mapFn._classifierGenericType()._typeArguments().getOnly()._rawType();
             mapFnType._parameters(Lists.mutable.<VariableExpression>withAll(mapFnType._parameters()).with(thisParam));
             try (VariableContextScope ignore = state.withNewVariableContext())
             {
-                matcher.fullMatch(aggregationFunctionSpecification._mapFn(), state);
-
-                ValueSpecification mapFnExpressionSequence = aggregationFunctionSpecification._mapFn()._expressionSequence().toList().getFirst();
-                this.addAggregateSpecificationUsageContext(mapFnExpressionSequence, setImplementation, i, processorSupport);
-                i++;
+                matcher.fullMatch(mapFn, state);
+                addAggregateSpecificationUsageContext(mapFn._expressionSequence().getOnly(), setImplementation, i++, processorSupport);
             }
 
-            VariableExpression mappedParam = VariableExpressionInstance.createPersistent(repository, aggregateSpecification.getSourceInformation(), mapFnType._returnType(), (Multiplicity) processorSupport.package_getByUserPath(M3Paths.ZeroMany), "mapped");
-            FunctionType aggregateFnType = (FunctionType) ImportStub.withImportStubByPass(aggregationFunctionSpecification._aggregateFn()._classifierGenericType()._typeArguments().toList().get(0)._rawTypeCoreInstance(), processorSupport);
+            LambdaFunction<?> aggregateFn = aggregationFunctionSpecification._aggregateFn();
+            SourceInformation aggregateFnSourceInfo = aggregateFn.getSourceInformation();
+            VariableExpression mappedParam = VariableExpressionInstance.createPersistent(repository, aggregateFnSourceInfo, (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(mapFnType._returnType(), aggregateFnSourceInfo, processorSupport), (Multiplicity) processorSupport.package_getByUserPath(M3Paths.ZeroMany), "mapped");
+            FunctionType aggregateFnType = (FunctionType) aggregateFn._classifierGenericType()._typeArguments().getOnly()._rawType();
             aggregateFnType._parameters(Lists.mutable.<VariableExpression>withAll(aggregateFnType._parameters()).with(mappedParam));
             try (VariableContextScope ignore = state.withNewVariableContext())
             {
-                matcher.fullMatch(aggregationFunctionSpecification._aggregateFn(), state);
-
-                ValueSpecification aggregateFnExpressionSequence = aggregationFunctionSpecification._aggregateFn()._expressionSequence().toList().getFirst();
-                this.addAggregateSpecificationUsageContext(aggregateFnExpressionSequence, setImplementation, i, processorSupport);
-                i++;
+                matcher.fullMatch(aggregateFn, state);
+                addAggregateSpecificationUsageContext(aggregateFn._expressionSequence().getOnly(), setImplementation, i++, processorSupport);
             }
         }
     }
