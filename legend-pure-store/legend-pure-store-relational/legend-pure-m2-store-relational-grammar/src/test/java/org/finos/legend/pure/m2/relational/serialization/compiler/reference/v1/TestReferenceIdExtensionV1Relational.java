@@ -22,10 +22,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.relational.mapping.GroupByMapp
 import org.finos.legend.pure.m3.coreinstance.meta.relational.mapping.RelationalInstanceSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database;
-import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdProvider;
-import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdResolver;
 import org.finos.legend.pure.m3.serialization.compiler.reference.v1.TestReferenceIdExtensionV1;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -176,31 +173,19 @@ public class TestReferenceIdExtensionV1Relational extends TestReferenceIdExtensi
     {
         String path = "test::relational::TestDB";
         Database testDB = getCoreInstance(path);
-        ReferenceIdProvider provider = extension.newProvider(processorSupport);
-        ReferenceIdResolver resolver = extension.newResolver(processorSupport);
 
-        Assert.assertEquals(path, provider.getReferenceId(testDB));
-        Assert.assertSame(path, testDB, resolver.resolveReference(path));
+        assertRefId(path, testDB);
 
         testDB._schemas().forEach(schema ->
         {
-            String schemaId = provider.getReferenceId(schema);
-            Assert.assertEquals(path + ".schemas['" + schema._name() + "']", schemaId);
-            Assert.assertSame(schemaId, schema, resolver.resolveReference(schemaId));
+            String schemaId = assertRefId(path + ".schemas['" + schema._name() + "']", schema);
 
             schema._tables().forEach(table ->
             {
-                String tableId = provider.getReferenceId(table);
-                Assert.assertEquals(path + ".schemas['" + schema._name() + "'].tables['" + table._name() + "']", tableId);
-                Assert.assertSame(tableId, table, resolver.resolveReference(tableId));
+                String tableId = assertRefId(schemaId + ".tables['" + table._name() + "']", table);
 
                 MutableSet<Column> primaryKeyColumns = Sets.mutable.withAll(table._primaryKey());
-                primaryKeyColumns.forEach(column ->
-                {
-                    String columnId = provider.getReferenceId(column);
-                    Assert.assertEquals(path + ".schemas['" + schema._name() + "'].tables['" + table._name() + "'].primaryKey['" + column._name() + "']", columnId);
-                    Assert.assertSame(columnId, column, resolver.resolveReference(columnId));
-                });
+                primaryKeyColumns.forEach(pk -> assertRefId(tableId + ".primaryKey['" + pk._name() + "']", pk));
 
                 int[] counter = {0};
                 table._columns().forEach(column ->
@@ -208,42 +193,29 @@ public class TestReferenceIdExtensionV1Relational extends TestReferenceIdExtensi
                     int index = counter[0]++;
                     if (!primaryKeyColumns.contains(column))
                     {
-                        String columnId = provider.getReferenceId(column);
-                        Assert.assertEquals(path + ".schemas['" + schema._name() + "'].tables['" + table._name() + "'].columns[" + index + "]", columnId);
-                        Assert.assertSame(columnId, column, resolver.resolveReference(columnId));
+                        assertRefId(tableId + ".columns[" + index + "]", column);
                     }
                 });
             });
 
             schema._views().forEach(view ->
             {
-                String viewId = provider.getReferenceId(view);
-                Assert.assertEquals(path + ".schemas['" + schema._name() + "'].views['" + view._name() + "']", viewId);
-                Assert.assertSame(viewId, view, resolver.resolveReference(viewId));
+                String viewId = assertRefId(schemaId + ".views['" + view._name() + "']", view);
 
                 FilterMapping filter = view._filter();
                 if (filter != null)
                 {
-                    String filterId = provider.getReferenceId(filter);
-                    Assert.assertEquals(path + ".schemas['" + schema._name() + "'].views['" + view._name() + "'].filter", filterId);
-                    Assert.assertSame(filterId, filter, resolver.resolveReference(filterId));
+                    assertRefId(viewId + ".filter", filter);
                 }
 
                 GroupByMapping groupBy = view._groupBy();
                 if (groupBy != null)
                 {
-                    String groupById = provider.getReferenceId(groupBy);
-                    Assert.assertEquals(path + ".schemas['" + schema._name() + "'].views['" + view._name() + "'].groupBy", groupById);
-                    Assert.assertSame(groupById, groupBy, resolver.resolveReference(groupById));
+                    assertRefId(viewId + ".groupBy", groupBy);
                 }
 
                 MutableSet<Column> primaryKeyColumns = Sets.mutable.withAll(view._primaryKey());
-                primaryKeyColumns.forEach(column ->
-                {
-                    String columnId = provider.getReferenceId(column);
-                    Assert.assertEquals(path + ".schemas['" + schema._name() + "'].views['" + view._name() + "'].primaryKey['" + column._name() + "']", columnId);
-                    Assert.assertSame(columnId, column, resolver.resolveReference(columnId));
-                });
+                primaryKeyColumns.forEach(pk -> assertRefId(viewId + ".primaryKey['" + pk._name() + "']", pk));
 
                 int[] counter = {0};
                 view._columns().forEach(column ->
@@ -251,27 +223,15 @@ public class TestReferenceIdExtensionV1Relational extends TestReferenceIdExtensi
                     int index = counter[0]++;
                     if (!primaryKeyColumns.contains(column))
                     {
-                        String columnId = provider.getReferenceId(column);
-                        Assert.assertEquals(path + ".schemas['" + schema._name() + "'].views['" + view._name() + "'].columns[" + index + "]", columnId);
-                        Assert.assertSame(columnId, column, resolver.resolveReference(columnId));
+                        assertRefId(viewId + ".columns[" + index + "]", column);
                     }
                 });
             });
         });
 
-        testDB._joins().forEach(join ->
-        {
-            String joinId = provider.getReferenceId(join);
-            Assert.assertEquals(path + ".joins['" + join._name() + "']", joinId);
-            Assert.assertSame(joinId, join, resolver.resolveReference(joinId));
-        });
+        testDB._joins().forEach(join -> assertRefId(path + ".joins['" + join._name() + "']", join));
 
-        testDB._filters().forEach(filter ->
-        {
-            String filterId = provider.getReferenceId(filter);
-            Assert.assertEquals(path + ".filters['" + filter._name() + "']", filterId);
-            Assert.assertSame(filterId, filter, resolver.resolveReference(filterId));
-        });
+        testDB._filters().forEach(filter -> assertRefId(path + ".filters['" + filter._name() + "']", filter));
     }
 
     @Test
@@ -280,54 +240,31 @@ public class TestReferenceIdExtensionV1Relational extends TestReferenceIdExtensi
         String path = "test::relational::TestMapping";
         Mapping mapping = getCoreInstance(path);
 
-        ReferenceIdProvider provider = extension.newProvider(processorSupport);
-        ReferenceIdResolver resolver = extension.newResolver(processorSupport);
-
-        Assert.assertEquals(path, provider.getReferenceId(mapping));
-        Assert.assertSame(path, mapping, resolver.resolveReference(path));
+        assertRefId(path, mapping);
 
         mapping._classMappings().forEach(classMapping ->
         {
-            String classMappingId = provider.getReferenceId(classMapping);
-            Assert.assertEquals(path + ".classMappings[id='" + classMapping._id() + "']", classMappingId);
-            Assert.assertSame(classMappingId, classMapping, resolver.resolveReference(classMappingId));
+            String classMappingId = assertRefId(path + ".classMappings[id='" + classMapping._id() + "']", classMapping);
 
             int[] counter = {0};
-            ((RelationalInstanceSetImplementation) classMapping)._propertyMappings().forEach(propertyMapping ->
-            {
-                String propertyMappingId = provider.getReferenceId(propertyMapping);
-                Assert.assertEquals(path + ".classMappings[id='" + classMapping._id() + "'].propertyMappings[" + counter[0]++ + "]", propertyMappingId);
-                Assert.assertSame(propertyMappingId, propertyMapping, resolver.resolveReference(propertyMappingId));
-            });
+            ((RelationalInstanceSetImplementation) classMapping)._propertyMappings().forEach(pm ->
+                    assertRefId(classMappingId + ".propertyMappings[" + counter[0]++ + "]", pm));
         });
 
         mapping._associationMappings().forEach(assocMapping ->
         {
-            String assocMappingId = provider.getReferenceId(assocMapping);
-            Assert.assertEquals(path + ".associationMappings[id='" + assocMapping._id() + "']", assocMappingId);
-            Assert.assertSame(assocMappingId, assocMapping, resolver.resolveReference(assocMappingId));
+            String assocMappingId = assertRefId(path + ".associationMappings[id='" + assocMapping._id() + "']", assocMapping);
 
             int[] counter = {0};
-            assocMapping._propertyMappings().forEach(propertyMapping ->
-            {
-                String propertyMappingId = provider.getReferenceId(propertyMapping);
-                Assert.assertEquals(path + ".associationMappings[id='" + assocMapping._id() + "'].propertyMappings[" + counter[0]++ + "]", propertyMappingId);
-                Assert.assertSame(propertyMappingId, propertyMapping, resolver.resolveReference(propertyMappingId));
-            });
+            assocMapping._propertyMappings().forEach(pm -> assertRefId(assocMappingId + ".propertyMappings[" + counter[0]++ + "]", pm));
         });
 
         mapping._enumerationMappings().forEach(enumMapping ->
         {
-            String enumMappingId = provider.getReferenceId(enumMapping);
-            Assert.assertEquals(path + ".enumerationMappings['" + enumMapping._name() + "']", enumMappingId);
-            Assert.assertSame(enumMappingId, enumMapping, resolver.resolveReference(enumMappingId));
+            String enumMappingId = assertRefId(path + ".enumerationMappings['" + enumMapping._name() + "']", enumMapping);
+
             int[] counter = {0};
-            enumMapping._enumValueMappings().forEach(enumValueMapping ->
-            {
-                String enumValueMappingId = provider.getReferenceId(enumValueMapping);
-                Assert.assertEquals(path + ".enumerationMappings['" + enumMapping._name() + "'].enumValueMappings[" + counter[0]++ + "]", enumValueMappingId);
-                Assert.assertSame(enumValueMappingId, enumValueMapping, resolver.resolveReference(enumValueMappingId));
-            });
+            enumMapping._enumValueMappings().forEach(evm -> assertRefId(enumMappingId + ".enumValueMappings[" + counter[0]++ + "]", evm));
         });
     }
 }

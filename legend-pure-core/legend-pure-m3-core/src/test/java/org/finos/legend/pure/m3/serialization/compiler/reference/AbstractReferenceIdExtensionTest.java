@@ -25,6 +25,7 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ServiceLoader;
@@ -32,6 +33,16 @@ import java.util.ServiceLoader;
 public abstract class AbstractReferenceIdExtensionTest extends AbstractReferenceTest
 {
     protected static ReferenceIdExtension extension;
+
+    protected ReferenceIdProvider provider;
+    protected ReferenceIdResolver resolver;
+
+    @Before
+    public void setUpProviderResolver()
+    {
+        this.provider = extension.newProvider(processorSupport);
+        this.resolver = extension.newResolver(processorSupport);
+    }
 
     @Test
     public void testLoadAsService()
@@ -60,19 +71,15 @@ public abstract class AbstractReferenceIdExtensionTest extends AbstractReference
     @Test
     public void testAllInstances()
     {
-        ReferenceIdProvider provider = extension.newProvider(processorSupport);
-        ReferenceIdResolver resolver = extension.newResolver(processorSupport);
         GraphNodeIterable.builder()
                 .withStartingNodes(repository.getTopLevels())
                 .withKeyFilter((node, key) -> !M3PropertyPaths.BACK_REFERENCE_PROPERTY_PATHS.contains(node.getRealKeyByName(key)))
                 .build()
                 .forEach(instance ->
                 {
-                    if (provider.hasReferenceId(instance))
+                    if (this.provider.hasReferenceId(instance))
                     {
-                        String id = provider.getReferenceId(instance);
-                        CoreInstance resolved = resolver.resolveReference(id);
-                        Assert.assertSame(id, instance, resolved);
+                        assertRefId(instance);
                     }
                     else if (shouldHaveReferenceId(instance))
                     {
@@ -96,7 +103,7 @@ public abstract class AbstractReferenceIdExtensionTest extends AbstractReference
                     }
                     else
                     {
-                        Assert.assertThrows(ReferenceIdProvisionException.class, () -> provider.getReferenceId(instance));
+                        Assert.assertThrows(ReferenceIdProvisionException.class, () -> this.provider.getReferenceId(instance));
                     }
                 });
     }
@@ -104,5 +111,34 @@ public abstract class AbstractReferenceIdExtensionTest extends AbstractReference
     private boolean shouldHaveReferenceId(CoreInstance instance)
     {
         return (instance.getSourceInformation() == null) ? _Package.isPackage(instance, processorSupport) : !AnyStubHelper.isStub(instance);
+    }
+
+    protected String assertRefId(CoreInstance instance)
+    {
+        return assertRefId(null, instance);
+    }
+
+    protected String assertRefId(String expectedId, CoreInstance instance)
+    {
+        String actualId;
+        try
+        {
+            actualId = this.provider.getReferenceId(instance);
+        }
+        catch (ReferenceIdProvisionException e)
+        {
+            if (expectedId != null)
+            {
+                throw new RuntimeException("Expected to generate id: " + expectedId, e);
+            }
+            throw e;
+        }
+        if (expectedId != null)
+        {
+            Assert.assertEquals(expectedId, actualId);
+        }
+        CoreInstance resolved = this.resolver.resolveReference(actualId);
+        Assert.assertSame(actualId, instance, resolved);
+        return actualId;
     }
 }
