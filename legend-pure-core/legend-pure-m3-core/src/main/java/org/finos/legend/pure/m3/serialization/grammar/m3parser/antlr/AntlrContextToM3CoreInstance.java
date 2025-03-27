@@ -2575,12 +2575,12 @@ public class AntlrContextToM3CoreInstance
 
         GenericType classifierGT = GenericTypeInstance.createPersistent(this.repository, sourceInfo)
                 ._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.ClassProjection))
-                ._typeArguments(Lists.mutable.with(GenericTypeInstance.createPersistent(this.repository, sourceInfo)._rawType(projection)));
+                ._typeArguments(Lists.mutable.with(GenericTypeInstance.createPersistent(this.repository)._rawType(projection)));
         projection._classifierGenericType(classifierGT);
 
         GenericType superType = GenericTypeInstance.createPersistent(this.repository, sourceInfo)
                 ._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Any));
-        projection._generalizations(Lists.mutable.with(GeneralizationInstance.createPersistent(this.repository, superType, projection)));
+        projection._generalizations(Lists.mutable.with(GeneralizationInstance.createPersistent(this.repository, sourceInfo, superType, projection)));
         String fullName = this.getQualifiedNameString(ctx.qualifiedName());
         MutableList<Constraint> constraints = constraints(projection, ctx.constraints(), Lists.fixedSize.empty(), Lists.fixedSize.empty(), Lists.fixedSize.empty(), importId, new LambdaContext(fullName.replace("::", "_")), addLines);
 

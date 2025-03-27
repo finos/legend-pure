@@ -15,14 +15,14 @@
 package org.finos.legend.pure.m3.tests.projection;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.api.multimap.set.MutableSetMultimap;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.factory.Multimaps;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.test.Verify;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassProjection;
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -31,6 +31,7 @@ import org.finos.legend.pure.m3.navigation.Printer;
 import org.finos.legend.pure.m3.navigation.profile.Profile;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -50,196 +51,209 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
         runtime.delete("file.pure");
         runtime.delete("projection.pure");
         runtime.delete("model.pure");
+        runtime.compile();
     }
 
     @Test
-    public void testExceptionScenarios() throws Exception
+    public void testUnknownSourceClass()
     {
-        try
-        {
-            this.runtime.createInMemorySource("file.pure", "Class Person{address:Address[1];} Class Firm<T> {employees : Person[1];address:Address[1];} Class Address{}\n" +
-                    "Class PersonProjection projects\n" +
-                    "#\n" +
-                    "    UnknownFirm" +
-                    "          { " +
-                    "             *" +
-                    "          }\n" +
-                    "#\n");
-            this.runtime.compile();
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException("UnknownFirm has not been defined!", 4, 5, e);
-        }
-
-        try
-        {
-            this.runtime.modify("file.pure", "Class Person{address:Address[1];} Class Firm<T> {employees : Person[1];address:Address[1];} Class Address{}\n" +
-                    "Class FirmProjection projects\n" +
-                    "#Firm" +
-                    "{" +
-                    "   *" +
-                    "}#\n" +
-                    "function test():Any[*]\n" +
-                    "{\n" +
-                    "    print(FirmProjection,1)\n" +
-                    "}\n");
-            this.runtime.compile();
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException("Type argument mismatch for the class Firm<T> (expected 1, got 0): Firm", 3, 2, e);
-        }
-
-        try
-        {
-            String code = "Class Person{address:Address[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{}\n" +
-                    "Class FirmProjection projects\n" +
-                    "#Firm{\n" +
-                    "   +[employee]  \n" +
-                    "}#\n";
-            this.runtime.modify("file.pure", code);
-            this.runtime.compile();
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-
-            assertPureException("The property 'employee' can't be found in the type 'Firm' (or any supertype).", 4, 6, e);
-        }
-
-        try
-        {
-            this.runtime.modify("file.pure", "Class Person{address:Address[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{}\n" +
-                    "Class MyFirm projects \n #Firm\n" +
-                    "{\n" +
-                    "   employees \n" +
-                    "               {\n" +
-                    "                   address2 {} \n" +
-                    "               }" +
-                    "}" +
-                    "#\n");
-            this.runtime.compile();
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException("The property 'address2' can't be found in the type 'Person' (or any supertype).", 7, 20, e);
-        }
-
-        try
-        {
-            this.runtime.modify("file.pure", "Class Person{address:Address[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{}\n" +
-                    "Class MyFirm projects \n #Firm\n" +
-                    "{\n" +
-                    "   employees \n" +
-                    "               {\n" +
-                    "                   * \n" +
-                    "               }" +
-                    "}" +
-                    "#\n");
-            this.runtime.compile();
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException("Invalid projection specification. Found complex property 'employees', only simple properties are allowed in a class projection.", 5, 4, e);
-        }
-
-        try
-        {
-            this.runtime.modify("file.pure", "Class Person{ name: String[1]; nameWithTitle(title:String[1]){$title + $this.name}: String[1];address:Address[1]; firm: Firm[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{ street:String[1]; }\n" +
-                    "Class PersonProjection projects #Person" +
-                    "{\n" +
-                    "      +[ nameWithTitle(String[1]) ]   \n" +
-                    "}#");
-            this.runtime.compile();
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException("Error compiling projection 'PersonProjection'. Property 'nameWithTitle' cannot be resolved due to underlying cause: Can't find the property 'name' in the class PersonProjection", 2, 7, e);
-        }
-
-        try
-        {
-            String code = "Class Person{address:Address[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{}\n" +
-                    "Class FirmProjection projects\n" +
-                    "#Firm{\n" +
-                    "   *  \n" +
-                    "}#\n" +
-                    "Class FirmProjectionSubClass extends FirmProjection {}";
-            this.runtime.modify("file.pure", code);
-            this.runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException("Class 'FirmProjection' is a projection and cannot be extended.", 6, 38, e);
-        }
+        runtime.createInMemorySource("file.pure",
+                "Class Person\n" +
+                        "{\n" +
+                        "   address:Address[1];\n" +
+                        "}\n" +
+                        "Class Firm<T>\n" +
+                        "{\n" +
+                        "   employees : Person[1];\n" +
+                        "   address:Address[1];\n" +
+                        "}\n" +
+                        "Class Address\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class PersonProjection projects\n" +
+                        "#\n" +
+                        "    UnknownFirm\n" +
+                        "          {\n " +
+                        "             *\n" +
+                        "          }\n" +
+                        "#\n");
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "UnknownFirm has not been defined!", "file.pure", 16, 5, e);
     }
 
     @Test
-    public void testSimpleClassProjection() throws Exception
+    public void testSourceTypeArgumentMismatch()
     {
-        this.runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; yearsEmployed : Integer[1]; address:Address[1]; firm: Firm[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{ street:String[1]; }\n" +
+        runtime.createInMemorySource("file.pure",
+                "Class Person\n" +
+                        "{\n" +
+                        "   address:Address[1];\n" +
+                        "}\n" +
+                        "Class Firm<T>\n" +
+                        "{\n" +
+                        "   employees : Person[1];\n" +
+                        "   address:Address[1];\n" +
+                        "}\n" +
+                        "Class Address\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class FirmProjection projects\n" +
+                        "#Firm\n" +
+                        "{\n" +
+                        "   *\n" +
+                        "}#\n" +
+                        "\n" +
+                        "function test():Any[*]\n" +
+                        "{\n" +
+                        "    print(FirmProjection, 1)\n" +
+                        "}\n");
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "Type argument mismatch for the class Firm<T> (expected 1, got 0): Firm", "file.pure", 15, 2, e);
+    }
+
+    @Test
+    public void testUnknownProperty()
+    {
+        runtime.createInMemorySource("file.pure",
+                "Class Person\n" +
+                        "{\n" +
+                        "   address:Address[1];\n" +
+                        "}\n" +
+                        "Class Firm<T>\n" +
+                        "{\n" +
+                        "   employees : Person[1];\n" +
+                        "   address:Address[1];\n" +
+                        "}\n" +
+                        "Class Address\n" +
+                        "{\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class FirmProjection projects\n" +
+                        "#Firm{\n" +
+                        "   +[employee]\n" +
+                        "}#\n");
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "The property 'employee' can't be found in the type 'Firm' (or any supertype).", "file.pure", 16, 6, e);
+    }
+
+    @Test
+    public void testUnknownProperty2()
+    {
+        runtime.createInMemorySource("file.pure",
+                "Class Person{address:Address[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{}\n" +
+                        "Class MyFirm projects \n #Firm\n" +
+                        "{\n" +
+                        "   employees \n" +
+                        "               {\n" +
+                        "                   address2 {} \n" +
+                        "               }\n" +
+                        "}\n" +
+                        "#\n");
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "The property 'address2' can't be found in the type 'Person' (or any supertype).", "file.pure", 7, 20, e);
+    }
+
+    @Test
+    public void testComplexPropertiesNotAllowed()
+    {
+        runtime.createInMemorySource("file.pure",
+                "Class Person{address:Address[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{}\n" +
+                        "Class MyFirm projects \n #Firm\n" +
+                        "{\n" +
+                        "   employees \n" +
+                        "               {\n" +
+                        "                   * \n" +
+                        "               }" +
+                        "}" +
+                        "#\n");
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "Invalid projection specification. Found complex property 'employees', only simple properties are allowed in a class projection.", "file.pure", 5, 4, e);
+    }
+
+    @Test
+    public void testQualifiedPropertyWithMissingSimpleProperty()
+    {
+        runtime.createInMemorySource("file.pure",
+                "Class Person{ name: String[1]; nameWithTitle(title:String[1]){$title + $this.name}: String[1];address:Address[1]; firm: Firm[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{ street:String[1]; }\n" +
+                        "Class PersonProjection projects #Person" +
+                        "{\n" +
+                        "      +[ nameWithTitle(String[1]) ]   \n" +
+                        "}#");
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "Error compiling projection 'PersonProjection'. Property 'nameWithTitle' cannot be resolved due to underlying cause: Can't find the property 'name' in the class PersonProjection", "file.pure", 2, 7, e);
+    }
+
+    @Test
+    public void testProjectionOfProjection()
+    {
+        runtime.createInMemorySource("file.pure",
+                "Class Person{address:Address[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{}\n" +
+                        "Class FirmProjection projects\n" +
+                        "#Firm{\n" +
+                        "   *  \n" +
+                        "}#\n" +
+                        "Class FirmProjectionSubClass extends FirmProjection {}");
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "Class 'FirmProjection' is a projection and cannot be extended.", "file.pure", 6, 38, e);
+    }
+
+    @Test
+    public void testSimpleClassProjection()
+    {
+        runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; yearsEmployed : Integer[1]; address:Address[1]; firm: Firm[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{ street:String[1]; }\n" +
                 "Class PersonProjection projects #Person" +
                 "{ \n" +
                 "   *   " +
                 "}#");
-        this.runtime.compile();
+        runtime.compile();
 
-        CoreInstance projection = this.runtime.getCoreInstance("PersonProjection");
+        ClassProjection<?> projection = (ClassProjection<?>) runtime.getCoreInstance("PersonProjection");
 
         Assert.assertNotNull(projection);
-        RichIterable<? extends CoreInstance> properties = Instance.getValueForMetaPropertyToManyResolved(projection, M3Properties.properties, processorSupport);
-        Assert.assertEquals("Missing properties", 2, properties.size());
-
-        RichIterable<String> names = properties.collect(CoreInstance.GET_NAME);
-        Verify.assertContainsAll(names.toList(), "name", "yearsEmployed");
+        Assert.assertEquals(
+                Lists.mutable.with("name", "yearsEmployed"),
+                projection._properties().collect(Property::_name, Lists.mutable.empty()).sortThis());
     }
 
     @Test
-    public void testSimpleClassProjectionWithoutDSL() throws Exception
+    public void testSimpleClassProjectionWithoutDSL()
     {
-        this.runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; yearsEmployed : Integer[1]; address:Address[1]; firm: Firm[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{ street:String[1]; }\n" +
+        runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; yearsEmployed : Integer[1]; address:Address[1]; firm: Firm[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{ street:String[1]; }\n" +
                 "Class PersonProjection projects Person" +
                 "{ \n" +
                 "   *   " +
                 "}");
-        this.runtime.compile();
+        runtime.compile();
 
-        CoreInstance projection = this.runtime.getCoreInstance("PersonProjection");
+        ClassProjection<?> projection = (ClassProjection<?>) runtime.getCoreInstance("PersonProjection");
 
         Assert.assertNotNull(projection);
-        RichIterable<? extends CoreInstance> properties = Instance.getValueForMetaPropertyToManyResolved(projection, M3Properties.properties, processorSupport);
-        Assert.assertEquals("Missing properties", 2, properties.size());
-
-        RichIterable<String> names = properties.collect(CoreInstance.GET_NAME);
-        Verify.assertContainsAll(names.toList(), "name", "yearsEmployed");
+        Assert.assertEquals(
+                Lists.mutable.with("name", "yearsEmployed"),
+                projection._properties().collect(Property::_name, Lists.mutable.empty()).sortThis());
     }
 
     @Test
-    public void testClassProjectionWithAnnotations() throws Exception
+    public void testClassProjectionWithAnnotations()
     {
         String annotations = "Profile TPP\n" +
                 "{\n" +
                 "   stereotypes:[Root, ExistingProperty, DerivedProperty, SimpleProperty];  \n" +
                 "   tags: [name, description];\n" +
                 "}\n";
-        this.runtime.createInMemorySource("file.pure", annotations + "Class {TPP.name='Person Class'} Person \n{\n {TPP.name = 'name prop'} name: String[1];\n <<TPP.SimpleProperty>> nameWithPrefix(prefix:String[1]){ $prefix + ' ' + $this.name;}:String[1];\n yearsEmployed : Integer[1];\n}\n" +
+        runtime.createInMemorySource("file.pure", annotations + "Class {TPP.name='Person Class'} Person \n{\n {TPP.name = 'name prop'} name: String[1];\n <<TPP.SimpleProperty>> nameWithPrefix(prefix:String[1]){ $prefix + ' ' + $this.name;}:String[1];\n yearsEmployed : Integer[1];\n}\n" +
                 "Class PersonProjection projects #Person <<TPP.Root>> {TPP.description = 'Person Class Projection'}" +
                 "{ \n" +
                 "   +[name {TPP.description='Full Name'}, nameWithPrefix(String[1]) <<TPP.ExistingProperty>>]   " +
                 "}#");
-        this.runtime.compile();
+        runtime.compile();
 
-        CoreInstance projection = this.runtime.getCoreInstance("PersonProjection");
+        CoreInstance projection = runtime.getCoreInstance("PersonProjection");
         Assert.assertNotNull(projection);
 
-        CoreInstance tppProfile = this.runtime.getCoreInstance("TPP");
+        CoreInstance tppProfile = runtime.getCoreInstance("TPP");
         Assert.assertNotNull(tppProfile);
 
         CoreInstance rootST = Profile.findStereotype(tppProfile, "Root");
@@ -261,29 +275,29 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
         Assert.assertNotNull(nameWithPrefixProp);
 
         validateAnnotations(projection, Sets.mutable.with(rootST), Maps.mutable.with(nameTag, Sets.mutable.with("Person Class"), descriptionTag, Sets.mutable.with("Person Class Projection")));
-        validateAnnotations(nameProp, Sets.mutable.<CoreInstance>empty(), Maps.mutable.with(descriptionTag, Sets.mutable.with("Full Name"), nameTag, Sets.mutable.with("name prop")));
-        validateAnnotations(nameWithPrefixProp, Sets.mutable.with(existingPropertyST, simplePropertyST), Maps.mutable.<CoreInstance, MutableSet<String>>empty());
+        validateAnnotations(nameProp, Sets.mutable.empty(), Maps.mutable.with(descriptionTag, Sets.mutable.with("Full Name"), nameTag, Sets.mutable.with("name prop")));
+        validateAnnotations(nameWithPrefixProp, Sets.mutable.with(existingPropertyST, simplePropertyST), Maps.mutable.empty());
     }
 
     @Test
-    public void testClassProjectionWithoutDSLWithAnnotations() throws Exception
+    public void testClassProjectionWithoutDSLWithAnnotations()
     {
         String annotations = "Profile TPP\n" +
                 "{\n" +
                 "   stereotypes:[Root, ExistingProperty, DerivedProperty, SimpleProperty];  \n" +
                 "   tags: [name, description];\n" +
                 "}\n";
-        this.runtime.createInMemorySource("file.pure", annotations + "Class {TPP.name='Person Class'} Person \n{\n {TPP.name = 'name prop'} name: String[1];\n <<TPP.SimpleProperty>> nameWithPrefix(prefix:String[1]){ $prefix + ' ' + $this.name;}:String[1];\n yearsEmployed : Integer[1];\n}\n" +
+        runtime.createInMemorySource("file.pure", annotations + "Class {TPP.name='Person Class'} Person \n{\n {TPP.name = 'name prop'} name: String[1];\n <<TPP.SimpleProperty>> nameWithPrefix(prefix:String[1]){ $prefix + ' ' + $this.name;}:String[1];\n yearsEmployed : Integer[1];\n}\n" +
                 "Class PersonProjection projects Person <<TPP.Root>> {TPP.description = 'Person Class Projection'}" +
                 "{ \n" +
                 "   +[name {TPP.description='Full Name'}, nameWithPrefix(String[1]) <<TPP.ExistingProperty>>]   " +
                 "}");
-        this.runtime.compile();
+        runtime.compile();
 
-        CoreInstance projection = this.runtime.getCoreInstance("PersonProjection");
+        CoreInstance projection = runtime.getCoreInstance("PersonProjection");
         Assert.assertNotNull(projection);
 
-        CoreInstance tppProfile = this.runtime.getCoreInstance("TPP");
+        CoreInstance tppProfile = runtime.getCoreInstance("TPP");
         Assert.assertNotNull(tppProfile);
 
         CoreInstance rootST = Profile.findStereotype(tppProfile, "Root");
@@ -305,31 +319,31 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
         Assert.assertNotNull(nameWithPrefixProp);
 
         validateAnnotations(projection, Sets.mutable.with(rootST), Maps.mutable.with(nameTag, Sets.mutable.with("Person Class"), descriptionTag, Sets.mutable.with("Person Class Projection")));
-        validateAnnotations(nameProp, Sets.mutable.<CoreInstance>empty(), Maps.mutable.with(descriptionTag, Sets.mutable.with("Full Name"), nameTag, Sets.mutable.with("name prop")));
-        validateAnnotations(nameWithPrefixProp, Sets.mutable.with(existingPropertyST, simplePropertyST), Maps.mutable.<CoreInstance, MutableSet<String>>empty());
+        validateAnnotations(nameProp, Sets.mutable.empty(), Maps.mutable.with(descriptionTag, Sets.mutable.with("Full Name"), nameTag, Sets.mutable.with("name prop")));
+        validateAnnotations(nameWithPrefixProp, Sets.mutable.with(existingPropertyST, simplePropertyST), Maps.mutable.empty());
     }
 
     private void validateAnnotations(CoreInstance instance, MutableSet<CoreInstance> expectedStereotypes, MutableMap<CoreInstance, MutableSet<String>> expectedTaggedValues)
     {
-        ListIterable<? extends CoreInstance> stereotypes = Instance.getValueForMetaPropertyToManyResolved(instance, M3Properties.stereotypes, this.processorSupport);
-        ListIterable<? extends CoreInstance> taggedValues = Instance.getValueForMetaPropertyToManyResolved(instance, M3Properties.taggedValues, this.processorSupport);
+        ListIterable<? extends CoreInstance> stereotypes = Instance.getValueForMetaPropertyToManyResolved(instance, M3Properties.stereotypes, processorSupport);
+        ListIterable<? extends CoreInstance> taggedValues = Instance.getValueForMetaPropertyToManyResolved(instance, M3Properties.taggedValues, processorSupport);
 
         // Check that we have the expected stereotypes and tagged values
-        MutableSetMultimap<CoreInstance, String> actualTaggedValues = Multimaps.mutable.set.empty();
+        MutableMap<CoreInstance, MutableSet<String>> actualTaggedValues = Maps.mutable.empty();
         for (CoreInstance taggedValue : taggedValues)
         {
-            CoreInstance tag = Instance.getValueForMetaPropertyToOneResolved(taggedValue, M3Properties.tag, this.processorSupport);
-            CoreInstance value = Instance.getValueForMetaPropertyToOneResolved(taggedValue, M3Properties.value, this.processorSupport);
-            actualTaggedValues.put(tag, PrimitiveUtilities.getStringValue(value));
+            CoreInstance tag = Instance.getValueForMetaPropertyToOneResolved(taggedValue, M3Properties.tag, processorSupport);
+            CoreInstance value = Instance.getValueForMetaPropertyToOneResolved(taggedValue, M3Properties.value, processorSupport);
+            actualTaggedValues.getIfAbsentPut(tag, Sets.mutable::empty).add(PrimitiveUtilities.getStringValue(value));
         }
 
-        Verify.assertSetsEqual(expectedStereotypes, stereotypes.toSet());
-        Verify.assertMapsEqual(expectedTaggedValues, actualTaggedValues.toMap());
+        Assert.assertEquals(expectedStereotypes, stereotypes.toSet());
+        Assert.assertEquals(expectedTaggedValues, actualTaggedValues);
 
         // Check that the stereotypes and tags have the appropriate model elements
         for (CoreInstance stereotype : expectedStereotypes)
         {
-            ListIterable<? extends CoreInstance> modelElements = Instance.getValueForMetaPropertyToManyResolved(stereotype, M3Properties.modelElements, this.processorSupport);
+            ListIterable<? extends CoreInstance> modelElements = Instance.getValueForMetaPropertyToManyResolved(stereotype, M3Properties.modelElements, processorSupport);
             if (!modelElements.contains(instance))
             {
                 Assert.fail("model elements for " + stereotype + " did not contain " + instance);
@@ -337,7 +351,7 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
         }
         for (CoreInstance tag : expectedTaggedValues.keysView())
         {
-            ListIterable<? extends CoreInstance> modelElements = Instance.getValueForMetaPropertyToManyResolved(tag, M3Properties.modelElements, this.processorSupport);
+            ListIterable<? extends CoreInstance> modelElements = Instance.getValueForMetaPropertyToManyResolved(tag, M3Properties.modelElements, processorSupport);
             if (!modelElements.contains(instance))
             {
                 Assert.fail("model elements for " + tag + " did not contain " + instance);
@@ -346,30 +360,28 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
-    public void testClassProjectionFlattening() throws Exception
+    public void testClassProjectionFlattening()
     {
-        this.runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; yearsEmployed : Integer[1]; address:Address[1]; firm: Firm[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{ street:String[1]; }\n" +
+        runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; yearsEmployed : Integer[1]; address:Address[1]; firm: Firm[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{ street:String[1]; }\n" +
                 "Class PersonProjection projects #Person" +
                 "{ \n" +
                 "   *" +
                 "   >address [$this.address.street]" +
                 "}#");
-        this.runtime.compile();
+        runtime.compile();
 
-        CoreInstance projection = this.runtime.getCoreInstance("PersonProjection");
+        ClassProjection<?> projection = (ClassProjection<?>) runtime.getCoreInstance("PersonProjection");
 
         Assert.assertNotNull(projection);
-        RichIterable<? extends CoreInstance> properties = Instance.getValueForMetaPropertyToManyResolved(projection, M3Properties.properties, processorSupport);
-        Assert.assertEquals("Missing properties", 3, properties.size());
-
-        RichIterable<String> names = properties.collect(CoreInstance.GET_NAME);
-        Verify.assertContainsAll(names.toList(), "name", "yearsEmployed", "address");
+        Assert.assertEquals(
+                Lists.mutable.with("address", "name", "yearsEmployed"),
+                projection._properties().collect(Property::_name, Lists.mutable.empty()).sortThis());
     }
 
     @Test
-    public void testClassProjectionWithFunctionRecompile() throws Exception
+    public void testClassProjectionWithFunctionRecompile()
     {
-        this.runtime.createInMemorySource("file.pure", "Class demo::A\n" +
+        runtime.createInMemorySource("file.pure", "Class demo::A\n" +
                 "{\n" +
                 "\n" +
                 "    name()\n" +
@@ -393,9 +405,9 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
                 "{   \n" +
                 "   'Projection ' +  $a->type().name->toOne();\n" +
                 "}");
-        this.runtime.compile();
+        runtime.compile();
 
-        CoreInstance projection = this.runtime.getCoreInstance("demo::AP");
+        CoreInstance projection = runtime.getCoreInstance("demo::AP");
 
         Assert.assertNotNull(projection);
         RichIterable<? extends CoreInstance> properties = Instance.getValueForMetaPropertyToManyResolved(projection, M3Properties.qualifiedProperties, processorSupport);
@@ -407,9 +419,9 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
-    public void testClassProjectionWithFunctionRecompileExceptionScenario() throws Exception
+    public void testClassProjectionWithFunctionRecompileExceptionScenario()
     {
-        this.runtime.createInMemorySource("file.pure", "Class demo::A\n" +
+        runtime.createInMemorySource("file.pure", "Class demo::A\n" +
                 "{\n" +
                 "    name()\n" +
                 "    {\n" +
@@ -427,30 +439,25 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
                 "   $a->type().name;\n" +
                 "}\n" +
                 "\n");
-        try
-        {
-            this.runtime.compile();
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException("Error compiling projection 'demo::AP'. Property 'name' cannot be resolved due to underlying cause: " + PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "printName(_:AP[1])\n" +
-                    PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_IMPORTED_MESSAGE +
-                    "\tprintName(A[1]):String[*]\n" +
-                    PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE, 8, 13, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class,
+                "Error compiling projection 'demo::AP'. Property 'name' cannot be resolved due to underlying cause: " + PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "printName(_:AP[1])\n" +
+                        PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_IMPORTED_MESSAGE +
+                        "\tprintName(A[1]):String[*]\n" +
+                        PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE,
+                "file.pure", 8, 13, e);
     }
 
     @Test
-    public void testSimpleProjectionWithQualifiedProperties() throws Exception
+    public void testSimpleProjectionWithQualifiedProperties()
     {
-        this.runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; nameWithTitle(title:String[1]){$title + $this.name}: String[1];address:Address[1]; firm: Firm[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{ street:String[1]; }\n" +
+        runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; nameWithTitle(title:String[1]){$title + $this.name}: String[1];address:Address[1]; firm: Firm[1];} Class Firm {employees : Person[1];address:Address[1];} Class Address{ street:String[1]; }\n" +
                 "Class PersonProjection projects #Person" +
                 "{\n" +
                 "      +[ name, nameWithTitle(String[1]) ]   \n" +
                 "}#");
-        this.runtime.compile();
-        CoreInstance tree = this.runtime.getCoreInstance("PersonProjection");
+        runtime.compile();
+        CoreInstance tree = runtime.getCoreInstance("PersonProjection");
         Assert.assertNotNull(tree);
         RichIterable<? extends CoreInstance> children = Instance.getValueForMetaPropertyToManyResolved(tree, M3Properties.qualifiedProperties, processorSupport);
         Assert.assertEquals("Missing properties", 1, children.size());
@@ -458,57 +465,57 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
-    public void testSimpleProjectionWithQualifiedPropertiesIntLiteral() throws Exception
+    public void testSimpleProjectionWithQualifiedPropertiesIntLiteral()
     {
-        this.runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; propInt(){1}: Integer[1];}" +
+        runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; propInt(){1}: Integer[1];}" +
                 "Class PersonProjection projects #Person" +
                 "{\n" +
                 "      +[ name, propInt() ]   \n" +
                 "}#");
-        this.runtime.compile();
-        CoreInstance tree = this.runtime.getCoreInstance("PersonProjection");
+        runtime.compile();
+        CoreInstance tree = runtime.getCoreInstance("PersonProjection");
         Assert.assertNotNull(tree);
-        RichIterable<? extends CoreInstance> children = Instance.getValueForMetaPropertyToManyResolved(tree, M3Properties.qualifiedProperties, this.processorSupport);
+        RichIterable<? extends CoreInstance> children = Instance.getValueForMetaPropertyToManyResolved(tree, M3Properties.qualifiedProperties, processorSupport);
         Assert.assertEquals("Missing properties", 1, children.size());
         Assert.assertEquals("propInt", children.getFirst().getValueForMetaPropertyToOne("name").getName());
     }
 
     @Test
-    public void testSimpleProjectionWithQualifiedPropertiesBooleanLiteral() throws Exception
+    public void testSimpleProjectionWithQualifiedPropertiesBooleanLiteral()
     {
-        this.runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; propBool(){true}: Boolean[1];}" +
+        runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; propBool(){true}: Boolean[1];}" +
                 "Class PersonProjection projects #Person" +
                 "{\n" +
                 "      +[ propBool() ]   \n" +
                 "}#");
-        this.runtime.compile();
-        CoreInstance tree = this.runtime.getCoreInstance("PersonProjection");
+        runtime.compile();
+        CoreInstance tree = runtime.getCoreInstance("PersonProjection");
         Assert.assertNotNull(tree);
-        RichIterable<? extends CoreInstance> children = Instance.getValueForMetaPropertyToManyResolved(tree, M3Properties.qualifiedProperties, this.processorSupport);
+        RichIterable<? extends CoreInstance> children = Instance.getValueForMetaPropertyToManyResolved(tree, M3Properties.qualifiedProperties, processorSupport);
         Assert.assertEquals("Missing properties", 1, children.size());
         Assert.assertEquals("propBool", children.getFirst().getValueForMetaPropertyToOne("name").getName());
     }
 
     @Test
-    public void testSimpleProjectionWithQualifiedPropertiesDateLiteral() throws Exception
+    public void testSimpleProjectionWithQualifiedPropertiesDateLiteral()
     {
-        this.runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; propDate(){%12-12-12}: Date[1];}" +
+        runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; propDate(){%12-12-12}: Date[1];}" +
                 "Class PersonProjection projects #Person" +
                 "{\n" +
                 "      +[ propDate() ]   \n" +
                 "}#");
-        this.runtime.compile();
-        CoreInstance tree = this.runtime.getCoreInstance("PersonProjection");
+        runtime.compile();
+        CoreInstance tree = runtime.getCoreInstance("PersonProjection");
         Assert.assertNotNull(tree);
-        RichIterable<? extends CoreInstance> children = Instance.getValueForMetaPropertyToManyResolved(tree, M3Properties.qualifiedProperties, this.processorSupport);
+        RichIterable<? extends CoreInstance> children = Instance.getValueForMetaPropertyToManyResolved(tree, M3Properties.qualifiedProperties, processorSupport);
         Assert.assertEquals("Missing properties", 1, children.size());
         Assert.assertEquals("propDate", children.getFirst().getValueForMetaPropertyToOne("name").getName());
     }
 
     @Test
-    public void testSimpleProjectionWithQualifiedPropertiesEnumLiteral() throws Exception
+    public void testSimpleProjectionWithQualifiedPropertiesEnumLiteral()
     {
-        this.runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; propEnum(){NumNum.Cookie}: NumNum[1];}" +
+        runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; propEnum(){NumNum.Cookie}: NumNum[1];}" +
                 "Class PersonProjection projects #Person" +
                 "{\n" +
                 "      +[ propEnum() ]   \n" +
@@ -518,8 +525,8 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
                 "{" +
                 "   Cookie, Monster" +
                 "}");
-        this.runtime.compile();
-        CoreInstance tree = this.runtime.getCoreInstance("PersonProjection");
+        runtime.compile();
+        CoreInstance tree = runtime.getCoreInstance("PersonProjection");
         Assert.assertNotNull(tree);
         RichIterable<? extends CoreInstance> children = Instance.getValueForMetaPropertyToManyResolved(tree, M3Properties.qualifiedProperties, processorSupport);
         Assert.assertEquals("Missing properties", 1, children.size());
@@ -527,9 +534,9 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
-    public void testSimpleProjectionWithQualifiedPropertiesLiteralArrayAny() throws Exception
+    public void testSimpleProjectionWithQualifiedPropertiesLiteralArrayAny()
     {
-        this.runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; propManyAny(){[NumNum.Cookie, 1 , true, %12-12-12, 'pi', 3.14]}: Any[*];}" +
+        runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; propManyAny(){[NumNum.Cookie, 1 , true, %12-12-12, 'pi', 3.14]}: Any[*];}" +
                 "Class PersonProjection projects #Person" +
                 "{\n" +
                 "      +[ propManyAny() ]   \n" +
@@ -539,8 +546,8 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
                 "{" +
                 "   Cookie, Monster" +
                 "}");
-        this.runtime.compile();
-        CoreInstance tree = this.runtime.getCoreInstance("PersonProjection");
+        runtime.compile();
+        CoreInstance tree = runtime.getCoreInstance("PersonProjection");
         Assert.assertNotNull(tree);
         RichIterable<? extends CoreInstance> children = Instance.getValueForMetaPropertyToManyResolved(tree, M3Properties.qualifiedProperties, processorSupport);
         Assert.assertEquals("Missing properties", 1, children.size());
@@ -548,9 +555,9 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
-    public void testMultipleParameters() throws Exception
+    public void testMultipleParameters()
     {
-        this.runtime.createInMemorySource("file.pure",
+        runtime.createInMemorySource("file.pure",
                 "Class Person\n" +
                         "{\n" +
                         "    firstName : String[1];\n" +
@@ -575,13 +582,13 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
                         "{\n" +
                         "}");
 
-        this.runtime.createInMemorySource("projection.pure",
+        runtime.createInMemorySource("projection.pure",
                 "Class PersonProjection projects #Person\n" +
                         "{-[nameWithPrefixAndSuffix(String[0..1], String[*])]}" +
                         "#\n");
-        this.runtime.compile();
+        runtime.compile();
 
-        CoreInstance projection = this.runtime.getCoreInstance("PersonProjection");
+        CoreInstance projection = runtime.getCoreInstance("PersonProjection");
 
         Assert.assertNotNull(projection);
         RichIterable<? extends CoreInstance> properties = Instance.getValueForMetaPropertyToManyResolved(projection, M3Properties.properties, processorSupport);
@@ -591,9 +598,9 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
-    public void testClassProjectionWithQualifiedPropertyBoundToOtherType() throws Exception
+    public void testClassProjectionWithQualifiedPropertyBoundToOtherType()
     {
-        this.runtime.createInMemorySource("file.pure", "import meta::pure::tests::model::simple::*;\n" +
+        runtime.createInMemorySource("file.pure", "import meta::pure::tests::model::simple::*;\n" +
                 "Class meta::pure::tests::model::simple::Trade\n" +
                 "{\n" +
                 "   id : Integer[1];\n" +
@@ -659,10 +666,9 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
                 "{\n" +
                 "   trade:  Trade[*];\n" +
                 "   events: TradeEvent [*];\n" +
-                "}\n" +
-                "");
-        this.runtime.compile();
-        CoreInstance tradeProjection = this.runtime.getCoreInstance("meta::pure::tests::model::simple::TradeProjection");
+                "}\n");
+        runtime.compile();
+        CoreInstance tradeProjection = runtime.getCoreInstance("meta::pure::tests::model::simple::TradeProjection");
         Assert.assertNotNull(tradeProjection);
         RichIterable<? extends CoreInstance> properties = Instance.getValueForMetaPropertyToManyResolved(tradeProjection, M3Properties.properties, processorSupport);
         Assert.assertEquals(5, properties.size());
@@ -671,9 +677,9 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
-    public void testProjectionWithNonResolvableQualifiedProperties() throws Exception
+    public void testProjectionWithNonResolvableQualifiedProperties()
     {
-        this.runtime.createInMemorySource("file.pure", "import meta::pure::tests::model::simple::*;\n" +
+        runtime.createInMemorySource("file.pure", "import meta::pure::tests::model::simple::*;\n" +
                 "import meta::pure::tests::model::simple::projection::*;\n" +
                 "\n" +
                 "\n" +
@@ -695,21 +701,15 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
                 "   *\n" +
                 "}\n" +
                 "#");
-        this.runtime.createInMemorySource("model.pure", testModel);
-        try
-        {
-            this.runtime.compile();
-        }
-        catch (Exception e)
-        {
-            assertPureException("Error compiling projection 'meta::pure::tests::model::simple::projection::FirmProjection'. Property 'nameAndAddress' cannot be resolved due to underlying cause: Can't find the property 'address' in the class meta::pure::tests::model::simple::projection::FirmProjection", 16, 53, e);
-        }
+        runtime.createInMemorySource("model.pure", testModel);
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "Error compiling projection 'meta::pure::tests::model::simple::projection::FirmProjection'. Property 'nameAndAddress' cannot be resolved due to underlying cause: Can't find the property 'address' in the class meta::pure::tests::model::simple::projection::FirmProjection", "file.pure", 16, 53, e);
     }
 
     @Test
-    public void testPrintFlattenedProperty() throws Exception
+    public void testPrintFlattenedProperty()
     {
-        this.runtime.createInMemorySource("file.pure", "import meta::pure::tests::model::simple::*;\n" +
+        runtime.createInMemorySource("file.pure", "import meta::pure::tests::model::simple::*;\n" +
                 "import meta::pure::tests::model::simple::projection::*;\n" +
                 "\n" +
                 "native function average(s:Number[*]):Float[1];\n" +
@@ -726,10 +726,10 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
                 "{" +
                 "   print(EntityWithAddressProjection,1);" +
                 "}");
-        this.runtime.createInMemorySource("model.pure", testModel);
-        this.runtime.compile();
-        CoreInstance projection = this.runtime.getCoreInstance("meta::pure::tests::model::simple::projection::EntityWithAddressProjection");
-        Printer.print(projection, this.runtime.getProcessorSupport());
+        runtime.createInMemorySource("model.pure", testModel);
+        runtime.compile();
+        CoreInstance projection = runtime.getCoreInstance("meta::pure::tests::model::simple::projection::EntityWithAddressProjection");
+        Printer.print(projection, runtime.getProcessorSupport());
 
         Assert.assertNotNull(projection);
         RichIterable<? extends CoreInstance> properties = Instance.getValueForMetaPropertyToManyResolved(projection, M3Properties.properties, processorSupport);
@@ -739,7 +739,7 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testProjectionWithQualifiedPropertyInclude()
     {
-        this.runtime.createInMemorySource("projection.pure", "import meta::pure::tests::model::simple::*;" +
+        runtime.createInMemorySource("projection.pure", "import meta::pure::tests::model::simple::*;" +
                 "import meta::pure::tests::model::simple::projection::*;\n" +
                 "native function average(s:Number[*]):Float[1];\n" +
                 "native function sum(s:Integer[*]):Integer[1];\n" +
@@ -756,7 +756,6 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
                 "   >employerName [$this.firm.legalName]\n" +
                 "}\n" +
                 "\n" +
-                "" +
                 "Class meta::pure::tests::model::simple::projection::AddressProjection projects\n" +
                 "Address\n" +
                 "{\n" +
@@ -764,9 +763,9 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
                 "}\n" +
                 "\n" +
                 "Association meta::pure::tests::model::simple::projection::EmploymentProjection projects Employment<FirmProjection, PersonProjection> \n");
-        this.runtime.createInMemorySource("model.pure", testModel);
-        this.runtime.compile();
-        CoreInstance projection = this.runtime.getCoreInstance("meta::pure::tests::model::simple::projection::PersonProjection");
+        runtime.createInMemorySource("model.pure", testModel);
+        runtime.compile();
+        CoreInstance projection = runtime.getCoreInstance("meta::pure::tests::model::simple::projection::PersonProjection");
         Assert.assertNotNull(projection);
         RichIterable<? extends CoreInstance> properties = Instance.getValueForMetaPropertyToManyResolved(projection, M3Properties.properties, processorSupport);
         RichIterable<? extends CoreInstance> qProperties = Instance.getValueForMetaPropertyToManyResolved(projection, M3Properties.qualifiedProperties, processorSupport);
@@ -774,11 +773,11 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
         Assert.assertEquals(1, qProperties.size());
     }
 
-    private static String testModel = "import meta::pure::profiles::*;\n" +
+    private static final String testModel = "import meta::pure::profiles::*;\n" +
             "import meta::pure::tests::model::simple::*;\n" +
-            "" +
+            "\n" +
             "native function in(s:String[1],c:String[*]):Boolean[1];\n" +
-            "" +
+            "\n" +
             "Class meta::pure::tests::model::simple::EntityWithAddress\n" +
             "{\n" +
             "    address : Address[0..1];\n" +
@@ -1155,5 +1154,4 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
             "}\n" +
             "\n" +
             "\n";
-
 }
