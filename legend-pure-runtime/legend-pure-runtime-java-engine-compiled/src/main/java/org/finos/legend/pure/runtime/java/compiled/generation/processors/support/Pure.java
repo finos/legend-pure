@@ -396,11 +396,11 @@ public class Pure
         }
         if (func instanceof LambdaFunction)
         {
-            LambdaFunction<?> lambda = (LambdaFunction<?>) func;
             if (canFindNativeOrLambdaFunction(es, func))
             {
                 return getNativeOrLambdaFunction(es, func);
             }
+            LambdaFunction<?> lambda = (LambdaFunction<?>) func;
             if (Reactivator.canReactivateWithoutJavaCompilation(lambda, es, getOpenVariables(func, bridge), bridge))
             {
                 PureMap openVariablesMap = getOpenVariables(func, bridge);
@@ -413,33 +413,31 @@ public class Pure
             if (func.getSourceInformation() != null)
             {
                 return ces.getFunctionCache().getIfAbsentPutJavaFunctionForPureFunction(func, () ->
-                        {
-                            try
-                            {
-                                RichIterable<? extends VariableExpression> params = ((FunctionType) func._classifierGenericType()._typeArguments().getFirst()._rawType())._parameters();
-                                Class<?>[] paramClasses = new Class[params.size() + 1];
-                                int index = 0;
-                                for (VariableExpression o : params)
-                                {
-                                    paramClasses[index++] = pureTypeToJavaClassForExecution(o, bridge, es);
-                                }
-                                paramClasses[params.size()] = ExecutionSupport.class;
-                                Method method = ces.getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation())).getMethod(FunctionProcessor.functionNameToJava(func), paramClasses);
-                                return new JavaMethodWithParamsSharedPureFunction<>(method, paramClasses, func.getSourceInformation());
-                            }
-                            catch (ReflectiveOperationException e)
-                            {
-                                throw new RuntimeException(e);
-                            }
-                        });
-            }
-            else
-            {
-                PureMap openVars = new PureMap(Maps.mutable.empty());
-                if (Reactivator.canReactivateWithoutJavaCompilation(func, es, openVars, bridge))
                 {
-                    return DynamicPureFunctionImpl.createPureFunction((FunctionDefinition<?>) func, openVars.getMap(), bridge);
-                }
+                    try
+                    {
+                        RichIterable<? extends VariableExpression> params = ((FunctionType) func._classifierGenericType()._typeArguments().getFirst()._rawType())._parameters();
+                        Class<?>[] paramClasses = new Class[params.size() + 1];
+                        int index = 0;
+                        for (VariableExpression o : params)
+                        {
+                            paramClasses[index++] = pureTypeToJavaClassForExecution(o, bridge, es);
+                        }
+                        paramClasses[params.size()] = ExecutionSupport.class;
+                        Method method = ces.getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation())).getMethod(FunctionProcessor.functionNameToJava(func), paramClasses);
+                        return new JavaMethodWithParamsSharedPureFunction<>(method, paramClasses, func.getSourceInformation());
+                    }
+                    catch (ReflectiveOperationException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+
+            PureMap openVars = new PureMap(Maps.mutable.empty());
+            if (Reactivator.canReactivateWithoutJavaCompilation(func, es, openVars, bridge))
+            {
+                return DynamicPureFunctionImpl.createPureFunction((FunctionDefinition<?>) func, openVars.getMap(), bridge);
             }
         }
 
@@ -1096,7 +1094,7 @@ public class Pure
             PackageableElement child = pkg._children().detect(c -> name.equals(c._name()));
             if (child == null)
             {
-                Package newPkg =  packageBuilder.apply(name)._name(name)._package(pkg);
+                Package newPkg = packageBuilder.apply(name)._name(name)._package(pkg);
                 pkg._childrenAdd(newPkg);
                 return newPkg;
             }

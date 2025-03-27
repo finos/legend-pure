@@ -319,7 +319,7 @@ class DistributedBinaryRepositorySerializer extends DistributedBinaryGraphSerial
 
         private EnumRef buildEnumRef(CoreInstance enumValue)
         {
-            String classifierId = buildClassifierId(instance);
+            String classifierId = buildClassifierId(enumValue);
             return new EnumRef(classifierId, enumValue.getName());
         }
     }

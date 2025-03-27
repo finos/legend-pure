@@ -22,7 +22,6 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.measure.Measure;
@@ -55,7 +54,7 @@ public class ValueSpecificationProcessor
         return processValueSpecification(topLevelElement, valueSpecification, topLevel, processorContext);
     }
 
-    public static String processValueSpecification(final CoreInstance topLevelElement, CoreInstance valueSpecification, boolean topLevel, final ProcessorContext processorContext)
+    public static String processValueSpecification(CoreInstance topLevelElement, CoreInstance valueSpecification, boolean topLevel, ProcessorContext processorContext)
     {
         ProcessorSupport processorSupport = processorContext.getSupport();
 
@@ -114,7 +113,7 @@ public class ValueSpecificationProcessor
                     else
                     {
                         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(valueSpecification, M3Properties.genericType, M3Properties.typeArguments, M3Properties.rawType, processorSupport);
-                        return "((" + FullJavaPaths.Class + "<" + TypeProcessor.fullyQualifiedJavaInterfaceNameForType(_class, processorSupport) + ">)((CompiledExecutionSupport)es).getMetadataAccessor(\"" + PackageableElement.getSystemPathForPackageableElement(_class, "::") + "\"))";
+                        return "((" + FullJavaPaths.Class + "<" + TypeProcessor.fullyQualifiedJavaInterfaceNameForType(_class, processorSupport) + ">)((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"" + processorContext.getIdBuilder().buildId(_class) + "\"))";
                     }
                 }
                 else if (values.size() == 1)
@@ -127,7 +126,7 @@ public class ValueSpecificationProcessor
                     }
                     CoreInstance type = processorSupport.getClassifier(cls);
                     String classifier = MetadataJavaPaths.buildMetadataKeyFromType(type);
-                    return "((" + TypeProcessor.fullyQualifiedJavaInterfaceNameForType(type, processorSupport) + "<" + TypeProcessor.fullyQualifiedJavaInterfaceNameForType(cls, processorSupport) + ">)((CompiledExecutionSupport)es).getMetadata(\"" + classifier + "\",\"" + PackageableElement.getSystemPathForPackageableElement(cls) + "\"))";
+                    return "((" + TypeProcessor.fullyQualifiedJavaInterfaceNameForType(type, processorSupport) + "<" + TypeProcessor.fullyQualifiedJavaInterfaceNameForType(cls, processorSupport) + ">)((CompiledExecutionSupport)es).getMetadata(\"" + classifier + "\",\"" + processorContext.getIdBuilder().buildId(cls) + "\"))";
                 }
                 else
                 {
@@ -144,7 +143,7 @@ public class ValueSpecificationProcessor
                         String type = TypeProcessor.fullyQualifiedJavaInterfaceNameForType(cls, processorSupport);
                         types.add(type);
                         String classifier = TypeProcessor.fullyQualifiedJavaInterfaceNameForType(processorSupport.getClassifier(cls), processorSupport);
-                        return "((" + classifier + "<? extends " + type + ">)((CompiledExecutionSupport)es).getMetadata(\"" + MetadataJavaPaths.buildMetadataKeyFromType(processorSupport.getClassifier(cls)) + "\",\"" + PackageableElement.getSystemPathForPackageableElement(cls, "::") + "\"))";
+                        return "((" + classifier + "<? extends " + type + ">)((CompiledExecutionSupport)es).getMetadata(\"" + MetadataJavaPaths.buildMetadataKeyFromType(processorSupport.getClassifier(cls)) + "\",\"" + processorContext.getIdBuilder().buildId(cls) + "\"))";
                     }).makeString();
                     String typeString = (types.size() > 1) ? ("<" + TypeProcessor.typeToJavaObjectSingle(Instance.getValueForMetaPropertyToOneResolved(valueSpecification, M3Properties.genericType, processorSupport), true, processorSupport) + ">") : "";
                     return "Lists.mutable." + typeString + "with(" + listElements + ")";
@@ -162,7 +161,7 @@ public class ValueSpecificationProcessor
                         // Enumeration is wrapped in an InstanceValue
                         enumeration = Instance.getValueForMetaPropertyToOneResolved(enumeration, M3Properties.values, processorSupport);
                     }
-                    return "((" + type + ")((CompiledExecutionSupport)es).getMetadataAccessor().getEnumeration(\"" + PackageableElement.getSystemPathForPackageableElement(enumeration) + "\"))";
+                    return "((" + type + ")((CompiledExecutionSupport)es).getMetadataAccessor().getEnumeration(\"" + processorContext.getIdBuilder().buildId(enumeration) + "\"))";
                 }
                 else
                 {
@@ -283,15 +282,15 @@ public class ValueSpecificationProcessor
         if (fullyConcreteSignature && notOpenVariables && !processorContext.isInLineAllLambda())
         {
             String sourceId = IdBuilder.sourceToId(function.getSourceInformation());
-            String functionId = processorContext.getIdBuilder().buildId(function);
+            String functionKey = function.getName();
 
             //Only need to create this if we are currently generating this file
             if (registerLambdasInProcessorContext && (topLevelElement == null || function.getSourceInformation().getSourceId().equals(topLevelElement.getSourceInformation().getSourceId())))
             {
                 String func = createLambdaBody(topLevelElement, function, processorContext, notOpenVariables, functionType, params);
-                processorContext.registerLambdaFunction(sourceId, functionId, func);
+                processorContext.registerLambdaFunction(sourceId, functionKey, func);
             }
-            pureFunctionString = sourceId + ".__functions.get(\"" + functionId + "\")";
+            pureFunctionString = sourceId + ".__functions.get(\"" + functionKey + "\")";
         }
         else
         {

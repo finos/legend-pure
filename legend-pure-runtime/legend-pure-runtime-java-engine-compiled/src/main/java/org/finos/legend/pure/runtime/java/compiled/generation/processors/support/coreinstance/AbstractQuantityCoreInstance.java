@@ -82,11 +82,10 @@ public abstract class AbstractQuantityCoreInstance extends ReflectiveCoreInstanc
         Unit result = this.unit;
         if (result == null)
         {
-            String path = getUnitPath();
-            this.unit = result = this.executionSupport.getMetadataAccessor().getUnit("Root::" + path);
+            this.unit = result = this.executionSupport.getMetadataAccessor().getUnit(getUnitId());
             if (result == null)
             {
-                throw new IllegalStateException("Cannot find unit: " + path);
+                throw new IllegalStateException("Cannot find unit: " + getUnitPath());
             }
         }
         return result;
@@ -273,7 +272,7 @@ public abstract class AbstractQuantityCoreInstance extends ReflectiveCoreInstanc
     @Override
     public Multiplicity _multiplicity()
     {
-        return (Multiplicity) this.executionSupport.getMetadata().getMetadata(M3Paths.Multiplicity, "Root::" + M3Paths.PureOne);
+        return (Multiplicity) this.executionSupport.getMetadata(M3Paths.Multiplicity, M3Paths.PureOne);
     }
 
     @Override
@@ -360,6 +359,8 @@ public abstract class AbstractQuantityCoreInstance extends ReflectiveCoreInstanc
         throw new UnsupportedOperationException();
     }
 
+    protected abstract String getUnitId();
+
     protected abstract QuantityCoreInstance unwrap();
 
     private Object getValuePossiblyWrapped()
@@ -374,7 +375,7 @@ public abstract class AbstractQuantityCoreInstance extends ReflectiveCoreInstanc
 
     private Type getClassifierType()
     {
-        return this.executionSupport.getMetadataAccessor().getClass("Root::" + M3Paths.InstanceValue);
+        return this.executionSupport.getMetadataAccessor().getClass(M3Paths.InstanceValue);
     }
 
     private GenericType wrapGenericType(Type rawType)

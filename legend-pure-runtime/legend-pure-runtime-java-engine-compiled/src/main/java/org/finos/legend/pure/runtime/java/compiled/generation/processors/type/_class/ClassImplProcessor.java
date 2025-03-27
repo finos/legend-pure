@@ -140,7 +140,7 @@ public class ClassImplProcessor
                 buildGetValueForMetaPropertyToOne(classGenericType, processorSupport) +
                 buildGetValueForMetaPropertyToMany(classGenericType, processorSupport) +
 
-                buildSimpleProperties(classGenericType, (property, name, unresolvedReturnType, returnType, returnMultiplicity, returnTypeJava, classOwnerFullId, ownerClassName, ownerTypeParams, processorContext1) ->
+                buildSimpleProperties(classGenericType, (property, name, unresolvedReturnType, returnType, returnMultiplicity, returnTypeJava, classOwnerId, ownerClassName, ownerTypeParams, processorContext1) ->
                 {
                     CoreInstance propertyOwner = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.owner, processorSupport);
 
@@ -153,7 +153,7 @@ public class ClassImplProcessor
                                 "    public " + returnTypeJava + " _" + name + ";\n" :
                                 "    public RichIterable _" + name + " = Lists.mutable.with();\n";
                     }
-                    propertyString += buildProperty(property, ownerClassName + (ownerTypeParams.isEmpty() ? "" : "<" + ownerTypeParams + ">"), "this", classOwnerFullId, name, returnType, unresolvedReturnType, returnMultiplicity, processorContext1.getSupport(), includeGettor, processorContext1);
+                    propertyString += buildProperty(property, ownerClassName + (ownerTypeParams.isEmpty() ? "" : "<" + ownerTypeParams + ">"), "this", classOwnerId, name, returnType, unresolvedReturnType, returnMultiplicity, processorContext1.getSupport(), includeGettor, processorContext1);
                     return propertyString;
                 }, processorContext, processorSupport) +
                 buildQualifiedProperties(classGenericType, processorContext, processorSupport) +
@@ -507,8 +507,8 @@ public class ClassImplProcessor
             boolean makePrimitiveIfPossible = GenericType.isGenericTypeConcrete(unresolvedReturnType) && Multiplicity.isToOne(returnMultiplicity, true);
             String returnTypeJava = TypeProcessor.pureTypeToJava(returnType, true, makePrimitiveIfPossible, processorSupport);
             CoreInstance classOwner = Instance.getValueForMetaPropertyToOneResolved(property.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToMany(M3Properties.typeArguments).get(0), M3Properties.rawType, processorSupport);
-            String classOwnerFullId = PackageableElement.getSystemPathForPackageableElement(classOwner, "::");
-            return propertyImpl.build(property, name, unresolvedReturnType, returnType, returnMultiplicity, returnTypeJava, classOwnerFullId, ownerClassName, ownerTypeParams, processorContext);
+            String classOwnerId = processorContext.getIdBuilder().buildId(classOwner);
+            return propertyImpl.build(property, name, unresolvedReturnType, returnType, returnMultiplicity, returnTypeJava, classOwnerId, ownerClassName, ownerTypeParams, processorContext);
         }).makeString("", "\n", "\n");
     }
 
@@ -846,7 +846,7 @@ public class ClassImplProcessor
                 "\n";
     }
 
-    public static String buildProperty(CoreInstance property, String className, String owner, String classOwnerFullId, String name, CoreInstance returnType, CoreInstance unresolvedReturnType, CoreInstance multiplicity, ProcessorSupport processorSupport, boolean includeGettor, ProcessorContext processorContext)
+    public static String buildProperty(CoreInstance property, String className, String owner, String classOwnerId, String name, CoreInstance returnType, CoreInstance unresolvedReturnType, CoreInstance multiplicity, ProcessorSupport processorSupport, boolean includeGettor, ProcessorContext processorContext)
     {
         CoreInstance associationClass = processorSupport.package_getByUserPath(M3Paths.Association);
         CoreInstance propertyOwner = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.owner, processorSupport);
@@ -878,7 +878,7 @@ public class ClassImplProcessor
             return buildPropertyStandardWriteToOneBuilders(property, returnType, name, owner, className, typeObject, defaultValue, reversePropertyName, typePrimitive, false, processorContext) +
                     (includeGettor ? buildPropertyStandardWriteSeverReverseToOne(name, owner, typePrimitive, isPrimitive, false) +
                             buildPropertyToOneGetterCoreInstance(property, returnType, name, processorContext) +
-                            buildPropertyToOneGetter(owner, classOwnerFullId, name, isOverrider, isClassifierGenericType, isDataType, typePrimitive) : "");
+                            buildPropertyToOneGetter(owner, classOwnerId, name, isOverrider, isClassifierGenericType, isDataType, typePrimitive) : "");
         }
         else
         {
@@ -887,26 +887,26 @@ public class ClassImplProcessor
             // it just won't be called.
             return buildPropertyStandardWriteToManyBuilders(property, returnType, name, owner, className, typeObject, reversePropertyName, typePrimitive, rawType, false, processorSupport, processorContext) +
                     (includeGettor ? buildPropertyStandardSeverReverseToMany(name, owner, typePrimitive, isPrimitive, false) +
-                            buildPropertyToManyGetter(owner, classOwnerFullId, name, isOverrider, isClassifierGenericType, isDataType, typePrimitive) : "") +
+                            buildPropertyToManyGetter(owner, classOwnerId, name, isOverrider, isClassifierGenericType, isDataType, typePrimitive) : "") +
                     buildPropertyToManyGetterCoreInstance(property, returnType, name, processorContext);
         }
     }
 
-    private static String buildPropertyToManyGetter(String owner, String classOwnerFullId, String name, boolean isOverrider, boolean isClassifierGenericType, boolean isDataType, String typeObject)
+    private static String buildPropertyToManyGetter(String owner, String classOwnerId, String name, boolean isOverrider, boolean isClassifierGenericType, boolean isDataType, String typeObject)
     {
         return "    public RichIterable<? extends " + typeObject + "> _" + name + "()\n" +
                 "    {\n" +
                 "        return " + (isDataType || isOverrider || isClassifierGenericType ? owner + "._" + name + ";\n" :
-                owner + "._elementOverride() == null || !GetterOverrideExecutor.class.isInstance(" + owner + "._elementOverride()) ? " + owner + "._" + name + " : (RichIterable<? extends " + typeObject + ">)((GetterOverrideExecutor)" + owner + "._elementOverride()).executeToMany(" + owner + ", \"" + classOwnerFullId + "\", \"" + name + "\");\n") +
+                owner + "._elementOverride() == null || !GetterOverrideExecutor.class.isInstance(" + owner + "._elementOverride()) ? " + owner + "._" + name + " : (RichIterable<? extends " + typeObject + ">)((GetterOverrideExecutor)" + owner + "._elementOverride()).executeToMany(" + owner + ", \"" + classOwnerId + "\", \"" + name + "\");\n") +
                 "    }\n";
     }
 
-    private static String buildPropertyToOneGetter(String owner, String classOwnerFullId, String name, boolean isOverrider, boolean isClassifierGenericType, boolean isDataType, String typeObject)
+    private static String buildPropertyToOneGetter(String owner, String classOwnerId, String name, boolean isOverrider, boolean isClassifierGenericType, boolean isDataType, String typeObject)
     {
         return "    public " + typeObject + " _" + name + "()\n" +
                 "    {\n" +
                 "        return " + (isDataType || isOverrider || isClassifierGenericType ? owner + "._" + name + ";\n" :
-                owner + "._elementOverride() == null || !GetterOverrideExecutor.class.isInstance(" + owner + "._elementOverride()) ? " + owner + "._" + name + " : (" + typeObject + ")((GetterOverrideExecutor)" + owner + "._elementOverride()).executeToOne(" + owner + ", \"" + classOwnerFullId + "\", \"" + name + "\");\n") +
+                owner + "._elementOverride() == null || !GetterOverrideExecutor.class.isInstance(" + owner + "._elementOverride()) ? " + owner + "._" + name + " : (" + typeObject + ")((GetterOverrideExecutor)" + owner + "._elementOverride()).executeToOne(" + owner + ", \"" + classOwnerId + "\", \"" + name + "\");\n") +
                 "    }\n";
     }
 
@@ -991,13 +991,13 @@ public class ClassImplProcessor
                 "        this.__getterOverrideToManyExec = f2;" +
                 "        return this;\n" +
                 "    }\n" +
-                "    public Object executeToOne(CoreInstance instance, String fullSystemClassName, String propertyName)\n" +
+                "    public Object executeToOne(CoreInstance instance, String classId, String propertyName)\n" +
                 "    {\n" +
-                "        return this.__getterOverrideToOneExec.value(instance, Pure.getProperty(fullSystemClassName, propertyName,((CompiledExecutionSupport)__getterOverrideToOneExec.getExecutionSupport()).getMetadataAccessor()), __getterOverrideToOneExec.getExecutionSupport());\n" +
+                "        return this.__getterOverrideToOneExec.value(instance, Pure.getProperty(classId, propertyName,((CompiledExecutionSupport)__getterOverrideToOneExec.getExecutionSupport()).getMetadataAccessor()), __getterOverrideToOneExec.getExecutionSupport());\n" +
                 "    }\n" +
-                "    public ListIterable executeToMany(CoreInstance instance, String fullSystemClassName, String propertyName)\n" +
+                "    public ListIterable executeToMany(CoreInstance instance, String classId, String propertyName)\n" +
                 "    {\n" +
-                "        return (ListIterable)this.__getterOverrideToManyExec.value(instance, Pure.getProperty(fullSystemClassName, propertyName,((CompiledExecutionSupport)__getterOverrideToOneExec.getExecutionSupport()).getMetadataAccessor()), __getterOverrideToManyExec.getExecutionSupport());\n" +
+                "        return (ListIterable)this.__getterOverrideToManyExec.value(instance, Pure.getProperty(classId, propertyName,((CompiledExecutionSupport)__getterOverrideToOneExec.getExecutionSupport()).getMetadataAccessor()), __getterOverrideToManyExec.getExecutionSupport());\n" +
                 "    }\n";
 
     }
@@ -1114,6 +1114,6 @@ public class ClassImplProcessor
 
     public interface FullPropertyImplementation
     {
-        String build(CoreInstance property, String name, CoreInstance unresolvedReturnType, CoreInstance returnType, CoreInstance returnMultiplicity, String returnTypeJava, String classOwnerFullId, String ownerClassName, String ownerTypeParams, ProcessorContext processorContext);
+        String build(CoreInstance property, String name, CoreInstance unresolvedReturnType, CoreInstance returnType, CoreInstance returnMultiplicity, String returnTypeJava, String classOwnerId, String ownerClassName, String ownerTypeParams, ProcessorContext processorContext);
     }
 }

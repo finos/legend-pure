@@ -157,19 +157,16 @@ public class CompiledExecutionSupport implements ExecutionSupport
         return this.options;
     }
 
-    @Deprecated
     public MapIterable getMetadata(String classifier)
     {
         return getMetadata().getMetadata(classifier);
     }
 
-    @Deprecated
     public CoreInstance getMetadata(String classifier, String id)
     {
         return getMetadata().getMetadata(classifier, id);
     }
 
-    @Deprecated
     public Metadata getMetadata()
     {
         return this.processorSupport.getMetadata();

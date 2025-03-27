@@ -15,16 +15,7 @@
 package org.finos.legend.pure.runtime.java.compiled.delta;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.function.Function2;
-import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.serialization.runtime.IncrementalCompiler;
@@ -42,17 +33,6 @@ import org.finos.legend.pure.runtime.java.compiled.metadata.Metadata;
 
 public final class CodeBlockDeltaCompiler
 {
-    private static final Function2<String, CompiledExecutionSupport, CompilationResult> COMPILE_CODE_BLOCK = new Function2<String, CompiledExecutionSupport, CompilationResult>()
-    {
-        @Override
-        public CompilationResult value(String code, CompiledExecutionSupport executionSupport)
-        {
-            return compileCodeBlock(code, executionSupport);
-        }
-    };
-
-    private static final CreateSourceFunction CREATE_SOURCE_FUNCTION = new CreateSourceFunction();
-
     private CodeBlockDeltaCompiler()
     {
     }
@@ -67,7 +47,7 @@ public final class CodeBlockDeltaCompiler
     public static RichIterable<CompilationResult> compileCodeBlocks(RichIterable<? extends String> codeBlocks, CompiledExecutionSupport executionSupport)
     {
         //This needs to stream - so make sure it uses rich iterables
-        return codeBlocks.collectWith(COMPILE_CODE_BLOCK, executionSupport);
+        return codeBlocks.collect(code -> compileCodeBlock(code, executionSupport));
     }
 
     public static CompilationResult compileCodeBlock(String code, CompiledExecutionSupport executionSupport)
@@ -75,9 +55,7 @@ public final class CodeBlockDeltaCompiler
         IncrementalCompilerTransaction transaction = executionSupport.getIncrementalCompiler().newTransaction(false);
         try (ThreadLocalTransactionContext ignore = transaction.openInCurrentThread())
         {
-            return new BuildMetadataFunction(executionSupport.getMetadataProvider()).valueOf(Lists.mutable.of(
-                    new InterpretedCompileFunction(executionSupport.getIncrementalCompiler()).valueOf(
-                            CREATE_SOURCE_FUNCTION.valueOf(code)))).getFirst();
+            return buildCompilationResult(compileSource(executionSupport.getIncrementalCompiler(), createSource(code)), executionSupport.getMetadataProvider());
         }
         finally
         {
@@ -85,95 +63,45 @@ public final class CodeBlockDeltaCompiler
         }
     }
 
-    private static class CreateSourceFunction implements Function<String, Source>
+    private static Source createSource(String code)
     {
-        @Override
-        public Source valueOf(String code)
+        Pair<String, String> codeBlockPair = wrapCodeBlock(code);
+        return Source.createMutableInMemorySource(codeBlockPair.getOne(), codeBlockPair.getTwo());
+    }
+
+    private static IntermediateCompilationResult compileSource(IncrementalCompiler incrementalCompiler, Source source)
+    {
+        try
         {
-            Pair<String, String> codeBlockPair = wrapCodeBlock(code);
-            return Source.createMutableInMemorySource(codeBlockPair.getOne(), codeBlockPair.getTwo());
+            //First compile and validate that the code is actually correct
+            incrementalCompiler.compileInCurrentTransaction(source);
+            CoreInstance instance = source.getNewInstances().getFirst();
+            String functionName = PackageableElement.getUserPathForPackageableElement(instance);
+            return new IntermediateCompilationResult(source, functionName);
+        }
+        catch (PureCompilationException | PureParserException e)
+        {
+            return IntermediateCompilationResult.createForFailure(e);
         }
     }
 
-    private static class InterpretedCompileFunction implements Function<Source, IntermediateCompilationResult>
+    private static CompilationResult buildCompilationResult(IntermediateCompilationResult intermediateResult, MetadataProvider metadataProvider)
     {
-        private final IncrementalCompiler incrementalCompiler;
-
-        private InterpretedCompileFunction(IncrementalCompiler incrementalCompiler)
+        if (!intermediateResult.wasSuccess())
         {
-            this.incrementalCompiler = incrementalCompiler;
+            return new CompilationResult(intermediateResult.failureMessage, intermediateResult.failureSourceInformation);
         }
 
-        @Override
-        public IntermediateCompilationResult valueOf(Source source)
+        try
         {
-            try
-            {
-                //First compile and validate that the code is actually correct
-                this.incrementalCompiler.compileInCurrentTransaction(source);
-                CoreInstance instance = source.getNewInstances().getFirst();
-                String functionName = PackageableElement.getSystemPathForPackageableElement(instance);
-                return new IntermediateCompilationResult(source, functionName);
-            }
-            catch (PureCompilationException | PureParserException ex)
-            {
-                return IntermediateCompilationResult.createForFailure(ex);
-            }
+            metadataProvider.startTransaction();
+            metadataProvider.buildMetadata(intermediateResult.source.getNewInstances());
+            Metadata metadata = metadataProvider.getMetadata();
+            return new CompilationResult(metadata.getMetadata(MetadataJavaPaths.ConcreteFunctionDefinition, intermediateResult.functionName));
         }
-    }
-
-    private static class BuildMetadataFunction implements Function<RichIterable<IntermediateCompilationResult>, RichIterable<CompilationResult>>
-    {
-        private final MetadataProvider metadataProvider;
-
-        private BuildMetadataFunction(MetadataProvider metadataProvider)
+        finally
         {
-            this.metadataProvider = metadataProvider;
-        }
-
-        @Override
-        public RichIterable<CompilationResult> valueOf(RichIterable<IntermediateCompilationResult> intermediateResults)
-        {
-
-            MutableList<CompilationResult> results = new FastList<>(intermediateResults.size());
-            MutableMap<String, CompilationResult> functionToResultIndex = Maps.mutable.of();
-            MutableSet<CoreInstance> newInstances = Sets.mutable.of();
-
-            for (IntermediateCompilationResult compilationResult : intermediateResults)
-            {
-                if (compilationResult.wasSuccess())
-                {
-                    CompilationResult result = new CompilationResult();
-                    results.add(result);
-                    functionToResultIndex.put(compilationResult.functionName, result);
-                    newInstances.addAllIterable(compilationResult.source.getNewInstances());
-                }
-                else
-                {
-                    results.add(new CompilationResult(compilationResult.failureMessage,
-                            compilationResult.failureSourceInformation));
-                }
-            }
-            try
-            {
-                this.metadataProvider.startTransaction();
-                this.metadataProvider.buildMetadata(newInstances);
-                Metadata metadata = this.metadataProvider.getMetadata();
-
-                for (String functionName : functionToResultIndex.keysView())
-                {
-                    functionToResultIndex.get(functionName).result = metadata.getMetadata(MetadataJavaPaths.ConcreteFunctionDefinition, functionName);
-                }
-            }
-            finally
-            {
-                if (this.metadataProvider != null)
-                {
-                    this.metadataProvider.rollbackTransaction();
-                }
-            }
-
-            return results;
+            metadataProvider.rollbackTransaction();
         }
     }
 
@@ -206,22 +134,20 @@ public final class CodeBlockDeltaCompiler
             return this.failureMessage == null;
         }
 
-        private static IntermediateCompilationResult createForFailure(PureException ex)
+        private static IntermediateCompilationResult createForFailure(PureException e)
         {
-            SourceInformation orig = ex.getOriginatingPureException().getSourceInformation();
-            SourceInformation adjustedSourceInfo = null;
-            if (orig != null)
-            {
-                adjustedSourceInfo = new SourceInformation("",
-                        adjustLine(orig.getStartLine()),
-                        orig.getStartColumn(),
-                        adjustLine(orig.getLine()),
-                        orig.getColumn(),
-                        adjustLine(orig.getEndLine()),
-                        orig.getEndColumn());
-            }
-
-            return new IntermediateCompilationResult(ex.getOriginatingPureException().getInfo(), adjustedSourceInfo);
+            PureException originalEx = e.getOriginatingPureException();
+            SourceInformation originalSourceInfo = originalEx.getSourceInformation();
+            SourceInformation sourceInfo = (originalSourceInfo == null) ?
+                                           null :
+                                           new SourceInformation("",
+                                                   adjustLine(originalSourceInfo.getStartLine()),
+                                                   originalSourceInfo.getStartColumn(),
+                                                   adjustLine(originalSourceInfo.getLine()),
+                                                   originalSourceInfo.getColumn(),
+                                                   adjustLine(originalSourceInfo.getEndLine()),
+                                                   originalSourceInfo.getEndColumn());
+            return new IntermediateCompilationResult(originalEx.getInfo(), sourceInfo);
         }
 
         private static int adjustLine(int line)
@@ -232,25 +158,25 @@ public final class CodeBlockDeltaCompiler
 
     public static class CompilationResult
     {
-        private CoreInstance result;
-        private String failureMessage;
-        private SourceInformation failureSourceInformation;
-
-        public CompilationResult()
-        {
-        }
-
-        public CompilationResult(String failureMessage, SourceInformation failureSourceInformation)
-        {
-            this.failureMessage = failureMessage;
-            this.failureSourceInformation = failureSourceInformation;
-        }
+        private final CoreInstance result;
+        private final String failureMessage;
+        private final SourceInformation failureSourceInformation;
 
         public CompilationResult(CoreInstance result, String failureMessage, SourceInformation failureSourceInformation)
         {
             this.result = result;
             this.failureMessage = failureMessage;
             this.failureSourceInformation = failureSourceInformation;
+        }
+
+        public CompilationResult(String failureMessage, SourceInformation failureSourceInformation)
+        {
+            this(null, failureMessage, failureSourceInformation);
+        }
+
+        public CompilationResult(CoreInstance result)
+        {
+            this(result, null, null);
         }
 
         public CoreInstance getResult()
@@ -268,5 +194,4 @@ public final class CodeBlockDeltaCompiler
             return this.failureSourceInformation;
         }
     }
-
 }
