@@ -26,6 +26,7 @@ import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.serialization.grammar.StringEscape;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class _Column
@@ -40,7 +41,7 @@ public class _Column
     public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, GenericType targetType, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity multiplicity, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
         Column<?, ?> columnInstance = (Column<?, ?>) processorSupport.newAnonymousCoreInstance(sourceInformation, M3Paths.Column);
-        columnInstance._name(removeQuotes(name));
+        columnInstance._name(StringEscape.unescape(removeQuotes(name)));
         columnInstance._nameWildCard(nameWildCard);
         GenericType columnGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(sourceInformation, M3Paths.GenericType);
         columnGenericType._rawType((Type) _Package.getByUserPath(M3Paths.Column, processorSupport));
