@@ -44,6 +44,7 @@ import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstanceWrapper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.serialization.grammar.StringEscape;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class _RelationType
@@ -77,7 +78,7 @@ public class _RelationType
 
     public static Function<?> findColumn(RelationType<?> type, String name, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
-        CoreInstance col = Instance.getValueForMetaPropertyToManyResolved(type, "columns", processorSupport).select(c -> Instance.getValueForMetaPropertyToOneResolved(c, M3Properties.name, processorSupport).getName().equals(name)).getFirst();
+        CoreInstance col = Instance.getValueForMetaPropertyToManyResolved(type, "columns", processorSupport).select(c -> Instance.getValueForMetaPropertyToOneResolved(c, M3Properties.name, processorSupport).getName().equals(StringEscape.unescape(name))).getFirst();
         if (col == null)
         {
             throw new PureCompilationException(sourceInformation, "The system can't find the column " + name + " in the Relation " + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(processorSupport.type_wrapGenericType(type), processorSupport));
