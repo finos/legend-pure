@@ -14,13 +14,18 @@
 
 package org.finos.legend.pure.m3.serialization.compiler.reference;
 
+import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.coreinstance.helper.AnyStubHelper;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.ReferenceUsage;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation._package._Package;
+import org.finos.legend.pure.m3.navigation.graph.ResolvedGraphPath;
+import org.finos.legend.pure.m3.tools.GraphTools;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
@@ -83,22 +88,8 @@ public abstract class AbstractReferenceIdExtensionTest extends AbstractReference
                     }
                     else if (shouldHaveReferenceId(instance))
                     {
-                        StringBuilder builder = new StringBuilder();
-                        if (PackageableElement.isPackageableElement(instance, processorSupport))
-                        {
-                            PackageableElement.writeUserPathForPackageableElement(builder, instance);
-                        }
-                        else
-                        {
-                            builder.append(instance);
-                        }
-                        PackageableElement.writeUserPathForPackageableElement(builder.append(" (instance of "), instance.getClassifier());
-                        SourceInformation sourceInfo = instance.getSourceInformation();
-                        if (sourceInfo != null)
-                        {
-                            sourceInfo.appendMessage(builder.append(", at "));
-                        }
-                        builder.append(") should have a reference id but does not");
+                        StringBuilder builder = appendInstanceDescription(new StringBuilder(), instance, true, true)
+                                .append(" should have a reference id but does not");
                         Assert.fail(builder.toString());
                     }
                     else
@@ -111,6 +102,51 @@ public abstract class AbstractReferenceIdExtensionTest extends AbstractReference
     private boolean shouldHaveReferenceId(CoreInstance instance)
     {
         return (instance.getSourceInformation() == null) ? _Package.isPackage(instance, processorSupport) : !AnyStubHelper.isStub(instance);
+    }
+
+    private StringBuilder appendInstanceDescription(StringBuilder builder, CoreInstance instance, boolean includeClassifier, boolean includeSourceInfo)
+    {
+        appendInstanceDescription(builder, instance);
+        if (includeClassifier || includeSourceInfo)
+        {
+            builder.append(" (");
+            if (includeClassifier)
+            {
+                PackageableElement.writeUserPathForPackageableElement(builder.append("instance of "), instance.getClassifier());
+            }
+            if (includeSourceInfo)
+            {
+                SourceInformation sourceInfo = instance.getSourceInformation();
+                if (sourceInfo != null)
+                {
+                    sourceInfo.appendMessage((includeClassifier ? builder.append(", ") : builder).append("at "));
+                }
+            }
+            builder.append(')');
+        }
+        return builder;
+    }
+
+    private StringBuilder appendInstanceDescription(StringBuilder builder, CoreInstance instance)
+    {
+        if (PackageableElement.isPackageableElement(instance, processorSupport))
+        {
+            return PackageableElement.writeUserPathForPackageableElement(builder, instance);
+        }
+        ResolvedGraphPath path = tryFindPathToInstance(instance);
+        if (path != null)
+        {
+            return path.getGraphPath().writeDescription(builder);
+        }
+        return builder.append(instance);
+    }
+
+    protected ResolvedGraphPath tryFindPathToInstance(CoreInstance instance)
+    {
+        LazyIterable<ResolvedGraphPath> paths = GraphTools.getPathsToInstance(instance, processorSupport);
+        return (instance instanceof ReferenceUsage) ?
+               paths.getAny() :
+               paths.detect(rgp -> rgp.getGraphPath().getEdges().noneSatisfy(e -> M3Properties.referenceUsages.equals(e.getProperty())));
     }
 
     protected String assertRefId(CoreInstance instance)

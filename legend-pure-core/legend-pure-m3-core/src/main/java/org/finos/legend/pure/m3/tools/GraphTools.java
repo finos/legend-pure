@@ -144,6 +144,16 @@ public class GraphTools
                 .getAny();
     }
 
+    public static LazyIterable<ResolvedGraphPath> getPathsToInstance(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        return getPathsToInstance(instance, processorSupport, false);
+    }
+
+    public static LazyIterable<ResolvedGraphPath> getPathsToInstance(CoreInstance instance, ProcessorSupport processorSupport, boolean allowPathsToExternalInstance)
+    {
+        return getTopLevelAndPackagedElements(processorSupport).flatCollect(e -> getPathsToInstanceWithinElement(e, instance, processorSupport, allowPathsToExternalInstance));
+    }
+
     public static GraphPathIterable getPathsToInstanceWithinElement(CoreInstance element, CoreInstance instance, ProcessorSupport processorSupport)
     {
         return getPathsToInstanceWithinElement(element, instance, processorSupport, false);

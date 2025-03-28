@@ -146,13 +146,13 @@ public class AssociationProcessor extends Processor<Association>
             throwInvalidProjectionException(associationProjection, leftProperty);
         }
 
-        Property<?, ?> leftPropertyCopy = (Property<?, ?>) ProjectionUtil.createPropertyCopy(leftProperty, associationProjection, modelRepository, processorSupport)
+        Property<?, ?> leftPropertyCopy = ProjectionUtil.createPropertyCopy(leftProperty, associationProjection, modelRepository, processorSupport)
                 ._owner(null);
         GenericType leftPropertyCopyGT = (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(rightProjection, leftPropertyCopy.getSourceInformation(), processorSupport);
         replacePropertyGenericType(leftPropertyCopy, leftPropertyCopyGT);
         replacePropertyReturnType(leftPropertyCopy, leftPropertyCopyGT);
 
-        Property<?, ?> rightPropertyCopy = (Property<?, ?>) ProjectionUtil.createPropertyCopy(rightProperty, associationProjection, modelRepository, processorSupport)
+        Property<?, ?> rightPropertyCopy = ProjectionUtil.createPropertyCopy(rightProperty, associationProjection, modelRepository, processorSupport)
                 ._owner(null);
         GenericType rightPropertyCopyGT = (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(leftProjection, rightPropertyCopy.getSourceInformation(), processorSupport);
         replacePropertyGenericType(rightPropertyCopy, rightPropertyCopyGT);

@@ -111,6 +111,28 @@ public class AbstractReferenceTest extends AbstractPureTestWithCoreCompiled
                         "  rightCount : Integer[1];\n" +
                         "}\n" +
                         "\n" +
+                        "Class test::model::Product\n" +
+                        "{\n" +
+                        "  id : String[1];\n" +
+                        "  synonyms : ProductSynonym[*];\n" +
+                        "  synonymByType(type:String[1])\n" +
+                        "  {\n" +
+                        "    $this.synonyms->filter(s | $type == $s.type)->toOne()\n" +
+                        "  }:ProductSynonym[1];\n" +
+                        "  others : String[*];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class test::model::ProductSynonym\n" +
+                        "{\n" +
+                        "  type: String[1];\n" +
+                        "  value: String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class test::model::ProductProjection projects Product\n" +
+                        "{\n" +
+                        "  +[id, synonyms, synonymByType(String[1])]\n" +
+                        "}\n" +
+                        "\n" +
                         "Class <<doc.deprecated>> {doc.doc = 'Deprecated class with annotations'} test::model::ClassWithAnnotations\n" +
                         "{\n" +
                         "  <<doc.deprecated>> deprecated : String[0..1];\n" +

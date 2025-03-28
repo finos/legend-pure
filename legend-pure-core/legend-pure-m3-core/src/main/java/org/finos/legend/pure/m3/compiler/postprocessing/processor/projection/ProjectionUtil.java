@@ -19,6 +19,7 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.partition.PartitionIterable;
 import org.eclipse.collections.api.set.MutableSet;
@@ -57,12 +58,13 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 public class ProjectionUtil
 {
-    public static CoreInstance deepCopyAndBindSimpleProperty(AbstractProperty<?> originalProperty, ClassProjection<?> projection, ModelRepository modelRepository, Context context, ProcessorSupport processorSupport)
+    public static Property<?, ?> deepCopyAndBindSimpleProperty(Property<?, ?> originalProperty, ClassProjection<?> projection, ModelRepository modelRepository, Context context, ProcessorSupport processorSupport)
     {
-        AbstractProperty<?> propertyCopy = createPropertyCopy(originalProperty, projection, modelRepository, processorSupport);
-
-        GenericType ownerType = projection._classifierGenericType()._typeArguments().getFirst();
-        propertyCopy._classifierGenericType()._typeArguments(Lists.immutable.with((GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(ownerType, processorSupport)).newWithAll(propertyCopy._classifierGenericType()._typeArguments().asLazy().drop(1)));
+        Property<?, ?> propertyCopy = createPropertyCopy(originalProperty, projection, modelRepository, processorSupport);
+        MutableList<GenericType> typeArgumentsCopy = Lists.mutable.withAll(propertyCopy._classifierGenericType()._typeArguments());
+        GenericType newOwnerType = projection._classifierGenericType()._typeArguments().getOnly();
+        typeArgumentsCopy.set(0, (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(newOwnerType, propertyCopy.getSourceInformation(), processorSupport));
+        propertyCopy._classifierGenericType()._typeArguments(typeArgumentsCopy);
         context.update(propertyCopy);
         return propertyCopy;
     }
@@ -80,51 +82,53 @@ public class ProjectionUtil
             propertyCopy._functionNameRemove();
         }
 
-        GenericType ownerType = projection._classifierGenericType()._typeArguments().getFirst();
+        GenericType ownerType = projection._classifierGenericType()._typeArguments().getOnly();
 
-        FunctionType classifierFunctionType = (FunctionType) ImportStub.withImportStubByPass(propertyCopy._classifierGenericType()._typeArguments().getFirst()._rawTypeCoreInstance(), processorSupport);
+        FunctionType classifierFunctionType = (FunctionType) propertyCopy._classifierGenericType()._typeArguments().getOnly()._rawType();
 
         VariableExpression propertyOwner = classifierFunctionType._parameters().getFirst();
 
-        propertyOwner._genericType((GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(ownerType, processorSupport));
+        propertyOwner._genericType((GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(ownerType, propertyCopy.getSourceInformation(), processorSupport));
         classifierFunctionType._functionCoreInstance(Lists.immutable.of(propertyCopy));
 
         MutableMap<CoreInstance, CoreInstance> processedMap = Maps.mutable.empty();
-        originalProperty._expressionSequence().forEach(expr ->
-        {
-            ValueSpecification copy = copyValueSpecification(expr, modelRepository, context, processorSupport, processedMap, state, projection);
-            propertyCopy._expressionSequenceAdd(copy);
-        });
+        propertyCopy._expressionSequence(originalProperty._expressionSequence().collect(expr -> copyValueSpecification(expr, modelRepository, context, processorSupport, processedMap, state, projection)));
 
         return propertyCopy;
     }
 
+    @Deprecated
     public static AbstractProperty<?> createPropertyCopy(AbstractProperty<?> sourceProperty, PropertyOwner newOwner, ModelRepository repository, ProcessorSupport processorSupport)
     {
-        AbstractProperty<?> copy = createAbstractPropertyCopy(sourceProperty, newOwner, repository, processorSupport);
-        if (sourceProperty instanceof Property)
+        return (sourceProperty instanceof Property) ?
+               createPropertyCopy((Property<?, ?>) sourceProperty, newOwner, repository, processorSupport) :
+               createAbstractPropertyCopy(sourceProperty, newOwner, repository, processorSupport);
+    }
+
+    public static Property<?, ?> createPropertyCopy(Property<?, ?> sourceProperty, PropertyOwner newOwner, ModelRepository repository, ProcessorSupport processorSupport)
+    {
+        Property<?, ?> copy = createAbstractPropertyCopy(sourceProperty, newOwner, repository, processorSupport);
+        if (sourceProperty._aggregation() != null)
         {
-            if (((Property<?, ?>) sourceProperty)._aggregation() != null)
-            {
-                ((Property<?, ?>) copy)._aggregation(((Property<?, ?>) sourceProperty)._aggregation());
-            }
-            else if (((Property<?, ?>) copy)._aggregation() != null)
-            {
-                ((Property<?, ?>) copy)._aggregationRemove();
-            }
+            copy._aggregation(sourceProperty._aggregation());
+        }
+        else if (copy._aggregation() != null)
+        {
+            copy._aggregationRemove();
         }
         return copy;
     }
 
     public static QualifiedProperty<?> createQualifiedPropertyCopy(QualifiedProperty<?> qualifiedProperty, PropertyOwner newOwner, ModelRepository repository, ProcessorSupport processorSupport)
     {
-        return (QualifiedProperty<?>) createAbstractPropertyCopy(qualifiedProperty, newOwner, repository, processorSupport);
+        return createAbstractPropertyCopy(qualifiedProperty, newOwner, repository, processorSupport);
     }
 
-    private static AbstractProperty<?> createAbstractPropertyCopy(AbstractProperty<?> sourceProperty, PropertyOwner newOwner, ModelRepository repository, ProcessorSupport processorSupport)
+    @SuppressWarnings("unchecked")
+    private static <T extends AbstractProperty<?>> T createAbstractPropertyCopy(T sourceProperty, PropertyOwner newOwner, ModelRepository repository, ProcessorSupport processorSupport)
     {
         SourceInformation sourceInfo = newOwner.getSourceInformation();
-        AbstractProperty<?> copy = (AbstractProperty<?>) repository.newCoreInstance(sourceProperty.getName(), sourceProperty.getClassifier(), sourceInfo);
+        T copy = (T) repository.newCoreInstance(sourceProperty.getName(), sourceProperty.getClassifier(), sourceInfo);
         copy._owner(newOwner);
         if (sourceProperty._name() != null)
         {
@@ -294,22 +298,22 @@ public class ProjectionUtil
         }
         if (instance instanceof AbstractProperty && ((AbstractProperty<?>) instance)._genericType() != null)
         {
-            ((AbstractProperty<?>) copy)._genericType((GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(((AbstractProperty<?>) instance)._genericType(), processorSupport));
+            ((AbstractProperty<?>) copy)._genericType((GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(((AbstractProperty<?>) instance)._genericType(), copy.getSourceInformation(), processorSupport));
         }
         if (instance instanceof ValueSpecification && ((ValueSpecification) instance)._genericType() != null)
         {
-            ((ValueSpecification) copy)._genericType((GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(((ValueSpecification) instance)._genericType(), processorSupport));
+            ((ValueSpecification) copy)._genericType((GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(((ValueSpecification) instance)._genericType(), copy.getSourceInformation(), processorSupport));
         }
         if (instance._classifierGenericType() != null)
         {
-            copy._classifierGenericType((GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(instance._classifierGenericType(), processorSupport));
+            copy._classifierGenericType((GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(instance._classifierGenericType(), copy.getSourceInformation(), processorSupport));
         }
         return copy;
     }
 
     private static void copyInstanceValue(InstanceValue valueSpecification, ModelRepository modelRepository, Context context, ProcessorSupport processorSupport, MutableMap<CoreInstance, CoreInstance> processedMap, ProcessorState state, ClassProjection<?> classProjection, InstanceValue copy)
     {
-        valueSpecification._valuesCoreInstance().forEach(value -> copy._valuesAdd(copyInstanceValueValue(value, modelRepository, context, processorSupport, processedMap, state, classProjection)));
+        copy._values(valueSpecification._valuesCoreInstance().collect(value -> copyInstanceValueValue(value, modelRepository, context, processorSupport, processedMap, state, classProjection)));
     }
 
     private static CoreInstance copyInstanceValueValue(CoreInstance value, ModelRepository modelRepository, Context context, ProcessorSupport processorSupport, MutableMap<CoreInstance, CoreInstance> processedMap, ProcessorState state, ClassProjection<?> classProjection)
