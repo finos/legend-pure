@@ -46,19 +46,25 @@ import org.finos.legend.pure.m3.serialization.runtime.binary.SimplePureRepositor
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.jupiter.api.DynamicContainer;
 
 import static org.finos.legend.pure.m3.pct.shared.PCTTools.isPCTTest;
 import static org.junit.Assert.fail;
 
 public class PureTestBuilderInterpreted
 {
+    public static DynamicContainer buildTestContainer(String... all)
+    {
+       return PureTestBuilder.convertTestSuiteToDynamicContainer(buildSuite(all));
+    }
+
     public static TestSuite buildSuite(String... all)
     {
         FunctionExecutionInterpreted functionExecution = getFunctionExecutionInterpreted();
 
         PureTestBuilder.F2<CoreInstance, MutableList<Object>, Object> testExecutor = getTestExecutor(functionExecution, Maps.mutable.empty(), "meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_");
 
-        TestSuite suite = new TestSuite();
+        TestSuite suite = new TestSuite("suite");
         ArrayIterate.forEach(all, (path) ->
                 {
                     TestCollection col = TestCollection.collectTests(path, functionExecution.getProcessorSupport(), ci -> PureTestBuilder.satisfiesConditionsInterpreted(ci, functionExecution.getProcessorSupport()));
@@ -67,6 +73,13 @@ public class PureTestBuilderInterpreted
         );
         return suite;
     }
+
+    public static DynamicContainer buildPCTTestContainer(ReportScope reportScope, MutableList<ExclusionSpecification> expectedFailures, Adapter adapter)
+    {
+        TestSuite testSuite = buildPCTTestSuite(reportScope, expectedFailures, adapter);
+        return PureTestBuilder.convertTestSuiteToDynamicContainer(testSuite);
+    }
+
 
     public static TestSuite buildPCTTestSuite(ReportScope reportScope, MutableList<ExclusionSpecification> expectedFailures, Adapter adapter)
     {
@@ -80,13 +93,11 @@ public class PureTestBuilderInterpreted
         );
     }
 
-    public static TestSuite buildPCTTestSuite(TestCollection testCollection, MutableMap<String, String> expectedFailures, String adapter, FunctionExecutionInterpreted functionExecution)
+    private static TestSuite buildPCTTestSuite(TestCollection testCollection, MutableMap<String, String> expectedFailures, String adapter, FunctionExecutionInterpreted functionExecution)
     {
         TestCollection.validateExclusions(testCollection, expectedFailures);
         PureTestBuilder.F2<CoreInstance, MutableList<Object>, Object> testExecutor = getTestExecutor(functionExecution, expectedFailures, adapter);
-        TestSuite suite = new TestSuite();
-        suite.addTest(PureTestBuilder.buildSuite(testCollection, testExecutor, new ExecutionSupport()));
-        return suite;
+        return PureTestBuilder.buildSuite(testCollection, testExecutor, new ExecutionSupport());
     }
 
     private static PureTestBuilder.F2<CoreInstance, MutableList<Object>, Object> getTestExecutor(FunctionExecutionInterpreted functionExecution, MutableMap<String, String> expectedFailures, String PCTExecutor)
