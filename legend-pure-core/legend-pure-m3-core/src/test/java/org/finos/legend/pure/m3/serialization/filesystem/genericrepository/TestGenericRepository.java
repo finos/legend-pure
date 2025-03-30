@@ -32,9 +32,9 @@ public class TestGenericRepository
     public void testRepositoryDetection()
     {
         RichIterable<CodeRepository> repositoryList = CodeRepositoryProviderHelper.findCodeRepositories();
-        Assert.assertEquals(3, repositoryList.size());
+        Assert.assertEquals(4, repositoryList.size());
         Verify.assertAllSatisfy(repositoryList, r -> r instanceof GenericCodeRepository);
-        Verify.assertSetsEqual(Sets.mutable.with("platform", "test_generic_repository", "other_test_generic_repository"), repositoryList.collect(CodeRepository::getName).toSet());
+        Verify.assertSetsEqual(Sets.mutable.with("platform", "test_generic_repository", "other_test_generic_repository", "test_milestoning_repository"), repositoryList.collect(CodeRepository::getName).toSet());
     }
 
     @Test
@@ -52,7 +52,7 @@ public class TestGenericRepository
     {
         RichIterable<CodeRepository> repositoryList = CodeRepositoryProviderHelper.findCodeRepositories();
         CompositeCodeStorage codeStorage = new CompositeCodeStorage(new ClassLoaderCodeStorage(repositoryList));
-        Verify.assertSetsEqual(Sets.mutable.with("platform", "test_generic_repository", "other_test_generic_repository"), codeStorage.getAllRepositories().collect(CodeRepository::getName).toSet());
+        Verify.assertSetsEqual(Sets.mutable.with("platform", "test_generic_repository", "other_test_generic_repository", "test_milestoning_repository"), codeStorage.getAllRepositories().collect(CodeRepository::getName).toSet());
         Verify.assertSetsEqual(Sets.mutable.with("/test_generic_repository/testBla.pure", "/other_test_generic_repository/test.pure"), codeStorage.getUserFiles().toSet().select(c -> !c.startsWith("/platform")));
     }
 }
