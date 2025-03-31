@@ -883,6 +883,138 @@ public class TestReferenceIdGenerator extends AbstractReferenceTest
     }
 
     @Test
+    public void testClassDSLProjection()
+    {
+        String path = "test::model::ProductDSLProjection";
+        ClassProjection<?> productProjection = getCoreInstance(path);
+        MutableMap<String, CoreInstance> expected = Maps.mutable.<String, CoreInstance>with(path, productProjection)
+                .withKeyValue(path + ".classifierGenericType", productProjection._classifierGenericType())
+                .withKeyValue(path + ".classifierGenericType", productProjection._classifierGenericType())
+                .withKeyValue(path + ".generalizations[0]", productProjection._generalizations().getOnly())
+                .withKeyValue(path + ".generalizations[0].general", productProjection._generalizations().getOnly()._general());
+
+        RootRouteNode projectionSpec = productProjection._projectionSpecification();
+        expected.put(path + ".projectionSpecification", projectionSpec);
+        expected.put(path + ".projectionSpecification.included[0]", at(projectionSpec._included(), 0));
+        expected.put(path + ".projectionSpecification.included[1]", at(projectionSpec._included(), 1));
+        expected.put(path + ".projectionSpecification.included[2]", at(projectionSpec._included(), 2));
+        expected.put(path + ".projectionSpecification.included[2].parameters[0].genericType", at(at(projectionSpec._included(), 2)._parameters(), 0)._genericType());
+        expected.put(path + ".projectionSpecification.type", projectionSpec._type());
+
+        Property<?, ?> idProperty = findProperty(productProjection, "id");
+        expected.put(path + ".properties['id']", idProperty);
+        expected.put(path + ".properties['id'].classifierGenericType", idProperty._classifierGenericType());
+        expected.put(path + ".properties['id'].classifierGenericType.typeArguments[0]", typeArgument(idProperty._classifierGenericType(), 0));
+        expected.put(path + ".properties['id'].classifierGenericType.typeArguments[1]", typeArgument(idProperty._classifierGenericType(), 1));
+        expected.put(path + ".properties['id'].genericType", idProperty._genericType());
+
+        Property<?, ?> synonymsProperty = findProperty(productProjection, "synonyms");
+        expected.put(path + ".properties['synonyms']", synonymsProperty);
+        expected.put(path + ".properties['synonyms'].classifierGenericType", synonymsProperty._classifierGenericType());
+        expected.put(path + ".properties['synonyms'].classifierGenericType.typeArguments[0]", typeArgument(synonymsProperty._classifierGenericType(), 0));
+        expected.put(path + ".properties['synonyms'].classifierGenericType.typeArguments[1]", typeArgument(synonymsProperty._classifierGenericType(), 1));
+        expected.put(path + ".properties['synonyms'].genericType", synonymsProperty._genericType());
+
+        QualifiedProperty<?> synonymByType = findQualifiedProperty(productProjection, "synonymByType(String[1])");
+        expected.put(path + ".qualifiedProperties[id='synonymByType(String[1])']", synonymByType);
+        expected.put(path + ".qualifiedProperties[id='synonymByType(String[1])'].classifierGenericType", synonymByType._classifierGenericType());
+        expected.put(path + ".qualifiedProperties[id='synonymByType(String[1])'].classifierGenericType.typeArguments[0]", typeArgument(synonymByType._classifierGenericType(), 0));
+        expected.put(path + ".qualifiedProperties[id='synonymByType(String[1])'].classifierGenericType.typeArguments[0].rawType", typeArgument(synonymByType._classifierGenericType(), 0)._rawType());
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].classifierGenericType.typeArguments[0].rawType.parameters['this']",
+                funcTypeParam(typeArgument(synonymByType._classifierGenericType(), 0)._rawType(), "this"));
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].classifierGenericType.typeArguments[0].rawType.parameters['this'].genericType",
+                funcTypeParam(typeArgument(synonymByType._classifierGenericType(), 0)._rawType(), "this")._genericType());
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].classifierGenericType.typeArguments[0].rawType.parameters['type']",
+                funcTypeParam(typeArgument(synonymByType._classifierGenericType(), 0)._rawType(), "type"));
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].classifierGenericType.typeArguments[0].rawType.parameters['type'].genericType",
+                funcTypeParam(typeArgument(synonymByType._classifierGenericType(), 0)._rawType(), "type")._genericType());
+        expected.put(path + ".qualifiedProperties[id='synonymByType(String[1])'].classifierGenericType.typeArguments[0].rawType.returnType", funcTypeRetType(typeArgument(synonymByType._classifierGenericType(), 0)._rawType()));
+        expected.put(path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0]", exprSeq(synonymByType, 0));
+        expected.put(path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].genericType", exprSeq(synonymByType, 0)._genericType());
+        expected.put(path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0]", paramValue(exprSeq(synonymByType, 0), 0));
+        expected.put(path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].genericType", paramValue(exprSeq(synonymByType, 0), 0)._genericType());
+        expected.put(path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[0]", paramValue(paramValue(exprSeq(synonymByType, 0), 0), 0));
+        expected.put(path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[0].genericType", paramValue(paramValue(exprSeq(synonymByType, 0), 0), 0)._genericType());
+        expected.put(path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[0].parametersValues[0]", paramValue(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 0), 0));
+        expected.put(path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[0].parametersValues[0].genericType", paramValue(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 0), 0)._genericType());
+        expected.put(path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[0].propertyName", ((SimpleFunctionExpression) paramValue(paramValue(exprSeq(synonymByType, 0), 0), 0))._propertyName());
+        expected.put(path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1]", paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1));
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].genericType",
+                paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1)._genericType());
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].genericType.typeArguments[0]",
+                typeArgument(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1)._genericType(), 0));
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].genericType.typeArguments[0].rawType",
+                typeArgument(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1)._genericType(), 0)._rawType());
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].genericType.typeArguments[0].rawType.parameters['s']",
+                funcTypeParam(typeArgument(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1)._genericType(), 0)._rawType(), "s"));
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].genericType.typeArguments[0].rawType.parameters['s'].genericType",
+                funcTypeParam(typeArgument(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1)._genericType(), 0)._rawType(), "s")._genericType());
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].genericType.typeArguments[0].rawType.returnType",
+                funcTypeRetType(typeArgument(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1)._genericType(), 0)._rawType()));
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].values[0]",
+                instanceValueValue(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1), 0));
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].values[0].classifierGenericType",
+                instanceValueValue(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1), 0)._classifierGenericType());
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].values[0].classifierGenericType.typeArguments[0]",
+                typeArgument(instanceValueValue(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1), 0)._classifierGenericType(), 0));
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].values[0].classifierGenericType.typeArguments[0].rawType",
+                typeArgument(instanceValueValue(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1), 0)._classifierGenericType(), 0)._rawType());
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].values[0].classifierGenericType.typeArguments[0].rawType.parameters['s']",
+                funcTypeParam(typeArgument(instanceValueValue(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1), 0)._classifierGenericType(), 0)._rawType(), "s"));
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].values[0].classifierGenericType.typeArguments[0].rawType.parameters['s'].genericType",
+                funcTypeParam(typeArgument(instanceValueValue(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1), 0)._classifierGenericType(), 0)._rawType(), "s")._genericType());
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].values[0].classifierGenericType.typeArguments[0].rawType.returnType",
+                funcTypeRetType(typeArgument(instanceValueValue(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1), 0)._classifierGenericType(), 0)._rawType()));
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].values[0].expressionSequence[0]",
+                exprSeq(instanceValueValue(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1), 0), 0));
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].values[0].expressionSequence[0].genericType",
+                exprSeq(instanceValueValue(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1), 0), 0)._genericType());
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].values[0].expressionSequence[0].parametersValues[0]",
+                paramValue(exprSeq(instanceValueValue(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1), 0), 0), 0));
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].values[0].expressionSequence[0].parametersValues[0].genericType",
+                paramValue(exprSeq(instanceValueValue(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1), 0), 0), 0)._genericType());
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].values[0].expressionSequence[0].parametersValues[1]",
+                paramValue(exprSeq(instanceValueValue(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1), 0), 0), 1));
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].values[0].expressionSequence[0].parametersValues[1].genericType",
+                paramValue(exprSeq(instanceValueValue(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1), 0), 0), 1)._genericType());
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].values[0].expressionSequence[0].parametersValues[1].parametersValues[0]",
+                paramValue(paramValue(exprSeq(instanceValueValue(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1), 0), 0), 1), 0));
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].values[0].expressionSequence[0].parametersValues[1].parametersValues[0].genericType",
+                paramValue(paramValue(exprSeq(instanceValueValue(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1), 0), 0), 1), 0)._genericType());
+        expected.put(
+                path + ".qualifiedProperties[id='synonymByType(String[1])'].expressionSequence[0].parametersValues[0].parametersValues[1].values[0].expressionSequence[0].parametersValues[1].propertyName",
+                ((SimpleFunctionExpression) paramValue(exprSeq(instanceValueValue(paramValue(paramValue(exprSeq(synonymByType, 0), 0), 1), 0), 0), 1))._propertyName());
+        expected.put(path + ".qualifiedProperties[id='synonymByType(String[1])'].genericType", synonymByType._genericType());
+
+        assertIds(path, expected);
+    }
+
+    @Test
     public void testClassWithMilestoning1()
     {
         String path = "test::model::ClassWithMilestoning1";

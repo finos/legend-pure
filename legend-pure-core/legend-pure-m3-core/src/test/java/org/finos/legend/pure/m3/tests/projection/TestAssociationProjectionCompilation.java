@@ -14,12 +14,12 @@
 
 package org.finos.legend.pure.m3.tests.projection;
 
-import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.impl.test.Verify;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.eclipse.collections.api.factory.Lists;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.AssociationProjection;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassProjection;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
@@ -38,10 +38,42 @@ public class TestAssociationProjectionCompilation extends AbstractPureTestWithCo
     public void cleanRuntime()
     {
         runtime.delete("file.pure");
+        runtime.compile();
     }
 
     @Test
-    public void testExceptionScenario()
+    public void testTargetNotProjection()
+    {
+        runtime.createInMemorySource("file.pure",
+                "Class a::b::Person\n" +
+                        "{\n" +
+                        "   name: String[1];\n" +
+                        "   yearsEmployed : Integer[1];\n" +
+                        "}\n" +
+                        "Class a::b::Address\n" +
+                        "{\n" +
+                        "   street:String[1];\n" +
+                        "}\n" +
+                        "Class a::b::PersonProjection projects #a::b::Person\n" +
+                        "{ \n" +
+                        "   *\n" +
+                        "}#\n" +
+                        "Class a::b::AddressProjection projects #a::b::Address\n" +
+                        "{\n" +
+                        "   *\n" +
+                        "}#\n" +
+                        "Association a::b::PerAddProjection projects a::b::PersonAddress<a::b::PersonProjection, a::b::Address>\n" +
+                        "Association a::b::PersonAddress \n" +
+                        "{\n" +
+                        "   person:  a::b::Person[1];\n" +
+                        "   address: a::b::Address[*];\n" +
+                        "}\n");
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "AssociationProjection 'a::b::PerAddProjection' can only be applied to ClassProjections; 'a::b::Address' is not a ClassProjection", "file.pure", 18, 19, e);
+    }
+
+    @Test
+    public void testMissingProperty1()
     {
         runtime.createInMemorySource("file.pure",
                 "Class a::b::Person\n" +
@@ -67,37 +99,14 @@ public class TestAssociationProjectionCompilation extends AbstractPureTestWithCo
                         "   person:  a::b::PersonProjection[1];\n" +
                         "   address: a::b::Address[*];\n" +
                         "}\n");
-        PureCompilationException e1 = Assert.assertThrows(PureCompilationException.class, runtime::compile);
-        assertPureException(PureCompilationException.class, "Invalid AssociationProjection 'a::b::PerAddProjection'. Projection for property 'person' is not specified.", "file.pure", 18, 19, e1);
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "Invalid AssociationProjection 'a::b::PerAddProjection'. Projection for property 'person' is not specified.", "file.pure", 18, 19, e);
+    }
 
-        runtime.modify("file.pure",
-                "Class a::b::Person\n" +
-                        "{\n" +
-                        "   name: String[1];\n" +
-                        "   yearsEmployed : Integer[1];\n" +
-                        "}\n" +
-                        "Class a::b::Address\n" +
-                        "{\n" +
-                        "   street:String[1];\n" +
-                        "}\n" +
-                        "Class a::b::PersonProjection projects #a::b::Person\n" +
-                        "{ \n" +
-                        "   *\n" +
-                        "}#\n" +
-                        "Class a::b::AddressProjection projects #a::b::Address\n" +
-                        "{\n" +
-                        "   *\n" +
-                        "}#\n" +
-                        "Association a::b::PerAddProjection projects a::b::PersonAddress<a::b::PersonProjection, a::b::Address>\n" +
-                        "Association a::b::PersonAddress \n" +
-                        "{\n" +
-                        "   person:  a::b::Person[1];\n" +
-                        "   address: a::b::Address[*];\n" +
-                        "}\n");
-        PureCompilationException e2 = Assert.assertThrows(PureCompilationException.class, runtime::compile);
-        assertPureException(PureCompilationException.class, "AssociationProjection 'a::b::PerAddProjection' can only be applied to ClassProjections; 'a::b::Address' is not a ClassProjection", "file.pure", 18, 19, e2);
-
-        runtime.modify("file.pure",
+    @Test
+    public void testMissingProperty2()
+    {
+        runtime.createInMemorySource("file.pure",
                 "Class a::b::Person\n" +
                         "{\n" +
                         "   name: String[1];\n" +
@@ -129,10 +138,14 @@ public class TestAssociationProjectionCompilation extends AbstractPureTestWithCo
                         "   person:  a::b::Person[1];\n" +
                         "   address: a::b::Address[*];\n" +
                         "}\n");
-        PureCompilationException e3 = Assert.assertThrows(PureCompilationException.class, runtime::compile);
-        assertPureException(PureCompilationException.class, "Invalid AssociationProjection 'a::b::PerAddProjection'. Projection for property 'address' is not specified.", "file.pure", 26, 19, e3);
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "Invalid AssociationProjection 'a::b::PerAddProjection'. Projection for property 'address' is not specified.", "file.pure", 26, 19, e);
+    }
 
-        runtime.modify("file.pure",
+    @Test
+    public void testMissingProperty3()
+    {
+        runtime.createInMemorySource("file.pure",
                 "Class a::b::Person\n" +
                         "{\n" +
                         "   name: String[1];\n" +
@@ -164,187 +177,228 @@ public class TestAssociationProjectionCompilation extends AbstractPureTestWithCo
                         "   person:  a::b::Person[1];\n" +
                         "   address: a::b::Address[*];\n" +
                         "}\n");
-        PureCompilationException e4 = Assert.assertThrows(PureCompilationException.class, runtime::compile);
-        assertPureException(PureCompilationException.class, "Invalid AssociationProjection 'a::b::PerAddProjection'. Projection for property 'address' is not specified.", "file.pure", 26, 19, e4);
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "Invalid AssociationProjection 'a::b::PerAddProjection'. Projection for property 'address' is not specified.", "file.pure", 26, 19, e);
     }
 
     @Test
     public void testSimpleAssociationProjection()
     {
-        runtime.createInMemorySource("file.pure", "Class a::b::Person{ name: String[1]; yearsEmployed : Integer[1]; }\n" +
-                "Class a::b::Address{ street:String[1]; }\n" +
-                "Class a::b::PersonProjection projects #a::b::Person" +
-                "{ \n" +
-                "   *   " +
-                "}#" +
-                "Class a::b::AddressProjection projects #a::b::Address" +
-                "{ \n" +
-                "   *   " +
-                "}#" +
-                "Association a::b::PerAddProjection projects a::b::PersonAddress<a::b::PersonProjection, a::b::AddressProjection>" +
-                "Association a::b::PersonAddress \n" +
-                "{\n" +
-                "   person:  a::b::Person[1];\n" +
-                "   address: a::b::Address[*];" +
-                "}\n" +
-                "");
+        runtime.createInMemorySource("file.pure",
+                "Class a::b::Person\n" +
+                        "{\n" +
+                        "  name: String[1];\n" +
+                        "  yearsEmployed: Integer[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class a::b::Address\n" +
+                        "{\n" +
+                        "  street:String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class a::b::PersonProjection projects #a::b::Person\n" +
+                        "{\n" +
+                        "   *\n" +
+                        "}#\n" +
+                        "\n" +
+                        "Class a::b::AddressProjection projects #a::b::Address\n" +
+                        "{ \n" +
+                        "   *\n" +
+                        "}#\n" +
+                        "\n" +
+                        "Association a::b::PerAddProjection projects a::b::PersonAddress<a::b::PersonProjection, a::b::AddressProjection>\n" +
+                        "\n" +
+                        "Association a::b::PersonAddress \n" +
+                        "{\n" +
+                        "   person:  a::b::Person[1];\n" +
+                        "   address: a::b::Address[*];\n" +
+                        "}");
         runtime.compile();
 
-        CoreInstance personProjection = runtime.getCoreInstance("a::b::PersonProjection");
-        CoreInstance addressProjection = runtime.getCoreInstance("a::b::AddressProjection");
+        AssociationProjection perAddProjection = (AssociationProjection) runtime.getCoreInstance("a::b::PerAddProjection");
+        Assert.assertEquals(new SourceInformation("file.pure", 22, 1, 22, 19, 22, 112), perAddProjection.getSourceInformation());
 
-        assertPropertiesFromAssociationProjection(personProjection, "address");
-        assertPropertiesFromAssociationProjection(addressProjection, "person");
+        assertPropertiesFromAssociationProjection("a::b::PersonProjection", "address");
+        assertPropertiesFromAssociationProjection("a::b::AddressProjection", "person");
     }
 
     @Test
     public void testSimpleAssociationProjectionWithOrderFlipped()
     {
-        runtime.createInMemorySource("file.pure", "Class a::b::Person{ name: String[1]; yearsEmployed : Integer[1]; }\n" +
-                "Class a::b::Address{ street:String[1]; }\n" +
-                "Class a::b::PersonProjection projects #a::b::Person" +
-                "{ \n" +
-                "   *   " +
-                "}#" +
-                "Class a::b::AddressProjection projects #a::b::Address" +
-                "{ \n" +
-                "   *   " +
-                "}#" +
-                "Association a::b::PerAddProjection projects a::b::PersonAddress<a::b::AddressProjection, a::b::PersonProjection>" +
-                "Association a::b::PersonAddress \n" +
-                "{\n" +
-                "   person:  a::b::Person[1];\n" +
-                "   address: a::b::Address[*];" +
-                "}\n" +
-                "");
+        runtime.createInMemorySource("file.pure",
+                "Class a::b::Person\n" +
+                        "{\n" +
+                        "  name: String[1];\n" +
+                        "  yearsEmployed: Integer[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class a::b::Address\n" +
+                        "{\n" +
+                        "  street:String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class a::b::PersonProjection projects #a::b::Person\n" +
+                        "{\n" +
+                        "   *\n" +
+                        "}#\n" +
+                        "\n" +
+                        "Class a::b::AddressProjection projects #a::b::Address\n" +
+                        "{\n" +
+                        "   *\n" +
+                        "}#\n" +
+                        "\n" +
+                        "Association a::b::PerAddProjection projects\n" +
+                        "   a::b::PersonAddress<a::b::AddressProjection, a::b::PersonProjection>\n" +
+                        "Association a::b::PersonAddress\n" +
+                        "{\n" +
+                        "   person:  a::b::Person[1];\n" +
+                        "   address: a::b::Address[*];\n" +
+                        "}");
         runtime.compile();
 
-        CoreInstance personProjection = runtime.getCoreInstance("a::b::PersonProjection");
-        CoreInstance addressProjection = runtime.getCoreInstance("a::b::AddressProjection");
+        AssociationProjection perAddProjection = (AssociationProjection) runtime.getCoreInstance("a::b::PerAddProjection");
+        Assert.assertEquals(new SourceInformation("file.pure", 22, 1, 22, 19, 23, 71), perAddProjection.getSourceInformation());
 
-        assertPropertiesFromAssociationProjection(personProjection, "address");
-        assertPropertiesFromAssociationProjection(addressProjection, "person");
+        assertPropertiesFromAssociationProjection("a::b::PersonProjection", "address");
+        assertPropertiesFromAssociationProjection("a::b::AddressProjection", "person");
     }
 
     @Test
     public void testInheritedAssociationProjection()
     {
-        runtime.createInMemorySource("file.pure", "Class a::b::Person{ name: String[1]; yearsEmployed : Integer[1]; }\n" +
-                "Class a::b::Address{ street:String[1]; }\n" +
-                "Class a::b::ZipAddress extends a::b::Address { zip:String[1]; }\n" +
-                "Class a::b::PersonProjection projects #a::b::Person" +
-                "{ \n" +
-                "   *   " +
-                "}#" +
-                "Class a::b::AddressProjection projects #a::b::ZipAddress" +
-                "{ \n" +
-                "   *   " +
-                "}#" +
-                "Association a::b::PerAddProjection projects a::b::PersonAddress<a::b::PersonProjection, a::b::AddressProjection>" +
-                "Association a::b::PersonAddress \n" +
-                "{\n" +
-                "   person:  a::b::Person[1];\n" +
-                "   address: a::b::Address[*];" +
-                "}\n" +
-                "");
+        runtime.createInMemorySource("file.pure",
+                "Class a::b::Person\n" +
+                        "{\n" +
+                        "  name: String[1];\n" +
+                        "  yearsEmployed: Integer[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class a::b::Address\n" +
+                        "{\n" +
+                        "  street:String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class a::b::ZipAddress extends a::b::Address\n" +
+                        "{\n" +
+                        "  zip:String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class a::b::PersonProjection projects #a::b::Person\n" +
+                        "{\n" +
+                        "   *\n" +
+                        "}#\n" +
+                        "\n" +
+                        "Class a::b::AddressProjection projects #a::b::ZipAddress\n" +
+                        "{\n" +
+                        "   *\n" +
+                        "}#\n" +
+                        "\n" +
+                        "Association a::b::PerAddProjection projects a::b::PersonAddress<a::b::PersonProjection, a::b::AddressProjection>\n" +
+                        "\n" +
+                        "Association a::b::PersonAddress\n" +
+                        "{\n" +
+                        "   person:  a::b::Person[1];\n" +
+                        "   address: a::b::Address[*];\n" +
+                        "}");
         runtime.compile();
 
-        CoreInstance personProjection = runtime.getCoreInstance("a::b::PersonProjection");
-        CoreInstance addressProjection = runtime.getCoreInstance("a::b::AddressProjection");
+        AssociationProjection perAddProjection = (AssociationProjection) runtime.getCoreInstance("a::b::PerAddProjection");
+        Assert.assertEquals(new SourceInformation("file.pure", 27, 1, 27, 19, 27, 112), perAddProjection.getSourceInformation());
 
-        assertPropertiesFromAssociationProjection(personProjection, "address");
-        assertPropertiesFromAssociationProjection(addressProjection, "person");
+        assertPropertiesFromAssociationProjection("a::b::PersonProjection", "address");
+        assertPropertiesFromAssociationProjection("a::b::AddressProjection", "person");
     }
 
-    public void assertPropertiesFromAssociationProjection(CoreInstance projection, String properties)
+    public void assertPropertiesFromAssociationProjection(String path, String property)
     {
-        Assert.assertNotNull(projection);
-        RichIterable<? extends CoreInstance> propertiesFromAssociation = Instance.getValueForMetaPropertyToManyResolved(projection, M3Properties.propertiesFromAssociations, processorSupport);
-        Assert.assertEquals("Missing properties", 1, propertiesFromAssociation.size());
-
-        RichIterable<String> names = propertiesFromAssociation.collect(CoreInstance.GET_NAME);
-        Verify.assertContainsAll(names.toList(), properties);
+        ClassProjection<?> projection = (ClassProjection<?>) runtime.getCoreInstance(path);
+        Assert.assertNotNull(path, projection);
+        Assert.assertEquals(Lists.mutable.with(property), projection._propertiesFromAssociations().collect(Property::_name, Lists.mutable.empty()));
     }
 
     @Test
     public void testAssociationProjectionPropertiesReferencedInQualifiedProperties()
     {
-        runtime.createInMemorySource("file.pure", "import meta::pure::tests::model::simple::*;\n" +
-                "Class meta::pure::tests::model::simple::Trade\n" +
-                "{\n" +
-                "   id : Integer[1];\n" +
-                "   date : Date[1];\n" +
-                "   quantity : Float[1];\n" +
-                "   settlementDateTime : Date[0..1];\n" +
-                "   latestEventDate : Date[0..1];\n" +
-                "\n" +
-                "   customerQuantity()\n" +
-                "   {\n" +
-                "      -$this.quantity;\n" +
-                "   }:Float[1];\n" +
-                "   \n" +
-                "   daysToLastEvent()\n" +
-                "   {\n" +
-                "      dateDiff($this.latestEventDate->toOne(), $this.date, DurationUnit.DAYS);\n" +
-                "   }:Integer[1];\n" +
-                "   \n" +
-                "   latestEvent()\n" +
-                "   {\n" +
-                "      $this.events->filter(e | $e.date == $this.latestEventDate)->toOne()\n" +
-                "   }:TradeEvent[1];\n" +
-                "   \n" +
-                "   eventsByDate(date:Date[1])\n" +
-                "   {\n" +
-                "      $this.events->filter(e | $e.date == $date)\n" +
-                "   }:TradeEvent[*];\n" +
-                "   \n" +
-                "   tradeDateEventType()\n" +
-                "   {\n" +
-                "      $this.eventsByDate($this.date->toOne()).eventType->toOne()\n" +
-                "   }:String[1];\n" +
-                "   \n" +
-                "   tradeDateEventTypeInlined()\n" +
-                "   {\n" +
-                "      $this.events->filter(e | $e.date == $this.date).eventType->toOne()\n" +
-                "   }:String[1];\n" +
-                "}\n" +
-                "\n" +
-                "Class meta::pure::tests::model::simple::TradeEvent\n" +
-                "{\n" +
-                "   eventType : String[0..1];\n" +
-                "   date: Date[1];\n" +
-                "}\n" +
-                "Class meta::pure::tests::model::simple::TradeProjection projects \n" +
-                "#\n" +
-                "   Trade\n" +
-                "   {\n" +
-                "      -[tradeDateEventType()]\n" +
-                "   }\n" +
-                "#\n" +
-                "\n" +
-                "Class meta::pure::tests::model::simple::TradeEventProjection projects \n" +
-                "#\n" +
-                "   TradeEvent\n" +
-                "   {\n" +
-                "      *\n" +
-                "   }\n" +
-                "#\n" +
-                "\n" +
-                "Association meta::pure::tests::model::simple::TP_TEP projects Trade_TradeEvent<TradeProjection, meta::pure::tests::model::simple::TradeEventProjection>\n" +
-                "Association meta::pure::tests::model::simple::Trade_TradeEvent \n" +
-                "{\n" +
-                "   trade:  Trade[*];\n" +
-                "   events: TradeEvent [*];\n" +
-                "}\n" +
-                "function meta::pure::tests::model::simple::tradeEventProjectionType(): Property<TradeProjection, Any|*>[1]\n" +
-                "{\n" +
-                "      TradeProjection.properties->filter(p | $p.name=='events')->toOne()\n" +
-                "}\n" +
-                "function meta::pure::tests::model::simple::tradeEventProjectionReturnType(): TradeEventProjection[1]\n" +
-                "{\n" +
-                "      TradeProjection.properties->filter(p | $p.name=='events')->toOne()->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).returnType.rawType->toOne()->cast(@TradeEventProjection)\n" +
-                "}\n" +
-                "");
+        runtime.createInMemorySource("file.pure",
+                "import meta::pure::tests::model::simple::*;\n" +
+                        "Class meta::pure::tests::model::simple::Trade\n" +
+                        "{\n" +
+                        "   id : Integer[1];\n" +
+                        "   date : Date[1];\n" +
+                        "   quantity : Float[1];\n" +
+                        "   settlementDateTime : Date[0..1];\n" +
+                        "   latestEventDate : Date[0..1];\n" +
+                        "\n" +
+                        "   customerQuantity()\n" +
+                        "   {\n" +
+                        "      -$this.quantity;\n" +
+                        "   }:Float[1];\n" +
+                        "   \n" +
+                        "   daysToLastEvent()\n" +
+                        "   {\n" +
+                        "      dateDiff($this.latestEventDate->toOne(), $this.date, DurationUnit.DAYS);\n" +
+                        "   }:Integer[1];\n" +
+                        "   \n" +
+                        "   latestEvent()\n" +
+                        "   {\n" +
+                        "      $this.events->filter(e | $e.date == $this.latestEventDate)->toOne()\n" +
+                        "   }:TradeEvent[1];\n" +
+                        "   \n" +
+                        "   eventsByDate(date:Date[1])\n" +
+                        "   {\n" +
+                        "      $this.events->filter(e | $e.date == $date)\n" +
+                        "   }:TradeEvent[*];\n" +
+                        "   \n" +
+                        "   tradeDateEventType()\n" +
+                        "   {\n" +
+                        "      $this.eventsByDate($this.date->toOne()).eventType->toOne()\n" +
+                        "   }:String[1];\n" +
+                        "   \n" +
+                        "   tradeDateEventTypeInlined()\n" +
+                        "   {\n" +
+                        "      $this.events->filter(e | $e.date == $this.date).eventType->toOne()\n" +
+                        "   }:String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class meta::pure::tests::model::simple::TradeEvent\n" +
+                        "{\n" +
+                        "   eventType : String[0..1];\n" +
+                        "   date: Date[1];\n" +
+                        "}\n" +
+                        "Class meta::pure::tests::model::simple::TradeProjection projects\n" +
+                        "#\n" +
+                        "   Trade\n" +
+                        "   {\n" +
+                        "      -[tradeDateEventType()]\n" +
+                        "   }\n" +
+                        "#\n" +
+                        "\n" +
+                        "Class meta::pure::tests::model::simple::TradeEventProjection projects\n" +
+                        "#\n" +
+                        "   TradeEvent\n" +
+                        "   {\n" +
+                        "      *\n" +
+                        "   }\n" +
+                        "#\n" +
+                        "\n" +
+                        "Association meta::pure::tests::model::simple::TP_TEP projects Trade_TradeEvent<TradeProjection, meta::pure::tests::model::simple::TradeEventProjection>\n" +
+                        "\n" +
+                        "Association meta::pure::tests::model::simple::Trade_TradeEvent\n" +
+                        "{\n" +
+                        "   trade:  Trade[*];\n" +
+                        "   events: TradeEvent [*];\n" +
+                        "}\n" +
+                        "function meta::pure::tests::model::simple::tradeEventProjectionType(): Property<TradeProjection, Any|*>[1]\n" +
+                        "{\n" +
+                        "      TradeProjection.properties->filter(p | $p.name=='events')->toOne()\n" +
+                        "}\n" +
+                        "function meta::pure::tests::model::simple::tradeEventProjectionReturnType(): TradeEventProjection[1]\n" +
+                        "{\n" +
+                        "      TradeProjection.properties->filter(p | $p.name=='events')->toOne()->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType).returnType.rawType->toOne()->cast(@TradeEventProjection)\n" +
+                        "}");
         runtime.compile();
+
+        AssociationProjection perAddProjection = (AssociationProjection) runtime.getCoreInstance("meta::pure::tests::model::simple::TP_TEP");
+        Assert.assertEquals(new SourceInformation("file.pure", 62, 1, 62, 47, 62, 151), perAddProjection.getSourceInformation());
     }
 }
