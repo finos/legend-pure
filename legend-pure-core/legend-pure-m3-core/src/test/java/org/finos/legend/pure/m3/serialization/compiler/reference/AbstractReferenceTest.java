@@ -133,6 +133,11 @@ public class AbstractReferenceTest extends AbstractPureTestWithCoreCompiled
                         "  +[id, synonyms, synonymByType(String[1])]\n" +
                         "}\n" +
                         "\n" +
+                        "Class test::model::ProductDSLProjection projects #Product\n" +
+                        "{\n" +
+                        "  +[id, synonyms, synonymByType(String[1])]\n" +
+                        "}#\n" +
+                        "\n" +
                         "Class <<doc.deprecated>> {doc.doc = 'Deprecated class with annotations'} test::model::ClassWithAnnotations\n" +
                         "{\n" +
                         "  <<doc.deprecated>> deprecated : String[0..1];\n" +

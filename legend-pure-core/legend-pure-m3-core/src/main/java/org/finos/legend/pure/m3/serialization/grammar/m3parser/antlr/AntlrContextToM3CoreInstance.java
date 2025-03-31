@@ -2563,10 +2563,22 @@ public class AntlrContextToM3CoreInstance
     {
         checkExists(ctx.qualifiedName().packagePath(), ctx.qualifiedName().identifier(), null);
 
-        CoreInstance treePath = ctx.projection().dsl() != null ? this.dsl(ctx.projection().dsl(), importId).get(0) : this.treePath(ctx.projection().treePath(), importId);
-        RootRouteNode rootNode = (RootRouteNode) treePath;
+        RootRouteNode rootNode;
+        SourceInformation sourceInfo;
+        if (ctx.projection().dsl() == null)
+        {
+            rootNode = treePath(ctx.projection().treePath(), importId);
+            sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop(), true);
+        }
+        else
+        {
+            rootNode = (RootRouteNode) dsl(ctx.projection().dsl(), importId).get(0);
+            // HACK we get the start and main line/column from the main context, but the end line/column from the parsed root node
+            // this is because the main context does not have the correct end line/col
+            SourceInformation tmp = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop());
+            sourceInfo = new SourceInformation(tmp.getSourceId(), tmp.getStartLine(), tmp.getStartColumn(), tmp.getLine(), tmp.getColumn(), rootNode.getSourceInformation().getEndLine(), rootNode.getSourceInformation().getEndColumn());
+        }
 
-        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop());
         String name = ctx.qualifiedName().identifier().getText();
         ClassProjection<?> projection = ClassProjectionInstance.createPersistent(this.repository, name, sourceInfo, rootNode)._name(name);
         rootNode._owner(projection);
@@ -3354,7 +3366,7 @@ public class AntlrContextToM3CoreInstance
         return tags;
     }
 
-    public CoreInstance treePath(TreePathContext ctx, ImportGroup importId)
+    public RootRouteNode treePath(TreePathContext ctx, ImportGroup importId)
     {
         GenericType treePathGT = this.type(ctx.type(), Lists.mutable.empty(), "", importId, true);
         if (Iterate.notEmpty(treePathGT._typeArguments()))
