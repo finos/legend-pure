@@ -688,10 +688,10 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
     {
         String tables = visitTablesBlock(ctx.table());
 
-        ScopeInfo viewSchemaScopeInfo = new ScopeInfo(dbImport, ctx.identifier().getStart(), null, null, true);
+        ScopeInfo viewSchemaScopeInfo = new ScopeInfo(dbImport, ctx.relationalIdentifier().getStart(), null, null, true);
         String views = visitViewsBlock(ctx.view(), viewSchemaScopeInfo);
 
-        return "^meta::relational::metamodel::Schema " + sourceInformation.getPureSourceInformation(ctx.identifier().getStart(), ctx.identifier().getStart(), ctx.GROUP_CLOSE().getSymbol()).toM4String() + " (name='" + ctx.identifier().getText() + "', tables=[" + tables + "], views=[" + views + "])";
+        return "^meta::relational::metamodel::Schema " + sourceInformation.getPureSourceInformation(ctx.relationalIdentifier().getStart(), ctx.relationalIdentifier().getStart(), ctx.GROUP_CLOSE().getSymbol()).toM4String() + " (name='" + ctx.relationalIdentifier().getText() + "', tables=[" + tables + "], views=[" + views + "])";
     }
 
     private String visitTablesBlock(List<TableContext> tables)

@@ -109,6 +109,8 @@ public class ColumnDataTypeFactory
         map.put("REAL", "Real");
         map.put("ARRAY", "Array");
 
+        map.put("JSON", "Json");
+        map.put("SEMISTRUCTURED", "SemiStructured");
         return map.toImmutable();
     }
 

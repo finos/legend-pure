@@ -24,7 +24,7 @@ stereotype: qualifiedName DOT identifier
 ;
 
 schema:
-    SCHEMA identifier
+    SCHEMA relationalIdentifier
     GROUP_OPEN
         (table | view )*
     GROUP_CLOSE
