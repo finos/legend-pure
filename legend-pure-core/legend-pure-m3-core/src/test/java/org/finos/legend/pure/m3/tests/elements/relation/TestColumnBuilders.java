@@ -389,11 +389,13 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     public void testUnescapeSingleQuotes()
     {
         compileTestSource("fromString.pure",
-                "native function meta::pure::functions::relation::extend<T,Z>(r:meta::pure::metamodel::relation::Relation<T>[1], f:meta::pure::metamodel::relation::FuncColSpec<{T[1]->Any[0..1]},Z>[1]):meta::pure::metamodel::relation::Relation<T+Z>[1];\n" +
+                "native function max(i:Integer[*]):Integer[0..1];\n" +
+                        "native function meta::pure::functions::relation::groupBy<U,T,K,R>(r:meta::pure::metamodel::relation::Relation<U>[1], agg:meta::pure::metamodel::relation::AggColSpecArray<{U[1]->T[0..1]},{T[*]->K[0..1]}, R>[1]):meta::pure::metamodel::relation::Relation<U+R>[1];\n" +
+                        "native function meta::pure::functions::relation::extend<T,Z>(r:meta::pure::metamodel::relation::Relation<T>[1], f:meta::pure::metamodel::relation::FuncColSpec<{T[1]->Any[0..1]},Z>[1]):meta::pure::metamodel::relation::Relation<T+Z>[1];\n" +
                         "\n" +
                         "function test():Boolean[1]\n" +
                         "{\n" +
-                        "   []->toOne()->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, '\\'2000__|__newCol\\'':Integer)>)->extend(~name:c|$c.'\\'2000__|__newCol\\''->toOne());\n" +
+                        "   []->toOne()->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, '\\'2000__|__newCol\\'':Integer)>)->toOne()->groupBy(~[name: x|$x.id : y|$y->max(), '\\'2000__|__newCol2\\'' : x|$x.'\\'2000__|__newCol\\'' : y|$y->max()])->extend(~newName:c|$c.'\\'2000__|__newCol2\\''->toOne());\n" +
                         "   true;\n" +
                         "}");
     }
