@@ -28,7 +28,6 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Nil;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 
 /**
  * Provides key meta data
@@ -62,12 +61,12 @@ public interface MetadataAccessor
     @SuppressWarnings("unchecked")
     default Class<Any> getTopType()
     {
-        return (Class<Any>) getClass(M3Paths.Any);
+        return (Class<Any>) getClass("Root::meta::pure::metamodel::type::Any");
     }
 
     @SuppressWarnings("unchecked")
     default Class<Nil> getBottomType()
     {
-        return (Class<Nil>) getClass(M3Paths.Nil);
+        return (Class<Nil>) getClass("Root::meta::pure::metamodel::type::Nil");
     }
 }

@@ -14,10 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.compiled.runtime.serialization;
 
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Maps;
-import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.impl.factory.Maps;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.factory.JavaModelFactoryRegistryLoader;
@@ -29,6 +27,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 
 public class TestLazyImplClassifiers extends AbstractPureTestWithCoreCompiled
 {
@@ -52,17 +51,16 @@ public class TestLazyImplClassifiers extends AbstractPureTestWithCoreCompiled
     @Test
     public void testLazyMetaDataClassifierPrimitiveType()
     {
-        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "meta::pure::metamodel::type::PrimitiveType");
-        MutableList<String> invalidPrimitiveTypes = this.metadataLazy.getMetadata("meta::pure::metamodel::type::PrimitiveType")
-                .collectIf(ci -> ci.getClassifier() != expected, CoreInstance::getName, Lists.mutable.empty());
-        Assert.assertEquals("primitive types with the wrong classifier", Lists.fixedSize.empty(), invalidPrimitiveTypes);
+        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::PrimitiveType");
+        boolean primitiveClassiferSetForAllPrimitiveTypes = this.metadataLazy.getMetadata("meta::pure::metamodel::type::PrimitiveType").allSatisfy(ci -> ci.getClassifier() == expected);
+        Assert.assertTrue(primitiveClassiferSetForAllPrimitiveTypes);
     }
 
     @Test
     public void testLazyMetaDataClassifierForClasses()
     {
-        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "meta::pure::metamodel::type::Class");
-        CoreInstance ci = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "meta::pure::metamodel::function::property::Property");
+        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::Class");
+        CoreInstance ci = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::function::property::Property");
         CoreInstance classifier = ci.getClassifier();
         Assert.assertEquals(expected, classifier);
     }
@@ -70,8 +68,8 @@ public class TestLazyImplClassifiers extends AbstractPureTestWithCoreCompiled
     @Test
     public void testLazyMetaDataClassifierForEnums()
     {
-        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "meta::pure::metamodel::type::Enumeration");
-        CoreInstance ci = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Enumeration", "meta::pure::metamodel::function::property::AggregationKind");
+        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::Enumeration");
+        CoreInstance ci = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Enumeration", "Root::meta::pure::metamodel::function::property::AggregationKind");
         CoreInstance classifier = ci.getClassifier();
         Assert.assertEquals(expected, classifier);
     }

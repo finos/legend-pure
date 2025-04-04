@@ -76,7 +76,7 @@ public final class CodeBlockDeltaCompiler
             //First compile and validate that the code is actually correct
             incrementalCompiler.compileInCurrentTransaction(source);
             CoreInstance instance = source.getNewInstances().getFirst();
-            String functionName = PackageableElement.getUserPathForPackageableElement(instance);
+            String functionName = PackageableElement.getSystemPathForPackageableElement(instance);
             return new IntermediateCompilationResult(source, functionName);
         }
         catch (PureCompilationException | PureParserException e)
