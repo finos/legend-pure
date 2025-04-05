@@ -162,7 +162,7 @@ public class InstantiationHelpers
     {
         if (Instance.instanceOf(multiplicity, M3Paths.PackageableMultiplicity, processorSupport))
         {
-            return "(" + FullJavaPaths.PackageableMultiplicity + ")((CompiledExecutionSupport)es).getMetadata(\"" + MetadataJavaPaths.PackageableMultiplicity + "\",\"" + PackageableElement.getUserPathForPackageableElement(multiplicity) + "\")";
+            return "(" + FullJavaPaths.PackageableMultiplicity + ")((CompiledExecutionSupport)es).getMetadata(\"" + MetadataJavaPaths.PackageableMultiplicity + "\",\"" + PackageableElement.getSystemPathForPackageableElement(multiplicity) + "\")";
         }
 
         CoreInstance lowerBound = Instance.getValueForMetaPropertyToOneResolved(multiplicity, M3Properties.lowerBound, processorSupport);
