@@ -945,7 +945,7 @@ public class AntlrContextToM3CoreInstance
             ListIterate.forEach(ctx.columnBuilders().oneColSpec(), oneColSpec ->
             {
                 M3Parser.ColumnNameContext colNameCtx = oneColSpec.columnName();
-                String colName = removeQuotes(colNameCtx.getText());
+                String colName = StringEscape.unescape(removeQuotes(colNameCtx.getText()));
                 columnNames.add(this.repository.newStringCoreInstance(colName));
                 String returnType = null;
                 if (oneColSpec.anyLambda() != null)
