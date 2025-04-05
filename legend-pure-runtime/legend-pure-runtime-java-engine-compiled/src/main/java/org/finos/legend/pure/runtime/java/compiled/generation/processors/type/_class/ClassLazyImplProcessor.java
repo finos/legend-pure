@@ -92,11 +92,18 @@ public class ClassLazyImplProcessor
                 (instanceOfGetterOverride ? lazyGetterOverride(interfaceNamePlusTypeParams) : "") +
                 ClassImplProcessor.buildGetValueForMetaPropertyToOne(classGenericType, processorSupport) +
                 ClassImplProcessor.buildGetValueForMetaPropertyToMany(classGenericType, processorSupport) +
-                ClassImplProcessor.buildSimpleProperties(classGenericType, (property, name, unresolvedReturnType, returnType, returnMultiplicity, returnTypeJava, classOwnerId, ownerClassName, ownerTypeParams, processorContext1) -> "    public final AtomicBoolean _" + name + LAZY_INITIALIZED_SUFFIX + " = new AtomicBoolean(false);\n" +
-                        (Multiplicity.isToOne(returnMultiplicity, false) ?
-                                "    public " + returnTypeJava + " _" + name + ";\n" :
-                                "    public RichIterable _" + name + " = Lists.mutable.with();\n") +
-                        buildLazyProperty(property, ownerClassName + (ownerTypeParams.isEmpty() ? "" : "<" + ownerTypeParams + ">"), "this", name, returnType, unresolvedReturnType, returnMultiplicity, processorContext1.getSupport(), processorContext1), processorContext, processorSupport) +
+                ClassImplProcessor.buildSimpleProperties(classGenericType, new ClassImplProcessor.FullPropertyImplementation()
+                {
+                    @Override
+                    public String build(CoreInstance property, String name, CoreInstance unresolvedReturnType, CoreInstance returnType, CoreInstance returnMultiplicity, String returnTypeJava, String classOwnerFullId, String ownerClassName, String ownerTypeParams, ProcessorContext processorContext)
+                    {
+                        return "    public final AtomicBoolean _" + name + LAZY_INITIALIZED_SUFFIX + " = new AtomicBoolean(false);\n" +
+                                (Multiplicity.isToOne(returnMultiplicity, false) ?
+                                        "    public " + returnTypeJava + " _" + name + ";\n" :
+                                        "    public RichIterable _" + name + " = Lists.mutable.with();\n") +
+                                buildLazyProperty(property, ownerClassName + (ownerTypeParams.isEmpty() ? "" : "<" + ownerTypeParams + ">"), "this", classOwnerFullId, name, returnType, unresolvedReturnType, returnMultiplicity, processorContext.getSupport(), processorContext);
+                    }
+                }, processorContext, processorSupport) +
                 ClassImplProcessor.buildQualifiedProperties(classGenericType, processorContext, processorSupport) +
                 buildLazyCopy(classGenericType, classInterfaceName, className, false, processorSupport) +
                 ClassImplProcessor.buildEquality(classGenericType, CLASS_LAZYIMPL_SUFFIX, true, false, true, processorContext, processorSupport) +
@@ -159,7 +166,7 @@ public class ClassLazyImplProcessor
 
     }
 
-    private static String buildLazyProperty(CoreInstance property, String className, String owner, String name, CoreInstance returnType, CoreInstance unresolvedReturnType, CoreInstance multiplicity, ProcessorSupport processorSupport, ProcessorContext processorContext)
+    private static String buildLazyProperty(CoreInstance property, String className, String owner, String classOwnerFullId, String name, CoreInstance returnType, CoreInstance unresolvedReturnType, CoreInstance multiplicity, ProcessorSupport processorSupport, ProcessorContext processorContext)
     {
         CoreInstance associationClass = processorSupport.package_getByUserPath(M3Paths.Association);
         CoreInstance propertyOwner = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.owner, processorSupport);
