@@ -24,7 +24,7 @@ native function
     }
     meta::pure::functions::lang::match<T|m,n>(var:Any[*], functions:Function<{Nil[n]->T[m]}>[1..*]):T[m];
 
-native function meta::pure::functions::lang::match<T,P|m,n,o>(var:Any[*], functions:Function<{Nil[n],P[o]->T[m]}>[1..*], with:P[o]):T[m];
+native function <<PCT.function>> meta::pure::functions::lang::match<T,P|m,n,o>(var:Any[*], functions:Function<{Nil[n],P[o]->T[m]}>[1..*], with:P[o]):T[m];
 
 
 function <<PCT.test>> meta::pure::functions::lang::tests::match::testMatchOneWithZeroOne<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
