@@ -92,7 +92,8 @@ public class DateFormat
                         throw new IllegalArgumentException("Unknown time zone: " + timeZoneId);
                     }
 
-                    if(hourOrMinFormatted) {
+                    if (hourOrMinFormatted)
+                    {
                         throw new IllegalArgumentException("Cannot set timezone after hour/min has been formatted");
                     }
 
