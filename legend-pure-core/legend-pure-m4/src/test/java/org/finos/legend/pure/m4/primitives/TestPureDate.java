@@ -55,6 +55,14 @@ public class TestPureDate
         Assert.assertEquals("2014-01-01 02:01:01.070+0100", date.format("[CET]yyyy-MM-dd HH:mm:ss.SSSZ"));
         Assert.assertEquals("2014-01-01 02:01:01.070 CET", date.format("[CET]yyyy-MM-dd HH:mm:ss.SSS z"));
         Assert.assertEquals("2014-01-01 02:01:01.070+01", date.format("[CET]yyyy-MM-dd HH:mm:ss.SSSX"));
+
+        // Time zone in different places
+        Assert.assertEquals("2014-01-01 02:01:01.070 CET", date.format("yyyy-MM-dd[CET] HH:mm:ss.SSS z"));
+        Assert.assertEquals("2014-01-01 02:01:01.070 CET", date.format("yyyy-MM-dd [CET]HH:mm:ss.SSS z"));
+
+        // Time zone is illegal after hour/min has been formatted and written out
+        IllegalArgumentException e = Assert.assertThrows(IllegalArgumentException.class, () -> date.format("yyyy-MM-dd HH:mm:ss.SSS [CET]z"));
+        Assert.assertEquals("Cannot set timezone after hour/min has been formatted", e.getMessage());
     }
 
     @Test

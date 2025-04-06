@@ -36,6 +36,7 @@ public class DateFormat
         int length = formatString.length();
         GregorianCalendar calendar = null;
         int i = 0;
+        boolean hourOrMinFormatted = false;
         while (i < length)
         {
             char character = formatString.charAt(i++);
@@ -89,6 +90,10 @@ public class DateFormat
                     catch (RuntimeException e)
                     {
                         throw new IllegalArgumentException("Unknown time zone: " + timeZoneId);
+                    }
+
+                    if(hourOrMinFormatted) {
+                        throw new IllegalArgumentException("Cannot set timezone after hour/min has been formatted");
                     }
 
                     if (date.hasHour())
@@ -160,6 +165,7 @@ public class DateFormat
                     int count = getCharCountFrom(character, formatString, i);
                     appendZeroPaddedInt(safeAppendable, displayHour, count + 1);
                     i += count;
+                    hourOrMinFormatted = true;
                     break;
                 }
                 // Hour (0-23)
@@ -172,6 +178,7 @@ public class DateFormat
                     int displayHour = (calendar == null) ? date.getHour() : calendar.get(Calendar.HOUR_OF_DAY);
                     int count = getCharCountFrom(character, formatString, i);
                     appendZeroPaddedInt(safeAppendable, displayHour, count + 1);
+                    hourOrMinFormatted = true;
                     i += count;
                     break;
                 }
@@ -196,6 +203,7 @@ public class DateFormat
                     int displayMinute = (calendar == null) ? date.getMinute() : calendar.get(Calendar.MINUTE);
                     int count = getCharCountFrom(character, formatString, i);
                     appendZeroPaddedInt(safeAppendable, displayMinute, count + 1);
+                    hourOrMinFormatted = true;
                     i += count;
                     break;
                 }
