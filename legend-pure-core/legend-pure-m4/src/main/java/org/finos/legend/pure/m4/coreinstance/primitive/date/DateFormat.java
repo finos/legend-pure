@@ -247,16 +247,13 @@ public class DateFormat
                 case 'z':
                 {
                     int count = getCharCountFrom(character, formatString, i);
-                    // TODO
                     if (calendar == null)
                     {
                         safeAppendable.append("GMT");
                     }
                     else
                     {
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("z");
-                        dateFormat.setTimeZone(calendar.getTimeZone());
-                        safeAppendable.append(dateFormat.format(calendar.getTime()));
+                        safeAppendable.append(calendar.getTimeZone().getID());
                     }
                     i += count;
                     break;
