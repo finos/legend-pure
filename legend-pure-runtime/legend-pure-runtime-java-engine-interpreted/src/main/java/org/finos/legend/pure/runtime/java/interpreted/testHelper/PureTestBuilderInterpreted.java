@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.testHelper;
 
+import java.nio.file.Paths;
 import junit.framework.TestSuite;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
@@ -148,7 +149,18 @@ public class PureTestBuilderInterpreted
         CodeRepositorySet.Builder builder = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true));
         RichIterable<CodeRepository> codeRepositories = builder.build().getRepositories();
         CompositeCodeStorage codeStorage = new CompositeCodeStorage(new ClassLoaderCodeStorage(codeRepositories));
-        FunctionExecutionInterpreted functionExecution = new FunctionExecutionInterpreted();
+
+        FunctionExecutionInterpreted functionExecution;
+
+        if (System.getProperty("functionExecutionInterpretedCoverageDirectory") != null)
+        {
+            functionExecution = new FunctionExecutionInterpretedWithCodeCoverage(Paths.get(System.getProperty("functionExecutionInterpretedCoverageDirectory")));
+        }
+        else
+        {
+            functionExecution = new FunctionExecutionInterpreted();
+        }
+
         PureRuntime runtime = new PureRuntimeBuilder(codeStorage).build();
         Message message = new Message("");
         functionExecution.init(runtime, message);
