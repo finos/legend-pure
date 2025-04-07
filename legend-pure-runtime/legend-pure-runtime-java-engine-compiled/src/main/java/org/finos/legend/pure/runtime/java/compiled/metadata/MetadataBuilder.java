@@ -21,7 +21,6 @@ import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.factory.Stacks;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -79,25 +78,11 @@ public class MetadataBuilder
                 String id = idBuilder.buildId(instance);
                 CoreInstance classifier = instance.getClassifier();
 
-                for (String key : instance.getKeys())
-                {
-                    for (CoreInstance value : Instance.getValueForMetaPropertyToManyResolved(instance, key, processorSupport))
-                    {
-                        if (!state.isPrimitiveType(value.getClassifier()))
-                        {
-                            state.addNode(value);
-                        }
-                    }
-                }
-
-                if (classifier instanceof Enumeration)
-                {
-                    metadataEager.add(state.getClassifierId(classifier), instance.getName(), instance);
-                }
-                else
-                {
-                    metadataEager.add(state.getClassifierId(classifier), id, instance);
-                }
+                instance.getKeys().asLazy()
+                        .flatCollect(key -> Instance.getValueForMetaPropertyToManyResolved(instance, key, processorSupport))
+                        .reject(value -> state.isPrimitiveType(value.getClassifier()))
+                        .forEach(state::addNode);
+                metadataEager.add(state.getClassifierId(classifier), id, instance);
             }
         }
 
