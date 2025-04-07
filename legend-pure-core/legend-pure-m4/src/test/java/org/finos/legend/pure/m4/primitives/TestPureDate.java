@@ -56,6 +56,15 @@ public class TestPureDate
         Assert.assertEquals("2014-01-01 02:01:01.070 CET", date.format("[CET]yyyy-MM-dd HH:mm:ss.SSS z"));
         Assert.assertEquals("2014-01-01 02:01:01.070+01", date.format("[CET]yyyy-MM-dd HH:mm:ss.SSSX"));
 
+        // Longer time zone names
+        Assert.assertEquals("2014-01-01 01:01:01.070+0000", date.format("[Europe/Lissabon]yyyy-MM-dd HH:mm:ss.SSSZ"));
+        Assert.assertEquals("2014-01-01 01:01:01.070 Europe/Lissabon", date.format("[Europe/Lissabon]yyyy-MM-dd HH:mm:ss.SSS z"));
+        Assert.assertEquals("2014-01-01 01:01:01.070Z", date.format("[Lissabon]yyyy-MM-dd HH:mm:ss.SSSX"));
+
+        Assert.assertEquals("2014-01-01 00:01:01.070-0100", date.format("[Atlantic/Azores]yyyy-MM-dd HH:mm:ss.SSSZ"));
+        Assert.assertEquals("2014-01-01 00:01:01.070 Atlantic/Azores", date.format("[Atlantic/Azores]yyyy-MM-dd HH:mm:ss.SSS z"));
+        Assert.assertEquals("2014-01-01 00:01:01.070-01", date.format("[Atlantic/Azores]yyyy-MM-dd HH:mm:ss.SSSX"));
+
         // Time zone is illegal after date or time has been formatted and written out
         Assert.assertEquals("Time zone can only be set at the beginning of the format string",
                 Assert.assertThrows(IllegalArgumentException.class, () -> date.format("yyyy-MM-dd HH:mm:ss.SSS [CET]z")).getMessage());
