@@ -419,11 +419,13 @@ public class DateFormat
         {
             start++;
         }
-        end--;
-        while ((end > start) && (string.charAt(end) <= ' '))
+
+        do
         {
             end--;
         }
+        while ((end > start) && (string.charAt(end) <= ' '));
+
         end++;
         if (start >= end)
         {
