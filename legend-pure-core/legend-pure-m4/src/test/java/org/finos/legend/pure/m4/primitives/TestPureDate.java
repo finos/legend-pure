@@ -56,13 +56,13 @@ public class TestPureDate
         Assert.assertEquals("2014-01-01 02:01:01.070 CET", date.format("[CET]yyyy-MM-dd HH:mm:ss.SSS z"));
         Assert.assertEquals("2014-01-01 02:01:01.070+01", date.format("[CET]yyyy-MM-dd HH:mm:ss.SSSX"));
 
-        // Time zone in different places
-        Assert.assertEquals("2014-01-01 02:01:01.070 CET", date.format("yyyy-MM-dd[CET] HH:mm:ss.SSS z"));
-        Assert.assertEquals("2014-01-01 02:01:01.070 CET", date.format("yyyy-MM-dd [CET]HH:mm:ss.SSS z"));
-
-        // Time zone is illegal after hour/min has been formatted and written out
-        IllegalArgumentException e = Assert.assertThrows(IllegalArgumentException.class, () -> date.format("yyyy-MM-dd HH:mm:ss.SSS [CET]z"));
-        Assert.assertEquals("Cannot set timezone after hour/min has been formatted", e.getMessage());
+        // Time zone is illegal after date or time has been formatted and written out
+        Assert.assertEquals("Time zone can only be set at the beginning of the format string",
+                Assert.assertThrows(IllegalArgumentException.class, () -> date.format("yyyy-MM-dd HH:mm:ss.SSS [CET]z")).getMessage());
+        Assert.assertEquals("Time zone can only be set at the beginning of the format string",
+                Assert.assertThrows(IllegalArgumentException.class, () -> date.format("yyyy-MM-dd [CET]HH:mm:ss.SSSz")).getMessage());
+        Assert.assertEquals("Time zone can only be set at the beginning of the format string",
+                Assert.assertThrows(IllegalArgumentException.class, () -> date.format("yyyy-MM-dd[CET] HH:mm:ss.SSSz")).getMessage());
     }
 
     @Test
@@ -76,20 +76,10 @@ public class TestPureDate
     }
 
     @Test
-    public void testFormatWithMultipleTimeZones()
-    {
-        PureDate date = DateFunctions.newPureDate(2014, 1, 1, 1, 1, 1, "070004235");
-        Assert.assertEquals("2013-12-31 20:01:01.070-0500", date.format("[EST]yyyy-MM-dd HH:mm:ss.SSSZ"));
-        Assert.assertEquals("2013-12-31 20:01:01.070-0500", date.format("[EST]yyyy-MM-dd [EST]HH:mm:ss.SSSZ"));
-        IllegalArgumentException e = Assert.assertThrows(IllegalArgumentException.class, () -> date.format("[EST]yyyy-MM-dd [CST] HH:mm:ss.SSSZ"));
-        Assert.assertEquals("Cannot set multiple timezones: EST, CST", e.getMessage());
-    }
-
-    @Test
     public void testFormatRefersToNonexistentComponent()
     {
         PureDate date = DateFunctions.newPureDate(2014, 1, 1);
-        IllegalArgumentException e = Assert.assertThrows(IllegalArgumentException.class, () -> date.format("[EST]yyyy-MM-dd [CST] HH:mm:ss.SSSZ"));
+        IllegalArgumentException e = Assert.assertThrows(IllegalArgumentException.class, () -> date.format("[EST]yyyy-MM-dd HH:mm:ss.SSSZ"));
         Assert.assertEquals("Date has no hour: 2014-01-01", e.getMessage());
     }
 

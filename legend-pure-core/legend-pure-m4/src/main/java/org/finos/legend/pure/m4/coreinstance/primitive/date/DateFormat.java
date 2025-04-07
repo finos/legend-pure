@@ -36,7 +36,6 @@ public class DateFormat
         int length = formatString.length();
         GregorianCalendar calendar = null;
         int i = 0;
-        boolean hourOrMinFormatted = false;
         while (i < length)
         {
             char character = formatString.charAt(i++);
@@ -45,6 +44,11 @@ public class DateFormat
                 // Timezone conversion
                 case '[':
                 {
+                    if (i > 1)
+                    {
+                        throw new IllegalArgumentException("Time zone can only be set at the beginning of the format string");
+                    }
+
                     StringBuilder timeZoneId = new StringBuilder();
                     boolean done = false;
                     boolean escaped = false;
@@ -92,11 +96,6 @@ public class DateFormat
                         throw new IllegalArgumentException("Unknown time zone: " + timeZoneId);
                     }
 
-                    if (hourOrMinFormatted)
-                    {
-                        throw new IllegalArgumentException("Cannot set timezone after hour/min has been formatted");
-                    }
-
                     if (date.hasHour())
                     {
                         if (calendar == null)
@@ -104,10 +103,6 @@ public class DateFormat
                             calendar = date.getCalendar();
                             calendar.setTimeZone(timeZone);
                             calendar.add(Calendar.MILLISECOND, timeZone.getOffset(calendar.getTimeInMillis()));
-                        }
-                        else if (!timeZone.equals(calendar.getTimeZone()))
-                        {
-                            throw new IllegalArgumentException("Cannot set multiple timezones: " + calendar.getTimeZone().getID() + ", " + timeZone.getID());
                         }
                     }
                     break;
@@ -166,7 +161,6 @@ public class DateFormat
                     int count = getCharCountFrom(character, formatString, i);
                     appendZeroPaddedInt(safeAppendable, displayHour, count + 1);
                     i += count;
-                    hourOrMinFormatted = true;
                     break;
                 }
                 // Hour (0-23)
@@ -179,7 +173,6 @@ public class DateFormat
                     int displayHour = (calendar == null) ? date.getHour() : calendar.get(Calendar.HOUR_OF_DAY);
                     int count = getCharCountFrom(character, formatString, i);
                     appendZeroPaddedInt(safeAppendable, displayHour, count + 1);
-                    hourOrMinFormatted = true;
                     i += count;
                     break;
                 }
@@ -204,7 +197,6 @@ public class DateFormat
                     int displayMinute = (calendar == null) ? date.getMinute() : calendar.get(Calendar.MINUTE);
                     int count = getCharCountFrom(character, formatString, i);
                     appendZeroPaddedInt(safeAppendable, displayMinute, count + 1);
-                    hourOrMinFormatted = true;
                     i += count;
                     break;
                 }
