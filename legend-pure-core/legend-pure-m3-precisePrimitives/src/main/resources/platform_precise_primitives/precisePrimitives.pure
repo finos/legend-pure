@@ -48,7 +48,8 @@ Primitive meta::pure::precisePrimitives::Varchar(x:Integer[1]) extends String
 
 Primitive meta::pure::precisePrimitives::Time extends StrictTime
 
-Primitive meta::pure::precisePrimitives::Date extends StrictDate
+// Use StrictDate
+//Primitive meta::pure::precisePrimitives::Date extends StrictDate
 
 Primitive meta::pure::precisePrimitives::Timestamp extends DateTime
 
@@ -56,7 +57,7 @@ Primitive meta::pure::precisePrimitives::Float4 extends Float
 
 Primitive meta::pure::precisePrimitives::Double extends Float
 
-Primitive meta::pure::precisePrimitives::Decimal(x:Integer[1], y:Integer[1]) extends Decimal
+Primitive meta::pure::precisePrimitives::Numeric(x:Integer[1], y:Integer[1]) extends Decimal
 [
   $this->floor()->toString()->length() <= $x && ($this->fractionDigits()->toString()->length()-2 <= $y)
 ]
