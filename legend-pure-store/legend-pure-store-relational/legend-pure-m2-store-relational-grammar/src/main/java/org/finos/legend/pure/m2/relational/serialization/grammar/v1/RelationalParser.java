@@ -360,7 +360,7 @@ public class RelationalParser implements IRelationalParser
             case "DECIMAL":
             {
                 GenericType genType = (GenericType) processorSupport.newAnonymousCoreInstance(null, M3Paths.GenericType);
-                genType._rawType((Type) _Package.getByUserPath("meta::pure::precisePrimitives::Decimal", processorSupport));
+                genType._rawType((Type) _Package.getByUserPath("meta::pure::precisePrimitives::Numeric", processorSupport));
                 genType._typeVariableValues(
                         Lists.mutable.with(
                                 (ValueSpecification)ValueSpecificationBootstrap.newIntegerLiteral(repository, Long.parseLong(type.getValueForMetaPropertyToOne("precision").getName()), processorSupport),
@@ -371,7 +371,8 @@ public class RelationalParser implements IRelationalParser
             }
             case "DATE":
             {
-                return (GenericType) processorSupport.type_wrapGenericType(_Package.getByUserPath("meta::pure::precisePrimitives::Date", processorSupport));
+                result = M3Paths.StrictDate;
+                break;
             }
             case "TIMESTAMP":
             {
