@@ -35,6 +35,7 @@ public class DateFormat
         SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
         int length = formatString.length();
         GregorianCalendar calendar = null;
+        StringBuilder timeZoneId = new StringBuilder();
         int i = 0;
         while (i < length)
         {
@@ -49,7 +50,6 @@ public class DateFormat
                         throw new IllegalArgumentException("Time zone can only be set at the beginning of the format string");
                     }
 
-                    StringBuilder timeZoneId = new StringBuilder();
                     boolean done = false;
                     boolean escaped = false;
                     boolean inQuotes = false;
@@ -254,7 +254,7 @@ public class DateFormat
                     }
                     else
                     {
-                        safeAppendable.append(calendar.getTimeZone().getID());
+                        safeAppendable.append(timeZoneId);
                     }
                     i += count;
                     break;
