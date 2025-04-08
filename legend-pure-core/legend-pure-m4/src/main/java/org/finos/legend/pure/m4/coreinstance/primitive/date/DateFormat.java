@@ -61,10 +61,6 @@ public class DateFormat
                             timeZoneId.append(next);
                             escaped = false;
                         }
-                        else if (inQuotes && next != '"')
-                        {
-                            timeZoneId.append(next);
-                        }
                         else if (next == '"')
                         {
                             inQuotes = !inQuotes;
