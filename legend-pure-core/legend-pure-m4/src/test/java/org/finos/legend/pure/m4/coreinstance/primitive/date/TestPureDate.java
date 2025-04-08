@@ -87,6 +87,18 @@ public class TestPureDate
     }
 
     @Test
+    public void testFormatWithMultipleTimeZonesFails()
+    {
+        PureDate date = DateFunctions.newPureDate(2014, 1, 1, 1, 1, 1, "070004235");
+        Assert.assertEquals("Fails when the time zones are the same",
+                "Time zone can only be set at the beginning of the format string",
+                Assert.assertThrows(IllegalArgumentException.class, () -> date.format("[EST]yyyy-MM-dd [EST]HH:mm:ss.SSSZ")).getMessage());
+        Assert.assertEquals("Fails when the time zones are different",
+                "Time zone can only be set at the beginning of the format string",
+                Assert.assertThrows(IllegalArgumentException.class, () -> date.format("[EST]yyyy-MM-dd [CST] HH:mm:ss.SSSZ")).getMessage());
+    }
+
+    @Test
     public void testFormatRefersToNonexistentComponent()
     {
         PureDate date = DateFunctions.newPureDate(2014, 1, 1);
