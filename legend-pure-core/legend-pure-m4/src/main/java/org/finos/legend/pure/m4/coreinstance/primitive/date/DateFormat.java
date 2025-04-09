@@ -78,6 +78,10 @@ public class DateFormat
                             timeZoneId.append(next);
                         }
                     }
+                    if (inQuotes)
+                    {
+                        throw new IllegalArgumentException("Missing closing quotes in time zone definition: " + formatString);
+                    }
                     if (!done)
                     {
                         throw new IllegalArgumentException("Missing closing bracket in format string: " + formatString);

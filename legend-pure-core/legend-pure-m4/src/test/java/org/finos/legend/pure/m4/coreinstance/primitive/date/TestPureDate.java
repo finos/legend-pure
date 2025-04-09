@@ -74,6 +74,10 @@ public class TestPureDate
                 Assert.assertThrows(IllegalArgumentException.class, () -> date.format("yyyy-MM-dd [CET]HH:mm:ss.SSSz")).getMessage());
         Assert.assertEquals("Time zone can only be set at the beginning of the format string",
                 Assert.assertThrows(IllegalArgumentException.class, () -> date.format("yyyy-MM-dd[CET] HH:mm:ss.SSSz")).getMessage());
+
+        Assert.assertEquals("Fails when end quotes missing in time zone definition",
+                "Missing closing quotes in time zone definition: [\"CET]yyyy-MM-dd HH:mm:ss.SSS z",
+                Assert.assertThrows(IllegalArgumentException.class, () -> date.format("[\"CET]yyyy-MM-dd HH:mm:ss.SSS z")).getMessage());
     }
 
     @Test
