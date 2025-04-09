@@ -65,7 +65,7 @@ public class DateFormat
                         {
                             inQuotes = !inQuotes;
                         }
-                        else if (next == ']')
+                        else if ((next == ']') && !inQuotes)
                         {
                             done = true;
                         }
