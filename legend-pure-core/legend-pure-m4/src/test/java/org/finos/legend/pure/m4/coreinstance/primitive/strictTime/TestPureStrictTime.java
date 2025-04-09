@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m4.primitives;
+package org.finos.legend.pure.m4.coreinstance.primitive.strictTime;
 
-import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
-import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.StrictTimeFunctions;
 import org.junit.Assert;
 import org.junit.Test;
 

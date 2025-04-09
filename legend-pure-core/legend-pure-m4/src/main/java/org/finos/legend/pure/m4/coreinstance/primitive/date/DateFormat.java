@@ -35,6 +35,7 @@ public class DateFormat
         SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
         int length = formatString.length();
         GregorianCalendar calendar = null;
+        StringBuilder timeZoneId = new StringBuilder();
         int i = 0;
         while (i < length)
         {
@@ -44,7 +45,11 @@ public class DateFormat
                 // Timezone conversion
                 case '[':
                 {
-                    StringBuilder timeZoneId = new StringBuilder();
+                    if (i > 1)
+                    {
+                        throw new IllegalArgumentException("Time zone can only be set at the beginning of the format string");
+                    }
+
                     boolean done = false;
                     boolean escaped = false;
                     boolean inQuotes = false;
@@ -56,17 +61,13 @@ public class DateFormat
                             timeZoneId.append(next);
                             escaped = false;
                         }
-                        else if (inQuotes)
-                        {
-                            timeZoneId.append(next);
-                        }
-                        else if (next == ']')
-                        {
-                            done = true;
-                        }
                         else if (next == '"')
                         {
                             inQuotes = !inQuotes;
+                        }
+                        else if ((next == ']') && !inQuotes)
+                        {
+                            done = true;
                         }
                         else if (next == '\\')
                         {
@@ -76,6 +77,10 @@ public class DateFormat
                         {
                             timeZoneId.append(next);
                         }
+                    }
+                    if (inQuotes)
+                    {
+                        throw new IllegalArgumentException("Missing closing quotes in time zone definition: " + formatString);
                     }
                     if (!done)
                     {
@@ -98,10 +103,6 @@ public class DateFormat
                             calendar = date.getCalendar();
                             calendar.setTimeZone(timeZone);
                             calendar.add(Calendar.MILLISECOND, timeZone.getOffset(calendar.getTimeInMillis()));
-                        }
-                        else if (!timeZone.equals(calendar.getTimeZone()))
-                        {
-                            throw new IllegalArgumentException("Cannot set multiple timezones: " + calendar.getTimeZone().getID() + ", " + timeZone.getID());
                         }
                     }
                     break;
@@ -247,16 +248,13 @@ public class DateFormat
                 case 'z':
                 {
                     int count = getCharCountFrom(character, formatString, i);
-                    // TODO
                     if (calendar == null)
                     {
                         safeAppendable.append("GMT");
                     }
                     else
                     {
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("z");
-                        dateFormat.setTimeZone(calendar.getTimeZone());
-                        safeAppendable.append(dateFormat.format(calendar.getTime()));
+                        safeAppendable.append(timeZoneId);
                     }
                     i += count;
                     break;
@@ -421,11 +419,13 @@ public class DateFormat
         {
             start++;
         }
-        end--;
-        while ((end > start) && (string.charAt(end) <= ' '))
+
+        do
         {
             end--;
         }
+        while ((end > start) && (string.charAt(end) <= ' '));
+
         end++;
         if (start >= end)
         {
