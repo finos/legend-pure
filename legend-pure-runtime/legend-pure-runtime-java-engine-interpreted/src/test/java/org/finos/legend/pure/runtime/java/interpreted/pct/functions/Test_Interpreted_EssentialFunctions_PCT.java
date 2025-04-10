@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.pct.functions;
 
-import junit.framework.Test;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.PlatformCodeRepositoryProvider;
@@ -23,6 +22,8 @@ import org.finos.legend.pure.m3.pct.reports.config.exclusion.ExclusionSpecificat
 import org.finos.legend.pure.m3.pct.reports.model.Adapter;
 import org.finos.legend.pure.m3.pct.shared.model.ReportScope;
 import org.finos.legend.pure.runtime.java.interpreted.testHelper.PureTestBuilderInterpreted;
+import org.junit.jupiter.api.DynamicContainer;
+import org.junit.jupiter.api.TestFactory;
 
 public class Test_Interpreted_EssentialFunctions_PCT extends PCTReportConfiguration
 {
@@ -31,9 +32,10 @@ public class Test_Interpreted_EssentialFunctions_PCT extends PCTReportConfigurat
     private static final String platform = "interpreted";
     private static final MutableList<ExclusionSpecification> expectedFailures = Lists.mutable.empty();
 
-    public static Test suite()
+    @TestFactory
+    public DynamicContainer tests()
     {
-        return PureTestBuilderInterpreted.buildPCTTestSuite(reportScope, expectedFailures, adapter);
+        return PureTestBuilderInterpreted.buildPCTTestContainer(reportScope, expectedFailures, adapter);
     }
 
     @Override
