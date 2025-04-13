@@ -69,9 +69,11 @@ public class FunctionExecutionInterpretedWithCodeCoverage extends FunctionExecut
     @Override
     public CoreInstance executeFunction(boolean limitScope, Function<?> function, ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext varContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport)
     {
-//        SourceInformation caller = functionExpressionCallStack.peek().getSourceInformation();
         SourceInformation covered = function.getSourceInformation();
-        this.writer.printf("%s %d %d %d %d%n", covered.getSourceId(), covered.getStartLine() - 1, covered.getStartColumn() - 1, covered.getEndLine() - 1, covered.getEndColumn());
+        if (covered != null)
+        {
+            this.writer.printf("%s %d %d %d %d%n", covered.getSourceId(), covered.getStartLine() - 1, covered.getStartColumn() - 1, covered.getEndLine() - 1, covered.getEndColumn());
+        }
         return super.executeFunction(limitScope, function, params, resolvedTypeParameters, resolvedMultiplicityParameters, varContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport);
     }
 }
