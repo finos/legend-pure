@@ -14,11 +14,25 @@
 
 package org.finos.legend.pure.m4.coreinstance;
 
+import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecifications;
+import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
 
 public abstract class AbstractCoreInstance implements CoreInstance
 {
+    @Override
+    public CoreInstance getValueForMetaPropertyToOne(CoreInstance property)
+    {
+        return getValueForMetaPropertyToOne(property.getName());
+    }
+
+    @Override
+    public ListIterable<? extends CoreInstance> getValueForMetaPropertyToMany(CoreInstance key)
+    {
+        return getValueForMetaPropertyToMany(key.getName());
+    }
+
     @Override
     public CoreInstance getValueInValueForMetaPropertyToMany(String keyName, String keyInMany)
     {
@@ -67,6 +81,18 @@ public abstract class AbstractCoreInstance implements CoreInstance
     public boolean hasBeenValidated()
     {
         return hasCompileState(CompileState.VALIDATED);
+    }
+
+    @Override
+    public void print(Appendable appendable, String tab)
+    {
+        print(appendable, tab, DEFAULT_MAX_PRINT_DEPTH);
+    }
+
+    @Override
+    public void printWithoutDebug(Appendable appendable, String tab)
+    {
+        printWithoutDebug(appendable, tab, DEFAULT_MAX_PRINT_DEPTH);
     }
 
     @Override
@@ -129,12 +155,16 @@ public abstract class AbstractCoreInstance implements CoreInstance
         return super.hashCode();
     }
 
-
-
     @Override
     public void removeProperty(CoreInstance propertyNameKey)
     {
-        this.removeProperty(propertyNameKey.getName());
+        removeProperty(propertyNameKey.getName());
+    }
+
+    @Override
+    public void rollback(ModelRepositoryTransaction transaction)
+    {
+        // By default, rolling back is simply not committing
     }
 
     public abstract CoreInstance copy();

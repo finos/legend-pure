@@ -24,7 +24,6 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.api.stack.MutableStack;
-import org.eclipse.collections.impl.block.factory.Comparators;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstance;
@@ -38,10 +37,10 @@ import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 
+import java.util.Objects;
+
 public abstract class BaseCoreInstance extends AbstractCoreInstance
 {
-    public static final int DEFAULT_MAX_PRINT_DEPTH = 1;
-
     private final int internalSyntheticId;
 
     private String name;
@@ -115,18 +114,6 @@ public abstract class BaseCoreInstance extends AbstractCoreInstance
     }
 
     @Override
-    public CoreInstance getValueForMetaPropertyToOne(CoreInstance key)
-    {
-        return getValueForMetaPropertyToOne(key.getName());
-    }
-
-    @Override
-    public ListIterable<? extends CoreInstance> getValueForMetaPropertyToMany(CoreInstance key)
-    {
-        return getValueForMetaPropertyToMany(key.getName());
-    }
-
-    @Override
     public void addKeyWithEmptyList(ListIterable<String> key)
     {
         setKeyValues(key, Lists.immutable.empty());
@@ -139,12 +126,12 @@ public abstract class BaseCoreInstance extends AbstractCoreInstance
 
     protected <V extends CoreInstance, K> V getValueByIDIndexFromToOnePropertyValue(V value, IndexSpecification<K> indexSpec, K keyInIndex)
     {
-        return (value != null) && Comparators.nullSafeEquals(keyInIndex, indexSpec.getIndexKey(value)) ? value : null;
+        return (value != null) && Objects.equals(keyInIndex, indexSpec.getIndexKey(value)) ? value : null;
     }
 
     protected <V extends CoreInstance, K> ListIterable<V> getValuesByIndexFromToOnePropertyValue(V value, IndexSpecification<K> indexSpec, K keyInIndex)
     {
-        return (value != null) && Comparators.nullSafeEquals(keyInIndex, indexSpec.getIndexKey(value)) ? Lists.immutable.with(value) : null;
+        return (value != null) && Objects.equals(keyInIndex, indexSpec.getIndexKey(value)) ? Lists.immutable.with(value) : null;
     }
 
     protected <V extends CoreInstance> V getOneValueFromToManyPropertyValues(String keyName, ToManyPropertyValues<V> values)
@@ -224,7 +211,7 @@ public abstract class BaseCoreInstance extends AbstractCoreInstance
     {
         while (stack.notEmpty())
         {
-            final BaseCoreInstance element = stack.pop();
+            BaseCoreInstance element = stack.pop();
             doneList.add(element);
 
             if (element.getClassifier() == null)
@@ -301,21 +288,9 @@ public abstract class BaseCoreInstance extends AbstractCoreInstance
     }
 
     @Override
-    public void print(Appendable appendable, String tab)
-    {
-        print(appendable, tab, DEFAULT_MAX_PRINT_DEPTH);
-    }
-
-    @Override
     public void print(Appendable appendable, String tab, int max)
     {
         print(appendable, tab, false, true, max);
-    }
-
-    @Override
-    public void printWithoutDebug(Appendable appendable, String tab)
-    {
-        print(appendable, tab, false, false, DEFAULT_MAX_PRINT_DEPTH);
     }
 
     @Override
@@ -355,13 +330,13 @@ public abstract class BaseCoreInstance extends AbstractCoreInstance
             SourceInformation sourceInfo = node.getSourceInformation();
             if (sourceInfo != null)
             {
-                appendable.append('(').append(sourceInfo.getSourceId()).append(':');
-                appendable.append(sourceInfo.getStartLine()).append(',');
-                appendable.append(sourceInfo.getStartColumn()).append(',');
-                appendable.append(sourceInfo.getLine()).append(',');
-                appendable.append(sourceInfo.getColumn()).append(',');
-                appendable.append(sourceInfo.getEndLine()).append(',');
-                appendable.append(sourceInfo.getEndColumn()).append(')');
+                appendable.append('(').append(sourceInfo.getSourceId()).append(':')
+                        .append(sourceInfo.getStartLine()).append(',')
+                        .append(sourceInfo.getStartColumn()).append(',')
+                        .append(sourceInfo.getLine()).append(',')
+                        .append(sourceInfo.getColumn()).append(',')
+                        .append(sourceInfo.getEndLine()).append(',')
+                        .append(sourceInfo.getEndColumn()).append(')');
             }
         }
     }
@@ -571,7 +546,7 @@ public abstract class BaseCoreInstance extends AbstractCoreInstance
             synchronized (this)
             {
                 V oldValue = this.values.get(offset);
-                if (!Comparators.nullSafeEquals(oldValue, value))
+                if (!Objects.equals(oldValue, value))
                 {
                     if (!(this.values instanceof MutableList<?>))
                     {

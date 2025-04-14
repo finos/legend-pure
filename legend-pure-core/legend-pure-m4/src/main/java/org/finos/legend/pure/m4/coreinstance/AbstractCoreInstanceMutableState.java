@@ -32,54 +32,42 @@ public abstract class AbstractCoreInstanceMutableState
 
     public void addCompileState(CompileState state)
     {
-        while (true)
-        {
-            int currentState = this.compileStateBitSet;
-            int newState = CompileStateSet.addCompileStateToBitSet(currentState, state);
-            if (UPDATER.compareAndSet(this, currentState, newState))
-            {
-                return;
-            }
-        }
+        addCompileStateSet(CompileStateSet.with(state));
     }
 
     public void addCompileStates(Iterable<? extends CompileState> states)
     {
-        while (true)
+        addCompileStateSet(CompileStateSet.withAll(states));
+    }
+
+    private void addCompileStateSet(CompileStateSet toAdd)
+    {
+        int currentState;
+        do
         {
-            int currentState = this.compileStateBitSet;
-            int newState = CompileStateSet.addCompileStatesToBitSet(currentState, states);
-            if (UPDATER.compareAndSet(this, currentState, newState))
-            {
-                return;
-            }
+            currentState = this.compileStateBitSet;
         }
+        while (!UPDATER.compareAndSet(this, currentState, CompileStateSet.addCompileStatesToBitSet(currentState, toAdd)));
     }
 
     public void removeCompileState(CompileState state)
     {
-        while (true)
-        {
-            int currentState = this.compileStateBitSet;
-            int newState = CompileStateSet.removeCompileStateFromBitSet(currentState, state);
-            if (UPDATER.compareAndSet(this, currentState, newState))
-            {
-                return;
-            }
-        }
+        removeCompileStateSet(CompileStateSet.with(state));
     }
 
     public void removeCompileStates(Iterable<? extends CompileState> states)
     {
-        while (true)
+        removeCompileStateSet(CompileStateSet.withAll(states));
+    }
+
+    private void removeCompileStateSet(CompileStateSet toRemove)
+    {
+        int currentState;
+        do
         {
-            int currentState = this.compileStateBitSet;
-            int newState = CompileStateSet.removeCompileStatesFromBitSet(currentState, states);
-            if (UPDATER.compareAndSet(this, currentState, newState))
-            {
-                return;
-            }
+            currentState = this.compileStateBitSet;
         }
+        while (!UPDATER.compareAndSet(this, currentState, CompileStateSet.removeCompileStatesFromBitSet(currentState, toRemove)));
     }
 
     public CompileStateSet getCompileStates()

@@ -37,8 +37,6 @@ import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
 
 public class SimpleCoreInstance extends AbstractCoreInstance
 {
-    public static final int DEFAULT_MAX_PRINT_DEPTH = 1;
-
     private final int internalSyntheticId;
 
     private String name;
@@ -64,11 +62,6 @@ public class SimpleCoreInstance extends AbstractCoreInstance
     public void commit(ModelRepositoryTransaction transaction)
     {
         this.state = (SimpleCoreInstanceMutableState) transaction.getState(this);
-    }
-
-    @Override
-    public void rollback(ModelRepositoryTransaction transaction)
-    {
     }
 
     @Override
@@ -183,12 +176,6 @@ public class SimpleCoreInstance extends AbstractCoreInstance
         }
     }
 
-    @Override
-    public CoreInstance getValueForMetaPropertyToOne(CoreInstance property)
-    {
-        return this.getValueForMetaPropertyToOne(property.getName());
-    }
-
     // -------------
     //  Get To Many
     //--------------
@@ -197,12 +184,6 @@ public class SimpleCoreInstance extends AbstractCoreInstance
     {
         ListIterable<CoreInstance> values = this.getState().getValues(keyName);
         return (values == null) ? Lists.immutable.empty() : values;
-    }
-
-    @Override
-    public ListIterable<CoreInstance> getValueForMetaPropertyToMany(CoreInstance key)
-    {
-        return this.getValueForMetaPropertyToMany(key.getName());
     }
 
     @Override
@@ -441,21 +422,9 @@ public class SimpleCoreInstance extends AbstractCoreInstance
     }
 
     @Override
-    public void print(Appendable appendable, String tab)
-    {
-        print(appendable, tab, DEFAULT_MAX_PRINT_DEPTH);
-    }
-
-    @Override
     public void print(Appendable appendable, String tab, int max)
     {
         print(appendable, tab, false, true, max);
-    }
-
-    @Override
-    public void printWithoutDebug(Appendable appendable, String tab)
-    {
-        print(appendable, tab, false, false, DEFAULT_MAX_PRINT_DEPTH);
     }
 
     @Override
@@ -499,13 +468,13 @@ public class SimpleCoreInstance extends AbstractCoreInstance
             SourceInformation sourceInfo = node.getSourceInformation();
             if (sourceInfo != null)
             {
-                appendable.append('(').append(sourceInfo.getSourceId()).append(':');
-                appendable.append(sourceInfo.getStartLine()).append(',');
-                appendable.append(sourceInfo.getStartColumn()).append(',');
-                appendable.append(sourceInfo.getLine()).append(',');
-                appendable.append(sourceInfo.getColumn()).append(',');
-                appendable.append(sourceInfo.getEndLine()).append(',');
-                appendable.append(sourceInfo.getEndColumn()).append(')');
+                appendable.append('(').append(sourceInfo.getSourceId()).append(':')
+                        .append(sourceInfo.getStartLine()).append(',')
+                        .append(sourceInfo.getStartColumn()).append(',')
+                        .append(sourceInfo.getLine()).append(',')
+                        .append(sourceInfo.getColumn()).append(',')
+                        .append(sourceInfo.getEndLine()).append(',')
+                        .append(sourceInfo.getEndColumn()).append(')');
             }
         }
     }

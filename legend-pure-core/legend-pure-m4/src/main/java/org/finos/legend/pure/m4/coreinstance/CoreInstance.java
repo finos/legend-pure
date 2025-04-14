@@ -31,6 +31,8 @@ import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
  */
 public interface CoreInstance
 {
+    int DEFAULT_MAX_PRINT_DEPTH = 1;
+
     /**
      * Function to get the name of a core instance.
      */

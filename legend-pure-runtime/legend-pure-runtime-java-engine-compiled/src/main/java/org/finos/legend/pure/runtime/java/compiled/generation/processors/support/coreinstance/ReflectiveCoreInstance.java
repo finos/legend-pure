@@ -294,12 +294,6 @@ public abstract class ReflectiveCoreInstance extends AbstractCompiledCoreInstanc
     }
 
     @Override
-    public CoreInstance getValueForMetaPropertyToOne(CoreInstance property)
-    {
-        return getValueForMetaPropertyToOne(property.getName());
-    }
-
-    @Override
     public ListIterable<CoreInstance> getValueForMetaPropertyToMany(String keyName)
     {
         Object result = getRawValueForMetaProperty(keyName);
@@ -315,12 +309,6 @@ public abstract class ReflectiveCoreInstance extends AbstractCompiledCoreInstanc
         }
 
         return ValCoreInstance.toCoreInstances((RichIterable<?>) result);
-    }
-
-    @Override
-    public ListIterable<CoreInstance> getValueForMetaPropertyToMany(CoreInstance key)
-    {
-        return getValueForMetaPropertyToMany(key.getName());
     }
 
     @Override
@@ -425,21 +413,9 @@ public abstract class ReflectiveCoreInstance extends AbstractCompiledCoreInstanc
     }
 
     @Override
-    public void print(Appendable appendable, String tab)
-    {
-        print(appendable, tab, DEFAULT_MAX_PRINT_DEPTH);
-    }
-
-    @Override
     public void print(Appendable appendable, String tab, int max)
     {
         print(appendable, tab, false, true, max);
-    }
-
-    @Override
-    public void printWithoutDebug(Appendable appendable, String tab)
-    {
-        printWithoutDebug(appendable, tab, DEFAULT_MAX_PRINT_DEPTH);
     }
 
     @Override
