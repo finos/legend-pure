@@ -449,4 +449,22 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
                         "   true;\n" +
                         "}");
     }
+
+
+    @Test
+    public void testDifferentTypes()
+    {
+        compileTestSource("fromString.pure",
+                 "import test::*;\n" +
+                         "import meta::pure::functions::meta::*;\n" +
+                         "import meta::pure::metamodel::relation::*\n;" +
+                        "\n" +
+                         "Primitive test::Int8 extends Integer\n" +
+                         "" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   @(x:Integer[1])->genericType().rawType->cast(@RelationType<Any>)->toOne()->addColumns(~[z:Int8[1]]);\n" +
+                        "   true;\n" +
+                        "}");
+    }
 }

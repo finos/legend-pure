@@ -947,7 +947,7 @@ public class AntlrContextToM3CoreInstance
                 M3Parser.ColumnNameContext colNameCtx = oneColSpec.columnName();
                 String colName = StringEscape.unescape(removeQuotes(colNameCtx.getText()));
                 columnNames.add(this.repository.newStringCoreInstance(colName));
-                String returnType = null;
+                GenericType returnType = null;
                 Multiplicity multiplicity = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport);
                 if (oneColSpec.anyLambda() != null)
                 {
@@ -961,7 +961,7 @@ public class AntlrContextToM3CoreInstance
                 else if (oneColSpec.type() != null)
                 {
                     GenericType returnGType = type(oneColSpec.type(), typeParametersNames, "", importId, addLines);
-                    returnType = returnGType._rawType().getName();
+                    returnType = returnGType;
                 }
                 if (oneColSpec.multiplicity() != null)
                 {
