@@ -44,6 +44,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.JavaPurePrimitiveT
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.FunctionProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Pure;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.MetadataJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
@@ -474,11 +475,11 @@ public class ValueSpecificationProcessor
     {
         if (type instanceof Class)
         {
-            return "((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"" + type.getValueForMetaPropertyToOne("name").getName() + "\")";
+            return "((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"" + Pure.elementToPath((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) type, "::") + "\")";
         }
         else if (type instanceof PrimitiveType)
         {
-            return "((CompiledExecutionSupport)es).getMetadataAccessor().getPrimitiveType(\"" + type.getValueForMetaPropertyToOne("name").getName() + "\")";
+            return "((CompiledExecutionSupport)es).getMetadataAccessor().getPrimitiveType(\"" + Pure.elementToPath((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) type, "::") + "\")";
         }
         else if (type instanceof RelationType)
         {
@@ -493,15 +494,15 @@ public class ValueSpecificationProcessor
         }
         else if (type instanceof Unit)
         {
-            return "((CompiledExecutionSupport)es).getMetadataAccessor().getUnit(\"" + type.getValueForMetaPropertyToOne("name").getName() + "\")";
+            return "((CompiledExecutionSupport)es).getMetadataAccessor().getUnit(\"" + Pure.elementToPath((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) type, "::") + "\")";
         }
         else if (type instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure)
         {
-            return "((CompiledExecutionSupport)es).getMetadataAccessor().getMeasure(\"" + type.getValueForMetaPropertyToOne("name").getName() + "\")";
+            return "((CompiledExecutionSupport)es).getMetadataAccessor().getMeasure(\"" + Pure.elementToPath((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) type, "::") + "\")";
         }
         else if (type instanceof Enumeration)
         {
-            return "((CompiledExecutionSupport)es).getMetadataAccessor().getEnumeration(\"" + type.getValueForMetaPropertyToOne("name").getName() + "\")";
+            return "((CompiledExecutionSupport)es).getMetadataAccessor().getEnumeration(\"" + Pure.elementToPath((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) type, "::") + "\")";
         }
         throw new RuntimeException("Unsupported type: " + type.getClass());
     }

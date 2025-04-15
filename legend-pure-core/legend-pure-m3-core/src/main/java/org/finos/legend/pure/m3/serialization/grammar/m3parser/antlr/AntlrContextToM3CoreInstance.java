@@ -1970,7 +1970,8 @@ public class AntlrContextToM3CoreInstance
 
     public ListIterable<InstanceValue> processTypeVariableValues(M3Parser.TypeVariableValuesContext ctx)
     {
-        return ctx == null ? Lists.mutable.empty() : ListIterate.collect(ctx.instanceLiteral(), x -> {
+        return ctx == null ? Lists.mutable.empty() : ListIterate.collect(ctx.instanceLiteral(), x ->
+        {
             InstanceValue iv = doWrap(instanceLiteral(x), x.getStart());
             InstanceValueProcessor.updateInstanceValue(iv, processorSupport);
             return iv;
