@@ -15,7 +15,6 @@
 package org.finos.legend.pure.m4.coreinstance.simple;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.procedure.Procedure2;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ImmutableList;
@@ -114,7 +113,7 @@ class SimpleCoreInstanceMutableState extends AbstractCoreInstanceMutableState
         synchronized (this.state)
         {
             ValueHolder valueHolder = this.state.get(keyName);
-            return (valueHolder == null) ? Lists.immutable.<CoreInstance>empty() : valueHolder.getValuesByIndex(indexSpec, keyInIndex);
+            return (valueHolder == null) ? Lists.immutable.empty() : valueHolder.getValuesByIndex(indexSpec, keyInIndex);
         }
     }
 
@@ -200,17 +199,10 @@ class SimpleCoreInstanceMutableState extends AbstractCoreInstanceMutableState
 
     SimpleCoreInstanceMutableState copy()
     {
-        final SimpleCoreInstanceMutableState copy = new SimpleCoreInstanceMutableState();
+        SimpleCoreInstanceMutableState copy = new SimpleCoreInstanceMutableState();
         synchronized (this.state)
         {
-            this.state.forEachKeyValue(new Procedure2<String, ValueHolder>()
-            {
-                @Override
-                public void value(String key, ValueHolder value)
-                {
-                    copy.state.put(key, value.copy());
-                }
-            });
+            this.state.forEachKeyValue((key, value) -> copy.state.put(key, value.copy()));
             copy.setCompileStateBitSet(getCompileStateBitSet());
         }
         return copy;

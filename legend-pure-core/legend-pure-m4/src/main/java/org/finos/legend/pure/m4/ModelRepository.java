@@ -599,24 +599,22 @@ public class ModelRepository
 
     private IntegerCoreInstance newIntegerCoreInstance(String name, CoreInstance classifier, int internalSyntheticId)
     {
-        try
-        {
-            int intValue = Integer.parseInt(name);
-            return newIntegerCoreInstance(intValue, classifier, internalSyntheticId);
-        }
-        catch (NumberFormatException e)
+        if (name.length() <= 20)
         {
             try
             {
-                Long longValue = Long.valueOf(name);
-                return PrimitiveCoreInstance.newIntegerCoreInstance(longValue, classifier, nextId());
+                long l = Long.parseLong(name);
+                return ((Integer.MIN_VALUE <= l) && (l <= Integer.MAX_VALUE)) ?
+                       newIntegerCoreInstance((int) l, classifier, internalSyntheticId) :
+                       PrimitiveCoreInstance.newIntegerCoreInstance(l, classifier, internalSyntheticId);
             }
-            catch (NumberFormatException e1)
+            catch (NumberFormatException ignore)
             {
-                BigInteger bigIntValue = new BigInteger(name);
-                return PrimitiveCoreInstance.newIntegerCoreInstance(bigIntValue, classifier, nextId());
+                // not an Integer or Long, fall back to BigInteger
             }
         }
+        BigInteger bigIntValue = new BigInteger(name);
+        return PrimitiveCoreInstance.newIntegerCoreInstance(bigIntValue, classifier, nextId());
     }
 
     public IntegerCoreInstance newIntegerCoreInstance(int value)

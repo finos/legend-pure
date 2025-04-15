@@ -15,9 +15,9 @@
 package org.finos.legend.pure.m4.coreinstance.simple;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.indexing.IDConflictException;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecification;
@@ -108,7 +108,7 @@ public class ValueHolder
 
     public <K> ListIterable<CoreInstance> getValuesByIndex(IndexSpecification<K> indexSpec, K key)
     {
-        return (this.values == null) ? Lists.immutable.<CoreInstance>empty() : this.values.getValuesByIndex(indexSpec, key);
+        return (this.values == null) ? Lists.immutable.empty() : this.values.getValuesByIndex(indexSpec, key);
     }
 
     void setValues(CoreInstance value)
@@ -154,6 +154,7 @@ public class ValueHolder
         return newValues((ListIterable<? extends T>) values);
     }
 
+    @SuppressWarnings("unchecked")
     public static <T extends CoreInstance> Values<T> newValues(ListIterable<? extends T> values)
     {
         if (values == null)
@@ -164,7 +165,7 @@ public class ValueHolder
         int size = values.size();
         if (size == 0)
         {
-            return (Values<T>)EmptyValues.EMPTY_VALUES;
+            return (Values<T>) EmptyValues.EMPTY_VALUES;
         }
         if (size == 1)
         {

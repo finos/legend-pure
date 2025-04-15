@@ -90,21 +90,23 @@ public class PrimitiveUtilities
         }
 
         String name = instance.getName();
-        try
-        {
-            return Integer.valueOf(name);
-        }
-        catch (NumberFormatException e)
+        if (name.length() <= 20)
         {
             try
             {
-                return Long.valueOf(name);
+                long l = Long.parseLong(name);
+                if ((Integer.MIN_VALUE <= l) && (l <= Integer.MAX_VALUE))
+                {
+                    return (int) l;
+                }
+                return l;
             }
-            catch (NumberFormatException e1)
+            catch (NumberFormatException ignore)
             {
-                return new BigInteger(name);
+                // not an Integer or Long, fall back to BigInteger
             }
         }
+        return new BigInteger(name);
     }
 
     public static Number getIntegerValue(CoreInstance instance, Integer defaultIfNull)
