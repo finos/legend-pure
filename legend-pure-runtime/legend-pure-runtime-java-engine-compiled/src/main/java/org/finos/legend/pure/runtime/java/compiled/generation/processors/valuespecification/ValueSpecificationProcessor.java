@@ -528,6 +528,6 @@ public class ValueSpecificationProcessor
                         "._multiplicityParameter(\"" + multiplicity._multiplicityParameter() + "\")" :
                         "._lowerBound(new Root_meta_pure_metamodel_multiplicity_MultiplicityValue_Impl(\"\")._value(" + multiplicity._lowerBound()._value() + "L))" +
                                 "._upperBound(new Root_meta_pure_metamodel_multiplicity_MultiplicityValue_Impl(\"\")" +
-                                (multiplicity._upperBound() == null ? "" : "._value(" + multiplicity._upperBound()._value() + "L))"));
+                                (multiplicity._upperBound()._value() == null ? "" : "._value(" + multiplicity._upperBound()._value() + "L))"));
     }
 }
