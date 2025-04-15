@@ -467,9 +467,9 @@ public class ValueSpecificationProcessor
         return "new Root_meta_pure_metamodel_type_generics_GenericType_Impl(\"\")" +
                 (genericType._rawType() == null ? "" : "._rawType(" + generateTypeBuilder(genericType._rawType(), processorContext) + ")") +
                 (genericType._typeParameter() == null ? "" : "._typeParameter(new Root_meta_pure_metamodel_type_generics_TypeParameter_Impl(\"\")._name(\"" + genericType._typeParameter()._name() + "\"))") +
-                (genericType._typeArguments().isEmpty() ? "" : "._typeArguments(" + genericType._typeArguments().collect(x -> generateGenericTypeBuilder(x, processorContext)).makeString(", ") + ")") +
-                (genericType._multiplicityArguments().isEmpty() ? "" : "._multiplicityArguments(" + genericType._multiplicityArguments().collect(ValueSpecificationProcessor::generateMultiplicityBuilder).makeString(", ") + ")") +
-                (genericType._typeVariableValues().isEmpty() ? "" : "._typeVariableValues(" + genericType._typeVariableValues().collect(vs -> processValueSpecification(vs, processorContext)).makeString(", ") + ")");
+                (genericType._typeArguments().isEmpty() ? "" : "._typeArguments(Lists.mutable.with(" + genericType._typeArguments().collect(x -> generateGenericTypeBuilder(x, processorContext)).makeString(", ") + "))") +
+                (genericType._multiplicityArguments().isEmpty() ? "" : "._multiplicityArguments(Lists.mutable.with(" + genericType._multiplicityArguments().collect(ValueSpecificationProcessor::generateMultiplicityBuilder).makeString(", ") + "))") +
+                (genericType._typeVariableValues().isEmpty() ? "" : "._typeVariableValues(Lists.mutable.with(" + genericType._typeVariableValues().collect(vs -> processValueSpecification(vs, processorContext)).makeString(", ") + "))");
     }
 
     private static String generateTypeBuilder(Type type, ProcessorContext processorContext)
@@ -489,7 +489,7 @@ public class ValueSpecificationProcessor
         else if (type instanceof FunctionType)
         {
             return "new Root_meta_pure_metamodel_type_FunctionType_Impl(\"\")" +
-                    "._parameters(" + ((FunctionType) type)._parameters().collect(v -> generateVariableBuilder(v, processorContext)) + ")" +
+                    "._parameters(Lists.mutable.with(" + ((FunctionType) type)._parameters().collect(v -> generateVariableBuilder(v, processorContext)).makeString(", ") + "))" +
                     "._returnType(" + generateGenericTypeBuilder(((FunctionType) type)._returnType(), processorContext) + ")" +
                     "._returnMultiplicity(" + generateMultiplicityBuilder(((FunctionType) type)._returnMultiplicity()) + ")";
         }
