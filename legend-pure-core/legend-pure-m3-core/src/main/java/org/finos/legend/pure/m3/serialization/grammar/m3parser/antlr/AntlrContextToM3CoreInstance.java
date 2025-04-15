@@ -538,8 +538,8 @@ public class AntlrContextToM3CoreInstance
             return result;
         });
         return (bounds == null) ?
-               getDefaultImportGroupSourceInfo() :
-               new SourceInformation(this.sourceInformation.getSourceName(), bounds[0], bounds[1], bounds[2], bounds[3]);
+                getDefaultImportGroupSourceInfo() :
+                new SourceInformation(this.sourceInformation.getSourceName(), bounds[0], bounds[1], bounds[2], bounds[3]);
     }
 
     private SourceInformation getDefaultImportGroupSourceInfo()
@@ -966,7 +966,7 @@ public class AntlrContextToM3CoreInstance
                 {
                     multiplicity = this.buildMultiplicity(oneColSpec.multiplicity().multiplicityArgument());
                 }
-                if(returnType == null)
+                if (returnType == null)
                 {
                     returnType = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
                     returnType._rawType(null);
@@ -1373,16 +1373,16 @@ public class AntlrContextToM3CoreInstance
         if (ctx.qualifiedName() != null)
         {
             return useImportStubsInInstanceParser ?
-                   ImportStubInstance.createPersistent(this.repository, this.getQualifiedNameString(ctx.qualifiedName()), importId) :
-                   org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.findPackageableElement(this.getQualifiedNameString(ctx.qualifiedName()), this.repository);
+                    ImportStubInstance.createPersistent(this.repository, this.getQualifiedNameString(ctx.qualifiedName()), importId) :
+                    org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.findPackageableElement(this.getQualifiedNameString(ctx.qualifiedName()), this.repository);
         }
         if (ctx.enumReference() != null)
         {
             String enumeration = this.getQualifiedNameString(ctx.enumReference().qualifiedName());
             String enumValue = ctx.enumReference().identifier().getText();
             return useImportStubsInInstanceParser ?
-                   EnumStubInstance.createPersistent(this.repository, enumValue, ImportStubInstance.createPersistent(this.repository, enumeration, importId)) :
-                   findEnum(enumeration, enumValue, this.repository);
+                    EnumStubInstance.createPersistent(this.repository, enumValue, ImportStubInstance.createPersistent(this.repository, enumeration, importId)) :
+                    findEnum(enumeration, enumValue, this.repository);
         }
         if (ctx.stereotypeReference() != null)
         {
@@ -2018,8 +2018,8 @@ public class AntlrContextToM3CoreInstance
                                                 c.mayColumnName().QUESTION() != null,
                                                 c.mayColumnType().QUESTION() != null ? GenericTypeInstance.createPersistent(this.repository) : this.type(c.mayColumnType().type(), typeParametersNames, spacePlusTabs(space, 5), importId, addLines),
                                                 c.multiplicity() == null ?
-                                                    (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport) :
-                                                    this.buildMultiplicity(c.multiplicity().multiplicityArgument()),
+                                                        (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport) :
+                                                        this.buildMultiplicity(c.multiplicity().multiplicityArgument()),
                                                 srcInfo,
                                                 processorSupport
                                         );
@@ -2216,8 +2216,8 @@ public class AntlrContextToM3CoreInstance
         buildAndSetPackage(primitiveType, ctx.qualifiedName().packagePath(), this.repository, this.sourceInformation);
 
         ListIterable<VariableExpression> typeVariables = (ctx.typeVariableParameters() == null) ?
-                                                         Lists.immutable.empty() :
-                                                         ListIterate.collect(ctx.typeVariableParameters().functionVariableExpression(), fveCtx -> functionVariableExpression(fveCtx, Lists.mutable.empty(), importId, spacePlusTabs("", 4)));
+                Lists.immutable.empty() :
+                ListIterate.collect(ctx.typeVariableParameters().functionVariableExpression(), fveCtx -> functionVariableExpression(fveCtx, Lists.mutable.empty(), importId, spacePlusTabs("", 4)));
         if (typeVariables.notEmpty())
         {
             primitiveType._typeVariables(typeVariables);
@@ -2272,8 +2272,8 @@ public class AntlrContextToM3CoreInstance
         classInstance._name(className);
 
         ListIterable<VariableExpression> typeVariables = (ctx.typeVariableParameters() == null) ?
-                                                         Lists.immutable.empty() :
-                                                         ListIterate.collect(ctx.typeVariableParameters().functionVariableExpression(), fveCtx -> functionVariableExpression(fveCtx, Lists.mutable.empty(), importId, spacePlusTabs("", 4)));
+                Lists.immutable.empty() :
+                ListIterate.collect(ctx.typeVariableParameters().functionVariableExpression(), fveCtx -> functionVariableExpression(fveCtx, Lists.mutable.empty(), importId, spacePlusTabs("", 4)));
         classInstance._typeVariables(typeVariables);
 
         buildAndSetPackage(classInstance, ctx.qualifiedName().packagePath(), this.repository, this.sourceInformation);
@@ -3042,8 +3042,8 @@ public class AntlrContextToM3CoreInstance
     private FunctionType functionTypeSignature(FunctionTypeSignatureContext ctx, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> function, MutableList<String> typeParametersNames, MutableList<String> multiplicityParametersNames, ImportGroup importId, String space)
     {
         ListIterable<VariableExpression> vars = (ctx.functionVariableExpression() == null) ?
-                                                Lists.immutable.empty() :
-                                                ListIterate.collect(ctx.functionVariableExpression(), fveCtx -> functionVariableExpression(fveCtx, typeParametersNames, importId, spacePlusTabs(space, 4)));
+                Lists.immutable.empty() :
+                ListIterate.collect(ctx.functionVariableExpression(), fveCtx -> functionVariableExpression(fveCtx, typeParametersNames, importId, spacePlusTabs(space, 4)));
         GenericType returnType = this.type(ctx.type(), typeParametersNames, spacePlusTabs(space, 3), importId, false);
         Multiplicity multiplicity = this.buildMultiplicity(ctx.multiplicity().multiplicityArgument());
 
@@ -3155,7 +3155,7 @@ public class AntlrContextToM3CoreInstance
                     {
                         GenericType right = type(
                                 typeOperationContext.addType() != null ?
-                                typeOperationContext.addType().type() : typeOperationContext.subType().type(),
+                                        typeOperationContext.addType().type() : typeOperationContext.subType().type(),
                                 typeParametersNames, space, importId, addLines);
                         String type = typeOperationContext.addType() != null ? "Union" : "Difference";
                         return GenericTypeOperationInstance.createPersistent(repository, genericType, right, (Enum) findEnum(M3Paths.GenericTypeOperationType, type, repository));
@@ -3639,12 +3639,12 @@ public class AntlrContextToM3CoreInstance
     public TemporaryPureSetImplementation mapping(MappingContext ctx, String cl, LambdaContext lambdaContext, ImportGroup importId)
     {
         ImportStub src = (ctx.qualifiedName() == null) ?
-                         null :
-                         ImportStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().getStart()), getQualifiedNameString(ctx.qualifiedName()), importId);
+                null :
+                ImportStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().getStart()), getQualifiedNameString(ctx.qualifiedName()), importId);
 
         CoreInstance filter = (ctx.combinedExpression() == null) ?
-                              null :
-                              combinedExpression(ctx.combinedExpression(), "", Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, "", true, importId, true);
+                null :
+                combinedExpression(ctx.combinedExpression(), "", Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, "", true, importId, true);
 
         MutableList<TemporaryPurePropertyMapping> propertyMappings = ListIterate.collect(ctx.mappingLine(), mlc -> mappingLine(mlc, lambdaContext, cl, importId));
         return TemporaryPureSetImplementation.build(src, filter, propertyMappings);
