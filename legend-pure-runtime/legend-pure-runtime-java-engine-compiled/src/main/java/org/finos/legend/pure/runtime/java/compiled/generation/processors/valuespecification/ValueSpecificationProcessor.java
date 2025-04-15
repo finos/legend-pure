@@ -27,6 +27,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionTy
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -461,7 +462,12 @@ public class ValueSpecificationProcessor
                 (genericType._typeParameter() == null ? "" : "._typeParameter(new Root_meta_pure_metamodel_type_generics_TypeParameter_Impl(\"\")._name(\"" + genericType._typeParameter()._name() + "\"))") +
                 (genericType._typeArguments().isEmpty() ? "" : "._typeArguments(Lists.mutable.with(" + genericType._typeArguments().collect(x -> generateGenericTypeBuilder(x, processorContext)).makeString(", ") + "))") +
                 (genericType._multiplicityArguments().isEmpty() ? "" : "._multiplicityArguments(Lists.mutable.with(" + genericType._multiplicityArguments().collect(ValueSpecificationProcessor::generateMultiplicityBuilder).makeString(", ") + "))") +
-                (genericType._typeVariableValues().isEmpty() ? "" : "._typeVariableValues(Lists.mutable.with(" + genericType._typeVariableValues().collect(vs -> processValueSpecification(vs, processorContext)).makeString(", ") + "))");
+                (genericType._typeVariableValues().isEmpty() ? "" : "._typeVariableValues(Lists.mutable.with(" + genericType._typeVariableValues().collect(vs -> generateValueSpecification(vs, processorContext)).makeString(", ") + "))");
+    }
+
+    private static String generateValueSpecification(ValueSpecification vs, ProcessorContext processorContext)
+    {
+        return "new Root_meta_pure_metamodel_valuespecification_InstanceValue_Impl(\"\")._values(Lists.mutable.with(" + processValueSpecification(vs, processorContext) + "))";
     }
 
     private static String generateTypeBuilder(Type type, ProcessorContext processorContext)
