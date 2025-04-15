@@ -39,6 +39,7 @@ import org.eclipse.collections.impl.utility.LazyIterate;
 import org.eclipse.collections.impl.utility.ListIterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningClassProcessor;
+import org.finos.legend.pure.m3.compiler.postprocessing.processor.valuespecification.InstanceValueProcessor;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.PackageInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.KeyExpressionInstance;
@@ -1969,7 +1970,11 @@ public class AntlrContextToM3CoreInstance
 
     public ListIterable<InstanceValue> processTypeVariableValues(M3Parser.TypeVariableValuesContext ctx)
     {
-        return ctx == null ? Lists.mutable.empty() : ListIterate.collect(ctx.instanceLiteral(), x -> doWrap(instanceLiteral(x), x.getStart()));
+        return ctx == null ? Lists.mutable.empty() : ListIterate.collect(ctx.instanceLiteral(), x -> {
+            InstanceValue iv = doWrap(instanceLiteral(x), x.getStart());
+            InstanceValueProcessor.updateInstanceValue(iv, processorSupport);
+            return iv;
+        });
     }
 
     public GenericType type(TypeContext ctx, MutableList<String> typeParametersNames, String space, ImportGroup importId, boolean addLines)
