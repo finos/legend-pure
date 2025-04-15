@@ -15,9 +15,12 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.type;
 
 import org.eclipse.collections.api.list.ListIterable;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification.ValueSpecificationProcessor;
 
 public class GenericType extends AbstractNative
 {
@@ -29,6 +32,16 @@ public class GenericType extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
+        CoreInstance parameter = functionExpression.getValueForMetaPropertyToMany(M3Properties.parametersValues).getFirst();
+        if (processorContext.getSupport().instance_instanceOf(functionExpression.getValueForMetaPropertyToMany(M3Properties.parametersValues).getFirst(), M3Paths.InstanceValue))
+        {
+            if (parameter.getValueForMetaPropertyToMany(M3Properties.values).isEmpty())
+            {
+                parameter.getValueForMetaPropertyToOne(M3Properties.genericType);
+                return "CoreGen.safeGetGenericType(" + ValueSpecificationProcessor.generateGenericTypeBuilder((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) parameter.getValueForMetaPropertyToOne(M3Properties.genericType), processorContext) + ", es)";
+            }
+            System.out.println(functionExpression.getValueForMetaPropertyToMany(M3Properties.parametersValues).getFirst());
+        }
         return "CoreGen.safeGetGenericType(" + transformedParams.get(0) + ", es)";
     }
 

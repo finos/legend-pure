@@ -193,15 +193,7 @@ public class ValueSpecificationProcessor
                 }
                 else
                 {
-                    CoreInstance gType = valueSpecification.getValueForMetaPropertyToOne(M3Properties.genericType);
-                    if (gType instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType)
-                    {
-                        return generateGenericTypeBuilder((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) gType, processorContext);
-                    }
-                    else
-                    {
-                        return "(" + TypeProcessor.typeToJavaObjectSingle(valueSpecification.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorContext.getSupport()) + ")null";
-                    }
+                    return "(" + TypeProcessor.typeToJavaObjectSingle(valueSpecification.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorContext.getSupport()) + ")null";
                 }
             }
             throw new RuntimeException(" To CODE ! 1" + processorSupport.getClassifier(valueSpecification) + valueSpecification.printWithoutDebug("", 1));
