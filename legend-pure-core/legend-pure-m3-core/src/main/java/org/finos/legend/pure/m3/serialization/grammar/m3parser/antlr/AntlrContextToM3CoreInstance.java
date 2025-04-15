@@ -960,12 +960,16 @@ public class AntlrContextToM3CoreInstance
                 }
                 else if (oneColSpec.type() != null)
                 {
-                    GenericType returnGType = type(oneColSpec.type(), typeParametersNames, "", importId, addLines);
-                    returnType = returnGType;
+                    returnType = type(oneColSpec.type(), typeParametersNames, "", importId, addLines);
                 }
                 if (oneColSpec.multiplicity() != null)
                 {
                     multiplicity = this.buildMultiplicity(oneColSpec.multiplicity().multiplicityArgument());
+                }
+                if(returnType == null)
+                {
+                    returnType = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
+                    returnType._rawType(null);
                 }
                 columnInstances.add(_Column.getColumnInstance(colName, false, returnType, multiplicity, src, processorSupport));
             });
