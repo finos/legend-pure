@@ -19,6 +19,15 @@ import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -27,6 +36,7 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.measure.Measure;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.navigation.relation._Column;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPurePrimitiveTypeMapping;
@@ -183,7 +193,15 @@ public class ValueSpecificationProcessor
                 }
                 else
                 {
-                    return "(" + TypeProcessor.typeToJavaObjectSingle(valueSpecification.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorContext.getSupport()) + ")null";
+                    CoreInstance gType = valueSpecification.getValueForMetaPropertyToOne(M3Properties.genericType);
+                    if (gType instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType)
+                    {
+                        return generateGenericTypeBuilder((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) gType, processorContext);
+                    }
+                    else
+                    {
+                        return "(" + TypeProcessor.typeToJavaObjectSingle(valueSpecification.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorContext.getSupport()) + ")null";
+                    }
                 }
             }
             throw new RuntimeException(" To CODE ! 1" + processorSupport.getClassifier(valueSpecification) + valueSpecification.printWithoutDebug("", 1));
@@ -439,5 +457,76 @@ public class ValueSpecificationProcessor
             typeCast = "(" + TypeProcessor.typeToJavaObjectWithMul(targetGenericType, targetMultiplicity, processorContext.getSupport()) + ")";
         }
         return "null".equals(processedValueSpecification) || targetMultiplicity == null || Multiplicity.isToZeroOrOne(targetMultiplicity) ? typeCast + processedValueSpecification : "CompiledSupport.toPureCollection(" + typeCast + processedValueSpecification + ")";
+    }
+
+
+    // GenericType 'serialization' in code
+
+    public static String generateGenericTypeBuilder(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType, ProcessorContext processorContext)
+    {
+        return "new Root_meta_pure_metamodel_type_generics_GenericType_Impl(\"\")" +
+                (genericType._rawType() == null ? "" : "._rawType(" + generateTypeBuilder(genericType._rawType(), processorContext) + ")") +
+                (genericType._typeParameter() == null ? "" : "._typeParameter(new Root_meta_pure_metamodel_type_generics_TypeParameter_Impl(\"\")._name(\"" + genericType._typeParameter()._name() + "\"))") +
+                (genericType._typeArguments().isEmpty() ? "" : "._typeArguments(" + genericType._typeArguments().collect(x -> generateGenericTypeBuilder(x, processorContext)).makeString(", ") + ")") +
+                (genericType._multiplicityArguments().isEmpty() ? "" : "._multiplicityArguments(" + genericType._multiplicityArguments().collect(ValueSpecificationProcessor::generateMultiplicityBuilder).makeString(", ") + ")") +
+                (genericType._typeVariableValues().isEmpty() ? "" : "._typeVariableValues(" + genericType._typeVariableValues().collect(vs -> processValueSpecification(vs, processorContext)).makeString(", ") + ")");
+    }
+
+    private static String generateTypeBuilder(Type type, ProcessorContext processorContext)
+    {
+        if (type instanceof Class)
+        {
+            return "((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"" + type.getValueForMetaPropertyToOne("name").getName() + "\")";
+        }
+        else if (type instanceof PrimitiveType)
+        {
+            return "((CompiledExecutionSupport)es).getMetadataAccessor().getPrimitiveType(\"" + type.getValueForMetaPropertyToOne("name").getName() + "\")";
+        }
+        else if (type instanceof RelationType)
+        {
+            return "org.finos.legend.pure.m3.navigation.relation._RelationType.build(Lists.mutable.<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column<?,?>>with(" + ((RelationType<?>) type)._columns().collect(c -> generateColumnBuilder(c, processorContext)).makeString(", ") + "), null, ((CompiledExecutionSupport)es).getProcessorSupport())";
+        }
+        else if (type instanceof FunctionType)
+        {
+            return "new Root_meta_pure_metamodel_type_FunctionType_Impl(\"\")" +
+                    "._parameters(" + ((FunctionType) type)._parameters().collect(v -> generateVariableBuilder(v, processorContext)) + ")" +
+                    "._returnType(" + generateGenericTypeBuilder(((FunctionType) type)._returnType(), processorContext) + ")" +
+                    "._returnMultiplicity(" + generateMultiplicityBuilder(((FunctionType) type)._returnMultiplicity()) + ")";
+        }
+        else if (type instanceof Unit)
+        {
+            return "((CompiledExecutionSupport)es).getMetadataAccessor().getUnit(\"" + type.getValueForMetaPropertyToOne("name").getName() + "\")";
+        }
+        else if (type instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure)
+        {
+            return "((CompiledExecutionSupport)es).getMetadataAccessor().getMeasure(\"" + type.getValueForMetaPropertyToOne("name").getName() + "\")";
+        }
+        else if (type instanceof Enumeration)
+        {
+            return "((CompiledExecutionSupport)es).getMetadataAccessor().getEnumeration(\"" + type.getValueForMetaPropertyToOne("name").getName() + "\")";
+        }
+        throw new RuntimeException("Unsupported type: " + type.getClass());
+    }
+
+    private static Object generateVariableBuilder(VariableExpression v, ProcessorContext processorContext)
+    {
+        return "new Root_meta_pure_metamodel_valuespecification_VariableExpression_Impl(\"\")" +
+                "._name(\"" + v._name() + "\")" +
+                "._genericType(" + generateGenericTypeBuilder(v._genericType(), processorContext) + ")" +
+                "._multiplicity(" + generateMultiplicityBuilder(v._multiplicity()) + ")";
+    }
+
+    public static String generateColumnBuilder(Column<?, ?> column, ProcessorContext processorContext)
+    {
+        return "org.finos.legend.pure.m3.navigation.relation._Column.getColumnInstance(\"" + column._name() + "\", " + column._nameWildCard() + ", " + generateGenericTypeBuilder(_Column.getColumnType(column), processorContext) + ", " + generateMultiplicityBuilder(_Column.getColumnMultiplicity(column)) + ", null, ((CompiledExecutionSupport)es).getProcessorSupport())";
+    }
+
+    public static String generateMultiplicityBuilder(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity multiplicity)
+    {
+        return "new Root_meta_pure_metamodel_multiplicity_Multiplicity_Impl(\"\")" +
+                (multiplicity._multiplicityParameter() != null ?
+                        "._multiplicityParameter(\"" + multiplicity._multiplicityParameter() + "\")" :
+                        "._lowerBound(new Root_meta_pure_metamodel_multiplicity_MultiplicityValue_Impl(\"\")._value(" + multiplicity._lowerBound()._value() + "L))" +
+                                "._upperBound(new Root_meta_pure_metamodel_multiplicity_MultiplicityValue_Impl(\"\")._value(" + multiplicity._upperBound()._value() + "L))");
     }
 }

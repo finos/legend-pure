@@ -286,6 +286,10 @@ public class Pure
         {
             return genericTypeBuilder.get()._rawType(ma.getBottomType());
         }
+        if (val instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType)
+        {
+            return (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) val;
+        }
         if (val instanceof QuantityCoreInstance)
         {
             return genericTypeBuilder.get()._rawType(((QuantityCoreInstance) val).getUnit());

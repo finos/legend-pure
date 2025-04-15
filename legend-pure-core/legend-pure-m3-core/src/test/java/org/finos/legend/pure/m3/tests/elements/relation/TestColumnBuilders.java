@@ -65,6 +65,16 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     }
 
     @Test
+    public void testSimpleColumnWithTypeAndMultiplicity()
+    {
+        compileTestSource("fromString.pure",
+                "function test():meta::pure::metamodel::relation::ColSpec<(name:String)>[1]\n" +
+                        "{\n" +
+                        "   ~name:String[1];\n" +
+                        "}");
+    }
+
+    @Test
     public void testSimpleColumnWithTypeArray()
     {
         compileTestSource("fromString.pure",

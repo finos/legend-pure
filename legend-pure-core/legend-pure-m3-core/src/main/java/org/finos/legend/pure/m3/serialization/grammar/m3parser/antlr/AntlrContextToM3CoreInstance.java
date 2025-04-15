@@ -948,6 +948,7 @@ public class AntlrContextToM3CoreInstance
                 String colName = StringEscape.unescape(removeQuotes(colNameCtx.getText()));
                 columnNames.add(this.repository.newStringCoreInstance(colName));
                 String returnType = null;
+                Multiplicity multiplicity = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport);
                 if (oneColSpec.anyLambda() != null)
                 {
                     lambdas.add(processLambda(oneColSpec.anyLambda(), Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, importId, space, addLines, false, Lists.mutable.empty()));
@@ -962,7 +963,11 @@ public class AntlrContextToM3CoreInstance
                     GenericType returnGType = type(oneColSpec.type(), typeParametersNames, "", importId, addLines);
                     returnType = returnGType._rawType().getName();
                 }
-                columnInstances.add(_Column.getColumnInstance(colName, false, returnType, (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport), src, processorSupport));
+                if (oneColSpec.multiplicity() != null)
+                {
+                    multiplicity = this.buildMultiplicity(oneColSpec.multiplicity().multiplicityArgument());
+                }
+                columnInstances.add(_Column.getColumnInstance(colName, false, returnType, multiplicity, src, processorSupport));
             });
             RelationType<?> relationType = _RelationType.build(columnInstances, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.getStart(), ctx.getStop()), processorSupport);
             GenericType relationTypeGenericType = (GenericType) processorSupport.type_wrapGenericType(relationType);
@@ -2008,7 +2013,9 @@ public class AntlrContextToM3CoreInstance
                                                 c.mayColumnName().QUESTION() != null ? "" : colName,
                                                 c.mayColumnName().QUESTION() != null,
                                                 c.mayColumnType().QUESTION() != null ? GenericTypeInstance.createPersistent(this.repository) : this.type(c.mayColumnType().type(), typeParametersNames, spacePlusTabs(space, 5), importId, addLines),
-                                                (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport),
+                                                c.multiplicity() == null ?
+                                                    (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport) :
+                                                    this.buildMultiplicity(c.multiplicity().multiplicityArgument()),
                                                 srcInfo,
                                                 processorSupport
                                         );

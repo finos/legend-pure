@@ -165,6 +165,7 @@ import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.meta.ty
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.meta.type._class.GenericTypeClass;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.meta.type._enum.EnumName;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.meta.type._enum.EnumValues;
+import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.meta.type.relation.AddColumns;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string._boolean.Contains;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string._boolean.EndsWith;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string._boolean.StartsWith;
@@ -530,6 +531,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.nativeFunctions.put("instanceOf_Any_1__Type_1__Boolean_1_", new InstanceOf(repository));
         this.nativeFunctions.put("generalizations_Type_1__Type_$1_MANY$_", new Generalizations(this, repository));
         this.nativeFunctions.put("subTypeOf_Type_1__Type_1__Boolean_1_", new SubTypeOf(this, repository));
+        this.nativeFunctions.put("addColumns_RelationType_1__ColSpecArray_1__RelationType_1_", new AddColumns());
         //    Class
         this.nativeFunctions.put("genericTypeClass_GenericType_1__Class_1_", new GenericTypeClass(repository));
         //    Enum

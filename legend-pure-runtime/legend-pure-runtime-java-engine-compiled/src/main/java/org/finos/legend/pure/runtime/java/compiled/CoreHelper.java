@@ -37,6 +37,9 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profi
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Tag;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.ColSpecArray;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Nil;
@@ -44,6 +47,9 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.relation._Column;
+import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
@@ -1143,4 +1149,13 @@ public class CoreHelper
         return (T) ((Any) instance)._elementOverrideRemove();
     }
 
+
+    public static RelationType<?> addColumns(RelationType<?> instance, ColSpecArray<?> colSpecArray, ExecutionSupport es)
+    {
+        ProcessorSupport processorSupport = ((CompiledExecutionSupport) es).getProcessorSupport();
+        MutableList<Column<?,?>> columns = Lists.mutable.withAll(instance._columns());
+        columns.withAll(Lists.mutable.withAll(((RelationType<?>)colSpecArray._classifierGenericType()._rawType())._columns()));
+        MutableList<? extends CoreInstance> newColumns = columns.collect(c -> _Column.getColumnInstance(c._name(), c._nameWildCard(), _Column.getColumnType(c), _Column.getColumnMultiplicity(c), c.getSourceInformation(), processorSupport)).toList();
+        return _RelationType.build(newColumns, null, processorSupport);
+    }
 }

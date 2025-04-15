@@ -15,8 +15,11 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification;
 
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -33,6 +36,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.Functio
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.NativeFunctionProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.SourceInfoProcessor;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Pure;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 
@@ -52,6 +56,13 @@ public class FunctionExpressionProcessor
         }
         if (support.instance_instanceOf(function, M3Paths.FunctionDefinition) && !Property.isQualifiedProperty(function, support))
         {
+            String maySetClassifierGenericType = "";
+            if (function instanceof PackageableElement && Sets.immutable.with("meta::pure::functions::relation::colSpec_String_1__T_1__ColSpec_1_", "meta::pure::functions::relation::colSpecArray_String_MANY__T_1__ColSpecArray_1_").contains(Pure.elementToPath((PackageableElement) function, "::")))
+            {
+                FunctionExpression funcExpression = (FunctionExpression) functionExpression;
+                maySetClassifierGenericType = "._classifierGenericType(" + ValueSpecificationProcessor.generateGenericTypeBuilder(funcExpression._parametersValues().getLast()._genericType(), processorContext) + ")";
+            }
+
             CoreInstance functionType = support.function_getFunctionType(function);
             // May want to be a little bit more specific (when a parameter has a type which is a functionType that has type parameters leveraged in the returnType)
             boolean shouldCast = !topLevel && !GenericType.isGenericTypeFullyConcrete(functionType.getValueForMetaPropertyToOne(M3Properties.returnType), support);
@@ -81,9 +92,9 @@ public class FunctionExpressionProcessor
                 String interfaceString = TypeProcessor.pureTypeToJava(genericType, false, false, true, support);
                 SourceInformation sourceInformation = functionExpression.getSourceInformation();
                 return "(CompiledSupport.<" + castType + ">castWithExceptionHandling(" + (addCastToOne ? "CompiledSupport.makeOne(" : "") + possiblyWrappedFunctionCall + (addCastToOne ? ")" : "") + "," + interfaceString + ".class, "
-                        + NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + "))";
+                        + NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + "))" + maySetClassifierGenericType;
             }
-            return (shouldCast ? "((" + castType + ")" : "") + (addCastToOne ? "CompiledSupport.makeOne(" : "") + possiblyWrappedFunctionCall + (addCastToOne ? ")" : "") + (shouldCast ? ")" : "");
+            return (shouldCast ? "((" + castType + ")" : "") + (addCastToOne ? "CompiledSupport.makeOne(" : "") + possiblyWrappedFunctionCall + (addCastToOne ? ")" : "") + (shouldCast ? ")" : "") + maySetClassifierGenericType;
         }
         if (Property.isProperty(function, support))
         {

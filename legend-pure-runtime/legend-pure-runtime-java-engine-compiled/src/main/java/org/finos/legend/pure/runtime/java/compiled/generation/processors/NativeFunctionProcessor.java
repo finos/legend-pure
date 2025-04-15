@@ -134,6 +134,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.graph.PathToElement;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.type._enum.EnumName;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.type._enum.EnumValues;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.meta.type.relation.AddColumns;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string._boolean.Contains;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string._boolean.EndsWith;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.essentials.string.index.IndexOfWithFrom;
@@ -504,6 +505,8 @@ public class NativeFunctionProcessor
         //    Enum
         registerNative(map, new EnumName());
         registerNative(map, new EnumValues());
+        //    Relation
+        registerNative(map, new AddColumns());
 
         //String
         //  Boolean
