@@ -31,6 +31,7 @@ import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.tools.JavaTools;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.runtime.java.compiled.generation.GenericTypeSerializationInCode;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.FunctionProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
@@ -60,7 +61,7 @@ public class FunctionExpressionProcessor
             if (function instanceof PackageableElement && Sets.immutable.with("meta::pure::functions::relation::colSpec_String_1__T_1__ColSpec_1_", "meta::pure::functions::relation::colSpecArray_String_MANY__T_1__ColSpecArray_1_").contains(Pure.elementToPath((PackageableElement) function, "::")))
             {
                 FunctionExpression funcExpression = (FunctionExpression) functionExpression;
-                maySetClassifierGenericType = "._classifierGenericType(" + ValueSpecificationProcessor.generateGenericTypeBuilder(funcExpression._parametersValues().getLast()._genericType(), processorContext) + ")";
+                maySetClassifierGenericType = "._classifierGenericType(" + GenericTypeSerializationInCode.generateGenericTypeBuilder(funcExpression._parametersValues().getLast()._genericType(), processorContext) + ")";
             }
 
             CoreInstance functionType = support.function_getFunctionType(function);
