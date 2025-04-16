@@ -65,6 +65,16 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
     }
 
     @Test
+    public void testSimpleColumnWithTypeAndMultiplicity()
+    {
+        compileTestSource("fromString.pure",
+                "function test():meta::pure::metamodel::relation::ColSpec<(name:String)>[1]\n" +
+                        "{\n" +
+                        "   ~name:String[1];\n" +
+                        "}");
+    }
+
+    @Test
     public void testSimpleColumnWithTypeArray()
     {
         compileTestSource("fromString.pure",
@@ -436,6 +446,44 @@ public class TestColumnBuilders extends AbstractPureTestWithCoreCompiledPlatform
                         "function test():Boolean[1]\n" +
                         "{\n" +
                         "   []->toOne()->cast(@meta::pure::metamodel::relation::Relation<(id:Integer, ok:Integer)>)->extend(~[name:c|$c.id->toOne()]);\n" +
+                        "   true;\n" +
+                        "}");
+    }
+
+
+    @Test
+    public void testUseExtendedPrimitiveTypes()
+    {
+        compileTestSource("fromString.pure",
+                 "import test::*;\n" +
+                         "import meta::pure::functions::meta::*;\n" +
+                         "import meta::pure::metamodel::relation::*\n;" +
+                        "\n" +
+                         "Primitive test::Int8 extends Integer\n" +
+                         "" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   @(x:Integer[1])->genericType().rawType->cast(@RelationType<Any>)->toOne()->addColumns(~[z:Int8[1]]);\n" +
+                        "   true;\n" +
+                        "}");
+    }
+
+    @Test
+    public void testUseExtendedPrimitiveTypesWithTypeVariableValues()
+    {
+        compileTestSource("fromString.pure",
+                "import test::*;\n" +
+                        "import meta::pure::functions::meta::*;\n" +
+                        "import meta::pure::metamodel::relation::*\n;" +
+                        "\n" +
+                        "Primitive meta::pure::metamodel::relation::Varchar(x:Integer[1]) extends String\n" +
+                        "[\n" +
+                        "  $this->length() <= $x\n" +
+                        "]\n" +
+                        "" +
+                        "function test():Boolean[1]\n" +
+                        "{\n" +
+                        "   @(x:Integer[1])->genericType().rawType->cast(@RelationType<Any>)->toOne()->addColumns(~[z:Varchar(200)[1]]);\n" +
                         "   true;\n" +
                         "}");
     }

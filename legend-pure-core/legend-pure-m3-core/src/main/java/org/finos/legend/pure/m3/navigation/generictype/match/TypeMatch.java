@@ -475,9 +475,9 @@ abstract class TypeMatch implements Comparable<TypeMatch>
             }
             columnsTypeMatches.add(paramTypeMatch);
 
-            CoreInstance paramParamMult = Instance.getValueForMetaPropertyToOneResolved(candidateColumn, M3Properties.classifierGenericType, processorSupport).getValueForMetaPropertyToMany(M3Properties.multiplicityArguments).getFirst();
-            CoreInstance valueParamMult = Instance.getValueForMetaPropertyToOneResolved(signatureColumn, M3Properties.classifierGenericType, processorSupport).getValueForMetaPropertyToMany(M3Properties.multiplicityArguments).getFirst();
-            MultiplicityMatch paramMultMatch = MultiplicityMatch.newMultiplicityMatch(paramParamMult, valueParamMult, covariant, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
+            CoreInstance candidateMult = Instance.getValueForMetaPropertyToOneResolved(candidateColumn, M3Properties.classifierGenericType, processorSupport).getValueForMetaPropertyToMany(M3Properties.multiplicityArguments).getFirst();
+            CoreInstance signatureMult = Instance.getValueForMetaPropertyToOneResolved(signatureColumn, M3Properties.classifierGenericType, processorSupport).getValueForMetaPropertyToMany(M3Properties.multiplicityArguments).getFirst();
+            MultiplicityMatch paramMultMatch = MultiplicityMatch.newMultiplicityMatch(signatureMult, candidateMult, covariant, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
             if (paramMultMatch == null)
             {
                 return null;
