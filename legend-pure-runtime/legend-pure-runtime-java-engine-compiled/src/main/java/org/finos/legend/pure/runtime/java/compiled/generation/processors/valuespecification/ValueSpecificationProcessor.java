@@ -468,7 +468,10 @@ public class ValueSpecificationProcessor
 
     private static String generateValueSpecification(ValueSpecification vs, ProcessorContext processorContext)
     {
-        return "new Root_meta_pure_metamodel_valuespecification_InstanceValue_Impl(\"\")._values(Lists.mutable.with(" + processValueSpecification(vs, processorContext) + "))";
+        return "new Root_meta_pure_metamodel_valuespecification_InstanceValue_Impl(\"\")" +
+                "._genericType(" + generateTypeBuilder(vs._genericType()._rawType(), processorContext) + ")" +
+                "._multiplicity(" + generateMultiplicityBuilder(vs._multiplicity()) + ")" +
+                "._values(Lists.mutable.with(" + processValueSpecification(vs, processorContext) + "))";
     }
 
     private static String generateTypeBuilder(Type type, ProcessorContext processorContext)
