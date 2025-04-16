@@ -137,7 +137,7 @@ public interface SafeAppendable extends Appendable
             @Override
             public SafeAppendable append(CharSequence csq, int start, int end)
             {
-                builder.append(csq);
+                builder.append(csq, start, end);
                 return this;
             }
 
@@ -213,7 +213,7 @@ public interface SafeAppendable extends Appendable
             @Override
             public SafeAppendable append(CharSequence csq, int start, int end)
             {
-                buffer.append(csq);
+                buffer.append(csq, start, end);
                 return this;
             }
 
