@@ -30,6 +30,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Native
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.PropertyCoreInstanceWrapper;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.Console;
@@ -45,6 +46,7 @@ import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation.function.Function;
+import org.finos.legend.pure.m3.navigation.linearization.C3Linearization;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
@@ -776,9 +778,32 @@ public class FunctionExecutionInterpreted implements FunctionExecution
             {
                 result = this.executeProperty(PropertyCoreInstanceWrapper.toProperty(function), true, resolvedTypeParameters, resolvedMultiplicityParameters, varContext, profiler, params, functionExpressionCallStack, instantiationContext, executionSupport);
             }
-            //Qualified properties also go here
             else if (Instance.instanceOf(function, M3Paths.FunctionDefinition, processorSupport))
             {
+                if (Instance.instanceOf(function, M3Paths.QualifiedProperty, processorSupport))
+                {
+                    // Manage Dispatch
+                    CoreInstance genericType = Instance.extractGenericTypeFromInstance(((InstanceValue) params.get(0))._valuesCoreInstance().getFirst(), processorSupport);
+                    ListIterable<CoreInstance> allSuperTypes = C3Linearization.getGenericTypeGeneralizationLinearization(genericType, processorSupport);
+                    org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> found = null;
+                    for (CoreInstance superType : allSuperTypes)
+                    {
+                        if (found != null)
+                        {
+                            break;
+                        }
+                        for (CoreInstance f : superType.getValueForMetaPropertyToOne(M3Properties.rawType).getValueForMetaPropertyToMany(M3Properties.qualifiedProperties))
+                        {
+                            if (overrides(f, function))
+                            {
+                                found = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>) f;
+                                break;
+                            }
+                        }
+                    }
+                    function = found;
+                }
+
                 RichIterable<? extends CoreInstance> expressions = FunctionDefinitionCoreInstanceWrapper.toFunctionDefinition(function)._expressionSequence();
 
                 CoreInstance returnVal = null;
@@ -789,7 +814,8 @@ public class FunctionExecutionInterpreted implements FunctionExecution
                 }
                 result = returnVal;
             }
-            List<CoreInstance> instances = this.extensions.collect(x -> x.getExtraFunctionExecution(function, params, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport, processorSupport, this)).select(Objects::nonNull);
+            final org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> finalFunc = function;
+            List<CoreInstance> instances = this.extensions.collect(x -> x.getExtraFunctionExecution(finalFunc, params, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionCallStack, profiler, instantiationContext, executionSupport, processorSupport, this)).select(Objects::nonNull);
 
             if (instances.size() == 1)
             {
@@ -901,6 +927,23 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         {
             throw new PureExecutionException("Pure stackoverflow", stackOverflowError, functionExpressionCallStack);
         }
+    }
+
+    public boolean overrides(CoreInstance f1, CoreInstance f2)
+    {
+        if (f1.getValueForMetaPropertyToOne(M3Properties.name).equals(f2.getValueForMetaPropertyToOne(M3Properties.name)))
+        {
+            CoreInstance fType1 = Function.computeFunctionType(f1, processorSupport);
+            CoreInstance fType2 = Function.computeFunctionType(f2, processorSupport);
+            ListIterable<? extends CoreInstance> f1Ps = fType1.getValueForMetaPropertyToMany(M3Properties.parameters);
+            ListIterable<? extends CoreInstance> f2Ps = fType2.getValueForMetaPropertyToMany(M3Properties.parameters);
+            f1Ps = f1Ps.subList(1, f1Ps.size());
+            f2Ps = f2Ps.subList(1, f2Ps.size());
+            return f1Ps.size() == f2Ps.size() && f1Ps.zip(f2Ps).injectInto(true, (a, b) ->
+                    a && org.finos.legend.pure.m3.navigation.generictype.GenericType.genericTypesEqual(b.getOne().getValueForMetaPropertyToOne(M3Properties.genericType), b.getTwo().getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport)
+            );
+        }
+        return false;
     }
 
     public CoreInstance executeProperty(Property<?, ?> property, boolean route, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, Profiler profiler, ListIterable<? extends CoreInstance> parameters, MutableStack<CoreInstance> functionExpressionCallStack, InstantiationContext instantiationContext, ExecutionSupport executionSupport) throws PureExecutionException
