@@ -18,7 +18,7 @@ import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.junit.After;
 import org.junit.Test;
 
-public class AbstractTestDispatchQualifiedProperties extends AbstractPureTestWithCoreCompiled
+public abstract class AbstractTestDispatchQualifiedProperties extends AbstractPureTestWithCoreCompiled
 {
     @After
     public void cleanRuntime()
@@ -28,31 +28,175 @@ public class AbstractTestDispatchQualifiedProperties extends AbstractPureTestWit
     }
 
     @Test
-    public void testFunction()
+    public void testWithoutOverrides()
     {
         compileTestSource("fromString.pure",
-                "Class A" +
-                        "{" +
-                        "   f(){'a'}:String[1];" +
-                        "   f(s:String[1]){'a'+$s}:String[1];" +
-                        "}" +
-                        "Class B extends A" +
-                        "{" +
-                        "   f(){'b'}:String[1];" +
-                        "   f(s:String[1]){'b'+$s}:String[1];" +
-                        "}" +
-                        "function n():A[1]" +
-                        "{ " +
-                        "   ^B();" +
-                        "}" +
+                "Class A\n" +
+                        "{\n" +
+                        "   f(){'a'}:String[1];\n" +
+                        "   f(s:String[1]){'a'+$s}:String[1];\n" +
+                        "}\n" +
+                        "Class B extends A\n" +
+                        "{\n" +
+                        "}\n" +
+                        "function n():A[1]\n" +
+                        "{\n" +
+                        "   ^B();\n" +
+                        "}\n" +
                         "function testNew():Any[*]\n" +
                         "{\n" +
-                        "   assertEquals('a', ^A().f);" +
-                        "   assertEquals('b', ^B().f);" +
-                        "   assertEquals('b', ^B()->cast(@A).f);" +
-                        "   assertEquals('bok', n().f('ok'));" +
-                        "   assertEquals('b', n().f);" +
-                        "   assertEquals(['a','b','a','b'], [^A(),^B(),^A(),^B()]->cast(@A).f);" +
+                        "   assertEquals('a', ^A().f);\n" +
+                        "   assertEquals('a', ^B().f);\n" +
+                        "   assertEquals('a', ^B()->cast(@A).f);\n" +
+                        "   assertEquals('aok', n().f('ok'));\n" +
+                        "   assertEquals('a', n().f);\n" +
+                        "   assertEquals(['a','a','a','a'], [^A(),^B(),^A(),^B()]->cast(@A).f);\n" +
+                        "}\n");
+        execute("testNew():Any[*]");
+    }
+
+    @Test
+    public void testWithoutOverridesFromAssociation()
+    {
+        compileTestSource("fromString.pure",
+                "Class A\n" +
+                        "{\n" +
+                        "   f(s:String[1]){'a'+$s}:String[1];\n" +
+                        "}\n" +
+                        "Class B extends A\n" +
+                        "{\n" +
+                        "}\n" +
+                        "Class C\n" +
+                        "{\n" +
+                        "   name : String[1];\n" +
+                        "}\n" +
+                        "Association A_C\n" +
+                        "{\n" +
+                        "  a:A[*];\n" +
+                        "  c:C[*];\n" +
+                        "  cByName(name:String[1])\n" +
+                        "  {\n" +
+                        "    $this.c->filter(c | $name == $c.name)\n" +
+                        "  }:C[*];\n" +
+                        "}\n" +
+                        "function n():A[1]\n" +
+                        "{\n" +
+                        "   ^B(c=[^C(name='c1'), ^C(name='c2')]);\n" +
+                        "}\n" +
+                        "function testNew():Any[*]\n" +
+                        "{\n" +
+                        "   let a = ^A(c=[^C(name='c1'), ^C(name='c2')]);\n" +
+                        "   assertEquals('c1', $a.cByName('c1')->map(c | $c.name));\n" +
+                        "   let b = ^B(c=[^C(name='c1'), ^C(name='c2')]);\n" +
+                        "   assertEquals('c1', $b.cByName('c1')->map(c | $c.name));\n" +
+                        "   assertEquals('c2', $b->cast(@A).cByName('c2')->map(c | $c.name));\n" +
+                        "   let n = n();\n" +
+                        "   assertEquals('c1', $n.cByName('c1')->map(c | $c.name));\n" +
+                        "}\n");
+        execute("testNew():Any[*]");
+    }
+
+    @Test
+    public void testWithOverrides()
+    {
+        compileTestSource("fromString.pure",
+                "Class A\n" +
+                        "{\n" +
+                        "   f(){'a'}:String[1];\n" +
+                        "   f(s:String[1]){'a'+$s}:String[1];\n" +
+                        "}\n" +
+                        "Class B extends A\n" +
+                        "{\n" +
+                        "   f(s:String[1]){'b'+$s}:String[1];\n" +
+                        "   f(){'b'}:String[1];\n" +
+                        "}\n" +
+                        "function n():A[1]\n" +
+                        "{\n" +
+                        "   ^B();\n" +
+                        "}\n" +
+                        "function testNew():Any[*]\n" +
+                        "{\n" +
+                        "   assertEquals('a', ^A().f);\n" +
+                        "   assertEquals('b', ^B().f);\n" +
+                        "   assertEquals('b', ^B()->cast(@A).f);\n" +
+                        "   assertEquals('bok', n().f('ok'));\n" +
+                        "   assertEquals('b', n().f);\n" +
+                        "   assertEquals(['a','b','a','b'], [^A(),^B(),^A(),^B()]->cast(@A).f);\n" +
+                        "}\n");
+        execute("testNew():Any[*]");
+    }
+
+    @Test
+    public void testWithOverridesFromAssociation()
+    {
+        compileTestSource("fromString.pure",
+                "Class A\n" +
+                        "{\n" +
+                        "   f(s:String[1]){'a'+$s}:String[1];\n" +
+                        "}\n" +
+                        "Class B extends A\n" +
+                        "{\n" +
+                        "}\n" +
+                        "Class C\n" +
+                        "{\n" +
+                        "   name : String[1];\n" +
+                        "}\n" +
+                        "Association A_C\n" +
+                        "{\n" +
+                        "  a:A[*];\n" +
+                        "  c:C[*];\n" +
+                        "  cByName(name:String[1])\n" +
+                        "  {\n" +
+                        "    $this.c->filter(c | $name == $c.name)\n" +
+                        "  }:C[*];\n" +
+                        "}\n" +
+                        "Association B_C\n" +
+                        "{\n" +
+                        "  b:B[*];\n" +
+                        "  c:C[*];\n" +
+                        "  cByName(name:String[1])\n" +
+                        "  {\n" +
+                        "    $this.c->filter(c | $name != $c.name)\n" +
+                        "  }:C[*];\n" +
+                        "}\n" +
+                        "function n():A[1]\n" +
+                        "{\n" +
+                        "   ^B(c=[^C(name='c1'), ^C(name='c2')]);\n" +
+                        "}\n" +
+                        "function testNew():Any[*]\n" +
+                        "{\n" +
+                        "   let a = ^A(c=[^C(name='c1'), ^C(name='c2')]);\n" +
+                        "   assertEquals('c1', $a.cByName('c1')->map(c | $c.name));\n" +
+                        "   let b = ^B(c=[^C(name='c1'), ^C(name='c2')]);\n" +
+                        "   assertEquals('c2', $b.cByName('c1')->map(c | $c.name));\n" +
+                        "   assertEquals('c1', $b->cast(@A).cByName('c2')->map(c | $c.name));\n" +
+                        "   let n = n();\n" +
+                        "   assertEquals('c2', $n.cByName('c1')->map(c | $c.name));\n" +
+                        "   assertEquals('c1', $n.cByName('c2')->map(c | $c.name));\n" +
+                        "}\n");
+        execute("testNew():Any[*]");
+    }
+
+    @Test
+    public void testWithEvaluateAndDeactivate()
+    {
+        compileTestSource("fromString.pure",
+                        "Class D\n" +
+                        "{\n" +
+                        "  i : Integer[1];\n" +
+                        "}\n" +
+                        "Class C\n" +
+                        "{\n" +
+                        "   f : Function<{Integer[1]->Integer[1]}>[1];\n" +
+                        "   f(i:Integer[1]){^D(i=$this.f->eval($i));}:D[1];\n" +
+                        "}\n" +
+                        "function myfunc(i:Integer[1]):Integer[1]\n" +
+                        "{\n" +
+                        "   $i + 1;\n" +
+                        "}\n" +
+                        "function testNew():Any[*]\n" +
+                        "{\n" +
+                        "   assertEquals(2, ^C(f=myfunc_Integer_1__Integer_1_)->evaluateAndDeactivate().f(1).i);\n" +
                         "}\n");
         execute("testNew():Any[*]");
     }
