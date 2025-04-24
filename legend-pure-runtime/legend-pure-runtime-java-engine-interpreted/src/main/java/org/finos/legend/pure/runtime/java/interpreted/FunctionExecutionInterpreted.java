@@ -21,6 +21,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.stack.MutableStack;
+import org.eclipse.collections.impl.list.Interval;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionCoreInstanceWrapper;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionCoreInstanceWrapper;
@@ -28,7 +29,6 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Native
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.PropertyCoreInstanceWrapper;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.Console;
@@ -910,56 +910,55 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         if (org.finos.legend.pure.m3.navigation.property.Property.isQualifiedProperty(function, processorSupport))
         {
             // Manage qualified property dispatch
+            String functionName = org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(function);
+            CoreInstance functionType = processorSupport.function_getFunctionType(function);
+            ListIterable<? extends CoreInstance> functionParams = functionType.getValueForMetaPropertyToMany(M3Properties.parameters);
+            CoreInstance functionSourceType = Instance.getValueForMetaPropertyToOneResolved(functionParams.get(0), M3Properties.rawType, processorSupport);
+
             ListIterable<? extends CoreInstance> firstParamValues = params.get(0).getValueForMetaPropertyToMany(M3Properties.values);
             if (firstParamValues == null)
             {
                 throw new IllegalStateException("Unexpected value specification type for first parameter: " + PackageableElement.getUserPathForPackageableElement(params.get(0).getClassifier()));
             }
             CoreInstance instance = firstParamValues.get(0);
-
             CoreInstance instanceType = instance.getClassifier();
-            for (CoreInstance type : Type.getGeneralizationResolutionOrder(instanceType, processorSupport))
+            if (functionSourceType != instanceType)
             {
-                for (String qpProp : _Class.QUALIFIED_PROPERTIES_PROPERTIES)
+                for (CoreInstance type : Type.getGeneralizationResolutionOrder(instanceType, processorSupport))
                 {
-                    for (CoreInstance qualProp : type.getValueForMetaPropertyToMany(qpProp))
+                    if (type == functionSourceType)
                     {
-                        if ((qualProp == function) || overrides(qualProp, function, processorSupport))
+                        // We've reached the source type of the qualified property the compiler chose, so it must be the best choice
+                        return function;
+                    }
+                    for (String qpProp : _Class.QUALIFIED_PROPERTIES_PROPERTIES)
+                    {
+                        for (CoreInstance qualProp : type.getValueForMetaPropertyToMany(qpProp))
                         {
-                            return (QualifiedProperty<?>) qualProp;
+                            if (functionName.equals(org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(qualProp)))
+                            {
+                                CoreInstance qpFT = processorSupport.function_getFunctionType(qualProp);
+                                ListIterable<? extends CoreInstance> qpParams = qpFT.getValueForMetaPropertyToMany(M3Properties.parameters);
+                                if ((functionParams.size() == qpParams.size()) &&
+                                        ((functionParams.size() <= 1) ||
+                                                Interval.fromTo(1, functionParams.size() - 1).allSatisfy(i -> org.finos.legend.pure.m3.navigation.generictype.GenericType.genericTypesEqual(functionParams.get(i).getValueForMetaPropertyToOne(M3Properties.genericType), qpParams.get(i).getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport))))
+                                {
+                                    return (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>) qualProp;
+                                }
+                            }
                         }
                     }
                 }
+
+                // Could not find a matching qualified property: this should not happen, but give a good error message in case it does
+                StringBuilder builder = new StringBuilder("Could not find qualified property ")
+                        .append(org.finos.legend.pure.m3.navigation.property.Property.getQualifiedPropertyId(function, processorSupport))
+                        .append(" for instance of type ");
+                PackageableElement.writeUserPathForPackageableElement(builder, instanceType);
+                throw new IllegalStateException(builder.toString());
             }
-            // Could not find a matching qualified property: this should not happen, but give a good error message in case it does
-            StringBuilder builder = new StringBuilder("Could not find qualified property ").append(PrimitiveUtilities.getStringValue(function.getValueForMetaPropertyToOne(M3Properties.id))).append(" for instance of type ");
-            PackageableElement.writeUserPathForPackageableElement(builder, instanceType);
-            throw new IllegalStateException(builder.toString());
         }
         return function;
-    }
-
-    private boolean overrides(CoreInstance qp1, CoreInstance qp2, ProcessorSupport processorSupport)
-    {
-        if (PrimitiveUtilities.getStringValue(qp1.getValueForMetaPropertyToOne(M3Properties.name)).equals(PrimitiveUtilities.getStringValue(qp2.getValueForMetaPropertyToOne(M3Properties.name))))
-        {
-            CoreInstance fType1 = Function.computeFunctionType(qp1, processorSupport);
-            CoreInstance fType2 = Function.computeFunctionType(qp2, processorSupport);
-            ListIterable<? extends CoreInstance> f1Ps = fType1.getValueForMetaPropertyToMany(M3Properties.parameters);
-            ListIterable<? extends CoreInstance> f2Ps = fType2.getValueForMetaPropertyToMany(M3Properties.parameters);
-            if (f1Ps.size() == f2Ps.size())
-            {
-                for (int i = 1, size = f1Ps.size(); i < size; i++)
-                {
-                    if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.genericTypesEqual(f1Ps.get(i).getValueForMetaPropertyToOne(M3Properties.genericType), f2Ps.get(i).getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport))
-                    {
-                        return false;
-                    }
-                }
-                return true;
-            }
-        }
-        return false;
     }
 
     public CoreInstance executeProperty(Property<?, ?> property, boolean route, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, Profiler profiler, ListIterable<? extends CoreInstance> parameters, MutableStack<CoreInstance> functionExpressionCallStack, InstantiationContext instantiationContext, ExecutionSupport executionSupport) throws PureExecutionException
