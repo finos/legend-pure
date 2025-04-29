@@ -85,7 +85,7 @@ public class Fold extends AbstractNativeFunctionGeneric
         }
         else
         {
-            return "CompiledSupport.fold(" + list + "," + "new DefendedFunction2<" + functionParamTypeO2 + "," + sourceTypeO1 + "," + functionReturnTypeWithMul + ">(){public " + functionReturnTypeWithMul + " value(final " + functionParamTypeO2 + " _param2, final " + sourceTypeO1 + " _param1){  return ((PureFunction2<" + functionParamTypeO2 + "," + sourceTypeO1 + "," + functionReturnTypeWithMul + ">)PureCompiledLambda.getPureFunction(" + ValueSpecificationProcessor.processValueSpecification(topLevelElement, parametersValues.get(1), processorContext) + ", es)).value(_param2,_param1, es); }}" + "," + init + ")";
+            return "CompiledSupport.fold(" + list + "," + "new DefendedFunction2<" + functionParamTypeO2 + "," + sourceTypeO1 + "," + functionReturnTypeWithMul + ">(){public " + functionReturnTypeWithMul + " value(final " + functionParamTypeO2 + " _param2, final " + sourceTypeO1 + " _param1){  return (" + functionReturnTypeWithMul + ")CompiledSupport.toPureCollection(PureCompiledLambda.getPureFunction(" + ValueSpecificationProcessor.processValueSpecification(topLevelElement, parametersValues.get(1), processorContext) + ", es).execute(Lists.fixedSize.of(_param2,_param1), es)); }}" + "," + init + ")";
         }
     }
 
