@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.navigation.relation;
 
+import java.util.Objects;
 import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
@@ -34,7 +35,7 @@ public class _Column
     public static Column<?, ?> getColumnInstance(String name, boolean nameWildCard, String type, Multiplicity multiplicity, SourceInformation src, ProcessorSupport processorSupport)
     {
         GenericType target = (GenericType) processorSupport.newAnonymousCoreInstance(src, M3Paths.GenericType);
-        target._rawType(type == null ? null : (Type) _Package.getByUserPath(type, processorSupport));
+        target._rawType(type == null ? null : (Type) Objects.requireNonNull(_Package.getByUserPath(type, processorSupport), () -> type + " not found!  (imports are not scan for TDS column type resolution)"));
         return _Column.getColumnInstance(name, nameWildCard, target, multiplicity, src, processorSupport);
     }
 
@@ -42,6 +43,7 @@ public class _Column
     {
         Column<?, ?> columnInstance = (Column<?, ?>) processorSupport.newAnonymousCoreInstance(sourceInformation, M3Paths.Column);
         columnInstance._name(StringEscape.unescape(removeQuotes(name)));
+        columnInstance._functionName("column:" + columnInstance._name());
         columnInstance._nameWildCard(nameWildCard);
         GenericType columnGenericType = (GenericType) processorSupport.newAnonymousCoreInstance(sourceInformation, M3Paths.GenericType);
         columnGenericType._rawType((Type) _Package.getByUserPath(M3Paths.Column, processorSupport));

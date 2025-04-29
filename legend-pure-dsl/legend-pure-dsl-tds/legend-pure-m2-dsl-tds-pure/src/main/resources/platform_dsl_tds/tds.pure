@@ -29,3 +29,8 @@ function meta::pure::metamodel::relation::newTDSRelationAccessor<T>(tds:TDS<T>[1
 {
   ^TDSRelationAccessor<T>(sourceElement = $tds);
 }
+
+Class <<typemodifiers.abstract>> meta::pure::metamodel::relation::Variant
+{
+
+}

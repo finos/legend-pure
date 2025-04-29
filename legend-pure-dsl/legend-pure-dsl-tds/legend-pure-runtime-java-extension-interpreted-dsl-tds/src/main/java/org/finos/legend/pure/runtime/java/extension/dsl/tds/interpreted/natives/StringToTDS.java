@@ -36,17 +36,15 @@ import java.util.Stack;
 
 public class StringToTDS extends NativeFunction
 {
-    private final ModelRepository repository;
-
     public StringToTDS(FunctionExecutionInterpreted functionExecution, ModelRepository repository)
     {
-        this.repository = repository;
+
     }
 
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         String tdsString = params.get(0).getValueForMetaPropertyToOne("values").getName();
-        return ValueSpecificationBootstrap.wrapValueSpecification(TDSExtension.parse(tdsString, new M3ProcessorSupport(context, repository)), false, processorSupport);
+        return ValueSpecificationBootstrap.wrapValueSpecification(TDSExtension.parse(tdsString, processorSupport), false, processorSupport);
     }
 }
