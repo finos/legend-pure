@@ -57,12 +57,12 @@ public class PureTestBuilderInterpreted
     {
         FunctionExecutionInterpreted functionExecution = getFunctionExecutionInterpreted();
 
-        PureTestBuilder.F2<CoreInstance, MutableList<Object>, Object> testExecutor = getTestExecutor(functionExecution, Maps.mutable.empty(), "meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_");
+        PureTestBuilder.F2<CoreInstance, MutableList<Object>, Object> testExecutor = getTestExecutor(functionExecution, Maps.mutable.empty(), null);
 
         TestSuite suite = new TestSuite();
         ArrayIterate.forEach(all, (path) ->
                 {
-                    TestCollection col = TestCollection.collectTests(path, functionExecution.getProcessorSupport(), ci -> PureTestBuilder.satisfiesConditionsInterpreted(ci, functionExecution.getProcessorSupport()));
+                    TestCollection col = TestCollection.collectTests(path, functionExecution.getProcessorSupport(), ci -> !isPCTTest(ci, functionExecution.getProcessorSupport()) && PureTestBuilder.satisfiesConditionsInterpreted(ci, functionExecution.getProcessorSupport()));
                     suite.addTest(PureTestBuilder.buildSuite(col, testExecutor, new ExecutionSupport()));
                 }
         );

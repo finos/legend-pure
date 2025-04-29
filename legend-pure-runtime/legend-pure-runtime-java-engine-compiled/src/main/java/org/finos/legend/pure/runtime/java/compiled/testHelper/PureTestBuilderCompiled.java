@@ -70,20 +70,13 @@ public class PureTestBuilderCompiled extends TestSuite
 
     public static TestSuite buildSuite(String... all)
     {
-        return buildSuite(false, Maps.mutable.empty(), "meta::pure::test::pct::testAdapterForInMemoryExecution_Function_1__X_o_", all);
-    }
-
-    private static TestSuite buildSuite(boolean limitToPCT, MutableMap<String, String> exclusions, String executor, String... all)
-    {
         CompiledExecutionSupport executionSupport = getClassLoaderExecutionSupport();
-        PureTestBuilder.F2<CoreInstance, MutableList<Object>, Object> p = (a, b) -> executeFn(a, executor, exclusions, executionSupport, b);
+        PureTestBuilder.F2<CoreInstance, MutableList<Object>, Object> p = (a, b) -> executeFn(a, null, Maps.fixedSize.empty(), executionSupport, b);
         TestSuite suite = new TestSuite();
         ArrayIterate.forEach(all, (path) ->
                 {
                     TestCollection col = TestCollection.collectTests(path, executionSupport.getProcessorSupport(),
-                            limitToPCT ?
-                                    node -> isPCTTest(node, executionSupport.getProcessorSupport()) :
-                                    ci -> PureTestBuilder.satisfiesConditionsModular(ci, executionSupport.getProcessorSupport())
+                                    ci ->  !isPCTTest(ci, executionSupport.getProcessorSupport()) && PureTestBuilder.satisfiesConditionsModular(ci, executionSupport.getProcessorSupport())
                     );
                     suite.addTest(PureTestBuilder.buildSuite(col, p, executionSupport));
                 }
