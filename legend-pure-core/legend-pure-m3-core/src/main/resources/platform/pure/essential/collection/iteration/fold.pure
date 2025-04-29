@@ -23,6 +23,18 @@ native function
     }
     meta::pure::functions::collection::fold<T,V|m>(value:T[*], func:Function<{T[1],V[m]->V[m]}>[1], accumulator:V[m]):V[m];
 
+function <<PCT.test>> meta::pure::functions::collection::tests::fold::testFoldFunctionAsParameter<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    let fold = {x: Integer[1], y: Integer[1] | $x + $y};
+    let acc = 0;
+    assertEq(10, $f->eval(|[1, 2, 3, 4]->meta::pure::functions::collection::tests::fold::outerFold($fold, $acc)));
+}
+
+function <<access.private>> meta::pure::functions::collection::tests::fold::outerFold<V,T|m>(val: V[*], fold:Function<{V[1],T[m]->T[m]}>[1], acc: T[m]):T[m]
+{
+    $val->fold($fold, $acc);
+}
+
 function <<PCT.test>> meta::pure::functions::collection::tests::fold::testIntegerSum<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEq(10, $f->eval(|[1, 2, 3, 4]->fold({x, y | $x + $y}, 0)));
