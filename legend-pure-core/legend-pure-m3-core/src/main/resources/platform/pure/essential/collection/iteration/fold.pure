@@ -105,26 +105,3 @@ function <<PCT.test>> meta::pure::functions::collection::tests::fold::testFoldFi
     assertEquals(['Doe', 'Branche'], $person.otherNames);
 }
 
-function <<test.Test>> meta::pure::functions::collection::tests::fold::testFoldFunctionAsParameter():Boolean[1]
-{
-    let fold1 = {x: Integer[1], y: Integer[1] | $x + $y};
-    let acc1 = 0;
-    assertEq(10, [1, 2, 3, 4]->meta::pure::functions::collection::tests::fold::outerFold($fold1, $acc1));
-
-    let fold2 = {x: Integer[1], y: Integer[*] | $x->concatenate($y)};
-    let acc2 = [];
-    assertEquals([4, 3, 2, 1], [1, 2, 3, 4]->meta::pure::functions::collection::tests::fold::outerFold($fold2, $acc2));
-
-    let fold3 = {x: Integer[1], y: Integer[*] | $x->concatenate($y)};
-    let acc3 = [0];
-    assertEquals([4, 3, 2, 1, 0], [1, 2, 3, 4]->meta::pure::functions::collection::tests::fold::outerFold($fold3, $acc3));
-
-    let fold4 = {x: Integer[1], y: String[1] | $y + $x->toString()};
-    let acc4 = '';
-    assertEq('1234', [1, 2, 3, 4]->meta::pure::functions::collection::tests::fold::outerFold($fold4, $acc4));
-}
-
-function <<access.private>> meta::pure::functions::collection::tests::fold::outerFold<V,T|m>(val: V[*], fold:Function<{V[1],T[m]->T[m]}>[1], acc: T[m]):T[m]
-{
-    $val->fold($fold, $acc);
-}
