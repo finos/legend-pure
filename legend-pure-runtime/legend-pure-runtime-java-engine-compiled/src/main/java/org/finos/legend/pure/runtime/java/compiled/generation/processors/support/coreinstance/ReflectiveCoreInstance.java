@@ -16,12 +16,8 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.suppor
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Maps;
-import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.map.MapIterable;
-import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.eclipse.collections.impl.utility.Iterate;
@@ -29,8 +25,6 @@ import org.finos.legend.pure.m3.coreinstance.helper.AnyHelper;
 import org.finos.legend.pure.m3.coreinstance.helper.AnyStubHelper;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -696,119 +690,6 @@ public abstract class ReflectiveCoreInstance extends AbstractCompiledCoreInstanc
             {
                 throw new IllegalArgumentException("Type not supported to retrieve value from ReflectiveCoreInstance - " + valueType);
             }
-        }
-    }
-
-    public static KeyIndexBuilder keyIndexBuilder()
-    {
-        return new KeyIndexBuilder();
-    }
-
-    public static KeyIndexBuilder keyIndexBuilder(int keyCount)
-    {
-        return new KeyIndexBuilder(keyCount);
-    }
-
-    public static class KeyIndexBuilder
-    {
-        private final MutableMap<String, ImmutableList<String>> realKeys;
-
-        private KeyIndexBuilder(int keyCount)
-        {
-            this.realKeys = Maps.mutable.ofInitialCapacity(keyCount);
-        }
-
-        private KeyIndexBuilder()
-        {
-            this.realKeys = Maps.mutable.empty();
-        }
-
-        public KeyIndexBuilder withKey(String sourceType, String keyName)
-        {
-            addKey(sourceType, M3Properties.properties, keyName);
-            return this;
-        }
-
-        public KeyIndexBuilder withKeyFromAssociation(String sourceType, String keyName)
-        {
-            addKey(sourceType, M3Properties.propertiesFromAssociations, keyName);
-            return this;
-        }
-
-        public KeyIndexBuilder withKeys(String sourceType, String keyName, String... moreKeyNames)
-        {
-            addKeys(sourceType, M3Properties.properties, keyName, moreKeyNames);
-            return this;
-        }
-
-        public KeyIndexBuilder withKeysFromAssociation(String sourceType, String keyName, String... moreKeyNames)
-        {
-            addKeys(sourceType, M3Properties.propertiesFromAssociations, keyName, moreKeyNames);
-            return this;
-        }
-
-        public KeyIndex build()
-        {
-            return new KeyIndex(this.realKeys.isEmpty() ? Maps.immutable.empty() : this.realKeys);
-        }
-
-        private void addKey(String sourceType, String propertiesProperty, String keyName)
-        {
-            MutableList<String> realKey = buildRealKey(sourceType, propertiesProperty, keyName);
-            this.realKeys.put(keyName, realKey.toImmutable());
-        }
-
-        private void addKeys(String sourceType, String propertiesProperty, String keyName, String... moreKeyNames)
-        {
-            MutableList<String> realKey = buildRealKey(sourceType, propertiesProperty, keyName);
-            this.realKeys.put(keyName, realKey.toImmutable());
-            int keyIndex = realKey.size() - 1;
-            for (String otherKeyName : moreKeyNames)
-            {
-                realKey.set(keyIndex, otherKeyName);
-                this.realKeys.put(otherKeyName, realKey.toImmutable());
-            }
-        }
-
-        private MutableList<String> buildRealKey(String sourceType, String propertyProperty, String keyName)
-        {
-            MutableList<String> list = Lists.mutable.empty();
-            PackageableElement.forEachSystemPathElement(sourceType, n ->
-            {
-                if (list.notEmpty())
-                {
-                    list.add(M3Properties.children);
-                }
-                list.add(n);
-            });
-            list.add(propertyProperty);
-            list.add(keyName);
-            return list;
-        }
-    }
-
-    public static class KeyIndex
-    {
-        private final MapIterable<String, ImmutableList<String>> realKeysByKey;
-
-        private KeyIndex(MapIterable<String, ImmutableList<String>> realKeysByKey)
-        {
-            this.realKeysByKey = realKeysByKey;
-        }
-
-        public RichIterable<String> getKeys()
-        {
-            return this.realKeysByKey.keysView();
-        }
-
-        public ListIterable<String> getRealKeyByName(String name)
-        {
-            ImmutableList<String> realKey = this.realKeysByKey.get(name);
-            if (realKey == null)
-            {
-                throw new RuntimeException("Unsupported key: " + name);
-            }
-            return realKey;
         }
     }
 }

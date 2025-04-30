@@ -54,6 +54,7 @@ public class ClassImplProcessor
             "import org.eclipse.collections.api.list.ListIterable;\n" +
             "import org.eclipse.collections.api.list.MutableList;\n" +
             "import org.eclipse.collections.api.map.MutableMap;\n" +
+            "import org.finos.legend.pure.m3.coreinstance.KeyIndex;\n" +
             "import org.finos.legend.pure.m3.execution.ExecutionSupport;\n" +
             "import org.finos.legend.pure.m4.ModelRepository;\n" +
             "import org.finos.legend.pure.m4.coreinstance.CoreInstance;\n" +
@@ -151,7 +152,7 @@ public class ClassImplProcessor
 
                         propertyString += Multiplicity.isToOne(returnMultiplicity, false) ?
                                 "    public " + returnTypeJava + " _" + name + ";\n" :
-                                "    public RichIterable _" + name + " = Lists.mutable.with();\n";
+                                "    public RichIterable _" + name + " = Lists.mutable.empty();\n";
                     }
                     propertyString += buildProperty(property, ownerClassName + (ownerTypeParams.isEmpty() ? "" : "<" + ownerTypeParams + ">"), "this", classOwnerId, name, returnType, unresolvedReturnType, returnMultiplicity, processorContext1.getSupport(), includeGettor, processorContext1);
                     return propertyString;
@@ -301,7 +302,7 @@ public class ClassImplProcessor
         builder.append("    private static final String tempFullTypeId = \"").append(fullId).append("\";\n");
 
         MapIterable<String, CoreInstance> simplePropertiesByName = processorSupport.class_getSimplePropertiesByName(_class);
-        builder.append("    private static final KeyIndex KEY_INDEX = keyIndexBuilder(").append(simplePropertiesByName.size()).append(")\n");
+        builder.append("    private static final KeyIndex KEY_INDEX = KeyIndex.builder(").append(simplePropertiesByName.size()).append(")\n");
         MutableMap<CoreInstance, MutableMap<String, CoreInstance>> propertiesBySourceType = Maps.mutable.empty();
         simplePropertiesByName.forEachKeyValue((name, property) ->
         {
@@ -726,7 +727,7 @@ public class ClassImplProcessor
                                         "                {\n" +
                                         "                    v._sever_reverse_" + reversePropertyName + "(" + owner + ");\n" +
                                         "                }\n") +
-                        "                " + owner + "._" + name + " = Lists.mutable.with();\n" +
+                        "                " + owner + "._" + name + " = Lists.mutable.empty();\n" +
                         "            }\n" +
                         "            return this;\n" +
                         "        }\n" : "") +

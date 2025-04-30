@@ -1,4 +1,4 @@
-// Copyright 2024 Goldman Sachs
+// Copyright 2025 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,20 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.runtime.java.compiled.runtime.generation.processors.support.coreinstance;
+package org.finos.legend.pure.m3.coreinstance;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ReflectiveCoreInstance;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class TestReflectiveCoreInstance
+public class TestKeyIndex
 {
     @Test
     public void testEmptyKeyIndex()
     {
-        ReflectiveCoreInstance.KeyIndex empty = ReflectiveCoreInstance.keyIndexBuilder().build();
+        KeyIndex empty = KeyIndex.builder().build();
         Assert.assertEquals(Sets.immutable.empty(), empty.getKeys().toSet());
         RuntimeException e = Assert.assertThrows(RuntimeException.class, () -> empty.getRealKeyByName("fakeKey"));
         Assert.assertEquals("Unsupported key: fakeKey", e.getMessage());
@@ -34,7 +33,7 @@ public class TestReflectiveCoreInstance
     @Test
     public void testKeyIndex()
     {
-        ReflectiveCoreInstance.KeyIndex index = ReflectiveCoreInstance.keyIndexBuilder(18)
+        KeyIndex index = KeyIndex.builder(18)
                 .withKey("Root::meta::pure::metamodel::extension::ElementWithConstraints", "constraints")
                 .withKey("Root::meta::pure::metamodel::extension::ElementWithStereotypes", "stereotypes")
                 .withKey("Root::meta::pure::metamodel::extension::ElementWithTaggedValues", "taggedValues")
