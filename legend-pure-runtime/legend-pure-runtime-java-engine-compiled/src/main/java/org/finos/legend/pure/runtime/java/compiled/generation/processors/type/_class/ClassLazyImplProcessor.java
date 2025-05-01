@@ -44,7 +44,6 @@ public class ClassLazyImplProcessor
             "import org.finos.legend.pure.m3.execution.ExecutionSupport;\n" +
             "import org.finos.legend.pure.m4.ModelRepository;\n" +
             "import org.finos.legend.pure.m4.coreinstance.CoreInstance;\n" +
-            "import org.finos.legend.pure.m4.coreinstance.CoreInstance;\n" +
             "import org.finos.legend.pure.m4.coreinstance.SourceInformation;\n" +
             "import org.finos.legend.pure.m4.coreinstance.factory.CoreInstanceFactory;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataLazy;\n" +
@@ -91,11 +90,11 @@ public class ClassLazyImplProcessor
                 (instanceOfGetterOverride ? lazyGetterOverride(interfaceNamePlusTypeParams) : "") +
                 ClassImplProcessor.buildGetValueForMetaPropertyToOne(classGenericType, processorSupport) +
                 ClassImplProcessor.buildGetValueForMetaPropertyToMany(classGenericType, processorSupport) +
-                ClassImplProcessor.buildSimpleProperties(classGenericType, (property, name, unresolvedReturnType, returnType, returnMultiplicity, returnTypeJava, classOwnerId, ownerClassName, ownerTypeParams, processorContext1) -> "    public final AtomicBoolean _" + name + LAZY_INITIALIZED_SUFFIX + " = new AtomicBoolean(false);\n" +
+                ClassImplProcessor.buildSimpleProperties(classGenericType, (property, name, unresolvedReturnType, returnType, returnMultiplicity, returnTypeJava, classOwnerFullId, ownerClassName, ownerTypeParams, processorContext1) -> "    public final AtomicBoolean _" + name + LAZY_INITIALIZED_SUFFIX + " = new AtomicBoolean(false);\n" +
                         (Multiplicity.isToOne(returnMultiplicity, false) ?
                          "    public " + returnTypeJava + " _" + name + ";\n" :
                          "    public RichIterable _" + name + " = Lists.mutable.empty();\n") +
-                        buildLazyProperty(property, ownerClassName + (ownerTypeParams.isEmpty() ? "" : "<" + ownerTypeParams + ">"), "this", name, returnType, unresolvedReturnType, returnMultiplicity, processorContext1.getSupport(), processorContext1), processorContext, processorSupport) +
+                        buildLazyProperty(property, ownerClassName + (ownerTypeParams.isEmpty() ? "" : "<" + ownerTypeParams + ">"), "this", classOwnerFullId, name, returnType, unresolvedReturnType, returnMultiplicity, processorContext1.getSupport(), processorContext1), processorContext, processorSupport) +
                 ClassImplProcessor.buildQualifiedProperties(classGenericType, processorContext, processorSupport) +
                 buildLazyCopy(classGenericType, classInterfaceName, className, false, processorSupport) +
                 ClassImplProcessor.buildEquality(classGenericType, CLASS_LAZYIMPL_SUFFIX, true, false, true, processorContext, processorSupport) +
@@ -158,7 +157,7 @@ public class ClassLazyImplProcessor
 
     }
 
-    private static String buildLazyProperty(CoreInstance property, String className, String owner, String name, CoreInstance returnType, CoreInstance unresolvedReturnType, CoreInstance multiplicity, ProcessorSupport processorSupport, ProcessorContext processorContext)
+    private static String buildLazyProperty(CoreInstance property, String className, String owner, String classOwnerFullId, String name, CoreInstance returnType, CoreInstance unresolvedReturnType, CoreInstance multiplicity, ProcessorSupport processorSupport, ProcessorContext processorContext)
     {
         CoreInstance associationClass = processorSupport.package_getByUserPath(M3Paths.Association);
         CoreInstance propertyOwner = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.owner, processorSupport);

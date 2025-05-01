@@ -52,7 +52,7 @@ public class TestLazyImplClassifiers extends AbstractPureTestWithCoreCompiled
     @Test
     public void testLazyMetaDataClassifierPrimitiveType()
     {
-        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "meta::pure::metamodel::type::PrimitiveType");
+        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::PrimitiveType");
         MutableList<String> invalidPrimitiveTypes = this.metadataLazy.getMetadata("meta::pure::metamodel::type::PrimitiveType")
                 .collectIf(ci -> ci.getClassifier() != expected, CoreInstance::getName, Lists.mutable.empty());
         Assert.assertEquals("primitive types with the wrong classifier", Lists.fixedSize.empty(), invalidPrimitiveTypes);
@@ -61,8 +61,8 @@ public class TestLazyImplClassifiers extends AbstractPureTestWithCoreCompiled
     @Test
     public void testLazyMetaDataClassifierForClasses()
     {
-        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "meta::pure::metamodel::type::Class");
-        CoreInstance ci = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "meta::pure::metamodel::function::property::Property");
+        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::Class");
+        CoreInstance ci = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::function::property::Property");
         CoreInstance classifier = ci.getClassifier();
         Assert.assertEquals(expected, classifier);
     }
@@ -70,8 +70,8 @@ public class TestLazyImplClassifiers extends AbstractPureTestWithCoreCompiled
     @Test
     public void testLazyMetaDataClassifierForEnums()
     {
-        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "meta::pure::metamodel::type::Enumeration");
-        CoreInstance ci = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Enumeration", "meta::pure::metamodel::function::property::AggregationKind");
+        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::Enumeration");
+        CoreInstance ci = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Enumeration", "Root::meta::pure::metamodel::function::property::AggregationKind");
         CoreInstance classifier = ci.getClassifier();
         Assert.assertEquals(expected, classifier);
     }

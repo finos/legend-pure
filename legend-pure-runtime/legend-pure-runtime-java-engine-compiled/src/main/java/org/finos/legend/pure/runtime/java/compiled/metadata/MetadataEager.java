@@ -84,7 +84,7 @@ public final class MetadataEager implements Metadata
     @Override
     public CoreInstance getEnum(String enumerationName, String enumName)
     {
-        return getMetadata(enumerationName, enumerationName + "." + M3Properties.values + "['" + enumName + "']");
+        return getMetadata(enumerationName, enumName);
     }
 
     @Deprecated
@@ -116,11 +116,6 @@ public final class MetadataEager implements Metadata
     @Override
     public CoreInstance getMetadata(String classifier, String id)
     {
-        // for backward compatibility
-        if (id.startsWith("Root::"))
-        {
-            id = id.substring(6);
-        }
         CoreInstance coreInstance = this.metamodelByClassifier.getMetadata(classifier, id);
         if (coreInstance == null && this.isInTransaction())
         {
