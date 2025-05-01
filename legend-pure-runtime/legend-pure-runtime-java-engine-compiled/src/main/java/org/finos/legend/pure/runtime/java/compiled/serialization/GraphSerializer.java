@@ -222,7 +222,7 @@ public class GraphSerializer
             }
             if (Instance.instanceOf(value, M3Paths.Class, m3ProcessorSupport))
             {
-                return metamodel.getMetadata(MetadataJavaPaths.Class, PackageableElement.getSystemPathForPackageableElement(value));
+                return metamodel.getMetadata(MetadataJavaPaths.Class, PackageableElement.getUserPathForPackageableElement(value));
             }
         }
         return value;
