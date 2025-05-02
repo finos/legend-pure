@@ -19,6 +19,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Relati
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
@@ -26,7 +27,6 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecificat
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.relation._Column;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Pure;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification.ValueSpecificationProcessor;
 
 public class GenericTypeSerializationInCode
@@ -55,34 +55,34 @@ public class GenericTypeSerializationInCode
     {
         if (type instanceof Class)
         {
-            return "((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"" + Pure.elementToPath((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) type, "::") + "\")";
+            return "((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"" + processorContext.getIdBuilder().buildId(type) + "\")";
         }
-        else if (type instanceof PrimitiveType)
+        if (type instanceof PrimitiveType)
         {
-            return "((CompiledExecutionSupport)es).getMetadataAccessor().getPrimitiveType(\"" + Pure.elementToPath((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) type, "::") + "\")";
+            return "((CompiledExecutionSupport)es).getMetadataAccessor().getPrimitiveType(\"" + processorContext.getIdBuilder().buildId(type) + "\")";
         }
-        else if (type instanceof RelationType)
+        if (type instanceof RelationType)
         {
             return "org.finos.legend.pure.m3.navigation.relation._RelationType.build(Lists.mutable.<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column<?,?>>with(" + ((RelationType<?>) type)._columns().collect(c -> generateColumnBuilder(c, processorContext)).makeString(", ") + "), null, ((CompiledExecutionSupport)es).getProcessorSupport())";
         }
-        else if (type instanceof FunctionType)
+        if (type instanceof FunctionType)
         {
             return "new Root_meta_pure_metamodel_type_FunctionType_Impl(\"\", null, ((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"" + M3Paths.FunctionType + "\"))" +
                     "._parameters(Lists.mutable.with(" + ((FunctionType) type)._parameters().collect(v -> generateVariableBuilder(v, processorContext)).makeString(", ") + "))" +
                     "._returnType(" + generateGenericTypeBuilder(((FunctionType) type)._returnType(), processorContext) + ")" +
                     "._returnMultiplicity(" + generateMultiplicityBuilder(((FunctionType) type)._returnMultiplicity()) + ")";
         }
-        else if (type instanceof Unit)
+        if (type instanceof Unit)
         {
-            return "((CompiledExecutionSupport)es).getMetadataAccessor().getUnit(\"" + Pure.elementToPath((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) type, "::") + "\")";
+            return "((CompiledExecutionSupport)es).getMetadataAccessor().getUnit(\"" + processorContext.getIdBuilder().buildId(type) + "\")";
         }
-        else if (type instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure)
+        if (type instanceof Measure)
         {
-            return "((CompiledExecutionSupport)es).getMetadataAccessor().getMeasure(\"" + Pure.elementToPath((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) type, "::") + "\")";
+            return "((CompiledExecutionSupport)es).getMetadataAccessor().getMeasure(\"" + processorContext.getIdBuilder().buildId(type) + "\")";
         }
-        else if (type instanceof Enumeration)
+        if (type instanceof Enumeration)
         {
-            return "((CompiledExecutionSupport)es).getMetadataAccessor().getEnumeration(\"" + Pure.elementToPath((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) type, "::") + "\")";
+            return "((CompiledExecutionSupport)es).getMetadataAccessor().getEnumeration(\"" + processorContext.getIdBuilder().buildId(type) + "\")";
         }
         throw new RuntimeException("Unsupported type: " + type.getClass());
     }
