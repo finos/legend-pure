@@ -1,0 +1,78 @@
+// Copyright 2025 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::test::pct::*;
+import meta::pure::metamodel::variant::*;
+import meta::pure::functions::variant::convert::*;
+
+native function
+    <<PCT.function>>
+    {
+        doc.doc='Parses the given json string and return its variant representation.'
+    }
+meta::pure::functions::variant::convert::fromJson(json: String[1]): Variant[1];
+
+// todo convert to PCT...
+
+function <<test.Test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonNull():Boolean[1]
+{
+    assertEquals('null', fromJson('null')->toString());
+}
+
+function <<test.Test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonArrayOfNull():Boolean[1]
+{
+    assertEquals('[null,null,null]', fromJson('[ null, null , null ]')->toString());
+}
+
+function <<test.Test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonInteger():Boolean[1]
+{
+    assertEquals('1', fromJson('1')->toString());
+}
+
+function <<test.Test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonArrayOfInteger():Boolean[1]
+{
+    assertEquals('[1,2,3]', fromJson('[ 1, 2 , 3 ]')->toString());
+}
+
+function <<test.Test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonFloat():Boolean[1]
+{
+    assertEquals('1.25', fromJson('1.25')->toString());
+}
+
+function <<test.Test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonArrayOfFloat():Boolean[1]
+{
+    assertEquals('[1.25,2.5,3.75]', fromJson('[ 1.25 , 2.5 , 3.75 ]')->toString());
+}
+
+function <<test.Test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonString():Boolean[1]
+{
+    assertEquals('"Hello"', fromJson('"Hello"')->toString());
+}
+
+function <<test.Test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonArrayOfString():Boolean[1]
+{
+    assertEquals('["Hello","World"]', fromJson('[ "Hello" , "World" ]')->toString());
+}
+
+function <<test.Test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonObject():Boolean[1]
+{
+    assertEquals('{"Hello":null}', fromJson('{ "Hello" : null }')->toString());
+    assertEquals('{"Hello":"World"}', fromJson('{ "Hello" : "World" }')->toString());
+    assertEquals('{"Hello":["World","!"]}', fromJson('{ "Hello" : [ "World", "!" ] }')->toString());
+}
+
+function <<test.Test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonArrayOfObject():Boolean[1]
+{
+    assertEquals('[{"Hello":null},{"Hello":"World"}]', fromJson('[ { "Hello" : null }, { "Hello" : "World" } ]')->toString());
+}

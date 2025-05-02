@@ -157,4 +157,8 @@ public class M3Paths
     public static final String Pair = "meta::pure::functions::collection::Pair";
     public static final String Map = "meta::pure::functions::collection::Map";
     public static final String List = "meta::pure::functions::collection::List";
+
+    // Variant
+    public static final String Variant = "meta::pure::metamodel::variant::Variant";
+
 }

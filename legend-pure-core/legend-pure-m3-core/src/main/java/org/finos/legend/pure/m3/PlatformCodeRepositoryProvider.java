@@ -40,6 +40,13 @@ public class PlatformCodeRepositoryProvider implements CodeRepositoryProvider
             "/platform/pure/grammar/functions/"
     );
 
+
+    public static final ReportScope variantFunctions = new ReportScope(
+            "variant",
+            "meta::pure::functions::variant",
+            "/platform/pure/"
+    );
+
     @Override
     public CodeRepository repository()
     {
