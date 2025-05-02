@@ -46,7 +46,7 @@ public class GenericTypeSerializationInCode
 
     private static String generateValueSpecification(ValueSpecification vs, ProcessorContext processorContext)
     {
-        return "new Root_meta_pure_metamodel_valuespecification_InstanceValue_Impl(\"\", null, ((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"" + M3Paths.InstanceValue + "\"))" +
+        return "new Root_meta_pure_metamodel_valuespecification_InstanceValue_Impl(\"\", null, ((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"Root::" + M3Paths.InstanceValue + "\"))" +
                 "._genericType(" + generateGenericTypeBuilder(vs._genericType(), processorContext) + ")" +
                 "._multiplicity(" + generateMultiplicityBuilder(vs._multiplicity()) + ")" +
                 "._values(Lists.mutable.with(" + ValueSpecificationProcessor.processValueSpecification(vs, processorContext) + "))";
