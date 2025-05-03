@@ -38,15 +38,22 @@ meta::pure::functions::variant::navigation::get(variant: Variant[0..1], index: I
     $variant->toMany(@Variant)->at($index);
 }
 
-function <<test.Test>> meta::pure::functions::variant::navigation::tests::get::testGetFromObject():Boolean[1]
+function <<PCT.test>> meta::pure::functions::variant::navigation::tests::get::testGetFromObjectWhenKeyExists<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('"world"', fromJson('{"hello":"world"}')->get('hello')->toOne()->toString());
-    assertEquals([], fromJson('{"hello":"world"}')->get('nonExisting'));
-    assertEquals([], []->cast(@Variant)->get('hello'));
+    assertEquals('"world"', $f->eval(|fromJson('{"hello":"world"}')->get('hello')->toOne())->toString());
 }
 
-function <<test.Test>> meta::pure::functions::variant::navigation::tests::get::testGetFromArray():Boolean[1]
+function <<PCT.test>> meta::pure::functions::variant::navigation::tests::get::testGetFromObjectWhenKeyDoesNotExists<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('1', fromJson('[1,2,3]')->get(0)->toOne()->toString());
-    assertEquals('3', fromJson('[1,2,3]')->get(2)->toOne()->toString());
+    assertEquals([], $f->eval(|fromJson('{"hello":"world"}')->get('nonExisting')));
+}
+
+function <<PCT.test>> meta::pure::functions::variant::navigation::tests::get::testGetFromZeroMultiplicityObject<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEquals([], $f->eval(|[]->cast(@Variant)->get('hello')));
+}
+
+function <<PCT.test>> meta::pure::functions::variant::navigation::tests::get::testGetFromArray<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEquals('2', $f->eval(|fromJson('[1,2,3]')->get(1)->toOne())->toString());
 }

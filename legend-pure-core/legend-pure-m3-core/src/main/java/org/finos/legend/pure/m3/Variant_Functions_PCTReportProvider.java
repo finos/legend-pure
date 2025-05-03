@@ -12,30 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.runtime.java.interpreted;
+package org.finos.legend.pure.m3;
 
-import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
-import org.finos.legend.pure.m3.pct.shared.provider.PCTReportProvider;
-import org.finos.legend.pure.m3.pct.reports.model.AdapterReport;
+import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.pct.functions.model.Functions;
+import org.finos.legend.pure.m3.pct.reports.model.AdapterReport;
+import org.finos.legend.pure.m3.pct.shared.provider.PCTReportProvider;
 import org.finos.legend.pure.m3.pct.shared.provider.PCTReportProviderTool;
 
-public class Core_Interpreted_PCTReportProvider implements PCTReportProvider
+public class Variant_Functions_PCTReportProvider implements PCTReportProvider
 {
     @Override
     public MutableList<Functions> getFunctions()
     {
-        return Lists.mutable.empty();
+        return PCTReportProviderTool.load(Grammar_Functions_PCTReportProvider.class.getClassLoader(), Functions.class,
+                "pct-reports/FUNCTIONS_variant.json"
+        );
     }
 
     @Override
     public MutableList<AdapterReport> getAdapterReports()
     {
-        return PCTReportProviderTool.load(Core_Interpreted_PCTReportProvider.class.getClassLoader(), AdapterReport.class,
-                "pct-reports/ADAPTER_essential_interpreted_Native.json",
-                "pct-reports/ADAPTER_grammar_interpreted_Native.json",
-                "pct-reports/ADAPTER_variant_interpreted_Native.json"
-        );
+        return Lists.mutable.empty();
     }
 }

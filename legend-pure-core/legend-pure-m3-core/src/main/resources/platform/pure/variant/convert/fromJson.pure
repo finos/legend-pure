@@ -23,56 +23,54 @@ native function
     }
 meta::pure::functions::variant::convert::fromJson(json: String[1]): Variant[1];
 
-// todo convert to PCT...
-
-function <<test.Test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonNull():Boolean[1]
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonNull<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('null', fromJson('null')->toString());
+    assertEquals('null', $f->eval(|fromJson('null'))->toString());
 }
 
-function <<test.Test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonArrayOfNull():Boolean[1]
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonArrayOfNull<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('[null,null,null]', fromJson('[ null, null , null ]')->toString());
+    assertEquals('[null,null,null]', $f->eval(|fromJson('[ null, null , null ]'))->toString());
 }
 
-function <<test.Test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonInteger():Boolean[1]
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonInteger<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('1', fromJson('1')->toString());
+    assertEquals('1', $f->eval(|fromJson('1'))->toString());
 }
 
-function <<test.Test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonArrayOfInteger():Boolean[1]
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonArrayOfInteger<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('[1,2,3]', fromJson('[ 1, 2 , 3 ]')->toString());
+    assertEquals('[1,2,3]', $f->eval(|fromJson('[ 1, 2 , 3 ]'))->toString());
 }
 
-function <<test.Test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonFloat():Boolean[1]
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonFloat<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('1.25', fromJson('1.25')->toString());
+    assertEquals('1.25', $f->eval(|fromJson('1.25'))->toString());
 }
 
-function <<test.Test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonArrayOfFloat():Boolean[1]
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonArrayOfFloat<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('[1.25,2.5,3.75]', fromJson('[ 1.25 , 2.5 , 3.75 ]')->toString());
+    assertEquals('[1.25,2.5,3.75]', $f->eval(|fromJson('[ 1.25 , 2.5 , 3.75 ]'))->toString());
 }
 
-function <<test.Test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonString():Boolean[1]
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonString<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('"Hello"', fromJson('"Hello"')->toString());
+    assertEquals('"Hello"', $f->eval(|fromJson('"Hello"'))->toString());
 }
 
-function <<test.Test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonArrayOfString():Boolean[1]
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonArrayOfString<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('["Hello","World"]', fromJson('[ "Hello" , "World" ]')->toString());
+    assertEquals('["Hello","World"]', $f->eval(|fromJson('[ "Hello" , "World" ]'))->toString());
 }
 
-function <<test.Test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonObject():Boolean[1]
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonObject<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('{"Hello":null}', fromJson('{ "Hello" : null }')->toString());
-    assertEquals('{"Hello":"World"}', fromJson('{ "Hello" : "World" }')->toString());
-    assertEquals('{"Hello":["World","!"]}', fromJson('{ "Hello" : [ "World", "!" ] }')->toString());
+    assertEquals('{"Hello":null}', $f->eval(|fromJson('{ "Hello" : null }'))->toString());
+    assertEquals('{"Hello":"World"}', $f->eval(|fromJson('{ "Hello" : "World" }'))->toString());
+    assertEquals('{"Hello":["World","!"]}', $f->eval(|fromJson('{ "Hello" : [ "World", "!" ] }'))->toString());
 }
 
-function <<test.Test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonArrayOfObject():Boolean[1]
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::fromJson::testJsonArrayOfObject<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('[{"Hello":null},{"Hello":"World"}]', fromJson('[ { "Hello" : null }, { "Hello" : "World" } ]')->toString());
+    assertEquals('[{"Hello":null},{"Hello":"World"}]', $f->eval(|fromJson('[ { "Hello" : null }, { "Hello" : "World" } ]'))->toString());
 }

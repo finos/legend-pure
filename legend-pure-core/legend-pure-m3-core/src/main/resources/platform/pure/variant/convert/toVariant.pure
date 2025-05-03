@@ -23,37 +23,57 @@ native function
     }
 meta::pure::functions::variant::convert::toVariant(value: Any[*]): Variant[1];
 
-function <<test.Test>> meta::pure::functions::variant::convert::tests::toVariant::testEmpty():Boolean[1]
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::toVariant::testEmpty<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('null', toVariant([])->toString());
+    assertEquals('null', $f->eval(|toVariant([]))->toString());
 }
 
-function <<test.Test>> meta::pure::functions::variant::convert::tests::toVariant::testInteger():Boolean[1]
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::toVariant::testInteger<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('1', toVariant(1)->toString());
-    assertEquals('[1,2,3]', toVariant([1, 2, 3])->toString());
+    assertEquals('1', $f->eval(|toVariant(1))->toString());
 }
 
-function <<test.Test>> meta::pure::functions::variant::convert::tests::toVariant::testFloat():Boolean[1]
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::toVariant::testIntegers<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('1.25', toVariant(1.25)->toString());
-    assertEquals('[1.25,2.5,3.75]', toVariant([1.25, 2.5, 3.75])->toString());
+    assertEquals('[1,2,3]', $f->eval(|toVariant([1, 2, 3]))->toString());
 }
 
-function <<test.Test>> meta::pure::functions::variant::convert::tests::tovariant::convert::teststring():Boolean[1]
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::toVariant::testFloat<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('"Hello"', toVariant('Hello')->toString());
-    assertEquals('["Hello","World"]', toVariant(['Hello', 'World'])->toString());
+    assertEquals('1.25', $f->eval(|toVariant(1.25))->toString());
 }
 
-function <<test.Test>> meta::pure::functions::variant::convert::tests::toVariant::testList():Boolean[1]
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::toVariant::testFloats<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('[1,2,3]', toVariant(list([1,2,3]))->toString());
-    assertEquals('[1,2,3]', toVariant(list([1,2,3]->map(x | $x->toVariant())))->toString());
+    assertEquals('[1.25,2.5,3.75]', $f->eval(|toVariant([1.25, 2.5, 3.75]))->toString());
 }
 
-function <<test.Test>> meta::pure::functions::variant::convert::tests::toVariant::testMap():Boolean[1]
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::toVariant::convert::testString<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('{"hello":1}', toVariant(newMap(pair('hello', 1)))->toString());
-    assertEquals('{"hello":null}', toVariant(newMap(pair('hello', []->toVariant())))->toString());
+    assertEquals('"Hello"', $f->eval(|toVariant('Hello'))->toString());
+}
+
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::toVariant::convert::testStrings<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEquals('["Hello","World"]', $f->eval(|toVariant(['Hello', 'World']))->toString());
+}
+
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::toVariant::testListOfPrimitives<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEquals('[1,2,3]', $f->eval(|toVariant(list([1,2,3])))->toString());
+}
+
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::toVariant::testListOfVariants<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEquals('[1,2,3]', $f->eval(|toVariant(list([1,2,3]->map(x | $x->toVariant()))))->toString());
+}
+
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::toVariant::testMapWithPrimitiveValues<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEquals('{"hello":1}', $f->eval(|toVariant(newMap(pair('hello', 1))))->toString());
+}
+
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::toVariant::testMapOfVariantValues<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEquals('{"hello":null}', $f->eval(|toVariant(newMap(pair('hello', []->toVariant()))))->toString());
 }

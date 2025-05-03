@@ -47,6 +47,7 @@
                                 <argument>${project.build.directory}/classes/pct-reports/</argument>
                                 <argument>org.finos.legend.pure.runtime.java.interpreted.pct.functions.Test_Interpreted_GrammarFunctions_PCT</argument>
                                 <argument>org.finos.legend.pure.runtime.java.interpreted.pct.functions.Test_Interpreted_EssentialFunctions_PCT</argument>
+                                <argument>org.finos.legend.pure.runtime.java.interpreted.pct.functions.Test_Interpreted_VariantFunctions_PCT</argument>
                             </arguments>
                             <includeProjectDependencies>true</includeProjectDependencies>
                             <includePluginDependencies>true</includePluginDependencies>

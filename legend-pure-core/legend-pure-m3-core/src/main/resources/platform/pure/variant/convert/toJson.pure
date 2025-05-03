@@ -23,9 +23,9 @@ native function
     }
 meta::pure::functions::variant::convert::toJson(variant: Variant[1]): String[1];
 
-function <<test.Test>> meta::pure::functions::variant::convert::tests::toJson::testObjectToJson():Boolean[1]
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::toJson::testObjectToJson<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('{"Hello":null}', fromJson('{ "Hello" : null }')->toJson());
-    assertEquals('{"Hello":"World"}', fromJson('{ "Hello" : "World" }')->toJson());
-    assertEquals('{"Hello":["World","!"]}', fromJson('{ "Hello" : [ "World", "!" ] }')->toJson());
+    assertEquals('{"Hello":null}', $f->eval(|fromJson('{ "Hello" : null }')->toJson()));
+    assertEquals('{"Hello":"World"}', $f->eval(|fromJson('{ "Hello" : "World" }')->toJson()));
+    assertEquals('{"Hello":["World","!"]}', $f->eval(|fromJson('{ "Hello" : [ "World", "!" ] }')->toJson()));
 }
