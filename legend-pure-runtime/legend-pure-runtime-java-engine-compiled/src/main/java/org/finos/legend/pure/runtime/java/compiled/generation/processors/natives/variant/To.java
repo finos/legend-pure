@@ -76,7 +76,17 @@ public class To extends AbstractNative
         boolean toZeroOrOne = Multiplicity.isToZeroOrOne(returnMultiplicity);
         String pureJavaType = toZeroOrOne ? TypeProcessor.typeToJavaObjectSingle(targetType, true, processorSupport) : TypeProcessor.typeToJavaObjectWithMul(targetType, returnMultiplicity, processorSupport);
 
-        String pureGenericType = GenericTypeSerializationInCode.generateGenericTypeBuilder((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) targetType, processorContext);
+        String pureGenericType;
+
+        if (targetType instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType)
+        {
+            pureGenericType = GenericTypeSerializationInCode.generateGenericTypeBuilder((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) targetType, processorContext);
+        }
+        else
+        {
+            // todo what to do here?
+            pureGenericType = "null";
+        }
 
         return "(" + pureJavaType + ")" + To.class.getCanonicalName() + ".to(" + transformedParams.get(0) + "," + toZeroOrOne + ',' + pureGenericType + ',' + sourceInformation + ",es)";
     }
