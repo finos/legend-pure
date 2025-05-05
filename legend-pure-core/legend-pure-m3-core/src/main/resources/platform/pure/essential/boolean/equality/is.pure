@@ -17,12 +17,13 @@ import meta::pure::functions::boolean::tests::equalitymodel::*;
 
 native function
     <<PCT.function>>
+    <<PCT.platformOnly>>
     {
         doc.doc='Identity (i.e., pointer equality)'
     }
     meta::pure::functions::boolean::is(left:Any[1], right:Any[1]):Boolean[1];
 
-function <<PCT.test>> meta::pure::functions::boolean::tests::testIsPrimitive<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::is::testIsPrimitive<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let x = 6;
     assert($f->eval(|is($x, $x)));
@@ -33,7 +34,7 @@ function <<PCT.test>> meta::pure::functions::boolean::tests::testIsPrimitive<Z|y
     assertFalse($f->eval(|is($y, 'the lazy dog is jumped over by the quick brown fox')));
 }
 
-function <<PCT.test>> meta::pure::functions::boolean::tests::testIsEnum<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::is::testIsEnum<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assert($f->eval(|is(TestEnum1.FIRST, TestEnum1.FIRST)));
     assert($f->eval(|is(TestEnum1.SECOND, TestEnum1.SECOND)));
@@ -52,7 +53,7 @@ function <<PCT.test>> meta::pure::functions::boolean::tests::testIsEnum<Z|y>(f:F
     assertFalse($f->eval(|is($x, TestEnum1.SECOND)));
 }
 
-function <<PCT.test>> meta::pure::functions::boolean::tests::testIsNonPrimitive<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::boolean::tests::is::testIsNonPrimitive<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let side1 = ^SideClass(stringId='firstSide', intId=1);
     let side2 = ^SideClass(stringId='firstSide', intId=1);
