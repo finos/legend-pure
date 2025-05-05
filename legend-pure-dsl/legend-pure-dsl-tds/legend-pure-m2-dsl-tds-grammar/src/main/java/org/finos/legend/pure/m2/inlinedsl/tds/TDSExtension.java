@@ -21,6 +21,8 @@ import io.deephaven.csv.sinks.SinkFactory;
 import io.deephaven.csv.util.CsvReaderException;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.finos.legend.pure.m2.inlinedsl.tds.processor.TDSProcessor;
 import org.finos.legend.pure.m2.inlinedsl.tds.unloader.TDSUnbind;
@@ -142,7 +144,11 @@ public class TDSExtension implements InlineDSL
 
         Class<?> tdsType = (Class<?>) processorSupport.package_getByUserPath(M2TDSPaths.TDS);
         GenericType typeParam = ((GenericType) processorSupport.newAnonymousCoreInstance(sourceInfo, M3Paths.GenericType))
-                ._rawType(_RelationType.build(ArrayIterate.collect(result.columns(), c -> _Column.getColumnInstance(c.name(), false, convertType(c.dataType()), (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport), sourceInfo, processorSupport)), sourceInfo, processorSupport));
+                ._rawType(_RelationType.build(ArrayIterate.collect(result.columns(), c ->
+                {
+                    Pair<String, String> nameAndType = getNameAndType(c);
+                    return _Column.getColumnInstance(nameAndType.getOne(), false, nameAndType.getTwo(), (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.newMultiplicity(0, 1, processorSupport), sourceInfo, processorSupport);
+                }), sourceInfo, processorSupport));
         GenericType tdsGenericType = ((GenericType) processorSupport.newAnonymousCoreInstance(sourceInfo, M3Paths.GenericType))
                 ._rawType(tdsType)
                 ._typeArgumentsAdd(typeParam);
@@ -150,6 +156,27 @@ public class TDSExtension implements InlineDSL
         return ((TDS<?>) processorSupport.newAnonymousCoreInstance(sourceInfo, M2TDSPaths.TDS))
                 ._classifierGenericType(tdsGenericType)
                 ._csv(text);
+    }
+
+    private static Pair<String, String> getNameAndType(CsvReader.ResultColumn c)
+    {
+        String name;
+        String type;
+        int typeSplit = c.name().indexOf(':');
+
+        if (typeSplit != -1)
+        {
+            name = c.name().substring(0, typeSplit);
+            type = c.name().substring(typeSplit + 1).trim();
+            // todo check compatibility of inferred type vs explicit type
+        }
+        else
+        {
+            name = c.name();
+            type = convertType(c.dataType());
+        }
+
+        return Tuples.pair(name, type);
     }
 
     private static SourceInformation getSourceInfo(String text, String fileName, int columnOffset, int lineOffset)

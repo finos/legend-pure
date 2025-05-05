@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m3;
 
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.pct.functions.model.Functions;

@@ -47,6 +47,7 @@
                                 <argument>${project.build.directory}/classes/pct-reports/</argument>
                                 <argument>org.finos.legend.pure.runtime.java.interpreted.pct.functions.Test_Interpreted_GrammarFunctions_PCT</argument>
                                 <argument>org.finos.legend.pure.runtime.java.interpreted.pct.functions.Test_Interpreted_EssentialFunctions_PCT</argument>
+                                <argument>org.finos.legend.pure.runtime.java.interpreted.pct.functions.Test_Interpreted_VariantFunctions_PCT</argument>
                             </arguments>
                             <includeProjectDependencies>true</includeProjectDependencies>
                             <includePluginDependencies>true</includePluginDependencies>
@@ -85,6 +86,11 @@
         <dependency>
             <groupId>org.eclipse.collections</groupId>
             <artifactId>eclipse-collections</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
 
         <dependency>

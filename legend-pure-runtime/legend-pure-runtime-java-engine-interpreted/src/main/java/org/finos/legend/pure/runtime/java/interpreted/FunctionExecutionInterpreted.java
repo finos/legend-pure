@@ -218,6 +218,7 @@ import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.math.opera
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.math.operation.Times;
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.math.sequence.Range;
 import org.finos.legend.pure.runtime.java.interpreted.natives.grammar.string.operation.JoinStrings;
+import org.finos.legend.pure.runtime.java.interpreted.natives.variant.*;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.VoidProfiler;
 
@@ -575,6 +576,13 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         // Tests
         this.nativeFunctions.put("assert_Boolean_1__Function_1__Boolean_1_", new Assert(this));
         this.nativeFunctions.put("assertError_Function_1__String_1__Integer_$0_1$__Integer_$0_1$__Boolean_1_", new AssertError(this, repository));
+
+        // Variant
+        this.nativeFunctions.put("fromJson_String_1__Variant_1_", new FromJson(repository));
+        this.nativeFunctions.put("toJson_Variant_1__String_1_", new ToJson(repository));
+        this.nativeFunctions.put("to_Variant_$0_1$__T_1__T_$0_1$_", new To(repository));
+        this.nativeFunctions.put("toMany_Variant_$0_1$__T_1__T_MANY_", new ToMany(repository));
+        this.nativeFunctions.put("toVariant_Any_MANY__Variant_1_", new ToVariant(repository));
     }
 
     public RepositoryCodeStorage getStorage()

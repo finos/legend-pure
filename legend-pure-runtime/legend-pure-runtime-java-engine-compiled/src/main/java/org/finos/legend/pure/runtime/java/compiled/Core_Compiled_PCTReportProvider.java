@@ -34,7 +34,8 @@ public class Core_Compiled_PCTReportProvider implements PCTReportProvider
     {
         return PCTReportProviderTool.load(Core_Compiled_PCTReportProvider.class.getClassLoader(), AdapterReport.class,
                 "pct-reports/ADAPTER_essential_compiled_Native.json",
-                "pct-reports/ADAPTER_grammar_compiled_Native.json"
+                "pct-reports/ADAPTER_grammar_compiled_Native.json",
+                "pct-reports/ADAPTER_variant_compiled_Native.json"
         );
     }
 }

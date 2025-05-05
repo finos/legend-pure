@@ -75,6 +75,22 @@ public class TestTDSDSLCompilation extends AbstractPureTestWithCoreCompiled
     }
 
     @Test
+    public void testDeclarationWithExplicitTyping()
+    {
+        runtime.createInMemorySource("file.pure",
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "function test():TDS<(value:Float,other:Number,name:String)>[*]\n" +
+                        "{\n" +
+                        "       #TDS\n" +
+                        "         value:Float, other:Number, name\n" +
+                        "         1, 3, A\n" +
+                        "         2, 4, B\n" +
+                        "       #\n" +
+                        "}\n");
+        runtime.compile();
+    }
+
+    @Test
     public void testSimpleDeclarationApplyFunction()
     {
         runtime.createInMemorySource("file.pure",
