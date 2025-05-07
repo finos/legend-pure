@@ -16,6 +16,7 @@ package org.finos.legend.pure.m3.tests.elements.primitive;
 
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -48,17 +49,18 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
     public void testPrimitiveFunctionMatching()
     {
         assertCompileError("Primitive test::Int8 extends Integer\n" +
-                "native function x(p:test::Int8[1]):Any[1];" +
-                "function test():Any[1]" +
-                "{" +
-                "   x(1);" +
-                "}", "Compilation error at (resource:fromString.pure line:2 column:69), \"The system can't find a match for the function: x(_:Integer[1])\n" +
-                "\n" +
-                "These functions, in packages already imported, would match the function call if you changed the parameters.\n" +
-                "\tx(Int8[1]):Any[1]\n" +
-                "\n" +
-                "No functions, in packages not imported, match the function name.\n" +
-                "\"");
+                        "native function x(p:test::Int8[1]):Any[1];\n" +
+                        "function test():Any[1]\n" +
+                        "{\n" +
+                        "   x(1);\n" +
+                        "}\n",
+                "Compilation error at (resource:fromString.pure line:5 column:4), \"The system can't find a match for the function: x(_:Integer[1])\n" +
+                        "\n" +
+                        "These functions, in packages already imported, would match the function call if you changed the parameters.\n" +
+                        "\tx(Int8[1]):Any[1]\n" +
+                        "\n" +
+                        "No functions, in packages not imported, match the function name.\n" +
+                        "\"");
     }
 
     @Test
@@ -123,10 +125,10 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
     public void testPrimitiveWithVariableExtend()
     {
         compileTestSource("fromString.pure",
-                "Primitive test::IntCap(x:Integer[1]) extends Integer" +
-                        "[" +
-                        " $this < $x" +
-                        "]" +
+                "Primitive test::IntCap(x:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        " $this < $x\n" +
+                        "]\n" +
                         "Primitive test::Int8 extends test::IntCap(255)");
         Assert.assertEquals("IntCap", ((PrimitiveType) runtime.getCoreInstance("test::IntCap"))._name());
         Assert.assertEquals("Int8", ((PrimitiveType) runtime.getCoreInstance("test::Int8"))._name());
@@ -136,10 +138,10 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
     public void testPrimitiveComplexConstraint()
     {
         compileTestSource("fromString.pure",
-                "Primitive test::IntCap(x:Integer[1]) extends Integer" +
-                        "[" +
-                        " id(~function:$this < $x)" +
-                        "]" +
+                "Primitive test::IntCap(x:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        " id(~function:$this < $x)\n" +
+                        "]\n" +
                         "Primitive test::Int8 extends test::IntCap(255)");
         Assert.assertEquals("IntCap", ((PrimitiveType) runtime.getCoreInstance("test::IntCap"))._name());
         Assert.assertEquals("Int8", ((PrimitiveType) runtime.getCoreInstance("test::Int8"))._name());
@@ -149,13 +151,13 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
     public void testPrimitiveWithParameterInClass()
     {
         compileTestSource("fromString.pure",
-                "Primitive test::IntCap(x:Integer[1]) extends Integer" +
-                        "[" +
-                        " $this < $x" +
-                        "]" +
-                        "Class x::A" +
-                        "{" +
-                        " v : test::IntCap(2)[1];" +
+                "Primitive test::IntCap(x:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        " $this < $x\n" +
+                        "]\n" +
+                        "Class x::A\n" +
+                        "{\n" +
+                        " v : test::IntCap(2)[1];\n" +
                         "}");
     }
 
@@ -163,44 +165,35 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
     public void testPrimitiveWithParameterInClassError()
     {
         assertCompileError(
-                "Primitive test::IntCap(x:Integer[1]) extends Integer" +
-                        "[" +
-                        " $this < $x" +
-                        "]" +
-                        "Class x::A" +
-                        "{" +
-                        " v : test::IntCap()[1];" +
+                "Primitive test::IntCap(x:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        " $this < $x\n" +
+                        "]\n" +
+                        "Class x::A\n" +
+                        "{\n" +
+                        " v : test::IntCap()[1];\n" +
                         "}",
-                "Compilation error at (resource:fromString.pure line:1 column:88), \"Type variable mismatch for the class IntCap(x:Integer) (expected 1, got 0): IntCap\"");
-
+                "Compilation error at (resource:fromString.pure line:7 column:12), \"Type variable mismatch for the class IntCap(x:Integer) (expected 1, got 0): IntCap\"");
     }
 
     @Test
     public void testWrongPrimitiveTypeError()
     {
         assertCompileError(
-                "Primitive x::Decimal(x:Integer[1]) extends Decimal" +
-                        "[" +
-                        " $this < $x" +
-                        "]" +
-                        "Class x::A" +
-                        "{" +
-                        " v : Decimal(1)[1];" +
+                "Primitive x::Decimal(x:Integer[1]) extends Decimal\n" +
+                        "[\n" +
+                        " $this < $x\n" +
+                        "]\n" +
+                        "Class x::A\n" +
+                        "{\n" +
+                        " v : Decimal(1)[1];\n" +
                         "}",
-                "Compilation error at (resource:fromString.pure line:1 column:80), \"Type variable mismatch for the class Decimal (expected 0, got 1): Decimal(1)\"");
-
+                "Compilation error at (resource:fromString.pure line:7 column:6), \"Type variable mismatch for the class Decimal (expected 0, got 1): Decimal(1)\"");
     }
 
     public static void assertCompileError(String code, String message)
     {
-        try
-        {
-            compileTestSource("fromString.pure", code);
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals(message, e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure", code));
+        Assert.assertEquals(message, e.getMessage());
     }
 }
