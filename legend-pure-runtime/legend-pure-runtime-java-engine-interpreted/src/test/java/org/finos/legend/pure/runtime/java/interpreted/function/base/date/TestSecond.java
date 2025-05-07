@@ -12,18 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m3.tests.function.base.date;
+package org.finos.legend.pure.runtime.java.interpreted.function.base.date;
 
-import org.finos.legend.pure.m3.tests.function.base.PureExpressionTest;
-import org.junit.Test;
+import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.function.base.date.AbstractTestSecond;
+import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.BeforeClass;
 
-public abstract class AbstractTestNewDate extends PureExpressionTest
+public class TestSecond extends AbstractTestSecond
 {
-    @Test
-    public void testNewDateError() throws Exception
+    @BeforeClass
+    public static void setUp()
     {
-        assertExpressionRaisesPureException("Invalid month: 13", 3, 9, "date(2016, 13)");
-        assertExpressionRaisesPureException("Invalid day: 2016-12-32", 3, 9, "date(2016, 12, 32)");
-        assertExpressionRaisesPureException("Invalid hour: 24", 3, 9, "date(2016, 12, 31, 24)");
+        setUpRuntime(getFunctionExecution());
+    }
+
+    protected static FunctionExecution getFunctionExecution()
+    {
+        return new FunctionExecutionInterpreted();
     }
 }
