@@ -17,11 +17,12 @@ package org.finos.legend.pure.m3.tests.function.base.date;
 import org.finos.legend.pure.m3.tests.function.base.PureExpressionTest;
 import org.junit.Test;
 
-public abstract class AbstractTestSecond extends PureExpressionTest
+public abstract class AbstractTestDayOfWeekNumber extends PureExpressionTest
 {
     @Test
-    public void testSecondError() throws Exception
+    public void testDayOfWeekNumberError() throws Exception
     {
-        assertExpressionRaisesPureException("Cannot get second for 2017", 3, 16, "%2017->second()");
+        assertExpressionRaisesPureException("Cannot get day of week for 2017", 3, 16, "%2017->dayOfWeekNumber()");
+
     }
 }
