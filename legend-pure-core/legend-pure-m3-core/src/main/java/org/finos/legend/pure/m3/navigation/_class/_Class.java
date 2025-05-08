@@ -28,6 +28,7 @@ import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.profile.Profile;
 import org.finos.legend.pure.m3.navigation.property.Property;
@@ -145,6 +146,15 @@ public class _Class
         {
             safeAppendable.append(cls.getValueForMetaPropertyToOne(M3Properties.name).getName());
         }
+        if (hasTypeVariables)
+        {
+            safeAppendable.append("(");
+            typeVariables.forEachWithIndex((var, i) -> ((i == 0) ? safeAppendable : safeAppendable.append(','))
+                    .append(PrimitiveUtilities.getStringValue(var.getValueForMetaPropertyToOne(M3Properties.name)))
+                    .append(':')
+                    .append(PrimitiveUtilities.getStringValue(var.getValueForMetaPropertyToOne(M3Properties.genericType).getValueForMetaPropertyToOne(M3Properties.rawType).getValueForMetaPropertyToOne(M3Properties.name))));
+            safeAppendable.append(")");
+        }
         if (hasTypeParams || hasMultParams)
         {
             safeAppendable.append('<');
@@ -182,12 +192,6 @@ public class _Class
                 }
             }
             safeAppendable.append('>');
-        }
-        if (hasTypeVariables)
-        {
-            safeAppendable.append("(");
-            safeAppendable.append(typeVariables.collect(x -> x.getValueForMetaPropertyToOne("name").getName() + ":" + x.getValueForMetaPropertyToOne(M3Properties.genericType).getValueForMetaPropertyToOne(M3Properties.rawType).getValueForMetaPropertyToOne(M3Properties.name).getName()).makeString(","));
-            safeAppendable.append(")");
         }
         return appendable;
     }

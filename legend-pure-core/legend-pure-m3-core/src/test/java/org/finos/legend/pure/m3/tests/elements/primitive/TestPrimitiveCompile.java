@@ -14,9 +14,13 @@
 
 package org.finos.legend.pure.m3.tests.elements.primitive;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
+import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -87,7 +91,7 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         " 2->cast(@test::IntCap(1));\n" +
                         "}",
-                "Compilation error at (resource:fromString.pure line:6 column:26), \"Type variable mismatch for the class IntCap(x:Integer,z:String) (expected 2, got 1): IntCap(1)\"");
+                "Compilation error at (resource:fromString.pure line:6 column:26), \"Type variable mismatch for test::IntCap(x:Integer,z:String) (expected 2, got 1): test::IntCap(1)\"");
     }
 
     @Test
@@ -103,7 +107,7 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         " [];\n" +
                         "}",
-                "Compilation error at (resource:fromString.pure line:6 column:26), \"Type variable type mismatch for the class IntCap(x:Integer) (expected Integer, got String): \"");
+                "Compilation error at (resource:fromString.pure line:6 column:26), \"Type variable type mismatch for test::IntCap(x:Integer) (expected Integer, got String): test::IntCap('w')\"");
     }
 
     @Test
@@ -173,7 +177,7 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         " v : test::IntCap()[1];\n" +
                         "}",
-                "Compilation error at (resource:fromString.pure line:7 column:12), \"Type variable mismatch for the class IntCap(x:Integer) (expected 1, got 0): IntCap\"");
+                "Compilation error at (resource:fromString.pure line:7 column:12), \"Type variable mismatch for test::IntCap(x:Integer) (expected 1, got 0): test::IntCap\"");
     }
 
     @Test
@@ -188,7 +192,65 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         " v : Decimal(1)[1];\n" +
                         "}",
-                "Compilation error at (resource:fromString.pure line:7 column:6), \"Type variable mismatch for the class Decimal (expected 0, got 1): Decimal(1)\"");
+                "Compilation error at (resource:fromString.pure line:7 column:6), \"Type variable mismatch for Decimal (expected 0, got 1): Decimal(1)\"");
+    }
+
+    @Test
+    public void testPrimitiveExtendsNonPrimitive()
+    {
+        assertCompileError(
+                "Class x::NotPrimitive\n" +
+                        "{\n" +
+                        "   name : String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Primitive x::MyPrimitive(x:Integer[1]) extends x::NotPrimitive\n" +
+                        "[\n" +
+                        " $x < 10\n" +
+                        "]",
+                "Compilation error at (resource:fromString.pure line:6 column:51), \"Invalid generalization: x::MyPrimitive cannot extend x::NotPrimitive as it is not a PrimitiveType or Any\"");
+    }
+
+    @Test
+    public void testPrimitiveNoExtends()
+    {
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource("fromString.pure", "Primitive x::MyPrimitive(x:Integer[1])\n"));
+        Assert.assertEquals("Parser error at (resource:fromString.pure line:2 column:1), expected: 'extends' found: '<EOF>'", e.getMessage());
+    }
+
+    @Test
+    public void testMissingTypeVariableInExtends()
+    {
+        assertCompileError(
+                        "Primitive test::IntLessThan(x:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        "   $this < $x\n" +
+                        "]\n" +
+                        "\n" +
+                        "Primitive test::IntBetween(y:Integer[1]) extends test::IntLessThan\n" +
+                        "[\n" +
+                        " $this > $y\n" +
+                        "]",
+                "Compilation error at (resource:fromString.pure line:6 column:56), \"Type variable mismatch for test::IntLessThan(x:Integer) (expected 1, got 0): test::IntLessThan\"");
+    }
+
+    @Test
+    public void testGeneralizationResolutionOrder()
+    {
+        compileTestSource("fromString.pure",
+                        "Primitive test::IntBounded(l:Integer[1], u:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        "  $this >= $l," +
+                        "  $this <= $u\n" +
+                        "]\n" +
+                        "\n" +
+                        "Primitive test::OneToTen extends test::IntBounded(1, 10)\n");
+        Class<?> any = (Class<?>) processorSupport.type_TopType();
+        PrimitiveType number = (PrimitiveType) processorSupport.repository_getTopLevel("Number");
+        PrimitiveType integer = (PrimitiveType) processorSupport.repository_getTopLevel("Integer");
+        PrimitiveType bounded = (PrimitiveType) runtime.getCoreInstance("test::IntBounded");
+        PrimitiveType oneToTen = (PrimitiveType) runtime.getCoreInstance("test::OneToTen");
+        Assert.assertEquals(Lists.immutable.with(oneToTen, bounded, integer, number, any), Type.getGeneralizationResolutionOrder(oneToTen, processorSupport));
     }
 
     public static void assertCompileError(String code, String message)
