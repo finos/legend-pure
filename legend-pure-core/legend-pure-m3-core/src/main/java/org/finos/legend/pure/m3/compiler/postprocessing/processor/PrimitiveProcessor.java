@@ -14,16 +14,11 @@
 
 package org.finos.legend.pure.m3.compiler.postprocessing.processor;
 
-import org.eclipse.collections.api.RichIterable;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.compiler.postprocessing.GenericTypeTraceability;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m4.ModelRepository;
 
@@ -36,26 +31,14 @@ public class PrimitiveProcessor extends Processor<PrimitiveType>
     }
 
     @Override
-    public void process(PrimitiveType cls, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
+    public void process(PrimitiveType primitiveType, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
     {
     }
 
     @Override
-    public void populateReferenceUsages(PrimitiveType instance, ModelRepository repository, ProcessorSupport processorSupport)
+    public void populateReferenceUsages(PrimitiveType primitiveType, ModelRepository repository, ProcessorSupport processorSupport)
     {
         // To ensure the InstanceValues of the general type are managed properly
-        RichIterable<? extends Generalization> generalizations = instance._generalizations();
-        if (generalizations.notEmpty())
-        {
-            Type topType = (Type)processorSupport.type_TopType();
-            for (Generalization generalization : generalizations)
-            {
-                Type generalType = generalization._general() == null ? null : (Type) ImportStub.withImportStubByPass(generalization._general()._rawTypeCoreInstance(), processorSupport);
-                if (generalType != topType)
-                {
-                    GenericTypeTraceability.addTraceForGeneralization(generalization, repository, processorSupport);
-                }
-            }
-        }
+        TypeProcessor.processGeneralizationReferenceUsages(primitiveType, repository, processorSupport);
     }
 }
