@@ -48,12 +48,12 @@ function <<PCT.test>> meta::pure::functions::variant::convert::tests::toVariant:
     assertEquals('[1.25,2.5,3.75]', $f->eval(|toVariant([1.25, 2.5, 3.75]))->toString());
 }
 
-function <<PCT.test>> meta::pure::functions::variant::convert::tests::toVariant::convert::testString<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::toVariant::testString<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEquals('"Hello"', $f->eval(|toVariant('Hello'))->toString());
 }
 
-function <<PCT.test>> meta::pure::functions::variant::convert::tests::toVariant::convert::testStrings<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::toVariant::testStrings<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEquals('["Hello","World"]', $f->eval(|toVariant(['Hello', 'World']))->toString());
 }
