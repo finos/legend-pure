@@ -1,2 +1,3 @@
 org.finos.legend.pure.m3.serialization.filesystem.genericrepository.config.TestGenericRepositoryProvider
 org.finos.legend.pure.m3.serialization.filesystem.genericrepository.config.TestOtherGenericRepositoryProvider
+org.finos.legend.pure.m3.serialization.filesystem.genericrepository.config.TestMilestoningRepositoryProvider
