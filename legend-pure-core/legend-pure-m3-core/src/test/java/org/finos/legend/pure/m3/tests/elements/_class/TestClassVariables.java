@@ -15,9 +15,10 @@
 
 package org.finos.legend.pure.m3.tests.elements._class;
 
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -48,10 +49,26 @@ public class TestClassVariables extends AbstractPureTestWithCoreCompiled
                         "   bNotB(~function: $this.values->size() < $x ~message: 'error' + $x->toString())\n" +
                         "]\n" +
                         "{\n" +
-                        "   ret(){$x} :Integer[1];\n" +
+                        "   ret(){$x} : Integer[1];\n" +
                         "   values : U[1];\n" +
                         "}");
-        Assert.assertEquals("x Integer", ((ClassInstance) runtime.getCoreInstance("test::List"))._typeVariables().collect(x -> x._name() + " " + GenericType.print(x._genericType(), processorSupport)).makeString(", "));
+        Assert.assertEquals("x Integer", ((Class<?>) runtime.getCoreInstance("test::List"))._typeVariables().collect(x -> x._name() + " " + GenericType.print(x._genericType(), true, processorSupport)).makeString(", "));
+    }
+
+    @Test
+    public void testClassVariables()
+    {
+        compileTestSource("fromString.pure",
+                "Class test::List(x:Integer[1], y:Number[1])<U>\n" +
+                        "[\n" +
+                        "   $this.values->size() < $y,\n" +
+                        "   bNotB(~function: $this.values->size() < $x ~message: 'error' + $x->toString())\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   ret(){$x} : Integer[1];\n" +
+                        "   values : U[1];\n" +
+                        "}");
+        Assert.assertEquals("x Integer, y Number", ((Class<?>) runtime.getCoreInstance("test::List"))._typeVariables().collect(x -> x._name() + " " + GenericType.print(x._genericType(), true, processorSupport)).makeString(", "));
     }
 
     @Test
@@ -72,12 +89,12 @@ public class TestClassVariables extends AbstractPureTestWithCoreCompiled
     public void testClassVariableConstraintMessageError()
     {
         assertCompileError("Class test::List(x:Integer[1])<U>\n" +
-                "[\n" +
-                "   bNotB(~function: $this.values->size() < $x ~message: 'error' + $xx->toString())" +
-                "]\n" +
-                "{\n" +
-                "   values : U[1];\n" +
-                "}",
+                        "[\n" +
+                        "   bNotB(~function: $this.values->size() < $x ~message: 'error' + $xx->toString())" +
+                        "]\n" +
+                        "{\n" +
+                        "   values : U[1];\n" +
+                        "}",
                 "Compilation error at (resource:fromString.pure line:3 column:68), \"The variable 'xx' is unknown!\""
         );
     }
@@ -93,15 +110,55 @@ public class TestClassVariables extends AbstractPureTestWithCoreCompiled
         );
     }
 
+    @Test
+    public void testMissingTypeVariableInExtends()
+    {
+        assertCompileError(
+                "Class test::List(x:Integer[1])<U>\n" +
+                        "[\n" +
+                        "   $this.values->size() < $x,\n" +
+                        "   bNotB(~function: $this.values->size() < $x ~message: 'error' + $x->toString())\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   ret(){$x} : Integer[1];\n" +
+                        "   values : U[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class test::SubList(y:Integer[1])<V> extends test::List<V>\n" +
+                        "[\n" +
+                        "   $this.values->size() > $y\n" +
+                        "]\n" +
+                        "{\n" +
+                        "}\n",
+                "Compilation error at (resource:fromString.pure line:11 column:52), \"Type variable mismatch for test::List(x:Integer)<U> (expected 1, got 0): test::List<V>\"");
+    }
+
+    @Test
+    public void testWrongVariableTypeInExtends()
+    {
+        assertCompileError(
+                "Class test::List(x:Integer[1])<U>\n" +
+                        "[\n" +
+                        "   $this.values->size() < $x,\n" +
+                        "   bNotB(~function: $this.values->size() < $x ~message: 'error' + $x->toString())\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   ret(){$x} : Integer[1];\n" +
+                        "   values : U[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class test::SubList(y:Integer[1])<V> extends test::List<V>(%2011-01-10)\n" +
+                        "[\n" +
+                        "   $this.values->size() > $y\n" +
+                        "]\n" +
+                        "{\n" +
+                        "}\n",
+                "Compilation error at (resource:fromString.pure line:11 column:52), \"Type variable type mismatch for test::List(x:Integer)<U> (expected Integer, got StrictDate): test::List(%2011-01-10)<V>\"");
+    }
+
     public static void assertCompileError(String code, String message)
     {
-        try
-        {
-            compileTestSource("fromString.pure", code);
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals(message, e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure", code));
+        Assert.assertEquals(message, e.getMessage());
     }
 }

@@ -200,7 +200,7 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
                         "}#\n" +
                         "Class FirmProjectionSubClass extends FirmProjection {}");
         PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
-        assertPureException(PureCompilationException.class, "Class 'FirmProjection' is a projection and cannot be extended.", "file.pure", 6, 38, e);
+        assertPureException(PureCompilationException.class, "Class FirmProjection is a projection and cannot be extended", "file.pure", 6, 38, e);
     }
 
     @Test

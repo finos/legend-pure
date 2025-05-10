@@ -15,35 +15,28 @@
 package org.finos.legend.pure.m3.compiler.validation.validator;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.collection.MutableCollection;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.factory.Sets;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.validation.Validator;
 import org.finos.legend.pure.m3.compiler.validation.ValidatorState;
 import org.finos.legend.pure.m3.compiler.validation.VisibilityValidation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassProjection;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class ClassValidator implements MatchRunner<Class<?>>
@@ -59,10 +52,6 @@ public class ClassValidator implements MatchRunner<Class<?>>
     {
         ValidatorState validatorState = (ValidatorState) state;
         ProcessorSupport processorSupport = validatorState.getProcessorSupport();
-        for (Generalization generalization : cls._generalizations())
-        {
-            validateGeneralization(generalization, cls, validatorState, matcher, processorSupport);
-        }
         for (CoreInstance property : cls._properties())
         {
             Validator.validate(property, validatorState, matcher, processorSupport);
@@ -75,72 +64,6 @@ public class ClassValidator implements MatchRunner<Class<?>>
         validatePropertyOverrides(cls, processorSupport);
         VisibilityValidation.validateClass(cls, context, validatorState, processorSupport);
         MilestoningClassValidator.validateTemporalStereotypesAppliedForAllSubTypesInTemporalHierarchy(cls, processorSupport);
-    }
-
-    private static void validateGeneralization(Generalization generalization, Class<?> cls, ValidatorState state, Matcher matcher, ProcessorSupport processorSupport)
-    {
-        GenericType superGenericType = generalization._general();
-        // Validate the GenericType itself
-        Validator.validate(superGenericType, state, matcher, processorSupport);
-
-        // Check that this is not a subclass of a ClassProjection
-        CoreInstance superRawType = ImportStub.withImportStubByPass(superGenericType._rawTypeCoreInstance(), processorSupport);
-        if (superRawType instanceof ClassProjection)
-        {
-            throw new PureCompilationException(superGenericType.getSourceInformation(), String.format("Class '%s' is a projection and cannot be extended.", superRawType.getName()));
-        }
-
-        // Check for loops in type arguments
-        if (superRawType instanceof Class<?>)
-        {
-            RichIterable<? extends GenericType> typeArguments = superGenericType._typeArguments();
-            if (typeArguments.notEmpty())
-            {
-                CoreInstance bottomType = processorSupport.type_BottomType();
-                for (GenericType typeArgument : typeArguments)
-                {
-                    MutableSet<CoreInstance> typeArgumentConcreteTypes = Sets.mutable.empty();
-                    collectAllConcreteTypes(typeArgument, typeArgumentConcreteTypes, processorSupport);
-                    for (CoreInstance type : typeArgumentConcreteTypes)
-                    {
-                        if ((type != bottomType) && ((type == cls) || processorSupport.type_subTypeOf(type, cls)))
-                        {
-                            StringBuilder message = new StringBuilder("Class ");
-                            message.append(cls.getName());
-                            message.append(" extends ");
-                            org.finos.legend.pure.m3.navigation.generictype.GenericType.print(message, superGenericType, processorSupport);
-                            message.append(" which contains a reference to ");
-                            if (type == cls)
-                            {
-                                message.append(cls.getName());
-                                message.append(" itself");
-                            }
-                            else
-                            {
-                                message.append(type.getName());
-                                message.append(" which is a subtype of ");
-                                message.append(cls.getName());
-                            }
-                            SourceInformation sourceInfo = generalization.getSourceInformation();
-                            throw new PureCompilationException((sourceInfo == null) ? cls.getSourceInformation() : sourceInfo, message.toString());
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private static void collectAllConcreteTypes(GenericType genericType, MutableCollection<? super CoreInstance> types, ProcessorSupport processorSupport)
-    {
-        CoreInstance rawType = ImportStub.withImportStubByPass(genericType._rawTypeCoreInstance(), processorSupport);
-        if (rawType != null)
-        {
-            types.add(rawType);
-        }
-        for (GenericType typeArgument : genericType._typeArguments())
-        {
-            collectAllConcreteTypes(typeArgument, types, processorSupport);
-        }
     }
 
     /**
