@@ -20,7 +20,7 @@ import meta::relational::metamodel::relation::*;
 
 Enum meta::relational::runtime::DatabaseType
 {
-   DB2, H2, MemSQL, Sybase, SybaseIQ, Composite, Postgres, SqlServer, Hive, Snowflake, Presto, Trino, BigQuery, Redshift, Databricks, Spanner, Athena, SparkSQL, DuckDB, DebugPrint
+   DB2, H2, MemSQL, Sybase, SybaseIQ, Composite, Postgres, SqlServer, Hive, Snowflake, Presto, Trino, BigQuery, Redshift, Databricks, Spanner, Athena, SparkSQL, DuckDB, Oracle, DebugPrint
 }
 
 Class meta::external::store::relational::runtime::DatabaseConnection extends Connection
