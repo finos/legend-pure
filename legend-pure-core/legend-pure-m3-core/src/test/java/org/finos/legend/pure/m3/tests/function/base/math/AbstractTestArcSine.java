@@ -20,8 +20,7 @@ import org.junit.Test;
 public abstract class AbstractTestArcSine extends PureExpressionTest
 {
     @Test
-    public void testArcSineError() throws Exception
-    {
+    public void testArcSineError() {
         assertExpressionRaisesPureException("Unable to compute asin of 2.0", 3, 14, "2.0->asin()");
     }
 }
