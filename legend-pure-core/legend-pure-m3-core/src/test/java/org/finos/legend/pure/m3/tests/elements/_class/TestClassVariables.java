@@ -111,6 +111,28 @@ public class TestClassVariables extends AbstractPureTestWithCoreCompiled
     }
 
     @Test
+    public void testTypeVariableNonExistentType()
+    {
+        assertCompileError(
+                "Class test::List(x:NonExistentType[1])<U>\n" +
+                        "{\n" +
+                        "   values : U[1];\n" +
+                        "}\n",
+                "Compilation error at (resource:fromString.pure line:1 column:20), \"NonExistentType has not been defined!\"");
+    }
+
+    @Test
+    public void testTypeVariableConflict()
+    {
+        assertCompileError(
+                "Class test::List(x:Integer[1], x:Integer[1])<U>\n" +
+                        "{\n" +
+                        "   values : U[1];\n" +
+                        "}\n",
+                "Compilation error at (resource:fromString.pure line:1 column:32), \"Type variable 'x' is already defined (at fromString.pure:1c18)\"");
+    }
+
+    @Test
     public void testMissingTypeVariableInExtends()
     {
         assertCompileError(
@@ -154,6 +176,55 @@ public class TestClassVariables extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         "}\n",
                 "Compilation error at (resource:fromString.pure line:11 column:52), \"Type variable type mismatch for test::List(x:Integer)<U> (expected Integer, got StrictDate): test::List(%2011-01-10)<V>\"");
+    }
+
+    @Test
+    public void testVariableReferenceInSubclass()
+    {
+        // We should consider allowing this
+        assertCompileError(
+                "Class test::List(x:Integer[1])<U>\n" +
+                        "[\n" +
+                        "   $this.values->size() < $x,\n" +
+                        "   bNotB(~function: $this.values->size() < $x ~message: 'error' + $x->toString())\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   ret(){$x} : Integer[1];\n" +
+                        "   values : U[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class test::SubList(y:Integer[1])<V> extends test::List<V>(%2011-01-10)\n" +
+                        "[\n" +
+                        "   $this.values->size() > $y,\n" +
+                        "   $x < $y\n" +
+                        "]\n" +
+                        "{\n" +
+                        "}\n",
+                "Compilation error at (resource:fromString.pure line:14 column:5), \"The variable 'x' is unknown!\"");
+    }
+
+    @Test
+    public void testTypeVariableConflictWithSuperType()
+    {
+        // We should consider allowing this
+        assertCompileError(
+                "Class test::List(x:Integer[1])<U>\n" +
+                        "[\n" +
+                        "   $this.values->size() < $x,\n" +
+                        "   bNotB(~function: $this.values->size() < $x ~message: 'error' + $x->toString())\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   ret(){$x} : Integer[1];\n" +
+                        "   values : U[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class test::SubList(x:Integer[1])<V> extends test::List<V>(1)\n" +
+                        "[\n" +
+                        "   $this.values->size() > $x\n" +
+                        "]\n" +
+                        "{\n" +
+                        "}\n",
+                "Compilation error at (resource:fromString.pure line:11 column:21), \"Type variable 'x' is already defined in supertype test::List at fromString.pure:1c18\"");
     }
 
     public static void assertCompileError(String code, String message)

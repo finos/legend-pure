@@ -23,6 +23,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassProjection;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -47,6 +48,8 @@ public class ClassProcessor extends Processor<Class<?>>
     private static void processClass(Class<?> cls, ProcessorState state, Matcher matcher, ModelRepository repository, ProcessorSupport processorSupport)
     {
         state.newTypeInferenceContext(cls);
+
+        cls._typeVariables().forEach(v -> GenericType.resolveGenericTypeUsingImports(v._genericType(), repository, processorSupport));
 
         // TODO PURE-3436 Difficult to type this because of AbstractProperty hierarchy, plus PostProcessor.processElement takes CoreInstance
         MutableList<CoreInstance> propertiesProperties = Lists.mutable.empty();

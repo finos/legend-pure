@@ -103,6 +103,7 @@ import org.finos.legend.pure.m3.compiler.validation.validator.GenericTypeValidat
 import org.finos.legend.pure.m3.compiler.validation.validator.InstanceValueValidator;
 import org.finos.legend.pure.m3.compiler.validation.validator.PackageValidator;
 import org.finos.legend.pure.m3.compiler.validation.validator.PackageableFunctionValidator;
+import org.finos.legend.pure.m3.compiler.validation.validator.PrimitiveTypeValidator;
 import org.finos.legend.pure.m3.compiler.validation.validator.ProfileValidator;
 import org.finos.legend.pure.m3.compiler.validation.validator.PropertyValidator;
 import org.finos.legend.pure.m3.compiler.validation.validator.RepositoryPackageValidator;
@@ -530,6 +531,7 @@ public class M3AntlrParser implements Parser
                 new ElementWithConstraintsValidator(),
                 new ClassValidator(),
                 new ClassProjectionValidator(),
+                new PrimitiveTypeValidator(),
                 new RootRouteNodeValidator(),
                 new EnumerationValidator(),
                 new TypeValidator(),

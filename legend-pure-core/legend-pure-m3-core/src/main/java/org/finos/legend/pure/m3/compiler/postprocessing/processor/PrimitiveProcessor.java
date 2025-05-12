@@ -19,6 +19,7 @@ import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m4.ModelRepository;
 
@@ -33,6 +34,7 @@ public class PrimitiveProcessor extends Processor<PrimitiveType>
     @Override
     public void process(PrimitiveType primitiveType, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
     {
+        primitiveType._typeVariables().forEach(v -> GenericType.resolveGenericTypeUsingImports(v._genericType(), repository, processorSupport));
     }
 
     @Override
