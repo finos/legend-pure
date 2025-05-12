@@ -20,7 +20,8 @@ import org.junit.Test;
 public abstract class AbstractTestArcCosine extends PureExpressionTest
 {
     @Test
-    public void testArcCosineError() {
+    public void testArcCosineError()
+    {
         assertExpressionRaisesPureException("Unable to compute acos of 2.0", 3, 14, "2.0->acos()");
     }
 }

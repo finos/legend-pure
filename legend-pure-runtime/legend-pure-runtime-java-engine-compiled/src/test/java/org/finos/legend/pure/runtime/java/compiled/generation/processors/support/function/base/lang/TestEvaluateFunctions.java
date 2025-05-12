@@ -27,14 +27,14 @@ public class TestEvaluateFunctions extends AbstractPureTestWithCoreCompiled
     @BeforeClass
     public static void setUp()
     {
-        AbstractPureTestWithCoreCompiled.setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
+        setUpRuntime(getFunctionExecution(), JavaModelFactoryRegistryLoader.loader());
     }
 
     @After
     public void cleanRuntime()
     {
-        AbstractPureTestWithCoreCompiled.runtime.delete("fromString.pure");
-        AbstractPureTestWithCoreCompiled.runtime.compile();
+        runtime.delete("fromString.pure");
+        runtime.compile();
     }
 
     @Test
