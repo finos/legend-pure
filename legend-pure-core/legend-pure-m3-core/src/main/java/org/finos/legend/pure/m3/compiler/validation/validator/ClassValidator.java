@@ -16,8 +16,10 @@ package org.finos.legend.pure.m3.compiler.validation.validator;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.validation.Validator;
 import org.finos.legend.pure.m3.compiler.validation.ValidatorState;
@@ -29,6 +31,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionTy
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
 import org.finos.legend.pure.m3.navigation.type.Type;
@@ -37,6 +40,7 @@ import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class ClassValidator implements MatchRunner<Class<?>>
@@ -52,18 +56,54 @@ public class ClassValidator implements MatchRunner<Class<?>>
     {
         ValidatorState validatorState = (ValidatorState) state;
         ProcessorSupport processorSupport = validatorState.getProcessorSupport();
-        for (CoreInstance property : cls._properties())
-        {
-            Validator.validate(property, validatorState, matcher, processorSupport);
-        }
-        for (QualifiedProperty<?> property : cls._qualifiedProperties())
-        {
-            Validator.validate(property, validatorState, matcher, processorSupport);
-        }
+        validateTypeVariables(cls, processorSupport);
+        cls._properties().forEach(p -> Validator.validate(p, validatorState, matcher, processorSupport));
+        cls._qualifiedProperties().forEach(qp -> Validator.validate(qp, validatorState, matcher, processorSupport));
         Validator.testProperties(cls, validatorState, matcher, processorSupport);
         validatePropertyOverrides(cls, processorSupport);
         VisibilityValidation.validateClass(cls, context, validatorState, processorSupport);
         MilestoningClassValidator.validateTemporalStereotypesAppliedForAllSubTypesInTemporalHierarchy(cls, processorSupport);
+    }
+
+    private void validateTypeVariables(Class<?> cls, ProcessorSupport processorSupport)
+    {
+        MutableMap<String, VariableExpression> typeVariablesByName = Maps.mutable.empty();
+        cls._typeVariables().forEach(v ->
+        {
+            VariableExpression old = typeVariablesByName.put(v._name(), v);
+            if (old != null)
+            {
+                StringBuilder builder = new StringBuilder("Type variable '").append(v._name()).append("' is already defined");
+                SourceInformation oldSourceInfo = old.getSourceInformation();
+                if (oldSourceInfo != null)
+                {
+                    oldSourceInfo.appendMessage(builder.append(" (at ")).append(')');
+                }
+                throw new PureCompilationException(v.getSourceInformation(), builder.toString());
+            }
+        });
+
+        Type.getGeneralizationResolutionOrder(cls, processorSupport).drop(1).forEach(genl ->
+        {
+            if (genl instanceof Class)
+            {
+                ((Class<?>) genl)._typeVariables().forEach(v ->
+                {
+                    VariableExpression conflict = typeVariablesByName.get(v._name());
+                    if (conflict != null)
+                    {
+                        StringBuilder builder = new StringBuilder("Type variable '").append(conflict._name()).append("' is already defined in supertype ");
+                        PackageableElement.writeUserPathForPackageableElement(builder, genl);
+                        SourceInformation oldSourceInfo = v.getSourceInformation();
+                        if (oldSourceInfo != null)
+                        {
+                            oldSourceInfo.appendMessage(builder.append(" at "));
+                        }
+                        throw new PureCompilationException(conflict.getSourceInformation(), builder.toString());
+                    }
+                });
+            }
+        });
     }
 
     /**

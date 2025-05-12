@@ -219,6 +219,22 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
     }
 
     @Test
+    public void testTypeVariableNonExistentType()
+    {
+        assertCompileError(
+                "Primitive test::IntCap(x:NonExistentType[1]) extends Integer\n",
+                "Compilation error at (resource:fromString.pure line:1 column:26), \"NonExistentType has not been defined!\"");
+    }
+
+    @Test
+    public void testTypeVariableConflict()
+    {
+        assertCompileError(
+                "Primitive test::IntCap(x:Integer[1], x:Integer[1]) extends Integer\n",
+                "Compilation error at (resource:fromString.pure line:1 column:38), \"Type variable 'x' is already defined (at fromString.pure:1c24)\"");
+    }
+
+    @Test
     public void testMissingTypeVariableInExtends()
     {
         assertCompileError(
@@ -232,6 +248,38 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
                         " $this > $y\n" +
                         "]",
                 "Compilation error at (resource:fromString.pure line:6 column:56), \"Type variable mismatch for test::IntLessThan(x:Integer) (expected 1, got 0): test::IntLessThan\"");
+    }
+
+    @Test
+    public void testVariableReferenceInSubtype()
+    {
+        // We should consider allowing this
+        assertCompileError(
+                "Primitive test::IntLessThan(x:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        "   $this < $x\n" +
+                        "]\n" +
+                        "\n" +
+                        "Primitive test::IntBetweenYAndFive(y:Integer[1]) extends test::IntLessThan(5)\n" +
+                        "[\n" +
+                        " $y < $x,\n" +
+                        " $this > $y\n" +
+                        "]",
+                "Compilation error at (resource:fromString.pure line:8 column:8), \"The variable 'x' is unknown!\"");
+    }
+
+    @Test
+    public void testTypeVariableConflictWithSuperType()
+    {
+        // We should consider allowing this
+        assertCompileError(
+                "Primitive test::IntLessThan(x:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        "   $this < $x\n" +
+                        "]\n" +
+                        "\n" +
+                        "Primitive test::IntBetweenYAndFive(x:Integer[1]) extends test::IntLessThan(5)",
+                "Compilation error at (resource:fromString.pure line:6 column:36), \"Type variable 'x' is already defined in supertype test::IntLessThan at fromString.pure:1c29\"");
     }
 
     @Test
