@@ -14,13 +14,17 @@
 
 package org.finos.legend.pure.m3.exception;
 
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.stack.MutableStack;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.Function;
 import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
 import org.finos.legend.pure.m3.navigation.function.FunctionType;
+import org.finos.legend.pure.m3.navigation.generictype.GenericType;
+import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -32,12 +36,12 @@ import org.finos.legend.pure.m4.tools.SafeAppendable;
  */
 public class PureExecutionException extends PureException
 {
-    private final MutableStack<CoreInstance> callStack;
+    private final CoreInstance[] callStack;
 
     public PureExecutionException(SourceInformation sourceInformation, String info, Throwable cause, MutableStack<CoreInstance> callStack)
     {
         super(sourceInformation, info, cause);
-        this.callStack = callStack;
+        this.callStack = getCallStack(callStack);
     }
 
     public PureExecutionException(SourceInformation sourceInformation, String info, Throwable cause)
@@ -48,7 +52,7 @@ public class PureExecutionException extends PureException
     public PureExecutionException(SourceInformation sourceInformation, String info, MutableStack<CoreInstance> callStack)
     {
         super(sourceInformation, info, null);
-        this.callStack = callStack;
+        this.callStack = getCallStack(callStack);
     }
 
     public PureExecutionException(SourceInformation sourceInformation, String info)
@@ -59,7 +63,7 @@ public class PureExecutionException extends PureException
     public PureExecutionException(SourceInformation sourceInformation, Throwable cause, MutableStack<CoreInstance> callStack)
     {
         super(sourceInformation, null, cause);
-        this.callStack = callStack;
+        this.callStack = getCallStack(callStack);
     }
 
     public PureExecutionException(SourceInformation sourceInformation, Throwable cause)
@@ -70,7 +74,7 @@ public class PureExecutionException extends PureException
     public PureExecutionException(String info, Throwable cause, MutableStack<CoreInstance> callStack)
     {
         super(info, cause);
-        this.callStack = callStack;
+        this.callStack = getCallStack(callStack);
     }
 
     public PureExecutionException(String info, Throwable cause)
@@ -81,7 +85,7 @@ public class PureExecutionException extends PureException
     public PureExecutionException(SourceInformation sourceInformation, MutableStack<CoreInstance> callStack)
     {
         super(sourceInformation);
-        this.callStack = callStack;
+        this.callStack = getCallStack(callStack);
     }
 
     public PureExecutionException(SourceInformation sourceInformation)
@@ -92,7 +96,7 @@ public class PureExecutionException extends PureException
     public PureExecutionException(String info, MutableStack<CoreInstance> callStack)
     {
         super(info);
-        this.callStack = callStack;
+        this.callStack = getCallStack(callStack);
     }
 
     public PureExecutionException(String info)
@@ -103,7 +107,7 @@ public class PureExecutionException extends PureException
     public PureExecutionException(Throwable cause, MutableStack<CoreInstance> callStack)
     {
         super(cause);
-        this.callStack = callStack;
+        this.callStack = getCallStack(callStack);
     }
 
     public PureExecutionException(Throwable cause)
@@ -125,22 +129,24 @@ public class PureExecutionException extends PureException
 
     public MutableStack<CoreInstance> getCallStack()
     {
-        return this.callStack;
+        return (this.callStack == null) ? Stacks.mutable.empty() : Stacks.mutable.with(this.callStack);
     }
 
     public <T extends Appendable> T printPureStackTrace(T appendable, String indent, ProcessorSupport processorSupport)
     {
         super.printPureStackTrace(appendable, indent);
-        if ((this.callStack != null) && this.callStack.notEmpty())
+        if ((this.callStack != null) && this.callStack.length > 0)
         {
             SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
             safeAppendable.append('\n').append(indent).append("Full Stack:");
-            this.callStack.toList().reverseForEach(x ->
+            // TODO consider doing this in regular order instead of reverse
+            for (int i = this.callStack.length - 1; i >= 0; i--)
             {
+                CoreInstance frame = this.callStack[i];
                 safeAppendable.append('\n').append(indent).append("    ");
                 try
                 {
-                    CoreInstance func = x.getValueForMetaPropertyToOne(M3Properties.func);
+                    CoreInstance func = frame.getValueForMetaPropertyToOne(M3Properties.func);
                     if (func == null)
                     {
                         safeAppendable.append("NULL / TODO");
@@ -158,6 +164,13 @@ public class PureExecutionException extends PureException
                         safeAppendable.append("Property ").append(Property.getPropertyName(func));
                         FunctionType.print(safeAppendable, Function.computeFunctionType(func, processorSupport), processorSupport);
                     }
+                    else if (Property.isQualifiedProperty(func, processorSupport))
+                    {
+                        safeAppendable.append("Qualified Property ").append(Property.getPropertyId(func, processorSupport)).append(':');
+                        CoreInstance functionType = Function.computeFunctionType(func, processorSupport);
+                        GenericType.print(safeAppendable, functionType.getValueForMetaPropertyToOne(M3Properties.returnType), processorSupport);
+                        Multiplicity.print(safeAppendable, Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, processorSupport), true);
+                    }
                     else if (processorSupport.instance_instanceOf(func, M3Paths.Column))
                     {
                         safeAppendable.append("Column ").append(func.getValueForMetaPropertyToOne(M3Properties.name).getName());
@@ -172,9 +185,14 @@ public class PureExecutionException extends PureException
                 {
                     safeAppendable.append("Error Printing Function");
                 }
-                writeSourceInformationMessage(safeAppendable.append("     <-     "), x.getSourceInformation(), false);
-            });
+                writeSourceInformationMessage(safeAppendable.append("     <-     "), frame.getSourceInformation(), false);
+            }
         }
         return appendable;
+    }
+
+    private static CoreInstance[] getCallStack(MutableStack<CoreInstance> callStack)
+    {
+        return (callStack == null) ? null : callStack.toArray(new CoreInstance[callStack.size()]);
     }
 }

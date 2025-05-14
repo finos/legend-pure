@@ -15,7 +15,6 @@
 package org.finos.legend.pure.runtime.java.interpreted.natives;
 
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.stack.MutableStack;
@@ -83,7 +82,7 @@ public class DefaultConstraintHandler
         CoreInstance owner = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.owner, functionExecution.getProcessorSupport());
         if (owner == null || "Global".equals(owner.getName()))
         {
-            CoreInstance result = functionExecution.executeValueSpecification(definition, new Stack<>(), new Stack<>(), Stacks.mutable.empty(), ctx, VoidProfiler.VOID_PROFILER, instantiationContext, executionSupport);
+            CoreInstance result = functionExecution.executeValueSpecification(definition, new Stack<>(), new Stack<>(), functionExpressionCallStack, ctx, VoidProfiler.VOID_PROFILER, instantiationContext, executionSupport);
             CoreInstance constraintClass = Instance.getValueForMetaPropertyToOneResolved(definition, M3Properties.usageContext, functionExecution.getProcessorSupport()).getValueForMetaPropertyToOne(M3Properties.type);
             CoreInstance messageFunction = Instance.getValueForMetaPropertyToOneResolved(constraint, M3Properties.messageFunction, functionExecution.getProcessorSupport());
             if (!PrimitiveUtilities.getBooleanValue(result.getValueForMetaPropertyToOne(M3Properties.values)))
@@ -92,7 +91,7 @@ public class DefaultConstraintHandler
                 if (messageFunction != null)
                 {
                     message.append(", Message: ");
-                    message.append(PrimitiveUtilities.getStringValue(functionExecution.executeValueSpecification(messageFunction.getValueForMetaPropertyToOne(M3Properties.expressionSequence), new Stack<>(), new Stack<>(), Stacks.mutable.empty(), ctx, VoidProfiler.VOID_PROFILER, instantiationContext, executionSupport).getValueForMetaPropertyToOne(M3Properties.values)));
+                    message.append(PrimitiveUtilities.getStringValue(functionExecution.executeValueSpecification(messageFunction.getValueForMetaPropertyToOne(M3Properties.expressionSequence), new Stack<>(), new Stack<>(), functionExpressionCallStack, ctx, VoidProfiler.VOID_PROFILER, instantiationContext, executionSupport).getValueForMetaPropertyToOne(M3Properties.values)));
                 }
                 throw new PureExecutionException(sourceInformation, message.toString(), functionExpressionCallStack);
             }
