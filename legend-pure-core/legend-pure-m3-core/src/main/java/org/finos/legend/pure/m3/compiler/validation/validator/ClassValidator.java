@@ -19,6 +19,7 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.validation.Validator;
@@ -30,7 +31,9 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
@@ -67,6 +70,27 @@ public class ClassValidator implements MatchRunner<Class<?>>
 
     private void validateTypeVariables(Class<?> cls, ProcessorSupport processorSupport)
     {
+        // Validate there are no name conflicts with properties
+        MapIterable<String, CoreInstance> propertiesByName = processorSupport.class_getSimplePropertiesByName(cls);
+        cls._typeVariables().forEach(v ->
+        {
+            String name = v._name();
+            CoreInstance property = propertiesByName.get(name);
+            if (property != null)
+            {
+                StringBuilder builder = new StringBuilder("Type variable '").append(name).append("' conflicts with the property ").append(name).append(':');
+                org.finos.legend.pure.m3.navigation.generictype.GenericType.print(builder, property.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport);
+                org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(builder, Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.multiplicity, processorSupport), true);
+                SourceInformation propSourceInfo = property.getSourceInformation();
+                if (propSourceInfo != null)
+                {
+                    propSourceInfo.appendMessage(builder.append(" at "));
+                }
+                throw new PureCompilationException(v.getSourceInformation(), builder.toString());
+            }
+        });
+
+        // Validate there are no name conflicts with other type variables
         MutableMap<String, VariableExpression> typeVariablesByName = Maps.mutable.empty();
         cls._typeVariables().forEach(v ->
         {
