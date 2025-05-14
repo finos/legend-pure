@@ -251,6 +251,57 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
     }
 
     @Test
+    public void testSubtypeWithTypeVariable()
+    {
+        // We should consider allowing this
+        // If we do, we need to add the below (or something like it) to the tests in cast.pure
+        assertCompileError(
+                "Primitive test::IntLessThan(x:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        "   id(~function:$this < $x ~message:'the value is greater than '+$x->toString())\n" +
+                        "]\n" +
+                        "\n" +
+                        "Primitive test::IntBetweenYAndFive(y:Integer[1]) extends test::IntLessThan(5)\n" +
+                        "[\n" +
+                        " id2(~function:$this > $y ~message:'the value is less than '+$y->toString())\n" +
+                        "]\n" +
+                        "\n" +
+                        "function <<test.Test>> test::testSimpleConstraintCastErrorWithMessageSimpleInheritance():Any[*]\n" +
+                        "{\n" +
+                        "   assertError(|10->cast(@test::IntBetweenYAndFive(1)), 'Constraint :[id] violated in the Class IntLessThan, Message: the value is greater than 5');\n" +
+                        "   assertError(|2->cast(@test::IntBetweenYAndFive(3)), 'Constraint :[id2] violated in the Class IntBetweenYAndFive, Message: the value is less than 3');\n" +
+                        "}",
+                "Compilation error at (resource:fromString.pure line:6 column:64), \"Primitive type with type variables test::IntBetweenYAndFive(y:Integer[1]) extends a primitive type with type variables test::IntLessThan(x:Integer[1]) at fromString.pure:1c1-4c1: this is not currently supported\"");
+    }
+
+    @Test
+    public void testIndirectSubtypeWithTypeVariable()
+    {
+        // We should consider allowing this
+        // If we do, we need to add the below (or something like it) to the tests in cast.pure
+        // We would also need to consider variable name conflicts/overrides between super- and sub-types
+        assertCompileError(
+                "Primitive test::IntLessThan(x:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        "   id(~function:$this < $x ~message:'the value is greater than '+$x->toString())\n" +
+                        "]\n" +
+                        "\n" +
+                        "Primitive test::IntLessThan5 extends test::IntLessThan(5)\n" +
+                        "\n" +
+                        "Primitive test::IntBetweenYAndFive(y:Integer[1]) extends test::IntLessThan5\n" +
+                        "[\n" +
+                        " id2(~function:$this > $y ~message:'the value is less than '+$y->toString())\n" +
+                        "]\n" +
+                        "\n" +
+                        "function <<test.Test>> test::testSimpleConstraintCastErrorWithMessageSimpleInheritance():Any[*]\n" +
+                        "{\n" +
+                        "   assertError(|10->cast(@test::IntBetweenYAndFive(1)), 'Constraint :[id] violated in the Class IntLessThan, Message: the value is greater than 5');\n" +
+                        "   assertError(|2->cast(@test::IntBetweenYAndFive(3)), 'Constraint :[id2] violated in the Class IntBetweenYAndFive, Message: the value is less than 3');\n" +
+                        "}",
+                "Compilation error at (resource:fromString.pure lines:8c17-11c1), \"Primitive type with type variables test::IntBetweenYAndFive(y:Integer[1]) extends a primitive type with type variables test::IntLessThan(x:Integer[1]) at fromString.pure:1c1-4c1: this is not currently supported\"");
+    }
+
+    @Test
     public void testVariableReferenceInSubtype()
     {
         // We should consider allowing this
@@ -260,26 +311,11 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
                         "   $this < $x\n" +
                         "]\n" +
                         "\n" +
-                        "Primitive test::IntBetweenYAndFive(y:Integer[1]) extends test::IntLessThan(5)\n" +
+                        "Primitive test::IntBetween0And5 extends test::IntLessThan(5)\n" +
                         "[\n" +
-                        " $y < $x,\n" +
-                        " $this > $y\n" +
+                        " $this > ($x - 5)\n" +
                         "]",
-                "Compilation error at (resource:fromString.pure line:8 column:8), \"The variable 'x' is unknown!\"");
-    }
-
-    @Test
-    public void testTypeVariableConflictWithSuperType()
-    {
-        // We should consider allowing this
-        assertCompileError(
-                "Primitive test::IntLessThan(x:Integer[1]) extends Integer\n" +
-                        "[\n" +
-                        "   $this < $x\n" +
-                        "]\n" +
-                        "\n" +
-                        "Primitive test::IntBetweenYAndFive(x:Integer[1]) extends test::IntLessThan(5)",
-                "Compilation error at (resource:fromString.pure line:6 column:36), \"Type variable 'x' is already defined in supertype test::IntLessThan at fromString.pure:1c29\"");
+                "Compilation error at (resource:fromString.pure line:8 column:12), \"The variable 'x' is unknown!\"");
     }
 
     @Test
