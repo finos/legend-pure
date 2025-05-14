@@ -18,6 +18,9 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.native
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
@@ -73,7 +76,11 @@ public class ToVariant extends AbstractNativeFunctionGeneric
         else if (value instanceof PureMap)
         {
             ObjectNode node = VariantInstanceImpl.OBJECT_MAPPER.createObjectNode();
-            ((PureMap) value).getMap().forEachKeyValue((k, v) -> node.set((String) k, toJson(v)));
+            ((MutableMap<String, Object>) ((PureMap) value).getMap())
+                    .keyValuesView()
+                    .collect(x -> Tuples.pair(x.getOne(), toJson(x.getTwo())))
+                    .toSortedListBy(Pair::getOne)
+                    .forEach(x -> node.set(x.getOne(), x.getTwo()));
             return node;
         }
         else // primitive
