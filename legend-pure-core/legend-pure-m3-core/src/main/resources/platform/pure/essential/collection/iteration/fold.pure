@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import meta::pure::test::pct::*;
-
+import meta::pure::functions::variant::convert::*;
+import meta::pure::metamodel::variant::*;
 import meta::pure::functions::collection::tests::fold::*;
 
 native function
