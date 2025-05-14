@@ -14,6 +14,8 @@
 
 import meta::pure::test::pct::*;
 import meta::pure::functions::collection::tests::model::*;
+import meta::pure::functions::variant::convert::*;
+import meta::pure::metamodel::variant::*;
 
 native function
     <<PCT.function>>
