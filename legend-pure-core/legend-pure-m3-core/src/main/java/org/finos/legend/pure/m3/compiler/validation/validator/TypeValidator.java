@@ -28,6 +28,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveT
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
@@ -169,6 +170,15 @@ public class TypeValidator implements MatchRunner<Type>
                 builder.append(" cannot extend ");
                 org.finos.legend.pure.m3.navigation.generictype.GenericType.print(builder, general, true, processorSupport);
                 builder.append(" as it is not a Class");
+                throw new PureCompilationException(chooseSourceInfo(cls, generalization), builder.toString());
+            }
+            if (generalRawType.getValueForMetaPropertyToMany(M3Properties.typeVariables).notEmpty())
+            {
+                StringBuilder builder = new StringBuilder("Invalid generalization: ");
+                _Class.print(builder, cls, true);
+                builder.append(" cannot extend ");
+                org.finos.legend.pure.m3.navigation.generictype.GenericType.print(builder, general, true, processorSupport);
+                builder.append(" as extending a class with type variables is not currently supported");
                 throw new PureCompilationException(chooseSourceInfo(cls, generalization), builder.toString());
             }
         });

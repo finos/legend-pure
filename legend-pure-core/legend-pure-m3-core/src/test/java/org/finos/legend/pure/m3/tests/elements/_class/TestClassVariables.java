@@ -204,27 +204,71 @@ public class TestClassVariables extends AbstractPureTestWithCoreCompiled
     }
 
     @Test
-    public void testTypeVariableConflictWithSuperType()
+    public void testExtendClassWithTypeVariable()
     {
         // We should consider allowing this
+        // If we do, we need to add the below (or something like it) to the tests in new.pure
+        // We would also need to consider variable name conflicts/overrides between super- and sub-classes
+        // We would further need to consider the possibility of conflicting values being assigned to the same variable
+        // via multiple inheritance.
         assertCompileError(
-                "Class test::List(x:Integer[1])<U>\n" +
+                "import test::*;\n" +
+                        "\n" +
+                        "Class test::MyClassWithTypeVariables(x:Integer[1])\n" +
                         "[\n" +
-                        "   $this.values->size() < $x,\n" +
-                        "   bNotB(~function: $this.values->size() < $x ~message: 'error' + $x->toString())\n" +
+                        "   wx(~function:$this.text->size() < $x ~message:'Error '+$this.text->size()->toString()+' >= '+$x->toString())\n" +
                         "]\n" +
                         "{\n" +
-                        "   ret(){$x} : Integer[1];\n" +
-                        "   values : U[1];\n" +
+                        "   x:Integer[1] = 0;\n" +
+                        "   x(){$x}:Integer[1];\n" +
+                        "   xPlusX(){$x + $this.x}:Integer[1];\n" +
+                        "   res(){'1'+$x->toString()}:String[1];\n" +
+                        "   res(z:String[1]){'1'+$x->toString()+$z}:String[1];\n" +
+                        "   text : String[*];\n" +
                         "}\n" +
                         "\n" +
-                        "Class test::SubList(x:Integer[1])<V> extends test::List<V>(1)\n" +
+                        "Class test::MySubClassWithTypeVariables(y:Integer[1]) extends MyClassWithTypeVariables(10)\n" +
                         "[\n" +
-                        "   $this.values->size() > $x\n" +
+                        "   wy(~function:$this.text->size() > $y ~message:'Error '+$this.text->size()->toString()+' <= '+$y->toString())\n" +
                         "]\n" +
                         "{\n" +
+                        "   y:Integer[1] = 0;\n" +
+                        "   y(){$y}:Integer[1];\n" +
+                        "   yPlusY(){$y + $this.y}:Integer[1];\n" +
+                        "   yPlusX1(){$y + $this.x()}:Integer[1];\n" +
+                        "   yPlusX2(){$y + $this.x}:Integer[1];\n" +
+                        "   yPlusYPlusXPlusX(){$y + $this.y + $this.x() + $this.x}:Integer[1];\n" +
+                        "   subres(){$this.res() + '2' + $y->toString()}:String[1];\n" +
+                        "   subres(z:String[1]){$this.res($z) + '2' + $y->toString() + $z}:String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "function <<test.Test>> test::testNewWithTypeVariables():Any[*]\n" +
+                        "{\n" +
+                        "   assertEquals('110', ^MyClassWithTypeVariables(10)(text = ['a', 'b']).res());\n" +
+                        "   assertEquals('110z', ^MyClassWithTypeVariables(10)(text = ['a', 'b']).res('z'));\n" +
+                        "   assertEquals(10, ^MyClassWithTypeVariables(10)(text = ['a', 'b']).x());\n" +
+                        "   assertEquals(10, ^MyClassWithTypeVariables(10)(text = ['a', 'b']).xPlusX());\n" +
+                        "   assertEquals(10, ^MyClassWithTypeVariables(10)(text = ['a', 'b'], x = 5).x());\n" +
+                        "   assertEquals(15, ^MyClassWithTypeVariables(10)(text = ['a', 'b'], x = 5).xPlusX());\n" +
+                        "   assertError(|^MyClassWithTypeVariables(1)(text = ['a', 'b'], x = 5).res('z'), 'Constraint :[wx] violated in the Class MyClassWithTypeVariables, Message: Error 2 >= 1');\n" +
+                        "\n" +
+                        "   assertEquals('110', ^MySubClassWithTypeVariables(1)(text = ['a', 'b']).res());\n" +
+                        "   assertEquals('11021', ^MySubClassWithTypeVariables(1)(text = ['a', 'b']).subres());\n" +
+                        "   assertEquals('110z', ^MySubClassWithTypeVariables(1)(text = ['a', 'b']).res('z'));\n" +
+                        "   assertEquals('110z21z', ^MySubClassWithTypeVariables(1)(text = ['a', 'b']).subres('z'));\n" +
+                        "   assertEquals(10, ^MySubClassWithTypeVariables(1)(text = ['a', 'b']).x());\n" +
+                        "   assertEquals(10, ^MySubClassWithTypeVariables(1)(text = ['a', 'b']).xPlusX());\n" +
+                        "   assertEquals(15, ^MySubClassWithTypeVariables(1)(text = ['a', 'b'], x = 5).xPlusX());\n" +
+                        "   assertEquals(1, ^MySubClassWithTypeVariables(1)(text = ['a', 'b']).y());\n" +
+                        "   assertEquals(1, ^MySubClassWithTypeVariables(1)(text = ['a', 'b']).yPlusY());\n" +
+                        "   assertEquals(8, ^MySubClassWithTypeVariables(1)(text = ['a', 'b'], y = 7).yPlusY());\n" +
+                        "   assertEquals(11, ^MySubClassWithTypeVariables(1)(text = ['a', 'b']).yPlusX1());\n" +
+                        "   assertEquals(11, ^MySubClassWithTypeVariables(1)(text = ['a', 'b'], x = 5).yPlusX1());\n" +
+                        "   assertEquals(6, ^MySubClassWithTypeVariables(1)(text = ['a', 'b'], x = 5).yPlusX2());\n" +
+                        "   assertEquals(23, ^MySubClassWithTypeVariables(1)(text = ['a', 'b'], x = 5, y = 7).yPlusYPlusXPlusX());\n" +
+                        "   assertError(|^MyClassWithTypeVariables(5)(text = ['a', 'b']).res('z'), 'Constraint :[wy] violated in the Class MySubClassWithTypeVariables, Message: Error 2 <= 5');\n" +
                         "}\n",
-                "Compilation error at (resource:fromString.pure line:11 column:21), \"Type variable 'x' is already defined in supertype test::List at fromString.pure:1c18\"");
+                "Compilation error at (resource:fromString.pure line:16 column:63), \"Invalid generalization: test::MySubClassWithTypeVariables(y:Integer) cannot extend test::MyClassWithTypeVariables(10) as extending a class with type variables is not currently supported\"");
     }
 
     public static void assertCompileError(String code, String message)
