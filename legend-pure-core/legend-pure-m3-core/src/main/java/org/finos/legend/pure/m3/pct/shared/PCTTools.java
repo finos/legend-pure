@@ -14,23 +14,39 @@
 
 package org.finos.legend.pure.m3.pct.shared;
 
+import java.util.Set;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.eclipse.collections.api.list.ListIterable;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.profile.Profile;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.StringCoreInstance;
 
 import static org.junit.Assert.fail;
 
 public class PCTTools
 {
     public static final String PCT_PROFILE = "meta::pure::test::pct::PCT";
+    public static final String PCT_QUALIFIER_PROFILE = "meta::pure::test::pct::PCTQualifier";
     public static final String DOC_PROFILE = "meta::pure::profiles::doc";
     public static final String TEST_PROFILE = "meta::pure::profiles::test";
 
     public static boolean isPCTTest(CoreInstance node, ProcessorSupport processorSupport)
     {
         return Profile.hasStereotype(node, PCT_PROFILE, "test", processorSupport);
+    }
+
+    public static Set<String> getPCTQualifiers(CoreInstance testFunction, ProcessorSupport processorSupport)
+    {
+        CoreInstance profileCoreInstance = processorSupport.package_getByUserPath(PCT_QUALIFIER_PROFILE);
+        ListIterable<? extends CoreInstance> stereotypes = Instance.getValueForMetaPropertyToManyResolved(testFunction, M3Properties.stereotypes, processorSupport);
+        return stereotypes
+                .select(x -> Instance.getValueForMetaPropertyToOneResolved(x, M3Properties.profile, processorSupport) == profileCoreInstance)
+                .collect(x -> Instance.getValueForMetaPropertyToOneResolved(x, M3Properties.value, processorSupport).getName())
+                .toSet();
     }
 
     public static boolean isPCTFunction(CoreInstance node, ProcessorSupport processorSupport)
