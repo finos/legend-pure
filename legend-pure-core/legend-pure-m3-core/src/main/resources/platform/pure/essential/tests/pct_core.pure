@@ -20,6 +20,11 @@ Profile meta::pure::test::pct::PCT
     tags: [grammarDoc, grammarCharacters, adapterName];
 }
 
+Profile meta::pure::test::pct::PCTQualifier
+{
+    stereotypes : [variant, relation];
+}
+
 function
     <<PCT.adapter>>
     {
