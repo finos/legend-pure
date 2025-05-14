@@ -24,6 +24,8 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.ColSpe
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValueInstance;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation.relation._Column;
@@ -42,7 +44,7 @@ public class AddColumns extends NativeFunction
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport)
     {
-        MutableList<Column<?,?>> columns = Lists.mutable.withAll(((RelationType<?>)((InstanceValueInstance)params.get(0))._values().getFirst())._columns());
+        MutableList<Column<?,?>> columns = Lists.mutable.withAll(((RelationType<?>) Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport))._columns());
         columns.withAll(Lists.mutable.withAll(((RelationType<?>)((ColSpecArrayInstance)((InstanceValueInstance)params.get(1))._values().getFirst())._classifierGenericType()._typeArguments().getFirst()._rawType())._columns()));
         MutableList<? extends CoreInstance> newColumns = columns.collect(c -> _Column.getColumnInstance(c._name(), c._nameWildCard(), _Column.getColumnType(c), _Column.getColumnMultiplicity(c), c.getSourceInformation(), processorSupport)).toList();
         return ValueSpecificationBootstrap.wrapValueSpecification(_RelationType.build(newColumns, null, processorSupport), true, processorSupport);
