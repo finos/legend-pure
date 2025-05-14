@@ -14,20 +14,20 @@
 
 package org.finos.legend.pure.m3.pct.reports.model;
 
+import java.util.Set;
+
 public class TestInfo
 {
-    public String testName;
-    public boolean success;
-    public String errorMessage;
+    public final String testName;
+    public final boolean success;
+    public final String errorMessage;
+    public final Set<String> qualifiers;
 
-    public TestInfo()
-    {
-    }
-
-    public TestInfo(String testName, boolean success, String errorMessage)
+    public TestInfo(String testName, boolean success, String errorMessage, Set<String> qualifiers)
     {
         this.testName = testName;
         this.success = success;
         this.errorMessage = errorMessage;
+        this.qualifiers = qualifiers;
     }
 }
