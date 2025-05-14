@@ -18,6 +18,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -28,6 +29,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._class.DefaultValue;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification.ValueSpecificationProcessor;
 
 public class New extends AbstractNative
 {
@@ -55,8 +57,10 @@ public class New extends AbstractNative
         {
             String newId = InstantiationHelpers.manageId(parametersValues, processorSupport);
             return "new " + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class, processorSupport) + (addGenericType ? TypeProcessor.buildTypeArgumentsString(genericType, false, processorSupport) : "")
-                    + "(\"" + newId + "\")" + (addGenericType ? "._classifierGenericType("
-                    + InstantiationHelpers.buildGenericType(genericType, processorContext) + ")" : "") + (_Class.computeConstraintsInHierarchy(_class, processorSupport).isEmpty() ? "" : "._validate(false, " + SourceInfoProcessor.sourceInfoToString(functionExpression.getSourceInformation()) + ", es)")
+                    + "(\"" + newId + "\")"
+                    + _class.getValueForMetaPropertyToMany(M3Properties.typeVariables).zip(genericType.getValueForMetaPropertyToMany(M3Properties.typeVariableValues)).collect(x -> "._" + PrimitiveUtilities.getStringValue(x.getOne().getValueForMetaPropertyToOne(M3Properties.name)) + "(" + ValueSpecificationProcessor.processValueSpecification(x.getTwo(), processorContext) + ")").makeString("")
+                    + (addGenericType ? "._classifierGenericType(" + InstantiationHelpers.buildGenericType(genericType, processorContext) + ")" : "")
+                    + (_Class.computeConstraintsInHierarchy(_class, processorSupport).isEmpty() ? "" : "._validate(false, " + SourceInfoProcessor.sourceInfoToString(functionExpression.getSourceInformation()) + ", es)")
                     + DefaultValue.manageDefaultValues(this::formatDefaultValueString, Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), false, processorContext).makeString("");
         }
     }
