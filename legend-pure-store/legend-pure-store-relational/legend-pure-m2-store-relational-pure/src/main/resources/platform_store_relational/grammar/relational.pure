@@ -450,18 +450,18 @@ Class meta::relational::metamodel::datatype::Real extends meta::relational::meta
 
 Class meta::relational::metamodel::datatype::Array extends meta::relational::metamodel::datatype::CoreDataType
 {
+    type: meta::relational::metamodel::datatype::DataType[0..1];
+}
+
+Class meta::relational::metamodel::datatype::Object extends meta::relational::metamodel::datatype::CoreDataType
+{
+    keyType: meta::relational::metamodel::datatype::DataType[1];
+    valueType: meta::relational::metamodel::datatype::DataType[1];
 }
 
 Class meta::relational::metamodel::datatype::SemiStructured extends meta::relational::metamodel::datatype::CoreDataType
 {
 }
-
-Class
-{doc.doc = 'SingleStore JSON type'}
-meta::relational::metamodel::datatype::Json extends meta::relational::metamodel::datatype::CoreDataType
-{
-}
-
 
 Class meta::relational::metamodel::Literal extends meta::relational::metamodel::RelationalOperationElement
 {
@@ -473,12 +473,10 @@ Class meta::relational::metamodel::LiteralList extends meta::relational::metamod
    <<equality.Key>> values:Literal[*];
 }
 
-
-
-
-
-
-
+Class meta::relational::metamodel::DataTypeInfo extends meta::relational::metamodel::RelationalOperationElement
+{
+   dataType: GenericType[1];
+}
 
 Class meta::relational::metamodel::SQLNull
 {
@@ -530,4 +528,10 @@ Class meta::relational::metamodel::SortByInfo extends meta::relational::metamode
 
    sortByElement: RelationalOperationElement [1];
    sortDirection: meta::relational::metamodel::SortDirection[0..1] ;
+}
+
+Class meta::relational::metamodel::RelationalLambda extends meta::relational::metamodel::RelationalOperationElement
+{
+   parameters: Column[*];
+   body: RelationalOperationElement[1];
 }
