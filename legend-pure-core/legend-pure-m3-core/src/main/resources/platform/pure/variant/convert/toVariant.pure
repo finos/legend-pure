@@ -76,7 +76,13 @@ function <<PCT.test>> meta::pure::functions::variant::convert::tests::toVariant:
 
 function <<PCT.test>> meta::pure::functions::variant::convert::tests::toVariant::testMapWithPrimitiveValues<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals('{"hello":1,"world":2}', $f->eval(|toVariant(newMap([pair('hello', 1), pair('world', 2)])))->toString());
+    assertEquals('{"hello":1}', $f->eval(|toVariant(newMap(pair('hello', 1))))->toString());
+}
+
+function <<PCT.test>> meta::pure::functions::variant::convert::tests::toVariant::testMapWithMultipleKeys<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    let result = $f->eval(|toVariant(newMap([pair('hello', 1), pair('world', 2)])));
+    assertEquals([pair('hello', 1), pair('world', 2)], $result->to(@Map<String, Integer>)->toOne()->keyValues()->sort({x,y | compare($x.first, $y.first)}));
 }
 
 function <<PCT.test>> meta::pure::functions::variant::convert::tests::toVariant::testMapOfMap<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
