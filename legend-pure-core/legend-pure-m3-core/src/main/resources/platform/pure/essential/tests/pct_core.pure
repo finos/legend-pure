@@ -17,12 +17,7 @@ import meta::pure::test::pct::*;
 Profile meta::pure::test::pct::PCT
 {
     stereotypes : [test, adapter, function, platformOnly];
-    tags: [grammarDoc, grammarCharacters, adapterName];
-}
-
-Profile meta::pure::test::pct::PCTQualifier
-{
-    stereotypes : [variant, relation];
+    tags: [grammarDoc, grammarCharacters, adapterName, testQualifier];
 }
 
 function

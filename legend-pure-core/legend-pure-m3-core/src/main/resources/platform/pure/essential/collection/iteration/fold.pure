@@ -106,12 +106,12 @@ function <<PCT.test>> meta::pure::functions::collection::tests::fold::testFoldFi
     assertEquals(['Doe', 'Branche'], $person.otherNames);
 }
 
-function <<PCT.test, PCTQualifier.variant>> meta::pure::functions::collection::tests::fold::testFold_FromVariant<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test>> {PCT.testQualifier='variant'} meta::pure::functions::collection::tests::fold::testFold_FromVariant<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEquals(7, $f->eval(|toVariant([1, 2, 3])->toMany(@Variant)->fold({val, acc| $acc + $val->to(@Integer)->toOne()}, 1)));
 }
 
-function <<PCT.test, PCTQualifier.variant>> meta::pure::functions::collection::tests::fold::testFold_FromVariantAsPrimitive<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test>> {PCT.testQualifier='variant'} meta::pure::functions::collection::tests::fold::testFold_FromVariantAsPrimitive<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEquals(7, $f->eval(|toVariant([1, 2, 3])->toMany(@Integer)->fold({val, acc| $acc + $val}, 1)));
 }
