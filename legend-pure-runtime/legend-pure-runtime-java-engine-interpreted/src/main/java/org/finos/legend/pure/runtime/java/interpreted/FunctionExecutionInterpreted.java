@@ -580,8 +580,8 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         // Variant
         this.nativeFunctions.put("fromJson_String_1__Variant_1_", new FromJson(repository));
         this.nativeFunctions.put("toJson_Variant_1__String_1_", new ToJson(repository));
-        this.nativeFunctions.put("to_Variant_$0_1$__T_1__T_$0_1$_", new To(repository));
-        this.nativeFunctions.put("toMany_Variant_$0_1$__T_1__T_MANY_", new ToMany(repository));
+        this.nativeFunctions.put("to_Variant_$0_1$__T_$0_1$__T_$0_1$_", new To(repository));
+        this.nativeFunctions.put("toMany_Variant_$0_1$__T_$0_1$__T_MANY_", new ToMany(repository));
         this.nativeFunctions.put("toVariant_Any_MANY__Variant_1_", new ToVariant(repository));
     }
 
