@@ -23,7 +23,7 @@ native function
                  'This allows to extract the variant actual value, like primitives.\n' +
                  'This will fail if value cannot be coerced.'
     }
-meta::pure::functions::variant::convert::to<T>(variant: Variant[0..1], type: T[1]): T[0..1];
+meta::pure::functions::variant::convert::to<T>(variant: Variant[0..1], type: T[0..1]): T[0..1];
 
 function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testToNull<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
@@ -97,7 +97,8 @@ function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testTo
 
 function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testToDateTime<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals(%2020-01-01T01:01:00.000, $f->eval(|fromJson('"2020-01-01T01:01:00.000"')->to(@DateTime)));
+    let result = $f->eval(|fromJson('"2020-01-01T01:01:00.000"')->to(@DateTime))->toOne();
+    assertEquals(0, meta::pure::functions::date::dateDiff(%2020-01-01T01:01:00.000, $result, DurationUnit.MILLISECONDS));
 }
 
 function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testToDateTimeFromWrongString<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
