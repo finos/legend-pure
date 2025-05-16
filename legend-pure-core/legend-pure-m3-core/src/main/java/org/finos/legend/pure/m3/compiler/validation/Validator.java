@@ -26,14 +26,13 @@ import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
-import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class Validator
@@ -44,7 +43,7 @@ public class Validator
 
     public static void validateM3(Iterable<? extends CoreInstance> newInstancesConsolidated, ValidationType validationType, ParserLibrary parserLibrary, InlineDSLLibrary inlineDSLLibrary, RepositoryCodeStorage codeStorage, ModelRepository modelRepository, Context context, ProcessorSupport processorSupport) throws PureCompilationException
     {
-        validateM3(newInstancesConsolidated, validationType, parserLibrary, inlineDSLLibrary, Lists.immutable.<MatchRunner>empty(), codeStorage, modelRepository, context, processorSupport);
+        validateM3(newInstancesConsolidated, validationType, parserLibrary, inlineDSLLibrary, Lists.immutable.empty(), codeStorage, modelRepository, context, processorSupport);
     }
 
     public static void validateM3(Iterable<? extends CoreInstance> newInstancesConsolidated, ValidationType validationType, ParserLibrary parserLibrary, InlineDSLLibrary inlineDSLLibrary, Iterable<? extends MatchRunner> additionalValidators, RepositoryCodeStorage codeStorage, ModelRepository modelRepository, Context context, ProcessorSupport processorSupport) throws PureCompilationException
@@ -52,30 +51,12 @@ public class Validator
         // Post Process
         Matcher matcher = new Matcher(modelRepository, context, processorSupport);
 
-        for (Parser parser : parserLibrary.getParsers())
-        {
-            for (MatchRunner parserValidator : parser.getValidators())
-            {
-                matcher.addMatchIfTypeIsKnown(parserValidator);
-            }
-        }
-        for (InlineDSL dsl : inlineDSLLibrary.getInlineDSLs())
-        {
-            for (MatchRunner dslValidator : dsl.getValidators())
-            {
-                matcher.addMatchIfTypeIsKnown(dslValidator);
-            }
-        }
-        for (MatchRunner validator : additionalValidators)
-        {
-            matcher.addMatchIfTypeIsKnown(validator);
-        }
+        parserLibrary.getParsers().forEach(p -> p.getValidators().forEach(matcher::addMatchIfTypeIsKnown));
+        inlineDSLLibrary.getInlineDSLs().forEach(d -> d.getValidators().forEach(matcher::addMatchIfTypeIsKnown));
+        additionalValidators.forEach(matcher::addMatchIfTypeIsKnown);
 
         ValidatorState validatorState = new ValidatorState(validationType, codeStorage, inlineDSLLibrary, processorSupport);
-        for (CoreInstance instance : newInstancesConsolidated)
-        {
-            validate(instance, validatorState, matcher, processorSupport);
-        }
+        newInstancesConsolidated.forEach(i -> validate(i, validatorState, matcher, processorSupport));
     }
 
     public static void validate(CoreInstance coreInstance, ValidatorState validatorState, Matcher matcher, ProcessorSupport processorSupport) throws PureCompilationException
@@ -99,26 +80,30 @@ public class Validator
         if (validatorState.getValidationType() == ValidationType.DEEP && !coreInstance.equals(processorSupport.package_getByUserPath(M3Paths.Class)))
         {
             // Test existing properties
-            for (String propertyName : coreInstance.getKeys())
+            coreInstance.getKeys().forEach(propertyName ->
             {
                 CoreInstance property = coreInstance.getKeyByName(propertyName);
                 if (!(property instanceof Property))
                 {
-                    throw new RuntimeException("A key is not a property!\n" + property.print(""));
+                    StringBuilder builder = new StringBuilder("Key '").append(propertyName).append("' is not a property!");
+                    if (property == null)
+                    {
+                        throw new PureCompilationException(coreInstance.getSourceInformation(), builder.toString());
+                    }
+                    property.print(builder.append('\n'), "");
+                    SourceInformation propertySourceInfo = property.getSourceInformation();
+                    throw new PureCompilationException((propertySourceInfo == null) ? coreInstance.getSourceInformation() : propertySourceInfo, builder.toString());
                 }
 
-                PropertyValidator.validateProperty((Property)property, processorSupport);
-
+                PropertyValidator.validateProperty((Property<?, ?>) property, processorSupport);
                 ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(coreInstance, property, processorSupport);
-
                 PropertyValidator.validateMultiplicityRange(coreInstance, property, values, processorSupport);
-
-                for (CoreInstance instance : values)
+                values.forEach(value ->
                 {
-                    PropertyValidator.validateTypeRange(coreInstance, property, instance, processorSupport);
-                    validate(instance, validatorState, matcher, processorSupport);
-                }
-            }
+                    PropertyValidator.validateTypeRange(coreInstance, property, value, processorSupport);
+                    validate(value, validatorState, matcher, processorSupport);
+                });
+            });
         }
     }
 }
