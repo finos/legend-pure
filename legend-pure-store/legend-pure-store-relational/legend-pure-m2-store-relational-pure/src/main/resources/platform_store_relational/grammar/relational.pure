@@ -368,6 +368,10 @@ Class meta::relational::metamodel::RelationalOperationElementWithJoin extends me
     joinTreeNode : JoinTreeNode[0..1];
 }
 
+Class meta::relational::metamodel::datatype::Boolean extends meta::relational::metamodel::datatype::CoreDataType
+{
+}
+
 Class meta::relational::metamodel::datatype::BigInt extends meta::relational::metamodel::datatype::CoreDataType
 {
 }
@@ -475,7 +479,7 @@ Class meta::relational::metamodel::LiteralList extends meta::relational::metamod
 
 Class meta::relational::metamodel::DataTypeInfo extends meta::relational::metamodel::RelationalOperationElement
 {
-   dataType: GenericType[1];
+   dataType: meta::relational::metamodel::datatype::DataType[1];
 }
 
 Class meta::relational::metamodel::SQLNull
