@@ -23,7 +23,7 @@ native function
         doc.doc='Converts the $variant to the given $type if the variant represent an array, failing if is not an array.\n' +
                  'This will fail if array values cannot be coerced.'
     }
-meta::pure::functions::variant::convert::toMany<T>(variant: Variant[0..1], type: T[1]): T[*];
+meta::pure::functions::variant::convert::toMany<T>(variant: Variant[0..1], type: T[0..1]): T[*];
 
 function <<PCT.test>> meta::pure::functions::variant::convert::tests::toMany::testToManyVariant<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
