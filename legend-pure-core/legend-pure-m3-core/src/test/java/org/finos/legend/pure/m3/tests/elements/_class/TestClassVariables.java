@@ -19,6 +19,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.exception.PureException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -285,6 +286,62 @@ public class TestClassVariables extends AbstractPureTestWithCoreCompiled
                         "   assertError(|^MyClassWithTypeVariables(5)(text = ['a', 'b']).res('z'), 'Constraint :[wy] violated in the Class MySubClassWithTypeVariables, Message: Error 2 <= 5');\n" +
                         "}\n",
                 "Compilation error at (resource:fromString.pure line:14 column:63), \"Invalid generalization: test::MySubClassWithTypeVariables(y:Integer) cannot extend test::MyClassWithTypeVariables(10) as extending a class with type variables is not currently supported\"");
+    }
+
+    @Test
+    public void testInstanceOfClassWithVariablesInGraph()
+    {
+        // In these tests, the error messages aren't as important as the fact that the code won't compile
+        // Before allowing types with type variables to have instances in the graph, ensure that it will work with
+        // serialization and deserialization
+        Assert.assertThrows(PureException.class, () -> compileTestSource("fromString.pure",
+                "Class test::List(x:Integer[1])<U>\n" +
+                        "{\n" +
+                        "   values : U[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "^test::List<String> MyList @test()\n"));
+
+        runtime.delete("fromString.pure");
+        Assert.assertThrows(PureException.class, () -> compileTestSource("fromString.pure",
+                "Class test::List(x:Integer[1])<U>\n" +
+                        "{\n" +
+                        "   values : U[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "^test::List(5)<String> MyList @test()\n"));
+
+        runtime.delete("fromString.pure");
+        Assert.assertThrows(PureException.class, () -> compileTestSource("fromString.pure",
+                "Class test::List(x:Integer[1])<U>\n" +
+                        "{\n" +
+                        "   values : U[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class test::List5Wrapper<T>\n" +
+                        "{\n" +
+                        "  list : test::List(5)[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "^test::List5Wrapper<String> MyList @test(\n" +
+                        "  list = ^test::List<String> ()\n" +
+                        ")\n"));
+
+        runtime.delete("fromString.pure");
+        Assert.assertThrows(PureException.class, () -> compileTestSource("fromString.pure",
+                "Class test::List(x:Integer[1])<U>\n" +
+                        "{\n" +
+                        "   values : U[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class test::List5Wrapper<T>\n" +
+                        "{\n" +
+                        "  list : test::List(5)[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "^test::List5Wrapper<String> MyList @test(\n" +
+                        "  list = ^test::List(5)<String> ()\n" +
+                        ")\n"));
     }
 
     public static void assertCompileError(String code, String message)

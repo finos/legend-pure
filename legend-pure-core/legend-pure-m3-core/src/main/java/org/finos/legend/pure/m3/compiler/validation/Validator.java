@@ -24,7 +24,9 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.proper
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
@@ -72,6 +74,22 @@ public class Validator
                     testProperties(coreInstance, validatorState, matcher, processorSupport);
                 }
             }
+        }
+    }
+
+    private static void validateClassifier(CoreInstance coreInstance)
+    {
+        CoreInstance classifier = coreInstance.getClassifier();
+        if (classifier == null)
+        {
+            throw new PureCompilationException(coreInstance.getSourceInformation(), "Instance has no classifier: " + coreInstance);
+        }
+
+        if (classifier.getValueForMetaPropertyToMany(M3Properties.typeVariables).notEmpty())
+        {
+            StringBuilder builder = new StringBuilder("Instance has a classifier with type variables, which is currently not supported: ");
+            _Class.print(builder, classifier, true);
+            throw new PureCompilationException(coreInstance.getSourceInformation(), builder.toString());
         }
     }
 
