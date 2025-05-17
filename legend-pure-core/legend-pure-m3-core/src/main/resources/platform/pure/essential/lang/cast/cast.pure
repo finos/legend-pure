@@ -92,5 +92,3 @@ function <<test.Test>> meta::pure::functions::lang::tests::cast::testExtendedPri
 {
    assertError(|10->cast(@StringP), 'Cast exception: Integer cannot be cast to StringP')
 }
-
-

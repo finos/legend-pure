@@ -37,6 +37,7 @@ import org.finos.legend.pure.m3.compiler.postprocessing.processor.PrimitiveProce
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.PropertyOwnerProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.PropertyProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.QualifiedPropertyProcessor;
+import org.finos.legend.pure.m3.compiler.postprocessing.processor.TypeProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.UnitProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.projection.ClassProjectionProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.projection.ClassProjectionUnloaderWalk;
@@ -102,6 +103,7 @@ import org.finos.legend.pure.m3.compiler.validation.validator.GenericTypeValidat
 import org.finos.legend.pure.m3.compiler.validation.validator.InstanceValueValidator;
 import org.finos.legend.pure.m3.compiler.validation.validator.PackageValidator;
 import org.finos.legend.pure.m3.compiler.validation.validator.PackageableFunctionValidator;
+import org.finos.legend.pure.m3.compiler.validation.validator.PrimitiveTypeValidator;
 import org.finos.legend.pure.m3.compiler.validation.validator.ProfileValidator;
 import org.finos.legend.pure.m3.compiler.validation.validator.PropertyValidator;
 import org.finos.legend.pure.m3.compiler.validation.validator.RepositoryPackageValidator;
@@ -433,6 +435,7 @@ public class M3AntlrParser implements Parser
     {
         return Lists.immutable.with(
                 new ElementWithConstraintsProcessor(),
+                new TypeProcessor(),
                 new ClassProcessor(),
                 new PrimitiveProcessor(),
                 new ClassProjectionProcessor(),
@@ -528,6 +531,7 @@ public class M3AntlrParser implements Parser
                 new ElementWithConstraintsValidator(),
                 new ClassValidator(),
                 new ClassProjectionValidator(),
+                new PrimitiveTypeValidator(),
                 new RootRouteNodeValidator(),
                 new EnumerationValidator(),
                 new TypeValidator(),
