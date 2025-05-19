@@ -159,7 +159,7 @@ function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testTo
 
 function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testToListFromNonArrayVariant<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertError(|fromJson('"not an array"')->to(@List<Variant>), 'Variant of type \'STRING\' cannot be converted to List<Variant>');
+    assertError(|$f->eval(|fromJson('"not an array"')->to(@List<Variant>)), 'Variant of type \'STRING\' cannot be converted to List<Variant>');
 }
 
 function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testToEnum<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
