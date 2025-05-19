@@ -276,22 +276,59 @@ public abstract class AbstractCompiledStateIntegrityTest
     }
 
     @Test
-    public void testNullClassifiers()
+    public void testClassifiers()
     {
-        MutableList<CoreInstance> nullClassifiers = selectNodes(n -> n.getClassifier() == null);
-        if (nullClassifiers.notEmpty())
+        MutableList<CoreInstance> nullClassifiers = Lists.mutable.empty();
+        MutableList<Pair<CoreInstance, String>> invalidClassifiers = Lists.mutable.empty();
+        GraphNodeIterable.fromModelRepository(repository).forEach(node ->
         {
-            StringBuilder message = new StringBuilder("The following ").append(nullClassifiers.size()).append(" elements have null classifiers:");
-            nullClassifiers.forEach(instance ->
+            CoreInstance classifier = node.getClassifier();
+            if (classifier == null)
             {
-                message.append("\n\t").append(instance.getName());
-                SourceInformation sourceInfo = instance.getSourceInformation();
-                if (sourceInfo != null)
+                nullClassifiers.add(node);
+            }
+            else if (classifier.getValueForMetaPropertyToMany(M3Properties.typeVariables).notEmpty())
+            {
+                invalidClassifiers.add(Tuples.pair(classifier, _Class.print(new StringBuilder(), classifier).append(" has type variables (not currently supported)").toString()));
+            }
+        });
+        if (nullClassifiers.notEmpty() || invalidClassifiers.notEmpty())
+        {
+            StringBuilder builder = new StringBuilder();
+            if (nullClassifiers.notEmpty())
+            {
+                builder.append("The following ").append(nullClassifiers.size()).append(" elements have null classifiers:");
+                nullClassifiers.forEach(instance ->
                 {
-                    sourceInfo.appendMessage(message.append(": "));
+                    builder.append("\n\t").append(instance.getName());
+                    SourceInformation sourceInfo = instance.getSourceInformation();
+                    if (sourceInfo != null)
+                    {
+                        sourceInfo.appendMessage(builder.append(" (")).append(')');
+                    }
+                });
+            }
+            if (invalidClassifiers.notEmpty())
+            {
+                if (nullClassifiers.notEmpty())
+                {
+                    builder.append('\n');
                 }
-            });
-            Assert.fail(message.toString());
+                builder.append("The following ").append(invalidClassifiers.size()).append(" elements have invalid classifiers:");
+                invalidClassifiers.forEach(pair ->
+                {
+                    CoreInstance instance = pair.getOne();
+                    String detail = pair.getTwo();
+                    builder.append("\n\t").append(instance.getName());
+                    SourceInformation sourceInfo = instance.getSourceInformation();
+                    if (sourceInfo != null)
+                    {
+                        sourceInfo.appendMessage(builder.append(" (")).append(')');
+                    }
+                    builder.append(": ").append(detail);
+                });
+            }
+            Assert.fail(builder.toString());
         }
     }
 
