@@ -16,6 +16,7 @@ import meta::core::runtime::*;
 
 Class meta::core::runtime::Runtime
 {
+   preprocessFunction : Function<{FunctionDefinition<Any>[1], Runtime[1] -> FunctionDefinition<Any>[1]}>[0..1];
    connectionStores : ConnectionStore[*];
    connectionByElement(a:Any[1]){$this.connectionStores->filter(c|$c.element == $a).connection->toOne()}:Connection[1];
 }
