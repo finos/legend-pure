@@ -15,28 +15,28 @@
 package org.finos.legend.pure.m3.compiler.validation.validator;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.collection.MutableCollection;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.factory.Sets;
+import org.eclipse.collections.api.map.MapIterable;
+import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.validation.Validator;
 import org.finos.legend.pure.m3.compiler.validation.ValidatorState;
 import org.finos.legend.pure.m3.compiler.validation.VisibilityValidation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassProjection;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
@@ -59,88 +59,75 @@ public class ClassValidator implements MatchRunner<Class<?>>
     {
         ValidatorState validatorState = (ValidatorState) state;
         ProcessorSupport processorSupport = validatorState.getProcessorSupport();
-        for (Generalization generalization : cls._generalizations())
-        {
-            validateGeneralization(generalization, cls, validatorState, matcher, processorSupport);
-        }
-        for (CoreInstance property : cls._properties())
-        {
-            Validator.validate(property, validatorState, matcher, processorSupport);
-        }
-        for (QualifiedProperty<?> property : cls._qualifiedProperties())
-        {
-            Validator.validate(property, validatorState, matcher, processorSupport);
-        }
+        validateTypeVariables(cls, processorSupport);
+        cls._properties().forEach(p -> Validator.validate(p, validatorState, matcher, processorSupport));
+        cls._qualifiedProperties().forEach(qp -> Validator.validate(qp, validatorState, matcher, processorSupport));
         Validator.testProperties(cls, validatorState, matcher, processorSupport);
         validatePropertyOverrides(cls, processorSupport);
         VisibilityValidation.validateClass(cls, context, validatorState, processorSupport);
         MilestoningClassValidator.validateTemporalStereotypesAppliedForAllSubTypesInTemporalHierarchy(cls, processorSupport);
     }
 
-    private static void validateGeneralization(Generalization generalization, Class<?> cls, ValidatorState state, Matcher matcher, ProcessorSupport processorSupport)
+    private void validateTypeVariables(Class<?> cls, ProcessorSupport processorSupport)
     {
-        GenericType superGenericType = generalization._general();
-        // Validate the GenericType itself
-        Validator.validate(superGenericType, state, matcher, processorSupport);
-
-        // Check that this is not a subclass of a ClassProjection
-        CoreInstance superRawType = ImportStub.withImportStubByPass(superGenericType._rawTypeCoreInstance(), processorSupport);
-        if (superRawType instanceof ClassProjection)
+        // Validate there are no name conflicts with properties
+        MapIterable<String, CoreInstance> propertiesByName = processorSupport.class_getSimplePropertiesByName(cls);
+        cls._typeVariables().forEach(v ->
         {
-            throw new PureCompilationException(superGenericType.getSourceInformation(), String.format("Class '%s' is a projection and cannot be extended.", superRawType.getName()));
-        }
-
-        // Check for loops in type arguments
-        if (superRawType instanceof Class<?>)
-        {
-            RichIterable<? extends GenericType> typeArguments = superGenericType._typeArguments();
-            if (typeArguments.notEmpty())
+            String name = v._name();
+            CoreInstance property = propertiesByName.get(name);
+            if (property != null)
             {
-                CoreInstance bottomType = processorSupport.type_BottomType();
-                for (GenericType typeArgument : typeArguments)
+                StringBuilder builder = new StringBuilder("Type variable '").append(name).append("' conflicts with the property ").append(name).append(':');
+                org.finos.legend.pure.m3.navigation.generictype.GenericType.print(builder, property.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport);
+                org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(builder, Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.multiplicity, processorSupport), true);
+                SourceInformation propSourceInfo = property.getSourceInformation();
+                if (propSourceInfo != null)
                 {
-                    MutableSet<CoreInstance> typeArgumentConcreteTypes = Sets.mutable.empty();
-                    collectAllConcreteTypes(typeArgument, typeArgumentConcreteTypes, processorSupport);
-                    for (CoreInstance type : typeArgumentConcreteTypes)
-                    {
-                        if ((type != bottomType) && ((type == cls) || processorSupport.type_subTypeOf(type, cls)))
-                        {
-                            StringBuilder message = new StringBuilder("Class ");
-                            message.append(cls.getName());
-                            message.append(" extends ");
-                            org.finos.legend.pure.m3.navigation.generictype.GenericType.print(message, superGenericType, processorSupport);
-                            message.append(" which contains a reference to ");
-                            if (type == cls)
-                            {
-                                message.append(cls.getName());
-                                message.append(" itself");
-                            }
-                            else
-                            {
-                                message.append(type.getName());
-                                message.append(" which is a subtype of ");
-                                message.append(cls.getName());
-                            }
-                            SourceInformation sourceInfo = generalization.getSourceInformation();
-                            throw new PureCompilationException((sourceInfo == null) ? cls.getSourceInformation() : sourceInfo, message.toString());
-                        }
-                    }
+                    propSourceInfo.appendMessage(builder.append(" at "));
                 }
+                throw new PureCompilationException(v.getSourceInformation(), builder.toString());
             }
-        }
-    }
+        });
 
-    private static void collectAllConcreteTypes(GenericType genericType, MutableCollection<? super CoreInstance> types, ProcessorSupport processorSupport)
-    {
-        CoreInstance rawType = ImportStub.withImportStubByPass(genericType._rawTypeCoreInstance(), processorSupport);
-        if (rawType != null)
+        // Validate there are no name conflicts with other type variables
+        MutableMap<String, VariableExpression> typeVariablesByName = Maps.mutable.empty();
+        cls._typeVariables().forEach(v ->
         {
-            types.add(rawType);
-        }
-        for (GenericType typeArgument : genericType._typeArguments())
+            VariableExpression old = typeVariablesByName.put(v._name(), v);
+            if (old != null)
+            {
+                StringBuilder builder = new StringBuilder("Type variable '").append(v._name()).append("' is already defined");
+                SourceInformation oldSourceInfo = old.getSourceInformation();
+                if (oldSourceInfo != null)
+                {
+                    oldSourceInfo.appendMessage(builder.append(" (at ")).append(')');
+                }
+                throw new PureCompilationException(v.getSourceInformation(), builder.toString());
+            }
+        });
+
+        Type.getGeneralizationResolutionOrder(cls, processorSupport).drop(1).forEach(genl ->
         {
-            collectAllConcreteTypes(typeArgument, types, processorSupport);
-        }
+            if (genl instanceof Class)
+            {
+                ((Class<?>) genl)._typeVariables().forEach(v ->
+                {
+                    VariableExpression conflict = typeVariablesByName.get(v._name());
+                    if (conflict != null)
+                    {
+                        StringBuilder builder = new StringBuilder("Type variable '").append(conflict._name()).append("' is already defined in supertype ");
+                        PackageableElement.writeUserPathForPackageableElement(builder, genl);
+                        SourceInformation oldSourceInfo = v.getSourceInformation();
+                        if (oldSourceInfo != null)
+                        {
+                            oldSourceInfo.appendMessage(builder.append(" at "));
+                        }
+                        throw new PureCompilationException(conflict.getSourceInformation(), builder.toString());
+                    }
+                });
+            }
+        });
     }
 
     /**

@@ -14,8 +14,13 @@
 
 package org.finos.legend.pure.m3.tests.elements.primitive;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
+import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -48,17 +53,18 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
     public void testPrimitiveFunctionMatching()
     {
         assertCompileError("Primitive test::Int8 extends Integer\n" +
-                "native function x(p:test::Int8[1]):Any[1];" +
-                "function test():Any[1]" +
-                "{" +
-                "   x(1);" +
-                "}", "Compilation error at (resource:fromString.pure line:2 column:69), \"The system can't find a match for the function: x(_:Integer[1])\n" +
-                "\n" +
-                "These functions, in packages already imported, would match the function call if you changed the parameters.\n" +
-                "\tx(Int8[1]):Any[1]\n" +
-                "\n" +
-                "No functions, in packages not imported, match the function name.\n" +
-                "\"");
+                        "native function x(p:test::Int8[1]):Any[1];\n" +
+                        "function test():Any[1]\n" +
+                        "{\n" +
+                        "   x(1);\n" +
+                        "}\n",
+                "Compilation error at (resource:fromString.pure line:5 column:4), \"The system can't find a match for the function: x(_:Integer[1])\n" +
+                        "\n" +
+                        "These functions, in packages already imported, would match the function call if you changed the parameters.\n" +
+                        "\tx(Int8[1]):Any[1]\n" +
+                        "\n" +
+                        "No functions, in packages not imported, match the function name.\n" +
+                        "\"");
     }
 
     @Test
@@ -85,7 +91,7 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         " 2->cast(@test::IntCap(1));\n" +
                         "}",
-                "Compilation error at (resource:fromString.pure line:6 column:26), \"Type variable mismatch for the class IntCap(x:Integer,z:String) (expected 2, got 1): IntCap(1)\"");
+                "Compilation error at (resource:fromString.pure line:6 column:26), \"Type variable mismatch for test::IntCap(x:Integer,z:String) (expected 2, got 1): test::IntCap(1)\"");
     }
 
     @Test
@@ -101,7 +107,7 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         " [];\n" +
                         "}",
-                "Compilation error at (resource:fromString.pure line:6 column:26), \"Type variable type mismatch for the class IntCap(x:Integer) (expected Integer, got String): \"");
+                "Compilation error at (resource:fromString.pure line:6 column:26), \"Type variable type mismatch for test::IntCap(x:Integer) (expected Integer, got String): test::IntCap('w')\"");
     }
 
     @Test
@@ -123,10 +129,10 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
     public void testPrimitiveWithVariableExtend()
     {
         compileTestSource("fromString.pure",
-                "Primitive test::IntCap(x:Integer[1]) extends Integer" +
-                        "[" +
-                        " $this < $x" +
-                        "]" +
+                "Primitive test::IntCap(x:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        " $this < $x\n" +
+                        "]\n" +
                         "Primitive test::Int8 extends test::IntCap(255)");
         Assert.assertEquals("IntCap", ((PrimitiveType) runtime.getCoreInstance("test::IntCap"))._name());
         Assert.assertEquals("Int8", ((PrimitiveType) runtime.getCoreInstance("test::Int8"))._name());
@@ -136,10 +142,10 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
     public void testPrimitiveComplexConstraint()
     {
         compileTestSource("fromString.pure",
-                "Primitive test::IntCap(x:Integer[1]) extends Integer" +
-                        "[" +
-                        " id(~function:$this < $x)" +
-                        "]" +
+                "Primitive test::IntCap(x:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        " id(~function:$this < $x)\n" +
+                        "]\n" +
                         "Primitive test::Int8 extends test::IntCap(255)");
         Assert.assertEquals("IntCap", ((PrimitiveType) runtime.getCoreInstance("test::IntCap"))._name());
         Assert.assertEquals("Int8", ((PrimitiveType) runtime.getCoreInstance("test::Int8"))._name());
@@ -149,13 +155,13 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
     public void testPrimitiveWithParameterInClass()
     {
         compileTestSource("fromString.pure",
-                "Primitive test::IntCap(x:Integer[1]) extends Integer" +
-                        "[" +
-                        " $this < $x" +
-                        "]" +
-                        "Class x::A" +
-                        "{" +
-                        " v : test::IntCap(2)[1];" +
+                "Primitive test::IntCap(x:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        " $this < $x\n" +
+                        "]\n" +
+                        "Class x::A\n" +
+                        "{\n" +
+                        " v : test::IntCap(2)[1];\n" +
                         "}");
     }
 
@@ -163,44 +169,177 @@ public class TestPrimitiveCompile extends AbstractPureTestWithCoreCompiled
     public void testPrimitiveWithParameterInClassError()
     {
         assertCompileError(
-                "Primitive test::IntCap(x:Integer[1]) extends Integer" +
-                        "[" +
-                        " $this < $x" +
-                        "]" +
-                        "Class x::A" +
-                        "{" +
-                        " v : test::IntCap()[1];" +
+                "Primitive test::IntCap(x:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        " $this < $x\n" +
+                        "]\n" +
+                        "Class x::A\n" +
+                        "{\n" +
+                        " v : test::IntCap()[1];\n" +
                         "}",
-                "Compilation error at (resource:fromString.pure line:1 column:88), \"Type variable mismatch for the class IntCap(x:Integer) (expected 1, got 0): IntCap\"");
-
+                "Compilation error at (resource:fromString.pure line:7 column:12), \"Type variable mismatch for test::IntCap(x:Integer) (expected 1, got 0): test::IntCap\"");
     }
 
     @Test
     public void testWrongPrimitiveTypeError()
     {
         assertCompileError(
-                "Primitive x::Decimal(x:Integer[1]) extends Decimal" +
-                        "[" +
-                        " $this < $x" +
-                        "]" +
-                        "Class x::A" +
-                        "{" +
-                        " v : Decimal(1)[1];" +
+                "Primitive x::Decimal(x:Integer[1]) extends Decimal\n" +
+                        "[\n" +
+                        " $this < $x\n" +
+                        "]\n" +
+                        "Class x::A\n" +
+                        "{\n" +
+                        " v : Decimal(1)[1];\n" +
                         "}",
-                "Compilation error at (resource:fromString.pure line:1 column:80), \"Type variable mismatch for the class Decimal (expected 0, got 1): Decimal(1)\"");
+                "Compilation error at (resource:fromString.pure line:7 column:6), \"Type variable mismatch for Decimal (expected 0, got 1): Decimal(1)\"");
+    }
 
+    @Test
+    public void testPrimitiveExtendsNonPrimitive()
+    {
+        assertCompileError(
+                "Class x::NotPrimitive\n" +
+                        "{\n" +
+                        "   name : String[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Primitive x::MyPrimitive(x:Integer[1]) extends x::NotPrimitive\n" +
+                        "[\n" +
+                        " $x < 10\n" +
+                        "]",
+                "Compilation error at (resource:fromString.pure line:6 column:51), \"Invalid generalization: x::MyPrimitive cannot extend x::NotPrimitive as it is not a PrimitiveType or Any\"");
+    }
+
+    @Test
+    public void testPrimitiveNoExtends()
+    {
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource("fromString.pure", "Primitive x::MyPrimitive(x:Integer[1])\n"));
+        Assert.assertEquals("Parser error at (resource:fromString.pure line:2 column:1), expected: 'extends' found: '<EOF>'", e.getMessage());
+    }
+
+    @Test
+    public void testTypeVariableNonExistentType()
+    {
+        assertCompileError(
+                "Primitive test::IntCap(x:NonExistentType[1]) extends Integer\n",
+                "Compilation error at (resource:fromString.pure line:1 column:26), \"NonExistentType has not been defined!\"");
+    }
+
+    @Test
+    public void testTypeVariableConflict()
+    {
+        assertCompileError(
+                "Primitive test::IntCap(x:Integer[1], x:Integer[1]) extends Integer\n",
+                "Compilation error at (resource:fromString.pure line:1 column:38), \"Type variable 'x' is already defined (at fromString.pure:1c24)\"");
+    }
+
+    @Test
+    public void testMissingTypeVariableInExtends()
+    {
+        assertCompileError(
+                        "Primitive test::IntLessThan(x:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        "   $this < $x\n" +
+                        "]\n" +
+                        "\n" +
+                        "Primitive test::IntBetween(y:Integer[1]) extends test::IntLessThan\n" +
+                        "[\n" +
+                        " $this > $y\n" +
+                        "]",
+                "Compilation error at (resource:fromString.pure line:6 column:56), \"Type variable mismatch for test::IntLessThan(x:Integer) (expected 1, got 0): test::IntLessThan\"");
+    }
+
+    @Test
+    public void testSubtypeWithTypeVariable()
+    {
+        // We should consider allowing this
+        // If we do, we need to add the below (or something like it) to the tests in cast.pure
+        assertCompileError(
+                "Primitive test::IntLessThan(x:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        "   id(~function:$this < $x ~message:'the value is greater than '+$x->toString())\n" +
+                        "]\n" +
+                        "\n" +
+                        "Primitive test::IntBetweenYAndFive(y:Integer[1]) extends test::IntLessThan(5)\n" +
+                        "[\n" +
+                        " id2(~function:$this > $y ~message:'the value is less than '+$y->toString())\n" +
+                        "]\n" +
+                        "\n" +
+                        "function <<test.Test>> test::testSimpleConstraintCastErrorWithMessageSimpleInheritance():Any[*]\n" +
+                        "{\n" +
+                        "   assertError(|10->cast(@test::IntBetweenYAndFive(1)), 'Constraint :[id] violated in the Class IntLessThan, Message: the value is greater than 5');\n" +
+                        "   assertError(|2->cast(@test::IntBetweenYAndFive(3)), 'Constraint :[id2] violated in the Class IntBetweenYAndFive, Message: the value is less than 3');\n" +
+                        "}",
+                "Compilation error at (resource:fromString.pure line:6 column:64), \"Primitive type with type variables test::IntBetweenYAndFive(y:Integer[1]) extends a primitive type with type variables test::IntLessThan(x:Integer[1]) at fromString.pure:1c1-4c1: this is not currently supported\"");
+    }
+
+    @Test
+    public void testIndirectSubtypeWithTypeVariable()
+    {
+        // We should consider allowing this
+        // If we do, we need to add the below (or something like it) to the tests in cast.pure
+        // We would also need to consider variable name conflicts/overrides between super- and sub-types
+        assertCompileError(
+                "Primitive test::IntLessThan(x:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        "   id(~function:$this < $x ~message:'the value is greater than '+$x->toString())\n" +
+                        "]\n" +
+                        "\n" +
+                        "Primitive test::IntLessThan5 extends test::IntLessThan(5)\n" +
+                        "\n" +
+                        "Primitive test::IntBetweenYAndFive(y:Integer[1]) extends test::IntLessThan5\n" +
+                        "[\n" +
+                        " id2(~function:$this > $y ~message:'the value is less than '+$y->toString())\n" +
+                        "]\n" +
+                        "\n" +
+                        "function <<test.Test>> test::testSimpleConstraintCastErrorWithMessageSimpleInheritance():Any[*]\n" +
+                        "{\n" +
+                        "   assertError(|10->cast(@test::IntBetweenYAndFive(1)), 'Constraint :[id] violated in the Class IntLessThan, Message: the value is greater than 5');\n" +
+                        "   assertError(|2->cast(@test::IntBetweenYAndFive(3)), 'Constraint :[id2] violated in the Class IntBetweenYAndFive, Message: the value is less than 3');\n" +
+                        "}",
+                "Compilation error at (resource:fromString.pure lines:8c17-11c1), \"Primitive type with type variables test::IntBetweenYAndFive(y:Integer[1]) extends a primitive type with type variables test::IntLessThan(x:Integer[1]) at fromString.pure:1c1-4c1: this is not currently supported\"");
+    }
+
+    @Test
+    public void testVariableReferenceInSubtype()
+    {
+        // We should consider allowing this
+        assertCompileError(
+                "Primitive test::IntLessThan(x:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        "   $this < $x\n" +
+                        "]\n" +
+                        "\n" +
+                        "Primitive test::IntBetween0And5 extends test::IntLessThan(5)\n" +
+                        "[\n" +
+                        " $this > ($x - 5)\n" +
+                        "]",
+                "Compilation error at (resource:fromString.pure line:8 column:12), \"The variable 'x' is unknown!\"");
+    }
+
+    @Test
+    public void testGeneralizationResolutionOrder()
+    {
+        compileTestSource("fromString.pure",
+                        "Primitive test::IntBounded(l:Integer[1], u:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        "  $this >= $l," +
+                        "  $this <= $u\n" +
+                        "]\n" +
+                        "\n" +
+                        "Primitive test::OneToTen extends test::IntBounded(1, 10)\n");
+        Class<?> any = (Class<?>) processorSupport.type_TopType();
+        PrimitiveType number = (PrimitiveType) processorSupport.repository_getTopLevel("Number");
+        PrimitiveType integer = (PrimitiveType) processorSupport.repository_getTopLevel("Integer");
+        PrimitiveType bounded = (PrimitiveType) runtime.getCoreInstance("test::IntBounded");
+        PrimitiveType oneToTen = (PrimitiveType) runtime.getCoreInstance("test::OneToTen");
+        Assert.assertEquals(Lists.immutable.with(oneToTen, bounded, integer, number, any), Type.getGeneralizationResolutionOrder(oneToTen, processorSupport));
     }
 
     public static void assertCompileError(String code, String message)
     {
-        try
-        {
-            compileTestSource("fromString.pure", code);
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals(message, e.getMessage());
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure", code));
+        Assert.assertEquals(message, e.getMessage());
     }
 }

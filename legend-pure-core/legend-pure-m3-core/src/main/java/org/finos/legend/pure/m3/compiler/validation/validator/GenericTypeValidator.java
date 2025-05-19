@@ -15,9 +15,8 @@
 package org.finos.legend.pure.m3.compiler.validation.validator;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.block.factory.Predicates;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.validation.Validator;
 import org.finos.legend.pure.m3.compiler.validation.ValidatorState;
@@ -36,6 +35,7 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.type.Type;
+import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
@@ -43,6 +43,8 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+
+import java.util.Objects;
 
 public class GenericTypeValidator implements MatchRunner<GenericType>
 {
@@ -87,14 +89,13 @@ public class GenericTypeValidator implements MatchRunner<GenericType>
         }
     }
 
-    private static void validateGenericTypeRecursive(GenericType genericType,
-                                                     boolean validateFullyDefined, ProcessorSupport processorSupport)
+    private static void validateGenericTypeRecursive(GenericType genericType, boolean validateFullyDefined, ProcessorSupport processorSupport)
     {
-         validateGenericTypeRecursive(
+        validateGenericTypeRecursive(
                 ImportStub.withImportStubByPass(genericType._rawTypeCoreInstance(), processorSupport),
-                (ListIterable) genericType._typeArguments(),
-                (ListIterable) genericType._multiplicityArguments(),
-                (ListIterable) genericType._typeVariableValues(),
+                ListHelper.wrapListIterable(genericType._typeArguments()),
+                ListHelper.wrapListIterable(genericType._multiplicityArguments()),
+                ListHelper.wrapListIterable(genericType._typeVariableValues()),
                 validateFullyDefined,
                 genericType.getSourceInformation(),
                 processorSupport
@@ -114,17 +115,13 @@ public class GenericTypeValidator implements MatchRunner<GenericType>
 
             if (rawType instanceof Class)
             {
-                RichIterable<? extends TypeParameter> typeParameters = ((Class) rawType)._typeParameters();
+                RichIterable<? extends TypeParameter> typeParameters = ((Class<?>) rawType)._typeParameters();
 
                 if (typeArguments.size() != typeParameters.size())
                 {
                     StringBuilder message = new StringBuilder("Type argument mismatch for the class ");
-                    _Class.print(message, rawType);
-                    message.append(" (expected ");
-                    message.append(typeParameters.size());
-                    message.append(", got ");
-                    message.append(typeArguments.size());
-                    message.append("): ");
+                    _Class.print(message, rawType, true);
+                    message.append(" (expected ").append(typeParameters.size()).append(", got ").append(typeArguments.size()).append("): ");
 
                     org.finos.legend.pure.m3.navigation.generictype.GenericType.print(message, rawType, typeVariableValues, typeArguments, multiplicityArguments, processorSupport);
                     throw new PureCompilationException(sourceInformationForError, message.toString());
@@ -144,20 +141,16 @@ public class GenericTypeValidator implements MatchRunner<GenericType>
                     }
                 }
 
-                RichIterable<? extends InstanceValue> multiplicityParameters = ((Class) rawType)._multiplicityParameters();
+                RichIterable<? extends InstanceValue> multiplicityParameters = ((Class<?>) rawType)._multiplicityParameters();
                 if (multiplicityArguments.size() != multiplicityParameters.size())
                 {
                     StringBuilder message = new StringBuilder("Multiplicity argument mismatch for the class ");
-                    _Class.print(message, rawType);
-                    message.append(" (expected ");
-                    message.append(multiplicityParameters.size());
-                    message.append(", got ");
-                    message.append(multiplicityArguments.size());
-                    message.append("): ");
+                    _Class.print(message, rawType, true);
+                    message.append(" (expected ").append(multiplicityParameters.size()).append(", got ").append(multiplicityArguments.size()).append("): ");
                     org.finos.legend.pure.m3.navigation.generictype.GenericType.print(message, rawType, typeVariableValues, typeArguments, multiplicityArguments, processorSupport);
                     throw new PureCompilationException(sourceInformationForError, message.toString());
                 }
-                if (validateFullyDefined && multiplicityArguments.anySatisfy(Predicates.isNull()))
+                if (validateFullyDefined && multiplicityArguments.anySatisfy(Objects::isNull))
                 {
                     StringBuilder message = new StringBuilder("Generic type is not fully defined: ");
                     org.finos.legend.pure.m3.navigation.generictype.GenericType.print(message, rawType, typeVariableValues, typeArguments, multiplicityArguments, processorSupport);
@@ -199,49 +192,43 @@ public class GenericTypeValidator implements MatchRunner<GenericType>
 
     private static void validateTypeVariables(CoreInstance rawType, ListIterable<? extends GenericType> typeArguments, ListIterable<? extends Multiplicity> multiplicityArguments, ListIterable<? extends ValueSpecification> typeVariableValues, SourceInformation sourceInformationForError, ProcessorSupport processorSupport)
     {
-        RichIterable<? extends VariableExpression> typeVariables = (RichIterable<? extends VariableExpression>) rawType.getValueForMetaPropertyToMany(M3Properties.typeVariables);
+        ListIterable<? extends CoreInstance> typeVariables = rawType.getValueForMetaPropertyToMany(M3Properties.typeVariables);
 
         if (typeVariables.size() != typeVariableValues.size())
         {
-            StringBuilder message = new StringBuilder("Type variable mismatch for the class ");
-            _Class.print(message, rawType);
-            message.append(" (expected ");
-            message.append(typeVariables.size());
-            message.append(", got ");
-            message.append(typeVariableValues.size());
-            message.append("): ");
-            org.finos.legend.pure.m3.navigation.generictype.GenericType.print(message, rawType, typeVariableValues, typeArguments, multiplicityArguments, processorSupport);
+            StringBuilder message = new StringBuilder("Type variable mismatch for ");
+            _Class.print(message, rawType, true);
+            message.append(" (expected ").append(typeVariables.size()).append(", got ").append(typeVariableValues.size()).append("): ");
+            org.finos.legend.pure.m3.navigation.generictype.GenericType.print(message, rawType, typeVariableValues, typeArguments, multiplicityArguments, true, false, processorSupport);
             throw new PureCompilationException(sourceInformationForError, message.toString());
         }
 
-        typeVariables.zip(typeVariableValues).forEach(x ->
-                {
-                    if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericCompatibleWith(
-                            Type.wrapGenericType(findType(x.getTwo(), processorSupport), processorSupport),
-                            x.getOne()._genericType(),
-                            processorSupport
-                    ))
-                    {
-                        StringBuilder message = new StringBuilder("Type variable type mismatch for the class ");
-                        _Class.print(message, rawType);
-                        message.append(" (expected ");
-                        message.append(org.finos.legend.pure.m3.navigation.generictype.GenericType.print(x.getOne()._genericType(), processorSupport));
-                        message.append(", got ");
-                        message.append(org.finos.legend.pure.m3.navigation.generictype.GenericType.print(Type.wrapGenericType(processorSupport.getClassifier(((InstanceValue) x.getTwo())._valuesCoreInstance().getFirst()), processorSupport), processorSupport));
-                        message.append("): ");
-                        throw new PureCompilationException(sourceInformationForError, message.toString());
-                    }
-                }
-        );
+        typeVariables.forEachWithIndex((tv, i) ->
+        {
+            VariableExpression typeVariable = (VariableExpression) tv;
+            ValueSpecification typeVariableValue = typeVariableValues.get(i);
+            GenericType expected = typeVariable._genericType();
+            GenericType found = (GenericType) Type.wrapGenericType(findType(typeVariableValue, processorSupport), processorSupport);
+            if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericCompatibleWith(found, expected, processorSupport))
+            {
+                StringBuilder message = new StringBuilder("Type variable type mismatch for ");
+                _Class.print(message, rawType, true);
+                org.finos.legend.pure.m3.navigation.generictype.GenericType.print(message.append(" (expected "), expected, true, processorSupport);
+                org.finos.legend.pure.m3.navigation.generictype.GenericType.print(message.append(", got "), found, true, processorSupport).append("): ");
+                org.finos.legend.pure.m3.navigation.generictype.GenericType.print(message, rawType, typeVariableValues, typeArguments, multiplicityArguments, true, false, processorSupport);
+                throw new PureCompilationException(sourceInformationForError, message.toString());
+            }
+        });
     }
 
     private static CoreInstance findType(ValueSpecification val, ProcessorSupport processorSupport)
     {
         if (val instanceof InstanceValue)
         {
+            // TODO make this more principled
             return processorSupport.getClassifier(((InstanceValue) val)._valuesCoreInstance().getFirst());
         }
-        else if (val instanceof VariableExpression)
+        if (val instanceof VariableExpression)
         {
             return val._genericType()._rawType();
         }
@@ -257,9 +244,9 @@ public class GenericTypeValidator implements MatchRunner<GenericType>
             {
                 validateGenericTypeRecursive(
                         instance.getClassifier(),
-                        Lists.fixedSize.<GenericType>empty(),
-                        Lists.fixedSize.<Multiplicity>empty(),
-                        Lists.fixedSize.<ValueSpecification>empty(),
+                        Lists.fixedSize.empty(),
+                        Lists.fixedSize.empty(),
+                        Lists.fixedSize.empty(),
                         validateFullyDefined,
                         instance.getSourceInformation(),
                         processorSupport

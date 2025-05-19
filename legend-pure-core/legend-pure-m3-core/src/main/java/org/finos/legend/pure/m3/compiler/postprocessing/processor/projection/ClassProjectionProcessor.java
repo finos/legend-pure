@@ -24,8 +24,8 @@ import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.PostProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.Automap;
-import org.finos.legend.pure.m3.compiler.postprocessing.processor.ClassProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.Processor;
+import org.finos.legend.pure.m3.compiler.postprocessing.processor.TypeProcessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotatedElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
@@ -116,7 +116,7 @@ public class ClassProjectionProcessor extends Processor<ClassProjection<?>>
     @Override
     public void populateReferenceUsages(ClassProjection<?> cls, ModelRepository repository, ProcessorSupport processorSupport)
     {
-        ClassProcessor.processClassReferenceUsages(cls, repository, processorSupport);
+        TypeProcessor.processGeneralizationReferenceUsages(cls, repository, processorSupport);
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})

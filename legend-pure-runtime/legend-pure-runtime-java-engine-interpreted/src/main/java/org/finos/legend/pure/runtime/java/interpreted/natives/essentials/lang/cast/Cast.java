@@ -19,26 +19,26 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.api.tuple.Pair;
+import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationTypeCoreInstanceWrapper;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.generictype.match.GenericTypeMatch;
 import org.finos.legend.pure.m3.navigation.generictype.match.ParameterMatchBehavior;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.relation._Column;
 import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m3.navigation.type.Type;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
@@ -52,8 +52,8 @@ import java.util.Stack;
 
 public class Cast extends NativeFunction
 {
-    private FunctionExecutionInterpreted functionExecutionInterpreted;
-    private ModelRepository repository;
+    private final FunctionExecutionInterpreted functionExecutionInterpreted;
+    private final ModelRepository repository;
 
     public Cast(FunctionExecutionInterpreted functionExecutionInterpreted, ModelRepository repository)
     {
@@ -80,7 +80,7 @@ public class Cast extends NativeFunction
             CoreInstance relationType = processorSupport.package_getByUserPath(M3Paths.Relation);
             if (Type.isExtendedPrimitiveType(targetRawType, processorSupport))
             {
-                if (canBeCastedTo(sourceRawType, targetRawType, processorSupport))
+                if (canBeCastTo(sourceRawType, targetRawType, processorSupport))
                 {
                     return managePrimitiveTypeExtension(instantiationContext, executionSupport, processorSupport, valuesParam, targetGenericType, inst, functionExpressionCallStack.peek().getSourceInformation(), functionExpressionCallStack);
                 }
@@ -94,7 +94,7 @@ public class Cast extends NativeFunction
                 RelationType<?> source = RelationTypeCoreInstanceWrapper.toRelationType(sourceGenericType.getValueForMetaPropertyToOne(M3Properties.typeArguments).getValueForMetaPropertyToOne(M3Properties.rawType));
                 RelationType<?> target = RelationTypeCoreInstanceWrapper.toRelationType(targetGenericType.getValueForMetaPropertyToOne(M3Properties.typeArguments).getValueForMetaPropertyToOne(M3Properties.rawType));
                 Pair<ListIterable<? extends Column<?, ?>>, ListIterable<? extends Column<?, ?>>> cols = _RelationType.alignColumnSets(source._columns(), target._columns(), processorSupport);
-                if (!cols.getOne().zip(cols.getTwo()).injectInto(true, (a, b) -> a && canBeCastedTo(_Column.getColumnType(b.getOne())._rawType(), _Column.getColumnType(b.getTwo())._rawType(), processorSupport)))
+                if (!cols.getOne().zip(cols.getTwo()).allSatisfy(pair -> canBeCastTo(_Column.getColumnType(pair.getOne())._rawType(), _Column.getColumnType(pair.getTwo())._rawType(), processorSupport)))
                 {
                     throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "Cast exception: " + GenericType.print(sourceGenericType, processorSupport) + " cannot be cast to " + GenericType.print(targetGenericType, processorSupport), functionExpressionCallStack);
                 }
@@ -107,12 +107,9 @@ public class Cast extends NativeFunction
                 }), processorSupport);
                 return inst;
             }
-            else
+            else if (!GenericTypeMatch.genericTypeMatches(targetGenericType, sourceGenericType, true, ParameterMatchBehavior.MATCH_CAUTIOUSLY, ParameterMatchBehavior.MATCH_CAUTIOUSLY, processorSupport))
             {
-                if (!GenericTypeMatch.genericTypeMatches(targetGenericType, sourceGenericType, true, ParameterMatchBehavior.MATCH_CAUTIOUSLY, ParameterMatchBehavior.MATCH_CAUTIOUSLY, processorSupport))
-                {
-                    throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "Cast exception: ExtendedPrimitiveTypes are not supported in Generics for cast! " + GenericType.print(sourceGenericType, processorSupport) + " cannot be cast to " + GenericType.print(targetGenericType, processorSupport), functionExpressionCallStack);
-                }
+                throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "Cast exception: ExtendedPrimitiveTypes are not supported in Generics for cast! " + GenericType.print(sourceGenericType, processorSupport) + " cannot be cast to " + GenericType.print(targetGenericType, processorSupport), functionExpressionCallStack);
             }
         }
 
@@ -143,7 +140,7 @@ public class Cast extends NativeFunction
         return inst;
     }
 
-    private boolean canBeCastedTo(CoreInstance sourceRawType, CoreInstance targetRawType, ProcessorSupport processorSupport)
+    private boolean canBeCastTo(CoreInstance sourceRawType, CoreInstance targetRawType, ProcessorSupport processorSupport)
     {
         return Type.getGeneralizationResolutionOrder(targetRawType, processorSupport).contains(sourceRawType);
     }
