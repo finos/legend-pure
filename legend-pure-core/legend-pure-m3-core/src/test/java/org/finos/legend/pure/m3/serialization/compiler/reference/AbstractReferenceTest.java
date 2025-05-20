@@ -27,6 +27,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.As
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.SimpleFunctionExpression;
@@ -241,6 +242,30 @@ public class AbstractReferenceTest extends AbstractPureTestWithCoreCompiled
                         "  *Gram: x -> $x;\n" +
                         "  Kilogram: x -> $x*1000;\n" +
                         "  Pound: x -> $x*453.59;\n" +
+                        "}\n" +
+                        "\n" +
+                        "Primitive test::model::RangedInt(low:Integer[1], high:Integer[1]) extends Integer\n" +
+                        "[\n" +
+                        "  $low <= $high,\n" +
+                        "  $this >= $low,\n" +
+                        "  $this <= $high\n" +
+                        "]\n" +
+                        "\n" +
+                        "Class test::model::ClassWithTypeVariables(min:Integer[1], max:Integer[1])\n" +
+                        "[\n" +
+                        "  $min <= $max,\n" +
+                        "  $this.value <= $max,\n" +
+                        "  $this.value >= $min\n" +
+                        "]\n" +
+                        "{\n" +
+                        "  value:Integer[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Class test::model::ClassWithPropertiesWithTypeVariables\n" +
+                        "{\n" +
+                        "  rating:RangedInt(1, 5)[1];\n" +
+                        "  wideRating:RangedInt(0, 10)[0..1];\n" +
+                        "  values:ClassWithTypeVariables(1, 10)[*];\n" +
                         "}\n"
         );
     }
@@ -293,6 +318,36 @@ public class AbstractReferenceTest extends AbstractPureTestWithCoreCompiled
             Assert.fail(builder.toString());
         }
         return qualifiedProperty;
+    }
+
+    protected static VariableExpression typeVariable(CoreInstance type, String varName)
+    {
+        if (type instanceof PrimitiveType)
+        {
+            return typeVariable(type, ((PrimitiveType) type)._typeVariables(), varName);
+        }
+        if (type instanceof Class)
+        {
+            return typeVariable(type, ((Class<?>) type)._typeVariables(), varName);
+        }
+        return typeVariable(type, Lists.immutable.empty(), varName);
+    }
+
+    private static VariableExpression typeVariable(CoreInstance type, RichIterable<? extends VariableExpression> typeVariables, String varName)
+    {
+        VariableExpression var = typeVariables.detect(v -> varName.equals(v._name()));
+        if (var == null)
+        {
+            StringBuilder builder = new StringBuilder("Could not find type variable '").append(varName).append("' in type: ");
+            PackageableElement.writeUserPathForPackageableElement(builder, type);
+            SourceInformation sourceInfo = type.getSourceInformation();
+            if (sourceInfo != null)
+            {
+                sourceInfo.appendMessage(builder.append(" at "));
+            }
+            Assert.fail(builder.toString());
+        }
+        return var;
     }
 
     protected static VariableExpression funcTypeParam(CoreInstance functionType, String paramName)

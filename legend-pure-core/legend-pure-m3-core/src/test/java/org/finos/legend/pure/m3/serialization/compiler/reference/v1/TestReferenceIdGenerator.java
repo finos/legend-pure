@@ -40,6 +40,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.SimpleFunctionExpression;
@@ -5530,6 +5531,236 @@ public class TestReferenceIdGenerator extends AbstractReferenceTest
                 ((InstanceValue) ((InstanceValue) ((SimpleFunctionExpression) (units.get(1)._conversionFunction()._expressionSequence().getOnly()))._parametersValues().getOnly())._values().getLast())._genericType());
         expected.put(path + ".nonCanonicalUnits['Pound'].generalizations[0]", units.get(1)._generalizations().getOnly());
         expected.put(path + ".nonCanonicalUnits['Pound'].generalizations[0].general", units.get(1)._generalizations().getOnly()._general());
+
+        assertIds(path, expected);
+    }
+
+    @Test
+    public void testRangedInt()
+    {
+        String path = "test::model::RangedInt";
+        PrimitiveType rangedInt = getCoreInstance(path);
+        MutableMap<String, CoreInstance> expected = Maps.mutable.<String, CoreInstance>with(path, rangedInt)
+                .withKeyValue(path + ".classifierGenericType", rangedInt._classifierGenericType())
+                .withKeyValue(path + ".generalizations[0]", at(rangedInt._generalizations(), 0))
+                .withKeyValue(path + ".generalizations[0].general", at(rangedInt._generalizations(), 0)._general())
+                
+                .withKeyValue(path + ".constraints['0']", at(rangedInt._constraints(), 0))
+                .withKeyValue(path + ".constraints['0'].functionDefinition", at(rangedInt._constraints(), 0)._functionDefinition())
+//                .withKeyValue(path + ".constraints['0'].functionDefinition.classifierGenericType", at(rangedInt._constraints(), 0)._functionDefinition()._classifierGenericType())
+                .withKeyValue(path + ".constraints['0'].functionDefinition.classifierGenericType.typeArguments[0]", typeArgument(at(rangedInt._constraints(), 0)._functionDefinition()._classifierGenericType(), 0))
+                .withKeyValue(path + ".constraints['0'].functionDefinition.classifierGenericType.typeArguments[0].rawType", typeArgument(at(rangedInt._constraints(), 0)._functionDefinition()._classifierGenericType(), 0)._rawType())
+                .withKeyValue(path + ".constraints['0'].functionDefinition.classifierGenericType.typeArguments[0].rawType.parameters['this']", funcTypeParam(typeArgument(at(rangedInt._constraints(), 0)._functionDefinition()._classifierGenericType(), 0)._rawType(), "this"))
+                .withKeyValue(path + ".constraints['0'].functionDefinition.expressionSequence[0]", at(at(rangedInt._constraints(), 0)._functionDefinition()._expressionSequence(), 0))
+                .withKeyValue(path + ".constraints['0'].functionDefinition.expressionSequence[0].genericType", at(at(rangedInt._constraints(), 0)._functionDefinition()._expressionSequence(), 0)._genericType())
+                .withKeyValue(path + ".constraints['0'].functionDefinition.expressionSequence[0].parametersValues[0]", paramValue(at(at(rangedInt._constraints(), 0)._functionDefinition()._expressionSequence(), 0), 0))
+                .withKeyValue(
+                        path + ".constraints['0'].functionDefinition.expressionSequence[0].parametersValues[0].genericType",
+                        paramValue(at(at(rangedInt._constraints(), 0)._functionDefinition()._expressionSequence(), 0), 0)._genericType())
+                .withKeyValue(path + ".constraints['0'].functionDefinition.expressionSequence[0].parametersValues[1]", paramValue(at(at(rangedInt._constraints(), 0)._functionDefinition()._expressionSequence(), 0), 1))
+                .withKeyValue(
+                        path + ".constraints['0'].functionDefinition.expressionSequence[0].parametersValues[1].genericType",
+                        paramValue(at(at(rangedInt._constraints(), 0)._functionDefinition()._expressionSequence(), 0), 1)._genericType())
+
+                .withKeyValue(path + ".constraints['1']", at(rangedInt._constraints(), 1))
+                .withKeyValue(path + ".constraints['1'].functionDefinition", at(rangedInt._constraints(), 1)._functionDefinition())
+//                .withKeyValue(path + ".constraints['1'].functionDefinition.classifierGenericType", at(rangedInt._constraints(), 1)._functionDefinition()._classifierGenericType())
+                .withKeyValue(path + ".constraints['1'].functionDefinition.classifierGenericType.typeArguments[0]", typeArgument(at(rangedInt._constraints(), 1)._functionDefinition()._classifierGenericType(), 0))
+                .withKeyValue(path + ".constraints['1'].functionDefinition.classifierGenericType.typeArguments[0].rawType", typeArgument(at(rangedInt._constraints(), 1)._functionDefinition()._classifierGenericType(), 0)._rawType())
+                .withKeyValue(path + ".constraints['1'].functionDefinition.classifierGenericType.typeArguments[0].rawType.parameters['this']", funcTypeParam(typeArgument(at(rangedInt._constraints(), 1)._functionDefinition()._classifierGenericType(), 0)._rawType(), "this"))
+                .withKeyValue(path + ".constraints['1'].functionDefinition.expressionSequence[0]", at(at(rangedInt._constraints(), 1)._functionDefinition()._expressionSequence(), 0))
+                .withKeyValue(path + ".constraints['1'].functionDefinition.expressionSequence[0].genericType", at(at(rangedInt._constraints(), 1)._functionDefinition()._expressionSequence(), 0)._genericType())
+                .withKeyValue(path + ".constraints['1'].functionDefinition.expressionSequence[0].parametersValues[0]", paramValue(at(at(rangedInt._constraints(), 1)._functionDefinition()._expressionSequence(), 0), 0))
+                .withKeyValue(
+                        path + ".constraints['1'].functionDefinition.expressionSequence[0].parametersValues[0].genericType",
+                        paramValue(at(at(rangedInt._constraints(), 1)._functionDefinition()._expressionSequence(), 0), 0)._genericType())
+                .withKeyValue(path + ".constraints['1'].functionDefinition.expressionSequence[0].parametersValues[1]", paramValue(at(at(rangedInt._constraints(), 1)._functionDefinition()._expressionSequence(), 0), 1))
+                .withKeyValue(
+                        path + ".constraints['1'].functionDefinition.expressionSequence[0].parametersValues[1].genericType",
+                        paramValue(at(at(rangedInt._constraints(), 1)._functionDefinition()._expressionSequence(), 0), 1)._genericType())
+
+                .withKeyValue(path + ".constraints['2']", at(rangedInt._constraints(), 2))
+                .withKeyValue(path + ".constraints['2'].functionDefinition", at(rangedInt._constraints(), 2)._functionDefinition())
+//                .withKeyValue(path + ".constraints['2'].functionDefinition.classifierGenericType", at(rangedInt._constraints(), 2)._functionDefinition()._classifierGenericType())
+                .withKeyValue(path + ".constraints['2'].functionDefinition.classifierGenericType.typeArguments[0]", typeArgument(at(rangedInt._constraints(), 2)._functionDefinition()._classifierGenericType(), 0))
+                .withKeyValue(path + ".constraints['2'].functionDefinition.classifierGenericType.typeArguments[0].rawType", typeArgument(at(rangedInt._constraints(), 2)._functionDefinition()._classifierGenericType(), 0)._rawType())
+                .withKeyValue(path + ".constraints['2'].functionDefinition.classifierGenericType.typeArguments[0].rawType.parameters['this']", funcTypeParam(typeArgument(at(rangedInt._constraints(), 2)._functionDefinition()._classifierGenericType(), 0)._rawType(), "this"))
+                .withKeyValue(path + ".constraints['2'].functionDefinition.expressionSequence[0]", at(at(rangedInt._constraints(), 2)._functionDefinition()._expressionSequence(), 0))
+                .withKeyValue(path + ".constraints['2'].functionDefinition.expressionSequence[0].genericType", at(at(rangedInt._constraints(), 2)._functionDefinition()._expressionSequence(), 0)._genericType())
+                .withKeyValue(path + ".constraints['2'].functionDefinition.expressionSequence[0].parametersValues[0]", paramValue(at(at(rangedInt._constraints(), 2)._functionDefinition()._expressionSequence(), 0), 0))
+                .withKeyValue(
+                        path + ".constraints['2'].functionDefinition.expressionSequence[0].parametersValues[0].genericType",
+                        paramValue(at(at(rangedInt._constraints(), 2)._functionDefinition()._expressionSequence(), 0), 0)._genericType())
+                .withKeyValue(path + ".constraints['2'].functionDefinition.expressionSequence[0].parametersValues[1]", paramValue(at(at(rangedInt._constraints(), 2)._functionDefinition()._expressionSequence(), 0), 1))
+                .withKeyValue(
+                        path + ".constraints['2'].functionDefinition.expressionSequence[0].parametersValues[1].genericType",
+                        paramValue(at(at(rangedInt._constraints(), 2)._functionDefinition()._expressionSequence(), 0), 1)._genericType())
+
+                .withKeyValue(path + ".typeVariables['low']", typeVariable(rangedInt, "low"))
+                .withKeyValue(path + ".typeVariables['low'].genericType", typeVariable(rangedInt, "low")._genericType())
+                .withKeyValue(path + ".typeVariables['high']", typeVariable(rangedInt, "high"))
+                .withKeyValue(path + ".typeVariables['high'].genericType", typeVariable(rangedInt, "high")._genericType());
+
+        assertIds(path, expected);
+    }
+
+    @Test
+    public void testClassWithTypeVariables()
+    {
+        String path = "test::model::ClassWithTypeVariables";
+        Class<?> classWithTypeVars = getCoreInstance(path);
+        MutableMap<String, CoreInstance> expected = Maps.mutable.<String, CoreInstance>with(path, classWithTypeVars)
+                .withKeyValue(path + ".classifierGenericType", classWithTypeVars._classifierGenericType())
+                .withKeyValue(path + ".generalizations[0]", at(classWithTypeVars._generalizations(), 0))
+                .withKeyValue(path + ".generalizations[0].general", at(classWithTypeVars._generalizations(), 0)._general())
+
+                .withKeyValue(path + ".constraints['0']", at(classWithTypeVars._constraints(), 0))
+                .withKeyValue(path + ".constraints['0'].functionDefinition", at(classWithTypeVars._constraints(), 0)._functionDefinition())
+//                .withKeyValue(path + ".constraints['0'].functionDefinition.classifierGenericType", at(rangedInt._constraints(), 0)._functionDefinition()._classifierGenericType())
+                .withKeyValue(path + ".constraints['0'].functionDefinition.classifierGenericType.typeArguments[0]", typeArgument(at(classWithTypeVars._constraints(), 0)._functionDefinition()._classifierGenericType(), 0))
+                .withKeyValue(path + ".constraints['0'].functionDefinition.classifierGenericType.typeArguments[0].rawType", typeArgument(at(classWithTypeVars._constraints(), 0)._functionDefinition()._classifierGenericType(), 0)._rawType())
+                .withKeyValue(path + ".constraints['0'].functionDefinition.classifierGenericType.typeArguments[0].rawType.parameters['this']", funcTypeParam(typeArgument(at(classWithTypeVars._constraints(), 0)._functionDefinition()._classifierGenericType(), 0)._rawType(), "this"))
+                .withKeyValue(path + ".constraints['0'].functionDefinition.expressionSequence[0]", at(at(classWithTypeVars._constraints(), 0)._functionDefinition()._expressionSequence(), 0))
+                .withKeyValue(path + ".constraints['0'].functionDefinition.expressionSequence[0].genericType", at(at(classWithTypeVars._constraints(), 0)._functionDefinition()._expressionSequence(), 0)._genericType())
+                .withKeyValue(path + ".constraints['0'].functionDefinition.expressionSequence[0].parametersValues[0]", paramValue(at(at(classWithTypeVars._constraints(), 0)._functionDefinition()._expressionSequence(), 0), 0))
+                .withKeyValue(
+                        path + ".constraints['0'].functionDefinition.expressionSequence[0].parametersValues[0].genericType",
+                        paramValue(at(at(classWithTypeVars._constraints(), 0)._functionDefinition()._expressionSequence(), 0), 0)._genericType())
+                .withKeyValue(path + ".constraints['0'].functionDefinition.expressionSequence[0].parametersValues[1]", paramValue(at(at(classWithTypeVars._constraints(), 0)._functionDefinition()._expressionSequence(), 0), 1))
+                .withKeyValue(
+                        path + ".constraints['0'].functionDefinition.expressionSequence[0].parametersValues[1].genericType",
+                        paramValue(at(at(classWithTypeVars._constraints(), 0)._functionDefinition()._expressionSequence(), 0), 1)._genericType())
+
+                .withKeyValue(path + ".constraints['1']", at(classWithTypeVars._constraints(), 1))
+                .withKeyValue(path + ".constraints['1'].functionDefinition", at(classWithTypeVars._constraints(), 1)._functionDefinition())
+//                .withKeyValue(path + ".constraints['1'].functionDefinition.classifierGenericType", at(rangedInt._constraints(), 1)._functionDefinition()._classifierGenericType())
+                .withKeyValue(path + ".constraints['1'].functionDefinition.classifierGenericType.typeArguments[0]", typeArgument(at(classWithTypeVars._constraints(), 1)._functionDefinition()._classifierGenericType(), 0))
+                .withKeyValue(path + ".constraints['1'].functionDefinition.classifierGenericType.typeArguments[0].rawType", typeArgument(at(classWithTypeVars._constraints(), 1)._functionDefinition()._classifierGenericType(), 0)._rawType())
+                .withKeyValue(path + ".constraints['1'].functionDefinition.classifierGenericType.typeArguments[0].rawType.parameters['this']", funcTypeParam(typeArgument(at(classWithTypeVars._constraints(), 1)._functionDefinition()._classifierGenericType(), 0)._rawType(), "this"))
+                .withKeyValue(path + ".constraints['1'].functionDefinition.expressionSequence[0]", at(at(classWithTypeVars._constraints(), 1)._functionDefinition()._expressionSequence(), 0))
+                .withKeyValue(path + ".constraints['1'].functionDefinition.expressionSequence[0].genericType", at(at(classWithTypeVars._constraints(), 1)._functionDefinition()._expressionSequence(), 0)._genericType())
+                .withKeyValue(path + ".constraints['1'].functionDefinition.expressionSequence[0].parametersValues[0]", paramValue(at(at(classWithTypeVars._constraints(), 1)._functionDefinition()._expressionSequence(), 0), 0))
+                .withKeyValue(
+                        path + ".constraints['1'].functionDefinition.expressionSequence[0].parametersValues[0].genericType",
+                        paramValue(at(at(classWithTypeVars._constraints(), 1)._functionDefinition()._expressionSequence(), 0), 0)._genericType())
+                .withKeyValue(
+                        path + ".constraints['1'].functionDefinition.expressionSequence[0].parametersValues[0].parametersValues[0]",
+                        paramValue(paramValue(at(at(classWithTypeVars._constraints(), 1)._functionDefinition()._expressionSequence(), 0), 0), 0))
+                .withKeyValue(
+                        path + ".constraints['1'].functionDefinition.expressionSequence[0].parametersValues[0].parametersValues[0].genericType",
+                        paramValue(paramValue(at(at(classWithTypeVars._constraints(), 1)._functionDefinition()._expressionSequence(), 0), 0), 0)._genericType())
+//                .withKeyValue(
+//                        path + ".constraints['1'].functionDefinition.expressionSequence[0].parametersValues[0].parametersValues[0].genericType.typeVariableValues[0]",
+//                        at(paramValue(paramValue(at(at(classWithTypeVars._constraints(), 1)._functionDefinition()._expressionSequence(), 0), 0), 0)._genericType()._typeVariableValues(), 0))
+                .withKeyValue(
+                        path + ".constraints['1'].functionDefinition.expressionSequence[0].parametersValues[0].parametersValues[0].genericType.typeVariableValues[0].genericType",
+                        at(paramValue(paramValue(at(at(classWithTypeVars._constraints(), 1)._functionDefinition()._expressionSequence(), 0), 0), 0)._genericType()._typeVariableValues(), 0)._genericType())
+//                .withKeyValue(
+//                        path + ".constraints['1'].functionDefinition.expressionSequence[0].parametersValues[0].parametersValues[0].genericType.typeVariableValues[1]",
+//                        at(paramValue(paramValue(at(at(classWithTypeVars._constraints(), 1)._functionDefinition()._expressionSequence(), 0), 0), 0)._genericType()._typeVariableValues(), 1))
+                .withKeyValue(
+                        path + ".constraints['1'].functionDefinition.expressionSequence[0].parametersValues[0].parametersValues[0].genericType.typeVariableValues[1].genericType",
+                        at(paramValue(paramValue(at(at(classWithTypeVars._constraints(), 1)._functionDefinition()._expressionSequence(), 0), 0), 0)._genericType()._typeVariableValues(), 1)._genericType())
+                .withKeyValue(
+                        path + ".constraints['1'].functionDefinition.expressionSequence[0].parametersValues[0].propertyName",
+                        ((SimpleFunctionExpression) paramValue(at(at(classWithTypeVars._constraints(), 1)._functionDefinition()._expressionSequence(), 0), 0))._propertyName())
+                .withKeyValue(path + ".constraints['1'].functionDefinition.expressionSequence[0].parametersValues[1]", paramValue(at(at(classWithTypeVars._constraints(), 1)._functionDefinition()._expressionSequence(), 0), 1))
+                .withKeyValue(
+                        path + ".constraints['1'].functionDefinition.expressionSequence[0].parametersValues[1].genericType",
+                        paramValue(at(at(classWithTypeVars._constraints(), 1)._functionDefinition()._expressionSequence(), 0), 1)._genericType())
+
+                .withKeyValue(path + ".constraints['2']", at(classWithTypeVars._constraints(), 2))
+                .withKeyValue(path + ".constraints['2'].functionDefinition", at(classWithTypeVars._constraints(), 2)._functionDefinition())
+//                .withKeyValue(path + ".constraints['2'].functionDefinition.classifierGenericType", at(rangedInt._constraints(), 2)._functionDefinition()._classifierGenericType())
+                .withKeyValue(path + ".constraints['2'].functionDefinition.classifierGenericType.typeArguments[0]", typeArgument(at(classWithTypeVars._constraints(), 2)._functionDefinition()._classifierGenericType(), 0))
+                .withKeyValue(path + ".constraints['2'].functionDefinition.classifierGenericType.typeArguments[0].rawType", typeArgument(at(classWithTypeVars._constraints(), 2)._functionDefinition()._classifierGenericType(), 0)._rawType())
+                .withKeyValue(path + ".constraints['2'].functionDefinition.classifierGenericType.typeArguments[0].rawType.parameters['this']", funcTypeParam(typeArgument(at(classWithTypeVars._constraints(), 2)._functionDefinition()._classifierGenericType(), 0)._rawType(), "this"))
+                .withKeyValue(path + ".constraints['2'].functionDefinition.expressionSequence[0]", at(at(classWithTypeVars._constraints(), 2)._functionDefinition()._expressionSequence(), 0))
+                .withKeyValue(path + ".constraints['2'].functionDefinition.expressionSequence[0].genericType", at(at(classWithTypeVars._constraints(), 2)._functionDefinition()._expressionSequence(), 0)._genericType())
+                .withKeyValue(path + ".constraints['2'].functionDefinition.expressionSequence[0].parametersValues[0]", paramValue(at(at(classWithTypeVars._constraints(), 2)._functionDefinition()._expressionSequence(), 0), 0))
+                .withKeyValue(
+                        path + ".constraints['2'].functionDefinition.expressionSequence[0].parametersValues[0].genericType",
+                        paramValue(at(at(classWithTypeVars._constraints(), 2)._functionDefinition()._expressionSequence(), 0), 0)._genericType())
+                .withKeyValue(
+                        path + ".constraints['2'].functionDefinition.expressionSequence[0].parametersValues[0].parametersValues[0]",
+                        paramValue(paramValue(at(at(classWithTypeVars._constraints(), 2)._functionDefinition()._expressionSequence(), 0), 0), 0))
+                .withKeyValue(
+                        path + ".constraints['2'].functionDefinition.expressionSequence[0].parametersValues[0].parametersValues[0].genericType",
+                        paramValue(paramValue(at(at(classWithTypeVars._constraints(), 2)._functionDefinition()._expressionSequence(), 0), 0), 0)._genericType())
+//                .withKeyValue(
+//                        path + ".constraints['2'].functionDefinition.expressionSequence[0].parametersValues[0].parametersValues[0].genericType.typeVariableValues[0]",
+//                        at(paramValue(paramValue(at(at(classWithTypeVars._constraints(), 2)._functionDefinition()._expressionSequence(), 0), 0), 0)._genericType()._typeVariableValues(), 0))
+                .withKeyValue(
+                        path + ".constraints['2'].functionDefinition.expressionSequence[0].parametersValues[0].parametersValues[0].genericType.typeVariableValues[0].genericType",
+                        at(paramValue(paramValue(at(at(classWithTypeVars._constraints(), 2)._functionDefinition()._expressionSequence(), 0), 0), 0)._genericType()._typeVariableValues(), 0)._genericType())
+//                .withKeyValue(
+//                        path + ".constraints['2'].functionDefinition.expressionSequence[0].parametersValues[0].parametersValues[0].genericType.typeVariableValues[1]",
+//                        at(paramValue(paramValue(at(at(classWithTypeVars._constraints(), 2)._functionDefinition()._expressionSequence(), 0), 0), 0)._genericType()._typeVariableValues(), 1))
+                .withKeyValue(
+                        path + ".constraints['2'].functionDefinition.expressionSequence[0].parametersValues[0].parametersValues[0].genericType.typeVariableValues[1].genericType",
+                        at(paramValue(paramValue(at(at(classWithTypeVars._constraints(), 2)._functionDefinition()._expressionSequence(), 0), 0), 0)._genericType()._typeVariableValues(), 1)._genericType())
+                .withKeyValue(
+                        path + ".constraints['2'].functionDefinition.expressionSequence[0].parametersValues[0].propertyName",
+                        ((SimpleFunctionExpression) paramValue(at(at(classWithTypeVars._constraints(), 2)._functionDefinition()._expressionSequence(), 0), 0))._propertyName())
+                .withKeyValue(path + ".constraints['2'].functionDefinition.expressionSequence[0].parametersValues[1]", paramValue(at(at(classWithTypeVars._constraints(), 2)._functionDefinition()._expressionSequence(), 0), 1))
+                .withKeyValue(
+                        path + ".constraints['2'].functionDefinition.expressionSequence[0].parametersValues[1].genericType",
+                        paramValue(at(at(classWithTypeVars._constraints(), 2)._functionDefinition()._expressionSequence(), 0), 1)._genericType())
+
+                .withKeyValue(path + ".properties['value']", findProperty(classWithTypeVars, "value"))
+                .withKeyValue(path + ".properties['value'].classifierGenericType", findProperty(classWithTypeVars, "value")._classifierGenericType())
+                .withKeyValue(path + ".properties['value'].classifierGenericType.typeArguments[0]", typeArgument(findProperty(classWithTypeVars, "value")._classifierGenericType(), 0))
+                .withKeyValue(path + ".properties['value'].classifierGenericType.typeArguments[1]", typeArgument(findProperty(classWithTypeVars, "value")._classifierGenericType(), 1))
+                .withKeyValue(path + ".properties['value'].genericType", findProperty(classWithTypeVars, "value")._genericType())
+
+                .withKeyValue(path + ".typeVariables['min']", typeVariable(classWithTypeVars, "min"))
+                .withKeyValue(path + ".typeVariables['min'].genericType", typeVariable(classWithTypeVars, "min")._genericType())
+                .withKeyValue(path + ".typeVariables['max']", typeVariable(classWithTypeVars, "max"))
+                .withKeyValue(path + ".typeVariables['max'].genericType", typeVariable(classWithTypeVars, "max")._genericType());
+
+        assertIds(path, expected);
+    }
+
+    @Test
+    public void testClassWithPropertiesWithTypeVariables()
+    {
+        String path = "test::model::ClassWithPropertiesWithTypeVariables";
+        Class<?> classWithPropsWithTypeVars = getCoreInstance(path);
+        MutableMap<String, CoreInstance> expected = Maps.mutable.<String, CoreInstance>with(path, classWithPropsWithTypeVars)
+                .withKeyValue(path + ".classifierGenericType", classWithPropsWithTypeVars._classifierGenericType())
+                .withKeyValue(path + ".generalizations[0]", at(classWithPropsWithTypeVars._generalizations(), 0))
+                .withKeyValue(path + ".generalizations[0].general", at(classWithPropsWithTypeVars._generalizations(), 0)._general())
+
+                .withKeyValue(path + ".properties['rating']", findProperty(classWithPropsWithTypeVars, "rating"))
+                .withKeyValue(path + ".properties['rating'].classifierGenericType", findProperty(classWithPropsWithTypeVars, "rating")._classifierGenericType())
+                .withKeyValue(path + ".properties['rating'].classifierGenericType.typeArguments[0]", typeArgument(findProperty(classWithPropsWithTypeVars, "rating")._classifierGenericType(), 0))
+                .withKeyValue(path + ".properties['rating'].classifierGenericType.typeArguments[1]", typeArgument(findProperty(classWithPropsWithTypeVars, "rating")._classifierGenericType(), 1))
+                .withKeyValue(path + ".properties['rating'].genericType", findProperty(classWithPropsWithTypeVars, "rating")._genericType())
+                .withKeyValue(path + ".properties['rating'].genericType.typeVariableValues[0]", at(findProperty(classWithPropsWithTypeVars, "rating")._genericType()._typeVariableValues(), 0))
+                .withKeyValue(path + ".properties['rating'].genericType.typeVariableValues[0].genericType", at(findProperty(classWithPropsWithTypeVars, "rating")._genericType()._typeVariableValues(), 0)._genericType())
+                .withKeyValue(path + ".properties['rating'].genericType.typeVariableValues[1]", at(findProperty(classWithPropsWithTypeVars, "rating")._genericType()._typeVariableValues(), 1))
+                .withKeyValue(path + ".properties['rating'].genericType.typeVariableValues[1].genericType", at(findProperty(classWithPropsWithTypeVars, "rating")._genericType()._typeVariableValues(), 1)._genericType())
+
+                .withKeyValue(path + ".properties['wideRating']", findProperty(classWithPropsWithTypeVars, "wideRating"))
+                .withKeyValue(path + ".properties['wideRating'].classifierGenericType", findProperty(classWithPropsWithTypeVars, "wideRating")._classifierGenericType())
+                .withKeyValue(path + ".properties['wideRating'].classifierGenericType.typeArguments[0]", typeArgument(findProperty(classWithPropsWithTypeVars, "wideRating")._classifierGenericType(), 0))
+                .withKeyValue(path + ".properties['wideRating'].classifierGenericType.typeArguments[1]", typeArgument(findProperty(classWithPropsWithTypeVars, "wideRating")._classifierGenericType(), 1))
+                .withKeyValue(path + ".properties['wideRating'].genericType", findProperty(classWithPropsWithTypeVars, "wideRating")._genericType())
+                .withKeyValue(path + ".properties['wideRating'].genericType.typeVariableValues[0]", at(findProperty(classWithPropsWithTypeVars, "wideRating")._genericType()._typeVariableValues(), 0))
+                .withKeyValue(path + ".properties['wideRating'].genericType.typeVariableValues[0].genericType", at(findProperty(classWithPropsWithTypeVars, "wideRating")._genericType()._typeVariableValues(), 0)._genericType())
+                .withKeyValue(path + ".properties['wideRating'].genericType.typeVariableValues[1]", at(findProperty(classWithPropsWithTypeVars, "wideRating")._genericType()._typeVariableValues(), 1))
+                .withKeyValue(path + ".properties['wideRating'].genericType.typeVariableValues[1].genericType", at(findProperty(classWithPropsWithTypeVars, "wideRating")._genericType()._typeVariableValues(), 1)._genericType())
+
+
+                .withKeyValue(path + ".properties['values']", findProperty(classWithPropsWithTypeVars, "values"))
+                .withKeyValue(path + ".properties['values'].classifierGenericType", findProperty(classWithPropsWithTypeVars, "values")._classifierGenericType())
+                .withKeyValue(path + ".properties['values'].classifierGenericType.typeArguments[0]", typeArgument(findProperty(classWithPropsWithTypeVars, "values")._classifierGenericType(), 0))
+                .withKeyValue(path + ".properties['values'].classifierGenericType.typeArguments[1]", typeArgument(findProperty(classWithPropsWithTypeVars, "values")._classifierGenericType(), 1))
+                .withKeyValue(path + ".properties['values'].genericType", findProperty(classWithPropsWithTypeVars, "values")._genericType())
+                .withKeyValue(path + ".properties['values'].genericType.typeVariableValues[0]", at(findProperty(classWithPropsWithTypeVars, "values")._genericType()._typeVariableValues(), 0))
+                .withKeyValue(path + ".properties['values'].genericType.typeVariableValues[0].genericType", at(findProperty(classWithPropsWithTypeVars, "values")._genericType()._typeVariableValues(), 0)._genericType())
+                .withKeyValue(path + ".properties['values'].genericType.typeVariableValues[1]", at(findProperty(classWithPropsWithTypeVars, "values")._genericType()._typeVariableValues(), 1))
+                .withKeyValue(path + ".properties['values'].genericType.typeVariableValues[1].genericType", at(findProperty(classWithPropsWithTypeVars, "values")._genericType()._typeVariableValues(), 1)._genericType());
 
         assertIds(path, expected);
     }

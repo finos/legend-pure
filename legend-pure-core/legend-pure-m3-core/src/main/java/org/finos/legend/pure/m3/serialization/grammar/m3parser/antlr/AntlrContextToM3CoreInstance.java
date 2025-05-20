@@ -2217,6 +2217,7 @@ public class AntlrContextToM3CoreInstance
         SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop(), true);
         PrimitiveType primitiveType = PrimitiveTypeInstance.createPersistent(this.repository, typeName, sourceInfo)
                 ._name(typeName)
+                ._classifierGenericType(GenericTypeInstance.createPersistent(this.repository, sourceInfo)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.PrimitiveType)))
                 ._extended(true);
 
         buildAndSetPackage(primitiveType, ctx.qualifiedName().packagePath(), this.repository, this.sourceInformation);
