@@ -528,8 +528,9 @@ public final class JavaSourceCodeGenerator
                 "    public PureCompiledLambda(LambdaFunction lambdaFunction, SharedPureFunction pureFunction)\n" +
                 "    {\n" +
                 "        this();\n" +
-                "        this.lambdaFunction = (LambdaFunction)lambdaFunction;\n" +
                 "        this.pureFunction = pureFunction;\n" +
+                "        this.lambdaFunction = (LambdaFunction)lambdaFunction;\n" +
+                "        if (this.lambdaFunction != null) { setSourceInformation(this.lambdaFunction.getSourceInformation());}\n" +
                 "    }" +
                 "\n" +
                 "    public SharedPureFunction pureFunction()" +
