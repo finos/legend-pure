@@ -198,7 +198,7 @@ class ContainingElementIndex
         void addAllElements()
         {
             addElement(this.processorSupport.repository_getTopLevel(M3Paths.Package));
-            PrimitiveUtilities.forEachPrimitiveType(processorSupport, this::addElement);
+            PrimitiveUtilities.forEachPrimitiveType(this.processorSupport, this::addElement);
             Deque<CoreInstance> packages = new ArrayDeque<>();
             packages.add(this.processorSupport.repository_getTopLevel(M3Paths.Root));
             while (!packages.isEmpty())

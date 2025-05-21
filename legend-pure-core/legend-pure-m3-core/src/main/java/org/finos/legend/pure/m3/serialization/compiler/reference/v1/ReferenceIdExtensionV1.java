@@ -18,6 +18,9 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdExtension;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdProvider;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdResolver;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+
+import java.util.function.Function;
 
 public class ReferenceIdExtensionV1 implements ReferenceIdExtension
 {
@@ -34,8 +37,8 @@ public class ReferenceIdExtensionV1 implements ReferenceIdExtension
     }
 
     @Override
-    public ReferenceIdResolver newResolver(ProcessorSupport processorSupport)
+    public ReferenceIdResolver newResolver(Function<? super String, ? extends CoreInstance> packagePathResolver)
     {
-        return new ReferenceIdResolverV1(processorSupport);
+        return new ReferenceIdResolverV1(packagePathResolver);
     }
 }

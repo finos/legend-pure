@@ -15,6 +15,9 @@
 package org.finos.legend.pure.m3.serialization.compiler.reference;
 
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+
+import java.util.function.Function;
 
 public interface ReferenceIdExtension
 {
@@ -22,5 +25,5 @@ public interface ReferenceIdExtension
 
     ReferenceIdProvider newProvider(ProcessorSupport processorSupport);
 
-    ReferenceIdResolver newResolver(ProcessorSupport processorSupport);
+    ReferenceIdResolver newResolver(Function<? super String, ? extends CoreInstance> packagePathResolver);
 }

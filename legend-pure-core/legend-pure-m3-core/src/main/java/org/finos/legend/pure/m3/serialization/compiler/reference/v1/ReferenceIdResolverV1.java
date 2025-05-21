@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m3.serialization.compiler.reference.v1;
 
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.graph.GraphPath;
 import org.finos.legend.pure.m3.serialization.compiler.reference.InvalidReferenceIdException;
 import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdResolver;
@@ -23,15 +22,17 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.function.Function;
+
 class ReferenceIdResolverV1 implements ReferenceIdResolver
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReferenceIdResolverV1.class);
 
-    private final ProcessorSupport processorSupport;
+    private final Function<? super String, ? extends CoreInstance> packagePathResolver;
 
-    ReferenceIdResolverV1(ProcessorSupport processorSupport)
+    ReferenceIdResolverV1(Function<? super String, ? extends CoreInstance> packagePathResolver)
     {
-        this.processorSupport = processorSupport;
+        this.packagePathResolver = packagePathResolver;
     }
 
     @Override
@@ -63,7 +64,7 @@ class ReferenceIdResolverV1 implements ReferenceIdResolver
 
         try
         {
-            CoreInstance result = graphPath.resolve(this.processorSupport);
+            CoreInstance result = graphPath.resolve(this.packagePathResolver);
             long end = System.nanoTime();
             LOGGER.debug("Resolved {} in {}s", referenceId, (end - start) / 1_000_000_000.0);
             return result;

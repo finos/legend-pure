@@ -18,18 +18,22 @@ import org.eclipse.collections.api.map.primitive.IntObjectMap;
 import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 import org.eclipse.collections.impl.factory.primitive.IntObjectMaps;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 import java.util.Objects;
 import java.util.ServiceLoader;
+import java.util.function.Function;
 
 public abstract class ReferenceIds
 {
     final ProcessorSupport processorSupport;
+    final Function<? super String, ? extends CoreInstance> packagePathResolver;
     final int defaultVersion;
 
-    private ReferenceIds(ProcessorSupport processorSupport, int defaultVersion)
+    private ReferenceIds(ProcessorSupport processorSupport, Function<? super String, ? extends CoreInstance> packagePathResolver, int defaultVersion)
     {
         this.processorSupport = processorSupport;
+        this.packagePathResolver = (packagePathResolver == null) ? this.processorSupport::package_getByUserPath : packagePathResolver;
         this.defaultVersion = defaultVersion;
     }
 
@@ -121,7 +125,7 @@ public abstract class ReferenceIds
         {
             if (this.resolver == null)
             {
-                this.resolver = this.extension.newResolver(ReferenceIds.this.processorSupport);
+                this.resolver = this.extension.newResolver(ReferenceIds.this.packagePathResolver);
             }
             return this.resolver;
         }
@@ -131,9 +135,9 @@ public abstract class ReferenceIds
     {
         private final ExtensionCache extension;
 
-        private Single(ProcessorSupport processorSupport, ReferenceIdExtension extension)
+        private Single(ProcessorSupport processorSupport, Function<? super String, ? extends CoreInstance> packagePathResolver, ReferenceIdExtension extension)
         {
-            super(processorSupport, extension.version());
+            super(processorSupport, packagePathResolver, extension.version());
             this.extension = new ExtensionCache(extension);
         }
 
@@ -164,9 +168,9 @@ public abstract class ReferenceIds
         private final ExtensionCache[] extensions;
         private final int offset;
 
-        private Sequence(ProcessorSupport processorSupport, int defaultVersion, ReferenceIdExtension[] extensions)
+        private Sequence(ProcessorSupport processorSupport, Function<? super String, ? extends CoreInstance> packagePathResolver, int defaultVersion, ReferenceIdExtension[] extensions)
         {
-            super(processorSupport, defaultVersion);
+            super(processorSupport, packagePathResolver, defaultVersion);
             this.extensions = new ExtensionCache[extensions.length];
             for (int i = 0; i < extensions.length; i++)
             {
@@ -205,9 +209,9 @@ public abstract class ReferenceIds
     {
         private final MutableIntObjectMap<ExtensionCache> extensions;
 
-        private General(ProcessorSupport processorSupport, int defaultVersion, IntObjectMap<ReferenceIdExtension> extensions)
+        private General(ProcessorSupport processorSupport, Function<? super String, ? extends CoreInstance> packagePathResolver, int defaultVersion, IntObjectMap<ReferenceIdExtension> extensions)
         {
-            super(processorSupport, defaultVersion);
+            super(processorSupport, packagePathResolver, defaultVersion);
             this.extensions = IntObjectMaps.mutable.ofInitialCapacity(extensions.size());
             extensions.forEachKeyValue((version, extension) -> this.extensions.put(version, new ExtensionCache(extension)));
         }
@@ -237,6 +241,7 @@ public abstract class ReferenceIds
     public static class Builder
     {
         private final ProcessorSupport processorSupport;
+        private Function<? super String, ? extends CoreInstance> packagePathResolver;
         private final MutableIntObjectMap<ReferenceIdExtension> extensions = IntObjectMaps.mutable.empty();
         private Integer defaultVersion;
 
@@ -316,6 +321,22 @@ public abstract class ReferenceIds
             return this;
         }
 
+        public void setPackagePathResolver(Function<? super String, ? extends CoreInstance> packagePathResolver)
+        {
+            this.packagePathResolver = packagePathResolver;
+        }
+
+        public void clearPackagePathResolver()
+        {
+            setPackagePathResolver(null);
+        }
+
+        public Builder withPackagePathResolver(Function<? super String, ? extends CoreInstance> packagePathResolver)
+        {
+            setPackagePathResolver(packagePathResolver);
+            return this;
+        }
+
         public ReferenceIds build()
         {
             if (this.extensions.isEmpty())
@@ -338,7 +359,7 @@ public abstract class ReferenceIds
 
             if (this.extensions.size() == 1)
             {
-                return new Single(this.processorSupport, this.extensions.getAny());
+                return new Single(this.processorSupport, this.packagePathResolver, this.extensions.getAny());
             }
 
             int minId;
@@ -346,10 +367,10 @@ public abstract class ReferenceIds
             {
                 ReferenceIdExtension[] extArray = new ReferenceIdExtension[this.extensions.size()];
                 this.extensions.forEachKeyValue((id, ext) -> extArray[id - minId] = ext);
-                return new Sequence(this.processorSupport, resolvedDefaultVersion, extArray);
+                return new Sequence(this.processorSupport, this.packagePathResolver, resolvedDefaultVersion, extArray);
             }
 
-            return new General(this.processorSupport, resolvedDefaultVersion, this.extensions);
+            return new General(this.processorSupport, this.packagePathResolver, resolvedDefaultVersion, this.extensions);
         }
     }
 }
