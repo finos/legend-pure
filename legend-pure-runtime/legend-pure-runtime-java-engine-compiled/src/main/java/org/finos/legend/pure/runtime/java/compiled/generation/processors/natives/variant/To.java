@@ -232,6 +232,6 @@ public class To extends AbstractNative
             throw new PureExecutionException(sourceInformation, e.getMessage(), e);
         }
 
-        throw new PureExecutionException(sourceInformation, "Variant of type '" + jsonNode.getNodeType() + "' cannot be converted to " + GenericType.print(pureGenericType, es.getProcessorSupport()));
+        throw new PureExecutionException(sourceInformation, GenericType.print(pureGenericType, es.getProcessorSupport()) + " is not managed yet!");
     }
 }
