@@ -23,7 +23,6 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -31,15 +30,18 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Lexer;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser;
+import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstanceWrapper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.StringEscape;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 import org.finos.legend.pure.m4.tools.TextTools;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class GraphPath
 {
@@ -74,7 +76,12 @@ public class GraphPath
 
     public void forEachNode(Consumer<? super CoreInstance> consumer, ProcessorSupport processorSupport)
     {
-        CoreInstance node = getStartNode(processorSupport);
+        forEachNode(consumer, processorSupport::package_getByUserPath);
+    }
+
+    public void forEachNode(Consumer<? super CoreInstance> consumer, Function<? super String, ? extends CoreInstance> packagePathResolver)
+    {
+        CoreInstance node = getStartNode(packagePathResolver);
         consumer.accept(node);
         for (int i = 0, edgeCount = getEdgeCount(); i < edgeCount; i++)
         {
@@ -105,12 +112,17 @@ public class GraphPath
 
     public CoreInstance resolveUpTo(int end, ProcessorSupport processorSupport)
     {
+        return resolveUpTo(end, processorSupport::package_getByUserPath);
+    }
+
+    public CoreInstance resolveUpTo(int end, Function<? super String, ? extends CoreInstance> packagePathResolver)
+    {
         int resolvedEnd = (end < 0) ? (this.edges.size() + end) : end;
         if ((resolvedEnd > this.edges.size()) || (resolvedEnd < 0))
         {
             throw new IndexOutOfBoundsException("Index: " + end + "; size: " + this.edges.size());
         }
-        CoreInstance node = getStartNode(processorSupport);
+        CoreInstance node = getStartNode(packagePathResolver);
         for (int i = 0; i < resolvedEnd; i++)
         {
             node = applyPathElementAtIndex(node, i);
@@ -120,13 +132,23 @@ public class GraphPath
 
     public CoreInstance resolve(ProcessorSupport processorSupport)
     {
-        return resolveUpTo(getEdgeCount(), processorSupport);
+        return resolve(processorSupport::package_getByUserPath);
+    }
+
+    public CoreInstance resolve(Function<? super String, ? extends CoreInstance> packagePathResolver)
+    {
+        return resolveUpTo(getEdgeCount(), packagePathResolver);
     }
 
     public ResolvedGraphPath resolveFully(ProcessorSupport processorSupport)
     {
+        return resolveFully(processorSupport::package_getByUserPath);
+    }
+
+    public ResolvedGraphPath resolveFully(Function<? super String, ? extends CoreInstance> packagePathResolver)
+    {
         MutableList<CoreInstance> nodes = Lists.mutable.ofInitialCapacity(getNodeCount());
-        forEachNode(nodes::add, processorSupport);
+        forEachNode(nodes::add, packagePathResolver);
         return new ResolvedGraphPath(this, nodes.toImmutable());
     }
 
@@ -158,7 +180,7 @@ public class GraphPath
             return this;
         }
 
-        CoreInstance node = getStartNode(processorSupport);
+        CoreInstance node = getStartNode(processorSupport::package_getByUserPath);
         CoreInstance lastPackagedOrTopLevel = node;
         int newStartIndex = 0;
         int pathElementCount = this.edges.size();
@@ -304,9 +326,9 @@ public class GraphPath
         return getDescription();
     }
 
-    private CoreInstance getStartNode(ProcessorSupport processorSupport)
+    private CoreInstance getStartNode(Function<? super String, ? extends CoreInstance> packagePathResolver)
     {
-        CoreInstance node = processorSupport.package_getByUserPath(this.startNodePath);
+        CoreInstance node = packagePathResolver.apply(this.startNodePath);
         if (node == null)
         {
             throw new RuntimeException("Could not find " + this.startNodePath);
@@ -558,8 +580,7 @@ public class GraphPath
 
         public Builder addToOneProperties(String... properties)
         {
-            ArrayIterate.forEach(properties, this::addToOneProperty);
-            return this;
+            return addToOneProperties(Arrays.asList(properties));
         }
 
         public Builder addToOneProperties(List<String> properties)
@@ -976,7 +997,7 @@ public class GraphPath
             return context.getText();
         }
 
-        public Builder parseDescription(String description, Builder builder)
+        Builder parseDescription(String description, Builder builder)
         {
             // parse
             init(description);
@@ -1076,20 +1097,20 @@ public class GraphPath
         {
             return ((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) node)._package() != null;
         }
-        return !(node instanceof Any) && (node.getValueForMetaPropertyToOne(M3Properties._package) != null) && processorSupport.instance_instanceOf(node, M3Paths.PackageableElement);
+        return (!(node instanceof Any) || (node instanceof AbstractCoreInstanceWrapper)) &&
+                (node.getValueForMetaPropertyToOne(M3Properties._package) != null) &&
+                processorSupport.instance_instanceOf(node, M3Paths.PackageableElement);
     }
 
     static boolean isTopLevel(CoreInstance node, ProcessorSupport processorSupport)
     {
-        CoreInstance topLevel;
         try
         {
-            topLevel = processorSupport.repository_getTopLevel(node.getName());
+            return node == processorSupport.repository_getTopLevel(node.getName());
         }
         catch (Exception ignore)
         {
             return false;
         }
-        return node == topLevel;
     }
 }
