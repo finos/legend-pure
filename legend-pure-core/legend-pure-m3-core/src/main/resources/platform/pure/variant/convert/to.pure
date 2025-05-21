@@ -163,10 +163,10 @@ function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testTo
 
 function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testToEnum<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertError(|$f->eval(|fromJson('"January"')->to(@meta::pure::functions::date::Month)), 'Variant of type \'STRING\' cannot be converted to Month');
+    assertError(|$f->eval(|fromJson('"January"')->to(@meta::pure::functions::date::Month)), 'Month is not managed yet!');
 }
 
 function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testToAny<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertError(|$f->eval(|fromJson('"hello"')->to(@Any)), 'Variant of type \'STRING\' cannot be converted to Any');
+    assertError(|$f->eval(|fromJson('"hello"')->to(@Any)), 'Any is not managed yet!');
 }
