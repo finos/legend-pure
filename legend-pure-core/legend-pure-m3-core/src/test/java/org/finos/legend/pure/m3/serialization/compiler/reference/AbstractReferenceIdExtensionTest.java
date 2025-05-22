@@ -46,7 +46,7 @@ public abstract class AbstractReferenceIdExtensionTest extends AbstractReference
     public void setUpProviderResolver()
     {
         this.provider = extension.newProvider(processorSupport);
-        this.resolver = extension.newResolver(processorSupport);
+        this.resolver = extension.newResolver(processorSupport::package_getByUserPath);
     }
 
     @Test
@@ -70,7 +70,7 @@ public abstract class AbstractReferenceIdExtensionTest extends AbstractReference
     public void testProviderAndResolverVersions()
     {
         Assert.assertEquals(extension.version(), extension.newProvider(processorSupport).version());
-        Assert.assertEquals(extension.version(), extension.newResolver(processorSupport).version());
+        Assert.assertEquals(extension.version(), extension.newResolver(processorSupport::package_getByUserPath).version());
     }
 
     @Test
