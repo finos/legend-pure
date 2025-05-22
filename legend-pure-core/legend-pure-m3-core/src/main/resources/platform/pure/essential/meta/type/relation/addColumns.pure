@@ -34,3 +34,14 @@ function <<test.Test>> meta::pure::functions::meta::tests::addColumns():Boolean[
     );
 
 }
+
+
+function <<test.Test>> meta::pure::functions::relation::tests::testAddColumnsAfterEvaluateAndDeactivate():Boolean[1]
+{
+    let relType = ^meta::pure::metamodel::relation::RelationType<Any>()->evaluateAndDeactivate();
+
+    let newRelType = $relType->meta::pure::functions::meta::addColumns(~[strNew: String[1]]);
+
+    assertEquals(1, $newRelType.columns->size());
+    assertEquals('strNew', $newRelType.columns->at(0).name);
+}
