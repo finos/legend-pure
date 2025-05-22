@@ -53,7 +53,7 @@ public class TestLazyImplClassifiers extends AbstractPureTestWithCoreCompiled
     public void testLazyMetaDataClassifierPrimitiveType()
     {
         CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "meta::pure::metamodel::type::PrimitiveType");
-        MutableList<String> invalidPrimitiveTypes = this.metadataLazy.getMetadata("meta::pure::metamodel::type::PrimitiveType")
+        MutableList<String> invalidPrimitiveTypes = this.metadataLazy.getClassifierInstances("meta::pure::metamodel::type::PrimitiveType")
                 .collectIf(ci -> ci.getClassifier() != expected, CoreInstance::getName, Lists.mutable.empty());
         Assert.assertEquals("primitive types with the wrong classifier", Lists.fixedSize.empty(), invalidPrimitiveTypes);
     }

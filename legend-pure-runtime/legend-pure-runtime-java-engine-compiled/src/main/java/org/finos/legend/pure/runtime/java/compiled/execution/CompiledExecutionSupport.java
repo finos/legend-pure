@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.execution;
 
+import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.set.MutableSet;
@@ -157,9 +158,16 @@ public class CompiledExecutionSupport implements ExecutionSupport
         return this.options;
     }
 
+    @SuppressWarnings("rawtypes")
     public MapIterable getMetadata(String classifier)
     {
         return getMetadata().getMetadata(classifier);
+    }
+
+    @SuppressWarnings("rawtypes")
+    public RichIterable getClassifierInstances(String classifier)
+    {
+        return getMetadata().getClassifierInstances(classifier);
     }
 
     public CoreInstance getMetadata(String classifier, String id)

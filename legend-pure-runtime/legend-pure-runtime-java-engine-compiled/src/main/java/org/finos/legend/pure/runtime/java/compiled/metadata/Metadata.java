@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.metadata;
 
+import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.map.MapIterable;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
@@ -28,6 +29,11 @@ public interface Metadata
     CoreInstance getMetadata(String classifier, String id);
 
     MapIterable<String, CoreInstance> getMetadata(String classifier);
+
+    default RichIterable<CoreInstance> getClassifierInstances(String classifier)
+    {
+        return getMetadata(classifier).valuesView();
+    }
 
     CoreInstance getEnum(String enumerationName, String enumName);
 }

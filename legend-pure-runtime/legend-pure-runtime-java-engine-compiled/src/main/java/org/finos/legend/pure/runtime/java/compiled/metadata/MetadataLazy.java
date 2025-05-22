@@ -121,6 +121,12 @@ public class MetadataLazy implements Metadata
     }
 
     @Override
+    public RichIterable<CoreInstance> getClassifierInstances(String classifier)
+    {
+        return hasClassifier(classifier) ? loadAllClassifierInstances(classifier).valuesView() : Lists.immutable.empty();
+    }
+
+    @Override
     public CoreInstance getEnum(String enumerationName, String enumName)
     {
         if (!hasClassifier(enumerationName))

@@ -14,40 +14,26 @@
 
 package org.finos.legend.pure.runtime.java.compiled.runtime;
 
-import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
-import org.finos.legend.pure.runtime.java.compiled.execution.CompiledProcessorSupport;
+import org.finos.legend.pure.m3.tests.RuntimeVerifier;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiled;
-import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataEager;
 import org.junit.Assert;
 
 public class CompiledMetadataStateVerifier implements RuntimeVerifier.FunctionExecutionStateVerifier
 {
     private int classCacheSizeBefore;
-    private int metadataCount;
 
     @Override
     public void snapshotState(FunctionExecution functionExecution)
     {
-        FunctionExecutionCompiled functionExecutionCompiled = (FunctionExecutionCompiled)functionExecution;
-
-        MetadataEager metamodel = this.getMetamodel(functionExecutionCompiled);
+        FunctionExecutionCompiled functionExecutionCompiled = (FunctionExecutionCompiled) functionExecution;
         this.classCacheSizeBefore = functionExecutionCompiled.getClassCacheSize();
-        this.metadataCount = metamodel.getSize();
     }
 
     @Override
     public void assertStateSame(FunctionExecution functionExecution)
     {
-        FunctionExecutionCompiled functionExecutionCompiled = (FunctionExecutionCompiled)functionExecution;
-        MetadataEager metamodel = this.getMetamodel(functionExecutionCompiled);
+        FunctionExecutionCompiled functionExecutionCompiled = (FunctionExecutionCompiled) functionExecution;
         Assert.assertEquals(this.classCacheSizeBefore, functionExecutionCompiled.getClassCacheSize());
-        Assert.assertEquals(this.metadataCount, metamodel.getSize());
-    }
-
-    private MetadataEager getMetamodel(FunctionExecutionCompiled functionExecutionCompiled)
-    {
-        CompiledProcessorSupport compiledProcessorSupport = (CompiledProcessorSupport)functionExecutionCompiled.getProcessorSupport();
-        return (MetadataEager)compiledProcessorSupport.getMetadata();
     }
 }

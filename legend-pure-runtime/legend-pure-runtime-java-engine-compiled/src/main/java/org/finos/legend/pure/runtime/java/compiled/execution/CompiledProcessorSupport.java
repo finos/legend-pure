@@ -23,6 +23,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.set.SetIterable;
+import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.BaseCoreInstance;
 import org.finos.legend.pure.m3.coreinstance.Package;
@@ -404,8 +405,8 @@ public class CompiledProcessorSupport implements ProcessorSupport
     public SetIterable<CoreInstance> function_getFunctionsForName(String functionName)
     {
         //TODO Iterate over ConcreteFunctionDefinition and FunctionDefinition along with NativeFunction.
-        return this.metadata.getMetadata(MetadataJavaPaths.NativeFunction).valuesView().asLazy()
-                .concatenate(this.metadata.getMetadata(MetadataJavaPaths.ConcreteFunctionDefinition).valuesView())
+        return LazyIterate.adapt(this.metadata.getClassifierInstances(MetadataJavaPaths.NativeFunction))
+                .concatenate(this.metadata.getClassifierInstances(MetadataJavaPaths.ConcreteFunctionDefinition))
                 .select(f -> (f instanceof FunctionAccessor) && functionName.equals(((FunctionAccessor<?>) f)._functionName()), Sets.mutable.empty());
     }
 
