@@ -46,7 +46,8 @@ Primitive meta::pure::precisePrimitives::Varchar(x:Integer[1]) extends String
   $this->length() <= $x
 ]
 
-Primitive meta::pure::precisePrimitives::Time extends StrictTime
+// Use StrictTime
+//Primitive meta::pure::precisePrimitives::Time extends StrictTime
 
 // Use StrictDate
 //Primitive meta::pure::precisePrimitives::Date extends StrictDate
