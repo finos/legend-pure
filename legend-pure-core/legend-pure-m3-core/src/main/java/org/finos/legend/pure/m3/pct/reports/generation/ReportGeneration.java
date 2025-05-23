@@ -16,6 +16,7 @@ package org.finos.legend.pure.m3.pct.reports.generation;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import java.util.Set;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.MutableList;
@@ -30,6 +31,7 @@ import org.finos.legend.pure.m3.pct.reports.model.AdapterKey;
 import org.finos.legend.pure.m3.pct.reports.model.AdapterReport;
 import org.finos.legend.pure.m3.pct.reports.model.FunctionTestResults;
 import org.finos.legend.pure.m3.pct.reports.model.TestInfo;
+import org.finos.legend.pure.m3.pct.shared.PCTTools;
 import org.finos.legend.pure.m3.pct.shared.generation.Shared;
 
 import java.io.IOException;
@@ -71,7 +73,8 @@ public class ReportGeneration
             FunctionTestResults functionInfo = testResults.getIfAbsentPut(x.getSourceInformation().getSourceId(), () -> new FunctionTestResults(x.getSourceInformation().getSourceId()));
             PackageableFunction<?> f = (PackageableFunction<?>) x;
             String error = explodedExpectedFailures.get(PackageableElement.getUserPathForPackageableElement(f));
-            functionInfo.tests.add(new TestInfo(f._functionName(), error == null, error));
+            Set<String> pctQualifiers = PCTTools.getPCTQualifiers(f, ps);
+            functionInfo.tests.add(new TestInfo(f._functionName(), error == null, error, pctQualifiers));
         });
 
         return new AdapterReport(

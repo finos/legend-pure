@@ -14,20 +14,23 @@
 
 package org.finos.legend.pure.m3.pct.reports.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Set;
+
 public class TestInfo
 {
-    public String testName;
-    public boolean success;
-    public String errorMessage;
+    public final String testName;
+    public final boolean success;
+    public final String errorMessage;
+    public final Set<String> qualifiers;
 
-    public TestInfo()
-    {
-    }
-
-    public TestInfo(String testName, boolean success, String errorMessage)
+    @JsonCreator
+    public TestInfo(@JsonProperty("testName") String testName, @JsonProperty("success") boolean success, @JsonProperty("errorMessage") String errorMessage, @JsonProperty("qualifiers") Set<String> qualifiers)
     {
         this.testName = testName;
         this.success = success;
         this.errorMessage = errorMessage;
+        this.qualifiers = qualifiers;
     }
 }

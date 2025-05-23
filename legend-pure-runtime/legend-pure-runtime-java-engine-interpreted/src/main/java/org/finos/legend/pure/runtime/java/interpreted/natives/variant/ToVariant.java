@@ -22,6 +22,8 @@ import java.util.Stack;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.stack.MutableStack;
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.*;
@@ -93,7 +95,10 @@ public class ToVariant extends NativeFunction
             ObjectNode objectNode = VariantInstanceImpl.OBJECT_MAPPER.createObjectNode();
 
             MapCoreInstance map = (MapCoreInstance) valueCoreInstance;
-            map.getMap().forEachKeyValue((k, v) -> objectNode.set(PrimitiveUtilities.getStringValue(k), this.coreInstanceToJson(v, processorSupport)));
+            map.getMap().keyValuesView()
+                    .collect(x -> Tuples.pair(PrimitiveUtilities.getStringValue(x.getOne()), this.coreInstanceToJson(x.getTwo(), processorSupport)))
+                    .toSortedListBy(Pair::getOne)
+                    .forEach(x -> objectNode.set(x.getOne(), x.getTwo()));
 
             return objectNode;
         }

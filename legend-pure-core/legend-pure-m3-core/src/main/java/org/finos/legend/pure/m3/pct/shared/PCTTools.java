@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.pct.shared;
 
+import java.util.Set;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -31,6 +32,11 @@ public class PCTTools
     public static boolean isPCTTest(CoreInstance node, ProcessorSupport processorSupport)
     {
         return Profile.hasStereotype(node, PCT_PROFILE, "test", processorSupport);
+    }
+
+    public static Set<String> getPCTQualifiers(CoreInstance testFunction, ProcessorSupport processorSupport)
+    {
+        return Profile.getTaggedValues(testFunction, PCT_PROFILE, "testQualifier", processorSupport).toSet();
     }
 
     public static boolean isPCTFunction(CoreInstance node, ProcessorSupport processorSupport)
