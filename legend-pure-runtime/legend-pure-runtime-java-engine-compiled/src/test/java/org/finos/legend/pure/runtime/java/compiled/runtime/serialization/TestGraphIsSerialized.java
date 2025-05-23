@@ -14,7 +14,15 @@
 
 package org.finos.legend.pure.runtime.java.compiled.runtime.serialization;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.SetIterable;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
@@ -31,8 +39,11 @@ import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCo
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.metadata.Metadata;
+import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataBuilder;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.Formatter;
 
 public class TestGraphIsSerialized
 {
@@ -44,7 +55,7 @@ public class TestGraphIsSerialized
         funcExec.init(runtime, new Message(""));
         runtime.loadAndCompileCore();
         runtime.loadAndCompileSystem();
-        assertMetadataAccess(funcExec);
+        assertMetadata(funcExec);
     }
 
     @Test
@@ -60,7 +71,7 @@ public class TestGraphIsSerialized
         FunctionExecutionCompiled funcExec = new FunctionExecutionCompiledBuilder().build();
         funcExec.init(runtime, new Message(""));
         Assert.assertTrue(cache.getCacheState().getLastStackTrace(), runtime.isInitialized());
-        assertMetadataAccess(funcExec);
+        assertMetadata(funcExec);
     }
 
     @Test
@@ -77,24 +88,36 @@ public class TestGraphIsSerialized
         FunctionExecutionCompiled funcExec = new FunctionExecutionCompiledBuilder().build();
         funcExec.init(runtime, new Message(""));
         Assert.assertTrue(cache.getCacheState().getLastStackTrace(), runtime.isInitialized());
-        assertMetadataAccess(funcExec);
+        assertMetadata(funcExec);
     }
 
-    private void assertMetadataAccess(FunctionExecutionCompiled functionExecution)
+    private void assertMetadata(FunctionExecutionCompiled functionExecution)
     {
         PureRuntime runtime = functionExecution.getRuntime();
         Metadata metadata = functionExecution.getExecutionSupport().getMetadata();
         String defaultIdPrefix = "###default###";
         IdBuilder idBuilder = IdBuilder.newIdBuilder(defaultIdPrefix, runtime.getProcessorSupport());
+        MutableMap<CoreInstance, String> classifierPathIndex = Maps.mutable.empty();
+        SetIterable<CoreInstance> ignoredClassifiers = Lists.mutable.with(M3Paths.ImportStub, M3Paths.EnumStub, M3Paths.PropertyStub)
+                .withAll(PrimitiveUtilities.getPrimitiveTypeNames().castToSet())
+                .collect(runtime::getCoreInstance, Sets.mutable.empty());
+        MutableList<CoreInstance> missingSerialized = Lists.mutable.empty();
         GraphNodeIterable.fromModelRepository(runtime.getModelRepository()).forEach(elt ->
         {
+            CoreInstance classifier = elt.getClassifier();
+            if (!elt.hasCompileState(MetadataBuilder.SERIALIZED) && !ignoredClassifiers.contains(classifier))
+            {
+                missingSerialized.add(elt);
+            }
+
             String id = idBuilder.buildId(elt);
             if (!id.startsWith(defaultIdPrefix))
             {
+                String classifierPath = classifierPathIndex.getIfAbsentPutWithKey(classifier, PackageableElement::getUserPathForPackageableElement);
                 CoreInstance found;
                 try
                 {
-                    found = metadata.getMetadata(PackageableElement.getUserPathForPackageableElement(elt.getClassifier()), id);
+                    found = metadata.getMetadata(classifierPath, id);
                 }
                 catch (Exception e)
                 {
@@ -103,6 +126,21 @@ public class TestGraphIsSerialized
                 Assert.assertSame(id, elt, found);
             }
         });
+
+        int missingSize = missingSerialized.size();
+        if (missingSize > 0)
+        {
+            StringBuilder message = new StringBuilder();
+            Formatter formatter = new Formatter(message);
+            formatter.format("%,d instances not marked as serialized:", missingSize);
+            int toPrint = Math.min(missingSize, 10);
+            missingSerialized.forEachWithIndex(0, toPrint - 1, (elt, i) -> formatter.format("%n\t%s", elt));
+            if (toPrint < missingSize)
+            {
+                formatter.format("%n\t...");
+            }
+            Assert.fail(message.toString());
+        }
     }
 
     private MutableRepositoryCodeStorage getCodeStorage()

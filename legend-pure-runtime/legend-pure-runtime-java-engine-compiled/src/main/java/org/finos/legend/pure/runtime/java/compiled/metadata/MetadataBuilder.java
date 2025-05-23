@@ -14,42 +14,129 @@
 
 package org.finos.legend.pure.runtime.java.compiled.metadata;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.list.ImmutableList;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.impl.utility.Iterate;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 
-@Deprecated
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+
+/**
+ * Creates the metadata index
+ */
 public class MetadataBuilder
 {
-    @Deprecated
     public static final CompileState SERIALIZED = CompileState.COMPILE_EVENT_EXTRA_STATE_1;
+
+    private static final ImmutableList<String> GET_ALL_FUNCTIONS = Lists.immutable.with(
+            "meta::pure::functions::collection::getAll_Class_1__T_MANY_",
+            "meta::pure::functions::collection::getAllVersions_Class_1__T_MANY_",
+            "meta::pure::functions::collection::getAll_Class_1__Date_1__T_MANY_",
+            "meta::pure::functions::collection::getAll_Class_1__Date_1__Date_1__T_MANY_",
+            "meta::pure::functions::collection::getAllVersionsInRange_Class_1__Date_1__Date_1__T_MANY_"
+    );
 
     private MetadataBuilder()
     {
     }
 
     @Deprecated
-    public static MetadataEager indexAll(Iterable<? extends CoreInstance> startingNodes, ProcessorSupport processorSupport)
-    {
-        return new MetadataEager(processorSupport);
-    }
-
-    @Deprecated
     public static MetadataEager indexAll(Iterable<? extends CoreInstance> startingNodes, IdBuilder idBuilder, ProcessorSupport processorSupport)
     {
-        return new MetadataEager(processorSupport);
-    }
-
-    @Deprecated
-    public static MetadataEager indexNew(MetadataEager metadataEager, Iterable<? extends CoreInstance> startingNodes, ProcessorSupport processorSupport)
-    {
-        return metadataEager;
+        return indexAll(startingNodes, processorSupport);
     }
 
     @Deprecated
     public static MetadataEager indexNew(MetadataEager metadataEager, Iterable<? extends CoreInstance> startingNodes, IdBuilder idBuilder, ProcessorSupport processorSupport)
     {
+        return indexNew(metadataEager, startingNodes, processorSupport);
+    }
+
+    public static MetadataEager indexAll(Iterable<? extends CoreInstance> startingNodes, ProcessorSupport processorSupport)
+    {
+        MutableMap<CoreInstance, MutableList<CoreInstance>> classifierCache = Maps.mutable.empty();
+        forEachGetAllClassifier(processorSupport, c -> classifierCache.getIfAbsentPut(c, Lists.mutable::empty));
+        MutableSet<CoreInstance> visited = Sets.mutable.empty();
+        forEachInstance(startingNodes, processorSupport, visited::add, node ->
+        {
+            MutableList<CoreInstance> classifierInstances = classifierCache.get(node.getClassifier());
+            if (classifierInstances != null)
+            {
+                classifierInstances.add(node);
+            }
+        });
+        return new MetadataEager(classifierCache, processorSupport);
+    }
+
+    public static MetadataEager indexNew(MetadataEager metadataEager, Iterable<? extends CoreInstance> startingNodes, ProcessorSupport processorSupport)
+    {
+        MutableList<CoreInstance> newInstances = Lists.mutable.empty();
+        forEachInstance(startingNodes, processorSupport, node -> !node.hasCompileState(SERIALIZED), newInstances::add);
+        metadataEager.addInstances(newInstances);
         return metadataEager;
+    }
+
+    private static void forEachInstance(Iterable<? extends CoreInstance> startingNodes, ProcessorSupport processorSupport, Predicate<? super CoreInstance> shouldVisit, Consumer<? super CoreInstance> consumer)
+    {
+        Deque<CoreInstance> deque = Iterate.addAllTo(startingNodes, new ArrayDeque<>());
+        MutableSet<CoreInstance> primitiveTypes = PrimitiveUtilities.getPrimitiveTypes(processorSupport, Sets.mutable.ofInitialCapacity(PrimitiveUtilities.getPrimitiveTypeNames().size()));
+        while (!deque.isEmpty())
+        {
+            CoreInstance node = deque.pollFirst();
+            if (shouldVisit.test(node))
+            {
+                node.addCompileState(SERIALIZED);
+                consumer.accept(node);
+                node.getKeys().forEach(key -> Instance.getValueForMetaPropertyToManyResolved(node, key, processorSupport).forEach(value ->
+                {
+                    if (!primitiveTypes.contains(value.getClassifier()))
+                    {
+                        deque.add(value);
+                    }
+                }));
+            }
+        }
+    }
+
+    private static void forEachGetAllClassifier(ProcessorSupport processorSupport, Consumer<? super CoreInstance> consumer)
+    {
+        GET_ALL_FUNCTIONS.forEach(funcPath ->
+        {
+            CoreInstance getAll;
+            try
+            {
+                getAll = processorSupport.package_getByUserPath(funcPath);
+            }
+            catch (Exception ignore)
+            {
+                return;
+            }
+            if (getAll != null)
+            {
+                getAll.getValueForMetaPropertyToMany(M3Properties.applications).forEach(app ->
+                {
+                    CoreInstance classExpr = app.getValueForMetaPropertyToMany(M3Properties.parametersValues).get(0);
+                    if (ValueSpecification.isInstanceValue(classExpr, processorSupport))
+                    {
+                        consumer.accept(Instance.getValueForMetaPropertyToOneResolved(classExpr, M3Properties.values, processorSupport));
+                    }
+                });
+            }
+        });
     }
 }
