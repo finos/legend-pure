@@ -137,7 +137,7 @@ function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testTo
 
 function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testToMapWithNonStringKeys<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertError(|$f->eval(|fromJson('{}')->to(@Map<Integer, Variant>)), 'Variant of type \'OBJECT\' cannot be converted to Map<Integer, Variant>');
+    assertError(|$f->eval(|fromJson('{}')->to(@Map<Integer, Variant>)), 'Map<Integer, Variant> is not managed yet!');
 }
 
 function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testToListOfVariants<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
