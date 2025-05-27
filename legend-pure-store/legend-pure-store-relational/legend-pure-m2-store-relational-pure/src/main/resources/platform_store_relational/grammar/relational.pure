@@ -533,9 +533,3 @@ Class meta::relational::metamodel::SortByInfo extends meta::relational::metamode
    sortByElement: RelationalOperationElement [1];
    sortDirection: meta::relational::metamodel::SortDirection[0..1] ;
 }
-
-Class meta::relational::metamodel::RelationalLambda extends meta::relational::metamodel::RelationalOperationElement
-{
-   parameters: Column[*];
-   body: RelationalOperationElement[1];
-}
