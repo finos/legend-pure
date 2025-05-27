@@ -467,6 +467,12 @@ Class meta::relational::metamodel::datatype::SemiStructured extends meta::relati
 {
 }
 
+Class
+{doc.doc = 'SingleStore JSON type'}
+meta::relational::metamodel::datatype::Json extends meta::relational::metamodel::datatype::CoreDataType
+{
+}
+
 Class meta::relational::metamodel::Literal extends meta::relational::metamodel::RelationalOperationElement
 {
    <<equality.Key>> value:Any[1];
