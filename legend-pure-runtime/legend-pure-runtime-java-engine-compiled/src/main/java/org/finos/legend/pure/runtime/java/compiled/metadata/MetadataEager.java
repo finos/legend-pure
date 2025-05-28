@@ -36,9 +36,13 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
 import org.finos.legend.pure.m4.tools.GraphWalkFilterResult;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class MetadataEager implements Metadata
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(MetadataEager.class);
+
     private final ProcessorSupport processorSupport;
     private final ReferenceIdResolver resolver;
     private final Cache cache;
@@ -170,10 +174,15 @@ public final class MetadataEager implements Metadata
             return newCache();
         }
 
+        LOGGER.debug("Initializing cache with {} classifiers", classifierInstances.size());
         ConcurrentMutableMap<String, ImmutableList<CoreInstance>> classifierCache = ConcurrentHashMap.newMap(classifierInstances.size());
         classifierInstances.forEachKeyValue((classifier, instances) ->
         {
             String classifierId = PackageableElement.getUserPathForPackageableElement(classifier);
+            if (instances.notEmpty())
+            {
+                LOGGER.debug("Classifier {} has {} instances in cache", classifierId, instances.size());
+            }
             classifierCache.put(classifierId, Lists.immutable.withAll(instances));
         });
         return new Cache(ConcurrentHashMap.newMap(), classifierCache);
@@ -253,23 +262,38 @@ public final class MetadataEager implements Metadata
 
         private ImmutableList<CoreInstance> computeClassifierInstances(String classifierPath)
         {
-            CoreInstance classifierInstance;
+            long start = System.nanoTime();
+            LOGGER.debug("Computing instances for classifier {}", classifierPath);
             try
             {
-                classifierInstance = getById(classifierPath);
+                CoreInstance classifierInstance;
+                try
+                {
+                    classifierInstance = getById(classifierPath);
+                }
+                catch (Exception e)
+                {
+                    // unknown classifier
+                    return Lists.immutable.empty();
+                }
+
+                return GraphNodeIterable.builder()
+                        .withStartingNodes(GraphTools.getTopLevels(MetadataEager.this.processorSupport))
+                        .withNodeFilter(node -> GraphWalkFilterResult.cont(classifierInstance == getClassifier(node)))
+                        .build()
+                        .toList()
+                        .toImmutable();
             }
             catch (Exception e)
             {
-                // unknown classifier
-                return Lists.immutable.empty();
+                LOGGER.error("Error computing instances for classifier {}", classifierPath, e);
+                throw e;
             }
-
-            return GraphNodeIterable.builder()
-                    .withStartingNodes(GraphTools.getTopLevels(MetadataEager.this.processorSupport))
-                    .withNodeFilter(node -> GraphWalkFilterResult.cont(classifierInstance == getClassifier(node)))
-                    .build()
-                    .toList()
-                    .toImmutable();
+            finally
+            {
+                long end = System.nanoTime();
+                LOGGER.debug("Finished computing instances for classifier {} ({}s)", classifierPath, (end - start) / 1_000_000_000.0);
+            }
         }
 
         private CoreInstance getClassifier(CoreInstance instance)
