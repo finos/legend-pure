@@ -145,10 +145,7 @@ public final class MetadataEager implements Metadata
     @Deprecated
     public int getSize()
     {
-        return GraphNodeIterable.builder()
-                .withStartingNodes(GraphTools.getTopLevels(this.processorSupport))
-                .build()
-                .size();
+        return getCache().idCache.size();
     }
 
     private Cache getCache()
