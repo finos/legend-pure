@@ -30,6 +30,8 @@ import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -43,6 +45,7 @@ public class MetadataBuilder
 {
     public static final CompileState SERIALIZED = CompileState.COMPILE_EVENT_EXTRA_STATE_1;
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(MetadataBuilder.class);
     private static final ImmutableList<String> GET_ALL_FUNCTIONS = Lists.immutable.with(
             "meta::pure::functions::collection::getAll_Class_1__T_MANY_",
             "meta::pure::functions::collection::getAllVersions_Class_1__T_MANY_",
@@ -69,26 +72,57 @@ public class MetadataBuilder
 
     public static MetadataEager indexAll(Iterable<? extends CoreInstance> startingNodes, ProcessorSupport processorSupport)
     {
-        MutableMap<CoreInstance, MutableList<CoreInstance>> classifierCache = Maps.mutable.empty();
-        forEachGetAllClassifier(processorSupport, c -> classifierCache.getIfAbsentPut(c, Lists.mutable::empty));
-        MutableSet<CoreInstance> visited = Sets.mutable.empty();
-        forEachInstance(startingNodes, processorSupport, visited::add, node ->
+        long start = System.nanoTime();
+        LOGGER.debug("Start indexing all");
+        try
         {
-            MutableList<CoreInstance> classifierInstances = classifierCache.get(node.getClassifier());
-            if (classifierInstances != null)
+            MutableMap<CoreInstance, MutableList<CoreInstance>> classifierCache = Maps.mutable.empty();
+            forEachGetAllClassifier(processorSupport, c -> classifierCache.getIfAbsentPut(c, Lists.mutable::empty));
+            LOGGER.debug("Found {} classifiers to cache instances", classifierCache.size());
+            MutableSet<CoreInstance> visited = Sets.mutable.empty();
+            forEachInstance(startingNodes, processorSupport, visited::add, node ->
             {
-                classifierInstances.add(node);
-            }
-        });
-        return new MetadataEager(classifierCache, processorSupport);
+                MutableList<CoreInstance> classifierInstances = classifierCache.get(node.getClassifier());
+                if (classifierInstances != null)
+                {
+                    classifierInstances.add(node);
+                }
+            });
+            return new MetadataEager(classifierCache, processorSupport);
+        }
+        catch (Exception e)
+        {
+            LOGGER.error("Error indexing all", e);
+            throw e;
+        }
+        finally
+        {
+            long end = System.nanoTime();
+            LOGGER.debug("Finished indexing all ({}s)", (end - start) / 1_000_000_000.0);
+        }
     }
 
     public static MetadataEager indexNew(MetadataEager metadataEager, Iterable<? extends CoreInstance> startingNodes, ProcessorSupport processorSupport)
     {
-        MutableList<CoreInstance> newInstances = Lists.mutable.empty();
-        forEachInstance(startingNodes, processorSupport, node -> !node.hasCompileState(SERIALIZED), newInstances::add);
-        metadataEager.addInstances(newInstances);
-        return metadataEager;
+        long start = System.nanoTime();
+        LOGGER.debug("Start indexing new");
+        try
+        {
+            MutableList<CoreInstance> newInstances = Lists.mutable.empty();
+            forEachInstance(startingNodes, processorSupport, node -> !node.hasCompileState(SERIALIZED), newInstances::add);
+            metadataEager.addInstances(newInstances);
+            return metadataEager;
+        }
+        catch (Exception e)
+        {
+            LOGGER.error("Error indexing new", e);
+            throw e;
+        }
+        finally
+        {
+            long end = System.nanoTime();
+            LOGGER.debug("Finished indexing new ({}s)", (end - start) / 1_000_000_000.0);
+        }
     }
 
     private static void forEachInstance(Iterable<? extends CoreInstance> startingNodes, ProcessorSupport processorSupport, Predicate<? super CoreInstance> shouldVisit, Consumer<? super CoreInstance> consumer)
@@ -122,11 +156,16 @@ public class MetadataBuilder
             {
                 getAll = processorSupport.package_getByUserPath(funcPath);
             }
-            catch (Exception ignore)
+            catch (Exception e)
             {
+                LOGGER.warn("Could not find function: {}", funcPath, e);
                 return;
             }
-            if (getAll != null)
+            if (getAll == null)
+            {
+                LOGGER.warn("Could not find function: {}", funcPath);
+            }
+            else
             {
                 getAll.getValueForMetaPropertyToMany(M3Properties.applications).forEach(app ->
                 {
