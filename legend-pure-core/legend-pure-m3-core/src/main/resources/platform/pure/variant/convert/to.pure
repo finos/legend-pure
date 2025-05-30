@@ -23,7 +23,7 @@ native function
                  'This allows to extract the variant actual value, like primitives.\n' +
                  'This will fail if value cannot be coerced.'
     }
-meta::pure::functions::variant::convert::to<T>(variant: Variant[0..1], type: T[1]): T[0..1];
+meta::pure::functions::variant::convert::to<T>(variant: Variant[0..1], type: T[0..1]): T[0..1];
 
 function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testToNull<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
@@ -137,7 +137,7 @@ function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testTo
 
 function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testToMapWithNonStringKeys<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertError(|$f->eval(|fromJson('{}')->to(@Map<Integer, Variant>)), 'Variant of type \'OBJECT\' cannot be converted to Map<Integer, Variant>');
+    assertError(|$f->eval(|fromJson('{}')->to(@Map<Integer, Variant>)), 'Map<Integer, Variant> is not managed yet!');
 }
 
 function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testToListOfVariants<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
@@ -158,15 +158,15 @@ function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testTo
 
 function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testToListFromNonArrayVariant<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertError(|fromJson('"not an array"')->to(@List<Variant>), 'Variant of type \'STRING\' cannot be converted to List<Variant>');
+    assertError(|$f->eval(|fromJson('"not an array"')->to(@List<Variant>)), 'Variant of type \'STRING\' cannot be converted to List<Variant>');
 }
 
 function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testToEnum<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertError(|$f->eval(|fromJson('"January"')->to(@meta::pure::functions::date::Month)), 'Variant of type \'STRING\' cannot be converted to Month');
+    assertError(|$f->eval(|fromJson('"January"')->to(@meta::pure::functions::date::Month)), 'Month is not managed yet!');
 }
 
 function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testToAny<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertError(|$f->eval(|fromJson('"hello"')->to(@Any)), 'Variant of type \'STRING\' cannot be converted to Any');
+    assertError(|$f->eval(|fromJson('"hello"')->to(@Any)), 'Any is not managed yet!');
 }

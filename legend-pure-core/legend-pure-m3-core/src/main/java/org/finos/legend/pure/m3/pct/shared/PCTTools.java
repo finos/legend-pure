@@ -14,7 +14,10 @@
 
 package org.finos.legend.pure.m3.pct.shared;
 
+import java.util.Set;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotatedElement;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotationAccessor;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.profile.Profile;
@@ -31,6 +34,20 @@ public class PCTTools
     public static boolean isPCTTest(CoreInstance node, ProcessorSupport processorSupport)
     {
         return Profile.hasStereotype(node, PCT_PROFILE, "test", processorSupport);
+    }
+
+    public static Set<String> getPCTQualifiers(CoreInstance testFunction, ProcessorSupport processorSupport)
+    {
+        return ((AnnotatedElement) testFunction)
+                ._stereotypes()
+                .select(x -> isTestQualifierProfile(x._profile(), processorSupport))
+                .collect(AnnotationAccessor::_value)
+                .toSet();
+    }
+
+    public static boolean isTestQualifierProfile(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile profile, ProcessorSupport processorSupport)
+    {
+        return Profile.hasStereotype(profile, PCT_PROFILE, "testQualifierProfile", processorSupport);
     }
 
     public static boolean isPCTFunction(CoreInstance node, ProcessorSupport processorSupport)

@@ -56,7 +56,7 @@ public class To extends AbstractNative
 {
     public To()
     {
-        super("to_Variant_$0_1$__T_1__T_$0_1$_", "toMany_Variant_$0_1$__T_1__T_MANY_");
+        super("to_Variant_$0_1$__T_$0_1$__T_$0_1$_", "toMany_Variant_$0_1$__T_$0_1$__T_MANY_");
     }
 
     @Override
@@ -126,13 +126,15 @@ public class To extends AbstractNative
 
     private static Object to(JsonNode jsonNode, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType pureGenericType, SourceInformation sourceInformation, CompiledExecutionSupport es)
     {
+        boolean supportedTypeButWrongJson = false;
+
         try
         {
             if (jsonNode == null || jsonNode.isNull())
             {
                 return null;
             }
-            else if (jsonNode.isObject() && pureGenericType._rawType() == es.getProcessorSupport().package_getByUserPath(M3Paths.Map))
+            else if (pureGenericType._rawType() == es.getProcessorSupport().package_getByUserPath(M3Paths.Map))
             {
                 MutableList<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType> arguments = pureGenericType._typeArguments().toList();
 
@@ -140,98 +142,110 @@ public class To extends AbstractNative
 
                 if (keyType._rawType() == es.getProcessorSupport().package_getByUserPath(M3Paths.String))
                 {
-                    org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType valueType = arguments.get(1);
-
-                    MutableMap<Object, Object> map = Maps.mutable.empty();
-
-                    for (Iterator<Map.Entry<String, JsonNode>> it = jsonNode.fields(); it.hasNext(); )
+                    if (jsonNode.isObject())
                     {
-                        Map.Entry<String, JsonNode> jsonNodeEntry = it.next();
-                        map.put(jsonNodeEntry.getKey(), to(jsonNodeEntry.getValue(), valueType, sourceInformation, es));
+                        org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType valueType = arguments.get(1);
+
+                        MutableMap<Object, Object> map = Maps.mutable.empty();
+
+                        for (Iterator<Map.Entry<String, JsonNode>> it = jsonNode.fields(); it.hasNext(); )
+                        {
+                            Map.Entry<String, JsonNode> jsonNodeEntry = it.next();
+                            map.put(jsonNodeEntry.getKey(), to(jsonNodeEntry.getValue(), valueType, sourceInformation, es));
+                        }
+
+                        return new PureMap(map);
                     }
-
-                    return new PureMap(map);
+                    supportedTypeButWrongJson = true;
                 }
-
             }
-            else if (jsonNode.isArray() && pureGenericType._rawType() == es.getProcessorSupport().package_getByUserPath(M3Paths.List))
+            else if (pureGenericType._rawType() == es.getProcessorSupport().package_getByUserPath(M3Paths.List))
             {
-                org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType elementType = pureGenericType._typeArguments().getOnly();
-                RichIterable<Object> values = Iterate.collect(jsonNode, x -> to(x, elementType, sourceInformation, es), Lists.mutable.empty());
-                List<Object> list = (List<Object>) es.getProcessorSupport().newEphemeralAnonymousCoreInstance(M3Paths.List);
-                list._values(values);
-                return list;
+                if (jsonNode.isArray())
+                {
+                    org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType elementType = pureGenericType._typeArguments().getOnly();
+                    RichIterable<Object> values = Iterate.collect(jsonNode, x -> to(x, elementType, sourceInformation, es), Lists.mutable.empty());
+                    List<Object> list = (List<Object>) es.getProcessorSupport().newEphemeralAnonymousCoreInstance(M3Paths.List);
+                    list._values(values);
+                    return list;
+                }
+                supportedTypeButWrongJson = true;
             }
             else if (pureGenericType._rawType() == es.getProcessorSupport().package_getByUserPath(M3Paths.Variant))
             {
                 return VariantInstanceImpl.newVariant(jsonNode, null, es.getProcessorSupport());
             }
-            else if (jsonNode.isValueNode())
+            else if (pureGenericType._rawType() == es.getProcessorSupport().package_getByUserPath(M3Paths.StrictDate))
             {
-                if (pureGenericType._rawType() == es.getProcessorSupport().package_getByUserPath(M3Paths.StrictDate))
+                PureDate pureDate = DateFunctions.parsePureDate(jsonNode.asText());
+                if (pureDate instanceof StrictDate)
                 {
-                    PureDate pureDate = DateFunctions.parsePureDate(jsonNode.asText());
-                    if (pureDate instanceof StrictDate)
-                    {
-                        return pureDate;
-                    }
+                    return pureDate;
+                }
 
-                    throw new PureExecutionException(sourceInformation, "StrictDate must be a calendar day, got: " + jsonNode.asText());
-                }
-                else if (pureGenericType._rawType() == es.getProcessorSupport().package_getByUserPath(M3Paths.DateTime))
-                {
-                    PureDate pureDate = DateFunctions.parsePureDate(jsonNode.asText());
-                    if (pureDate instanceof DateTime)
-                    {
-                        return pureDate;
-                    }
-
-                    throw new PureExecutionException(sourceInformation, "DateTime must include time information, got: " + jsonNode.asText());
-                }
-                else if (pureGenericType._rawType() == es.getProcessorSupport().package_getByUserPath(M3Paths.Integer))
-                {
-                    if (jsonNode.isIntegralNumber())
-                    {
-                        return jsonNode.longValue();
-                    }
-                    else if (jsonNode.isTextual())
-                    {
-                        return Long.parseLong(jsonNode.asText());
-                    }
-                }
-                else if (pureGenericType._rawType() == es.getProcessorSupport().package_getByUserPath(M3Paths.Float))
-                {
-                    if (jsonNode.isNumber())
-                    {
-                        return jsonNode.doubleValue();
-                    }
-                    else if (jsonNode.isTextual())
-                    {
-                        return Double.parseDouble(jsonNode.asText());
-                    }
-                }
-                else if (pureGenericType._rawType() == es.getProcessorSupport().package_getByUserPath(M3Paths.Boolean))
-                {
-                    if (jsonNode.isBoolean())
-                    {
-                        return jsonNode.booleanValue();
-                    }
-                    else if (jsonNode.isTextual())
-                    {
-                        return ModelRepository.getBooleanValue(jsonNode.asText());
-                    }
-                }
-                else if (pureGenericType._rawType() == es.getProcessorSupport().package_getByUserPath(M3Paths.String))
-                {
-                    return jsonNode.asText();
-                }
+                throw new PureExecutionException(sourceInformation, "StrictDate must be a calendar day, got: " + jsonNode.asText());
             }
+            else if (pureGenericType._rawType() == es.getProcessorSupport().package_getByUserPath(M3Paths.DateTime))
+            {
+                PureDate pureDate = DateFunctions.parsePureDate(jsonNode.asText());
+                if (pureDate instanceof DateTime)
+                {
+                    return pureDate;
+                }
+
+                throw new PureExecutionException(sourceInformation, "DateTime must include time information, got: " + jsonNode.asText());
+            }
+            else if (pureGenericType._rawType() == es.getProcessorSupport().package_getByUserPath(M3Paths.Integer))
+            {
+                if (jsonNode.isIntegralNumber())
+                {
+                    return jsonNode.longValue();
+                }
+                else if (jsonNode.isTextual())
+                {
+                    return Long.parseLong(jsonNode.asText());
+                }
+                supportedTypeButWrongJson = true;
+            }
+            else if (pureGenericType._rawType() == es.getProcessorSupport().package_getByUserPath(M3Paths.Float))
+            {
+                if (jsonNode.isNumber())
+                {
+                    return jsonNode.doubleValue();
+                }
+                else if (jsonNode.isTextual())
+                {
+                    return Double.parseDouble(jsonNode.asText());
+                }
+                supportedTypeButWrongJson = true;
+            }
+            else if (pureGenericType._rawType() == es.getProcessorSupport().package_getByUserPath(M3Paths.Boolean))
+            {
+                if (jsonNode.isBoolean())
+                {
+                    return jsonNode.booleanValue();
+                }
+                else if (jsonNode.isTextual())
+                {
+                    return ModelRepository.getBooleanValue(jsonNode.asText());
+                }
+                supportedTypeButWrongJson = true;
+            }
+            else if (pureGenericType._rawType() == es.getProcessorSupport().package_getByUserPath(M3Paths.String))
+            {
+                return jsonNode.asText();
+            }
+
         }
         catch (IllegalArgumentException e)
         {
             throw new PureExecutionException(sourceInformation, e.getMessage(), e);
         }
 
-        throw new PureExecutionException(sourceInformation, "Variant of type '" + jsonNode.getNodeType() + "' cannot be converted to " + GenericType.print(pureGenericType, es.getProcessorSupport()));
+        if (supportedTypeButWrongJson)
+        {
+            throw new PureExecutionException(sourceInformation, "Variant of type '" + jsonNode.getNodeType() + "' cannot be converted to " + GenericType.print(pureGenericType, es.getProcessorSupport()));
+        }
+        throw new PureExecutionException(sourceInformation, GenericType.print(pureGenericType, es.getProcessorSupport()) + " is not managed yet!");
     }
 }

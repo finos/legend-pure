@@ -14,6 +14,8 @@
 
 import meta::pure::test::pct::*;
 import meta::pure::functions::collection::tests::model::*;
+import meta::pure::functions::variant::convert::*;
+import meta::pure::metamodel::variant::*;
 
 native function
     <<PCT.function>>
@@ -56,4 +58,14 @@ function <<test.Test>> meta::pure::functions::collection::tests::filter::testFil
     let branche = ^CO_Person(firstName='Justin', lastName='Branche');
     let f = {p:CO_Person[1] | !$p.lastName->isEmpty() && ($p.lastName->toOne()->length() < 6)};
     assertEquals([$smith, $doe], [$smith, $branche, $doe]->filter($f));
+}
+
+function <<PCT.test, PCTCoreQualifier.variant>> meta::pure::functions::collection::tests::filter::testFilter_FromVariant<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEquals('[1,3]', $f->eval(|toVariant([1, 2, 3])->toMany(@Variant)->filter(x | $x->to(@Integer) != 2)->toVariant())->toString());
+}
+
+function <<PCT.test, PCTCoreQualifier.variant>> meta::pure::functions::collection::tests::filter::testFilter_FromVariantAsPrimitive<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEquals('[1,3]', $f->eval(|toVariant([1, 2, 3])->toMany(@Integer)->filter(x | $x != 2)->toVariant())->toString());
 }

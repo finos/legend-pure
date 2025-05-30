@@ -255,7 +255,7 @@ defaultValueExpression: (instanceReference)(propertyExpression) | expressionInst
 defaultValueExpressionsArray: BRACKET_OPEN ( defaultValueExpression (COMMA defaultValueExpression)* )? BRACKET_CLOSE
 ;
 
-profile: PROFILE qualifiedName
+profile: PROFILE stereotypes? taggedValues? qualifiedName
          CURLY_BRACKET_OPEN
             stereotypeDefinitions?
             tagDefinitions?

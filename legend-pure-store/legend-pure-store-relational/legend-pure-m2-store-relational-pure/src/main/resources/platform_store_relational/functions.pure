@@ -68,6 +68,7 @@ Class meta::relational::metamodel::execute::Row
 function meta::relational::metamodel::datatype::dataTypeToSqlText(type: meta::relational::metamodel::datatype::DataType[1]):String[1]
 {
     $type->match([
+        b : meta::relational::metamodel::datatype::Boolean[1] | 'BOOLEAN',
         i : meta::relational::metamodel::datatype::Integer[1] | 'INT',
         f : meta::relational::metamodel::datatype::Float[1] | 'FLOAT',
         v : meta::relational::metamodel::datatype::Varchar[1] | format('VARCHAR(%d)', $v.size),
@@ -89,6 +90,7 @@ function meta::relational::metamodel::datatype::dataTypeToSqlText(type: meta::re
         v : meta::relational::metamodel::datatype::Varbinary[1] | format('VARBINARY(%d)', $v.size),
         s : meta::relational::metamodel::datatype::SemiStructured[1] | 'SEMISTRUCTURED',
         j : meta::relational::metamodel::datatype::Json[1] | 'JSON',
+        o : meta::relational::metamodel::datatype::Object[1] | 'OBJECT',
         d : meta::relational::metamodel::datatype::DbSpecificDataType[1] | $d.dbSpecificSql
     ]);
 }

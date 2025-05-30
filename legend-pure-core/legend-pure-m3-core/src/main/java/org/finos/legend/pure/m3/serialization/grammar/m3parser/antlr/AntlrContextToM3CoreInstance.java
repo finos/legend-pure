@@ -315,7 +315,7 @@ public class AntlrContextToM3CoreInstance
         CoreInstance result = null;
         if (ctx.profile() != null)
         {
-            result = processPackageableElement(ctx, hasImportChanged, importId, DefinitionContext::profile, this::profile, ProfileContext::qualifiedName, repository, sourceInformation, oldState, oldInstances, coreInstancesResult, newSourceInfoMap);
+            result = processPackageableElement(ctx, hasImportChanged, importId, DefinitionContext::profile, z -> profile(z, importId), ProfileContext::qualifiedName, repository, sourceInformation, oldState, oldInstances, coreInstancesResult, newSourceInfoMap);
         }
         if (ctx.classDefinition() != null)
         {
@@ -3344,12 +3344,22 @@ public class AntlrContextToM3CoreInstance
         return builder.toString();
     }
 
-    private Profile profile(ProfileContext ctx)
+    private Profile profile(ProfileContext ctx, ImportGroup importId)
     {
         String profileName = ctx.qualifiedName().identifier().getText();
         SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().getStop(), ctx.getStop());
         Profile profile = ProfileInstance.createPersistent(this.repository, profileName, sourceInfo);
         buildAndSetPackage(profile, ctx.qualifiedName().packagePath(), this.repository, this.sourceInformation);
+
+        if (ctx.stereotypes() != null)
+        {
+            profile._stereotypesCoreInstance(stereotypes(ctx.stereotypes(), importId));
+        }
+        if (ctx.taggedValues() != null)
+        {
+            profile._taggedValues(taggedValues(ctx.taggedValues(), importId));
+        }
+
         return profile._name(profileName)
                 ._classifierGenericType(GenericTypeInstance.createPersistent(this.repository, sourceInfo)._rawType((Type) this.processorSupport.package_getByUserPath(M3Paths.Profile)))
                 ._p_stereotypes(buildStereoTypes(ctx.stereotypeDefinitions(), profile))
