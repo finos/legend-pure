@@ -125,12 +125,12 @@ Enum meta::pure::functions::collection::tests::map::model::M_GeographicEntityTyp
     {doc.doc = 'Any geographic entity other than a city or country.'} REGION
 }
 
-function <<PCT.test>> {PCT.testQualifier='variant'} meta::pure::functions::collection::tests::map::testMap_FromVariant<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test, PCTCoreQualifier.variant>> meta::pure::functions::collection::tests::map::testMap_FromVariant<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEquals('[2,3,4]', $f->eval(|toVariant([1, 2, 3])->toMany(@Variant)->map(x | $x->to(@Integer)->toOne() + 1)->toVariant())->toString());
 }
 
-function <<PCT.test>> {PCT.testQualifier='variant'} meta::pure::functions::collection::tests::map::testMap_FromVariantAsPrimitive<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+function <<PCT.test, PCTCoreQualifier.variant>> meta::pure::functions::collection::tests::map::testMap_FromVariantAsPrimitive<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     assertEquals('[2,3,4]', $f->eval(|toVariant([1, 2, 3])->toMany(@Integer)->map(x | $x + 1)->toVariant())->toString());
 }
