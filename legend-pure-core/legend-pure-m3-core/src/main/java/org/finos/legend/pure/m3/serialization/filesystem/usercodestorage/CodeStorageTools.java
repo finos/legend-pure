@@ -83,6 +83,18 @@ public class CodeStorageTools
         return value.endsWith(".pure") ? null : value;
     }
 
+    public static boolean pathStartsWithElement(String path, String element)
+    {
+        if ((path == null) || path.isEmpty())
+        {
+            return false;
+        }
+
+        int start = (path.charAt(0) == '/') ? 1 : 0;
+        int end = start + element.length();
+        return ((path.length() > end) ? (path.charAt(end) == '/') : (path.length() == end)) && path.startsWith(element, start);
+    }
+
     public static ListIterable<String> splitPath(String path)
     {
         MutableList<String> elements = Lists.mutable.empty();

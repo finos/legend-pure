@@ -865,12 +865,13 @@ public class CompositeCodeStorage implements MutableVersionControlledCodeStorage
 
     public static String getSourceRepoName(String sourceId)
     {
-        if (!sourceId.isEmpty() && (sourceId.charAt(0) == '/'))
+        if ((sourceId != null) && !sourceId.isEmpty())
         {
-            int index = sourceId.indexOf('/', 1);
-            if (index != -1)
+            int start = (sourceId.charAt(0) == '/') ? 1 : 0;
+            int end = sourceId.indexOf('/', start);
+            if (end != -1)
             {
-                return sourceId.substring(1, index);
+                return sourceId.substring(start, end);
             }
         }
         return null;
@@ -884,15 +885,13 @@ public class CompositeCodeStorage implements MutableVersionControlledCodeStorage
         }
 
         int start = (sourceId.charAt(0) == '/') ? 1 : 0;
-        int nextSlash = sourceId.indexOf('/', start);
-
         if (repository == null)
         {
-            return nextSlash == -1;
+            return sourceId.indexOf('/', start) == -1;
         }
 
-        int length = (nextSlash == -1) ? (sourceId.length() - start) : (nextSlash - start);
-        return (length == repository.length()) && sourceId.startsWith(repository, start);
+        int end = start + repository.length();
+        return (sourceId.length() > end) && (sourceId.charAt(end) == '/') && sourceId.startsWith(repository, start);
     }
 
     public static final Function<Source, String> GET_SOURCE_REPO = source -> getSourceRepoName(source.getId());
