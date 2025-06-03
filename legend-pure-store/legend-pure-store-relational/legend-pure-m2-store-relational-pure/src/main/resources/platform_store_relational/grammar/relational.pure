@@ -108,6 +108,13 @@ Class meta::relational::metamodel::relation::View extends NamedRelation, Relatio
 Class meta::relational::metamodel::relation::TabularFunction extends NamedRelation
 {
     schema : Schema[1];
+    parameters : FunctionParameter[*];
+}
+
+Class meta::relational::metamodel::relation::FunctionParameter
+{
+    name : String[1];
+    type : meta::relational::metamodel::datatype::DataType[1];
 }
 
 Class meta::relational::mapping::ColumnMapping
