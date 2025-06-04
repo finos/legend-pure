@@ -20,12 +20,16 @@ import org.eclipse.collections.api.set.ImmutableSet;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.BooleanCoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.ByteCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.DateCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.DecimalCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.FloatCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.IntegerCoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.StrictTimeCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
+import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
+import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.StrictTimeFunctions;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -50,6 +54,16 @@ public class PrimitiveUtilities
     public static boolean getBooleanValue(CoreInstance instance, boolean defaultIfNull)
     {
         return (instance == null) ? defaultIfNull : getBooleanValue(instance);
+    }
+
+    public static byte getByteValue(CoreInstance instance)
+    {
+        return (instance instanceof ByteCoreInstance) ? ((ByteCoreInstance) instance).getValue() : Byte.parseByte(instance.getName());
+    }
+
+    public static byte getByteValue(CoreInstance instance, byte defaultIfNull)
+    {
+        return (instance == null) ? defaultIfNull : getByteValue(instance);
     }
 
     public static PureDate getDateValue(CoreInstance instance)
@@ -122,6 +136,16 @@ public class PrimitiveUtilities
     public static Number getIntegerValue(CoreInstance instance, BigInteger defaultIfNull)
     {
         return (instance == null) ? defaultIfNull : getIntegerValue(instance);
+    }
+
+    public static PureStrictTime getStrictTimeValue(CoreInstance instance)
+    {
+        return (instance instanceof StrictTimeCoreInstance) ? ((StrictTimeCoreInstance) instance).getValue() : StrictTimeFunctions.parsePureStrictTime(instance.getName());
+    }
+
+    public static PureStrictTime getStrictTimeValue(CoreInstance instance, PureStrictTime defaultIfNull)
+    {
+        return (instance == null) ? defaultIfNull : getStrictTimeValue(instance);
     }
 
     public static String getStringValue(CoreInstance instance)

@@ -114,12 +114,19 @@ public class Property
         return PrimitiveUtilities.getStringValue(property.getValueForMetaPropertyToOne(M3Properties.name));
     }
 
+    public static CoreInstance getPropertySourceType(CoreInstance property, ProcessorSupport processorSupport)
+    {
+        CoreInstance classifierGenericType = property.getValueForMetaPropertyToOne(M3Properties.classifierGenericType);
+        ListIterable<? extends CoreInstance> typeArguments = classifierGenericType.getValueForMetaPropertyToMany(M3Properties.typeArguments);
+        return Instance.getValueForMetaPropertyToOneResolved(typeArguments.get(0), M3Properties.rawType, processorSupport);
+    }
+
     public static ListIterable<String> calculatePropertyPath(CoreInstance property, ProcessorSupport processorSupport)
     {
         // Example: [Root, children, core, children, Any, properties, classifierGenericType]
         String propertyName = getPropertyName(property);
 
-        CoreInstance sourceType = Instance.getValueForMetaPropertyToOneResolved(Instance.getValueForMetaPropertyToManyResolved(Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.classifierGenericType, processorSupport), M3Properties.typeArguments, processorSupport).get(0), M3Properties.rawType, processorSupport);
+        CoreInstance sourceType = getPropertySourceType(property, processorSupport);
 
         String propertiesProperty = getPropertiesProperty(sourceType, property);
         if (propertiesProperty == null)
@@ -153,8 +160,8 @@ public class Property
             return multiplicity;
         }
 
-        CoreInstance propertyOwnerRawType = Instance.getValueForMetaPropertyToOneResolved(Instance.getValueForMetaPropertyToManyResolved(Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.classifierGenericType, processorSupport), M3Properties.typeArguments, processorSupport).get(0), M3Properties.rawType, processorSupport);
-        GenericTypeWithXArguments p = GenericType.resolveClassMultiplicityParameterUsingInheritance(sourceGenericType, propertyOwnerRawType, processorSupport);
+        CoreInstance propertySourceType = getPropertySourceType(property, processorSupport);
+        GenericTypeWithXArguments p = GenericType.resolveClassMultiplicityParameterUsingInheritance(sourceGenericType, propertySourceType, processorSupport);
         return p.getArgumentsByParameterName().get(Multiplicity.getMultiplicityParameter(multiplicity));
     }
 

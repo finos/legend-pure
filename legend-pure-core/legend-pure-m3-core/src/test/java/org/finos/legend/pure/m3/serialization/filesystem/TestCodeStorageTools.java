@@ -246,6 +246,50 @@ public class TestCodeStorageTools
     }
 
     @Test
+    public void testPathStartsWithElement()
+    {
+        Assert.assertTrue(CodeStorageTools.pathStartsWithElement("platform", "platform"));
+        Assert.assertTrue(CodeStorageTools.pathStartsWithElement("/platform", "platform"));
+        Assert.assertTrue(CodeStorageTools.pathStartsWithElement("/platform/", "platform"));
+        Assert.assertTrue(CodeStorageTools.pathStartsWithElement("platform/", "platform"));
+        Assert.assertTrue(CodeStorageTools.pathStartsWithElement("/platform/pure", "platform"));
+        Assert.assertTrue(CodeStorageTools.pathStartsWithElement("platform/pure", "platform"));
+        Assert.assertTrue(CodeStorageTools.pathStartsWithElement("/platform/pure/", "platform"));
+        Assert.assertTrue(CodeStorageTools.pathStartsWithElement("platform/pure/", "platform"));
+        Assert.assertTrue(CodeStorageTools.pathStartsWithElement("/platform/pure/corefunctions", "platform"));
+        Assert.assertTrue(CodeStorageTools.pathStartsWithElement("platform/pure/corefunctions", "platform"));
+        Assert.assertTrue(CodeStorageTools.pathStartsWithElement("/platform/pure/corefunctions/", "platform"));
+        Assert.assertTrue(CodeStorageTools.pathStartsWithElement("platform/pure/corefunctions/", "platform"));
+        Assert.assertTrue(CodeStorageTools.pathStartsWithElement("/platform/pure/corefunctions/lang.pure", "platform"));
+        Assert.assertTrue(CodeStorageTools.pathStartsWithElement("platform/pure/corefunctions/lang.pure", "platform"));
+
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement(null, "anything"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("", "anything"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("/platform/pure/corefunctions/lang.pure", "core"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("/platform/pure/corefunctions/lang.pure", "pure"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("/platform/pure/corefunctions/lang.pure", "corefunctions"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("abc", "platform"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("welcome.pure", "platform"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("/welcome.pure", "platform"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("platfor", "platform"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("/platfor", "platform"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("/platfor/", "platform"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("platfor/", "platform"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("platforms", "platform"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("/platforms", "platform"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("/platforms/", "platform"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("platforms/", "platform"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("platforn", "platform"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("/platforn", "platform"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("/platforn/", "platform"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("platforn/", "platform"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("plotfarm", "platform"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("/plotfarm", "platform"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("/plotfarm/", "platform"));
+        Assert.assertFalse(CodeStorageTools.pathStartsWithElement("plotfarm/", "platform"));
+    }
+
+    @Test
     public void testForEachPathElement()
     {
         assertForEachPathElement(null);
