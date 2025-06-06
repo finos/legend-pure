@@ -24,20 +24,13 @@ public class ExclusionOneTest implements ExclusionSpecification
 {
     public String testFullPath;
     public String expectedMessage;
-    public MutableSet<String> adapterQualifiers;
-
-    public ExclusionOneTest(String testFullPath, String expectedMessage)
-    {
-        this.testFullPath = testFullPath;
-        this.expectedMessage = expectedMessage;
-        this.adapterQualifiers = Sets.mutable.empty();
-    }
+    public MutableSet<AdapterQualifier> adapterQualifiers;
 
     public ExclusionOneTest(String testFullPath, String expectedMessage, AdapterQualifier...adapterQualifiers)
     {
         this.testFullPath = testFullPath;
         this.expectedMessage = expectedMessage;
-        this.adapterQualifiers = AdapterQualifier.resolveAdapterQualifiers(adapterQualifiers);
+        this.adapterQualifiers = Sets.mutable.of(adapterQualifiers);
     }
 
     @Override
@@ -49,6 +42,6 @@ public class ExclusionOneTest implements ExclusionSpecification
     @Override
     public MutableMap<String, MutableSet<String>> resolveQualifiers(ProcessorSupport processorSupport)
     {
-        return Maps.mutable.with(testFullPath, adapterQualifiers);
+        return Maps.mutable.with(testFullPath, adapterQualifiers.collect(AdapterQualifier::toString).toSet());
     }
 }

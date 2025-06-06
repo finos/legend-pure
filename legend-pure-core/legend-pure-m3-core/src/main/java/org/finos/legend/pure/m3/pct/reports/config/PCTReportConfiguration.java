@@ -35,19 +35,9 @@ public abstract class PCTReportConfiguration
 
     public abstract String getPlatform();
 
-    protected static ExclusionSpecification one(String fullPath, String message)
-    {
-        return new ExclusionOneTest(fullPath, message);
-    }
-
     protected static ExclusionSpecification one(String fullPath, String message, AdapterQualifier...adapterQualifiers)
     {
         return new ExclusionOneTest(fullPath, message, adapterQualifiers);
-    }
-
-    protected static ExclusionSpecification pack(String _package, String message)
-    {
-        return new ExclusionPackageTests(_package, message);
     }
 
     protected static ExclusionSpecification pack(String _package, String message, AdapterQualifier...adapterQualifiers)

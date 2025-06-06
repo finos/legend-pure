@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-        package org.finos.legend.pure.m3.pct.reports.config.exclusion;
+package org.finos.legend.pure.m3.pct.reports.config.exclusion;
 
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.set.MutableSet;
@@ -21,7 +21,7 @@ import java.util.Arrays;
 
 public enum AdapterQualifier
 {
-    unsupportedFeature, assertEqualsMismatch, needsInvestigation;
+    unsupportedFeature, assertErrorMismatch, needsInvestigation;
 
     public static MutableSet<String> resolveAdapterQualifiers(AdapterQualifier...adapterQualifiers)
     {

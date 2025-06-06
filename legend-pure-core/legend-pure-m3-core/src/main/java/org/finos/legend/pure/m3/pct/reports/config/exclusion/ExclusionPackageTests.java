@@ -27,20 +27,13 @@ public class ExclusionPackageTests implements ExclusionSpecification
 {
     public String testPackage;
     public String expectedMessage;
-    public MutableSet<String> adapterQualifiers;
-
-    public ExclusionPackageTests(String testPackage, String expectedMessage)
-    {
-        this.testPackage = testPackage;
-        this.expectedMessage = expectedMessage;
-        this.adapterQualifiers = Sets.mutable.empty();
-    }
+    public MutableSet<AdapterQualifier> adapterQualifiers;
 
     public ExclusionPackageTests(String testPackage, String expectedMessage, AdapterQualifier...adapterQualifiers)
     {
         this.testPackage = testPackage;
         this.expectedMessage = expectedMessage;
-        this.adapterQualifiers = AdapterQualifier.resolveAdapterQualifiers(adapterQualifiers);
+        this.adapterQualifiers = Sets.mutable.of(adapterQualifiers);
     }
 
     @Override
@@ -67,7 +60,7 @@ public class ExclusionPackageTests implements ExclusionSpecification
         {
             if (PCTTools.isPCTTest(c, processorSupport))
             {
-                result.put(PackageableElement.getUserPathForPackageableElement(c), adapterQualifiers);
+                result.put(PackageableElement.getUserPathForPackageableElement(c), adapterQualifiers.collect(AdapterQualifier::toString).toSet());
             }
         });
         return result;
