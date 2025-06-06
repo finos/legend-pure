@@ -22,14 +22,4 @@ import java.util.Arrays;
 public enum AdapterQualifier
 {
     unsupportedFeature, assertErrorMismatch, needsInvestigation;
-
-    public static MutableSet<String> resolveAdapterQualifiers(AdapterQualifier...adapterQualifiers)
-    {
-        MutableSet<String> result = Sets.mutable.empty();
-        if (adapterQualifiers != null)
-        {
-            Arrays.stream(adapterQualifiers).forEach(x -> result.add(x.toString()));
-        }
-        return result;
-    }
 }
