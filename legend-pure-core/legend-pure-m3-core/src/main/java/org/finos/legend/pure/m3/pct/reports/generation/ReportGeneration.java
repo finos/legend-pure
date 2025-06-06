@@ -21,6 +21,7 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.utility.ListIterate;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
 import org.finos.legend.pure.m3.execution.test.TestCollection;
@@ -65,6 +66,7 @@ public class ReportGeneration
     private static AdapterReport generateReport(TestCollection testCollection, PCTReportConfiguration reportManager, ProcessorSupport ps)
     {
         MutableMap<String, String> explodedExpectedFailures = PCTReportConfiguration.explodeExpectedFailures(reportManager.expectedFailures(), ps);
+        MutableMap<String, MutableSet<String>> explodedQualifiers = PCTReportConfiguration.explodeQualifiers(reportManager.expectedFailures(), ps);
 
         MutableMap<String, FunctionTestResults> testResults = Maps.mutable.empty();
 
@@ -72,8 +74,14 @@ public class ReportGeneration
         {
             FunctionTestResults functionInfo = testResults.getIfAbsentPut(x.getSourceInformation().getSourceId(), () -> new FunctionTestResults(x.getSourceInformation().getSourceId()));
             PackageableFunction<?> f = (PackageableFunction<?>) x;
-            String error = explodedExpectedFailures.get(PackageableElement.getUserPathForPackageableElement(f));
+
             Set<String> pctQualifiers = PCTTools.getPCTQualifiers(f, ps);
+            String error = explodedExpectedFailures.get(PackageableElement.getUserPathForPackageableElement(f));
+            MutableSet<String> adapterQualifiers = explodedQualifiers.get(PackageableElement.getUserPathForPackageableElement(f));
+            if (adapterQualifiers != null && !adapterQualifiers.isEmpty())
+            {
+                pctQualifiers.addAll(adapterQualifiers);
+            }
             functionInfo.tests.add(new TestInfo(f._functionName(), error == null, error, pctQualifiers));
         });
 

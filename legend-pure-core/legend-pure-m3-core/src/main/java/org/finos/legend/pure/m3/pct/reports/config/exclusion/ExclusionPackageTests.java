@@ -15,7 +15,9 @@
 package org.finos.legend.pure.m3.pct.reports.config.exclusion;
 
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -25,11 +27,13 @@ public class ExclusionPackageTests implements ExclusionSpecification
 {
     public String testPackage;
     public String expectedMessage;
+    public MutableSet<AdapterQualifier> adapterQualifiers;
 
-    public ExclusionPackageTests(String testPackage, String expectedMessage)
+    public ExclusionPackageTests(String testPackage, String expectedMessage, AdapterQualifier...adapterQualifiers)
     {
         this.testPackage = testPackage;
         this.expectedMessage = expectedMessage;
+        this.adapterQualifiers = Sets.mutable.of(adapterQualifiers);
     }
 
     @Override
@@ -42,6 +46,21 @@ public class ExclusionPackageTests implements ExclusionSpecification
             if (PCTTools.isPCTTest(c, processorSupport))
             {
                 result.put(PackageableElement.getUserPathForPackageableElement(c), expectedMessage);
+            }
+        });
+        return result;
+    }
+
+    @Override
+    public MutableMap<String, MutableSet<String>> resolveQualifiers(ProcessorSupport processorSupport)
+    {
+        MutableMap<String, MutableSet<String>> result = Maps.mutable.empty();
+        Package pack = (Package) processorSupport.package_getByUserPath(testPackage);
+        pack._children().forEach(c ->
+        {
+            if (PCTTools.isPCTTest(c, processorSupport))
+            {
+                result.put(PackageableElement.getUserPathForPackageableElement(c), adapterQualifiers.collect(AdapterQualifier::toString).toSet());
             }
         });
         return result;
