@@ -1,4 +1,4 @@
-// Copyright 2024 Goldman Sachs
+// Copyright 2025 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m3.pct.reports.config.exclusion;
+        package org.finos.legend.pure.m3.pct.reports.config.exclusion;
 
-import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.set.MutableSet;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 
-public interface ExclusionSpecification
+import java.util.Arrays;
+
+public enum AdapterQualifier
 {
-    MutableMap<String, String> resolveExclusion(ProcessorSupport processorSupport);
+    unsupportedFeature, assertEqualsMismatch, needsInvestigation;
 
-    MutableMap<String, MutableSet<String>> resolveQualifiers(ProcessorSupport processorSupport);
+    public static MutableSet<String> resolveAdapterQualifiers(AdapterQualifier...adapterQualifiers)
+    {
+        MutableSet<String> result = Sets.mutable.empty();
+        if (adapterQualifiers != null)
+        {
+            Arrays.stream(adapterQualifiers).forEach(x -> result.add(x.toString()));
+        }
+        return result;
+    }
 }

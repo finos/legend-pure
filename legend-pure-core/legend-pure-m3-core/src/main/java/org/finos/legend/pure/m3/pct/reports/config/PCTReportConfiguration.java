@@ -16,7 +16,9 @@ package org.finos.legend.pure.m3.pct.reports.config;
 
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.pct.reports.config.exclusion.AdapterQualifier;
 import org.finos.legend.pure.m3.pct.reports.config.exclusion.ExclusionOneTest;
 import org.finos.legend.pure.m3.pct.reports.config.exclusion.ExclusionPackageTests;
 import org.finos.legend.pure.m3.pct.reports.config.exclusion.ExclusionSpecification;
@@ -38,15 +40,32 @@ public abstract class PCTReportConfiguration
         return new ExclusionOneTest(fullPath, message);
     }
 
+    protected static ExclusionSpecification one(String fullPath, String message, AdapterQualifier...adapterQualifiers)
+    {
+        return new ExclusionOneTest(fullPath, message, adapterQualifiers);
+    }
+
     protected static ExclusionSpecification pack(String _package, String message)
     {
         return new ExclusionPackageTests(_package, message);
+    }
+
+    protected static ExclusionSpecification pack(String _package, String message, AdapterQualifier...adapterQualifiers)
+    {
+        return new ExclusionPackageTests(_package, message, adapterQualifiers);
     }
 
     public static MutableMap<String, String> explodeExpectedFailures(MutableList<ExclusionSpecification> expectedFailures, ProcessorSupport processorSupport)
     {
         MutableMap<String, String> result = org.eclipse.collections.impl.factory.Maps.mutable.empty();
         expectedFailures.forEach(x -> result.putAll(x.resolveExclusion(processorSupport)));
+        return result;
+    }
+
+    public static MutableMap<String, MutableSet<String>> explodeQualifiers(MutableList<ExclusionSpecification> expectedFailures, ProcessorSupport processorSupport)
+    {
+        MutableMap<String, MutableSet<String>> result = org.eclipse.collections.impl.factory.Maps.mutable.empty();
+        expectedFailures.forEach(x -> result.putAll(x.resolveQualifiers(processorSupport)));
         return result;
     }
 }

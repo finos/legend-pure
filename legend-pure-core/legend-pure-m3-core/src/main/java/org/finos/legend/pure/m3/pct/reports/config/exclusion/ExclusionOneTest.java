@@ -15,23 +15,40 @@
 package org.finos.legend.pure.m3.pct.reports.config.exclusion;
 
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 
 public class ExclusionOneTest implements ExclusionSpecification
 {
     public String testFullPath;
     public String expectedMessage;
+    public MutableSet<String> adapterQualifiers;
 
     public ExclusionOneTest(String testFullPath, String expectedMessage)
     {
         this.testFullPath = testFullPath;
         this.expectedMessage = expectedMessage;
+        this.adapterQualifiers = Sets.mutable.empty();
+    }
+
+    public ExclusionOneTest(String testFullPath, String expectedMessage, AdapterQualifier...adapterQualifiers)
+    {
+        this.testFullPath = testFullPath;
+        this.expectedMessage = expectedMessage;
+        this.adapterQualifiers = AdapterQualifier.resolveAdapterQualifiers(adapterQualifiers);
     }
 
     @Override
     public MutableMap<String, String> resolveExclusion(ProcessorSupport processorSupport)
     {
         return Maps.mutable.with(testFullPath, expectedMessage);
+    }
+
+    @Override
+    public MutableMap<String, MutableSet<String>> resolveQualifiers(ProcessorSupport processorSupport)
+    {
+        return Maps.mutable.with(testFullPath, adapterQualifiers);
     }
 }
