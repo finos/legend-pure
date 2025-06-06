@@ -14,11 +14,6 @@
 
 package org.finos.legend.pure.m3.pct.reports.config.exclusion;
 
-import org.eclipse.collections.api.factory.Sets;
-import org.eclipse.collections.api.set.MutableSet;
-
-import java.util.Arrays;
-
 public enum AdapterQualifier
 {
     unsupportedFeature, assertErrorMismatch, needsInvestigation;
