@@ -14,6 +14,10 @@
 
 package org.finos.legend.pure.m3.tests.elements.relation;
 
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
+import org.finos.legend.pure.m3.navigation.function.Function;
+import org.finos.legend.pure.m3.navigation.generictype.GenericType;
+import org.finos.legend.pure.m3.navigation.relation._RelationType;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
@@ -54,7 +58,7 @@ public class TestRelationType extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "   @meta::pure::metamodel::relation::Relation<(name:Number[1])>;\n" +
                         "}")
-                    );
+        );
 
         assertPureException(
                 PureCompilationException.class,
@@ -76,5 +80,26 @@ public class TestRelationType extends AbstractPureTestWithCoreCompiledPlatform
                 PureCompilationException.class,
                 "Return type error in function 'test'; found: meta::pure::metamodel::relation::Relation<(name:Integer)>; expected: meta::pure::metamodel::relation::Relation<(name:Number[1])>",
                 e);
+    }
+
+    @Test
+    public void testMerge()
+    {
+        compileTestSource("fromString.pure",
+                "Primitive Varchar(x:Integer[1]) extends String\n" +
+                        "[\n" +
+                        "  $this->length() <= $x\n" +
+                        "]" +
+                        "function func1():meta::pure::metamodel::relation::Relation<(num:Number[1], other:Varchar(222))>[0..1]\n" +
+                        "{\n" +
+                        "   [];\n" +
+                        "}" +
+                        "function func2():meta::pure::metamodel::relation::Relation<(num:Number[1], other:Varchar(222))>[0..1]\n" +
+                        "{\n" +
+                        "   [];\n" +
+                        "}");
+        FunctionType fType1 = (FunctionType) Function.computeFunctionType(runtime.getFunction("func1__Relation_$0_1$_"), runtime.getProcessorSupport());
+        FunctionType fType2 = (FunctionType) Function.computeFunctionType(runtime.getFunction("func2__Relation_$0_1$_"), runtime.getProcessorSupport());
+        Assert.assertEquals("(num:Number[1], other:Varchar(222))", GenericType.print(_RelationType.merge(fType1._returnType()._typeArguments().getFirst(), fType2._returnType()._typeArguments().getFirst(), true, runtime.getProcessorSupport()), processorSupport));
     }
 }

@@ -1162,8 +1162,6 @@ public class GenericType
         CoreInstance rawTypeCopy = copy(genericType.getValueForMetaPropertyToOne(M3Properties.rawType), replaceSourceInfo, newSourceInfo, processorSupport, inferred);
         CoreInstance copy = Type.wrapGenericType(rawTypeCopy, replaceSourceInfo ? newSourceInfo : genericType.getSourceInformation(), processorSupport, inferred);
 
-        Instance.addValueToProperty(copy, M3Properties.typeVariableValues, genericType.getValueForMetaPropertyToMany(M3Properties.typeVariableValues), processorSupport);
-
         ListIterable<? extends CoreInstance> typeArguments = genericType.getValueForMetaPropertyToMany(M3Properties.typeArguments);
         if (typeArguments.notEmpty())
         {
@@ -1186,7 +1184,7 @@ public class GenericType
                     InstanceValue instanceValue = (InstanceValue) processorSupport.newAnonymousCoreInstance(null, M3Paths.InstanceValue);
                     instanceValue._genericType((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) copyGenericType(x.getValueForMetaPropertyToOne("genericType"), replaceSourceInfo, newSourceInfo, processorSupport, inferred));
                     instanceValue._multiplicity((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity) Multiplicity.copyMultiplicity(x.getValueForMetaPropertyToOne("multiplicity"), replaceSourceInfo, newSourceInfo, processorSupport));
-                    instanceValue._values(x.getValueForMetaPropertyToMany(M3Properties.values));
+                    instanceValue._values(((InstanceValue)x)._values()); // Do not use getValueForMetaPropertyToMany as it may use 'toCoreInstance' in Compiled and transform primitive to ValCoreInstance
                     return instanceValue;
                 }
                 else if (x instanceof VariableExpression)
