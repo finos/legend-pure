@@ -19,6 +19,7 @@ import io.deephaven.csv.parsers.DataType;
 import io.deephaven.csv.reading.CsvReader;
 import io.deephaven.csv.sinks.SinkFactory;
 import io.deephaven.csv.util.CsvReaderException;
+import java.util.Arrays;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.tuple.Pair;
@@ -135,7 +136,7 @@ public class TDSExtension implements InlineDSL
         CsvReader.Result result;
         try
         {
-            result = CsvReader.read(CsvSpecs.csv(), new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)), makeMySinkFactory());
+            result = CsvReader.read(makePureCsvSpecs(), new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)), makePureSinkFactory());
         }
         catch (CsvReaderException e)
         {
@@ -236,17 +237,22 @@ public class TDSExtension implements InlineDSL
         }
     }
 
-    private static SinkFactory makeMySinkFactory()
+    public static CsvSpecs makePureCsvSpecs()
+    {
+        return CsvSpecs.builder().nullValueLiterals(Arrays.asList("", "null")).build();
+    }
+
+    public static SinkFactory makePureSinkFactory()
     {
         return SinkFactory.arrays(
                 null,
                 null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
+                2_147_483_647, //largest prime for 32 signed numbers
+                9_223_372_036_854_775_783L, //largest prime for 64 signed numbers
+                Float.NEGATIVE_INFINITY,
+                Double.NEGATIVE_INFINITY,
+                Byte.MIN_VALUE,
+                Character.MIN_VALUE,
                 null,
                 Long.MIN_VALUE,
                 Long.MIN_VALUE);
