@@ -22,7 +22,7 @@ Profile meta::pure::test::pct::PCT
 
 Profile <<meta::pure::test::pct::PCT.testQualifierProfile>> meta::pure::test::pct::PCTCoreQualifier
 {
-    stereotypes : [variant];
+    stereotypes : [variant, needsImplementation];
 
 }
 

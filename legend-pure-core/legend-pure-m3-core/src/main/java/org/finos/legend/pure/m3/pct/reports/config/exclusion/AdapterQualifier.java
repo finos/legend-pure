@@ -16,5 +16,5 @@ package org.finos.legend.pure.m3.pct.reports.config.exclusion;
 
 public enum AdapterQualifier
 {
-    unsupportedFeature, assertErrorMismatch, needsInvestigation;
+    unsupportedFeature, assertErrorMismatch, needsInvestigation, needsImplementation;
 }
