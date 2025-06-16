@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.finos</groupId>
         <artifactId>finos</artifactId>
-        <version>4</version>
+        <version>7</version>
     </parent>
 
     <name>Legend Pure</name>
@@ -54,6 +54,7 @@
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
         <maven.compiler.release>8</maven.compiler.release>
         <java.version.range>[11,12),[17,18)</java.version.range>
+        <publish.server.id>central</publish.server.id>
 
         <!-- Dependency version -->
         <antlr.version>4.8-1</antlr.version>
@@ -97,7 +98,6 @@
         <maven.shade.plugin.version>3.4.1</maven.shade.plugin.version>
         <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
         <maven.surefire.plugin.version>3.1.0</maven.surefire.plugin.version>
-        <nexus-staging.maven.plugin.version>1.6.13</nexus-staging.maven.plugin.version>
         <versions.maven.plugin.version>2.7</versions.maven.plugin.version>
     </properties>
 
@@ -206,11 +206,6 @@
                     <version>${jacoco.maven.plugin.version}</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.sonatype.plugins</groupId>
-                    <artifactId>nexus-staging-maven-plugin</artifactId>
-                    <version>${nexus-staging.maven.plugin.version}</version>
-                </plugin>
-                <plugin>
                     <groupId>org.finos.legend.pure</groupId>
                     <artifactId>legend-pure-maven-generation-pct</artifactId>
                     <version>${project.version}</version>
@@ -268,14 +263,12 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <extensions>true</extensions>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
                 <configuration>
-                    <serverId>ossrh</serverId>
-                    <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
-                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                    <stagingProgressTimeoutMinutes>20</stagingProgressTimeoutMinutes>
+                    <publishingServerId>central</publishingServerId>
+                    <autoPublish>true</autoPublish>
+                    <waitUntil>published</waitUntil>
                 </configuration>
             </plugin>
             <plugin>
@@ -965,20 +958,4 @@
             <!-- Test Scope -->
         </dependencies>
     </dependencyManagement>
-
-    <repositories>
-        <repository>
-            <id>ossrh</id>
-            <name>OSSRH Public Group</name>
-            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>ossrh-releases</id>
-            <name>OSSRH Public Releases Group</name>
-            <url>https://s01.oss.sonatype.org/content/repositories/releases/</url>
-        </repository>
-    </repositories>
 </project>
