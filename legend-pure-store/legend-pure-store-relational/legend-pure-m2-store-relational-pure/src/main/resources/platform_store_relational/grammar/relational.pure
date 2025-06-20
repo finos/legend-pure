@@ -538,6 +538,8 @@ Class meta::relational::metamodel::Window extends meta::relational::metamodel::R
    <<equality.Key>> partition: RelationalOperationElement[*];
 
    <<equality.Key>> sortBy: SortByInfo [*];
+
+   <<equality.Key>> frame: meta::relational::metamodel::Frame[0..1];
 }
 
 Class meta::relational::metamodel::SortByInfo extends meta::relational::metamodel::RelationalOperationElement
@@ -545,4 +547,40 @@ Class meta::relational::metamodel::SortByInfo extends meta::relational::metamode
 
    sortByElement: RelationalOperationElement [1];
    sortDirection: meta::relational::metamodel::SortDirection[0..1] ;
+}
+
+Enum meta::relational::metamodel::FrameType
+{
+   ROWS, RANGE
+}
+
+Class meta::relational::metamodel::Frame
+{
+   offsetFrom: meta::relational::metamodel::FrameValue[1];
+   offsetTo: meta::relational::metamodel::FrameValue[1];
+   frameType: meta::relational::metamodel::FrameType[1];
+}
+
+Enum meta::relational::metamodel::FrameValueDirection
+{
+   PRECEDING, FOLLOWING
+}
+
+Class <<typemodifiers.abstract>> meta::relational::metamodel::FrameValue extends meta::relational::metamodel::RelationalOperationElement
+{
+}
+
+Class meta::relational::metamodel::FrameLiteralValue extends meta::relational::metamodel::FrameValue
+{
+   value: RelationalOperationElement[1];
+   direction: FrameValueDirection[1];
+}
+
+Class meta::relational::metamodel::UnboundedFrameValue extends meta::relational::metamodel::FrameValue
+{
+   direction: FrameValueDirection[1];
+}
+
+Class meta::relational::metamodel::FrameCurrentRowValue extends meta::relational::metamodel::FrameValue
+{
 }
