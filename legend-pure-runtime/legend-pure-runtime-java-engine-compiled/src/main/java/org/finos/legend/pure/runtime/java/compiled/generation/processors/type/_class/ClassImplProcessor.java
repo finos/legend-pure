@@ -20,6 +20,7 @@ import org.eclipse.collections.api.block.predicate.Predicate2;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
@@ -51,39 +52,48 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuesp
 public class ClassImplProcessor
 {
     //DO NOT ADD WIDE * IMPORTS TO THIS LIST IT IMPACTS COMPILE TIMES
-    public static final String IMPORTS = "import org.eclipse.collections.api.RichIterable;\n" +
-            "import org.eclipse.collections.api.factory.Lists;\n" +
-            "import org.eclipse.collections.api.factory.Maps;\n" +
-            "import org.eclipse.collections.api.list.ListIterable;\n" +
-            "import org.eclipse.collections.api.list.MutableList;\n" +
-            "import org.eclipse.collections.api.map.MutableMap;\n" +
-            "import org.finos.legend.pure.m3.coreinstance.KeyIndex;\n" +
-            "import org.finos.legend.pure.m3.execution.ExecutionSupport;\n" +
-            "import org.finos.legend.pure.m4.ModelRepository;\n" +
-            "import org.finos.legend.pure.m4.coreinstance.CoreInstance;\n" +
-            "import org.finos.legend.pure.m4.coreinstance.SourceInformation;\n" +
-            "import org.finos.legend.pure.m4.coreinstance.factory.CoreInstanceFactory;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.E_;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.*;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.QuantityCoreInstance;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ReflectiveCoreInstance;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ValCoreInstance;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.GetterOverrideExecutor;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.*;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*;\n";
+    static final ImmutableList<String> IMPORTS_LIST = Lists.immutable.with(
+            "org.eclipse.collections.api.RichIterable",
+            "org.eclipse.collections.api.factory.Lists",
+            "org.eclipse.collections.api.factory.Maps",
+            "org.eclipse.collections.api.list.ListIterable",
+            "org.eclipse.collections.api.list.MutableList",
+            "org.eclipse.collections.api.map.MutableMap",
+            "org.finos.legend.pure.m3.coreinstance.KeyIndex",
+            "org.finos.legend.pure.m3.execution.ExecutionSupport",
+            "org.finos.legend.pure.m4.ModelRepository",
+            "org.finos.legend.pure.m4.coreinstance.CoreInstance",
+            "org.finos.legend.pure.m4.coreinstance.SourceInformation",
+            "org.finos.legend.pure.m4.coreinstance.factory.CoreInstanceFactory",
+            "org.finos.legend.pure.runtime.java.compiled.execution.*",
+            "org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.E_",
+            "org.finos.legend.pure.runtime.java.compiled.generation.processors.support.*",
+            "org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.QuantityCoreInstance",
+            "org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ReflectiveCoreInstance",
+            "org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ValCoreInstance",
+            "org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.GetterOverrideExecutor",
+            "org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.*",
+            "org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*"
+    );
 
-    static final String FUNCTION_IMPORTS =
-            "import org.eclipse.collections.api.block.function.Function0;\n" +
-                    "import org.eclipse.collections.api.block.function.Function;\n" +
-                    "import org.eclipse.collections.api.block.function.Function2;\n" +
-                    "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;\n";
+    static final ImmutableList<String> FUNCTION_IMPORTS_LIST = Lists.immutable.with(
+            "org.eclipse.collections.api.block.function.Function",
+            "org.eclipse.collections.api.block.function.Function0",
+            "org.eclipse.collections.api.block.function.Function2",
+            "org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap"
+    );
 
-    static final String SERIALIZABLE_IMPORTS = "import java.io.Externalizable;\n" +
-            "import java.io.IOException;\n" +
-            "import java.io.ObjectInput;\n" +
-            "import java.io.ObjectOutput;\n" +
-            "import org.eclipse.collections.api.block.procedure.Procedure;\n";
+    static final ImmutableList<String> SERIALIZABLE_IMPORTS_LIST = Lists.immutable.with(
+            "java.io.Externalizable",
+            "java.io.IOException",
+            "java.io.ObjectInput",
+            "java.io.ObjectOutput",
+            "org.eclipse.collections.api.block.procedure.Procedure"
+    );
+
+    public static final String IMPORTS = sortAndReduceImports(IMPORTS_LIST).makeString("import ", ";\nimport ", ";\n");
+    static final String FUNCTION_IMPORTS = sortAndReduceImports(FUNCTION_IMPORTS_LIST).makeString("import ", ";\nimport ", ";\n");
+    static final String SERIALIZABLE_IMPORTS = sortAndReduceImports(SERIALIZABLE_IMPORTS_LIST).makeString("import ", ";\nimport ", ";\n");
 
     public static final String CLASS_IMPL_SUFFIX = "_Impl";
 
@@ -118,13 +128,10 @@ public class ClassImplProcessor
         boolean hasFunctions = !_Class.getQualifiedProperties(_class, processorContext.getSupport()).isEmpty()
                 || !_Class.computeConstraintsInHierarchy(_class, processorContext.getSupport()).isEmpty();
 
-        ListIterable<? extends CoreInstance> params = _class.getValueForMetaPropertyToMany(M3Properties.typeVariables);
-
-        MutableList<String> typeVariablesSign = params.collect(ci -> "final " + TypeProcessor.typeToJavaPrimitiveWithMul(Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.genericType, processorSupport), Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.multiplicity, processorSupport), false, processorContext) + " _" + Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.name, processorSupport).getName()).toList();
-        MutableList<String> typeVariablesValues = params.collect(ci -> " _" + Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.name, processorSupport).getName()).toList();
-
-        String stringParams = typeVariablesSign.with("final " + TypeProcessor.typeToJavaObjectSingle(Type.wrapGenericType(_class, processorSupport), false, processorSupport) + " _this").makeString(", ");
-        String stringValues = "Lists.mutable.with(" + typeVariablesValues.with("this").makeString(", ") + ")";
+        String validateExtraValues = _class.getValueForMetaPropertyToMany(M3Properties.typeVariables)
+                .collect(p -> " _" + PrimitiveUtilities.getStringValue(p.getValueForMetaPropertyToOne(M3Properties.name)), Lists.mutable.empty())
+                .with("this")
+                .makeString("Lists.mutable.with(", ", ", ")");
 
         return StringJavaSource.newStringJavaSource(_package, className, IMPORTS + (hasFunctions ? FUNCTION_IMPORTS : "") + (addJavaSerializationSupport ? SERIALIZABLE_IMPORTS : "") + imports +
                 "public class " + classNamePlusTypeParams + " extends " + _extends + " implements " + interfaceNamePlusTypeParams + (isGetterOverride ? ", GetterOverrideExecutor" : "") +
@@ -165,7 +172,7 @@ public class ClassImplProcessor
                 (ClassProcessor.isLazy(_class) ? buildEquality(classGenericType, CLASS_IMPL_SUFFIX, true, false, true, processorContext, processorSupport) : buildEquality(classGenericType, CLASS_IMPL_SUFFIX, false, false, false, processorContext, processorSupport)) +
                 buildGetFullSystemPath() +
                 //Not supported on platform classes yet
-                (ClassProcessor.isPlatformClass(_class) ? "" : validate(true, _class, className, classGenericType, processorContext, processorSupport.class_getSimpleProperties(_class), null, stringValues)) +
+                (ClassProcessor.isPlatformClass(_class) ? "" : validate(true, _class, className, classGenericType, processorContext, processorSupport.class_getSimpleProperties(_class), null, validateExtraValues)) +
                 (defaultValueKeys.isEmpty() ? "" :
                         "\n" +
                                 "    @Override\n" +
@@ -523,33 +530,66 @@ public class ClassImplProcessor
     public static String buildSimpleProperties(CoreInstance classGenericType, FullPropertyImplementation propertyImpl, ProcessorContext processorContext, ProcessorSupport processorSupport)
     {
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
+        MapIterable<String, CoreInstance> propertiesByName = processorSupport.class_getSimplePropertiesByName(_class);
+        if (propertiesByName.isEmpty())
+        {
+            return "";
+        }
+
         String ownerClassName = TypeProcessor.javaInterfaceForType(_class, processorSupport);
         String ownerTypeParams = ClassProcessor.typeParameters(_class);
+        return Lists.mutable.<Pair<String, CoreInstance>>ofInitialCapacity(propertiesByName.size())
+                .withAll(propertiesByName.keyValuesView())
+                .sortThisBy(Pair::getOne)
+                .asLazy()
+                .collect(pair ->
+                {
+                    String name = pair.getOne();
+                    CoreInstance property = pair.getTwo();
+                    CoreInstance unresolvedReturnType = ClassProcessor.getPropertyUnresolvedReturnType(property, processorSupport);
+                    CoreInstance returnType = ClassProcessor.getPropertyResolvedReturnType(classGenericType, property, processorSupport);
 
-        return processorSupport.class_getSimpleProperties(_class).collect(property ->
-        {
-            CoreInstance unresolvedReturnType = ClassProcessor.getPropertyUnresolvedReturnType(property, processorSupport);
-            CoreInstance returnType = ClassProcessor.getPropertyResolvedReturnType(classGenericType, property, processorSupport);
+                    CoreInstance returnMultiplicity = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.multiplicity, processorSupport);
 
-            String name = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.name, processorSupport).getName();
-            CoreInstance returnMultiplicity = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.multiplicity, processorSupport);
-
-            boolean makePrimitiveIfPossible = GenericType.isGenericTypeConcrete(unresolvedReturnType) && Multiplicity.isToOne(returnMultiplicity, true);
-            String returnTypeJava = TypeProcessor.pureTypeToJava(returnType, true, makePrimitiveIfPossible, processorSupport);
-            CoreInstance classOwner = Instance.getValueForMetaPropertyToOneResolved(property.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToMany(M3Properties.typeArguments).get(0), M3Properties.rawType, processorSupport);
-            String classOwnerId = processorContext.getIdBuilder().buildId(classOwner);
-            return propertyImpl.build(property, name, unresolvedReturnType, returnType, returnMultiplicity, returnTypeJava, classOwnerId, ownerClassName, ownerTypeParams, processorContext);
-        }).makeString("", "\n", "\n");
+                    boolean makePrimitiveIfPossible = GenericType.isGenericTypeConcrete(unresolvedReturnType) && Multiplicity.isToOne(returnMultiplicity, true);
+                    String returnTypeJava = TypeProcessor.pureTypeToJava(returnType, true, makePrimitiveIfPossible, processorSupport);
+                    CoreInstance classOwner = Instance.getValueForMetaPropertyToOneResolved(property.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToMany(M3Properties.typeArguments).get(0), M3Properties.rawType, processorSupport);
+                    String classOwnerId = processorContext.getIdBuilder().buildId(classOwner);
+                    return propertyImpl.build(property, name, unresolvedReturnType, returnType, returnMultiplicity, returnTypeJava, classOwnerId, ownerClassName, ownerTypeParams, processorContext);
+                })
+                .makeString("", "\n", "\n");
     }
 
     public static String buildQualifiedProperties(CoreInstance classGenericType, ProcessorContext processorContext, ProcessorSupport processorSupport)
     {
+        return appendQualifiedProperties(new StringBuilder(), classGenericType, processorContext, processorSupport).toString();
+    }
+
+    static StringBuilder appendQualifiedProperties(StringBuilder builder, CoreInstance classGenericType, ProcessorContext processorContext, ProcessorSupport processorSupport)
+    {
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
-        return _Class.getQualifiedProperties(_class, processorContext.getSupport()).collect(qp -> "public " + FunctionProcessor.functionSignature(qp, false, false, true, "", processorContext, true) + "\n" +
-                "    {\n" +
-                "        " + FunctionProcessor.processFunctionDefinitionContent(_class, qp, true, processorContext, processorContext.getSupport()) + "\n" +
-                "    }\n" +
-                "\n").makeString("    ", "\n    ", "\n");
+        MapIterable<String, CoreInstance> qualifiedPropertiesById = processorSupport.class_getQualifiedPropertiesByName(_class);
+        return appendQualifiedProperties(builder, _class, qualifiedPropertiesById, processorContext);
+    }
+
+    static StringBuilder appendQualifiedProperties(StringBuilder builder, CoreInstance _class, MapIterable<String, CoreInstance> qualifiedPropertiesById, ProcessorContext processorContext)
+    {
+        if (qualifiedPropertiesById.notEmpty())
+        {
+            Lists.mutable.<Pair<String, CoreInstance>>ofInitialCapacity(qualifiedPropertiesById.size())
+                    .withAll(qualifiedPropertiesById.keyValuesView())
+                    .sortThisBy(Pair::getOne)
+                    .forEach(pair -> appendQualifiedProperty(builder, _class, pair.getTwo(), processorContext).append("\n"));
+        }
+        return builder;
+    }
+
+    static StringBuilder appendQualifiedProperty(StringBuilder builder, CoreInstance _class, CoreInstance qualifiedProperty, ProcessorContext processorContext)
+    {
+        return builder.append("    public ").append(FunctionProcessor.functionSignature(qualifiedProperty, false, false, true, "", processorContext, true)).append("\n")
+                .append("    {\n")
+                .append("        ").append(FunctionProcessor.processFunctionDefinitionContent(_class, qualifiedProperty, true, processorContext, processorContext.getSupport())).append("\n")
+                .append("    }\n");
     }
 
     public static String buildCopy(CoreInstance classGenericType, String suffix, boolean copyGetterOverride, ProcessorSupport processorSupport)
@@ -1037,7 +1077,7 @@ public class ClassImplProcessor
         ProcessorSupport processorSupport = processorContext.getSupport();
         ListIterable<CoreInstance> allConstraints = _Class.computeConstraintsInHierarchy(_class, processorSupport);
         StringBuilder validateItems = new StringBuilder();
-        String validate =         "    public " + (stateAndDeep ? "" : "static ") + className + " _validate(" + (stateAndDeep ? "boolean goDeep," : "") + (extraParameters == null ? "" : extraParameters + ",") + " org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInformation, final ExecutionSupport es)\n" +
+        String validate =         "    public " + (stateAndDeep ? "" : "static ") + className + " _validate(" + (stateAndDeep ? "boolean goDeep," : "") + (extraParameters == null ? "" : extraParameters + ",") + " SourceInformation sourceInformation, final ExecutionSupport es)\n" +
                         "    {\n" +
                         (stateAndDeep ? "        if (!this.hasCompileState(CompiledSupport.CONSTRAINTS_VALIDATED))\n" +
                                 "        {\n" : "") +
@@ -1057,7 +1097,7 @@ public class ClassImplProcessor
                         (stateAndDeep ? "            this.addCompileState(CompiledSupport.CONSTRAINTS_VALIDATED);\n" +
                                 "            if (goDeep)\n" +
                                 "            {\n" : "") +
-                        properties.collect(property ->
+                        properties.toSortedListBy(Property::getPropertyName).collect(property ->
                         {
                             CoreInstance returnType = ClassProcessor.getPropertyResolvedReturnType(classGenericType, property, processorSupport);
                             CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(returnType, M3Properties.rawType, processorSupport);
@@ -1145,5 +1185,77 @@ public class ClassImplProcessor
     public interface FullPropertyImplementation
     {
         String build(CoreInstance property, String name, CoreInstance unresolvedReturnType, CoreInstance returnType, CoreInstance returnMultiplicity, String returnTypeJava, String classOwnerId, String ownerClassName, String ownerTypeParams, ProcessorContext processorContext);
+    }
+
+    static MutableList<String> sortAndReduceImports(Iterable<? extends String> imports)
+    {
+        MutableMap<String, String> byName = Maps.mutable.empty();
+        MutableSet<String> starImports = Sets.mutable.empty();
+        imports.forEach(imp ->
+        {
+            if (imp.endsWith(".*"))
+            {
+                starImports.add(imp);
+            }
+            else
+            {
+                String name = imp.substring(imp.lastIndexOf('.') + 1);
+                String otherImp = byName.put(name, imp);
+                if ((otherImp != null) && !otherImp.equals(imp))
+                {
+                    throw new IllegalArgumentException("Name conflict between imports: " + imp + " and " + otherImp);
+                }
+            }
+        });
+
+        MutableList<String> list = Lists.mutable.<String>ofInitialCapacity(byName.size() + starImports.size())
+                .withAll(starImports)
+                .withAll(byName.values())
+                .sortThis(ClassImplProcessor::compareImports);
+        String[] prev = {null};
+        list.removeIf(current ->
+        {
+            String previous = prev[0];
+            if ((previous != null) && (current.length() >= previous.length()) && previous.endsWith(".*"))
+            {
+                int lastDot = current.lastIndexOf('.');
+                if ((lastDot == (previous.length() - 2)) && previous.regionMatches(0, current, 0, lastDot))
+                {
+                    return true;
+                }
+            }
+            prev[0] = current;
+            return false;
+        });
+        return list;
+    }
+
+    private static int compareImports(String import1, String import2)
+    {
+        // Imports from the java package go last
+        if (import1.startsWith("java."))
+        {
+            if (!import2.startsWith("java."))
+            {
+                return 1;
+            }
+        }
+        else if (import2.startsWith("java."))
+        {
+            return -1;
+        }
+
+        // * imports go before others in the same package
+        if (import1.endsWith("*") && (import1.length() <= import2.length()) && import1.regionMatches(0, import2, 0, import1.length() - 1))
+        {
+            return -1;
+        }
+        if (import2.endsWith("*") && (import2.length() <= import1.length()) && import2.regionMatches(0, import1, 0, import2.length() - 1))
+        {
+            return 1;
+        }
+
+        // general case
+        return import1.compareTo(import2);
     }
 }
