@@ -19,13 +19,14 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Relati
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.measure.Measure;
 import org.finos.legend.pure.m3.navigation.relation._Column;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification.ValueSpecificationProcessor;
 
@@ -35,9 +36,9 @@ public class GenericTypeSerializationInCode
 
     public static String generateGenericTypeBuilder(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType, ProcessorContext processorContext)
     {
-        return "new Root_meta_pure_metamodel_type_generics_GenericType_Impl(\"\", null, ((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"" + M3Paths.GenericType + "\"))" +
+        return "new Root_meta_pure_metamodel_type_generics_GenericType_Impl(\"\", null, ((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"Root::" + M3Paths.GenericType + "\"))" +
                 (genericType._rawType() == null ? "" : "._rawType(" + generateTypeBuilder(genericType._rawType(), processorContext) + ")") +
-                (genericType._typeParameter() == null ? "" : "._typeParameter(new Root_meta_pure_metamodel_type_generics_TypeParameter_Impl(\"\", null, ((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"" + M3Paths.TypeParameter + "\"))._name(\"" + genericType._typeParameter()._name() + "\"))") +
+                (genericType._typeParameter() == null ? "" : "._typeParameter(new Root_meta_pure_metamodel_type_generics_TypeParameter_Impl(\"\", null, ((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"Root::" + M3Paths.TypeParameter + "\"))._name(\"" + genericType._typeParameter()._name() + "\"))") +
                 (genericType._typeArguments().isEmpty() ? "" : "._typeArguments(Lists.mutable.with(" + genericType._typeArguments().collect(x -> generateGenericTypeBuilder(x, processorContext)).makeString(", ") + "))") +
                 (genericType._multiplicityArguments().isEmpty() ? "" : "._multiplicityArguments(Lists.mutable.with(" + genericType._multiplicityArguments().collect(GenericTypeSerializationInCode::generateMultiplicityBuilder).makeString(", ") + "))") +
                 (genericType._typeVariableValues().isEmpty() ? "" : "._typeVariableValues(Lists.mutable.with(" + genericType._typeVariableValues().collect(vs -> generateValueSpecification(vs, processorContext)).makeString(", ") + "))");
@@ -45,7 +46,7 @@ public class GenericTypeSerializationInCode
 
     private static String generateValueSpecification(ValueSpecification vs, ProcessorContext processorContext)
     {
-        return "new Root_meta_pure_metamodel_valuespecification_InstanceValue_Impl(\"\", null, ((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"" + M3Paths.InstanceValue + "\"))" +
+        return "new Root_meta_pure_metamodel_valuespecification_InstanceValue_Impl(\"\", null, ((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"Root::" + M3Paths.InstanceValue + "\"))" +
                 "._genericType(" + generateGenericTypeBuilder(vs._genericType(), processorContext) + ")" +
                 "._multiplicity(" + generateMultiplicityBuilder(vs._multiplicity()) + ")" +
                 "._values(Lists.mutable.with(" + ValueSpecificationProcessor.processValueSpecification(vs, processorContext) + "))";
@@ -55,11 +56,11 @@ public class GenericTypeSerializationInCode
     {
         if (type instanceof Class)
         {
-            return "((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"" + processorContext.getIdBuilder().buildId(type) + "\")";
+            return "((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"" + PackageableElement.getSystemPathForPackageableElement(type) + "\")";
         }
         if (type instanceof PrimitiveType)
         {
-            return "((CompiledExecutionSupport)es).getMetadataAccessor().getPrimitiveType(\"" + processorContext.getIdBuilder().buildId(type) + "\")";
+            return "((CompiledExecutionSupport)es).getMetadataAccessor().getPrimitiveType(\"" + PackageableElement.getSystemPathForPackageableElement(type) + "\")";
         }
         if (type instanceof RelationType)
         {
@@ -67,29 +68,29 @@ public class GenericTypeSerializationInCode
         }
         if (type instanceof FunctionType)
         {
-            return "new Root_meta_pure_metamodel_type_FunctionType_Impl(\"\", null, ((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"" + M3Paths.FunctionType + "\"))" +
+            return "new Root_meta_pure_metamodel_type_FunctionType_Impl(\"\", null, ((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"Root::" + M3Paths.FunctionType + "\"))" +
                     "._parameters(Lists.mutable.with(" + ((FunctionType) type)._parameters().collect(v -> generateVariableBuilder(v, processorContext)).makeString(", ") + "))" +
                     "._returnType(" + generateGenericTypeBuilder(((FunctionType) type)._returnType(), processorContext) + ")" +
                     "._returnMultiplicity(" + generateMultiplicityBuilder(((FunctionType) type)._returnMultiplicity()) + ")";
         }
         if (type instanceof Unit)
         {
-            return "((CompiledExecutionSupport)es).getMetadataAccessor().getUnit(\"" + processorContext.getIdBuilder().buildId(type) + "\")";
+            return "((CompiledExecutionSupport)es).getMetadataAccessor().getUnit(\"" + Measure.getSystemPathForUnit(type) + "\")";
         }
-        if (type instanceof Measure)
+        if (type instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure)
         {
-            return "((CompiledExecutionSupport)es).getMetadataAccessor().getMeasure(\"" + processorContext.getIdBuilder().buildId(type) + "\")";
+            return "((CompiledExecutionSupport)es).getMetadataAccessor().getMeasure(\"" + PackageableElement.getSystemPathForPackageableElement(type) + "\")";
         }
         if (type instanceof Enumeration)
         {
-            return "((CompiledExecutionSupport)es).getMetadataAccessor().getEnumeration(\"" + processorContext.getIdBuilder().buildId(type) + "\")";
+            return "((CompiledExecutionSupport)es).getMetadataAccessor().getEnumeration(\"" + PackageableElement.getSystemPathForPackageableElement(type) + "\")";
         }
         throw new RuntimeException("Unsupported type: " + type.getClass());
     }
 
     private static Object generateVariableBuilder(VariableExpression v, ProcessorContext processorContext)
     {
-        return "new Root_meta_pure_metamodel_valuespecification_VariableExpression_Impl(\"\", null, ((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"" + M3Paths.VariableExpression + "\"))" +
+        return "new Root_meta_pure_metamodel_valuespecification_VariableExpression_Impl(\"\", null, ((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"Root::" + M3Paths.VariableExpression + "\"))" +
                 "._name(\"" + v._name() + "\")" +
                 "._genericType(" + generateGenericTypeBuilder(v._genericType(), processorContext) + ")" +
                 "._multiplicity(" + generateMultiplicityBuilder(v._multiplicity()) + ")";
@@ -102,11 +103,11 @@ public class GenericTypeSerializationInCode
 
     public static String generateMultiplicityBuilder(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity multiplicity)
     {
-        return "new Root_meta_pure_metamodel_multiplicity_Multiplicity_Impl(\"\", null, ((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"" + M3Paths.Multiplicity + "\"))" +
+        return "new Root_meta_pure_metamodel_multiplicity_Multiplicity_Impl(\"\", null, ((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"Root::" + M3Paths.Multiplicity + "\"))" +
                 (multiplicity._multiplicityParameter() != null ?
                         "._multiplicityParameter(\"" + multiplicity._multiplicityParameter() + "\")" :
-                        "._lowerBound(new Root_meta_pure_metamodel_multiplicity_MultiplicityValue_Impl(\"\", null, ((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"" + M3Paths.MultiplicityValue + "\"))._value(" + multiplicity._lowerBound()._value() + "L))" +
-                                "._upperBound(new Root_meta_pure_metamodel_multiplicity_MultiplicityValue_Impl(\"\", null, ((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"" + M3Paths.MultiplicityValue + "\"))" +
+                        "._lowerBound(new Root_meta_pure_metamodel_multiplicity_MultiplicityValue_Impl(\"\", null, ((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"Root::" + M3Paths.MultiplicityValue + "\"))._value(" + multiplicity._lowerBound()._value() + "L))" +
+                                "._upperBound(new Root_meta_pure_metamodel_multiplicity_MultiplicityValue_Impl(\"\", null, ((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"Root::" + M3Paths.MultiplicityValue + "\"))" +
                                 (multiplicity._upperBound()._value() == null ? "" : "._value(" + multiplicity._upperBound()._value() + "L)") + ")");
     }
 }

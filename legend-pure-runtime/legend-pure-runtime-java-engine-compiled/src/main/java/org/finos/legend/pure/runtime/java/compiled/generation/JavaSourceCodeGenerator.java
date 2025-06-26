@@ -159,7 +159,7 @@ public final class JavaSourceCodeGenerator
     {
         this.name = name;
         this.processorSupport = processorSupport;
-        this.idBuilder = (idBuilder == null) ? IdBuilder.newIdBuilder(this.processorSupport, false) : idBuilder;
+        this.idBuilder = (idBuilder == null) ? IdBuilder.newIdBuilder(this.processorSupport) : idBuilder;
         this.codeStorage = codeStorage;
         this.writeFilesToDisk = writeFilesToDisk;
         this.directoryToWriteFilesTo = directoryToWriteFilesTo;

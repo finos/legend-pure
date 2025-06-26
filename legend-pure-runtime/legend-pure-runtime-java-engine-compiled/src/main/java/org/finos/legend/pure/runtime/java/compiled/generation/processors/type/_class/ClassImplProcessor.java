@@ -554,7 +554,7 @@ public class ClassImplProcessor
                     boolean makePrimitiveIfPossible = GenericType.isGenericTypeConcrete(unresolvedReturnType) && Multiplicity.isToOne(returnMultiplicity, true);
                     String returnTypeJava = TypeProcessor.pureTypeToJava(returnType, true, makePrimitiveIfPossible, processorSupport);
                     CoreInstance classOwner = Instance.getValueForMetaPropertyToOneResolved(property.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToMany(M3Properties.typeArguments).get(0), M3Properties.rawType, processorSupport);
-                    String classOwnerId = processorContext.getIdBuilder().buildId(classOwner);
+                    String classOwnerId = PackageableElement.getSystemPathForPackageableElement(classOwner);
                     return propertyImpl.build(property, name, unresolvedReturnType, returnType, returnMultiplicity, returnTypeJava, classOwnerId, ownerClassName, ownerTypeParams, processorContext);
                 })
                 .makeString("", "\n", "\n");
