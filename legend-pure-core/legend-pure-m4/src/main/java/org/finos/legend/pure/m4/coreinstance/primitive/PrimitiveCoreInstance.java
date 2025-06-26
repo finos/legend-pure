@@ -36,8 +36,6 @@ import java.math.BigInteger;
 
 public abstract class PrimitiveCoreInstance<T> extends AbstractCoreInstance
 {
-    private static final CompileStateSet COMPILE_STATES = CompileStateSet.with(CompileState.PROCESSED, CompileState.VALIDATED);
-
     private final T value;
     private final int internalSyntheticId;
     private CoreInstance classifier;
@@ -155,19 +153,7 @@ public abstract class PrimitiveCoreInstance<T> extends AbstractCoreInstance
     }
 
     @Override
-    public CoreInstance getValueForMetaPropertyToOne(CoreInstance property)
-    {
-        return null;
-    }
-
-    @Override
     public ListIterable<CoreInstance> getValueForMetaPropertyToMany(String keyName)
-    {
-        return Lists.immutable.empty();
-    }
-
-    @Override
-    public ListIterable<CoreInstance> getValueForMetaPropertyToMany(CoreInstance key)
     {
         return Lists.immutable.empty();
     }
@@ -227,37 +213,13 @@ public abstract class PrimitiveCoreInstance<T> extends AbstractCoreInstance
     }
 
     @Override
-    public void print(Appendable appendable, String tab)
-    {
-        print(appendable, tab, false);
-    }
-
-    @Override
     public void print(Appendable appendable, String tab, int max)
     {
-        print(appendable, tab);
-    }
-
-    @Override
-    public void printWithoutDebug(Appendable appendable, String tab)
-    {
         print(appendable, tab, false);
-    }
-
-    @Override
-    public void printWithoutDebug(Appendable appendable, String tab, int max)
-    {
-        printWithoutDebug(appendable, tab);
     }
 
     @Override
     public void commit(ModelRepositoryTransaction transaction)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void rollback(ModelRepositoryTransaction transaction)
     {
         throw new UnsupportedOperationException();
     }
@@ -317,19 +279,19 @@ public abstract class PrimitiveCoreInstance<T> extends AbstractCoreInstance
     @Override
     public boolean hasCompileState(CompileState state)
     {
-        return COMPILE_STATES.contains(state);
+        return CompileStateSet.PROCESSED_VALIDATED.contains(state);
     }
 
     @Override
     public CompileStateSet getCompileStates()
     {
-        return COMPILE_STATES;
+        return CompileStateSet.PROCESSED_VALIDATED;
     }
 
     @Override
     public void setCompileStatesFrom(CompileStateSet states)
     {
-        if (!COMPILE_STATES.equals(states))
+        if (!CompileStateSet.PROCESSED_VALIDATED.equals(states))
         {
             throw new IllegalArgumentException("Cannot set compile state to " + states + " for primitive instance");
         }

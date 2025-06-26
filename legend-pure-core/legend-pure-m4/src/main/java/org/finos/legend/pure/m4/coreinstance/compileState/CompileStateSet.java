@@ -31,6 +31,8 @@ public class CompileStateSet extends AbstractImmutableSet<CompileState>
     private static final int ALL_BIT_FLAGS = (1 << ALL_STATES.length) - 1;
     private static final int ORDINARY_BIT_FLAGS = toBitSet(CompileState.PROCESSED, CompileState.VALIDATED);
 
+    public static final CompileStateSet PROCESSED_VALIDATED = with(CompileState.PROCESSED, CompileState.VALIDATED);
+
     private final int bits;
 
     private CompileStateSet(int bits)
@@ -345,12 +347,12 @@ public class CompileStateSet extends AbstractImmutableSet<CompileState>
 
     public static CompileStateSet with(CompileState state)
     {
-        return new CompileStateSet(toBitSet(state));
+        return fromNormalizedBitSet(toBitSet(state));
     }
 
     public static CompileStateSet with(CompileState state1, CompileState state2)
     {
-        return new CompileStateSet(toBitSet(state1, state2));
+        return fromNormalizedBitSet(toBitSet(state1, state2));
     }
 
     public static CompileStateSet with(CompileState... states)

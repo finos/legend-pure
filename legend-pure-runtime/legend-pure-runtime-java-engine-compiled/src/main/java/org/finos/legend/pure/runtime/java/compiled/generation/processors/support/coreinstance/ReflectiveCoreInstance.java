@@ -34,17 +34,13 @@ import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
-import org.finos.legend.pure.runtime.java.compiled.execution.ConsoleCompiled;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 
 public abstract class ReflectiveCoreInstance extends AbstractCompiledCoreInstance
 {
-    private static final int DEFAULT_MAX_PRINT_DEPTH = 1;
-
     private final String __id;
     private SourceInformation sourceInformation;
 
@@ -398,38 +394,6 @@ public abstract class ReflectiveCoreInstance extends AbstractCompiledCoreInstanc
     public void validate(MutableSet<CoreInstance> doneList) throws PureCompilationException
     {
         throw new RuntimeException("TO CODE");
-    }
-
-    @Override
-    public void printFull(Appendable appendable, String tab)
-    {
-        print(appendable, tab, true, true, DEFAULT_MAX_PRINT_DEPTH);
-    }
-
-    @Override
-    public void print(Appendable appendable, String tab, int max)
-    {
-        print(appendable, tab, false, true, max);
-    }
-
-    @Override
-    public void printWithoutDebug(Appendable appendable, String tab, int max)
-    {
-        print(appendable, tab, false, false, max);
-    }
-
-    private void print(Appendable appendable, String tab, boolean full, boolean addDebug, int max)
-    {
-        // TODO consider adding support for full and addDebug
-        try
-        {
-            appendable.append(tab);
-            appendable.append(ConsoleCompiled.toString(this, max));
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override

@@ -84,6 +84,13 @@ public abstract class AbstractCoreInstance implements CoreInstance
     }
 
     @Override
+    public void printFull(Appendable appendable, String tab)
+    {
+        // by default, just call print
+        print(appendable, tab);
+    }
+
+    @Override
     public void print(Appendable appendable, String tab)
     {
         print(appendable, tab, DEFAULT_MAX_PRINT_DEPTH);
@@ -93,6 +100,13 @@ public abstract class AbstractCoreInstance implements CoreInstance
     public void printWithoutDebug(Appendable appendable, String tab)
     {
         printWithoutDebug(appendable, tab, DEFAULT_MAX_PRINT_DEPTH);
+    }
+
+    @Override
+    public void printWithoutDebug(Appendable appendable, String tab, int max)
+    {
+        // by default, just call print
+        print(appendable, tab, max);
     }
 
     @Override

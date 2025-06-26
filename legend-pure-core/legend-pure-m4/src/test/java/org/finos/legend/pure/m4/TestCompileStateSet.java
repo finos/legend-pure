@@ -48,6 +48,12 @@ public class TestCompileStateSet
                 }
             }
         }
+
+        Assert.assertEquals(0, CompileStateSet.toBitSet(Lists.immutable.empty()));
+        Assert.assertEquals(1, CompileStateSet.toBitSet(CompileState.PROCESSED));
+        Assert.assertEquals(2, CompileStateSet.toBitSet(CompileState.VALIDATED));
+        Assert.assertEquals(3, CompileStateSet.toBitSet(CompileState.PROCESSED, CompileState.VALIDATED));
+        Assert.assertEquals(3, CompileStateSet.toBitSet(CompileState.VALIDATED, CompileState.PROCESSED));
     }
 
     @Test
@@ -138,5 +144,12 @@ public class TestCompileStateSet
     {
         Assert.assertArrayEquals(CompileState.values(), CompileStateSet.with(CompileState.values()).toArray());
         Assert.assertEquals(ArrayAdapter.adapt(CompileState.values()), Lists.mutable.withAll(CompileStateSet.with(CompileState.values())));
+    }
+
+    @Test
+    public void testStaticProcessedValidatedSet()
+    {
+        Assert.assertSame(CompileStateSet.PROCESSED_VALIDATED, CompileStateSet.with(CompileState.PROCESSED, CompileState.VALIDATED));
+        Assert.assertSame(CompileStateSet.PROCESSED_VALIDATED, CompileStateSet.with(CompileState.VALIDATED, CompileState.PROCESSED));
     }
 }
