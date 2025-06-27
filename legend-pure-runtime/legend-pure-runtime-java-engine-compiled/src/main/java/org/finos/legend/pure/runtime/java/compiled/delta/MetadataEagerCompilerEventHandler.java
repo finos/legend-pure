@@ -22,6 +22,7 @@ import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataBuilder;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataEager;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataEventObserver;
@@ -79,7 +80,7 @@ public class MetadataEagerCompilerEventHandler implements CompilerEventHandlerMe
     @Override
     public void buildMetadata(RichIterable<CoreInstance> newInstances)
     {
-        this.metadataEager = MetadataBuilder.indexNew(this.metadataEager, newInstances, new M3ProcessorSupport(this.repository));
+        this.metadataEager = MetadataBuilder.indexNew(this.metadataEager, newInstances, IdBuilder.newIdBuilder(this.processorSupport), new M3ProcessorSupport(this.repository));
     }
 
     @Override
@@ -101,7 +102,7 @@ public class MetadataEagerCompilerEventHandler implements CompilerEventHandlerMe
             this.message.setMessage("Instantiating Graph");
         }
 
-        this.metadataEager = MetadataBuilder.indexAll(this.repository.getTopLevels(), this.processorSupport);
+        this.metadataEager = MetadataBuilder.indexAll(this.repository.getTopLevels(), IdBuilder.newIdBuilder(this.processorSupport), this.processorSupport);
 
         if (this.message != null)
         {
@@ -112,7 +113,7 @@ public class MetadataEagerCompilerEventHandler implements CompilerEventHandlerMe
     @Override
     public void invalidate(RichIterable<? extends CoreInstance> consolidatedCoreInstances)
     {
-        this.metadataEager.invalidateCoreInstances(consolidatedCoreInstances);
+        this.metadataEager = new MetadataEager();
     }
 
     @Override
@@ -120,7 +121,7 @@ public class MetadataEagerCompilerEventHandler implements CompilerEventHandlerMe
     {
         this.coreIndexed = false;
         this.otherIndexed = false;
-        this.metadataEager = new MetadataEager(new M3ProcessorSupport(this.repository));
+        this.metadataEager = new MetadataEager();
     }
 
     @Override
