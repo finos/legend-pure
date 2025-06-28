@@ -15,8 +15,8 @@
 package org.finos.legend.pure.m3.serialization.compiler.reference.v1;
 
 import org.finos.legend.pure.m3.navigation.graph.GraphPath;
+import org.finos.legend.pure.m3.serialization.compiler.reference.AbstractReferenceIdResolver;
 import org.finos.legend.pure.m3.serialization.compiler.reference.InvalidReferenceIdException;
-import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdResolver;
 import org.finos.legend.pure.m3.serialization.compiler.reference.UnresolvableReferenceIdException;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.slf4j.Logger;
@@ -24,15 +24,13 @@ import org.slf4j.LoggerFactory;
 
 import java.util.function.Function;
 
-class ReferenceIdResolverV1 implements ReferenceIdResolver
+class ReferenceIdResolverV1 extends AbstractReferenceIdResolver
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReferenceIdResolverV1.class);
 
-    private final Function<? super String, ? extends CoreInstance> packagePathResolver;
-
     ReferenceIdResolverV1(Function<? super String, ? extends CoreInstance> packagePathResolver)
     {
-        this.packagePathResolver = packagePathResolver;
+        super(packagePathResolver);
     }
 
     @Override
