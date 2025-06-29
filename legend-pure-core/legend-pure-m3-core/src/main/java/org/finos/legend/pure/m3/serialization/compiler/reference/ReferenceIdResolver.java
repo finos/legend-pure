@@ -36,4 +36,6 @@ public interface ReferenceIdResolver
      * @throws UnresolvableReferenceIdException if the id cannot be resolved
      */
     CoreInstance resolveReference(String referenceId) throws InvalidReferenceIdException, UnresolvableReferenceIdException;
+
+    CoreInstance resolvePackagePath(String packagePath);
 }

@@ -26,82 +26,39 @@ import java.util.function.Function;
 
 public abstract class ReferenceIds
 {
-    final ProcessorSupport processorSupport;
-    final Function<? super String, ? extends CoreInstance> packagePathResolver;
-    final int defaultVersion;
+    final ExtensionManager extensionManager;
 
-    private ReferenceIds(ProcessorSupport processorSupport, Function<? super String, ? extends CoreInstance> packagePathResolver, int defaultVersion)
+    ReferenceIds(ExtensionManager extensionManager)
     {
-        this.processorSupport = processorSupport;
-        this.packagePathResolver = (packagePathResolver == null) ? this.processorSupport::package_getByUserPath : packagePathResolver;
-        this.defaultVersion = defaultVersion;
+        this.extensionManager = extensionManager;
     }
 
     public int getDefaultVersion()
     {
-        return this.defaultVersion;
+        return this.extensionManager.getDefaultVersion();
     }
 
-    public abstract boolean isVersionAvailable(int version);
+    public boolean isVersionAvailable(int version)
+    {
+        return this.extensionManager.isVersionAvailable(version);
+    }
 
     public ReferenceIdExtension getExtension(int version)
     {
-        return getExtensionCache(version).extension;
+        return this.extensionManager.getExtensionCache(version).extension;
     }
 
     public ReferenceIdExtension getExtension(Integer version)
     {
-        return getExtensionCache(version).extension;
+        return this.extensionManager.getExtensionCache(version).extension;
     }
 
     public ReferenceIdExtension getDefaultExtension()
     {
-        return getDefaultExtensionCache().extension;
+        return this.extensionManager.getDefaultExtensionCache().extension;
     }
 
-    public ReferenceIdProvider provider(int version)
-    {
-        return getExtensionCache(version).provider();
-    }
-
-    public ReferenceIdProvider provider(Integer version)
-    {
-        return getExtensionCache(version).provider();
-    }
-
-    public ReferenceIdProvider provider()
-    {
-        return getDefaultExtensionCache().provider();
-    }
-
-    public ReferenceIdResolver resolver(int version)
-    {
-        return getExtensionCache(version).resolver();
-    }
-
-    public ReferenceIdResolver resolver(Integer version)
-    {
-        return getExtensionCache(version).resolver();
-    }
-
-    public ReferenceIdResolver resolver()
-    {
-        return getDefaultExtensionCache().resolver();
-    }
-
-    private ExtensionCache getExtensionCache(Integer version)
-    {
-        return (version == null) ? getDefaultExtensionCache() : getExtensionCache(version.intValue());
-    }
-
-    ExtensionCache getDefaultExtensionCache()
-    {
-        return getExtensionCache(this.defaultVersion);
-    }
-
-    abstract ExtensionCache getExtensionCache(int version);
-
-    class ExtensionCache
+    static class ExtensionCache
     {
         private final ReferenceIdExtension extension;
         private ReferenceIdProvider provider;
@@ -112,36 +69,61 @@ public abstract class ReferenceIds
             this.extension = extension;
         }
 
-        synchronized ReferenceIdProvider provider()
+        synchronized ReferenceIdProvider provider(ProcessorSupport processorSupport)
         {
             if (this.provider == null)
             {
-                this.provider = this.extension.newProvider(ReferenceIds.this.processorSupport);
+                this.provider = this.extension.newProvider(Objects.requireNonNull(processorSupport, "processor support is required for a provider"));
             }
             return this.provider;
         }
 
-        synchronized ReferenceIdResolver resolver()
+        synchronized ReferenceIdResolver resolver(Function<? super String, ? extends CoreInstance> packagePathResolver)
         {
             if (this.resolver == null)
             {
-                this.resolver = this.extension.newResolver(ReferenceIds.this.packagePathResolver);
+                this.resolver = this.extension.newResolver(Objects.requireNonNull(packagePathResolver, "package path resolver is required for a resolver"));
             }
             return this.resolver;
         }
     }
 
-    private static class Single extends ReferenceIds
+    abstract static class ExtensionManager
+    {
+        final int defaultVersion;
+
+        ExtensionManager(int defaultVersion)
+        {
+            this.defaultVersion = defaultVersion;
+        }
+
+        int getDefaultVersion()
+        {
+            return this.defaultVersion;
+        }
+
+        abstract boolean isVersionAvailable(int version);
+
+        ExtensionCache getDefaultExtensionCache()
+        {
+            return getExtensionCache(this.defaultVersion);
+        }
+
+        abstract ExtensionCache getExtensionCache(int version);
+    }
+
+    private static class SingleExtensionManager extends ExtensionManager
     {
         private final ExtensionCache extension;
 
-        private Single(ProcessorSupport processorSupport, Function<? super String, ? extends CoreInstance> packagePathResolver, ReferenceIdExtension extension)
+        private SingleExtensionManager(ReferenceIdExtension extension)
         {
-            super(processorSupport, packagePathResolver, extension.version());
+            super(extension.version());
             this.extension = new ExtensionCache(extension);
         }
 
-        public boolean isVersionAvailable(int version)
+        @Override
+        boolean isVersionAvailable(int version)
         {
             return version == this.defaultVersion;
         }
@@ -163,14 +145,14 @@ public abstract class ReferenceIds
         }
     }
 
-    private static class Sequence extends ReferenceIds
+    private static class SequenceExtensionManager extends ExtensionManager
     {
         private final ExtensionCache[] extensions;
         private final int offset;
 
-        private Sequence(ProcessorSupport processorSupport, Function<? super String, ? extends CoreInstance> packagePathResolver, int defaultVersion, ReferenceIdExtension[] extensions)
+        private SequenceExtensionManager(int defaultVersion, ReferenceIdExtension[] extensions)
         {
-            super(processorSupport, packagePathResolver, defaultVersion);
+            super(defaultVersion);
             this.extensions = new ExtensionCache[extensions.length];
             for (int i = 0; i < extensions.length; i++)
             {
@@ -180,7 +162,7 @@ public abstract class ReferenceIds
         }
 
         @Override
-        public boolean isVersionAvailable(int version)
+        boolean isVersionAvailable(int version)
         {
             int index = getIndex(version);
             return (0 <= index) && (index < this.extensions.length);
@@ -205,13 +187,13 @@ public abstract class ReferenceIds
         }
     }
 
-    private static class General extends ReferenceIds
+    private static class GeneralExtensionManager extends ExtensionManager
     {
         private final MutableIntObjectMap<ExtensionCache> extensions;
 
-        private General(ProcessorSupport processorSupport, Function<? super String, ? extends CoreInstance> packagePathResolver, int defaultVersion, IntObjectMap<ReferenceIdExtension> extensions)
+        private GeneralExtensionManager(int defaultVersion, IntObjectMap<ReferenceIdExtension> extensions)
         {
-            super(processorSupport, packagePathResolver, defaultVersion);
+            super(defaultVersion);
             this.extensions = IntObjectMaps.mutable.ofInitialCapacity(extensions.size());
             extensions.forEachKeyValue((version, extension) -> this.extensions.put(version, new ExtensionCache(extension)));
         }
@@ -233,21 +215,13 @@ public abstract class ReferenceIds
         }
     }
 
-    public static Builder builder(ProcessorSupport processorSupport)
+    public abstract static class AbstractBuilder<T extends ReferenceIds>
     {
-        return new Builder(processorSupport);
-    }
-
-    public static class Builder
-    {
-        private final ProcessorSupport processorSupport;
-        private Function<? super String, ? extends CoreInstance> packagePathResolver;
         private final MutableIntObjectMap<ReferenceIdExtension> extensions = IntObjectMaps.mutable.empty();
         private Integer defaultVersion;
 
-        private Builder(ProcessorSupport processorSupport)
+        protected AbstractBuilder()
         {
-            this.processorSupport = Objects.requireNonNull(processorSupport, "processor support is required");
         }
 
         public void addExtension(ReferenceIdExtension extension)
@@ -259,21 +233,9 @@ public abstract class ReferenceIds
             }
         }
 
-        public Builder withExtension(ReferenceIdExtension extension)
-        {
-            addExtension(extension);
-            return this;
-        }
-
         public void addExtensions(Iterable<? extends ReferenceIdExtension> extensions)
         {
             extensions.forEach(this::addExtension);
-        }
-
-        public Builder withExtensions(Iterable<? extends ReferenceIdExtension> extensions)
-        {
-            addExtensions(extensions);
-            return this;
         }
 
         public void loadExtensions(ClassLoader classLoader)
@@ -286,58 +248,17 @@ public abstract class ReferenceIds
             addExtensions(ServiceLoader.load(ReferenceIdExtension.class));
         }
 
-        public Builder withAvailableExtensions(ClassLoader classLoader)
-        {
-            loadExtensions(classLoader);
-            return this;
-        }
-
-        public Builder withAvailableExtensions()
-        {
-            loadExtensions();
-            return this;
-        }
-
-        public void setDefaultVersion(int defaultVersion)
+        public void setDefaultVersion(Integer defaultVersion)
         {
             this.defaultVersion = defaultVersion;
         }
 
         public void clearDefaultVersion()
         {
-            this.defaultVersion = null;
+            setDefaultVersion(null);
         }
 
-        public Builder withDefaultVersion(Integer defaultVersion)
-        {
-            if (defaultVersion == null)
-            {
-                clearDefaultVersion();
-            }
-            else
-            {
-                setDefaultVersion(defaultVersion);
-            }
-            return this;
-        }
-
-        public void setPackagePathResolver(Function<? super String, ? extends CoreInstance> packagePathResolver)
-        {
-            this.packagePathResolver = packagePathResolver;
-        }
-
-        public void clearPackagePathResolver()
-        {
-            setPackagePathResolver(null);
-        }
-
-        public Builder withPackagePathResolver(Function<? super String, ? extends CoreInstance> packagePathResolver)
-        {
-            setPackagePathResolver(packagePathResolver);
-            return this;
-        }
-
-        public ReferenceIds build()
+        public T build()
         {
             if (this.extensions.isEmpty())
             {
@@ -359,7 +280,7 @@ public abstract class ReferenceIds
 
             if (this.extensions.size() == 1)
             {
-                return new Single(this.processorSupport, this.packagePathResolver, this.extensions.getAny());
+                return build(new SingleExtensionManager(this.extensions.getAny()));
             }
 
             int minId;
@@ -367,10 +288,42 @@ public abstract class ReferenceIds
             {
                 ReferenceIdExtension[] extArray = new ReferenceIdExtension[this.extensions.size()];
                 this.extensions.forEachKeyValue((id, ext) -> extArray[id - minId] = ext);
-                return new Sequence(this.processorSupport, this.packagePathResolver, resolvedDefaultVersion, extArray);
+                return build(new SequenceExtensionManager(resolvedDefaultVersion, extArray));
             }
 
-            return new General(this.processorSupport, this.packagePathResolver, resolvedDefaultVersion, this.extensions);
+            return build(new GeneralExtensionManager(resolvedDefaultVersion, this.extensions));
+        }
+
+        abstract T build(ExtensionManager extensionManager);
+
+        // To remove
+
+        public AbstractBuilder<T> withExtension(ReferenceIdExtension extension)
+        {
+            addExtension(extension);
+            return this;
+        }
+
+        public AbstractBuilder<T> withAvailableExtensions(ClassLoader classLoader)
+        {
+            loadExtensions(classLoader);
+            return this;
+        }
+
+        public AbstractBuilder<T> withAvailableExtensions()
+        {
+            loadExtensions();
+            return this;
+        }
+
+        public void setPackagePathResolver(Function<? super String, ? extends CoreInstance> packagePathResolver)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        public AbstractBuilder<T> withPackagePathResolver(Function<? super String, ? extends CoreInstance> packagePathResolver)
+        {
+            throw new UnsupportedOperationException();
         }
     }
 }
