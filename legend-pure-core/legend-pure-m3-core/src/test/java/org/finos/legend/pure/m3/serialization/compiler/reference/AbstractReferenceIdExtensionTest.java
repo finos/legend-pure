@@ -61,7 +61,7 @@ public abstract class AbstractReferenceIdExtensionTest extends AbstractReference
     public void testReferenceIdProviders()
     {
         int version = extension.version();
-        ReferenceIds referenceIds = ReferenceIdProviders.builder().withProcessorSupport(processorSupport).withExtension(extension).build();
+        ReferenceIdProviders referenceIds = ReferenceIdProviders.builder().withProcessorSupport(processorSupport).withExtension(extension).build();
         Assert.assertTrue(referenceIds.isVersionAvailable(version));
         Assert.assertSame(extension, referenceIds.getExtension(version));
     }
@@ -70,7 +70,7 @@ public abstract class AbstractReferenceIdExtensionTest extends AbstractReference
     public void testReferenceIdResolvers()
     {
         int version = extension.version();
-        ReferenceIds referenceIds = ReferenceIdResolvers.builder().withPackagePathResolver(processorSupport::package_getByUserPath).withExtension(extension).build();
+        ReferenceIdResolvers referenceIds = ReferenceIdResolvers.builder().withPackagePathResolver(processorSupport::package_getByUserPath).withExtension(extension).build();
         Assert.assertTrue(referenceIds.isVersionAvailable(version));
         Assert.assertSame(extension, referenceIds.getExtension(version));
     }

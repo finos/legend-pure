@@ -109,6 +109,11 @@ public abstract class ReferenceIds
             return getExtensionCache(this.defaultVersion);
         }
 
+        ExtensionCache getExtensionCache(Integer version)
+        {
+            return (version == null) ? getDefaultExtensionCache() : getExtensionCache(version.intValue());
+        }
+
         abstract ExtensionCache getExtensionCache(int version);
     }
 
