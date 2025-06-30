@@ -64,7 +64,7 @@ public abstract class AbstractPackageableElementBuilderTest extends AbstractElem
     protected abstract String getExpectedConcreteElementClassName(String classifierPath);
 
     @Override
-    protected Class<? extends Any> getExpectedComponentInstanceClass(String classifierPath)
+    protected java.lang.Class<? extends Any> getExpectedComponentInstanceClass(String classifierPath)
     {
         return loadJavaClass(getExpectedComponentInstanceClassName(classifierPath));
     }

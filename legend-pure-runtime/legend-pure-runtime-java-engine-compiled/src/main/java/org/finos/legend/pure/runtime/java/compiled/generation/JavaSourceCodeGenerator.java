@@ -760,7 +760,8 @@ public final class JavaSourceCodeGenerator
                 StringJavaSource.newStringJavaSource(JavaPackageAndImportBuilder.platformJavaPackage(), "PureCompiledLambda", imports + platform + this.buildPureCompiledLambda(processorContext)),
                 StringJavaSource.newStringJavaSource(JavaPackageAndImportBuilder.platformJavaPackage(), "LambdaZero", imports + platform + this.buildLambdaZero()),
                 EnumProcessor.processEnum(),
-                EnumProcessor.processEnumLazy());
+                EnumProcessor.processEnumLazy(),
+                EnumProcessor.processEnumLazyComponent());
 
         if (this.writeFilesToDisk)
         {

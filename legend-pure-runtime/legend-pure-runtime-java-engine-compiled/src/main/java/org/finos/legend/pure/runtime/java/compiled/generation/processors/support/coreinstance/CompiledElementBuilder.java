@@ -12,18 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m3.coreinstance.lazy.generator;
+package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance;
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.ConcurrentMutableMap;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
-import org.finos.legend.pure.m3.coreinstance.lazy.ModelRepositoryPrimitiveValueResolver;
 import org.finos.legend.pure.m3.coreinstance.lazy.PrimitiveValueResolver;
 import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.serialization.compiler.element.DeserializedConcreteElement;
 import org.finos.legend.pure.m3.serialization.compiler.element.ElementBuilder;
-import org.finos.legend.pure.m3.serialization.compiler.element.ElementLoader;
 import org.finos.legend.pure.m3.serialization.compiler.element.InstanceData;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReference;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.BackReferenceProvider;
@@ -35,6 +32,8 @@ import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdReso
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.EnumProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,12 +43,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
-public class M3GeneratedLazyElementBuilder implements ElementBuilder
+public class CompiledElementBuilder implements ElementBuilder
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(M3GeneratedLazyElementBuilder.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CompiledElementBuilder.class);
 
     private final ClassLoader classLoader;
-    private final ModelRepository repository;
+    private final ModelRepository modelRepository;
     private final PrimitiveValueResolver primitiveValueResolver;
 
     private final ConcurrentMutableMap<String, Constructor<? extends CoreInstance>> concreteElementConstructors = ConcurrentHashMap.newMap();
@@ -57,22 +56,11 @@ public class M3GeneratedLazyElementBuilder implements ElementBuilder
     private final AtomicReference<Constructor<? extends CoreInstance>> virtualPackageConstructor = new AtomicReference<>();
     private final AtomicReference<Constructor<? extends CoreInstance>> enumConstructor = new AtomicReference<>();
 
-    protected M3GeneratedLazyElementBuilder(ClassLoader classLoader, ModelRepository repository)
+    private CompiledElementBuilder(ClassLoader classLoader, ModelRepository modelRepository)
     {
         this.classLoader = Objects.requireNonNull(classLoader);
-        this.repository = Objects.requireNonNull(repository);
-        this.primitiveValueResolver = new ModelRepositoryPrimitiveValueResolver(this.repository);
-    }
-
-    @Override
-    public void initialize(ElementLoader elementLoader)
-    {
-        // Load the top level elements eagerly to avoid bootstrapping issues (especially with classifiers for
-        // primitive values)
-        LOGGER.debug("Initializing element builder");
-        PrimitiveUtilities.getPrimitiveTypeNames().forEach(n -> this.repository.addTopLevel(elementLoader.loadElementStrict(n)));
-        this.repository.addTopLevel(elementLoader.loadElementStrict(M3Paths.Root));
-        this.repository.addTopLevel(elementLoader.loadElementStrict(M3Paths.Package));
+        this.modelRepository = modelRepository;
+        this.primitiveValueResolver = new CompiledPrimitiveValueResolver();
     }
 
     @Override
@@ -82,7 +70,7 @@ public class M3GeneratedLazyElementBuilder implements ElementBuilder
         try
         {
             Constructor<? extends CoreInstance> constructor = getVirtualPackageConstructorFromCache();
-            return constructor.newInstance(this.repository, metadata, index, this, referenceIds, this.primitiveValueResolver, backRefProviderDeserializer);
+            return constructor.newInstance(this.modelRepository, metadata, index, this, referenceIds, backRefProviderDeserializer);
         }
         catch (Exception e)
         {
@@ -97,7 +85,7 @@ public class M3GeneratedLazyElementBuilder implements ElementBuilder
         try
         {
             Constructor<? extends CoreInstance> constructor = getConcreteElementConstructorFromCache(metadata.getClassifierPath());
-            return constructor.newInstance(this.repository, metadata, index, this, referenceIds, this.primitiveValueResolver, deserializer, backRefProviderDeserializer);
+            return constructor.newInstance(this.modelRepository, metadata, index, this, referenceIds, this.primitiveValueResolver, deserializer, backRefProviderDeserializer);
         }
         catch (Exception e)
         {
@@ -118,7 +106,7 @@ public class M3GeneratedLazyElementBuilder implements ElementBuilder
         try
         {
             Constructor<? extends CoreInstance> constructor = isEnum(instanceData) ? getEnumConstructorFromCache() : getComponentElementConstructorFromCache(instanceData.getClassifierPath());
-            return constructor.newInstance(this.repository, instanceData, backReferences, referenceIdResolver, internalIdResolver, this.primitiveValueResolver, this);
+            return constructor.newInstance(this.modelRepository, instanceData, backReferences, referenceIdResolver, internalIdResolver, this.primitiveValueResolver, this);
         }
         catch (Exception e)
         {
@@ -160,9 +148,9 @@ public class M3GeneratedLazyElementBuilder implements ElementBuilder
     {
         try
         {
-            String javaClassName = M3LazyCoreInstanceGenerator.buildLazyVirtualPackageClassReference();
+            String javaClassName = JavaPackageAndImportBuilder.buildLazyVirtualPackageClassReference();
             Class<? extends CoreInstance> javaClass = loadJavaClass(javaClassName);
-            return javaClass.getConstructor(ModelRepository.class, VirtualPackageMetadata.class, MetadataIndex.class, ElementBuilder.class, ReferenceIdResolvers.class, PrimitiveValueResolver.class, Supplier.class);
+            return javaClass.getConstructor(ModelRepository.class, VirtualPackageMetadata.class, MetadataIndex.class, ElementBuilder.class, ReferenceIdResolvers.class, Supplier.class);
         }
         catch (Exception e)
         {
@@ -179,19 +167,14 @@ public class M3GeneratedLazyElementBuilder implements ElementBuilder
     {
         try
         {
-            Class<? extends CoreInstance> javaClass = getConcreteElementClass(classifierPath);
+            String javaClassName = JavaPackageAndImportBuilder.buildLazyConcreteElementClassReferenceFromUserPath(classifierPath);
+            Class<? extends CoreInstance> javaClass = loadJavaClass(javaClassName);
             return javaClass.getConstructor(ModelRepository.class, ConcreteElementMetadata.class, MetadataIndex.class, ElementBuilder.class, ReferenceIdResolvers.class, PrimitiveValueResolver.class, Supplier.class, Supplier.class);
         }
         catch (Exception e)
         {
             throw new RuntimeException("Error getting concrete element constructor for " + classifierPath, e);
         }
-    }
-
-    protected Class<? extends CoreInstance> getConcreteElementClass(String classifierPath) throws ClassNotFoundException
-    {
-        String javaClassName = M3LazyCoreInstanceGenerator.buildLazyConcreteElementClassReferenceFromUserPath(classifierPath);
-        return loadJavaClass(javaClassName);
     }
 
     private Constructor<? extends CoreInstance> getComponentElementConstructorFromCache(String classifierPath)
@@ -203,24 +186,14 @@ public class M3GeneratedLazyElementBuilder implements ElementBuilder
     {
         try
         {
-            Class<? extends CoreInstance> javaClass = getComponentElementClass(classifierPath);
+            String javaClassName = JavaPackageAndImportBuilder.buildLazyComponentInstanceClassReferenceFromUserPath(classifierPath);
+            Class<? extends CoreInstance> javaClass = loadJavaClass(javaClassName);
             return getComponentElementConstructor(javaClass);
         }
         catch (Exception e)
         {
             throw new RuntimeException("Error getting component element constructor for " + classifierPath, e);
         }
-    }
-
-    protected Class<? extends CoreInstance> getComponentElementClass(String classifierPath) throws ClassNotFoundException
-    {
-        String javaClassName = M3LazyCoreInstanceGenerator.buildLazyComponentInstanceClassReferenceFromUserPath(classifierPath);
-        return loadJavaClass(javaClassName);
-    }
-
-    private <T> Constructor<T> getComponentElementConstructor(Class<T> javaClass) throws NoSuchMethodException
-    {
-        return javaClass.getConstructor(ModelRepository.class, InstanceData.class, ListIterable.class, ReferenceIdResolver.class, IntFunction.class, PrimitiveValueResolver.class, ElementBuilder.class);
     }
 
     private Constructor<? extends CoreInstance> getEnumConstructorFromCache()
@@ -241,7 +214,7 @@ public class M3GeneratedLazyElementBuilder implements ElementBuilder
     {
         try
         {
-            String javaClassName = M3LazyCoreInstanceGenerator.buildLazyEnumClassReference();
+            String javaClassName = JavaPackageAndImportBuilder.rootPackage() + "." + EnumProcessor.ENUM_LAZY_COMPONENT_CLASS_NAME;
             Class<? extends CoreInstance> javaClass = loadJavaClass(javaClassName);
             return getComponentElementConstructor(javaClass);
         }
@@ -251,14 +224,24 @@ public class M3GeneratedLazyElementBuilder implements ElementBuilder
         }
     }
 
+    private <T> Constructor<T> getComponentElementConstructor(Class<T> javaClass) throws NoSuchMethodException
+    {
+        return javaClass.getConstructor(ModelRepository.class, InstanceData.class, ListIterable.class, ReferenceIdResolver.class, IntFunction.class, PrimitiveValueResolver.class, ElementBuilder.class);
+    }
+
     @SuppressWarnings("unchecked")
-    protected Class<? extends CoreInstance> loadJavaClass(String javaClassName) throws ClassNotFoundException
+    private Class<? extends CoreInstance> loadJavaClass(String javaClassName) throws ClassNotFoundException
     {
         return (Class<? extends CoreInstance>) this.classLoader.loadClass(javaClassName);
     }
 
-    public static M3GeneratedLazyElementBuilder newElementBuilder(ClassLoader classLoader, ModelRepository repository)
+    public static CompiledElementBuilder newElementBuilder(ClassLoader classLoader, ModelRepository modelRepository)
     {
-        return new M3GeneratedLazyElementBuilder(classLoader, repository);
+        return new CompiledElementBuilder(classLoader, modelRepository);
+    }
+
+    public static CompiledElementBuilder newElementBuilder(ClassLoader classLoader)
+    {
+        return newElementBuilder(classLoader, null);
     }
 }
