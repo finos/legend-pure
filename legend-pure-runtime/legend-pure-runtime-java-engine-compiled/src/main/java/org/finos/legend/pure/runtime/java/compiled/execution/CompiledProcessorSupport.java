@@ -181,6 +181,10 @@ public class CompiledProcessorSupport implements ProcessorSupport
             {
                 return Number.class;
             }
+            case M3Paths.Byte:
+            {
+                return Byte.class;
+            }
             case M3Paths.Date:
             case M3Paths.StrictDate:
             case M3Paths.DateTime:
