@@ -90,7 +90,7 @@ public class _Column
         Column<?, ?> column = (Column<?, ?>) col;
         org.finos.legend.pure.m3.navigation.generictype.GenericType.print(SafeAppendable.wrap(appendable).append(column._nameWildCard() ? "?" : column._name()).append(':'), getColumnType(column), processorSupport);
         Multiplicity multiplicity = getColumnMultiplicity(column);
-        if (!(multiplicity._lowerBound()._value() == 0 && multiplicity._upperBound()._value() == 1))
+        if (multiplicity == null || !(multiplicity._lowerBound()._value() == 0 && multiplicity._upperBound()._value() == 1))
         {
             org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(appendable, getColumnMultiplicity(column), true);
         }
