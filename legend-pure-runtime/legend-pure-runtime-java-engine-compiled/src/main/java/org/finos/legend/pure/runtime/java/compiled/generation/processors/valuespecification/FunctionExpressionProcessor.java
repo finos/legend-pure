@@ -61,7 +61,11 @@ public class FunctionExpressionProcessor
             if (function instanceof PackageableElement && Sets.immutable.with("meta::pure::functions::relation::colSpec_String_1__T_1__ColSpec_1_", "meta::pure::functions::relation::colSpecArray_String_MANY__T_1__ColSpecArray_1_").contains(Pure.elementToPath((PackageableElement) function, "::")))
             {
                 FunctionExpression funcExpression = (FunctionExpression) functionExpression;
-                maySetClassifierGenericType = "._classifierGenericType(" + GenericTypeSerializationInCode.generateGenericTypeBuilder(funcExpression._parametersValues().getLast()._genericType(), processorContext) + ")";
+                String rawType = "meta::pure::functions::relation::colSpecArray_String_MANY__T_1__ColSpecArray_1_".equals(Pure.elementToPath((PackageableElement) function, "::")) ? M3Paths.ColSpecArray : M3Paths.ColSpec;
+                org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType colSpecGenericType = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) support.newAnonymousCoreInstance(funcExpression._parametersValues().getFirst().getSourceInformation(), M3Paths.GenericType);
+                colSpecGenericType._rawType((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type) processorContext.getSupport().package_getByUserPath(rawType));
+                colSpecGenericType._typeArguments(Lists.mutable.with(funcExpression._parametersValues().getLast()._genericType()));
+                maySetClassifierGenericType = "._classifierGenericType(" + GenericTypeSerializationInCode.generateGenericTypeBuilder(colSpecGenericType, processorContext) + ")";
             }
 
             CoreInstance functionType = support.function_getFunctionType(function);

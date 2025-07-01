@@ -39,6 +39,8 @@ public class M3Paths
     public static final String ClassConstraintValueSpecificationContext = "meta::pure::metamodel::valuespecification::ClassConstraintValueSpecificationContext";
     public static final String ClassProjection = "meta::pure::metamodel::type::ClassProjection";
     public static final String Column = "meta::pure::metamodel::relation::Column";
+    public static final String ColSpec = "meta::pure::metamodel::relation::ColSpec";
+    public static final String ColSpecArray = "meta::pure::metamodel::relation::ColSpecArray";
     public static final String ConcreteFunctionDefinition = "meta::pure::metamodel::function::ConcreteFunctionDefinition";
     public static final String Constraint = "meta::pure::metamodel::constraint::Constraint";
     public static final String ConstraintsOverride = "meta::pure::metamodel::type::ConstraintsOverride";
