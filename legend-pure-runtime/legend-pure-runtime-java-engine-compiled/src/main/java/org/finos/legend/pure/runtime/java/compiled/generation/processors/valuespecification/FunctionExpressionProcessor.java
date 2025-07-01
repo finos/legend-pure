@@ -58,10 +58,11 @@ public class FunctionExpressionProcessor
         if (support.instance_instanceOf(function, M3Paths.FunctionDefinition) && !Property.isQualifiedProperty(function, support))
         {
             String maySetClassifierGenericType = "";
-            if (function instanceof PackageableElement && Sets.immutable.with("meta::pure::functions::relation::colSpec_String_1__T_1__ColSpec_1_", "meta::pure::functions::relation::colSpecArray_String_MANY__T_1__ColSpecArray_1_").contains(Pure.elementToPath((PackageableElement) function, "::")))
+            String functionName = (function instanceof PackageableElement) ? Pure.elementToPath((PackageableElement) function, "::") : "";
+            if (function instanceof PackageableElement && Sets.immutable.with("meta::pure::functions::relation::colSpec_String_1__T_1__ColSpec_1_", "meta::pure::functions::relation::colSpecArray_String_MANY__T_1__ColSpecArray_1_").contains(functionName))
             {
                 FunctionExpression funcExpression = (FunctionExpression) functionExpression;
-                String rawType = "meta::pure::functions::relation::colSpecArray_String_MANY__T_1__ColSpecArray_1_".equals(Pure.elementToPath((PackageableElement) function, "::")) ? M3Paths.ColSpecArray : M3Paths.ColSpec;
+                String rawType = "meta::pure::functions::relation::colSpecArray_String_MANY__T_1__ColSpecArray_1_".equals(functionName) ? M3Paths.ColSpecArray : M3Paths.ColSpec;
                 org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType colSpecGenericType = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) support.newAnonymousCoreInstance(funcExpression._parametersValues().getFirst().getSourceInformation(), M3Paths.GenericType);
                 colSpecGenericType._rawType((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type) processorContext.getSupport().package_getByUserPath(rawType));
                 colSpecGenericType._typeArguments(Lists.mutable.with(funcExpression._parametersValues().getLast()._genericType()));
