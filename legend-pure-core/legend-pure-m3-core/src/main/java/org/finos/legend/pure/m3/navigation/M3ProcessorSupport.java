@@ -102,22 +102,32 @@ public class M3ProcessorSupport implements ProcessorSupport
         return this.modelRepository.getTopLevel(root);
     }
 
+    private CoreInstance getClassifierByPath(String type)
+    {
+        CoreInstance classifier = this.package_getByUserPath(type);
+        if (classifier == null)
+        {
+            throw new RuntimeException("Unknown classifier: " + type);
+        }
+        return classifier;
+    }
+
     @Override
     public CoreInstance newEphemeralAnonymousCoreInstance(String type)
     {
-        return this.modelRepository.newEphemeralAnonymousCoreInstance(null, this.package_getByUserPath(type));
+        return this.modelRepository.newEphemeralAnonymousCoreInstance(null, getClassifierByPath(type));
     }
 
     @Override
     public CoreInstance newAnonymousCoreInstance(SourceInformation sourceInformation, String type)
     {
-        return this.modelRepository.newAnonymousCoreInstance(sourceInformation, this.package_getByUserPath(type));
+        return this.modelRepository.newAnonymousCoreInstance(sourceInformation, getClassifierByPath(type));
     }
 
     @Override
     public CoreInstance newCoreInstance(String name, String typeName, SourceInformation sourceInformation)
     {
-        return this.modelRepository.newCoreInstance(name, this.package_getByUserPath(typeName), sourceInformation);
+        return this.modelRepository.newCoreInstance(name, getClassifierByPath(typeName), sourceInformation);
     }
 
     @Override
