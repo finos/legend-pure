@@ -92,9 +92,9 @@ public class ClassImplProcessor
             "org.eclipse.collections.api.block.procedure.Procedure"
     );
 
-    public static final String IMPORTS = JavaTools.sortAndReduceImports(IMPORTS_LIST).makeString("import ", ";\nimport ", ";\n");
-    static final String FUNCTION_IMPORTS = JavaTools.sortAndReduceImports(FUNCTION_IMPORTS_LIST).makeString("import ", ";\nimport ", ";\n");
-    static final String SERIALIZABLE_IMPORTS = JavaTools.sortAndReduceImports(SERIALIZABLE_IMPORTS_LIST).makeString("import ", ";\nimport ", ";\n");
+    public static final String IMPORTS = JavaTools.sortReduceAndPrintImports(IMPORTS_LIST);
+    static final String FUNCTION_IMPORTS = JavaTools.sortReduceAndPrintImports(FUNCTION_IMPORTS_LIST);
+    static final String SERIALIZABLE_IMPORTS = JavaTools.sortReduceAndPrintImports(SERIALIZABLE_IMPORTS_LIST);
 
     public static final String CLASS_IMPL_SUFFIX = "_Impl";
 

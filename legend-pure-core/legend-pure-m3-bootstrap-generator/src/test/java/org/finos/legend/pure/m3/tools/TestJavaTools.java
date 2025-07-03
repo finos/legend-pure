@@ -63,7 +63,7 @@ public class TestJavaTools
     @Test
     public void testMakeValidJavaIdentifier_keywords()
     {
-        for (String keyword : new String[] {"assert", "class", "public", "private"})
+        for (String keyword : new String[]{"assert", "class", "public", "private"})
         {
             Assert.assertEquals("$" + keyword, JavaTools.makeValidJavaIdentifier(keyword, "$"));
             Assert.assertEquals(keyword + "1", JavaTools.makeValidJavaIdentifier(keyword, "1"));
@@ -133,6 +133,75 @@ public class TestJavaTools
         Assert.assertEquals(
                 "Name conflict between imports: org.finos.legend.pure.m3.other.SomethingElse and org.finos.legend.pure.m3.tools.SomethingElse",
                 Assert.assertThrows(IllegalArgumentException.class, () -> JavaTools.sortAndReduceImports("org.finos.legend.pure.m3.tools.JavaTools", "org.finos.legend.pure.m3.tools.SomethingElse", "org.finos.legend.pure.m3.other.SomethingElse")).getMessage()
+        );
+    }
+
+    @Test
+    public void testSortAndReduceAndPrintImports()
+    {
+        Assert.assertEquals("", JavaTools.sortReduceAndPrintImports());
+        Assert.assertEquals(
+                "import org.finos.legend.pure.m3.tools.JavaTools;\n",
+                JavaTools.sortReduceAndPrintImports("org.finos.legend.pure.m3.tools.JavaTools"));
+        Assert.assertEquals(
+                "import org.finos.legend.pure.m3.tools.*;\n",
+                JavaTools.sortReduceAndPrintImports("org.finos.legend.pure.m3.tools.JavaTools", "org.finos.legend.pure.m3.tools.*"));
+        Assert.assertEquals(
+                "import org.finos.legend.pure.m3.tools.*;\n",
+                JavaTools.sortReduceAndPrintImports("org.finos.legend.pure.m3.tools.*", "org.finos.legend.pure.m3.tools.JavaTools"));
+        Assert.assertEquals(
+                "import org.finos.legend.pure.m3.tools.*;\n",
+                JavaTools.sortReduceAndPrintImports("org.finos.legend.pure.m3.tools.*", "org.finos.legend.pure.m3.tools.JavaTools", "org.finos.legend.pure.m3.tools.SomethingElse"));
+        Assert.assertEquals(
+                "import org.finos.legend.pure.m3.*;\n" +
+                        "import org.finos.legend.pure.m3.tools.JavaTools;\n",
+                JavaTools.sortReduceAndPrintImports("org.finos.legend.pure.m3.*", "org.finos.legend.pure.m3.tools.JavaTools"));
+        Assert.assertEquals(
+                "import org.finos.legend.pure.m3.*;\n" +
+                        "import org.finos.legend.pure.m3.tools.*;\n",
+                JavaTools.sortReduceAndPrintImports("org.finos.legend.pure.m3.*", "org.finos.legend.pure.m3.tools.JavaTools", "org.finos.legend.pure.m3.tools.*"));
+        Assert.assertEquals(
+                "import org.finos.legend.pure.m3.tools.JavaTools;\n",
+                JavaTools.sortReduceAndPrintImports("org.finos.legend.pure.m3.tools.JavaTools", "org.finos.legend.pure.m3.tools.JavaTools"));
+        Assert.assertEquals(
+                "import org.finos.legend.pure.m3.tools.JavaTools;\n" +
+                        "import org.finos.legend.pure.m3.tools.SomethingElse;\n",
+                JavaTools.sortReduceAndPrintImports("org.finos.legend.pure.m3.tools.JavaTools", "org.finos.legend.pure.m3.tools.SomethingElse", "org.finos.legend.pure.m3.tools.JavaTools"));
+        Assert.assertEquals(
+                "import org.finos.legend.pure.m3.other.SomethingElse;\n" +
+                        "import org.finos.legend.pure.m3.tools.JavaTools;\n",
+                JavaTools.sortReduceAndPrintImports("org.finos.legend.pure.m3.tools.JavaTools", "org.finos.legend.pure.m3.other.SomethingElse", "org.finos.legend.pure.m3.tools.JavaTools"));
+        Assert.assertEquals(
+                "import org.finos.legend.pure.m3.other.SomethingElse;\n" +
+                        "import org.finos.legend.pure.m3.tools.*;\n",
+                JavaTools.sortReduceAndPrintImports("org.finos.legend.pure.m3.tools.JavaTools", "org.finos.legend.pure.m3.other.SomethingElse", "org.finos.legend.pure.m3.tools.*"));
+        Assert.assertEquals(
+                "import org.finos.legend.pure.m3.tools.JavaTools;\n" +
+                        "import org.finos.legend.pure.m3.tools.SomethingElse;\n" +
+                        "\n" +
+                        "import java.util.Arrays;\n" +
+                        "import java.util.List;\n",
+                JavaTools.sortReduceAndPrintImports("org.finos.legend.pure.m3.tools.SomethingElse", "java.util.List", "java.util.Arrays", "org.finos.legend.pure.m3.tools.JavaTools"));
+
+
+        Assert.assertEquals(
+                "import org.finos.legend.pure.m3.tools.*;\r\n",
+                JavaTools.sortReduceAndPrintImports(Lists.immutable.with("org.finos.legend.pure.m3.tools.*", "org.finos.legend.pure.m3.tools.JavaTools", "org.finos.legend.pure.m3.tools.SomethingElse"), "\r\n"));
+        Assert.assertEquals(
+                "import org.finos.legend.pure.m3.*;\r\n" +
+                        "import org.finos.legend.pure.m3.tools.*;\r\n",
+                JavaTools.sortReduceAndPrintImports(Lists.immutable.with("org.finos.legend.pure.m3.*", "org.finos.legend.pure.m3.tools.JavaTools", "org.finos.legend.pure.m3.tools.*"), "\r\n"));
+        Assert.assertEquals(
+                "import org.finos.legend.pure.m3.tools.JavaTools;\r\n" +
+                        "import org.finos.legend.pure.m3.tools.SomethingElse;\r\n" +
+                        "\r\n" +
+                        "import java.util.Arrays;\r\n" +
+                        "import java.util.List;\r\n",
+                JavaTools.sortReduceAndPrintImports(Lists.immutable.with("org.finos.legend.pure.m3.tools.SomethingElse", "java.util.List", "java.util.Arrays", "org.finos.legend.pure.m3.tools.JavaTools"), "\r\n"));
+
+        Assert.assertEquals(
+                "Name conflict between imports: org.finos.legend.pure.m3.other.SomethingElse and org.finos.legend.pure.m3.tools.SomethingElse",
+                Assert.assertThrows(IllegalArgumentException.class, () -> JavaTools.sortReduceAndPrintImports("org.finos.legend.pure.m3.tools.JavaTools", "org.finos.legend.pure.m3.tools.SomethingElse", "org.finos.legend.pure.m3.other.SomethingElse")).getMessage()
         );
     }
 }

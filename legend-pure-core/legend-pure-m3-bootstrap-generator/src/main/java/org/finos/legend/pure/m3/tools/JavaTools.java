@@ -20,6 +20,7 @@ import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 import javax.lang.model.SourceVersion;
 import java.util.Arrays;
@@ -131,6 +132,52 @@ public class JavaTools
     }
 
     // Java imports
+
+    public static String sortReduceAndPrintImports(String... imports)
+    {
+        return sortReduceAndPrintImports(Arrays.asList(imports));
+    }
+
+    public static String sortReduceAndPrintImports(Iterable<? extends String> imports)
+    {
+        return sortReduceAndPrintImports(imports, null);
+    }
+
+    public static String sortReduceAndPrintImports(Iterable<? extends String> imports, String linebreak)
+    {
+        return sortReduceAndPrintImports(new StringBuilder(), imports, linebreak).toString();
+    }
+
+    public static <T extends Appendable> T sortReduceAndPrintImports(T appendable, String... imports)
+    {
+        return sortReduceAndPrintImports(appendable, Arrays.asList(imports));
+    }
+
+    public static <T extends Appendable> T sortReduceAndPrintImports(T appendable, Iterable<? extends String> imports)
+    {
+        return sortReduceAndPrintImports(appendable, imports, null);
+    }
+
+    public static <T extends Appendable> T sortReduceAndPrintImports(T appendable, Iterable<? extends String> imports, String linebreak)
+    {
+        MutableList<String> sortedAndReduced = sortAndReduceImports(imports);
+        if (sortedAndReduced.notEmpty())
+        {
+            SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+            String resolvedLinebreak = (linebreak == null) ? "\n" : linebreak;
+            boolean[] previousJavaImport = {false};
+            sortedAndReduced.forEach(imp ->
+            {
+                if (imp.startsWith("java.") && !previousJavaImport[0])
+                {
+                    safeAppendable.append(resolvedLinebreak);
+                    previousJavaImport[0] = true;
+                }
+                safeAppendable.append("import ").append(imp).append(';').append(resolvedLinebreak);
+            });
+        }
+        return appendable;
+    }
 
     public static MutableList<String> sortAndReduceImports(String... imports)
     {
