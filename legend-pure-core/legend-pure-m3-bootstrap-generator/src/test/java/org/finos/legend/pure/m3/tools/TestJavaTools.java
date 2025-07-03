@@ -91,4 +91,48 @@ public class TestJavaTools
         IllegalStateException e2 = Assert.assertThrows(IllegalStateException.class, () -> JavaTools.makeValidJavaIdentifier("ab%", "##"));
         Assert.assertEquals("Character 2 of \"ab%\" needs to be replaced, but replacement (\"##\") is not a valid Java identifier part", e2.getMessage());
     }
+
+    @Test
+    public void testSortAndReduceImports()
+    {
+        Assert.assertEquals(Lists.mutable.empty(), JavaTools.sortAndReduceImports());
+        Assert.assertEquals(
+                Lists.mutable.with("org.finos.legend.pure.m3.tools.JavaTools"),
+                JavaTools.sortAndReduceImports("org.finos.legend.pure.m3.tools.JavaTools"));
+        Assert.assertEquals(
+                Lists.mutable.with("org.finos.legend.pure.m3.tools.*"),
+                JavaTools.sortAndReduceImports("org.finos.legend.pure.m3.tools.JavaTools", "org.finos.legend.pure.m3.tools.*"));
+        Assert.assertEquals(
+                Lists.mutable.with("org.finos.legend.pure.m3.tools.*"),
+                JavaTools.sortAndReduceImports("org.finos.legend.pure.m3.tools.*", "org.finos.legend.pure.m3.tools.JavaTools"));
+        Assert.assertEquals(
+                Lists.mutable.with("org.finos.legend.pure.m3.tools.*"),
+                JavaTools.sortAndReduceImports("org.finos.legend.pure.m3.tools.*", "org.finos.legend.pure.m3.tools.JavaTools", "org.finos.legend.pure.m3.tools.SomethingElse"));
+        Assert.assertEquals(
+                Lists.mutable.with("org.finos.legend.pure.m3.*", "org.finos.legend.pure.m3.tools.JavaTools"),
+                JavaTools.sortAndReduceImports("org.finos.legend.pure.m3.*", "org.finos.legend.pure.m3.tools.JavaTools"));
+        Assert.assertEquals(
+                Lists.mutable.with("org.finos.legend.pure.m3.*", "org.finos.legend.pure.m3.tools.*"),
+                JavaTools.sortAndReduceImports("org.finos.legend.pure.m3.*", "org.finos.legend.pure.m3.tools.JavaTools", "org.finos.legend.pure.m3.tools.*"));
+        Assert.assertEquals(
+                Lists.mutable.with("org.finos.legend.pure.m3.tools.JavaTools"),
+                JavaTools.sortAndReduceImports("org.finos.legend.pure.m3.tools.JavaTools", "org.finos.legend.pure.m3.tools.JavaTools"));
+        Assert.assertEquals(
+                Lists.mutable.with("org.finos.legend.pure.m3.tools.JavaTools", "org.finos.legend.pure.m3.tools.SomethingElse"),
+                JavaTools.sortAndReduceImports("org.finos.legend.pure.m3.tools.JavaTools", "org.finos.legend.pure.m3.tools.SomethingElse", "org.finos.legend.pure.m3.tools.JavaTools"));
+        Assert.assertEquals(
+                Lists.mutable.with("org.finos.legend.pure.m3.other.SomethingElse", "org.finos.legend.pure.m3.tools.JavaTools"),
+                JavaTools.sortAndReduceImports("org.finos.legend.pure.m3.tools.JavaTools", "org.finos.legend.pure.m3.other.SomethingElse", "org.finos.legend.pure.m3.tools.JavaTools"));
+        Assert.assertEquals(
+                Lists.mutable.with("org.finos.legend.pure.m3.other.SomethingElse", "org.finos.legend.pure.m3.tools.*"),
+                JavaTools.sortAndReduceImports("org.finos.legend.pure.m3.tools.JavaTools", "org.finos.legend.pure.m3.other.SomethingElse", "org.finos.legend.pure.m3.tools.*"));
+        Assert.assertEquals(
+                Lists.mutable.with("org.finos.legend.pure.m3.tools.JavaTools", "org.finos.legend.pure.m3.tools.SomethingElse", "java.util.Arrays", "java.util.List"),
+                JavaTools.sortAndReduceImports("org.finos.legend.pure.m3.tools.SomethingElse", "java.util.List", "java.util.Arrays", "org.finos.legend.pure.m3.tools.JavaTools"));
+
+        Assert.assertEquals(
+                "Name conflict between imports: org.finos.legend.pure.m3.other.SomethingElse and org.finos.legend.pure.m3.tools.SomethingElse",
+                Assert.assertThrows(IllegalArgumentException.class, () -> JavaTools.sortAndReduceImports("org.finos.legend.pure.m3.tools.JavaTools", "org.finos.legend.pure.m3.tools.SomethingElse", "org.finos.legend.pure.m3.other.SomethingElse")).getMessage()
+        );
+    }
 }

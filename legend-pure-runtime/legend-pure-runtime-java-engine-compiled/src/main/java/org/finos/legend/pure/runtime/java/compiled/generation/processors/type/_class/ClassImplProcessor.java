@@ -41,6 +41,7 @@ import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m3.navigation.type.Type;
+import org.finos.legend.pure.m3.tools.JavaTools;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
@@ -91,9 +92,9 @@ public class ClassImplProcessor
             "org.eclipse.collections.api.block.procedure.Procedure"
     );
 
-    public static final String IMPORTS = sortAndReduceImports(IMPORTS_LIST).makeString("import ", ";\nimport ", ";\n");
-    static final String FUNCTION_IMPORTS = sortAndReduceImports(FUNCTION_IMPORTS_LIST).makeString("import ", ";\nimport ", ";\n");
-    static final String SERIALIZABLE_IMPORTS = sortAndReduceImports(SERIALIZABLE_IMPORTS_LIST).makeString("import ", ";\nimport ", ";\n");
+    public static final String IMPORTS = JavaTools.sortAndReduceImports(IMPORTS_LIST).makeString("import ", ";\nimport ", ";\n");
+    static final String FUNCTION_IMPORTS = JavaTools.sortAndReduceImports(FUNCTION_IMPORTS_LIST).makeString("import ", ";\nimport ", ";\n");
+    static final String SERIALIZABLE_IMPORTS = JavaTools.sortAndReduceImports(SERIALIZABLE_IMPORTS_LIST).makeString("import ", ";\nimport ", ";\n");
 
     public static final String CLASS_IMPL_SUFFIX = "_Impl";
 
@@ -1185,77 +1186,5 @@ public class ClassImplProcessor
     public interface FullPropertyImplementation
     {
         String build(CoreInstance property, String name, CoreInstance unresolvedReturnType, CoreInstance returnType, CoreInstance returnMultiplicity, String returnTypeJava, String classOwnerId, String ownerClassName, String ownerTypeParams, ProcessorContext processorContext);
-    }
-
-    static MutableList<String> sortAndReduceImports(Iterable<? extends String> imports)
-    {
-        MutableMap<String, String> byName = Maps.mutable.empty();
-        MutableSet<String> starImports = Sets.mutable.empty();
-        imports.forEach(imp ->
-        {
-            if (imp.endsWith(".*"))
-            {
-                starImports.add(imp);
-            }
-            else
-            {
-                String name = imp.substring(imp.lastIndexOf('.') + 1);
-                String otherImp = byName.put(name, imp);
-                if ((otherImp != null) && !otherImp.equals(imp))
-                {
-                    throw new IllegalArgumentException("Name conflict between imports: " + imp + " and " + otherImp);
-                }
-            }
-        });
-
-        MutableList<String> list = Lists.mutable.<String>ofInitialCapacity(byName.size() + starImports.size())
-                .withAll(starImports)
-                .withAll(byName.values())
-                .sortThis(ClassImplProcessor::compareImports);
-        String[] prev = {null};
-        list.removeIf(current ->
-        {
-            String previous = prev[0];
-            if ((previous != null) && (current.length() >= previous.length()) && previous.endsWith(".*"))
-            {
-                int lastDot = current.lastIndexOf('.');
-                if ((lastDot == (previous.length() - 2)) && previous.regionMatches(0, current, 0, lastDot))
-                {
-                    return true;
-                }
-            }
-            prev[0] = current;
-            return false;
-        });
-        return list;
-    }
-
-    private static int compareImports(String import1, String import2)
-    {
-        // Imports from the java package go last
-        if (import1.startsWith("java."))
-        {
-            if (!import2.startsWith("java."))
-            {
-                return 1;
-            }
-        }
-        else if (import2.startsWith("java."))
-        {
-            return -1;
-        }
-
-        // * imports go before others in the same package
-        if (import1.endsWith("*") && (import1.length() <= import2.length()) && import1.regionMatches(0, import2, 0, import1.length() - 1))
-        {
-            return -1;
-        }
-        if (import2.endsWith("*") && (import2.length() <= import1.length()) && import2.regionMatches(0, import1, 0, import2.length() - 1))
-        {
-            return 1;
-        }
-
-        // general case
-        return import1.compareTo(import2);
     }
 }
