@@ -19,7 +19,7 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure-store-relational</artifactId>
-        <version>5.52.3</version>
+        <version>5.52.4-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
