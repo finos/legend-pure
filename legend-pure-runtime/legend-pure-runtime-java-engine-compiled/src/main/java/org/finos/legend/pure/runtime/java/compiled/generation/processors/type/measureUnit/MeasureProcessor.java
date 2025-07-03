@@ -48,7 +48,7 @@ public class MeasureProcessor
         processorContext.addJavaSource(buildUnitInterface(packageName, measureInterfaceName, unitInterfaceName, Measure.getUserPathForUnit(unit)));
 
         String unitImplClassName = JavaPackageAndImportBuilder.buildImplClassNameFromType(unit, processorContext.getSupport());
-        processorContext.addJavaSource(buildUnitImplClass(packageName, unitInterfaceName, unitImplClassName));
+        processorContext.addJavaSource(buildUnitImplClass(packageName, unitInterfaceName, unitImplClassName, processorContext.getIdBuilder().buildId(unit)));
     }
 
     private static StringJavaSource buildMeasureInterface(String packageName, String interfaceName)
@@ -79,7 +79,7 @@ public class MeasureProcessor
         return StringJavaSource.newStringJavaSource(packageName, unitInterfaceName, code);
     }
 
-    private static StringJavaSource buildUnitImplClass(String packageName, String unitInterfaceName, String unitClassImplName)
+    private static StringJavaSource buildUnitImplClass(String packageName, String unitInterfaceName, String unitClassImplName, String unitId)
     {
         String code = "package " + packageName + ";\n" +
                 "\n" +
@@ -89,6 +89,8 @@ public class MeasureProcessor
                 "\n" +
                 "public class " + unitClassImplName + " extends " + AbstractQuantityCoreInstance.class.getSimpleName() + " implements " + unitInterfaceName + "\n" +
                 "{\n" +
+                "    private static final String UNIT_ID = \"" + StringEscapeUtils.escapeJava(unitId) + "\";\n" +
+                "\n" +
                 "    public " + unitClassImplName + "(Number value, " + CompiledExecutionSupport.class.getSimpleName() + " executionSupport)\n" +
                 "    {\n" +
                 "        super(value, UNIT_PATH, executionSupport);\n" +
@@ -119,6 +121,12 @@ public class MeasureProcessor
                 "    public " + unitInterfaceName + " copy()\n" +
                 "    {\n" +
                 "        return new " + unitClassImplName + "(this);\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    protected String getUnitId()\n" +
+                "    {\n" +
+                "        return UNIT_ID;\n" +
                 "    }\n" +
                 "\n" +
                 "    @Override\n" +
