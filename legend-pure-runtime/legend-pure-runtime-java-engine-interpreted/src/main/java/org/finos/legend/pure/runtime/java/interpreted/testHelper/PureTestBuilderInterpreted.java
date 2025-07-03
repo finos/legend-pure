@@ -106,25 +106,27 @@ public class PureTestBuilderInterpreted
             }
             try
             {
+                Object ret = functionExecution.start(a, params);
+
                 String message = expectedFailures.get(PackageableElement.getUserPathForPackageableElement(a, "::"));
                 if (message != null)
                 {
                     PCTTools.displayExpectedErrorFailMessage(message, a, PCTExecutor);
                 }
-                Object ret = functionExecution.start(a, params);
+
                 return ret;
             }
             catch (Exception e)
             {
                 // Check if the error was expected
                 String message = expectedFailures.get(PackageableElement.getUserPathForPackageableElement(a, "::"));
-                if (message != null && e.getCause().getMessage().contains(message))
+                if (message != null && PCTTools.checkNullMessage(e.getMessage()).contains(message))
                 {
                     return null;
                 }
                 else
                 {
-                    PCTTools.displayErrorMessage(message, a, PCTExecutor, functionExecution.getProcessorSupport(), e.getCause());
+                    PCTTools.displayErrorMessage(message, a, PCTExecutor, functionExecution.getProcessorSupport(), e);
                     if (e.getCause() instanceof PureAssertFailException)
                     {
                         fail(e.getCause().getMessage());
