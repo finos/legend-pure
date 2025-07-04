@@ -27,6 +27,7 @@ import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.BaseCoreInstance;
 import org.finos.legend.pure.m3.coreinstance.Package;
+import org.finos.legend.pure.m3.coreinstance.lazy.AbstractLazyCoreInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration;
@@ -43,6 +44,7 @@ import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.function.Function;
 import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m3.navigation.type.Type;
+import org.finos.legend.pure.m3.tools.GraphTools;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
@@ -58,6 +60,7 @@ import org.finos.legend.pure.runtime.java.compiled.metadata.ClassCache;
 import org.finos.legend.pure.runtime.java.compiled.metadata.Metadata;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataAccessor;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataHolder;
+import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataPelt;
 
 import java.lang.reflect.Method;
 
@@ -284,6 +287,11 @@ public class CompiledProcessorSupport implements ProcessorSupport
     @Override
     public CoreInstance package_getByUserPath(String path)
     {
+        if (this.metadata instanceof MetadataPelt)
+        {
+            return ((MetadataPelt) this.metadata).getElementByPath(path);
+        }
+
         // Check top level elements
         if (path.isEmpty() || M3Paths.Root.equals(path) || "::".equals(path))
         {
@@ -362,6 +370,11 @@ public class CompiledProcessorSupport implements ProcessorSupport
     @Override
     public CoreInstance repository_getTopLevel(String name)
     {
+        if ((this.metadata instanceof MetadataPelt) && GraphTools.isTopLevelName(name))
+        {
+            return ((MetadataPelt) this.metadata).getElementByPath(name);
+        }
+
         if (M3Paths.Root.equals(name))
         {
             return this.metadataAccessor.getPackage(M3Paths.Root);
@@ -492,10 +505,12 @@ public class CompiledProcessorSupport implements ProcessorSupport
     {
         if (instance instanceof ValCoreInstance)
         {
-            return this.metadataAccessor.getPrimitiveType(((ValCoreInstance) instance).getType());
+            return (this.metadata instanceof MetadataPelt) ?
+                   ((MetadataPelt) this.metadata).getElementByPath(((ValCoreInstance) instance).getType()) :
+                   this.metadataAccessor.getPrimitiveType(((ValCoreInstance) instance).getType());
         }
 
-        if (instance instanceof QuantityCoreInstance)
+        if ((instance instanceof QuantityCoreInstance) || (instance instanceof AbstractLazyCoreInstance))
         {
             return instance.getClassifier();
         }
@@ -534,12 +549,20 @@ public class CompiledProcessorSupport implements ProcessorSupport
     @Override
     public CoreInstance type_BottomType()
     {
+        if (this.metadata instanceof MetadataPelt)
+        {
+            return ((MetadataPelt) this.metadata).getElementByPath(M3Paths.Nil);
+        }
         return this.metadataAccessor.getBottomType();
     }
 
     @Override
     public CoreInstance type_TopType()
     {
+        if (this.metadata instanceof MetadataPelt)
+        {
+            return ((MetadataPelt) this.metadata).getElementByPath(M3Paths.Any);
+        }
         return this.metadataAccessor.getTopType();
     }
 

@@ -147,6 +147,7 @@ public final class JavaSourceCodeGenerator
     private final boolean writeFilesToDisk;
     private final Path directoryToWriteFilesTo;
     private final String externalAPIPackage;
+    private final boolean useLegacyMetadataForExternalAPI;
 
     private final boolean includePureStackTrace;
     private final MutableSet<CoreInstance> processedClasses = Sets.mutable.empty();
@@ -156,7 +157,7 @@ public final class JavaSourceCodeGenerator
 
     private final String name;
 
-    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, IdBuilder idBuilder, RepositoryCodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> providedExtensions, String name, String externalAPIPackage, boolean generateCompilerExtensionCode)
+    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, IdBuilder idBuilder, RepositoryCodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> providedExtensions, String name, String externalAPIPackage, boolean generateCompilerExtensionCode, boolean useLegacyMetadataForExternalAPI)
     {
         this.name = name;
         this.processorSupport = processorSupport;
@@ -166,7 +167,8 @@ public final class JavaSourceCodeGenerator
         this.directoryToWriteFilesTo = directoryToWriteFilesTo;
         this.includePureStackTrace = includePureStackTrace;
         this.externalAPIPackage = externalAPIPackage;
-        this.extensions = new UnifiedSetWithHashingStrategy<>(new HashingStrategy<CompiledExtension>()
+        this.useLegacyMetadataForExternalAPI = useLegacyMetadataForExternalAPI;
+        this.extensions = UnifiedSetWithHashingStrategy.newSet(new HashingStrategy<CompiledExtension>()
         {
             @Override
             public int computeHashCode(CompiledExtension extension)
@@ -179,7 +181,12 @@ public final class JavaSourceCodeGenerator
             {
                 return extension1.getClass() == extension2.getClass();
             }
-        }).withAll(CompiledExtensionLoader.extensions()).withAll(providedExtensions).toList();
+        }, CompiledExtensionLoader.extensions()).withAll(providedExtensions).toList();
+    }
+
+    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, IdBuilder idBuilder, RepositoryCodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> providedExtensions, String name, String externalAPIPackage, boolean generateCompilerExtensionCode)
+    {
+        this(processorSupport, idBuilder, codeStorage, writeFilesToDisk, directoryToWriteFilesTo, includePureStackTrace, providedExtensions, name, externalAPIPackage, generateCompilerExtensionCode, true);
     }
 
     public JavaSourceCodeGenerator(ProcessorSupport processorSupport, RepositoryCodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> extensions, String name, String externalAPIPackage, boolean generateCompilerExtensionCode)
@@ -351,7 +358,7 @@ public final class JavaSourceCodeGenerator
                 e -> (e instanceof Function) || Instance.instanceOf(e, functionClass, this.processorSupport),
                 e -> FunctionProcessor.buildExternalizableFunction(e, processorContext),
                 Lists.mutable.empty());
-        String text = ExternalClassBuilder.buildExternalizableFunctionClass(pack, EXTERNAL_FUNCTIONS_CLASS_NAME, externalizableFunctionCode, this.codeStorage.getAllRepositories().collect(CodeRepository::getName));
+        String text = ExternalClassBuilder.buildExternalizableFunctionClass(pack, EXTERNAL_FUNCTIONS_CLASS_NAME, externalizableFunctionCode, this.codeStorage.getAllRepositories().collect(CodeRepository::getName), this.useLegacyMetadataForExternalAPI);
         return Lists.immutable.with(StringJavaSource.newStringJavaSource(pack, EXTERNAL_FUNCTIONS_CLASS_NAME, text));
     }
 
