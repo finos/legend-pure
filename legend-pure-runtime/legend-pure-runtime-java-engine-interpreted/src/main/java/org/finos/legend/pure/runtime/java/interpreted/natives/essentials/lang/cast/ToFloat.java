@@ -56,7 +56,7 @@ public class ToFloat extends NativeFunction
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         CoreInstance number = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
-        if (NumericUtilities.isFloat(number, processorSupport))
+        if (PrimitiveUtilities.isFloat(number, processorSupport))
         {
             return ValueSpecificationBootstrap.wrapValueSpecification(number, true, processorSupport);
         }

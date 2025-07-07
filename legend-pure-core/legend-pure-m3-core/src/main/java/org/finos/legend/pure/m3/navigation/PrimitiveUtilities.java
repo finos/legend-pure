@@ -16,6 +16,7 @@ package org.finos.legend.pure.m3.navigation;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.set.ImmutableSet;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -25,6 +26,7 @@ import org.finos.legend.pure.m4.coreinstance.primitive.DateCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.DecimalCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.FloatCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.IntegerCoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.StrictTimeCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
@@ -244,5 +246,225 @@ public class PrimitiveUtilities
                 throw new RuntimeException("Cannot find primitive type: " + name);
             }
         });
+    }
+
+    /**
+     * Convert a Pure number into a Java number.
+     *
+     * @param pureNumber       Pure number
+     * @param processorSupport processor support
+     * @return Java number
+     */
+    public static Number toJavaNumber(CoreInstance pureNumber, ProcessorSupport processorSupport)
+    {
+        CoreInstance classifier = processorSupport.getClassifier(pureNumber);
+        if (classifier.getValueForMetaPropertyToOne(M3Properties._package) == null)
+        {
+            String typeName = classifier.getName();
+            if (typeName != null)
+            {
+                switch (typeName)
+                {
+                    case M3Paths.Integer:
+                    {
+                        return getIntegerValue(pureNumber);
+                    }
+                    case M3Paths.Float:
+                    {
+                        return getFloatValue(pureNumber);
+                    }
+                    case M3Paths.Decimal:
+                    {
+                        return getDecimalValue(pureNumber);
+                    }
+                }
+            }
+        }
+        else
+        {
+            if (isInteger(pureNumber, processorSupport))
+            {
+                return getIntegerValue(pureNumber);
+            }
+            else if (isFloat(pureNumber, processorSupport))
+            {
+                return getFloatValue(pureNumber);
+            }
+            else if (isDecimal(pureNumber, processorSupport))
+            {
+                return getDecimalValue(pureNumber);
+            }
+        }
+        throw new IllegalArgumentException("Not a number: " + pureNumber);
+    }
+
+    public static boolean isInteger(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        return isNumberOfType(instance, IntegerCoreInstance.class, M3Paths.Integer, processorSupport);
+    }
+
+    public static boolean isFloat(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        return isNumberOfType(instance, FloatCoreInstance.class, M3Paths.Float, processorSupport);
+    }
+
+    public static boolean isDecimal(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        return isNumberOfType(instance, DecimalCoreInstance.class, M3Paths.Decimal, processorSupport);
+    }
+
+    private static boolean isNumberOfType(CoreInstance instance, Class<? extends PrimitiveCoreInstance<? extends Number>> coreInstanceClass, String numberTypeName, ProcessorSupport processorSupport)
+    {
+        if (coreInstanceClass.isInstance(instance))
+        {
+            return true;
+        }
+        CoreInstance classifier = processorSupport.getClassifier(instance);
+        return (classifier.getValueForMetaPropertyToOne(M3Properties._package) == null) && numberTypeName.equals(classifier.getName());
+    }
+
+    /**
+     * Convert a collection of Pure numbers into a collection of Java numbers.
+     *
+     * @param pureNumbers Pure numbers
+     * @return Java numbers
+     */
+    public static ListIterable<Number> toJavaNumber(ListIterable<? extends CoreInstance> pureNumbers, ProcessorSupport processorSupport)
+    {
+        return pureNumbers.collect(n -> toJavaNumber(n, processorSupport), Lists.mutable.ofInitialCapacity(pureNumbers.size()));
+    }
+
+    public static BigDecimal toBigDecimal(Number number)
+    {
+        if (number instanceof BigDecimal)
+        {
+            return (BigDecimal) number;
+        }
+        if (number instanceof BigInteger)
+        {
+            return new BigDecimal((BigInteger) number);
+        }
+        if (number instanceof Byte || number instanceof Short || number instanceof Integer || number instanceof Long)
+        {
+            return new BigDecimal(number.longValue());
+        }
+        if (number instanceof Float || number instanceof Double)
+        {
+            return BigDecimal.valueOf(number.doubleValue());
+        }
+        try
+        {
+            return new BigDecimal(number.toString());
+        }
+        catch (NumberFormatException e)
+        {
+            throw new RuntimeException("The given number (\"" + number + "\" of class " + number.getClass().getName() + ") does not have a parsable string representation", e);
+        }
+    }
+
+    public static Number plus(Number left, Number right)
+    {
+        if (((left instanceof Long) || (left instanceof Integer)) && ((right instanceof Long) || (right instanceof Integer)))
+        {
+            return left.longValue() + right.longValue();
+        }
+        if ((left instanceof BigDecimal) || (right instanceof BigDecimal))
+        {
+            return toBigDecimal(left).add(toBigDecimal(right));
+        }
+        return left.doubleValue() + right.doubleValue();
+    }
+
+    /**
+     * Compare two numbers. Returns a negative value if left is less than right, positive if right is less than left,
+     * or 0 if they are equal.
+     *
+     * @param left  left number
+     * @param right right number
+     * @return comparison
+     */
+    public static int compare(Number left, Number right)
+    {
+        if ((left instanceof Integer) || (left instanceof Long))
+        {
+            if ((right instanceof Integer) || (right instanceof Long))
+            {
+                return Long.compare(left.longValue(), right.longValue());
+            }
+            if ((right instanceof Float) || (right instanceof Double))
+            {
+                return BigDecimal.valueOf(left.longValue()).compareTo(BigDecimal.valueOf(right.doubleValue()));
+            }
+            if (right instanceof BigInteger)
+            {
+                return BigInteger.valueOf(left.longValue()).compareTo((BigInteger) right);
+            }
+            if (right instanceof BigDecimal)
+            {
+                return BigDecimal.valueOf(left.longValue()).compareTo((BigDecimal) right);
+            }
+            throw new RuntimeException("Number of an unhandled type: " + right);
+        }
+        if ((left instanceof Float) || (left instanceof Double))
+        {
+            if ((right instanceof Integer) || (right instanceof Long))
+            {
+                return BigDecimal.valueOf(left.doubleValue()).compareTo(BigDecimal.valueOf(right.longValue()));
+            }
+            if ((right instanceof Float) || (right instanceof Double))
+            {
+                return Double.compare(left.doubleValue(), right.doubleValue());
+            }
+            if (right instanceof BigInteger)
+            {
+                return BigDecimal.valueOf(left.doubleValue()).compareTo(new BigDecimal((BigInteger) right)); //NOSONAR
+            }
+            if (right instanceof BigDecimal)
+            {
+                return BigDecimal.valueOf(left.doubleValue()).compareTo((BigDecimal) right);
+            }
+            throw new RuntimeException("Number of an unhandled type: " + right);
+        }
+        if (left instanceof BigInteger)
+        {
+            if ((right instanceof Integer) || (right instanceof Long))
+            {
+                return ((BigInteger) left).compareTo(BigInteger.valueOf(right.longValue()));
+            }
+            if ((right instanceof Float) || (right instanceof Double))
+            {
+                return new BigDecimal((BigInteger) left).compareTo(BigDecimal.valueOf(right.doubleValue()));
+            }
+            if (right instanceof BigInteger)
+            {
+                return ((BigInteger) left).compareTo((BigInteger) right);
+            }
+            if (right instanceof BigDecimal)
+            {
+                return new BigDecimal((BigInteger) left).compareTo((BigDecimal) right);
+            }
+            throw new RuntimeException("Number of an unhandled type: " + right);
+        }
+        if (left instanceof BigDecimal)
+        {
+            if ((right instanceof Integer) || (right instanceof Long))
+            {
+                return ((BigDecimal) left).compareTo(BigDecimal.valueOf(right.longValue()));
+            }
+            if ((right instanceof Float) || (right instanceof Double))
+            {
+                return ((BigDecimal) left).compareTo(BigDecimal.valueOf(right.doubleValue()));
+            }
+            if (right instanceof BigInteger)
+            {
+                return ((BigDecimal) left).compareTo(new BigDecimal((BigInteger) right));
+            }
+            if (right instanceof BigDecimal)
+            {
+                return ((BigDecimal) left).compareTo((BigDecimal) right);
+            }
+            throw new RuntimeException("Number of an unhandled type: " + right);
+        }
+        throw new RuntimeException("Number of an unhandled type: " + left);
     }
 }

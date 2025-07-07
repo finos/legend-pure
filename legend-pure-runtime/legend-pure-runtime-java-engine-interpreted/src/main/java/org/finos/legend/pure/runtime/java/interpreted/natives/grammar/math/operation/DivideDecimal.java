@@ -21,6 +21,7 @@ import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
@@ -47,9 +48,9 @@ public class DivideDecimal extends NativeFunction
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
-        BigDecimal left = (BigDecimal)NumericUtilities.toJavaNumber(Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport), processorSupport);
-        BigDecimal right = (BigDecimal)NumericUtilities.toJavaNumber(Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport), processorSupport);
-        int scale = NumericUtilities.toJavaNumber(Instance.getValueForMetaPropertyToOneResolved(params.get(2), M3Properties.values, processorSupport), processorSupport).intValue();
+        BigDecimal left = (BigDecimal) PrimitiveUtilities.toJavaNumber(Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport), processorSupport);
+        BigDecimal right = (BigDecimal) PrimitiveUtilities.toJavaNumber(Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport), processorSupport);
+        int scale = PrimitiveUtilities.toJavaNumber(Instance.getValueForMetaPropertyToOneResolved(params.get(2), M3Properties.values, processorSupport), processorSupport).intValue();
 
         BigDecimal result = left.divide(right, scale, RoundingMode.HALF_UP);
 

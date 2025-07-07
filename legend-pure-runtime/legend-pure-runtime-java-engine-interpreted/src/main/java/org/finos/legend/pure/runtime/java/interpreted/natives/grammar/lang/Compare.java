@@ -43,7 +43,6 @@ import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
-import org.finos.legend.pure.runtime.java.interpreted.natives.NumericUtilities;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
 public class Compare extends NativeFunction
@@ -85,7 +84,7 @@ public class Compare extends NativeFunction
         Number num2 = getNumberValue(instance2, processorSupport);
         if (num1 != null)
         {
-            return (num2 == null) ? -1 : NumericUtilities.compare(num1, num2);
+            return (num2 == null) ? -1 : PrimitiveUtilities.compare(num1, num2);
         }
         if (num2 != null)
         {

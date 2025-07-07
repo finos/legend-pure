@@ -18,6 +18,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
@@ -58,11 +59,11 @@ public class Times extends NativeFunction
             }
             default:
             {
-                NumericAccumulator accumulator = NumericAccumulator.newAccumulator(NumericUtilities.toJavaNumber(numbers.get(0), processorSupport));
-                boolean bigDecimalToPureDecimal = numbers.anySatisfy(n -> NumericUtilities.isDecimal(n, processorSupport));
+                NumericAccumulator accumulator = NumericAccumulator.newAccumulator(PrimitiveUtilities.toJavaNumber(numbers.get(0), processorSupport));
+                boolean bigDecimalToPureDecimal = numbers.anySatisfy(n -> PrimitiveUtilities.isDecimal(n, processorSupport));
                 for (int i = 1; i < size; i++)
                 {
-                    accumulator.multiply(NumericUtilities.toJavaNumber(numbers.get(i), processorSupport));
+                    accumulator.multiply(PrimitiveUtilities.toJavaNumber(numbers.get(i), processorSupport));
                 }
                 return NumericUtilities.toPureNumberValueExpression(accumulator.getValue(), bigDecimalToPureDecimal, this.repository, processorSupport);
             }

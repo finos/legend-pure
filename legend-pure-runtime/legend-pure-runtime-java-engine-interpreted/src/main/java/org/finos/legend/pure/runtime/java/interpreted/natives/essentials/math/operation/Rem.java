@@ -21,6 +21,7 @@ import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -56,9 +57,9 @@ public class Rem extends NativeFunction
     {
         CoreInstance param0 = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
         CoreInstance param1 = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
-        Number dividend = NumericUtilities.toJavaNumber(param0, processorSupport);
-        Number divisor = NumericUtilities.toJavaNumber(param1, processorSupport);
-        boolean bigDecimalToPureDecimal = NumericUtilities.isDecimal(param0, processorSupport) || NumericUtilities.isDecimal(param1, processorSupport);
+        Number dividend = PrimitiveUtilities.toJavaNumber(param0, processorSupport);
+        Number divisor = PrimitiveUtilities.toJavaNumber(param1, processorSupport);
+        boolean bigDecimalToPureDecimal = PrimitiveUtilities.isDecimal(param0, processorSupport) || PrimitiveUtilities.isDecimal(param1, processorSupport);
         if (divisor.equals(0))
         {
             throw new PureExecutionException(functionExpressionCallStack.peek().getSourceInformation(), "Cannot divide " + dividend.toString() + " by zero", functionExpressionCallStack);

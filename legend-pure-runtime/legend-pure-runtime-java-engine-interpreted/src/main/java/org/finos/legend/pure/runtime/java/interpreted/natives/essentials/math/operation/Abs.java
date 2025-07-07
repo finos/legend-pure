@@ -20,6 +20,7 @@ import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -47,8 +48,8 @@ public class Abs extends NativeFunction
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport)
     {
         CoreInstance number = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
-        boolean bigDecimalToPureDecimal = NumericUtilities.isDecimal(number, processorSupport);
-        Number javaNumber = NumericUtilities.toJavaNumber(number, processorSupport);
+        boolean bigDecimalToPureDecimal = PrimitiveUtilities.isDecimal(number, processorSupport);
+        Number javaNumber = PrimitiveUtilities.toJavaNumber(number, processorSupport);
         if (javaNumber instanceof Integer)
         {
             return NumericUtilities.toPureNumberValueExpression(Math.abs((Integer) javaNumber), bigDecimalToPureDecimal, this.repository, processorSupport);

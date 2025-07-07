@@ -20,6 +20,7 @@ import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m4.ModelRepository;
@@ -28,7 +29,6 @@ import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.InstantiationContext;
 import org.finos.legend.pure.runtime.java.interpreted.natives.NativeFunction;
-import org.finos.legend.pure.runtime.java.interpreted.natives.NumericUtilities;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 
 import java.util.Stack;
@@ -46,11 +46,11 @@ public class Divide extends NativeFunction
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport)
     {
         CoreInstance firstNumber = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
-        NumericAccumulator accumulator = NumericAccumulator.newAccumulator(NumericUtilities.toJavaNumber(firstNumber, processorSupport));
+        NumericAccumulator accumulator = NumericAccumulator.newAccumulator(PrimitiveUtilities.toJavaNumber(firstNumber, processorSupport));
         for (int i = 1, length = params.size(); i < length; i++)
         {
             CoreInstance nextNumber = Instance.getValueForMetaPropertyToOneResolved(params.get(i), M3Properties.values, processorSupport);
-            accumulator.divide(NumericUtilities.toJavaNumber(nextNumber, processorSupport));
+            accumulator.divide(PrimitiveUtilities.toJavaNumber(nextNumber, processorSupport));
         }
 
         return ValueSpecificationBootstrap.wrapValueSpecification(repository.newCoreInstance(accumulator.getValue().toString(), processorSupport.package_getByUserPath("Float"), null), true, processorSupport);

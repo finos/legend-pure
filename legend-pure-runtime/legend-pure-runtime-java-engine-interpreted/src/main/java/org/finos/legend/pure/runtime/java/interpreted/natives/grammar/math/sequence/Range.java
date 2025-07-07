@@ -56,10 +56,10 @@ public class Range extends NativeFunction
 
         MutableList<CoreInstance> result = Lists.mutable.with();
         NumericAccumulator accumulator = NumericAccumulator.newAccumulator(start);
-        int stepSign = NumericUtilities.compare(step, 0);
+        int stepSign = PrimitiveUtilities.compare(step, 0);
         if (stepSign > 0)
         {
-            for (Number value = accumulator.getValue(); NumericUtilities.compare(value, stop) < 0; value = accumulator.getValue())
+            for (Number value = accumulator.getValue(); PrimitiveUtilities.compare(value, stop) < 0; value = accumulator.getValue())
             {
                 result.add(NumericUtilities.toPureNumber(value, false, this.repository));
                 accumulator.add(step);
@@ -67,7 +67,7 @@ public class Range extends NativeFunction
         }
         else if (stepSign < 0)
         {
-            for (Number value = accumulator.getValue(); NumericUtilities.compare(value, stop) > 0; value = accumulator.getValue())
+            for (Number value = accumulator.getValue(); PrimitiveUtilities.compare(value, stop) > 0; value = accumulator.getValue())
             {
                 result.add(NumericUtilities.toPureNumber(value, false, this.repository));
                 accumulator.add(step);

@@ -45,6 +45,7 @@ import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstance;
@@ -573,7 +574,7 @@ public class CompiledSupport
             return Double.compare(x.doubleValue(), y.doubleValue());
         }
 
-        return toBigDecimal(x).compareTo(toBigDecimal(y));
+        return PrimitiveUtilities.toBigDecimal(x).compareTo(PrimitiveUtilities.toBigDecimal(y));
     }
 
     private static boolean isSpecial(Number number)
@@ -589,34 +590,6 @@ public class CompiledSupport
             return f.isNaN() || f.isInfinite();
         }
         return false;
-    }
-
-    private static BigDecimal toBigDecimal(Number number)
-    {
-        if (number instanceof BigDecimal)
-        {
-            return (BigDecimal) number;
-        }
-        if (number instanceof BigInteger)
-        {
-            return new BigDecimal((BigInteger) number);
-        }
-        if (number instanceof Byte || number instanceof Short || number instanceof Integer || number instanceof Long)
-        {
-            return new BigDecimal(number.longValue());
-        }
-        if (number instanceof Float || number instanceof Double)
-        {
-            return BigDecimal.valueOf(number.doubleValue());
-        }
-        try
-        {
-            return new BigDecimal(number.toString());
-        }
-        catch (NumberFormatException e)
-        {
-            throw new RuntimeException("The given number (\"" + number + "\" of class " + number.getClass().getName() + ") does not have a parsable string representation", e);
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -1314,26 +1287,13 @@ public class CompiledSupport
         return left + right;
     }
 
-    public static Number plus(Number left, Number right)
-    {
-        if (((left instanceof Long) || (left instanceof Integer)) && ((right instanceof Long) || (right instanceof Integer)))
-        {
-            return left.longValue() + right.longValue();
-        }
-        if ((left instanceof BigDecimal) || (right instanceof BigDecimal))
-        {
-            return toBigDecimal(left).add(toBigDecimal(right));
-        }
-        return left.doubleValue() + right.doubleValue();
-    }
-
     @SuppressWarnings("unchecked")
     public static <T extends Number> T plus(RichIterable<T> numbers)
     {
         Number sum = 0L;
         for (Number n : numbers)
         {
-            sum = plus(sum, n);
+            sum = PrimitiveUtilities.plus(sum, n);
         }
         return (T) sum;
     }
@@ -1369,7 +1329,7 @@ public class CompiledSupport
         }
         if ((left instanceof BigDecimal) || (right instanceof BigDecimal))
         {
-            return toBigDecimal(left).subtract(toBigDecimal(right));
+            return PrimitiveUtilities.toBigDecimal(left).subtract(PrimitiveUtilities.toBigDecimal(right));
         }
         return left.doubleValue() - right.doubleValue();
     }
@@ -1423,7 +1383,7 @@ public class CompiledSupport
         }
         if ((left instanceof BigDecimal) || (right instanceof BigDecimal))
         {
-            return toBigDecimal(left).multiply(toBigDecimal(right));
+            return PrimitiveUtilities.toBigDecimal(left).multiply(PrimitiveUtilities.toBigDecimal(right));
         }
         return left.doubleValue() * right.doubleValue();
     }
@@ -1449,7 +1409,7 @@ public class CompiledSupport
 
         if ((left instanceof BigDecimal) || (right instanceof BigDecimal))
         {
-            return toBigDecimal(left).divide(toBigDecimal(right), RoundingMode.HALF_UP).doubleValue();
+            return PrimitiveUtilities.toBigDecimal(left).divide(PrimitiveUtilities.toBigDecimal(right), RoundingMode.HALF_UP).doubleValue();
         }
 
         return left.doubleValue() / right.doubleValue();
@@ -1464,7 +1424,7 @@ public class CompiledSupport
     {
         if ((left instanceof BigDecimal) || (right instanceof BigDecimal))
         {
-            return toBigDecimal(left).compareTo(toBigDecimal(right)) < 0;
+            return PrimitiveUtilities.toBigDecimal(left).compareTo(PrimitiveUtilities.toBigDecimal(right)) < 0;
         }
 
         if (((left instanceof Long) || (left instanceof Integer)) && ((right instanceof Long) || (right instanceof Integer)))
@@ -1479,7 +1439,7 @@ public class CompiledSupport
     {
         if ((left instanceof BigDecimal) || (right instanceof BigDecimal))
         {
-            return toBigDecimal(left).compareTo(toBigDecimal(right)) <= 0;
+            return PrimitiveUtilities.toBigDecimal(left).compareTo(PrimitiveUtilities.toBigDecimal(right)) <= 0;
         }
 
         if (((left instanceof Long) || (left instanceof Integer)) && ((right instanceof Long) || (right instanceof Integer)))

@@ -29,6 +29,11 @@ Class meta::pure::functions::relation::FrameIntValue extends meta::pure::functio
     value : Integer[1];
 }
 
+Class meta::pure::functions::relation::FrameNumericValue extends meta::pure::functions::relation::FrameValue
+{
+    value : Number[1];
+}
+
 Class meta::pure::functions::relation::UnboundedFrameValue extends meta::pure::functions::relation::FrameValue
 {
 }
