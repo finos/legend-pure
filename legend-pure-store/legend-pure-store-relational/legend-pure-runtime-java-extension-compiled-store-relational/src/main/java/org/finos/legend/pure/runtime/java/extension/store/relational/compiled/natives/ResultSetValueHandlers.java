@@ -21,7 +21,6 @@ import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.map.mutable.primitive.IntObjectHashMap;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.tools.BinaryUtils;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
@@ -132,7 +131,7 @@ public final class ResultSetValueHandlers
 
 
     private static final MutableIntObjectMap<ResultSetValueHandler> HANDLERS = IntObjectHashMap.newMap();
-    private static Map<Integer, Map<String, ResultSetValueHandler>> DB_SPECIFIC_HANDLERS = new HashMap<>();
+    private static final Map<String, ResultSetValueHandler> DB_SPECIFIC_HANDLERS = new HashMap<>();
 
     static
     {
@@ -162,7 +161,7 @@ public final class ResultSetValueHandlers
         HANDLERS.put(Types.VARBINARY, BINARY);
         HANDLERS.put(Types.LONGVARBINARY, BINARY);
 
-        DB_SPECIFIC_HANDLERS.put(Types.JAVA_OBJECT, Collections.singletonMap("HUGEINT", LONG));
+        DB_SPECIFIC_HANDLERS.put("HUGEINT", LONG); // DuckDb
     }
 
 
@@ -183,22 +182,19 @@ public final class ResultSetValueHandlers
 
         for (int i = 1; i <= count; i++)
         {
-            ResultSetValueHandler handler = HANDLERS.get(metaData.getColumnType(i));
+            int columnType = metaData.getColumnType(i);
+            String columnTypeName = metaData.getColumnTypeName(i);
+
+            ResultSetValueHandler handler = DB_SPECIFIC_HANDLERS.getOrDefault(columnTypeName, HANDLERS.get(columnType));
 
             if (handler == null)
             {
-                ResultSetValueHandler handlerDbSpecific  = DB_SPECIFIC_HANDLERS.get(metaData.getColumnType(i)).get(metaData.getColumnTypeName(i));
-                if (handler == null && handlerDbSpecific == null)
-                {
-                    throw new PureExecutionException("Unhandled SQL data type (java.sql.Types): " + metaData.getColumnType(i) + ", column: " + i + " " + metaData.getColumnName(i) + " " + metaData.getColumnTypeName(i), Stacks.mutable.empty());
-                }
-                handlers.add(handlerDbSpecific);
+                throw new PureExecutionException("Unhandled SQL data type (java.sql.Types): " + columnType + ", column: " + i + " " + metaData.getColumnName(i) + " " + columnTypeName, Stacks.mutable.empty());
             }
-            else
-            {
-                handlers.add(handler);                              //core type handlers take preference
-            }
+
+            handlers.add(handler);
         }
+
         return handlers;
     }
 }
