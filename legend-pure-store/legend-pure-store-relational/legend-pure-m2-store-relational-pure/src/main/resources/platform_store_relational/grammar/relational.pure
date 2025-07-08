@@ -232,6 +232,7 @@ Class meta::relational::metamodel::relation::SelectSQLQuery extends Relation, SQ
    groupBy : RelationalOperationElement[*];
    pivot : Pivot[0..1];
    havingOperation : RelationalOperationElement[*];
+   qualifyOperation : RelationalOperationElement[*];
    orderBy : OrderBy[*];
    fromRow : meta::relational::metamodel::Literal[0..1];
    toRow : meta::relational::metamodel::Literal[0..1];
