@@ -1321,19 +1321,6 @@ public class CompiledSupport
         return -number;
     }
 
-    public static Number minus(Number left, Number right)
-    {
-        if ((left instanceof Long) && (right instanceof Long))
-        {
-            return left.longValue() - right.longValue();
-        }
-        if ((left instanceof BigDecimal) || (right instanceof BigDecimal))
-        {
-            return PrimitiveUtilities.toBigDecimal(left).subtract(PrimitiveUtilities.toBigDecimal(right));
-        }
-        return left.doubleValue() - right.doubleValue();
-    }
-
     @SuppressWarnings("unchecked")
     public static <T extends Number> T minus(ListIterable<T> numbers)
     {
@@ -1350,7 +1337,7 @@ public class CompiledSupport
             }
             default:
             {
-                return (T) numbers.injectInto((Number) null, (result, n) -> (result == null) ? n : minus(result, n));
+                return (T) numbers.injectInto((Number) null, (result, n) -> (result == null) ? n : PrimitiveUtilities.minus(result, n));
             }
         }
     }

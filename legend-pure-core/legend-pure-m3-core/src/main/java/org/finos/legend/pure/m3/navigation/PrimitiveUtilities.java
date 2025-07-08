@@ -375,6 +375,19 @@ public class PrimitiveUtilities
         return left.doubleValue() + right.doubleValue();
     }
 
+    public static Number minus(Number left, Number right)
+    {
+        if ((left instanceof Long) && (right instanceof Long))
+        {
+            return left.longValue() - right.longValue();
+        }
+        if ((left instanceof BigDecimal) || (right instanceof BigDecimal))
+        {
+            return toBigDecimal(left).subtract(toBigDecimal(right));
+        }
+        return left.doubleValue() - right.doubleValue();
+    }
+
     /**
      * Compare two numbers. Returns a negative value if left is less than right, positive if right is less than left,
      * or 0 if they are equal.
