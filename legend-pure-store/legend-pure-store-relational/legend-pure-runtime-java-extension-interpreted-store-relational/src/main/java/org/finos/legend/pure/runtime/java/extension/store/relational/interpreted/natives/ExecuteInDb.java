@@ -346,10 +346,21 @@ public class ExecuteInDb extends NativeFunction
                         case Types.LONGNVARCHAR:
                         case Types.OTHER:
                         {
-                            String string = rs.getString(i);
-                            if (string != null)
+                            if (metaData.getColumnTypeName(i).equals("HUGEINT"))      // DuckDB Specific datatype
                             {
-                                value = repository.newStringCoreInstance(string);
+                                long num = rs.getLong(i);
+                                if (!rs.wasNull())
+                                {
+                                    value = repository.newIntegerCoreInstance(num);
+                                }
+                            }
+                            else
+                            {
+                                String string = rs.getString(i);
+                                if (string != null)
+                                {
+                                    value = repository.newStringCoreInstance(string);
+                                }
                             }
                             break;
                         }
