@@ -41,7 +41,7 @@ public abstract class AbstractCompiledCoreInstance extends AbstractCoreInstance 
     @Override
     public void print(Appendable appendable, String tab, int max)
     {
-        SafeAppendable.wrap(appendable).append(tab).append(ConsoleCompiled.toString(this, max));
+        ConsoleCompiled.append(SafeAppendable.wrap(appendable).append(tab), this, max);
     }
 
     @Override
