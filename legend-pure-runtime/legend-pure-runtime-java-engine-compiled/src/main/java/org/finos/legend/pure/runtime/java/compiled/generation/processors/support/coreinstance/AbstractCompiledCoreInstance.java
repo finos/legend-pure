@@ -131,14 +131,4 @@ public abstract class AbstractCompiledCoreInstance extends AbstractCoreInstance 
         }
         return result;
     }
-
-    public ListIterable<String> getDefaultValueKeys()
-    {
-        return Lists.immutable.empty();
-    }
-
-    public RichIterable<?> getDefaultValue(String property, ExecutionSupport es)
-    {
-        return Lists.immutable.empty();
-    }
 }

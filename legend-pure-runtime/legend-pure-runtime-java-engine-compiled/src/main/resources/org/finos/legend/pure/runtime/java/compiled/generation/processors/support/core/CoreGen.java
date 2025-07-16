@@ -46,8 +46,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.LambdaCompiledExtended;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Pure;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.AbstractCompiledCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.GetterOverrideExecutor;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.JavaCompiledCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.QuantityCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureFunction2;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.PureFunction2Wrapper;
@@ -209,7 +209,7 @@ public class CoreGen extends CoreHelper
             result.add(kv);
             keys.add(kv._key());
         }
-        AbstractCompiledCoreInstance coreInstance = (AbstractCompiledCoreInstance) instance;
+        JavaCompiledCoreInstance coreInstance = (JavaCompiledCoreInstance) instance;
         for (String key : coreInstance.getDefaultValueKeys())
         {
             if (!keys.contains(key))
