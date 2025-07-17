@@ -36,6 +36,8 @@ import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 
+import java.util.Collection;
+
 public class _Class
 {
     public static final String KEY_STEREOTYPE = "Key";
@@ -103,9 +105,14 @@ public class _Class
 
     public static ListIterable<CoreInstance> getEqualityKeyProperties(CoreInstance classifier, ProcessorSupport processorSupport)
     {
+        return collectEqualityKeyProperties(classifier, processorSupport, Lists.mutable.empty());
+    }
+
+    public static <T extends Collection<CoreInstance>> T collectEqualityKeyProperties(CoreInstance classifier, ProcessorSupport processorSupport, T target)
+    {
         CoreInstance profile = processorSupport.package_getByUserPath(M3Paths.equality);
         CoreInstance stereotype = Profile.findStereotype(profile, KEY_STEREOTYPE);
-        return processorSupport.class_getSimpleProperties(classifier).select(p -> hasStereotype(p, stereotype, processorSupport), Lists.mutable.empty());
+        return processorSupport.class_getSimpleProperties(classifier).select(p -> hasStereotype(p, stereotype, processorSupport), target);
     }
 
     private static boolean hasStereotype(CoreInstance property, CoreInstance stereotype, ProcessorSupport processorSupport)
