@@ -121,11 +121,6 @@ public class TDSExtension implements InlineDSL
         return null;
     }
 
-    public static TDS<?> parse(String text, ProcessorSupport processorSupport)
-    {
-        return parse(text, (SourceInformation) null, processorSupport);
-    }
-
     public static TDS<?> parse(String text, String fileName, ProcessorSupport processorSupport)
     {
         return parse(text, (fileName == null) ? null : getSourceInfo(text, fileName, 0, 0), processorSupport);

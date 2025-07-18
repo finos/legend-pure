@@ -15,12 +15,13 @@
 package org.finos.legend.pure.runtime.java.extension.dsl.tds.compiled.natives;
 
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNativeFunctionGeneric;
 
 public class StringToTDS extends AbstractNativeFunctionGeneric
 {
     public StringToTDS()
     {
-        super("org.finos.legend.pure.runtime.java.extension.dsl.tds.compiled.TDSNativeImplementation.parse", new Class[]{String.class, ExecutionSupport.class}, false, true, false, "stringToTDS_String_1__TDS_1_");
+        super("org.finos.legend.pure.runtime.java.extension.dsl.tds.compiled.TDSNativeImplementation.parse", new Class[]{String.class, SourceInformation.class, ExecutionSupport.class}, true, true, false, "stringToTDS_String_1__TDS_1_");
     }
 }

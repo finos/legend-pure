@@ -157,7 +157,7 @@ public class GenericType
                                     processorSupport
                             ),
                     Lists.mutable.empty()
-            ), null, processorSupport));
+            ), rel.getSourceInformation(), processorSupport));
         }
 
         if (FunctionType.isFunctionType(Instance.getValueForMetaPropertyToOneResolved(typeArgument, M3Properties.rawType, processorSupport), processorSupport))
