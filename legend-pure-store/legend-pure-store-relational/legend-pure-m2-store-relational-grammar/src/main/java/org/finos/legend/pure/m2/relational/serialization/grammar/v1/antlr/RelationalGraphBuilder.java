@@ -23,8 +23,7 @@ import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.IRelationalParser;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.AssociationMappingContext;
-import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.BusinessMilestoningFromContext;
-import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.BussinessSnapshotDateContext;
+import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.BusinessMilestoningFromThruContext;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.ClassMappingContext;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.ColWithDbOrConstantContext;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.ColumnDefinitionContext;
@@ -1368,21 +1367,21 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
     @Override
     public String visitBusinessMilestoningInnerDefinition(org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.BusinessMilestoningInnerDefinitionContext ctx)
     {
-        if (ctx.businessMilestoningFrom() != null)
+        if (ctx.businessMilestoningFromThru() != null)
         {
-            return visitBusinessMilestoningFrom(ctx.businessMilestoningFrom());
+            return visitBusinessMilestoningFromThru(ctx.businessMilestoningFromThru());
         }
-        return visitBussinessSnapshotDate(ctx.bussinessSnapshotDate());
+        return visitBusinessSnapshotDate(ctx.businessSnapshotDate());
     }
 
     @Override
-    public String visitBusinessMilestoningFrom(BusinessMilestoningFromContext ctx)
+    public String visitBusinessMilestoningFromThru(BusinessMilestoningFromThruContext ctx)
     {
         return "^meta::relational::metamodel::relation::BusinessMilestoning(from='" + ctx.identifier(0).getText() + "', thru='" + ctx.identifier(1).getText() + "', thruIsInclusive = " + (ctx.THRU_IS_INCLUSIVE() == null ? false : ctx.BOOLEAN().getText()) + (ctx.INFINITY_DATE() == null ? "" : ", infinityDate=" + ctx.DATE().getText()) + ")";
     }
 
     @Override
-    public String visitBussinessSnapshotDate(BussinessSnapshotDateContext ctx)
+    public String visitBusinessSnapshotDate(RelationalParser.BusinessSnapshotDateContext ctx)
     {
         return "^meta::relational::metamodel::relation::BusinessSnapshotMilestoning(snapshotDate = '" + ctx.identifier().getText() + "')";
     }
@@ -1390,6 +1389,22 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
     @Override
     public String visitProcessingMilestoningInnerDefinition(org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.ProcessingMilestoningInnerDefinitionContext ctx)
     {
+        if (ctx.processingMilestoningInOut() != null)
+        {
+            return visitProcessingMilestoningInOut(ctx.processingMilestoningInOut());
+        }
+        return visitProcessingSnapshotDate(ctx.processingSnapshotDate());
+    }
+
+    @Override
+    public String visitProcessingMilestoningInOut(RelationalParser.ProcessingMilestoningInOutContext ctx)
+    {
         return "^meta::relational::metamodel::relation::ProcessingMilestoning(in='" + ctx.identifier(0).getText() + "', out='" + ctx.identifier(1).getText() + "', outIsInclusive = " + (ctx.OUT_IS_INCLUSIVE() == null ? false : ctx.BOOLEAN().getText()) + (ctx.INFINITY_DATE() == null ? "" : ", infinityDate=" + ctx.DATE().getText()) + ")";
+    }
+
+    @Override
+    public String visitProcessingSnapshotDate(RelationalParser.ProcessingSnapshotDateContext ctx)
+    {
+        return "^meta::relational::metamodel::relation::ProcessingSnapshotMilestoning(snapshotDate = '" + ctx.identifier().getText() + "')";
     }
 }
