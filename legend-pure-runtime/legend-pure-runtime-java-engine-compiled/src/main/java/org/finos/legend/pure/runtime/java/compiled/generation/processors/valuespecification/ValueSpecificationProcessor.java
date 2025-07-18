@@ -256,13 +256,10 @@ public class ValueSpecificationProcessor
 
     public static String processLambda(CoreInstance topLevelElement, CoreInstance function, ProcessorSupport processorSupport, ProcessorContext processorContext)
     {
-
         String pureFunctionString = createFunctionForLambda(topLevelElement, function, processorSupport, processorContext);
-        String lambdaFunctionString = (processorContext.isInLineAllLambda() ?
-                "(" + FullJavaPaths.LambdaFunction + ")localLambdas.get(" + System.identityHashCode(function) + ")" :
-                "((CompiledExecutionSupport)es).getMetadataAccessor().getLambdaFunction(\"" + processorContext.getIdBuilder().buildId(function) + "\")");
-
-        return "new PureCompiledLambda(\n(" + lambdaFunctionString + "\n), (\n" + pureFunctionString + "\n))\n";
+        return processorContext.isInLineAllLambda() ?
+               ("new PureCompiledLambda((" + FullJavaPaths.LambdaFunction + ")localLambdas.get(" + System.identityHashCode(function) + "), " + pureFunctionString + ")") :
+               ("new PureCompiledLambda(es, \"" + processorContext.getIdBuilder().buildId(function) + "\", " + pureFunctionString + ")");
     }
 
     public static String createFunctionForLambda(CoreInstance topLevelElement, CoreInstance function, ProcessorSupport processorSupport, ProcessorContext processorContext)

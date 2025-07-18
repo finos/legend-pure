@@ -64,7 +64,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
-import java.util.Stack;
 
 public class CoreGen extends CoreHelper
 {
