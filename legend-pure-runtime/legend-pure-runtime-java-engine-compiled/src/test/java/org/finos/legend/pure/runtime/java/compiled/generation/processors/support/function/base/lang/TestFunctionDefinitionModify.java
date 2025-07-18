@@ -27,7 +27,7 @@ public class TestFunctionDefinitionModify extends AbstractTestFunctionDefinition
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getFunctionExecution(), AbstractTestFunctionDefinitionModify.getCodeStorage(), JavaModelFactoryRegistryLoader.loader());
+        setUpRuntime(getFunctionExecution(), AbstractTestFunctionDefinitionModify.getCodeStorage(), JavaModelFactoryRegistryLoader.loader(), getExtra());
     }
 
     protected static FunctionExecution getFunctionExecution()

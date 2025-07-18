@@ -24,7 +24,7 @@ public class TestFunctionDefinitionModify extends AbstractTestFunctionDefinition
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getFunctionExecution(), getCodeStorage());
+        setUpRuntime(getFunctionExecution(), getCodeStorage(), getExtra());
     }
 
     protected static FunctionExecution getFunctionExecution()
