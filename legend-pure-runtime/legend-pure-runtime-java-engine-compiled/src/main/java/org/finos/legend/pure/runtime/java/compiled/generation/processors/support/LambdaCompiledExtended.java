@@ -15,9 +15,10 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support;
 
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.JavaCompiledCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction;
 
-public interface LambdaCompiledExtended extends LambdaFunction<Object>
+public interface LambdaCompiledExtended<T> extends LambdaFunction<T>, JavaCompiledCoreInstance
 {
-    SharedPureFunction<Object> pureFunction();
+    SharedPureFunction<? extends T> pureFunction();
 }
