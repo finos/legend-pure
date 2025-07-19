@@ -76,9 +76,17 @@ Class meta::relational::metamodel::relation::BusinessMilestoning extends Tempora
    thruIsInclusive : Boolean[1];
 }
 
-Class meta::relational::metamodel::relation::BusinessSnapshotMilestoning extends TemporalMilestoning
+Class meta::relational::metamodel::relation::TemporalSnapshotMilestoning extends TemporalMilestoning
 {
    snapshotDate : Column[1];
+}
+
+Class meta::relational::metamodel::relation::BusinessSnapshotMilestoning extends TemporalSnapshotMilestoning
+{
+}
+
+Class meta::relational::metamodel::relation::ProcessingSnapshotMilestoning extends TemporalSnapshotMilestoning
+{
 }
 
 Class meta::relational::metamodel::relation::Table extends NamedRelation, AnnotatedElement

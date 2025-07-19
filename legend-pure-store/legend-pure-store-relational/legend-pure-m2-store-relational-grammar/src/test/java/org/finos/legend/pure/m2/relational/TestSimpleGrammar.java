@@ -32,6 +32,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.relational.mapping.RelationalI
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.BusinessSnapshotMilestoning;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.Milestoning;
+import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.ProcessingSnapshotMilestoning;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -142,7 +143,33 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
     }
 
     @Test
-    public void testSnapshotDateColumnType()
+    public void testTableWithProcessingSnapshotMilestoning()
+    {
+        runtime.createInMemorySource("test.pure", "###Relational\n" +
+                "Database pack::ProductDatabase (\n" +
+                "   Table ProductTable\n" +
+                "   (\n" +
+                "       milestoning( \n" +
+                "          processing(PROCESSING_SNAPSHOT_DATE = snapshotDate)\n" +
+                "       )" +
+                "       id INT PRIMARY KEY,\n" +
+                "       name VARCHAR(200),\n" +
+                "       snapshotDate Date\n" +
+                "   )\n" +
+                ")\n");
+        runtime.compile();
+
+        Database productDatabase = (Database) runtime.getCoreInstance("pack::ProductDatabase");
+        RichIterable<? extends Milestoning> milestonings = productDatabase._schemas().toList().get(0)._tables().toList().get(0)._milestoning().selectInstancesOf(ProcessingSnapshotMilestoning.class);
+        Assert.assertEquals(1, milestonings.size());
+        Assert.assertTrue(milestonings.toList().get(0) instanceof ProcessingSnapshotMilestoning);
+        ProcessingSnapshotMilestoning processingSnapshotMilestoning = (ProcessingSnapshotMilestoning) milestonings.toList().get(0);
+        Assert.assertEquals("snapshotDate", processingSnapshotMilestoning._snapshotDate()._name());
+        Assert.assertNull(processingSnapshotMilestoning._infinityDate());
+    }
+
+    @Test
+    public void testBusinessSnapshotDateColumnType()
     {
         runtime.createInMemorySource("test.pure", "###Relational\n" +
                 "Database pack::ProductDatabase (\n" +
@@ -158,6 +185,25 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 ")\n");
         PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
         Assert.assertEquals("Compilation error at (resource:test.pure line:9 column:8), \"Column set as BUS_SNAPSHOT_DATE can only be of type : [Date]\"", e.getMessage());
+    }
+
+    @Test
+    public void testProcessingSnapshotDateColumnType()
+    {
+        runtime.createInMemorySource("test.pure", "###Relational\n" +
+                "Database pack::ProductDatabase (\n" +
+                "   Table ProductTable\n" +
+                "   (\n" +
+                "       milestoning( \n" +
+                "          processing(PROCESSING_SNAPSHOT_DATE = snapshotDate)\n" +
+                "       )" +
+                "       id INT PRIMARY KEY,\n" +
+                "       name VARCHAR(200),\n" +
+                "       snapshotDate Timestamp\n" +
+                "   )\n" +
+                ")\n");
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:test.pure line:9 column:8), \"Column set as PROCESSING_SNAPSHOT_DATE can only be of type : [Date]\"", e.getMessage());
     }
 
     @Test
@@ -506,7 +552,7 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "   )\n" +
                 ")\n");
         PureParserException e1 = Assert.assertThrows(PureParserException.class, runtime::compile);
-        Assert.assertEquals("Parser error at (resource:test.pure line:6 column:20), expected: one of {'BUS_FROM', 'BUS_SNAPSHOT_DATE', 'processing'} found: 'INFINITY_DATE'", e1.getMessage());
+        Assert.assertEquals("Parser error at (resource:test.pure line:6 column:20), expected: one of {'BUS_FROM', 'BUS_SNAPSHOT_DATE'} found: 'INFINITY_DATE'", e1.getMessage());
 
         runtime.modify("test.pure", "###Relational\n" +
                 "Database pack::ProductDatabase (\n" +
@@ -553,7 +599,7 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "   )\n" +
                 ")\n");
         PureParserException e4 = Assert.assertThrows(PureParserException.class, runtime::compile);
-        Assert.assertEquals("Parser error at (resource:test.pure line:6 column:20), expected: one of {'BUS_FROM', 'BUS_SNAPSHOT_DATE', 'processing'} found: ','", e4.getMessage());
+        Assert.assertEquals("Parser error at (resource:test.pure line:6 column:20), expected: one of {'BUS_FROM', 'BUS_SNAPSHOT_DATE'} found: ','", e4.getMessage());
 
         runtime.modify("test.pure", "###Relational\n" +
                 "Database pack::ProductDatabase (\n" +
@@ -568,7 +614,88 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "   )\n" +
                 ")\n");
         PureParserException e5 = Assert.assertThrows(PureParserException.class, runtime::compile);
-        Assert.assertEquals("Parser error at (resource:test.pure line:6 column:20), expected: one of {'BUS_FROM', 'BUS_SNAPSHOT_DATE', 'processing'} found: 'bus_snapshot_date'", e5.getMessage());
+        Assert.assertEquals("Parser error at (resource:test.pure line:6 column:20), expected: one of {'BUS_FROM', 'BUS_SNAPSHOT_DATE'} found: 'bus_snapshot_date'", e5.getMessage());
+    }
+
+    @Test
+    public void testProcessingSnapshotMilestoningSyntax()
+    {
+        runtime.createInMemorySource("test.pure", "###Relational\n" +
+                "Database pack::ProductDatabase (\n" +
+                "   Table ProductTable\n" +
+                "   (\n" +
+                "       milestoning( \n" +
+                "          processing(INFINITY_DATE=%9999-12-31, PROCESSING_SNAPSHOT_DATE = snapshotDate)\n" +
+                "       )" +
+                "       id INT PRIMARY KEY,\n" +
+                "       name VARCHAR(200),\n" +
+                "       snapshotDate Date\n" +
+                "   )\n" +
+                ")\n");
+        PureParserException e1 = Assert.assertThrows(PureParserException.class, runtime::compile);
+        Assert.assertEquals("Parser error at (resource:test.pure line:6 column:22), expected: one of {'PROCESSING_IN', 'PROCESSING_SNAPSHOT_DATE'} found: 'INFINITY_DATE'", e1.getMessage());
+
+        runtime.modify("test.pure", "###Relational\n" +
+                "Database pack::ProductDatabase (\n" +
+                "   Table ProductTable\n" +
+                "   (\n" +
+                "       milestoning( \n" +
+                "          processing(PROCESSING_SNAPSHOT_DATE = snapshotDate, INFINITY_DATE=%9999-12-31, )\n" +
+                "       )" +
+                "       id INT PRIMARY KEY,\n" +
+                "       name VARCHAR(200),\n" +
+                "       snapshotDate Date\n" +
+                "   )\n" +
+                ")\n");
+        runtime.compile(); // parser can auto-correct this syntax error
+//        PureParserException e2 = Assert.assertThrows(PureParserException.class, runtime::compile);
+//        Assert.assertEquals("expected: ')' found: ','", e2.getMessage());
+
+        runtime.modify("test.pure", "###Relational\n" +
+                "Database pack::ProductDatabase (\n" +
+                "   Table ProductTable\n" +
+                "   (\n" +
+                "       milestoning( \n" +
+                "          processing(PROCESSING_SNAPSHOT_DATE = snapshotDate, )\n" +
+                "       )" +
+                "       id INT PRIMARY KEY,\n" +
+                "       name VARCHAR(200),\n" +
+                "       snapshotDate Date\n" +
+                "   )\n" +
+                ")\n");
+        runtime.compile(); // parser can auto-correct this syntax error
+//        PureParserException e3 = Assert.assertThrows(PureParserException.class, runtime::compile);
+//        Assert.assertEquals("expected: \")\" found: \",\"", e3.getMessage());
+
+        runtime.modify("test.pure", "###Relational\n" +
+                "Database pack::ProductDatabase (\n" +
+                "   Table ProductTable\n" +
+                "   (\n" +
+                "       milestoning( \n" +
+                "          processing(, PROCESSING_SNAPSHOT_DATE = snapshotDate)\n" +
+                "       )" +
+                "       id INT PRIMARY KEY,\n" +
+                "       name VARCHAR(200),\n" +
+                "       snapshotDate Date\n" +
+                "   )\n" +
+                ")\n");
+        PureParserException e4 = Assert.assertThrows(PureParserException.class, runtime::compile);
+        Assert.assertEquals("Parser error at (resource:test.pure line:6 column:22), expected: one of {'PROCESSING_IN', 'PROCESSING_SNAPSHOT_DATE'} found: ','", e4.getMessage());
+
+        runtime.modify("test.pure", "###Relational\n" +
+                "Database pack::ProductDatabase (\n" +
+                "   Table ProductTable\n" +
+                "   (\n" +
+                "       milestoning( \n" +
+                "          processing(processing_snapshot_date = snapshotDate)\n" +
+                "       )" +
+                "       id INT PRIMARY KEY,\n" +
+                "       name VARCHAR(200),\n" +
+                "       snapshotDate Date\n" +
+                "   )\n" +
+                ")\n");
+        PureParserException e5 = Assert.assertThrows(PureParserException.class, runtime::compile);
+        Assert.assertEquals("Parser error at (resource:test.pure line:6 column:22), expected: one of {'PROCESSING_IN', 'PROCESSING_SNAPSHOT_DATE'} found: 'processing_snapshot_date'", e5.getMessage());
     }
 
     @Test
