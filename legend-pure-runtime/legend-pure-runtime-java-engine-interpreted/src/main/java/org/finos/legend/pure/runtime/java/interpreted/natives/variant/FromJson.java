@@ -44,6 +44,6 @@ public class FromJson extends NativeFunction
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         String json = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport));
-        return ValueSpecificationBootstrap.wrapValueSpecification(VariantInstanceImpl.newVariant(json, this.repository, processorSupport), true, processorSupport);
+        return ValueSpecificationBootstrap.wrapValueSpecification(VariantInstanceImpl.newVariant(json, functionExpressionCallStack.peek().getSourceInformation(), processorSupport), true, processorSupport);
     }
 }
