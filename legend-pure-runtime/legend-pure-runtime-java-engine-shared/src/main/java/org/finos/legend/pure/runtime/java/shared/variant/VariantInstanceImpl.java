@@ -43,9 +43,9 @@ public class VariantInstanceImpl extends VariantCoreInstanceWrapper
     }
 
     @Override
-    public String getName()
+    public String toString()
     {
-        return this.jsonNode.toString();
+        return super.getName();
     }
 
     @Override
