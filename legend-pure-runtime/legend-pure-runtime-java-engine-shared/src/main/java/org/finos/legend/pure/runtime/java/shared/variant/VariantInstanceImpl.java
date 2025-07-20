@@ -43,6 +43,12 @@ public class VariantInstanceImpl extends VariantCoreInstanceWrapper
     }
 
     @Override
+    public String getName()
+    {
+        return this.jsonNode.toString();
+    }
+
+    @Override
     public Variant copy()
     {
         return new VariantInstanceImpl(this.jsonNode.deepCopy(), ((Variant) this.instance).copy());
