@@ -113,8 +113,9 @@ public class PCTTools
     private static String cleanMessage(String message)
     {
         message = checkNullMessage(message);
-        boolean shouldCut = message.contains("Execution error at ") || message.contains("Assert failure at ");
-        message = shouldCut ? message.substring(message.indexOf("\"")) : message;
+        int quotes = message.indexOf("\"");
+        boolean shouldCut = quotes > -1 && (message.contains("Execution error at ") || message.contains("Assert failure at "));
+        message = shouldCut ? message.substring(quotes) : message;
         return message.replace("\"", "\\\"").replace("\n", "\\n");
     }
 
