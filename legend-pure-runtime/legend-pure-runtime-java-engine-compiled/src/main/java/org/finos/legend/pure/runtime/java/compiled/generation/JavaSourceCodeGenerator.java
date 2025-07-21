@@ -521,22 +521,6 @@ public final class JavaSourceCodeGenerator
                 "    {\n" +
                 "        super(executionSupport, lambdaId, pureFunction);\n" +
                 "    }\n" +
-                "\n" +
-                "    public String __id()\n" +
-                "    {\n" +
-                "        LambdaFunction lf = lambdaFunction();\n" +
-                "        return lf == null ? \"Anonymous_Lambda\" : lf.getName();\n" +
-                "    }\n" +
-                "    \n" +
-                "    public PureCompiledLambda copy()\n" +
-                "    {\n" +
-                "        return new PureCompiledLambda(lambdaFunction().copy(), pureFunction());\n" +
-                "    }\n" +
-                "\n" +
-                "    public static SharedPureFunction getPureFunction(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> function, ExecutionSupport es)\n" +
-                "    {\n" +
-                "        return (function == null) ? null : CoreGen.getSharedPureFunction(function, es);\n" +
-                "    }\n" +
                 this.processorSupport.class_getSimpleProperties(this.processorSupport.package_getByUserPath(M3Paths.LambdaFunction)).toSortedListBy(CoreInstance::getName).collect(prop ->
                 {
                     CoreInstance functionType = this.processorSupport.function_getFunctionType(prop);
@@ -546,11 +530,11 @@ public final class JavaSourceCodeGenerator
                     return buildDelegationReadProperty(prop, "LambdaFunction", "lambdaFunction()", true, "", Property.getPropertyName(prop), returnType, unresolvedReturnType, multiplicity, this.processorSupport, processorContext);
                 }).makeString("", "\n", "\n") +
                 "\n" +
-                "    public String getFullSystemPath()\n" +
+                "    public static SharedPureFunction getPureFunction(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> function, ExecutionSupport es)\n" +
                 "    {\n" +
-                "        return \"Root::" + M3Paths.LambdaFunction + "\";\n" +
+                "        return (function == null) ? null : CoreGen.getSharedPureFunction(function, es);\n" +
                 "    }\n" +
-                "}";
+                "}\n";
     }
 
     public static String buildDelegationReadProperty(CoreInstance property, String className, String owner, String classOwnerFullId, String name, CoreInstance returnType,

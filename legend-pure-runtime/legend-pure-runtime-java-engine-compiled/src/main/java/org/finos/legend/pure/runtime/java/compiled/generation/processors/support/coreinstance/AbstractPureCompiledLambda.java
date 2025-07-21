@@ -19,6 +19,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -257,5 +258,19 @@ public abstract class AbstractPureCompiledLambda<T> extends AbstractCompiledCore
     public void validate(MutableSet<CoreInstance> doneList) throws PureCompilationException
     {
         lambdaFunction().validate(doneList);
+    }
+
+    @Override
+    public LambdaFunction<T> copy()
+    {
+        LambdaFunction<T> copy = lambdaFunction().copy();
+        copy.setName("Anonymous_Lambda");
+        return copy;
+    }
+
+    @Override
+    public String getFullSystemPath()
+    {
+        return "Root::" + M3Paths.LambdaFunction;
     }
 }
