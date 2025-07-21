@@ -306,28 +306,28 @@ milestoningDefinition:
     GROUP_CLOSE
 ;
 
-milestoningContent: (identifier | EQUAL | COMMA | BUSINESS_MILESTONING_FROM | BUSINESS_MILESTONING_THRU | THRU_IS_INCLUSIVE | INFINITY_DATE | BUS_SNAPSHOT_DATE | PROCESSING_MILESTONING_IN | PROCESSING_MILESTONING_OUT | OUT_IS_INCLUSIVE | DATE | BOOLEAN)*
+milestoningContent: (identifier | EQUAL | COMMA | BUSINESS_MILESTONING_FROM | BUSINESS_MILESTONING_THRU | THRU_IS_INCLUSIVE | INFINITY_DATE | BUS_SNAPSHOT_DATE | PROCESSING_MILESTONING_IN | PROCESSING_MILESTONING_OUT | OUT_IS_INCLUSIVE | PROCESSING_SNAPSHOT_DATE | DATE | BOOLEAN)*
 ;
 
-businessMilestoningInnerDefinition: (businessMilestoningFrom | bussinessSnapshotDate | processingMilestoningDefinition)
+businessMilestoningInnerDefinition: (businessMilestoningFromThru | businessSnapshotDate)
 ;
 
-businessMilestoningFrom:    BUSINESS_MILESTONING_FROM EQUAL identifier COMMA BUSINESS_MILESTONING_THRU EQUAL identifier
+businessMilestoningFromThru:    BUSINESS_MILESTONING_FROM EQUAL identifier COMMA BUSINESS_MILESTONING_THRU EQUAL identifier
                                 (COMMA ((THRU_IS_INCLUSIVE EQUAL BOOLEAN (COMMA INFINITY_DATE EQUAL DATE)?) | (INFINITY_DATE EQUAL DATE)) )?
 ;
 
-bussinessSnapshotDate:      BUS_SNAPSHOT_DATE EQUAL identifier
+businessSnapshotDate:           BUS_SNAPSHOT_DATE EQUAL identifier
 ;
 
-processingMilestoningDefinition:        PROCESSING_MILESTONING
-                                        GROUP_OPEN
-                                            processingMilestoningInnerDefinition
-                                        GROUP_CLOSE
+processingMilestoningInnerDefinition: (processingMilestoningInOut | processingSnapshotDate)
 ;
 
-processingMilestoningInnerDefinition: PROCESSING_MILESTONING_IN EQUAL identifier COMMA
-                                      PROCESSING_MILESTONING_OUT EQUAL identifier
-                                      (COMMA ((OUT_IS_INCLUSIVE EQUAL BOOLEAN (COMMA INFINITY_DATE EQUAL DATE)?) | (INFINITY_DATE EQUAL DATE)))?
+processingMilestoningInOut:     PROCESSING_MILESTONING_IN EQUAL identifier COMMA
+                                PROCESSING_MILESTONING_OUT EQUAL identifier
+                                (COMMA ((OUT_IS_INCLUSIVE EQUAL BOOLEAN (COMMA INFINITY_DATE EQUAL DATE)?) | (INFINITY_DATE EQUAL DATE)))?
+;
+
+processingSnapshotDate:         PROCESSING_SNAPSHOT_DATE EQUAL identifier
 ;
 
 relationalIdentifier: identifier | QUOTED_STRING
