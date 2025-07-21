@@ -15,6 +15,8 @@
 package org.finos.legend.pure.m3.tests.function;
 
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableRepositoryCodeStorage;
@@ -28,72 +30,6 @@ import org.junit.Test;
 
 public abstract class AbstractTestFunctionDefinitionModify extends AbstractPureTestWithCoreCompiled
 {
-    private static final String DECLARATION = "" +
-            "function performCompare(origLambda : FunctionDefinition<{String[1]->String[1]}>[1], \n" +
-            "                   mutator : FunctionDefinition<{FunctionDefinition<{String[1]->String[1]}>[1],\n" +
-            "                                                 FunctionDefinition<{String[1]->String[1]}>[1]\n" +
-            "                                                 ->FunctionDefinition<{String[1]->String[1]}>[1]\n" +
-            "                                               }>[1],\n" +
-            "                   expectedLambda : FunctionDefinition<{String[1]->String[1]}>[1]):Boolean[1]\n" +
-            "{ \n" +
-            "    if($origLambda->openVariableValues()->keyValues()->isEmpty(), " +
-            "         | ''," +
-            "         | print('WARNING: Copy/clone of lambdas with open variables fully supported, failures may occur', 1)" +
-            "         );\n" +
-            "  \n" +
-            "  let newLambda = $mutator->eval($origLambda, $expectedLambda);\n" +
-            "  \n" +
-            "  let inputVal = 'hello';\n" +
-            "\n" +
-            "  print('Evaluating $origLambda\\n', 1);\n" +
-            "  let resultOrigLambda = $origLambda->eval($inputVal);\n" +
-            "  print('Evaluating $expectedLambda\\n', 1);\n" +
-            "  let resultExpectedLambda = $expectedLambda->eval($inputVal);\n" +
-            "  print('Evaluating $newLambda\\n', 1);\n" +
-            "  let resultNewLambda = $newLambda->eval($inputVal);\n" +
-            "\n" +
-            "  print('$resultOrigLambda: ' + $resultOrigLambda + '\\n', 1);\n" +
-            "  print('$resultExpectedLambda: ' + $resultExpectedLambda + '\\n', 1);\n" +
-            "  print('$resultNewLambda: ' + $resultNewLambda + '\\n', 1);\n" +
-            "  print('$resultOrigLambda sourceInformation: ', 1);\n" +
-            "  print($resultOrigLambda->sourceInformation(), 1);\n" +
-            "  print('$resultNewLambda sourceInformation: ', 1);\n" +
-            "  print($resultNewLambda->sourceInformation(), 1);\n" +
-            "\n" +
-            "  //if($resultNewLambda == $resultOrigLambda,\n" +
-            "  //     | fail('Modified lambda result not changed, got original: \\'' + $resultOrigLambda +  '\\''),\n" +
-            "  //     | true);\n" +
-            "\n" +
-            "  if($resultNewLambda != $resultExpectedLambda,\n" +
-            "       | fail('Modified lambda result not as expected, expected: \\'' + $resultExpectedLambda +  '\\' got: \\'' + $resultNewLambda +  '\\''),\n" +
-            "       | true);\n" +
-            "}\n" +
-            "\n" +
-            "\n" +
-            "function test::hierarchicalProperties(class:Class<Any>[1]):Property<Nil,Any|*>[*]\n" +
-            "{\n" +
-            "   if($class==Any,\n" +
-            "      | [],\n" +
-            "      | $class.properties->concatenate($class.generalizations->map(g| test::hierarchicalProperties($g.general.rawType->cast(@Class<Any>)->toOne())))->removeDuplicates()\n" +
-            "   );\n" +
-            "}\n" +
-            "\n" +
-            "function modifyExpressionSequenceWithDynamicNew<T>(fd:FunctionDefinition<T>[1], es : ValueSpecification[1..*]) : FunctionDefinition<T>[1]\n" +
-            "{\n" +
-            "    let genericType = ^KeyValue(key='classifierGenericType', value= $fd.classifierGenericType);\n" +
-            "\n" +
-            "    let fdClass = $fd->type()->cast(@Class<Any>);\n" +
-            "    let properties = $fdClass->test::hierarchicalProperties()->map(p|\n" +
-            "      if($p.name == 'expressionSequence', \n" +
-            "        | ^KeyValue(key=$p.name->toOne(), value= $es), \n" +
-            "        | ^KeyValue(key=$p.name->toOne(), value= $p->eval($fd))\n" +
-            "        );\n" +
-            "      );\n" +
-            "\n" +
-            "    dynamicNew($fd.classifierGenericType->toOne(), $properties->concatenate($genericType))->cast($fd);\n" +
-            "}\n" +
-            "\n";
-
     @After
     public void cleanRuntime()
     {
@@ -105,12 +41,14 @@ public abstract class AbstractTestFunctionDefinitionModify extends AbstractPureT
     public void testConcreteFunctionDefinitionModifyWithCopyConstructor()
     {
         compileTestSource("testSource.pure",
-                DECLARATION
-                        + "function xx::myFunc(s : String[1]) : String[1] { 'answer: ' + $s; }\n"
-                        + "\n"
-                        + "function test():Any[*] \n{"
-                        + "\n"
-                        + "  let origFunc = xx::myFunc_String_1__String_1_;\n" +
+                "function xx::myFunc(s : String[1]) : String[1]\n" +
+                        "{\n" +
+                        "  'answer: ' + $s;\n" +
+                        "}\n" +
+                        "\n" +
+                        "function test():Any[*]\n" +
+                        "{\n" +
+                        "  let origFunc = xx::myFunc_String_1__String_1_;\n" +
                         "  let replacementLambda = {s:String[1]|'not your input:' + $s};\n" +
                         "  let replacementLambda2 = {s:String[1]|'not your input2:' + $s};\n" +
                         "  \n" +
@@ -120,8 +58,7 @@ public abstract class AbstractTestFunctionDefinitionModify extends AbstractPureT
                         "\n" +
                         "  performCompare($origFunc, $mutator, $replacementLambda);\n" +
                         "  performCompare($origFunc, $mutator, $replacementLambda2);\n" +
-                        "\n"
-                        + "}\n");
+                        "}\n");
 
         CoreInstance func = runtime.getFunction("test():Any[*]");
         functionExecution.start(func, Lists.immutable.empty());
@@ -131,12 +68,14 @@ public abstract class AbstractTestFunctionDefinitionModify extends AbstractPureT
     public void testConcreteFunctionDefinitionModifyWithDynamicNew()
     {
         compileTestSource("testSource.pure",
-                DECLARATION
-                        + "function xx::myFunc(s : String[1]) : String[1] { 'answer: ' + $s; }\n"
-                        + "\n"
-                        + "function test():Any[*] \n{"
-                        + "\n"
-                        + "  let origFunc = xx::myFunc_String_1__String_1_;\n" +
+                "function xx::myFunc(s : String[1]) : String[1]\n" +
+                        "{\n" +
+                        "  'answer: ' + $s;\n" +
+                        "}\n" +
+                        "\n" +
+                        "function test():Any[*]\n" +
+                        "{\n" +
+                        "  let origFunc = xx::myFunc_String_1__String_1_;\n" +
                         "  let replacementLambda = {s:String[1]|'not your input:' + $s};\n" +
                         "  let replacementLambda2 = {s:String[1]|'not your input2:' + $s};\n" +
                         "  \n" +
@@ -146,8 +85,7 @@ public abstract class AbstractTestFunctionDefinitionModify extends AbstractPureT
                         "\n" +
                         "  performCompare($origFunc, $mutator, $replacementLambda);\n" +
                         "  performCompare($origFunc, $mutator, $replacementLambda2);\n" +
-                        "\n"
-                        + "}\n");
+                        "}\n");
 
         CoreInstance func = runtime.getFunction("test():Any[*]");
         functionExecution.start(func, Lists.immutable.empty());
@@ -157,10 +95,9 @@ public abstract class AbstractTestFunctionDefinitionModify extends AbstractPureT
     public void testLambdaModifyWithCopyConstructor()
     {
         compileTestSource("testSource.pure",
-                DECLARATION
-                        + "function test():Any[*] \n{"
-                        + "\n"
-                        + "  let origLambda = {s:String[1]|'answer: ' + $s};\n" +
+                "function test():Any[*]\n" +
+                        "{\n" +
+                        "  let origLambda = {s:String[1]|'answer: ' + $s};\n" +
                         "  let replacementLambda = {s:String[1]|'not your input:' + $s};\n" +
                         "  let replacementLambda2 = {s:String[1]|'not your input2:' + $s};\n" +
                         "  \n" +
@@ -170,8 +107,7 @@ public abstract class AbstractTestFunctionDefinitionModify extends AbstractPureT
                         "\n" +
                         "  performCompare($origLambda, $mutator, $replacementLambda);\n" +
                         "  performCompare($origLambda, $mutator, $replacementLambda2);\n" +
-                        "\n"
-                        + "}\n");
+                        "}\n");
 
         CoreInstance func = runtime.getFunction("test():Any[*]");
         functionExecution.start(func, Lists.immutable.empty());
@@ -182,9 +118,8 @@ public abstract class AbstractTestFunctionDefinitionModify extends AbstractPureT
     public void testLambdaCloneWithDynamicNew()
     {
         compileTestSource("testSource.pure",
-                DECLARATION
-                        + "function test():Any[*] \n{"
-                        + "\n" +
+                "function test():Any[*]\n" +
+                        "{\n" +
                         "  let openVarValue = 'xyz';\n" +
                         "  \n" +
                         "  let origLambda = {s:String[1]|'answer: ' + $openVarValue + '/' + $s};\n" +
@@ -194,8 +129,7 @@ public abstract class AbstractTestFunctionDefinitionModify extends AbstractPureT
                         "    };\n" +
                         "\n" +
                         "  performCompare($origLambda, $mutator, $origLambda);\n" +
-                        "\n"
-                        + "}\n");
+                        "}\n");
 
         CoreInstance func = runtime.getFunction("test():Any[*]");
         functionExecution.start(func, Lists.immutable.empty());
@@ -206,9 +140,8 @@ public abstract class AbstractTestFunctionDefinitionModify extends AbstractPureT
     public void testLambdaCloneWithCopyConstructor()
     {
         compileTestSource("testSource.pure",
-                DECLARATION
-                        + "function test():Any[*] \n{"
-                        + "\n" +
+                "function test():Any[*]\n" +
+                        "{\n" +
                         "  let openVarValue = 'xyz';\n" +
                         "  \n" +
                         "  let origLambda = {s:String[1]|'answer: ' + $openVarValue + '/' + $s};\n" +
@@ -218,8 +151,7 @@ public abstract class AbstractTestFunctionDefinitionModify extends AbstractPureT
                         "    };\n" +
                         "\n" +
                         "  performCompare($origLambda, $mutator, $origLambda);\n" +
-                        "\n"
-                        + "}\n");
+                        "}\n");
 
         CoreInstance func = runtime.getFunction("test():Any[*]");
         functionExecution.start(func, Lists.immutable.empty());
@@ -229,10 +161,9 @@ public abstract class AbstractTestFunctionDefinitionModify extends AbstractPureT
     public void testLambdaModifyWithDynamicNew()
     {
         compileTestSource("testSource.pure",
-                DECLARATION
-                        + "function test():Any[*] \n{"
-                        + "\n"
-                        + "  let origLambda = {s:String[1]|'answer: ' + $s};\n" +
+                "function test():Any[*]\n" +
+                        "{\n" +
+                        "  let origLambda = {s:String[1]|'answer: ' + $s};\n" +
                         "  let replacementLambda = {s:String[1]|'not your input:' + $s};\n" +
                         "  let replacementLambda2 = {s:String[1]|'not your input2:' + $s};\n" +
                         "  \n" +
@@ -242,11 +173,78 @@ public abstract class AbstractTestFunctionDefinitionModify extends AbstractPureT
                         "\n" +
                         "  performCompare($origLambda, $mutator, $replacementLambda);\n" +
                         "  performCompare($origLambda, $mutator, $replacementLambda2);\n" +
-                        "\n"
-                        + "}\n");
+                        "}\n");
 
         CoreInstance func = runtime.getFunction("test():Any[*]");
         functionExecution.start(func, Lists.immutable.empty());
+    }
+
+    public static Pair<String, String> getExtra()
+    {
+        return Tuples.pair(
+                "performCompare.pure",
+                "function performCompare(origLambda : FunctionDefinition<{String[1]->String[1]}>[1], \n" +
+                        "                   mutator : FunctionDefinition<{FunctionDefinition<{String[1]->String[1]}>[1],\n" +
+                        "                                                 FunctionDefinition<{String[1]->String[1]}>[1]\n" +
+                        "                                                 ->FunctionDefinition<{String[1]->String[1]}>[1]\n" +
+                        "                                               }>[1],\n" +
+                        "                   expectedLambda : FunctionDefinition<{String[1]->String[1]}>[1]):Boolean[1]\n" +
+                        "{ \n" +
+                        "    if($origLambda->openVariableValues()->keyValues()->isEmpty(), " +
+                        "         | ''," +
+                        "         | print('WARNING: Copy/clone of lambdas with open variables fully supported, failures may occur', 1)" +
+                        "         );\n" +
+                        "  \n" +
+                        "  let newLambda = $mutator->eval($origLambda, $expectedLambda);\n" +
+                        "  \n" +
+                        "  let inputVal = 'hello';\n" +
+                        "\n" +
+                        "  print('Evaluating $origLambda\\n', 1);\n" +
+                        "  let resultOrigLambda = $origLambda->eval($inputVal);\n" +
+                        "  print('Evaluating $expectedLambda\\n', 1);\n" +
+                        "  let resultExpectedLambda = $expectedLambda->eval($inputVal);\n" +
+                        "  print('Evaluating $newLambda\\n', 1);\n" +
+                        "  let resultNewLambda = $newLambda->eval($inputVal);\n" +
+                        "\n" +
+                        "  print('$resultOrigLambda: ' + $resultOrigLambda + '\\n', 1);\n" +
+                        "  print('$resultExpectedLambda: ' + $resultExpectedLambda + '\\n', 1);\n" +
+                        "  print('$resultNewLambda: ' + $resultNewLambda + '\\n', 1);\n" +
+                        "  print('$resultOrigLambda sourceInformation: ', 1);\n" +
+                        "  print($resultOrigLambda->sourceInformation(), 1);\n" +
+                        "  print('$resultNewLambda sourceInformation: ', 1);\n" +
+                        "  print($resultNewLambda->sourceInformation(), 1);\n" +
+                        "\n" +
+                        "  //if($resultNewLambda == $resultOrigLambda,\n" +
+                        "  //     | fail('Modified lambda result not changed, got original: \\'' + $resultOrigLambda +  '\\''),\n" +
+                        "  //     | true);\n" +
+                        "\n" +
+                        "  assertEquals($resultExpectedLambda, $resultNewLambda);\n" +
+                        "}\n" +
+                        "\n" +
+                        "\n" +
+                        "function test::hierarchicalProperties(class:Class<Any>[1]):Property<Nil,Any|*>[*]\n" +
+                        "{\n" +
+                        "   if($class==Any,\n" +
+                        "      | [],\n" +
+                        "      | $class.properties->concatenate($class.generalizations->map(g| test::hierarchicalProperties($g.general.rawType->cast(@Class<Any>)->toOne())))->removeDuplicates()\n" +
+                        "   );\n" +
+                        "}\n" +
+                        "\n" +
+                        "function modifyExpressionSequenceWithDynamicNew<T>(fd:FunctionDefinition<T>[1], es : ValueSpecification[1..*]) : FunctionDefinition<T>[1]\n" +
+                        "{\n" +
+                        "    let genericType = ^KeyValue(key='classifierGenericType', value= $fd.classifierGenericType);\n" +
+                        "\n" +
+                        "    let fdClass = $fd->type()->cast(@Class<Any>);\n" +
+                        "    let properties = $fdClass->test::hierarchicalProperties()->map(p|\n" +
+                        "      if($p.name == 'expressionSequence', \n" +
+                        "        | ^KeyValue(key=$p.name->toOne(), value= $es), \n" +
+                        "        | ^KeyValue(key=$p.name->toOne(), value= $p->eval($fd))\n" +
+                        "        );\n" +
+                        "      );\n" +
+                        "\n" +
+                        "    dynamicNew($fd.classifierGenericType->toOne(), $properties->concatenate($genericType))->cast($fd);\n" +
+                        "}\n"
+        );
     }
 
     protected static MutableRepositoryCodeStorage getCodeStorage()
