@@ -530,6 +530,11 @@ public final class JavaSourceCodeGenerator
                     return buildDelegationReadProperty(prop, "LambdaFunction", "lambdaFunction()", true, "", Property.getPropertyName(prop), returnType, unresolvedReturnType, multiplicity, this.processorSupport, processorContext);
                 }).makeString("", "\n", "\n") +
                 "\n" +
+                "    public PureCompiledLambda copy()\n" +
+                "    {\n" +
+                "        return new PureCompiledLambda(lambdaFunction().copy(), pureFunction());\n" +
+                "    }\n" +
+                "\n" +
                 "    public static SharedPureFunction getPureFunction(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> function, ExecutionSupport es)\n" +
                 "    {\n" +
                 "        return (function == null) ? null : CoreGen.getSharedPureFunction(function, es);\n" +

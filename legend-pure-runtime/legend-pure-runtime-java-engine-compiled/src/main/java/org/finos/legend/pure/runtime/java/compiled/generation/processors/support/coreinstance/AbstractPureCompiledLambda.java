@@ -36,23 +36,20 @@ public abstract class AbstractPureCompiledLambda<T> extends AbstractCompiledCore
     private String lambdaId;
     private volatile LambdaFunction<T> lambdaFunction;
     private final SharedPureFunction<? extends T> pureFunction;
-
-    private AbstractPureCompiledLambda(SharedPureFunction<? extends T> pureFunction)
-    {
-        this.pureFunction = pureFunction;
-    }
+    private volatile SourceInformation sourceInfo;
 
     protected AbstractPureCompiledLambda(LambdaFunction<T> lambdaFunction, SharedPureFunction<? extends T> pureFunction)
     {
-        this(pureFunction);
         this.lambdaFunction = lambdaFunction;
+        this.pureFunction = pureFunction;
+        this.sourceInfo = lambdaFunction.getSourceInformation();
     }
 
     protected AbstractPureCompiledLambda(CompiledExecutionSupport executionSupport, String lambdaId, SharedPureFunction<? extends T> pureFunction)
     {
-        this(pureFunction);
         this.execSupport = executionSupport;
         this.lambdaId = lambdaId;
+        this.pureFunction = pureFunction;
     }
 
     protected AbstractPureCompiledLambda(ExecutionSupport executionSupport, String lambdaId, SharedPureFunction<? extends T> pureFunction)
@@ -77,6 +74,10 @@ public abstract class AbstractPureCompiledLambda<T> extends AbstractCompiledCore
                 if (localExecSupport != null)
                 {
                     LambdaFunction<T> result = this.lambdaFunction = (LambdaFunction<T>) localExecSupport.getMetadataAccessor().getLambdaFunction(this.lambdaId);
+                    if (this.sourceInfo == null)
+                    {
+                        this.sourceInfo = result.getSourceInformation();
+                    }
                     this.execSupport = null;
                     this.lambdaId = null;
                     return result;
@@ -125,13 +126,13 @@ public abstract class AbstractPureCompiledLambda<T> extends AbstractCompiledCore
     @Override
     public String getName()
     {
-        return lambdaFunction().getName();
+        return "Anonymous_Lambda";
     }
 
     @Override
     public void setName(String name)
     {
-        lambdaFunction().setName(name);
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -149,13 +150,20 @@ public abstract class AbstractPureCompiledLambda<T> extends AbstractCompiledCore
     @Override
     public SourceInformation getSourceInformation()
     {
-        return lambdaFunction().getSourceInformation();
+        SourceInformation local = this.sourceInfo;
+        if ((local == null) && (this.execSupport != null))
+        {
+            // initialize source info
+            lambdaFunction();
+            return this.sourceInfo;
+        }
+        return local;
     }
 
     @Override
     public void setSourceInformation(SourceInformation sourceInformation)
     {
-        lambdaFunction().setSourceInformation(sourceInformation);
+        this.sourceInfo = sourceInformation;
     }
 
     @Override
