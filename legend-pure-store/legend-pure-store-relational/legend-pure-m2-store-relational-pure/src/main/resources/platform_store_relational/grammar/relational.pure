@@ -585,6 +585,11 @@ Class meta::relational::metamodel::FrameLiteralValue extends meta::relational::m
    direction: FrameValueDirection[1];
 }
 
+Class meta::relational::metamodel::FrameIntervalValue extends meta::relational::metamodel::FrameLiteralValue
+{
+   durationUnit: meta::pure::functions::date::DurationUnit[1];
+}
+
 Class meta::relational::metamodel::UnboundedFrameValue extends meta::relational::metamodel::FrameValue
 {
    direction: FrameValueDirection[1];
