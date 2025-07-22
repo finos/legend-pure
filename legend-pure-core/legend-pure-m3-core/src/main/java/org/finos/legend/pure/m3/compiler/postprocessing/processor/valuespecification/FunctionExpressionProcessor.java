@@ -661,6 +661,8 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                 handleTypeArgumentTypeInference(templateTypeArgument, concreteTypeArgument, observer, state);
             }
         });
+
+        // TODO handle when the template is Relation or Function type
     }
 
     private static boolean processEmptyColumnType(GenericType templateGenericType, ValueSpecification instance, ListIterable<? extends VariableExpression> paramsType, int z, SourceInformation sourceInformation, TypeInferenceObserver observer, ProcessorState state, ProcessorSupport processorSupport)
