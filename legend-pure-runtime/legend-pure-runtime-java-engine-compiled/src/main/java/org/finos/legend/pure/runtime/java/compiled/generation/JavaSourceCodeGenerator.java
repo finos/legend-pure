@@ -521,6 +521,13 @@ public final class JavaSourceCodeGenerator
                 "    {\n" +
                 "        super(executionSupport, lambdaId, pureFunction);\n" +
                 "    }\n" +
+                "\n" +
+                "    @Override" +
+                "    public PureCompiledLambda copy()\n" +
+                "    {\n" +
+                "        LambdaFunction<Object> lambda = lambdaFunction();\n" +
+                "        return new PureCompiledLambda((lambda == null) ? null : lambda.copy(), pureFunction());\n" +
+                "    }\n" +
                 this.processorSupport.class_getSimpleProperties(this.processorSupport.package_getByUserPath(M3Paths.LambdaFunction)).toSortedListBy(CoreInstance::getName).collect(prop ->
                 {
                     CoreInstance functionType = this.processorSupport.function_getFunctionType(prop);
@@ -529,12 +536,6 @@ public final class JavaSourceCodeGenerator
                     CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(prop, M3Properties.multiplicity, this.processorSupport);
                     return buildDelegationReadProperty(prop, "LambdaFunction", "lambdaFunction()", true, "", Property.getPropertyName(prop), returnType, unresolvedReturnType, multiplicity, this.processorSupport, processorContext);
                 }).makeString("", "\n", "\n") +
-                "\n" +
-                "    public PureCompiledLambda copy()\n" +
-                "    {\n" +
-                "        return new PureCompiledLambda(lambdaFunction().copy(), pureFunction());\n" +
-                "    }\n" +
-                "\n" +
                 "    public static SharedPureFunction getPureFunction(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> function, ExecutionSupport es)\n" +
                 "    {\n" +
                 "        return (function == null) ? null : CoreGen.getSharedPureFunction(function, es);\n" +

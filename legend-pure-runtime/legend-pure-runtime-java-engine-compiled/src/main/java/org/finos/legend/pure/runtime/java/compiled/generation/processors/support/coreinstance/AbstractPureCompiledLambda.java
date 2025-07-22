@@ -30,6 +30,8 @@ import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSu
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.LambdaCompiledExtended;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction;
 
+import java.util.Objects;
+
 public abstract class AbstractPureCompiledLambda<T> extends AbstractCompiledCoreInstance implements LambdaCompiledExtended<T>
 {
     private volatile CompiledExecutionSupport execSupport;
@@ -42,7 +44,10 @@ public abstract class AbstractPureCompiledLambda<T> extends AbstractCompiledCore
     {
         this.lambdaFunction = lambdaFunction;
         this.pureFunction = pureFunction;
-        this.sourceInfo = lambdaFunction.getSourceInformation();
+        if (lambdaFunction != null)
+        {
+            this.sourceInfo = lambdaFunction.getSourceInformation();
+        }
     }
 
     protected AbstractPureCompiledLambda(CompiledExecutionSupport executionSupport, String lambdaId, SharedPureFunction<? extends T> pureFunction)
@@ -74,7 +79,7 @@ public abstract class AbstractPureCompiledLambda<T> extends AbstractCompiledCore
                 if (localExecSupport != null)
                 {
                     LambdaFunction<T> result = this.lambdaFunction = (LambdaFunction<T>) localExecSupport.getMetadataAccessor().getLambdaFunction(this.lambdaId);
-                    if (this.sourceInfo == null)
+                    if ((result != null) && (this.sourceInfo == null))
                     {
                         this.sourceInfo = result.getSourceInformation();
                     }
@@ -88,27 +93,15 @@ public abstract class AbstractPureCompiledLambda<T> extends AbstractCompiledCore
     }
 
     @Override
-    public boolean equals(Object obj)
-    {
-        return lambdaFunction().equals(obj);
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return lambdaFunction().hashCode();
-    }
-
-    @Override
     public boolean pureEquals(Object obj)
     {
-        return equals(obj);
+        return (this == obj) || ((obj != null) && Objects.equals(lambdaFunction(), obj));
     }
 
     @Override
     public int pureHashCode()
     {
-        return hashCode();
+        return Objects.hashCode(lambdaFunction());
     }
 
     @Override
@@ -144,7 +137,7 @@ public abstract class AbstractPureCompiledLambda<T> extends AbstractCompiledCore
     @Override
     public void setClassifier(CoreInstance classifier)
     {
-        lambdaFunction().setClassifier(classifier);
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -266,14 +259,6 @@ public abstract class AbstractPureCompiledLambda<T> extends AbstractCompiledCore
     public void validate(MutableSet<CoreInstance> doneList) throws PureCompilationException
     {
         lambdaFunction().validate(doneList);
-    }
-
-    @Override
-    public LambdaFunction<T> copy()
-    {
-        LambdaFunction<T> copy = lambdaFunction().copy();
-        copy.setName("Anonymous_Lambda");
-        return copy;
     }
 
     @Override
