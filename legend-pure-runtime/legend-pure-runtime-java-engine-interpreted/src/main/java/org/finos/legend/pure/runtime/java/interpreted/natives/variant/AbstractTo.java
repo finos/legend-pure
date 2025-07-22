@@ -71,7 +71,7 @@ public abstract class AbstractTo extends NativeFunction
 
         if (targetRawType == processorSupport.package_getByUserPath(M3Paths.Variant))
         {
-            return VariantInstanceImpl.newVariant(jsonNode, this.repository, processorSupport);
+            return VariantInstanceImpl.newVariant(jsonNode, functionExpressionCallStack.peek().getSourceInformation(), processorSupport);
         }
 
         if (jsonNode.isNull())

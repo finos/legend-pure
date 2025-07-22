@@ -388,7 +388,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             }
             else
             {
-                ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(1).getValueForMetaPropertyToOne("genericType"), (GenericType) processorSupport.type_wrapGenericType(_RelationType.build(found.collect(foundC -> _Column.getColumnInstance(foundC._name(), false, _Column.getColumnType(foundC), _Column.getColumnMultiplicity(foundC), functionExpression.getSourceInformation(), processorSupport)), null, processorSupport)), ctx, observer);
+                ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(1).getValueForMetaPropertyToOne("genericType"), (GenericType) processorSupport.type_wrapGenericType(_RelationType.build(found.collect(foundC -> _Column.getColumnInstance(foundC._name(), false, _Column.getColumnType(foundC), _Column.getColumnMultiplicity(foundC), functionExpression.getSourceInformation(), processorSupport)), functionExpression.getSourceInformation(), processorSupport)), ctx, observer);
                 columnTypeInferenceSuccess = true;
             }
         }
@@ -445,7 +445,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             }
             else
             {
-                ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(1).getValueForMetaPropertyToOne("genericType"), (GenericType) processorSupport.type_wrapGenericType(_RelationType.build(found.collect(foundC -> _Column.getColumnInstance(foundC._name(), false, _Column.getColumnType(foundC), _Column.getColumnMultiplicity(foundC), functionExpression.getSourceInformation(), processorSupport)), null, processorSupport)), ctx, observer);
+                ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(1).getValueForMetaPropertyToOne("genericType"), (GenericType) processorSupport.type_wrapGenericType(_RelationType.build(found.collect(foundC -> _Column.getColumnInstance(foundC._name(), false, _Column.getColumnType(foundC), _Column.getColumnMultiplicity(foundC), functionExpression.getSourceInformation(), processorSupport)), functionExpression.getSourceInformation(), processorSupport)), ctx, observer);
                 columnTypeInferenceSuccess = true;
             }
         }
@@ -616,6 +616,10 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                                 TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
                                 typeInferenceContext.register(templateReturnType, concreteGenericType, typeInferenceContext.getParent(), observer);
                             }
+                            else if (concreteGenericType != null)// type arguments might not be concrete
+                            {
+                                handleTypeArgumentTypeInference(templateReturnType, concreteGenericType, observer, state);
+                            }
                         }
 
                         Multiplicity templateReturnMultiplicity = Optional.ofNullable(ImportStub.withImportStubByPass(templateGenFunctionType._rawTypeCoreInstance(), processorSupport)).map(i -> ((FunctionType) i)._returnMultiplicity()).orElse(null);
@@ -637,6 +641,28 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             }
         }
         return lambdaParametersInferenceSuccess;
+    }
+
+    private static void handleTypeArgumentTypeInference(GenericType templateReturnType, GenericType concreteGenericType, TypeInferenceObserver observer, ProcessorState state)
+    {
+        TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
+
+        templateReturnType._typeArguments().zip(concreteGenericType._typeArguments()).forEach(args ->
+        {
+            GenericType templateTypeArgument = args.getOne();
+            GenericType concreteTypeArgument = args.getTwo();
+
+            if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(templateTypeArgument))
+            {
+                typeInferenceContext.register(templateTypeArgument, concreteTypeArgument, typeInferenceContext.getParent(), observer);
+            }
+            else if (concreteTypeArgument != null)
+            {
+                handleTypeArgumentTypeInference(templateTypeArgument, concreteTypeArgument, observer, state);
+            }
+        });
+
+        // TODO handle when the template is Relation or Function type
     }
 
     private static boolean processEmptyColumnType(GenericType templateGenericType, ValueSpecification instance, ListIterable<? extends VariableExpression> paramsType, int z, SourceInformation sourceInformation, TypeInferenceObserver observer, ProcessorState state, ProcessorSupport processorSupport)

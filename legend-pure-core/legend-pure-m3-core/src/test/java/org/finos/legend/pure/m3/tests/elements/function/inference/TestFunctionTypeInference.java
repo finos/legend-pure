@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.tests.elements.function.inference;
 
+import java.util.function.Function;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
@@ -580,6 +581,54 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                         "   $collection->map(v|^Pair<T, Integer>(first=$v, second=2))\n" +
                         "}");
         Assert.assertEquals("Pair<T, Integer>", GenericType.print(processorSupport.package_getByUserPath("countValues_T_MANY__Pair_MANY_").getValueForMetaPropertyToOne(M3Properties.expressionSequence).getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
+    }
+
+    @Test
+    public void testFunctionReturnTypeInfersNestedTypeVariablesFromLambdaFunctions()
+    {
+        compileInferenceTest(
+                "Class MyClass<Z>{value:Z[1];}\n" +
+                        "function funcToTest<T>(s:Function<{Any[1]->MyClass<T>[1]}>[1]):MyClass<T>[1]{$s->eval(1)}\n" +
+                        "function newObject<T>(a:T[1]):MyClass<T>[1]{^MyClass<T>(value=$a)}\n" +
+                        "function testSimple1():Any[*]{funcToTest(a|$a->toString()->newObject());}\n" +
+                        "function testSimple2():Any[*]{funcToTest(a|$a->cast(@Integer)->newObject());}\n" +
+                        "function testNested():Any[*]{funcToTest(a|$a->cast(@Integer)->newObject()->newObject());}\n");
+
+        Function<String, String> resolvedParamName = (func) ->
+        {
+            CoreInstance ci = runtime.getCoreInstance(func);
+            return GenericType.print(ci.getValueForMetaPropertyToMany("expressionSequence")
+                    .getOnly()
+                    .getValueForMetaPropertyToOne("resolvedTypeParameters"), runtime.getProcessorSupport());
+        };
+
+        Assert.assertEquals("String", resolvedParamName.apply("testSimple1__Any_MANY_"));
+        Assert.assertEquals("Integer", resolvedParamName.apply("testSimple2__Any_MANY_"));
+        Assert.assertEquals("MyClass<Integer>", resolvedParamName.apply("testNested__Any_MANY_"));
+
+        deleteInferenceTest();
+    }
+
+    @Test
+    public void testFunctionReturnTypeInfersDeepNestedTypeVariablesFromLambdaFunctions()
+    {
+        compileInferenceTest(
+                "Class MyClass<Z>{value:Z[1];}\n" +
+                        "function newObject<T>(a:T[1]):MyClass<T>[1]{^MyClass<T>(value=$a)}\n" +
+                        "function funcToTest<T>(s:Function<{Any[1]->MyClass<MyClass<T>>[1]}>[1]):MyClass<MyClass<T>>[1]{$s->eval(1)}\n" +
+                        "function testNested():Any[*]{funcToTest(a|$a->cast(@Integer)->newObject()->newObject());}\n");
+
+        Function<String, String> resolvedParamName = (func) ->
+        {
+            CoreInstance ci = runtime.getCoreInstance(func);
+            return GenericType.print(ci.getValueForMetaPropertyToMany("expressionSequence")
+                    .getOnly()
+                    .getValueForMetaPropertyToOne("resolvedTypeParameters"), runtime.getProcessorSupport());
+        };
+
+        Assert.assertEquals("Integer", resolvedParamName.apply("testNested__Any_MANY_"));
+
+        deleteInferenceTest();
     }
 
     @Test

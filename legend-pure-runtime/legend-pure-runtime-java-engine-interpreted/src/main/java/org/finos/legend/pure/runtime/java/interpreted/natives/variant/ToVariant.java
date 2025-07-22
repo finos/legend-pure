@@ -46,7 +46,6 @@ public class ToVariant extends NativeFunction
         this.repository = repository;
     }
 
-
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
@@ -56,18 +55,18 @@ public class ToVariant extends NativeFunction
 
         if (values.isEmpty())
         {
-            variantInstance = VariantInstanceImpl.newVariant(VariantInstanceImpl.OBJECT_MAPPER.nullNode(), this.repository, processorSupport);
+            variantInstance = VariantInstanceImpl.newVariant(VariantInstanceImpl.OBJECT_MAPPER.nullNode(), functionExpressionCallStack.peek().getSourceInformation(), processorSupport);
         }
         else if (values.size() == 1)
         {
             JsonNode json = this.coreInstanceToJson(values.get(0), processorSupport);
-            variantInstance = VariantInstanceImpl.newVariant(json, this.repository, processorSupport);
+            variantInstance = VariantInstanceImpl.newVariant(json, functionExpressionCallStack.peek().getSourceInformation(), processorSupport);
         }
         else
         {
             ArrayNode arrayNode = VariantInstanceImpl.OBJECT_MAPPER.createArrayNode();
             values.forEach(x -> arrayNode.add(this.coreInstanceToJson(x, processorSupport)));
-            variantInstance = VariantInstanceImpl.newVariant(arrayNode, this.repository, processorSupport);
+            variantInstance = VariantInstanceImpl.newVariant(arrayNode, functionExpressionCallStack.peek().getSourceInformation(), processorSupport);
         }
 
         return ValueSpecificationBootstrap.wrapValueSpecification(variantInstance, true, processorSupport);

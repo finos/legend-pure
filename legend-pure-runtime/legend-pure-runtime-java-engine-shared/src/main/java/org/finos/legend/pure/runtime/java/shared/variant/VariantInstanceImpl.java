@@ -19,27 +19,39 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Objects;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.variant.VariantInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.variant.Variant;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.variant.VariantCoreInstanceWrapper;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
-public class VariantInstanceImpl extends VariantInstance
+public class VariantInstanceImpl extends VariantCoreInstanceWrapper
 {
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final JsonNode jsonNode;
 
-    private VariantInstanceImpl(JsonNode jsonNode, CoreInstance classifier, ModelRepository repository)
+    private VariantInstanceImpl(JsonNode jsonNode, Variant wrapped)
     {
-        super(jsonNode.toString(), null, classifier, -1, repository, false);
+        super(wrapped);
         this.jsonNode = jsonNode;
     }
 
     public JsonNode getJsonNode()
     {
         return this.jsonNode;
+    }
+
+    @Override
+    public String toString()
+    {
+        return super.getName();
+    }
+
+    @Override
+    public Variant copy()
+    {
+        return new VariantInstanceImpl(this.jsonNode.deepCopy(), ((Variant) this.instance).copy());
     }
 
     @Override
@@ -67,12 +79,12 @@ public class VariantInstanceImpl extends VariantInstance
         return Objects.hash(super.hashCode(), this.getName());
     }
 
-    public static VariantInstanceImpl newVariant(String json, ModelRepository modelRepository, ProcessorSupport processorSupport)
+    public static VariantInstanceImpl newVariant(String json, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
         try
         {
             JsonNode parsed = OBJECT_MAPPER.readTree(json);
-            return newVariant(parsed, modelRepository, processorSupport);
+            return newVariant(parsed, sourceInformation, processorSupport);
         }
         catch (IOException e)
         {
@@ -80,8 +92,9 @@ public class VariantInstanceImpl extends VariantInstance
         }
     }
 
-    public static VariantInstanceImpl newVariant(JsonNode node, ModelRepository modelRepository, ProcessorSupport processorSupport)
+    public static VariantInstanceImpl newVariant(JsonNode node, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
-        return new VariantInstanceImpl(node, processorSupport.package_getByUserPath(M3Paths.Variant), modelRepository);
+        Variant variant = (Variant) processorSupport.newCoreInstance(node.toString(), M3Paths.Variant, sourceInformation);
+        return new VariantInstanceImpl(node, variant);
     }
 }

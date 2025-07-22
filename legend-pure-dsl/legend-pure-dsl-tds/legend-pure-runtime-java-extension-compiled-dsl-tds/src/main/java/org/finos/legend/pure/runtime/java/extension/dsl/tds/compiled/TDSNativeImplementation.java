@@ -17,12 +17,13 @@ package org.finos.legend.pure.runtime.java.extension.dsl.tds.compiled;
 import org.finos.legend.pure.m2.inlinedsl.tds.TDSExtension;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.TDS;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
 
 public class TDSNativeImplementation
 {
-    public static TDS<?> parse(String tdsString, ExecutionSupport compiledExecutionSupport)
+    public static TDS<?> parse(String tdsString, SourceInformation sourceInformation, ExecutionSupport compiledExecutionSupport)
     {
-        return TDSExtension.parse(tdsString, ((CompiledExecutionSupport) compiledExecutionSupport).getProcessorSupport());
+        return TDSExtension.parse(tdsString, sourceInformation, ((CompiledExecutionSupport) compiledExecutionSupport).getProcessorSupport());
     }
 }
