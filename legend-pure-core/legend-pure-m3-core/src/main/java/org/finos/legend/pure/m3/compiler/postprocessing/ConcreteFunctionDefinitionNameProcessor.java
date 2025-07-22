@@ -97,7 +97,7 @@ public class ConcreteFunctionDefinitionNameProcessor
 
     private static StringBuilder appendSignatureStringForType(StringBuilder builder, GenericType genericType, ModelRepository repository, ProcessorSupport processorSupport)
     {
-        org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveGenericTypeUsingImports(genericType, repository, processorSupport);
+        org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveImportStubs(genericType, processorSupport);
         CoreInstance rawType = ImportStub.withImportStubByPass(genericType._rawTypeCoreInstance(), processorSupport);
         if (rawType == null)
         {

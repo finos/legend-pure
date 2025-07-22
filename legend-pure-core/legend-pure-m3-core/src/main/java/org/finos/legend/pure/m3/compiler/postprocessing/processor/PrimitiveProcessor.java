@@ -34,7 +34,7 @@ public class PrimitiveProcessor extends Processor<PrimitiveType>
     @Override
     public void process(PrimitiveType primitiveType, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
     {
-        primitiveType._typeVariables().forEach(v -> GenericType.resolveGenericTypeUsingImports(v._genericType(), repository, processorSupport));
+        primitiveType._typeVariables().forEach(v -> GenericType.resolveImportStubs(v._genericType(), processorSupport));
     }
 
     @Override
