@@ -616,7 +616,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                                 TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
                                 typeInferenceContext.register(templateReturnType, concreteGenericType, typeInferenceContext.getParent(), observer);
                             }
-                            else if (concreteGenericType != null)// type arguments might not be concreate
+                            else if (concreteGenericType != null)// type arguments might not be concrete
                             {
                                 handleTypeArgumentTypeInference(templateReturnType, concreteGenericType, observer, state);
                             }
@@ -650,15 +650,15 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
         templateReturnType._typeArguments().zip(concreteGenericType._typeArguments()).forEach(args ->
         {
             GenericType templateTypeArgument = args.getOne();
-            GenericType concreateTypeArgument = args.getTwo();
+            GenericType concreteTypeArgument = args.getTwo();
 
             if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(templateTypeArgument))
             {
-                typeInferenceContext.register(templateTypeArgument, concreateTypeArgument, typeInferenceContext.getParent(), observer);
+                typeInferenceContext.register(templateTypeArgument, concreteTypeArgument, typeInferenceContext.getParent(), observer);
             }
-            else if (concreateTypeArgument != null)
+            else if (concreteTypeArgument != null)
             {
-                handleTypeArgumentTypeInference(templateTypeArgument, concreateTypeArgument, observer, state);
+                handleTypeArgumentTypeInference(templateTypeArgument, concreteTypeArgument, observer, state);
             }
         });
     }
