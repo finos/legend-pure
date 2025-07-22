@@ -233,4 +233,16 @@ public class _RelationType
         RelationType<?> rOne = RelationTypeCoreInstanceWrapper.toRelationType(relationType);
         return rOne._columns().injectInto(false, (a,b) -> a || org.finos.legend.pure.m3.navigation.generictype.GenericType.testContainsExtendedPrimitiveTypes(_Column.getColumnType(b), processorSupport));
     }
+
+    public static boolean isRelationTypeFullyConcrete(CoreInstance relationType, boolean checkFunctionTypes, ProcessorSupport processorSupport)
+    {
+        return ((RelationType<?>) relationType)._columns()
+                .allSatisfy(c -> org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeFullyConcrete(_Column.getColumnType(c), checkFunctionTypes, processorSupport));
+    }
+
+    public static boolean isRelationTypeFullyDefined(CoreInstance relationType, ProcessorSupport processorSupport)
+    {
+        return ((RelationType<?>) relationType)._columns()
+                .allSatisfy(c -> org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeFullyDefined(_Column.getColumnType(c), processorSupport));
+    }
 }

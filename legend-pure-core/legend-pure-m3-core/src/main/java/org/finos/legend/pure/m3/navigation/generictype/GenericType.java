@@ -641,9 +641,9 @@ public class GenericType
         {
             return false;
         }
-        if (_RelationType.isRelationType(rawType, processorSupport))
+        if (_RelationType.isRelationType(rawType, processorSupport) && !_RelationType.isRelationTypeFullyConcrete(rawType, checkFunctionTypes, processorSupport))
         {
-            return ((RelationType<?>) rawType)._columns().allSatisfy(c -> isGenericTypeConcrete(_Column.getColumnType(c)));
+            return false;
         }
         return hasConcreteMultiplicityArguments(genericType, processorSupport) && hasFullyConcreteTypeArguments(genericType, checkFunctionTypes, processorSupport);
     }
@@ -674,9 +674,19 @@ public class GenericType
                 return false;
             }
         }
-        else if (FunctionType.isFunctionType(rawType, processorSupport) && !FunctionType.isFunctionTypeFullyDefined(rawType, processorSupport))
+        else if (FunctionType.isFunctionType(rawType, processorSupport))
         {
-            return false;
+            if (!FunctionType.isFunctionTypeFullyDefined(rawType, processorSupport))
+            {
+                return false;
+            }
+        }
+        else if (_RelationType.isRelationType(rawType, processorSupport))
+        {
+            if (!_RelationType.isRelationTypeFullyDefined(rawType, processorSupport))
+            {
+                return false;
+            }
         }
 
         // Check type and multiplicity arguments are fully defined
