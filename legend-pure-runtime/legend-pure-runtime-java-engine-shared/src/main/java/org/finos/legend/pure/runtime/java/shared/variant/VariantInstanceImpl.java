@@ -16,14 +16,16 @@ package org.finos.legend.pure.runtime.java.shared.variant;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.Objects;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.variant.Variant;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.variant.VariantCoreInstanceWrapper;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.Objects;
 
 public class VariantInstanceImpl extends VariantCoreInstanceWrapper
 {
@@ -79,6 +81,11 @@ public class VariantInstanceImpl extends VariantCoreInstanceWrapper
         return Objects.hash(super.hashCode(), this.getName());
     }
 
+    public static VariantInstanceImpl newVariant(String json, ProcessorSupport processorSupport)
+    {
+        return newVariant(json, (SourceInformation) null, processorSupport);
+    }
+
     public static VariantInstanceImpl newVariant(String json, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
         try
@@ -92,9 +99,26 @@ public class VariantInstanceImpl extends VariantCoreInstanceWrapper
         }
     }
 
+    public static VariantInstanceImpl newVariant(JsonNode node, ProcessorSupport processorSupport)
+    {
+        return newVariant(node, (SourceInformation) null, processorSupport);
+    }
+
     public static VariantInstanceImpl newVariant(JsonNode node, SourceInformation sourceInformation, ProcessorSupport processorSupport)
     {
         Variant variant = (Variant) processorSupport.newCoreInstance(node.toString(), M3Paths.Variant, sourceInformation);
         return new VariantInstanceImpl(node, variant);
+    }
+
+    @Deprecated
+    public static VariantInstanceImpl newVariant(String json, ModelRepository modelRepository, ProcessorSupport processorSupport)
+    {
+        return newVariant(json, processorSupport);
+    }
+
+    @Deprecated
+    public static VariantInstanceImpl newVariant(JsonNode node, ModelRepository modelRepository, ProcessorSupport processorSupport)
+    {
+        return newVariant(node, processorSupport);
     }
 }

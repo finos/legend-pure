@@ -29,6 +29,6 @@ public class FromJson extends AbstractNativeFunctionGeneric
 
     public static VariantInstanceImpl fromJson(String json, ExecutionSupport es)
     {
-        return VariantInstanceImpl.newVariant(json, null, ((CompiledExecutionSupport) es).getProcessorSupport());
+        return VariantInstanceImpl.newVariant(json, ((CompiledExecutionSupport) es).getProcessorSupport());
     }
 }
