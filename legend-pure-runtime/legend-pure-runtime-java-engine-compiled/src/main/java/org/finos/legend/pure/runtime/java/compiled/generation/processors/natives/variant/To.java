@@ -16,8 +16,6 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.variant;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.util.Iterator;
-import java.util.Map;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
@@ -51,6 +49,9 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 import org.finos.legend.pure.runtime.java.shared.variant.VariantInstanceImpl;
+
+import java.util.Iterator;
+import java.util.Map;
 
 public class To extends AbstractNative
 {
@@ -173,7 +174,7 @@ public class To extends AbstractNative
             }
             else if (pureGenericType._rawType() == es.getProcessorSupport().package_getByUserPath(M3Paths.Variant))
             {
-                return VariantInstanceImpl.newVariant(jsonNode, null, es.getProcessorSupport());
+                return VariantInstanceImpl.newVariant(jsonNode, es.getProcessorSupport());
             }
             else if (pureGenericType._rawType() == es.getProcessorSupport().package_getByUserPath(M3Paths.StrictDate))
             {

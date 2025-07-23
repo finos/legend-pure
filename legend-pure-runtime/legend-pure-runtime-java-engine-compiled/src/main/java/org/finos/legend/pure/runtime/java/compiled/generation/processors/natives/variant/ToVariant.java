@@ -48,7 +48,7 @@ public class ToVariant extends AbstractNativeFunctionGeneric
         {
             node = toJson(object);
         }
-        return VariantInstanceImpl.newVariant(node, null, ((CompiledExecutionSupport) es).getProcessorSupport());
+        return VariantInstanceImpl.newVariant(node, ((CompiledExecutionSupport) es).getProcessorSupport());
     }
 
     private static JsonNode toJson(Object value)
