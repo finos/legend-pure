@@ -229,4 +229,5 @@ Class meta::pure::mapping::relation::RelationFunctionInstanceSetImplementation e
 Class meta::pure::mapping::relation::RelationFunctionPropertyMapping extends PropertyMapping
 {
   column: meta::pure::metamodel::relation::Column<Nil,Any|*>[1];
+  transformer: ValueTransformer<Any>[0..1];
 }
