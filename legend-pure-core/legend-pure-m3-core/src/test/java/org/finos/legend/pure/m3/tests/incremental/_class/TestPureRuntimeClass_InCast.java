@@ -32,7 +32,8 @@ public class TestPureRuntimeClass_InCast extends AbstractPureTestWithCoreCompile
     @After
     public void cleanRuntime()
     {
-        runtime.delete("sourceId.pure");
+        runtime.delete("sourceA.pure");
+        runtime.delete("sourceB.pure");
         runtime.delete("userId.pure");
         runtime.compile();
     }
@@ -40,13 +41,15 @@ public class TestPureRuntimeClass_InCast extends AbstractPureTestWithCoreCompile
     @Test
     public void testPureRuntimeClassUsedInCast()
     {
-        RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{name:String[1];} Class B extends A{}")
+        RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder()
+                        .createInMemorySource("sourceA.pure", "Class A{name:String[1];}")
+                        .createInMemorySource("sourceB.pure", "Class B extends A{}")
                         .createInMemorySource("userId.pure", "function test():String[1]{let b = ^B(name='OMG!')->cast(@A);'ok';}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
-                        .deleteSource("sourceId.pure")
+                        .deleteSource("sourceB.pure")
                         .compileWithExpectedCompileFailure("B has not been defined!", "userId.pure", 1, 36)
-                        .createInMemorySource("sourceId.pure", "Class A{name:String[1];} Class B extends A{}")
+                        .createInMemorySource("sourceB.pure", "Class B extends A{}")
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
     }
@@ -54,17 +57,19 @@ public class TestPureRuntimeClass_InCast extends AbstractPureTestWithCoreCompile
     @Test
     public void testPureRuntimeClassUsedInCastError()
     {
-        RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{name:String[1];} Class B extends A{}")
+        RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder()
+                        .createInMemorySource("sourceA.pure", "Class A{name:String[1];}")
+                        .createInMemorySource("sourceB.pure", "Class B extends A{}")
                         .createInMemorySource("userId.pure", "function test():String[1]{let b = ^B(name='OMG!')->cast(@A);'ok';}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
-                        .deleteSource("sourceId.pure")
+                        .deleteSource("sourceB.pure")
                         .compileWithExpectedCompileFailure("B has not been defined!", "userId.pure", 1, 36)
-                        .createInMemorySource("sourceId.pure", "Class B{name:String[1];}")
+                        .deleteSource("sourceA.pure")
                         .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 58)
-                        .updateSource("sourceId.pure", "Class A{name:String[1];} Class B extends A{}")
+                        .createInMemorySource("sourceA.pure", "Class A{name:String[1];}")
+                        .createInMemorySource("sourceB.pure", "Class B extends A{}")
                         .compile(),
                 runtime, functionExecution, this.getAdditionalVerifiers());
-
     }
 }

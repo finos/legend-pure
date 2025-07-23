@@ -18,19 +18,19 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionTy
 import org.finos.legend.pure.m3.navigation.function.Function;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.relation._RelationType;
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestRelationType extends AbstractPureTestWithCoreCompiledPlatform
+public class TestRelationType extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getExtra());
+        setUpRuntime();
     }
 
     @After
@@ -101,5 +101,50 @@ public class TestRelationType extends AbstractPureTestWithCoreCompiledPlatform
         FunctionType fType1 = (FunctionType) Function.computeFunctionType(runtime.getFunction("func1__Relation_$0_1$_"), runtime.getProcessorSupport());
         FunctionType fType2 = (FunctionType) Function.computeFunctionType(runtime.getFunction("func2__Relation_$0_1$_"), runtime.getProcessorSupport());
         Assert.assertEquals("(num:Number[1], other:Varchar(222))", GenericType.print(_RelationType.merge(fType1._returnType()._typeArguments().getFirst(), fType2._returnType()._typeArguments().getFirst(), true, runtime.getProcessorSupport()), processorSupport));
+    }
+
+    @Test
+    public void testNonExistentColumnTypeInParameter()
+    {
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure",
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "\n" +
+                        "function test::testFn(x:Relation<(c1:test::FakeInt)>[1]):Any[1]\n" +
+                        "{\n" +
+                        "  $x\n" +
+                        "}\n"));
+        assertPureException(
+                PureCompilationException.class,
+                "test::FakeInt has not been defined!", "fromString.pure", 3, 44, 3, 44, 3, 50, e);
+    }
+
+    @Test
+    public void testNonExistentColumnTypeInReturnType()
+    {
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure",
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "\n" +
+                        "function test::testFn():Relation<(c1:test::FakeInt)>[*]\n" +
+                        "{\n" +
+                        "  []\n" +
+                        "}\n"));
+        assertPureException(
+                PureCompilationException.class,
+                "test::FakeInt has not been defined!", "fromString.pure", 3, 44, 3, 44, 3, 50, e);
+    }
+
+    @Test
+    public void testNonExistentColumnTypeInCast()
+    {
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource("fromString.pure",
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "\n" +
+                        "function test::testFn(x:Any[1]):Any[1]\n" +
+                        "{\n" +
+                        "  $x->cast(@Relation<(c1:test::FakeInt)>)\n" +
+                        "}\n"));
+        assertPureException(
+                PureCompilationException.class,
+                "test::FakeInt has not been defined!", "fromString.pure", 5, 32, 5, 32, 5, 38, e);
     }
 }

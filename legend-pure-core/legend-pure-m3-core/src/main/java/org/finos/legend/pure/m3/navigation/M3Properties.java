@@ -96,6 +96,7 @@ public class M3Properties
     public static final String offset = "offset";
     public static final String operation = "operation";
     public static final String openVariables = "openVariables";
+    public static final String original = "original";
     public static final String originalMilestonedProperties = "originalMilestonedProperties";
     public static final String owner = "owner";
     public static final String p_stereotypes = "p_stereotypes";

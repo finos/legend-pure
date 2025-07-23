@@ -49,7 +49,7 @@ public class ClassProcessor extends Processor<Class<?>>
     {
         state.newTypeInferenceContext(cls);
 
-        cls._typeVariables().forEach(v -> GenericType.resolveGenericTypeUsingImports(v._genericType(), repository, processorSupport));
+        cls._typeVariables().forEach(v -> GenericType.resolveImportStubs(v._genericType(), processorSupport));
 
         // TODO PURE-3436 Difficult to type this because of AbstractProperty hierarchy, plus PostProcessor.processElement takes CoreInstance
         MutableList<CoreInstance> propertiesProperties = Lists.mutable.empty();

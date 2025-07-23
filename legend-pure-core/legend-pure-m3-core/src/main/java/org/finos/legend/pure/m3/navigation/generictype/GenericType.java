@@ -25,7 +25,6 @@ import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.utility.LazyIterate;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.GenericTypeOperation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
@@ -43,6 +42,7 @@ import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.function.FunctionType;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.linearization.C3Linearization;
 import org.finos.legend.pure.m3.navigation.measure.Measure;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
@@ -791,18 +791,33 @@ public class GenericType
 
     public static void resolveImportStubs(CoreInstance genericType, ProcessorSupport processorSupport)
     {
+        if (genericType == null)
+        {
+            return;
+        }
+
         CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
         if (FunctionType.isFunctionType(rawType, processorSupport))
         {
             FunctionType.resolveImportStubs(rawType, processorSupport);
         }
+        else if (_RelationType.isRelationType(rawType, processorSupport))
+        {
+            _RelationType.resolveImportStubs(rawType, processorSupport);
+        }
 
-        genericType.getValueForMetaPropertyToMany(M3Properties.multiplicityArguments).asLazy()
-                .select(Objects::nonNull)
-                .forEach(arg -> org.finos.legend.pure.m3.navigation.importstub.ImportStub.withImportStubByPass(arg, processorSupport));
-        genericType.getValueForMetaPropertyToMany(M3Properties.typeArguments).asLazy()
-                .select(Objects::nonNull)
-                .forEach(arg -> resolveImportStubs(arg, processorSupport));
+        if (isGenericTypeOperation(genericType, processorSupport))
+        {
+            resolveImportStubs(genericType.getValueForMetaPropertyToOne(M3Properties.left), processorSupport);
+            resolveImportStubs(genericType.getValueForMetaPropertyToOne(M3Properties.right), processorSupport);
+        }
+
+        genericType.getValueForMetaPropertyToMany(M3Properties.multiplicityArguments).forEach(arg -> ImportStub.withImportStubByPass(arg, processorSupport));
+        for (CoreInstance typeArgument : genericType.getValueForMetaPropertyToMany(M3Properties.typeArguments))
+        {
+            resolveImportStubs(typeArgument, processorSupport);
+            resolveImportStubs(typeArgument, processorSupport);
+        }
     }
 
     /**
@@ -1082,24 +1097,10 @@ public class GenericType
         }
     }
 
+    @Deprecated
     public static void resolveGenericTypeUsingImports(CoreInstance genericType, ModelRepository repository, ProcessorSupport processorSupport) throws PureCompilationException
     {
-        if (genericType.getValueForMetaPropertyToOne(M3Properties.rawType) != null && genericType.getValueForMetaPropertyToOne(M3Properties.rawType) instanceof ImportStub)
-        {
-            org.finos.legend.pure.m3.navigation.importstub.ImportStub.processImportStub((ImportStub) genericType.getValueForMetaPropertyToOne(M3Properties.rawType), repository, processorSupport);
-        }
-        if (FunctionType.isFunctionType(genericType.getValueForMetaPropertyToOne(M3Properties.rawType), processorSupport))
-        {
-            Instance.getValueForMetaPropertyToManyResolved(genericType.getValueForMetaPropertyToOne(M3Properties.rawType), M3Properties.parameters, processorSupport).asLazy()
-                    .collect(p -> p.getValueForMetaPropertyToOne(M3Properties.genericType))
-                    .select(Objects::nonNull)
-                    .forEach(gt -> resolveGenericTypeUsingImports(gt, repository, processorSupport));
-            if (genericType.getValueForMetaPropertyToOne(M3Properties.rawType).getValueForMetaPropertyToOne(M3Properties.returnType) != null)
-            {
-                resolveGenericTypeUsingImports(genericType.getValueForMetaPropertyToOne(M3Properties.rawType).getValueForMetaPropertyToOne(M3Properties.returnType), repository, processorSupport);
-            }
-        }
-        Instance.getValueForMetaPropertyToManyResolved(genericType, M3Properties.typeArguments, processorSupport).forEach(arg -> resolveGenericTypeUsingImports(arg, repository, processorSupport));
+        resolveImportStubs(genericType, processorSupport);
     }
 
     public static boolean isUnprocessedLambda(CoreInstance genericType, ProcessorSupport processorSupport)

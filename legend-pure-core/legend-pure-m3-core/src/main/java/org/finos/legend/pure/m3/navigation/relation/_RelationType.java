@@ -39,6 +39,7 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstanceWrapper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -244,5 +245,17 @@ public class _RelationType
     {
         return ((RelationType<?>) relationType)._columns()
                 .allSatisfy(c -> org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeFullyDefined(_Column.getColumnType(c), processorSupport));
+    }
+
+    public static void resolveImportStubs(CoreInstance relationType, ProcessorSupport processorSupport)
+    {
+        relationType.getValueForMetaPropertyToMany(M3Properties.columns).forEach(c ->
+        {
+            CoreInstance classifierGenericType = c.getValueForMetaPropertyToOne(M3Properties.classifierGenericType);
+            classifierGenericType.getValueForMetaPropertyToMany(M3Properties.multiplicityArguments).forEach(arg -> ImportStub.withImportStubByPass(arg, processorSupport));
+            // the first type argument of the column type is the relation type itself: we skip it to avoid infinite recursion
+            CoreInstance type = classifierGenericType.getValueForMetaPropertyToMany(M3Properties.typeArguments).get(1);
+            org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveImportStubs(type, processorSupport);
+        });
     }
 }

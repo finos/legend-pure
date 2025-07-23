@@ -268,6 +268,12 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
     private FunctionMatchResult matchFunction(FunctionExpression functionExpression, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
     {
         ListIterable<? extends ValueSpecification> parametersValues = ListHelper.wrapListIterable(functionExpression._parametersValues());
+        parametersValues.forEach(vs ->
+        {
+            // resolve import stubs in multiplicity and genericType
+            Instance.getValueForMetaPropertyToOneResolved(vs, M3Properties.multiplicity, processorSupport);
+            org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveImportStubs(vs._genericType(), processorSupport);
+        });
 
         // Process the function's parameters (FIRST PASS)
         IntSet parametersRequiringTypeInference = firstPassTypeInference(functionExpression, parametersValues, state, matcher, repository, context, processorSupport);
