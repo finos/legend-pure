@@ -378,6 +378,10 @@ public class RelationalParser implements IRelationalParser
             {
                 return (GenericType) processorSupport.type_wrapGenericType(_Package.getByUserPath("meta::pure::precisePrimitives::Timestamp", processorSupport));
             }
+            case "SEMISTRUCTURED":
+            {
+                return (GenericType) processorSupport.type_wrapGenericType(_Package.getByUserPath(M3Paths.Variant, processorSupport));
+            }
             default:
             {
                 throw new RuntimeException(typeStr + " not supported yet!");

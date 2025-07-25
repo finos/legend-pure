@@ -114,8 +114,8 @@ function meta::relational::metamodel::datatype::dataTypeToCompatiblePureType(typ
         o : meta::relational::metamodel::datatype::Other[1] | String,
         b : meta::relational::metamodel::datatype::Bit[1] | Boolean,
         r : meta::relational::metamodel::datatype::Real[1] | Float,
-        s : meta::relational::metamodel::datatype::SemiStructured[1] | String,
-        j : meta::relational::metamodel::datatype::Json[1] | String,
+        s : meta::relational::metamodel::datatype::SemiStructured[1] | meta::pure::metamodel::variant::Variant,
+        j : meta::relational::metamodel::datatype::Json[1] | meta::pure::metamodel::variant::Variant,
         d : meta::relational::metamodel::datatype::DbSpecificDataType[1] | $d.coreDataType->dataTypeToCompatiblePureType()
     ]);
 }
