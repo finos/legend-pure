@@ -82,9 +82,9 @@ public final class StrictTimeWithMinute extends AbstractStrictTimeWithMinute
     }
 
     @Override
-    public StrictTimeWithMinute clone()
+    protected StrictTimeWithMinute with(int hour, int minute)
     {
-        return new StrictTimeWithMinute(getHour(), getMinute());
+        return ((this.hour == hour) && (this.minute == minute)) ? this : new StrictTimeWithMinute(hour, minute);
     }
 
     public static StrictTimeWithMinute newStrictTimeWithMinute(int hour, int minute)
@@ -94,4 +94,3 @@ public final class StrictTimeWithMinute extends AbstractStrictTimeWithMinute
         return new StrictTimeWithMinute(hour, minute);
     }
 }
-

@@ -16,16 +16,15 @@ package org.finos.legend.pure.m4.coreinstance.primitive.strictTime;
 
 public class StrictTimeWithSubsecond extends AbstractStrictTimeWithSubsecond
 {
-
     private StrictTimeWithSubsecond(int hour, int minute, int second, String subsecond)
     {
         super(hour, minute, second, subsecond);
     }
 
     @Override
-    public StrictTimeWithSubsecond clone()
+    protected StrictTimeWithSubsecond with(int hour, int minute, int second, String subsecond)
     {
-        return new StrictTimeWithSubsecond(getHour(), getMinute(), getSecond(), getSubsecond());
+        return ((this.hour == hour) && (this.minute == minute) && (this.second == second) && this.subsecond.equals(subsecond)) ? this : new StrictTimeWithSubsecond(hour, minute, second, subsecond);
     }
 
     public static StrictTimeWithSubsecond newStrictTimeWithSubsecond(int hour, int minute, int second, String subsecond)

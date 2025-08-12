@@ -643,11 +643,19 @@ public class DateFormat
 
     private static void appendNonNegTwoDigitInt(SafeAppendable appendable, int integer)
     {
+        char c1;
+        char c2;
         if (integer < 10)
         {
-            appendable.append('0');
+            c1 = '0';
+            c2 = (char) ('0' + integer);
         }
-        appendable.append(integer);
+        else
+        {
+            c1 = (char) ('0' + (integer / 10));
+            c2 = (char) ('0' + (integer % 10));
+        }
+        appendable.append(c1).append(c2);
     }
 
     private static void appendZeroPaddedInt(SafeAppendable appendable, int integer, int minLength)

@@ -16,7 +16,10 @@ package org.finos.legend.pure.m4.coreinstance.primitive.strictTime;
 
 public interface PureStrictTime extends Comparable<PureStrictTime>
 {
-    boolean hasHour();
+    default boolean hasHour()
+    {
+        return true;
+    }
 
     int getHour();
 
@@ -32,9 +35,30 @@ public interface PureStrictTime extends Comparable<PureStrictTime>
 
     String getSubsecond();
 
-    String format(String formatString);
+    default <T extends Appendable> T appendString(T appendable)
+    {
+        return StrictTimeFormat.append(appendable, this);
+    }
 
-    void format(Appendable appendable, String formatString);
+    default <T extends Appendable> T appendFormat(T appendable, String formatString)
+    {
+        return StrictTimeFormat.format(appendable, formatString, this);
+    }
+
+    default void writeString(Appendable appendable)
+    {
+        appendString(appendable);
+    }
+
+    default String format(String formatString)
+    {
+        return appendFormat(new StringBuilder(32), formatString).toString();
+    }
+
+    default void format(Appendable appendable, String formatString)
+    {
+        appendFormat(appendable, formatString);
+    }
 
     PureStrictTime addHours(int hours);
 
@@ -51,10 +75,4 @@ public interface PureStrictTime extends Comparable<PureStrictTime>
     PureStrictTime addSubseconds(String subseconds);
 
     PureStrictTime subtractSubseconds(String subseconds);
-
-    void writeString(Appendable appendable);
-
-    int compareTo(PureStrictTime pureStrictTime);
-
-    PureStrictTime clone();
 }

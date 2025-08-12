@@ -16,7 +16,7 @@ package org.finos.legend.pure.m4.coreinstance.primitive.strictTime;
 
 abstract class AbstractStrictTimeWithSecond extends AbstractStrictTimeWithMinute
 {
-    private int second;
+    protected final int second;
 
     protected AbstractStrictTimeWithSecond(int hour, int minute, int second)
     {
@@ -44,27 +44,50 @@ abstract class AbstractStrictTimeWithSecond extends AbstractStrictTimeWithMinute
             return this;
         }
 
-        AbstractStrictTimeWithSecond copy = clone();
-        copy.incrementSecond(seconds);
-        return copy;
+        int minutesToAdd = seconds / 60;
+        int newSecond = this.second + (seconds % 60);
+        if (newSecond < 0)
+        {
+            minutesToAdd -= 1;
+            newSecond += 60;
+        }
+        else if (newSecond > 59)
+        {
+            minutesToAdd += 1;
+            newSecond -= 60;
+        }
+
+        int hoursToAdd = minutesToAdd / 60;
+        int newMinute = this.minute + (minutesToAdd % 60);
+        if (newMinute < 0)
+        {
+            hoursToAdd -= 1;
+            newMinute += 60;
+        }
+        else if (newMinute > 59)
+        {
+            hoursToAdd += 1;
+            newMinute -= 60;
+        }
+
+        int newHour = this.hour + (hoursToAdd % 24);
+        if (newHour < 0)
+        {
+            newHour += 24;
+        }
+        else if (newHour > 23)
+        {
+            newHour -= 24;
+        }
+
+        return with(newHour, newMinute, newSecond);
     }
 
     @Override
-    public abstract AbstractStrictTimeWithSecond clone();
-
-    void incrementSecond(int delta)
+    protected AbstractStrictTimeWithMinute with(int hour, int minute)
     {
-        incrementMinute(delta / 60);
-        this.second += (delta % 60);
-        if (this.second < 0)
-        {
-            incrementMinute(-1);
-            this.second += 60;
-        }
-        else if (this.second > 59)
-        {
-            incrementMinute(1);
-            this.second -= 60;
-        }
+        return with(hour, minute, this.second);
     }
+
+    protected abstract AbstractStrictTimeWithMinute with(int hour, int minute, int second);
 }
