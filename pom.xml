@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.finos</groupId>
         <artifactId>finos</artifactId>
-        <version>7</version>
+        <version>9</version>
     </parent>
 
     <name>Legend Pure</name>
@@ -159,11 +159,6 @@
                         <source>8</source>
                         <doclint>none</doclint>
                     </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-source-plugin</artifactId>
-                    <version>3.2.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
