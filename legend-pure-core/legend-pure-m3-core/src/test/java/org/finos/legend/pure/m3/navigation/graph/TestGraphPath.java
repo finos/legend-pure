@@ -923,6 +923,7 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
     @Test
     public void testStartNodePath()
     {
+        Assert.assertEquals("start node path may not be null", Assert.assertThrows(NullPointerException.class, () -> GraphPath.builder().withStartNodePath(null)).getMessage());
         ArrayAdapter.adapt(
                         "",
                         "        ",
@@ -946,7 +947,7 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                 .forEach(s ->
                 {
                     IllegalArgumentException e = Assert.assertThrows("'" + StringEscape.escape(s) + "'", IllegalArgumentException.class, () -> GraphPath.builder().setStartNodePath(s));
-                    String expectedPrefix = "Invalid GraphPath start node path '" + StringEscape.escape(s) + "'";
+                    String expectedPrefix = "Invalid start node path '" + StringEscape.escape(s) + "'";
                     String message = e.getMessage();
                     if (!message.startsWith(expectedPrefix))
                     {
