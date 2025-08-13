@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.strictTime;
 
-
 public class StrictTimeWithSecond extends AbstractStrictTimeWithSecond
 {
     private StrictTimeWithSecond(int hour, int minute, int second)
@@ -65,9 +64,9 @@ public class StrictTimeWithSecond extends AbstractStrictTimeWithSecond
     }
 
     @Override
-    public StrictTimeWithSecond clone()
+    protected StrictTimeWithSecond with(int hour, int minute, int second)
     {
-        return new StrictTimeWithSecond(getHour(), getMinute(), getSecond());
+        return ((this.hour == hour) && (this.minute == minute) && (this.second == second)) ? this : new StrictTimeWithSecond(hour, minute, second);
     }
 
     public static StrictTimeWithSecond newStrictTimeWithSecond(int hour, int minute, int second)

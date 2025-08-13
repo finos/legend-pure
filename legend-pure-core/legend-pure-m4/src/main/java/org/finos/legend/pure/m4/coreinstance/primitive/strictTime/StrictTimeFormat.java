@@ -14,6 +14,8 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.strictTime;
 
+import org.finos.legend.pure.m4.tools.SafeAppendable;
+
 import java.io.IOException;
 
 public class StrictTimeFormat
@@ -21,8 +23,9 @@ public class StrictTimeFormat
     static final char STRICT_TIME_SEPARATOR = ':';
     private static final char STRICT_TIME_PREFIX = '%';
 
-    public static void format(Appendable appendable, String formatString, PureStrictTime time) throws IOException
+    public static <T extends Appendable> T format(T appendable, String formatString, PureStrictTime time)
     {
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
         int length = formatString.length();
         int i = 0;
         while (i < length)
@@ -40,7 +43,7 @@ public class StrictTimeFormat
                     int preDisplayHour = time.getHour();
                     int displayHour = (preDisplayHour == 0) ? 12 : ((preDisplayHour > 12) ? (preDisplayHour - 12) : preDisplayHour);
                     int count = getCharCountFrom(character, formatString, i);
-                    appendZeroPaddedInt(appendable, displayHour, count + 1);
+                    appendZeroPaddedInt(safeAppendable, displayHour, count + 1);
                     i += count;
                     break;
                 }
@@ -53,7 +56,7 @@ public class StrictTimeFormat
                     }
                     int displayHour = time.getHour();
                     int count = getCharCountFrom(character, formatString, i);
-                    appendZeroPaddedInt(appendable, displayHour, count + 1);
+                    appendZeroPaddedInt(safeAppendable, displayHour, count + 1);
                     i += count;
                     break;
                 }
@@ -66,7 +69,7 @@ public class StrictTimeFormat
                     }
                     int displayMinute = time.getMinute();
                     int count = getCharCountFrom(character, formatString, i);
-                    appendZeroPaddedInt(appendable, displayMinute, count + 1);
+                    appendZeroPaddedInt(safeAppendable, displayMinute, count + 1);
                     i += count;
                     break;
                 }
@@ -78,7 +81,7 @@ public class StrictTimeFormat
                         throw new IllegalArgumentException("StrictTime has no second: " + time);
                     }
                     int count = getCharCountFrom(character, formatString, i);
-                    appendZeroPaddedInt(appendable, time.getSecond(), count + 1);
+                    appendZeroPaddedInt(safeAppendable, time.getSecond(), count + 1);
                     i += count;
                     break;
                 }
@@ -96,20 +99,20 @@ public class StrictTimeFormat
                         int len = time.getSubsecond().length();
                         if (len <= maxLen)
                         {
-                            appendable.append(time.getSubsecond());
+                            safeAppendable.append(time.getSubsecond());
                         }
                         else
                         {
                             int j = 0;
                             while (j < maxLen)
                             {
-                                appendable.append(time.getSubsecond().charAt(j++));
+                                safeAppendable.append(time.getSubsecond().charAt(j++));
                             }
                         }
                     }
                     else
                     {
-                        appendable.append(time.getSubsecond());
+                        safeAppendable.append(time.getSubsecond());
                     }
                     i += count;
                     break;
@@ -118,7 +121,7 @@ public class StrictTimeFormat
                 case ':':
                 case '.':
                 {
-                    appendable.append(character);
+                    safeAppendable.append(character);
                     break;
                 }
                 default:
@@ -127,23 +130,29 @@ public class StrictTimeFormat
                 }
             }
         }
+        return appendable;
     }
 
+    @Deprecated
     public static void write(Appendable appendable, PureStrictTime time) throws IOException
     {
-        appendTwoDigitInt(appendable, time.getHour());
-        appendable.append(STRICT_TIME_SEPARATOR);
-        appendTwoDigitInt(appendable, time.getMinute());
+        append(appendable, time);
+    }
+
+    public static <T extends Appendable> T append(T appendable, PureStrictTime time)
+    {
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+        appendNonNegTwoDigitInt(safeAppendable, time.getHour());
+        appendNonNegTwoDigitInt(safeAppendable.append(STRICT_TIME_SEPARATOR), time.getMinute());
         if (time.hasSecond())
         {
-            appendable.append(STRICT_TIME_SEPARATOR);
-            appendTwoDigitInt(appendable, time.getSecond());
+            appendNonNegTwoDigitInt(safeAppendable.append(STRICT_TIME_SEPARATOR), time.getSecond());
             if (time.hasSubsecond())
             {
-                appendable.append('.');
-                appendable.append(time.getSubsecond());
+                safeAppendable.append('.').append(time.getSubsecond());
             }
         }
+        return appendable;
     }
 
 
@@ -263,12 +272,24 @@ public class StrictTimeFormat
         return strictTime;
     }
 
-    private static void appendTwoDigitInt(Appendable appendable, int integer) throws IOException
+    private static void appendNonNegTwoDigitInt(SafeAppendable appendable, int integer)
     {
-        appendZeroPaddedInt(appendable, integer, 2);
+        char c1;
+        char c2;
+        if (integer < 10)
+        {
+            c1 = '0';
+            c2 = (char) ('0' + integer);
+        }
+        else
+        {
+            c1 = (char) ('0' + (integer / 10));
+            c2 = (char) ('0' + (integer % 10));
+        }
+        appendable.append(c1).append(c2);
     }
 
-    private static void appendZeroPaddedInt(Appendable appendable, int integer, int minLength) throws IOException
+    private static void appendZeroPaddedInt(SafeAppendable appendable, int integer, int minLength)
     {
         String string = Integer.toString(integer);
         for (int fill = minLength - string.length(); fill > 0; fill--)
