@@ -645,6 +645,19 @@ public class GenericType
         {
             return false;
         }
+        if (isGenericTypeOperation(genericType, processorSupport))
+        {
+            CoreInstance left = genericType.getValueForMetaPropertyToOne(M3Properties.left);
+            if ((left != null) && !isGenericTypeFullyConcrete(left, checkFunctionTypes, processorSupport))
+            {
+                return false;
+            }
+            CoreInstance right = genericType.getValueForMetaPropertyToOne(M3Properties.right);
+            if ((right != null) && !isGenericTypeFullyConcrete(right, checkFunctionTypes, processorSupport))
+            {
+                return false;
+            }
+        }
         return hasConcreteMultiplicityArguments(genericType, processorSupport) && hasFullyConcreteTypeArguments(genericType, checkFunctionTypes, processorSupport);
     }
 
