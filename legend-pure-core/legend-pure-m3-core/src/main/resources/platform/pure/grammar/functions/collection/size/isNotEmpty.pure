@@ -29,3 +29,20 @@ function <<PCT.function>> meta::pure::functions::collection::isNotEmpty(p:Any[0.
 {
     !isEmpty($p)
 }
+
+function <<PCT.test>> meta::pure::functions::collection::tests::isEmpty::testIsNotEmptyFalse<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertFalse($f->eval(|[]->isNotEmpty()));
+}
+
+function <<PCT.test, PCTCoreQualifier.variant>> meta::pure::functions::collection::tests::isEmpty::testIsNotEmptySingle<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assert($f->eval(|['']->isNotEmpty()));
+    assert($f->eval(|[1]->isNotEmpty()));
+}
+
+function <<PCT.test, PCTCoreQualifier.variant>> meta::pure::functions::collection::tests::isEmpty::testIsNotEmptyMultiple<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assert($f->eval(|['a', 'b']->isNotEmpty()));
+    assert($f->eval(|[1, 2, 3]->isNotEmpty()));
+}
