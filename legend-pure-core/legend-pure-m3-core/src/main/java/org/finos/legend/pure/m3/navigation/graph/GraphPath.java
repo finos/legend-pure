@@ -447,7 +447,13 @@ public class GraphPath
 
     public static GraphPath parse(String description)
     {
-        return builder().fromDescription(description).build();
+        return parseDescription(description, true);
+    }
+
+    public static GraphPath parse(String string, int start, int end)
+    {
+        checkDescriptionBounds(string, start, end);
+        return parseDescription(string, start, end, true);
     }
 
     private static String getDescription(String startNodePath, ListIterable<? extends Edge> edges)
@@ -576,7 +582,21 @@ public class GraphPath
 
         public Builder fromDescription(String description)
         {
-            return parseDescription(description, this, this.validate);
+            return fromGraphPath(parseDescription(description, this.validate));
+        }
+
+        public Builder fromDescription(String string, int start, int end)
+        {
+            checkDescriptionBounds(string, start, end);
+            return fromGraphPath(parseDescription(string, start, end, this.validate));
+        }
+
+        public Builder fromGraphPath(GraphPath path)
+        {
+            this.startNodePath = path.startNodePath;
+            this.pathElements.clear();
+            this.pathElements.addAll(path.edges.castToList());
+            return this;
         }
 
         public String getPureExpression()
@@ -1035,6 +1055,14 @@ public class GraphPath
         return StringEscape.escape(new StringBuilder("Invalid GraphPath description '"), description).append("': ");
     }
 
+    private static void checkDescriptionBounds(String string, int start, int end)
+    {
+        if ((start < 0) || (start > end) || (end > string.length()))
+        {
+            throw new StringIndexOutOfBoundsException("start " + start + ", end " + end + ", length " + string.length());
+        }
+    }
+
     // Validation helpers
 
     private static boolean isValidStartNodePath(String path)
@@ -1100,31 +1128,30 @@ public class GraphPath
 
     // Parsing
 
-    private static Builder parseDescription(String description, Builder builder, boolean validate)
+    private static GraphPath parseDescription(String description, boolean validate)
     {
-        int index = nextIndexOf(description, '.', 0);
+        return parseDescription(description, 0, description.length(), validate);
+    }
+
+    private static GraphPath parseDescription(String description, int start, int end, boolean validate)
+    {
+        int index = nextIndexOf(description, '.', start, end);
         if (index == -1)
         {
-            builder.startNodePath = validateStartNodePath(trim(description), description, validate);
-            builder.pathElements.clear();
-            return builder;
+            return new GraphPath(validateStartNodePath(trim(description, start, end), description, validate), Lists.immutable.empty());
         }
 
-        String startNodePath = validateStartNodePath(trim(description, 0, index), description, validate);
+        String startNodePath = validateStartNodePath(trim(description, start, index++), description, validate);
         MutableList<Edge> edges = Lists.mutable.empty();
-        int start = index + 1;
-        int end;
-        while ((end = nextIndexOf(description, '.', start)) != -1)
+        int next;
+        while ((next = nextIndexOf(description, '.', index, end)) != -1)
         {
-            edges.add(parseEdge(description, start, end, validate));
-            start = end + 1;
+            edges.add(parseEdge(description, index, next, validate));
+            index = next + 1;
         }
-        edges.add(parseEdge(description, start, description.length(), validate));
+        edges.add(parseEdge(description, index, end, validate));
 
-        builder.startNodePath = startNodePath;
-        builder.pathElements.clear();
-        builder.pathElements.addAll(edges);
-        return builder;
+        return new GraphPath(startNodePath, Lists.immutable.withAll(edges));
     }
 
     private static Edge parseEdge(String description, int start, int end, boolean validate)
@@ -1169,11 +1196,6 @@ public class GraphPath
     }
 
     // Parsing helpers
-
-    private static String trim(String string)
-    {
-        return trim(string, 0, string.length());
-    }
 
     private static String trim(String string, int start, int end)
     {
