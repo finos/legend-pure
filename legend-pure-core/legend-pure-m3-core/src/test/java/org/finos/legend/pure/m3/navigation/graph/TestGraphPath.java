@@ -796,6 +796,9 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                 GraphPath.builder("test::domain::ClassA").build(),
                 GraphPath.parse("test::domain::ClassA"));
         Assert.assertEquals(
+                GraphPath.builder("test::domain::ClassA").build(),
+                GraphPath.parse("prefix_test::domain::ClassA_suffix", 7, 27));
+        Assert.assertEquals(
                 GraphPath.builder("test::domain::ClassA")
                         .addToManyPropertyValueAtIndex("properties", 0)
                         .addToOneProperties("genericType", "rawType")
@@ -815,10 +818,16 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                 GraphPath.parse("test::domain::ClassA.properties[name='prop2'].genericType.rawType"));
         Assert.assertEquals(
                 GraphPath.builder("test::domain::ClassA")
+                        .addToManyPropertyValueWithKey("properties", "name", "name with escaped text, '\n\b\\][, and other unusual characters, \"#$%^.")
+                        .addToOneProperties("genericType", "rawType")
+                        .build(),
+                GraphPath.parse("test::domain::ClassA.properties[name='name with escaped text, \\'\\n\\b\\\\][, and other unusual characters, \"#$%^.'].genericType.rawType"));
+        Assert.assertEquals(
+                GraphPath.builder("test::domain::ClassA")
                         .addToManyPropertyValueWithKey("properties", "name", "name with escaped text, '\n\b\\, and other unusual characters, \"#$%^.")
                         .addToOneProperties("genericType", "rawType")
                         .build(),
-                GraphPath.parse("test::domain::ClassA.properties[name='name with escaped text, \\'\\n\\b\\\\, and other unusual characters, \"#$%^.'].genericType.rawType"));
+                GraphPath.parse("something_test::domain::ClassA.properties[name='name with escaped text, \\'\\n\\b\\\\, and other unusual characters, \"#$%^.'].genericType.rawType_somethingElse", 10,  140));
 
         // with excess whitespace
         Assert.assertEquals(
@@ -851,6 +860,12 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                         .addToOneProperties("genericType", "rawType")
                         .build(),
                 GraphPath.parse("test::domain::ClassA\r\n\t.properties[0]\r\n\t.genericType.\r\n\trawType"));
+        Assert.assertEquals(
+                GraphPath.builder("test::domain::ClassA")
+                        .addToManyPropertyValueAtIndex("properties", 0)
+                        .addToOneProperties("genericType", "rawType")
+                        .build(),
+                GraphPath.parse("prefix_test::domain::ClassA\r\n\t.properties[0]\r\n\t.genericType.\r\n\trawType_suffix", 7, 70));
     }
 
     @Test
@@ -861,7 +876,7 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiled
                         "test::domain::ClassB",
                         "test::domain::ClassA.properties[0].genericType.rawType",
                         "test::domain::ClassA.properties['prop2'].genericType.rawType",
-                        "test::domain::ClassA.properties['name with escaped text, \\'\\n\\b\\\\, and other unusual characters, \"#$%^.'].genericType.rawType",
+                        "test::domain::ClassA.properties['name with escaped text, \\'\\n\\b\\\\][][, and other unusual characters, \"#$%^.'].genericType.rawType",
                         "::",
                         "::.children['test']",
                         "::.children['test'].children['domain']",
