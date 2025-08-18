@@ -833,19 +833,33 @@ public class CoreHelper
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static PureMap putAllPairs(PureMap pureMap, RichIterable<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?>> pairs)
     {
-        Map map = pureMap.getMap();
-        MutableMap<Object, Object> newOne = (map instanceof UnifiedMapWithHashingStrategy) ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : Maps.mutable.withMap(map);
-        pairs.forEach(p -> newOne.put(p._first(), p._second()));
-        return new PureMap(newOne);
+        if (!pairs.isEmpty())
+        {
+            Map map = pureMap.getMap();
+            MutableMap<Object, Object> newOne = (map instanceof UnifiedMapWithHashingStrategy) ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : Maps.mutable.withMap(map);
+            pairs.forEach(p -> newOne.put(p._first(), p._second()));
+            return new PureMap(newOne);
+        }
+        else
+        {
+            return pureMap;
+        }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static PureMap putAllPairs(PureMap pureMap, org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair<?, ?> pair)
     {
-        Map map = pureMap.getMap();
-        MutableMap<Object, Object> newOne = (map instanceof UnifiedMapWithHashingStrategy) ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : Maps.mutable.withMap(map);
-        newOne.put(pair._first(), pair._second());
-        return new PureMap(newOne);
+        if (pair != null)
+        {
+            Map map = pureMap.getMap();
+            MutableMap<Object, Object> newOne = (map instanceof UnifiedMapWithHashingStrategy) ? new UnifiedMapWithHashingStrategy<>(((UnifiedMapWithHashingStrategy) map).hashingStrategy(), map) : Maps.mutable.withMap(map);
+            newOne.put(pair._first(), pair._second());
+            return new PureMap(newOne);
+        }
+        else
+        {
+            return pureMap;
+        }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
