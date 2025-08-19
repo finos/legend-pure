@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m3.serialization.compiler.reference.v1;
+package org.finos.legend.pure.m3.tools;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
@@ -34,7 +34,6 @@ import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.measure.Measure;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.serialization.compiler.reference.AbstractReferenceTest;
-import org.finos.legend.pure.m3.tools.PackageableElementIterable;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
