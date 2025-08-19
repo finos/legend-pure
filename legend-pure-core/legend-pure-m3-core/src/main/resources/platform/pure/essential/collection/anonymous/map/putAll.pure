@@ -30,21 +30,21 @@ meta::pure::functions::collection::putAll<U,V>(m:Map<U,V>[1], o:Map<U,V>[1]):Map
 
 function <<PCT.test>> meta::pure::functions::collection::tests::putAll::testPutAll_emptyInputMap<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals(newMap([pair('key1', 1), pair('key2', 2)]), $f->eval(|newMap([]->cast(@Pair<String, Integer>))->putAll([pair('key1', 1), pair('key2', 2)]))->sort());
+    assertEquals(newMap([pair('key1', 1), pair('key2', 2)]), $f->eval(|newMap([]->cast(@Pair<String, Integer>))->putAll([pair('key1', 1), pair('key2', 2)])));
 
-    assertEquals(newMap([pair('key1', 1), pair('key2', 2)]), $f->eval(|newMap([]->cast(@Pair<String, Integer>))->putAll(newMap([pair('key1', 1), pair('key2', 2)])))->sort());
+    assertEquals(newMap([pair('key1', 1), pair('key2', 2)]), $f->eval(|newMap([]->cast(@Pair<String, Integer>))->putAll(newMap([pair('key1', 1), pair('key2', 2)]))));
 }
 
 function <<PCT.test>> meta::pure::functions::collection::tests::putAll::testPutAll_emptyPutEntries<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals(newMap([pair('key1', 1), pair('key2', 2)]), $f->eval(|newMap([pair('key1', 1), pair('key2', 2)])->putAll([]->cast(@Pair<String, Integer>)))->sort());
+    assertEquals(newMap([pair('key1', 1), pair('key2', 2)]), $f->eval(|newMap([pair('key1', 1), pair('key2', 2)])->putAll([]->cast(@Pair<String, Integer>))));
 
-    assertEquals(newMap([pair('key1', 1), pair('key2', 2)]), $f->eval(|newMap([pair('key1', 1), pair('key2', 2)])->putAll(newMap([]->cast(@Pair<String, Integer>))))->sort());
+    assertEquals(newMap([pair('key1', 1), pair('key2', 2)]), $f->eval(|newMap([pair('key1', 1), pair('key2', 2)])->putAll(newMap([]->cast(@Pair<String, Integer>)))));
 }
 
 function <<PCT.test>> meta::pure::functions::collection::tests::putAll::testPutAll_overridesExistingAndAddNew<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
-    assertEquals(newMap([pair('key1', 1), pair('key2', -2), pair('key3', 3)]), $f->eval(|newMap([pair('key1', 1), pair('key2', 2)])->putAll([pair('key2', -2), pair('key3', 3)]))->sort());
+    assertEquals(newMap([pair('key1', 1), pair('key2', -2), pair('key3', 3)]), $f->eval(|newMap([pair('key1', 1), pair('key2', 2)])->putAll([pair('key2', -2), pair('key3', 3)])));
 
-    assertEquals(newMap([pair('key1', 1), pair('key2', -2), pair('key3', 3)]), $f->eval(|newMap([pair('key1', 1), pair('key2', 2)])->putAll(newMap([pair('key2', -2), pair('key3', 3)])))->sort());
+    assertEquals(newMap([pair('key1', 1), pair('key2', -2), pair('key3', 3)]), $f->eval(|newMap([pair('key1', 1), pair('key2', 2)])->putAll(newMap([pair('key2', -2), pair('key3', 3)]))));
 }
