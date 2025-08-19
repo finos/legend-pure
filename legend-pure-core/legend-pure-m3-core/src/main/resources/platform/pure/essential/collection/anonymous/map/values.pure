@@ -14,7 +14,16 @@
 
 import meta::pure::test::pct::*;
 
-native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::collection::values<U,V>(m:Map<U,V>[1]):V[*];
+native function <<PCT.function>>
+    {doc.doc = 'Returns the values contained in given map.'}
+meta::pure::functions::collection::values<U,V>(m:Map<U,V>[1]):V[*];
 //{
 //    $m._values.second;
 //}
+
+function <<PCT.test>> meta::pure::functions::collection::tests::values::testValues<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEquals([], $f->eval(|newMap([]->cast(@Pair<String, Integer>))->values()));
+    assertEquals(1, $f->eval(|newMap(pair('key1', 1))->values()));
+    assertEquals([1, 2], $f->eval(|newMap([pair('key1', 1), pair('key2', 2)])->values())->sort());
+}

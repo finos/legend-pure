@@ -14,7 +14,9 @@
 
 import meta::pure::test::pct::*;
 
-native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::collection::put<U,V>(m:Map<U,V>[1], key:U[1], value:V[1]):Map<U,V>[1];
+native function <<PCT.function>>
+    {doc.doc = 'Returns a new map, with all the entries of the given map plus a new entry with the given key and value.  If the input map previously contained a mapping for the key, the old value is replaced by the specified value.'}
+meta::pure::functions::collection::put<U,V>(m:Map<U,V>[1], key:U[1], value:V[1]):Map<U,V>[1];
 //{
 //   let filtered = if($m._func->isEmpty(),
 //                           |$m._values->filter(v|$v.first != $key),
@@ -22,3 +24,18 @@ native function <<PCT.function, PCT.platformOnly>> meta::pure::functions::collec
 //                        );
 //   ^$m(_values = $filtered->concatenate(pair($key, $value)));
 //}
+
+function <<PCT.test>> meta::pure::functions::collection::tests::put::testPut_emptyMap<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEquals(newMap(pair('key1', 1)), $f->eval(|newMap([]->cast(@Pair<String, Integer>))->put('key1', 1)));
+}
+
+function <<PCT.test>> meta::pure::functions::collection::tests::put::testPut_addsEntry<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEquals(newMap([pair('key1', 0), pair('key2', 1)]), $f->eval(|newMap(pair('key1', 0))->put('key2', 1)));
+}
+
+function <<PCT.test>> meta::pure::functions::collection::tests::put::testPut_overridesEntry<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+{
+    assertEquals(newMap(pair('key1', 1)), $f->eval(|newMap(pair('key1', 0))->put('key1', 1)));
+}

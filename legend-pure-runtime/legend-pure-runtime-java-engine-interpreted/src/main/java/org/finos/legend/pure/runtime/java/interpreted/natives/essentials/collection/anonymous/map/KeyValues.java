@@ -52,12 +52,6 @@ public class KeyValues extends NativeFunction
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, MutableStack<CoreInstance> functionExpressionCallStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, final ProcessorSupport processorSupport) throws PureExecutionException
     {
-        CoreInstance pairType = processorSupport.package_getByUserPath(M3Paths.Pair);
-
-        CoreInstance genericType = processorSupport.newGenericType(null, pairType, false);
-        Instance.addValueToProperty(genericType, M3Properties.rawType, pairType, processorSupport);
-        Instance.addValueToProperty(genericType, M3Properties.typeArguments, params.get(0).getValueForMetaPropertyToOne(M3Properties.genericType).getValueForMetaPropertyToMany(M3Properties.typeArguments), processorSupport);
-
         RichIterable<CoreInstance> res = executeMap(this.repository, params, processorSupport);
         return ValueSpecificationBootstrap.wrapValueSpecification(res, ValueSpecification.isExecutable(params.get(0), processorSupport), processorSupport);
     }

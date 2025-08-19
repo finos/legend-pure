@@ -19,6 +19,7 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.map.mutable.MapAdapter;
 
 import java.util.Map;
+import java.util.Objects;
 
 // PureMap is needed because MutableMap is a subtype of RichIterable
 // RichIterable is a synonym of collection in Compiled...
@@ -47,5 +48,22 @@ public class PureMap
     public PureMapStats getStats()
     {
         return this.stats;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (!(o instanceof PureMap))
+        {
+            return false;
+        }
+        PureMap pureMap = (PureMap) o;
+        return Objects.equals(map, pureMap.map);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hashCode(map);
     }
 }
