@@ -68,4 +68,11 @@ function <<PCT.test>> meta::pure::functions::lang::tests::if::testMultiIf<Z|y>(f
                         ],
                         |4
                     )+3));
+
+    assertEquals(13, $f->eval(|if(
+                              [
+                                pair(| $val==5,|10)
+                              ],
+                              |4
+                        )+3));
 }
