@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m3.serialization.compiler.reference.v1;
+package org.finos.legend.pure.m3.tools;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
@@ -35,7 +35,17 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Objects;
 
-class ContainingElementIndex
+/**
+ * <p>Index for efficiently finding the containing element of an instance based on source information. Generally, the
+ * index should be built from all elements in the package tree, plus top level elements. However, it may be built from a
+ * subset of that if not all elements are needed.</p>
+ *
+ * <p>Note that being unable to find the containing element for an instance does not imply that the instance does not
+ * have a containing element. For example, the instance may not have source information or the containing element may
+ * not be in the index. Not being able to find the containing element from this index means either that there is no such
+ * element or that a more expensive search is required to find it.</p>
+ */
+public class ContainingElementIndex
 {
     private final MapIterable<String, ImmutableList<CoreInstance>> sourceIndex;
     private final SetIterable<CoreInstance> virtualPackages;
@@ -97,58 +107,72 @@ class ContainingElementIndex
         return builder.toString();
     }
 
-    CoreInstance findContainingElement(CoreInstance instance)
+    /**
+     * Finds the containing element for the given instance. Returns null if no containing element is found. Note that
+     * just because a containing element is not found does not mean that one does not exist. For example, the containing
+     * element may simply not be in the index.
+     *
+     * @param instance instance to find the containing element for
+     * @return containing element or null if not found
+     */
+    public CoreInstance findContainingElement(CoreInstance instance)
     {
         SourceInformation sourceInfo = instance.getSourceInformation();
-        if (sourceInfo != null)
+        if (sourceInfo == null)
         {
-            ImmutableList<CoreInstance> sourceElements = this.sourceIndex.get(sourceInfo.getSourceId());
-            if (sourceElements != null)
-            {
-                // Binary search among elements sorted by position in the source
-                int low = 0;
-                int high = sourceElements.size() - 1;
-                while (low <= high)
-                {
-                    int mid = (low + high) >>> 1;
-                    CoreInstance element = sourceElements.get(mid);
-                    if (element == instance)
-                    {
-                        return element;
-                    }
+            // if the instance has no source information, we can only find the containing element if it is a virtual package
+            return this.virtualPackages.contains(instance) ? instance : null;
+        }
 
-                    SourceInformation elementSourceInfo = element.getSourceInformation();
-                    if (SourceInformation.isBefore(sourceInfo.getEndLine(), sourceInfo.getEndColumn(), elementSourceInfo.getStartLine(), elementSourceInfo.getStartColumn()))
-                    {
-                        // instance ends before element starts
-                        high = mid - 1;
-                    }
-                    else if (SourceInformation.isAfter(sourceInfo.getStartLine(), sourceInfo.getStartColumn(), elementSourceInfo.getEndLine(), elementSourceInfo.getEndColumn()))
-                    {
-                        // instance starts after element ends
-                        low = mid + 1;
-                    }
-                    else
-                    {
-                        // instance and element must intersect, which by assumption means that element contains instance
-                        return element;
-                    }
+        ImmutableList<CoreInstance> sourceElements = this.sourceIndex.get(sourceInfo.getSourceId());
+        if (sourceElements != null)
+        {
+            // binary search among elements sorted by position in the source
+            int startLine = sourceInfo.getStartLine();
+            int startColumn = sourceInfo.getStartColumn();
+            int endLine = sourceInfo.getEndLine();
+            int endColumn = sourceInfo.getEndColumn();
+
+            int low = 0;
+            int high = sourceElements.size() - 1;
+            while (low <= high)
+            {
+                int mid = (low + high) >>> 1;
+                CoreInstance element = sourceElements.get(mid);
+                if (element == instance)
+                {
+                    return element;
+                }
+
+                SourceInformation elementSourceInfo = element.getSourceInformation();
+                if (SourceInformation.isBefore(endLine, endColumn, elementSourceInfo.getStartLine(), elementSourceInfo.getStartColumn()))
+                {
+                    // instance ends before element starts
+                    high = mid - 1;
+                }
+                else if (SourceInformation.isAfter(startLine, startColumn, elementSourceInfo.getEndLine(), elementSourceInfo.getEndColumn()))
+                {
+                    // instance starts after element ends
+                    low = mid + 1;
+                }
+                else
+                {
+                    // instance and element must intersect, which by assumption means that element contains instance
+                    return element;
                 }
             }
         }
-        else if (this.virtualPackages.contains(instance))
-        {
-            return instance;
-        }
+
+        // index does not contain the containing element for the instance
         return null;
     }
 
-    static Builder builder(ProcessorSupport processorSupport)
+    public static Builder builder(ProcessorSupport processorSupport)
     {
         return new Builder(processorSupport);
     }
 
-    static class Builder
+    public static class Builder
     {
         private final MutableMap<String, MutableList<CoreInstance>> elementsBySource = Maps.mutable.empty();
         private final MutableList<CoreInstance> virtualPackages = Lists.mutable.empty();
@@ -159,9 +183,19 @@ class ContainingElementIndex
             this.processorSupport = processorSupport;
         }
 
-        void addElement(CoreInstance element)
+        public void addElement(CoreInstance element)
         {
-            SourceInformation sourceInfo = Objects.requireNonNull(element, "element may not be null").getSourceInformation();
+            Objects.requireNonNull(element, "element may not be null");
+            if (!PackageableElement.isPackageableElement(element, this.processorSupport))
+            {
+                throw new IllegalArgumentException("Element must be a packageable element: " + element);
+            }
+            addElement_internal(element);
+        }
+
+        private void addElement_internal(CoreInstance element)
+        {
+            SourceInformation sourceInfo = element.getSourceInformation();
             if (sourceInfo == null)
             {
                 if (_Package.isPackage(element, this.processorSupport))
@@ -169,42 +203,45 @@ class ContainingElementIndex
                     this.virtualPackages.add(element);
                     return;
                 }
-                throw new IllegalArgumentException("Invalid element, no source information: " + element);
+                throw new IllegalArgumentException(PackageableElement.writeUserPathForPackageableElement(new StringBuilder("Invalid element, no source information: "), element).toString());
             }
             if (!sourceInfo.isValid())
             {
-                throw new IllegalArgumentException("Element with invalid source information: " + element + ", " + sourceInfo.getMessage());
+                StringBuilder builder = new StringBuilder("Element with invalid source information: ");
+                PackageableElement.writeUserPathForPackageableElement(builder, element);
+                sourceInfo.appendMessage(builder.append(", "));
+                throw new IllegalArgumentException(builder.toString());
             }
             this.elementsBySource.getIfAbsentPut(sourceInfo.getSourceId(), Lists.mutable::empty).add(element);
         }
 
-        Builder withElement(CoreInstance element)
+        public Builder withElement(CoreInstance element)
         {
             addElement(element);
             return this;
         }
 
-        void addElements(Iterable<? extends CoreInstance> elements)
+        public void addElements(Iterable<? extends CoreInstance> elements)
         {
             elements.forEach(this::addElement);
         }
 
-        Builder withElements(Iterable<? extends CoreInstance> elements)
+        public Builder withElements(Iterable<? extends CoreInstance> elements)
         {
             addElements(elements);
             return this;
         }
 
-        void addAllElements()
+        public void addAllElements()
         {
-            addElement(this.processorSupport.repository_getTopLevel(M3Paths.Package));
-            PrimitiveUtilities.forEachPrimitiveType(this.processorSupport, this::addElement);
+            addElement_internal(this.processorSupport.repository_getTopLevel(M3Paths.Package));
+            PrimitiveUtilities.forEachPrimitiveType(this.processorSupport, this::addElement_internal);
             Deque<CoreInstance> packages = new ArrayDeque<>();
             packages.add(this.processorSupport.repository_getTopLevel(M3Paths.Root));
             while (!packages.isEmpty())
             {
                 CoreInstance pkg = packages.pollFirst();
-                addElement(pkg);
+                addElement_internal(pkg);
                 pkg.getValueForMetaPropertyToMany(M3Properties.children).forEach(child ->
                 {
                     if (_Package.isPackage(child, this.processorSupport))
@@ -213,19 +250,19 @@ class ContainingElementIndex
                     }
                     else
                     {
-                        addElement(child);
+                        addElement_internal(child);
                     }
                 });
             }
         }
 
-        Builder withAllElements()
+        public Builder withAllElements()
         {
             addAllElements();
             return this;
         }
 
-        ContainingElementIndex build()
+        public ContainingElementIndex build()
         {
             MutableMap<String, ImmutableList<CoreInstance>> index = Maps.mutable.ofInitialCapacity(this.elementsBySource.size());
             this.elementsBySource.forEachKeyValue((source, elements) ->
@@ -233,7 +270,7 @@ class ContainingElementIndex
                 if (elements.size() > 1)
                 {
                     elements.sortThis((e1, e2) -> SourceInformation.compareByStartPosition(e1.getSourceInformation(), e2.getSourceInformation()));
-                    CoreInstance[] prev = new CoreInstance[1];
+                    CoreInstance[] prev = {null};
                     elements.removeIf(current ->
                     {
                         CoreInstance previous = prev[0];
