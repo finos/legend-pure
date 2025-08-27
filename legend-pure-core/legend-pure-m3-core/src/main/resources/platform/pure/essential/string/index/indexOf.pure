@@ -37,8 +37,8 @@ function <<PCT.test>> meta::pure::functions::string::tests::indexOf::testFromInd
     assertEquals(5, $f->eval(|$string->indexOf('h', 3)));
 }
 
-
-function <<PCT.test>> meta::pure::functions::string::tests::indexOf::testSubstringWithIndexOf<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
+// Find a better place... Not a PCT test
+function meta::pure::functions::string::tests::indexOf::testSubstringWithIndexOf<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
     let text = 'Pure is <awesome>';
     let endIndex = $text->indexOf('>') + 1;

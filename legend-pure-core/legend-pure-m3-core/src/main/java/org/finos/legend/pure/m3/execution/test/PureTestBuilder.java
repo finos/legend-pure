@@ -95,6 +95,16 @@ public class PureTestBuilder
             this.executor = executor;
         }
 
+        public CoreInstance getCoreInstance()
+        {
+            return coreInstance;
+        }
+
+        public ExecutionSupport getExecutionSupport()
+        {
+            return executionSupport;
+        }
+
         @Override
         protected void runTest() throws Throwable
         {
