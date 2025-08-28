@@ -331,6 +331,11 @@ public class Pure
             Type type = ma.getPrimitiveType(M3Paths.Decimal);
             return genericTypeBuilder.get()._rawType(type);
         }
+        if (val instanceof PureMap)
+        {
+            Type type = (Type) processorSupport.package_getByUserPath(M3Paths.Map);
+            return genericTypeBuilder.get()._rawType(type);
+        }
         if (val instanceof RichIterable)
         {
             RichIterable<?> l = (RichIterable<?>) val;
