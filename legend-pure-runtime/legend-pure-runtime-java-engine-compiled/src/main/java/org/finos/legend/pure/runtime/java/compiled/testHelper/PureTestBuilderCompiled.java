@@ -95,7 +95,7 @@ public class PureTestBuilderCompiled extends TestSuite
 
     public static TestSuite buildPCTTestSuite(ReportScope reportScope, MutableList<ExclusionSpecification> expectedFailures, Adapter adapter)
     {
-        CompiledExecutionSupport executionSupport = getClassLoaderExecutionSupport();
+        CompiledExecutionSupport executionSupport = getClassLoaderExecutionSupport(Thread.currentThread().getContextClassLoader());
         MutableMap<String, String> explodedExpectedFailures = PCTReportConfiguration.explodeExpectedFailures(expectedFailures, executionSupport.getProcessorSupport());
 
         return PureTestBuilderCompiled.buildPCTTestSuite(

@@ -37,6 +37,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Native
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ConstraintsOverride;
@@ -525,7 +526,11 @@ public class Pure
                 throw new PureExecutionException(func.getSourceInformation(), "Error accessing property '" + func.getName() + "'", e, Stacks.mutable.empty());
             }
         }
-
+        if (func instanceof Column)
+        {
+            Object instance = getInstanceForPropertyEvaluate(paramInputs, func.getName(), func.getSourceInformation());
+            return Pure.findSharedPureFunction(func, bridge, es).execute(Lists.mutable.with(instance), es);
+        }
         RichIterable<? extends VariableExpression> params = ((FunctionType) func._classifierGenericType()._typeArguments().getAny()._rawType())._parameters();
         Class<?>[] paramClasses = new Class<?>[params.size()];
         int index = 0;
