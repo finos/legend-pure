@@ -99,7 +99,7 @@
         <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
         <maven.surefire.plugin.version>3.1.0</maven.surefire.plugin.version>
         <versions.maven.plugin.version>2.7</versions.maven.plugin.version>
-        <errorprone.plugin.version>2.4.1</errorprone.plugin.version>
+	<errorprone.plugin.version>2.41.0</errorprone.plugin.version>
     </properties>
 
 
