@@ -14,10 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.testHelper;
 
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.UncheckedIOException;
+import java.io.*;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -45,7 +43,8 @@ public class FunctionExecutionInterpretedWithCodeCoverage extends FunctionExecut
         try
         {
             Files.createDirectories(coverageDirectory);
-            this.writer = new PrintWriter(Files.newOutputStream(coverageDirectory.resolve(UUID.randomUUID() + ".purecov"), StandardOpenOption.CREATE_NEW));
+            this.writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(coverageDirectory.resolve(UUID.randomUUID() + ".purecov"), StandardOpenOption.CREATE_NEW), Charset.defaultCharset())));
+
         }
         catch (IOException e)
         {

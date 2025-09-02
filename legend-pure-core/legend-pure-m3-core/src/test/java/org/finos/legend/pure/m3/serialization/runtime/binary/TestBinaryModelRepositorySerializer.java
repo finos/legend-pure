@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.serialization.runtime.binary;
 
+import java.nio.charset.Charset;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
@@ -110,13 +111,13 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
 
             JarEntry definitionIndexEntry = stream.getNextJarEntry();
             Assert.assertEquals(PureRepositoryJarTools.DEFINITION_INDEX_NAME, definitionIndexEntry.getName());
-            JSONObject definitionIndex = (JSONObject) JSONValue.parse(new InputStreamReader(stream));
+            JSONObject definitionIndex = (JSONObject) JSONValue.parse(new InputStreamReader(stream, Charset.defaultCharset()));
             stream.closeEntry();
             Verify.assertMapsEqual(expectedDefinitionIndex, definitionIndex);
 
             JarEntry referenceIndexEntry = stream.getNextJarEntry();
             Assert.assertEquals(PureRepositoryJarTools.REFERENCE_INDEX_NAME, referenceIndexEntry.getName());
-            JSONObject referenceIndex = (JSONObject) JSONValue.parse(new InputStreamReader(stream));
+            JSONObject referenceIndex = (JSONObject) JSONValue.parse(new InputStreamReader(stream, Charset.defaultCharset()));
             stream.closeEntry();
             for (Entry<?, ?> entry : ((Map<?, ?>) referenceIndex).entrySet())
             {
