@@ -172,10 +172,10 @@ class FunctionExpressionExecutor implements Executor
                 size--;
             }
 
-            if (!GenericType.isGenericTypeOperation(ci, processorSupport) && !GenericType.isGenericTypeFullyConcrete(ci, processorSupport))
-            {
-                throw new PureExecutionException(functionExpressionCallStack.isEmpty() ? null : functionExpressionCallStack.peek().getSourceInformation(), "Can't resolve some type parameters in: " + GenericType.print(ci, processorSupport), functionExpressionCallStack);
-            }
+//            if (!GenericType.isGenericTypeOperation(ci, processorSupport) && !GenericType.isGenericTypeFullyConcrete(ci, processorSupport))
+//            {
+//                throw new PureExecutionException(functionExpressionCallStack.isEmpty() ? null : functionExpressionCallStack.peek().getSourceInformation(), "Can't resolve some type parameters in: " + GenericType.print(ci, processorSupport), functionExpressionCallStack);
+//            }
 
             if (GenericType.isGenericTypeOperationEqual((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) ci))
             {
@@ -208,10 +208,10 @@ class FunctionExpressionExecutor implements Executor
             else
             {
                 CoreInstance resolvedMultiplicity = resolveMultiplicityParameter(Multiplicity.getMultiplicityParameter(multiplicity), stack);
-                if (resolvedMultiplicity == null)
-                {
-                    throw new PureExecutionException(functionExpressionCallStack.isEmpty() ? null : functionExpressionCallStack.peek().getSourceInformation(), "Cannot resolve multiplicity parameter: " + Multiplicity.getMultiplicityParameter(multiplicity), functionExpressionCallStack);
-                }
+//                if (resolvedMultiplicity == null)
+//                {
+//                    throw new PureExecutionException(functionExpressionCallStack.isEmpty() ? null : functionExpressionCallStack.peek().getSourceInformation(), "Cannot resolve multiplicity parameter: " + Multiplicity.getMultiplicityParameter(multiplicity), functionExpressionCallStack);
+//                }
                 result.put(parameter, resolvedMultiplicity);
             }
         });
