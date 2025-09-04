@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.serialization.runtime.binary;
 
+import java.nio.charset.StandardCharsets;
 import org.eclipse.collections.api.collection.MutableCollection;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
@@ -93,7 +94,7 @@ public class PureRepositoryJarMetadata
             throw new RuntimeException("Invalid Pure jar: expected " + PureRepositoryJarTools.DEFINITION_INDEX_NAME + ", found " + entry.getName());
         }
 
-        ImmutableMap<String, String> index = readDefinitionIndex(new BufferedReader(new InputStreamReader(jarStream)));
+        ImmutableMap<String, String> index = readDefinitionIndex(new BufferedReader(new InputStreamReader(jarStream, Charset.defaultCharset())));
         jarStream.closeEntry();
         return index;
     }
@@ -114,7 +115,7 @@ public class PureRepositoryJarMetadata
             throw new RuntimeException("Invalid Pure jar: expected " + PureRepositoryJarTools.REFERENCE_INDEX_NAME + ", found " + entry.getName());
         }
 
-        ImmutableMap<String, ImmutableSet<String>> index = readExternalReferenceIndex(new BufferedReader(new InputStreamReader(jarStream)));
+        ImmutableMap<String, ImmutableSet<String>> index = readExternalReferenceIndex(new BufferedReader(new InputStreamReader(jarStream, Charset.defaultCharset())));
         jarStream.closeEntry();
         return index;
     }
