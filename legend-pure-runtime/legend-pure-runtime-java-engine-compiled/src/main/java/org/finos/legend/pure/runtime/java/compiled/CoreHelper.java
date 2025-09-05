@@ -1094,6 +1094,31 @@ public class CoreHelper
         return new BigDecimal(str.endsWith("D") || str.endsWith("d") ? str.substring(0, str.length() - 1) : str);
     }
 
+    public static BigDecimal parseDecimalWithScalePrecision(String str, Long precision, Long scale)
+    {
+        if (precision <= 0)
+        {
+            throw new IllegalArgumentException("Precision must be a positive integer.");
+        }
+        if (scale < 0)
+        {
+            throw new IllegalArgumentException("Scale cannot be negative.");
+        }
+        if (scale > precision)
+        {
+            throw new IllegalArgumentException("Scale cannot be greater than precision.");
+        }
+
+        BigDecimal bd = new BigDecimal(str);
+        bd = bd.setScale(scale.intValue(), RoundingMode.HALF_UP);
+        if (bd.precision() > precision)
+        {
+            throw new ArithmeticException("Value '" + str + "' cannot be represented as DECIMAL(" + precision + ", " + scale + ") due to precision overflow. Resulting precision (" + bd.precision() + ") exceeds allowed precision (" + precision + ").");
+        }
+
+        return bd;
+    }
+
     public static boolean contains(String str1, String str2)
     {
         return str1.contains(str2);

@@ -33,6 +33,7 @@ import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.StrictTimeFunc
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -89,6 +90,36 @@ public class PrimitiveUtilities
     public static BigDecimal getDecimalValue(CoreInstance instance)
     {
         return (instance instanceof DecimalCoreInstance) ? ((DecimalCoreInstance) instance).getValue() : new BigDecimal(instance.getName());
+    }
+
+    public static BigDecimal getDecimalValueWithPrecisionScale(CoreInstance numberInstance, CoreInstance precisionInstance, CoreInstance scaleInstance)
+    {
+        return (numberInstance instanceof DecimalCoreInstance) ? ((DecimalCoreInstance) numberInstance).getValue() : getDecimalWithScalePrecision(numberInstance.getName(), getIntegerValue(precisionInstance).intValue(), getIntegerValue(scaleInstance).intValue());
+    }
+
+    public static BigDecimal getDecimalWithScalePrecision(String str, int precision, int scale)
+    {
+        if (precision <= 0)
+        {
+            throw new IllegalArgumentException("Precision must be a positive integer.");
+        }
+        if (scale < 0)
+        {
+            throw new IllegalArgumentException("Scale cannot be negative.");
+        }
+        if (scale > precision)
+        {
+            throw new IllegalArgumentException("Scale cannot be greater than precision.");
+        }
+
+        BigDecimal bd = new BigDecimal(str);
+        bd = bd.setScale(scale, RoundingMode.HALF_UP);
+        if (bd.precision() > precision)
+        {
+            throw new ArithmeticException("Value '" + str + "' cannot be represented as DECIMAL(" + precision + ", " + scale + ") due to precision overflow. Resulting precision (" + bd.precision() + ") exceeds allowed precision (" + precision + ").");
+        }
+
+        return bd;
     }
 
     public static BigDecimal getDecimalValue(CoreInstance instance, BigDecimal defaultIfNull)

@@ -180,6 +180,7 @@ import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.parse.ParsePrimitiveBoolean;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.parse.ParsePrimitiveDate;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.parse.ParsePrimitiveDecimal;
+import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.parse.ParsePrimitiveDecimalWithScalePrecision;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.parse.ParsePrimitiveFloat;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.parse.ParsePrimitiveInteger;
 import org.finos.legend.pure.runtime.java.interpreted.natives.essentials.string.split.Split;
@@ -562,6 +563,7 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.nativeFunctions.put("parseDate_String_1__Date_1_", new ParsePrimitiveDate(this, repository));
         this.nativeFunctions.put("parseFloat_String_1__Float_1_", new ParsePrimitiveFloat(this, repository));
         this.nativeFunctions.put("parseDecimal_String_1__Decimal_1_", new ParsePrimitiveDecimal(this, repository));
+        this.nativeFunctions.put("parseDecimal_String_1__Integer_1__Integer_1__Decimal_1_", new ParsePrimitiveDecimalWithScalePrecision(repository));
         this.nativeFunctions.put("parseInteger_String_1__Integer_1_", new ParsePrimitiveInteger(this, repository));
         //  Split
         this.nativeFunctions.put("split_String_1__String_1__String_MANY_", new Split(repository));
