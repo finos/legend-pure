@@ -14,8 +14,18 @@
 
 import meta::pure::test::pct::*;
 
+function
+<<PCT.function>>
+    {
+        doc.doc='Cast a String to decimal with database default precision and scale. Should be deprecated in preference of parseDecimal(precision, scale).'
+    }
 native function <<PCT.function>> meta::pure::functions::string::parseDecimal(string:String[1]):Decimal[1];
 
+function
+<<PCT.function>>
+    {
+        doc.doc='Cast a String to decimal with user defined precision and scale.'
+    }
 native function <<PCT.function>> meta::pure::functions::string::parseDecimal(string:String[1], precision: Integer[1], scale: Integer[1]):Decimal[1];
 
 function <<PCT.test>> meta::pure::functions::string::tests::parseDecimal::testParseDecimal<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
