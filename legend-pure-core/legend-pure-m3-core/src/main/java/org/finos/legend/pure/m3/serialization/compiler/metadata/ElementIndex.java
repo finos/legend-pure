@@ -23,20 +23,19 @@ import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
+import java.util.Comparator;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 class ElementIndex
 {
     private final MapIterable<String, ConcreteElementMetadata> pathIndex;
-    private final MapIterable<String, ImmutableList<ConcreteElementMetadata>> sourceIndex;
-    private final MapIterable<String, ImmutableList<ConcreteElementMetadata>> classifierIndex;
+    private volatile MapIterable<String, ImmutableList<ConcreteElementMetadata>> sourceIndex;
+    private volatile MapIterable<String, ImmutableList<ConcreteElementMetadata>> classifierIndex;
 
-    private ElementIndex(MapIterable<String, ConcreteElementMetadata> pathIndex, MapIterable<String, ImmutableList<ConcreteElementMetadata>> sourceIndex, MapIterable<String, ImmutableList<ConcreteElementMetadata>> classifierIndex)
+    private ElementIndex(MapIterable<String, ConcreteElementMetadata> pathIndex)
     {
         this.pathIndex = pathIndex;
-        this.sourceIndex = sourceIndex;
-        this.classifierIndex = classifierIndex;
     }
 
     @Override
@@ -96,55 +95,110 @@ class ElementIndex
 
     boolean hasSource(String sourceId)
     {
-        return this.sourceIndex.containsKey(sourceId);
+        return getSourceIndex().containsKey(sourceId);
     }
 
     RichIterable<String> getAllSources()
     {
-        return this.sourceIndex.keysView();
+        return getSourceIndex().keysView();
     }
 
     ImmutableList<ConcreteElementMetadata> getSourceElements(String sourceId)
     {
-        return this.sourceIndex.get(sourceId);
+        return getSourceIndex().get(sourceId);
     }
 
     void forEachSourceWithElements(BiConsumer<? super String, ? super ImmutableList<ConcreteElementMetadata>> consumer)
     {
-        this.sourceIndex.forEachKeyValue(consumer::accept);
+        getSourceIndex().forEachKeyValue(consumer::accept);
+    }
+
+    private MapIterable<String, ImmutableList<ConcreteElementMetadata>> getSourceIndex()
+    {
+        if (this.sourceIndex == null)
+        {
+            synchronized (this)
+            {
+                if (this.sourceIndex == null)
+                {
+                    this.sourceIndex = buildSourceIndex();
+                }
+            }
+        }
+        return this.sourceIndex;
+    }
+
+    private MapIterable<String, ImmutableList<ConcreteElementMetadata>> buildSourceIndex()
+    {
+        MutableMap<String, MutableList<ConcreteElementMetadata>> initialIndex = Maps.mutable.empty();
+        this.pathIndex.forEachValue(element -> initialIndex.getIfAbsentPut(element.getSourceInformation().getSourceId(), Lists.mutable::empty).add(element));
+
+        MutableMap<String, ImmutableList<ConcreteElementMetadata>> index = Maps.mutable.ofInitialCapacity(initialIndex.size());
+        Comparator<ConcreteElementMetadata> comparator = (e1, e2) ->
+        {
+            // We sort by the start position: we can do this because there is no overlap between source info of different elements
+            SourceInformation si1 = e1.getSourceInformation();
+            SourceInformation si2 = e2.getSourceInformation();
+            return SourceInformation.comparePositions(si1.getStartLine(), si1.getStartColumn(), si2.getStartLine(), si2.getStartColumn());
+        };
+        initialIndex.forEachKeyValue((source, sourceElements) -> index.put(source, sourceElements.sortThis(comparator).toImmutable()));
+        return index;
     }
 
     // Elements by classifier
 
     boolean hasClassifier(String path)
     {
-        return this.classifierIndex.containsKey(path);
+        return getClassifierIndex().containsKey(path);
     }
 
     RichIterable<String> getAllClassifiers()
     {
-        return this.classifierIndex.keysView();
+        return getClassifierIndex().keysView();
     }
 
     ImmutableList<ConcreteElementMetadata> getClassifierElements(String classifierPath)
     {
-        return this.classifierIndex.get(classifierPath);
+        return getClassifierIndex().get(classifierPath);
     }
 
     void forEachClassifierWithElements(BiConsumer<? super String, ? super ImmutableList<ConcreteElementMetadata>> consumer)
     {
-        this.classifierIndex.forEachKeyValue(consumer::accept);
+        getClassifierIndex().forEachKeyValue(consumer::accept);
+    }
+
+    private MapIterable<String, ImmutableList<ConcreteElementMetadata>> getClassifierIndex()
+    {
+        if (this.classifierIndex == null)
+        {
+            synchronized (this)
+            {
+                if (this.classifierIndex == null)
+                {
+                    this.classifierIndex = buildClassifierIndex();
+                }
+            }
+        }
+        return this.classifierIndex;
+    }
+
+    private MapIterable<String, ImmutableList<ConcreteElementMetadata>> buildClassifierIndex()
+    {
+        MutableMap<String, MutableList<ConcreteElementMetadata>> initialIndex = Maps.mutable.empty();
+        this.pathIndex.forEachValue(element -> initialIndex.getIfAbsentPut(element.getClassifierPath(), Lists.mutable::empty).add(element));
+
+        MutableMap<String, ImmutableList<ConcreteElementMetadata>> index = Maps.mutable.ofInitialCapacity(initialIndex.size());
+        Comparator<PackageableElementMetadata> comparator = Comparator.comparing(PackageableElementMetadata::getPath);
+        initialIndex.forEachKeyValue((classifier, classifierElements) -> index.put(classifier, classifierElements.sortThis(comparator).toImmutable()));
+        return index;
     }
 
     static ElementIndex buildIndex(ModuleIndex modules)
     {
-        // Build initial indexes
-        MutableMap<String, ConcreteElementMetadata> pathIndex = Maps.mutable.empty();
-        MutableMap<String, MutableList<ConcreteElementMetadata>> initialSourceIndex = Maps.mutable.empty();
-        MutableMap<String, MutableList<ConcreteElementMetadata>> initialClassifierIndex = Maps.mutable.empty();
+        // Build element by path index eagerly and other indexes lazily
+        MutableMap<String, ConcreteElementMetadata> pathIndex = Maps.mutable.ofInitialCapacity(getTotalElementCount(modules));
         modules.forEachModule(module -> module.forEachElement(element ->
         {
-            // By path
             ConcreteElementMetadata previous = pathIndex.put(element.getPath(), element);
             if ((previous != null) && !element.equals(previous))
             {
@@ -155,35 +209,14 @@ class ElementIndex
                 element.getSourceInformation().appendMessage(builder);
                 throw new IllegalArgumentException(builder.toString());
             }
-
-            // By source
-            initialSourceIndex.getIfAbsentPut(element.getSourceInformation().getSourceId(), Lists.mutable::empty).add(element);
-
-            // By classifier
-            initialClassifierIndex.getIfAbsentPut(element.getClassifierPath(), Lists.mutable::empty).add(element);
         }));
+        return new ElementIndex(pathIndex);
+    }
 
-        // Build final source index
-        MutableMap<String, ImmutableList<ConcreteElementMetadata>> sourceIndex = Maps.mutable.ofInitialCapacity(initialSourceIndex.size());
-        initialSourceIndex.forEachKeyValue((source, elements) ->
-        {
-            if (elements.size() > 1)
-            {
-                // We sort by the start position: we can do this because there is no overlap between source info of different elements
-                elements.sortThis((e1, e2) ->
-                {
-                    SourceInformation si1 = e1.getSourceInformation();
-                    SourceInformation si2 = e2.getSourceInformation();
-                    return SourceInformation.comparePositions(si1.getStartLine(), si1.getStartColumn(), si2.getStartLine(), si2.getStartColumn());
-                });
-            }
-            sourceIndex.put(source, elements.toImmutable());
-        });
-
-        // Build final classifier index
-        MutableMap<String, ImmutableList<ConcreteElementMetadata>> classifierIndex = Maps.mutable.ofInitialCapacity(initialClassifierIndex.size());
-        initialClassifierIndex.forEachKeyValue((classifier, elements) -> classifierIndex.put(classifier, elements.sortThisBy(PackageableElementMetadata::getPath).toImmutable()));
-
-        return new ElementIndex(pathIndex, sourceIndex, classifierIndex);
+    private static int getTotalElementCount(ModuleIndex modules)
+    {
+        int[] count = {0};
+        modules.forEachModule(module -> count[0] += module.getElementCount());
+        return count[0];
     }
 }
