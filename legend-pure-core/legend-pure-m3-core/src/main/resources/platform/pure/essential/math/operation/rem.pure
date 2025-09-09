@@ -14,7 +14,7 @@
 
 import meta::pure::test::pct::*;
 
-native function <<PCT.function>> meta::pure::functions::math::rem(dividend:Number[1], divisor:Number[1]):Number[1];
+native function <<PCT.function>> {doc.doc='This is equivalent to what other computer languages refer to modulo and usually leverage the % operand.'} meta::pure::functions::math::rem(dividend:Number[1], divisor:Number[1]):Number[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::rem::testRem<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {

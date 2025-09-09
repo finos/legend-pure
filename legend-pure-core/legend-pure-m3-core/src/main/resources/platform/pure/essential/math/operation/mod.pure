@@ -14,7 +14,7 @@
 
 import meta::pure::test::pct::*;
 
-native function <<PCT.function>> meta::pure::functions::math::mod(dividend:Integer[1], divisor:Integer[1]):Integer[1];
+native function <<PCT.function>> {doc.doc='Compute the modulo as defined mathematically.  The result is never negative.  This is different from the % operation on computer languages, where for negative inputs it will return negative numbers.  For that operation in Pure, please see the function reminder - rem()'} meta::pure::functions::math::mod(dividend:Integer[1], divisor:Integer[1]):Integer[1];
 
 function <<PCT.test>> meta::pure::functions::math::tests::mod::testMod<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
 {
