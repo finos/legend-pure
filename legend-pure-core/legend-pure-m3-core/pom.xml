@@ -162,6 +162,22 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>Compile Pure</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>org.finos.legend.pure.m3.generator.compiler.PureCompilerBinaryGenerator</mainClass>
+                            <arguments>
+                                <argument>${project.build.outputDirectory}</argument>
+                                <argument>platform</argument>
+                            </arguments>
+                            <classpathScope>provided</classpathScope>
+                            <useMavenLogger>true</useMavenLogger>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>Generate PAR</id>
                         <phase>compile</phase>
                         <goals>
