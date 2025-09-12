@@ -29,6 +29,7 @@ import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m4.serialization.Reader;
 import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 
 import java.io.Serializable;
@@ -556,8 +557,9 @@ public abstract class DistributedBinaryGraphDeserializer
                     for (int i = 0; i < partitionInstanceCount; i++)
                     {
                         String identifier = this.stringIndex.getString(reader.readInt());
+                        String hashedInstanceId = IdBuilder.hashToBase64String(identifier);
                         int length = reader.readInt();
-                        index.put(identifier, new SourceCoordinates(identifier, filePath, offset, length));
+                        index.put(hashedInstanceId, new SourceCoordinates(hashedInstanceId, filePath, offset, length));
                         offset += length;
                     }
                     instancesRead += partitionInstanceCount;

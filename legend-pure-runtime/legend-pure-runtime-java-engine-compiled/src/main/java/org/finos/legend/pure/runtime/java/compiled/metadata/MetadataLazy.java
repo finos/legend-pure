@@ -28,6 +28,7 @@ import org.eclipse.collections.impl.Counter;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.EnumProcessor;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphDeserializer;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedMetadataSpecification;
@@ -279,7 +280,8 @@ public class MetadataLazy implements Metadata
 
     private CoreInstance toJavaObject(String classifier, String id)
     {
-        return getClassifierInstanceCache(classifier).getIfAbsentPut(id, () -> newInstance(classifier, id));
+        String hashedInstanceId = IdBuilder.hashToBase64String(id);
+        return getClassifierInstanceCache(classifier).getIfAbsentPut(hashedInstanceId, () -> newInstance(classifier, hashedInstanceId));
     }
 
     private ConcurrentMutableMap<String, CoreInstance> getClassifierInstanceCache(String classifier)

@@ -36,6 +36,8 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtensionLoader;
 
+import java.nio.ByteBuffer;
+import java.util.Base64;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -381,5 +383,22 @@ public class IdBuilder
 
         int endIndex = CodeStorageTools.hasPureFileExtension(sourceId) ? (sourceId.length() - RepositoryCodeStorage.PURE_FILE_EXTENSION.length()) : sourceId.length();
         return sourceId.substring(1, endIndex).replace('/', '_');
+    }
+
+    public static String hashToBase64String(String instanceId)
+    {
+        long hashedInstanceId = hash(instanceId);
+        byte[] longBytes = ByteBuffer.allocate(8).putLong(hashedInstanceId).array();
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(longBytes);
+    }
+
+    private static long hash(String id)
+    {
+        long value = 0;
+        for (int i = 0, codePoint; i < id.length(); i += Character.charCount(codePoint))
+        {
+            value = (31 * value) + (codePoint = id.codePointAt(i));
+        }
+        return value;
     }
 }
