@@ -825,11 +825,19 @@ public class GenericType
             resolveImportStubs(genericType.getValueForMetaPropertyToOne(M3Properties.right), processorSupport);
         }
 
-        genericType.getValueForMetaPropertyToMany(M3Properties.multiplicityArguments).forEach(arg -> ImportStub.withImportStubByPass(arg, processorSupport));
+        for (CoreInstance multArgument : genericType.getValueForMetaPropertyToMany(M3Properties.multiplicityArguments))
+        {
+            ImportStub.withImportStubByPass(multArgument, processorSupport);
+        }
         for (CoreInstance typeArgument : genericType.getValueForMetaPropertyToMany(M3Properties.typeArguments))
         {
             resolveImportStubs(typeArgument, processorSupport);
             resolveImportStubs(typeArgument, processorSupport);
+        }
+
+        for (CoreInstance typeVariableValue : genericType.getValueForMetaPropertyToMany(M3Properties.typeVariableValues))
+        {
+            resolveImportStubs(typeVariableValue.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport);
         }
     }
 
