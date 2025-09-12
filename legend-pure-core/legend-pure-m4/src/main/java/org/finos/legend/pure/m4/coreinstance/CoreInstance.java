@@ -23,6 +23,7 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecification;
+import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecifications;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
 
@@ -131,7 +132,10 @@ public interface CoreInstance
 
     void modifyValueForToManyMetaProperty(String key, int offset, CoreInstance value);
 
-    void removeProperty(CoreInstance propertyNameKey);
+    default void removeProperty(CoreInstance propertyNameKey)
+    {
+        removeProperty(propertyNameKey.getName());
+    }
 
     void removeProperty(String propertyNameKey);
 
@@ -139,15 +143,27 @@ public interface CoreInstance
 
     CoreInstance getValueForMetaPropertyToOne(String propertyName);
 
-    CoreInstance getValueForMetaPropertyToOne(CoreInstance property);
+    default CoreInstance getValueForMetaPropertyToOne(CoreInstance property)
+    {
+        return getValueForMetaPropertyToOne(property.getName());
+    }
 
     ListIterable<? extends CoreInstance> getValueForMetaPropertyToMany(String keyName);
 
-    ListIterable<? extends CoreInstance> getValueForMetaPropertyToMany(CoreInstance key);
+    default ListIterable<? extends CoreInstance> getValueForMetaPropertyToMany(CoreInstance key)
+    {
+        return getValueForMetaPropertyToMany(key.getName());
+    }
 
-    CoreInstance getValueInValueForMetaPropertyToMany(String keyName, String keyInMany);
+    default CoreInstance getValueInValueForMetaPropertyToMany(String keyName, String keyInMany)
+    {
+        return getValueInValueForMetaPropertyToManyByIDIndex(keyName, IndexSpecifications.getCoreInstanceNameIndexSpec(), keyInMany);
+    }
 
-    CoreInstance getValueInValueForMetaPropertyToManyWithKey(String keyName, String key, String keyInMany);
+    default CoreInstance getValueInValueForMetaPropertyToManyWithKey(String keyName, String key, String keyInMany)
+    {
+        return getValueInValueForMetaPropertyToManyByIDIndex(keyName, IndexSpecifications.getPropertyValueNameIndexSpec(key), keyInMany);
+    }
 
     <K> CoreInstance getValueInValueForMetaPropertyToManyByIDIndex(String keyName, IndexSpecification<K> indexSpec, K keyInIndex);
 
@@ -161,41 +177,103 @@ public interface CoreInstance
 
     void addKeyValue(ListIterable<String> key, CoreInstance value);
 
-    void printFull(Appendable appendable, String tab);
+    default void printFull(Appendable appendable, String tab)
+    {
+        // by default, just call print
+        print(appendable, tab);
+    }
 
-    void print(Appendable appendable, String tab);
+    default void print(Appendable appendable, String tab)
+    {
+        print(appendable, tab, DEFAULT_MAX_PRINT_DEPTH);
+    }
 
     void print(Appendable appendable, String tab, int max);
 
-    void printWithoutDebug(Appendable appendable, String tab);
+    default void printWithoutDebug(Appendable appendable, String tab)
+    {
+        printWithoutDebug(appendable, tab, DEFAULT_MAX_PRINT_DEPTH);
+    }
 
-    void printWithoutDebug(Appendable appendable, String tab, int max);
+    default void printWithoutDebug(Appendable appendable, String tab, int max)
+    {
+        // by default, just call print
+        print(appendable, tab, max);
+    }
 
-    String printFull(String tab);
+    default String printFull(String tab)
+    {
+        StringBuilder builder = new StringBuilder();
+        printFull(builder, tab);
+        return builder.toString();
+    }
 
-    String print(String tab);
+    default String print(String tab)
+    {
+        StringBuilder builder = new StringBuilder();
+        print(builder, tab);
+        return builder.toString();
+    }
 
-    String print(String tab, int max);
+    default String print(String tab, int max)
+    {
+        StringBuilder builder = new StringBuilder();
+        print(builder, tab, max);
+        return builder.toString();
+    }
 
-    String printWithoutDebug(String tab);
+    default String printWithoutDebug(String tab)
+    {
+        StringBuilder builder = new StringBuilder();
+        printWithoutDebug(builder, tab);
+        return builder.toString();
+    }
 
-    String printWithoutDebug(String tab, int max);
+    default String printWithoutDebug(String tab, int max)
+    {
+        StringBuilder builder = new StringBuilder();
+        printWithoutDebug(builder, tab, max);
+        return builder.toString();
+    }
 
     void commit(ModelRepositoryTransaction transaction);
 
-    void rollback(ModelRepositoryTransaction transaction);
+    default void rollback(ModelRepositoryTransaction transaction)
+    {
+        // By default, rolling back is simply not committing
+    }
 
-    void markProcessed();
+    default void markProcessed()
+    {
+        addCompileState(CompileState.PROCESSED);
+    }
 
-    void markNotProcessed();
+    default void markNotProcessed()
+    {
+        markNotValidated();
+        removeCompileState(CompileState.PROCESSED);
+    }
 
-    boolean hasBeenProcessed();
+    default boolean hasBeenProcessed()
+    {
+        return hasCompileState(CompileState.PROCESSED);
+    }
 
-    void markValidated();
+    default void markValidated()
+    {
+        markProcessed();
+        addCompileState(CompileState.VALIDATED);
+    }
 
-    void markNotValidated();
+    default void markNotValidated()
+    {
+        removeCompileState(CompileState.VALIDATED);
+    }
 
-    boolean hasBeenValidated();
+    default boolean hasBeenValidated()
+    {
+        return hasCompileState(CompileState.VALIDATED);
+    }
 
     void addCompileState(CompileState state);
 
