@@ -18,11 +18,11 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 import java.math.BigDecimal;
 
-public class DecimalCoreInstance extends PrimitiveCoreInstance<BigDecimal>
+public class DecimalCoreInstance extends AbstractPrimitiveCoreInstance<BigDecimal>
 {
     private String name = null;
 
-    protected DecimalCoreInstance(BigDecimal value, CoreInstance classifier, int internalSyntheticId)
+    DecimalCoreInstance(BigDecimal value, CoreInstance classifier, int internalSyntheticId)
     {
         super(value, classifier, internalSyntheticId);
     }

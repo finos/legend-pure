@@ -16,7 +16,7 @@ package org.finos.legend.pure.m4.coreinstance.primitive;
 
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
-public class ByteCoreInstance extends PrimitiveCoreInstance<Byte>
+public class ByteCoreInstance extends AbstractPrimitiveCoreInstance<Byte>
 {
     private String name = null;
 

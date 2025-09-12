@@ -18,15 +18,9 @@ import org.eclipse.collections.api.block.function.Function;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
-public final class BooleanCoreInstance extends PrimitiveCoreInstance<Boolean>
+public final class BooleanCoreInstance extends AbstractPrimitiveCoreInstance<Boolean>
 {
-    public static final Function<CoreInstance, Boolean> FROM_CORE_INSTANCE_FN = new Function<CoreInstance, Boolean>()
-    {
-        public Boolean valueOf(CoreInstance coreInstance)
-        {
-            return coreInstance == null ? null : ((BooleanCoreInstance)coreInstance).getValue();
-        }
-    };
+    public static final Function<CoreInstance, Boolean> FROM_CORE_INSTANCE_FN = BooleanCoreInstance::fromCoreInstance;
 
     BooleanCoreInstance(Boolean value, CoreInstance classifier, int internalSyntheticId)
     {
@@ -43,5 +37,10 @@ public final class BooleanCoreInstance extends PrimitiveCoreInstance<Boolean>
     public CoreInstance copy()
     {
         return new BooleanCoreInstance(this.getValue(), this.getClassifier(), this.getSyntheticId());
+    }
+
+    public static Boolean fromCoreInstance(CoreInstance instance)
+    {
+        return (instance == null) ? null : ((BooleanCoreInstance) instance).getValue();
     }
 }

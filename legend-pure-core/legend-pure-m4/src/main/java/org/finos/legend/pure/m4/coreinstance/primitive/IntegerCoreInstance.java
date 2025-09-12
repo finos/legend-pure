@@ -19,7 +19,7 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 import java.math.BigInteger;
 
-public final class IntegerCoreInstance extends PrimitiveCoreInstance<Number>
+public final class IntegerCoreInstance extends AbstractPrimitiveCoreInstance<Number>
 {
     public static final Function<CoreInstance, Number> FROM_CORE_INSTANCE_FN = IntegerCoreInstance::fromCoreInstance;
 

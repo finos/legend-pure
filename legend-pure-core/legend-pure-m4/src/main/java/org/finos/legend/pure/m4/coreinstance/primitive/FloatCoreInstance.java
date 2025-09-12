@@ -19,7 +19,7 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 import java.math.BigDecimal;
 
-public final class FloatCoreInstance extends PrimitiveCoreInstance<BigDecimal>
+public final class FloatCoreInstance extends AbstractPrimitiveCoreInstance<BigDecimal>
 {
     public static final Function<CoreInstance, BigDecimal> FROM_CORE_INSTANCE_FN = FloatCoreInstance::fromCoreInstance;
 

@@ -18,15 +18,9 @@ import org.eclipse.collections.api.block.function.Function;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 
-public final class DateCoreInstance extends PrimitiveCoreInstance<PureDate>
+public final class DateCoreInstance extends AbstractPrimitiveCoreInstance<PureDate>
 {
-    public static final Function<CoreInstance, PureDate> FROM_CORE_INSTANCE_FN = new Function<CoreInstance, PureDate>()
-    {
-        public PureDate valueOf(CoreInstance coreInstance)
-        {
-            return coreInstance == null ? null : ((DateCoreInstance)coreInstance).getValue();
-        }
-    };
+    public static final Function<CoreInstance, PureDate> FROM_CORE_INSTANCE_FN = ci -> ci == null ? null : ((DateCoreInstance) ci).getValue();
 
     private String name = null;
 

@@ -18,15 +18,9 @@ import org.eclipse.collections.api.block.function.Function;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
 
-public final class StrictTimeCoreInstance extends PrimitiveCoreInstance<PureStrictTime>
+public final class StrictTimeCoreInstance extends AbstractPrimitiveCoreInstance<PureStrictTime>
 {
-    public static final Function<CoreInstance, PureStrictTime> FROM_CORE_INSTANCE_FN = new Function<CoreInstance, PureStrictTime>()
-    {
-        public PureStrictTime valueOf(CoreInstance coreInstance)
-        {
-            return coreInstance == null ? null : ((StrictTimeCoreInstance)coreInstance).getValue();
-        }
-    };
+    public static final Function<CoreInstance, PureStrictTime> FROM_CORE_INSTANCE_FN = StrictTimeCoreInstance::fromCoreInstance;
 
     private String name = null;
 
@@ -49,5 +43,10 @@ public final class StrictTimeCoreInstance extends PrimitiveCoreInstance<PureStri
     public CoreInstance copy()
     {
         return new StrictTimeCoreInstance(this.getValue(), this.getClassifier(), this.getSyntheticId());
+    }
+
+    public static PureStrictTime fromCoreInstance(CoreInstance instance)
+    {
+        return (instance == null) ? null : ((StrictTimeCoreInstance) instance).getValue();
     }
 }
