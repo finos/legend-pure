@@ -14,30 +14,8 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive;
 
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-
-public class ByteCoreInstance extends AbstractPrimitiveCoreInstance<Byte>
+public interface ByteCoreInstance extends PrimitiveCoreInstance<Byte>
 {
-    private String name = null;
-
-    ByteCoreInstance(Byte value, CoreInstance classifier, int internalSyntheticId)
-    {
-        super(value, classifier, internalSyntheticId);
-    }
-
     @Override
-    public CoreInstance copy()
-    {
-        return new ByteCoreInstance(this.getValue(), this.getClassifier(), this.getSyntheticId());
-    }
-
-    @Override
-    public String getName()
-    {
-        if (this.name == null)
-        {
-            this.name = this.getValue().toString();
-        }
-        return this.name;
-    }
+    ByteCoreInstance copy();
 }

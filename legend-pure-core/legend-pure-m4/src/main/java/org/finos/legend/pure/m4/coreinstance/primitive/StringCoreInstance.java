@@ -17,29 +17,10 @@ package org.finos.legend.pure.m4.coreinstance.primitive;
 import org.eclipse.collections.api.block.function.Function;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
-public final class StringCoreInstance extends AbstractPrimitiveCoreInstance<String>
+public interface StringCoreInstance extends PrimitiveCoreInstance<String>
 {
-    public static final Function<CoreInstance, String> FROM_CORE_INSTANCE_FN = StringCoreInstance::fromCoreInstance;
-
-    StringCoreInstance(String value, CoreInstance classifier, int internalSyntheticId)
-    {
-        super(value, classifier, internalSyntheticId);
-    }
+    Function<CoreInstance, String> FROM_CORE_INSTANCE_FN = instance -> (instance == null) ? null : ((StringCoreInstance) instance).getValue();
 
     @Override
-    public String getName()
-    {
-        return getValue();
-    }
-
-    @Override
-    public CoreInstance copy()
-    {
-        return new StringCoreInstance(getValue(), getClassifier(), getSyntheticId());
-    }
-
-    public static String fromCoreInstance(CoreInstance instance)
-    {
-        return (instance == null) ? null : ((StringCoreInstance) instance).getValue();
-    }
+    StringCoreInstance copy();
 }

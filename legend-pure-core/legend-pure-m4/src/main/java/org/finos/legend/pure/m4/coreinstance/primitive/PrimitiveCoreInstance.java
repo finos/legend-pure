@@ -24,6 +24,7 @@ import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecification;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
+import org.finos.legend.pure.m4.coreinstance.primitive.simple.SimplePrimitiveCoreInstances;
 import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
@@ -240,72 +241,65 @@ public interface PrimitiveCoreInstance<T> extends CoreInstance
         // Do nothing
     }
 
+    PrimitiveCoreInstance<T> copy();
+
+    @Deprecated
     static BooleanCoreInstance newBooleanCoreInstance(boolean value, CoreInstance classifier, int internalSyntheticId)
     {
-        return new BooleanCoreInstance(value, classifier, internalSyntheticId);
+        return SimplePrimitiveCoreInstances.newBooleanCoreInstance(value, classifier, internalSyntheticId);
     }
 
-    static DateCoreInstance newDateCoreInstance(PureDate value, CoreInstance classifier, int internalSyntheticId)
-    {
-        return new DateCoreInstance(value, classifier, internalSyntheticId);
-    }
-
-    static StrictTimeCoreInstance newStrictTimeCoreInstance(PureStrictTime value, CoreInstance classifier, int internalSyntheticId)
-    {
-        return new StrictTimeCoreInstance(value, classifier, internalSyntheticId);
-    }
-
-    static FloatCoreInstance newFloatCoreInstance(BigDecimal value, CoreInstance classifier, int internalSyntheticId)
-    {
-        String plainString = value.toPlainString();
-        int decimalIndex = plainString.indexOf('.');
-        if (decimalIndex == -1)
-        {
-            value = new BigDecimal(plainString + ".0");
-        }
-        else
-        {
-            int index = plainString.length() - 1;
-            while ((index > decimalIndex) && (plainString.charAt(index) == '0'))
-            {
-                index--;
-            }
-            index++;
-            if (index < plainString.length())
-            {
-                value = new BigDecimal(plainString.substring(0, Math.max(index, decimalIndex + 2)));
-            }
-        }
-        return new FloatCoreInstance(value, classifier, internalSyntheticId);
-    }
-
-    static DecimalCoreInstance newDecimalCoreInstance(BigDecimal value, CoreInstance classifier, int internalSyntheticId)
-    {
-        return new DecimalCoreInstance(value, classifier, internalSyntheticId);
-    }
-
-    static IntegerCoreInstance newIntegerCoreInstance(Integer value, CoreInstance classifier, int internalSyntheticId)
-    {
-        return new IntegerCoreInstance(value, classifier, internalSyntheticId);
-    }
-
-    static IntegerCoreInstance newIntegerCoreInstance(Long value, CoreInstance classifier, int internalSyntheticId)
-    {
-        return new IntegerCoreInstance(value, classifier, internalSyntheticId);
-    }
-
-    static IntegerCoreInstance newIntegerCoreInstance(BigInteger value, CoreInstance classifier, int internalSyntheticId)
-    {
-        return new IntegerCoreInstance(value, classifier, internalSyntheticId);
-    }
-
-    static StringCoreInstance newStringCoreInstance(String value, CoreInstance classifier, int internalSyntheticId)
-    {
-        return new StringCoreInstance(value, classifier, internalSyntheticId);
-    }
-
+    @Deprecated
     static ByteCoreInstance newByteCoreInstance(Byte value, CoreInstance classifier, int internalSyntheticId)
     {
-        return new ByteCoreInstance(value, classifier, internalSyntheticId);
+        return SimplePrimitiveCoreInstances.newByteCoreInstance(value, classifier, internalSyntheticId);
+    }
+
+    @Deprecated
+    static DateCoreInstance newDateCoreInstance(PureDate value, CoreInstance classifier, int internalSyntheticId)
+    {
+        return SimplePrimitiveCoreInstances.newDateCoreInstance(value, classifier, internalSyntheticId);
+    }
+
+    @Deprecated
+    static DecimalCoreInstance newDecimalCoreInstance(BigDecimal value, CoreInstance classifier, int internalSyntheticId)
+    {
+        return SimplePrimitiveCoreInstances.newDecimalCoreInstance(value, classifier, internalSyntheticId);
+    }
+
+    @Deprecated
+    static FloatCoreInstance newFloatCoreInstance(BigDecimal value, CoreInstance classifier, int internalSyntheticId)
+    {
+        return SimplePrimitiveCoreInstances.newFloatCoreInstance(value, classifier, internalSyntheticId);
+    }
+
+    @Deprecated
+    static IntegerCoreInstance newIntegerCoreInstance(Integer value, CoreInstance classifier, int internalSyntheticId)
+    {
+        return SimplePrimitiveCoreInstances.newIntegerCoreInstance(value, classifier, internalSyntheticId);
+    }
+
+    @Deprecated
+    static IntegerCoreInstance newIntegerCoreInstance(Long value, CoreInstance classifier, int internalSyntheticId)
+    {
+        return SimplePrimitiveCoreInstances.newIntegerCoreInstance(value, classifier, internalSyntheticId);
+    }
+
+    @Deprecated
+    static IntegerCoreInstance newIntegerCoreInstance(BigInteger value, CoreInstance classifier, int internalSyntheticId)
+    {
+        return SimplePrimitiveCoreInstances.newIntegerCoreInstance(value, classifier, internalSyntheticId);
+    }
+
+    @Deprecated
+    static StrictTimeCoreInstance newStrictTimeCoreInstance(PureStrictTime value, CoreInstance classifier, int internalSyntheticId)
+    {
+        return SimplePrimitiveCoreInstances.newStrictTimeCoreInstance(value, classifier, internalSyntheticId);
+    }
+
+    @Deprecated
+    static StringCoreInstance newStringCoreInstance(String value, CoreInstance classifier, int internalSyntheticId)
+    {
+        return SimplePrimitiveCoreInstances.newStringCoreInstance(value, classifier, internalSyntheticId);
     }
 }

@@ -18,30 +18,10 @@ import org.eclipse.collections.api.block.function.Function;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 
-public final class DateCoreInstance extends AbstractPrimitiveCoreInstance<PureDate>
+public interface DateCoreInstance extends PrimitiveCoreInstance<PureDate>
 {
-    public static final Function<CoreInstance, PureDate> FROM_CORE_INSTANCE_FN = ci -> ci == null ? null : ((DateCoreInstance) ci).getValue();
-
-    private String name = null;
-
-    DateCoreInstance(PureDate value, CoreInstance classifier, int internalSyntheticId)
-    {
-        super(value, classifier, internalSyntheticId);
-    }
+    Function<CoreInstance, PureDate> FROM_CORE_INSTANCE_FN = instance -> (instance == null) ? null : ((DateCoreInstance) instance).getValue();
 
     @Override
-    public String getName()
-    {
-        if (this.name == null)
-        {
-            this.name = getValue().toString();
-        }
-        return this.name;
-    }
-
-    @Override
-    public CoreInstance copy()
-    {
-        return new DateCoreInstance(this.getValue(), this.getClassifier(), this.getSyntheticId());
-    }
+    DateCoreInstance copy();
 }

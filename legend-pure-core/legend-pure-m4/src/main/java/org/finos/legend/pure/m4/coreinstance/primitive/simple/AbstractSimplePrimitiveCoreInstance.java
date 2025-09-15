@@ -12,20 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m4.coreinstance.primitive;
+package org.finos.legend.pure.m4.coreinstance.primitive.simple;
 
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
 
-public abstract class AbstractPrimitiveCoreInstance<T> extends AbstractCoreInstance implements PrimitiveCoreInstance<T>
+abstract class AbstractSimplePrimitiveCoreInstance<T> extends AbstractCoreInstance implements PrimitiveCoreInstance<T>
 {
     private final T value;
     private final int internalSyntheticId;
     private CoreInstance classifier;
 
-    protected AbstractPrimitiveCoreInstance(T value, CoreInstance classifier, int internalSyntheticId)
+    protected AbstractSimplePrimitiveCoreInstance(T value, CoreInstance classifier, int internalSyntheticId)
     {
         if (value == null)
         {
