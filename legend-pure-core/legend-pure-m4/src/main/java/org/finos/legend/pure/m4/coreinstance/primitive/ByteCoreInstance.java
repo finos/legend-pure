@@ -14,8 +14,13 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive;
 
+import org.eclipse.collections.api.block.function.Function;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+
 public interface ByteCoreInstance extends PrimitiveCoreInstance<Byte>
 {
+    Function<CoreInstance, Byte> FROM_CORE_INSTANCE_FN = instance -> (instance == null) ? null : ((ByteCoreInstance) instance).getValue();
+
     @Override
     ByteCoreInstance copy();
 }

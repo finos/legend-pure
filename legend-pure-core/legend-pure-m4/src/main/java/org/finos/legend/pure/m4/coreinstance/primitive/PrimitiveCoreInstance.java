@@ -23,14 +23,8 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecification;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
-import org.finos.legend.pure.m4.coreinstance.primitive.simple.SimplePrimitiveCoreInstances;
-import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
-
-import java.math.BigDecimal;
-import java.math.BigInteger;
 
 public interface PrimitiveCoreInstance<T> extends CoreInstance
 {
@@ -242,64 +236,4 @@ public interface PrimitiveCoreInstance<T> extends CoreInstance
     }
 
     PrimitiveCoreInstance<T> copy();
-
-    @Deprecated
-    static BooleanCoreInstance newBooleanCoreInstance(boolean value, CoreInstance classifier, int internalSyntheticId)
-    {
-        return SimplePrimitiveCoreInstances.newBooleanCoreInstance(value, classifier, internalSyntheticId);
-    }
-
-    @Deprecated
-    static ByteCoreInstance newByteCoreInstance(Byte value, CoreInstance classifier, int internalSyntheticId)
-    {
-        return SimplePrimitiveCoreInstances.newByteCoreInstance(value, classifier, internalSyntheticId);
-    }
-
-    @Deprecated
-    static DateCoreInstance newDateCoreInstance(PureDate value, CoreInstance classifier, int internalSyntheticId)
-    {
-        return SimplePrimitiveCoreInstances.newDateCoreInstance(value, classifier, internalSyntheticId);
-    }
-
-    @Deprecated
-    static DecimalCoreInstance newDecimalCoreInstance(BigDecimal value, CoreInstance classifier, int internalSyntheticId)
-    {
-        return SimplePrimitiveCoreInstances.newDecimalCoreInstance(value, classifier, internalSyntheticId);
-    }
-
-    @Deprecated
-    static FloatCoreInstance newFloatCoreInstance(BigDecimal value, CoreInstance classifier, int internalSyntheticId)
-    {
-        return SimplePrimitiveCoreInstances.newFloatCoreInstance(value, classifier, internalSyntheticId);
-    }
-
-    @Deprecated
-    static IntegerCoreInstance newIntegerCoreInstance(Integer value, CoreInstance classifier, int internalSyntheticId)
-    {
-        return SimplePrimitiveCoreInstances.newIntegerCoreInstance(value, classifier, internalSyntheticId);
-    }
-
-    @Deprecated
-    static IntegerCoreInstance newIntegerCoreInstance(Long value, CoreInstance classifier, int internalSyntheticId)
-    {
-        return SimplePrimitiveCoreInstances.newIntegerCoreInstance(value, classifier, internalSyntheticId);
-    }
-
-    @Deprecated
-    static IntegerCoreInstance newIntegerCoreInstance(BigInteger value, CoreInstance classifier, int internalSyntheticId)
-    {
-        return SimplePrimitiveCoreInstances.newIntegerCoreInstance(value, classifier, internalSyntheticId);
-    }
-
-    @Deprecated
-    static StrictTimeCoreInstance newStrictTimeCoreInstance(PureStrictTime value, CoreInstance classifier, int internalSyntheticId)
-    {
-        return SimplePrimitiveCoreInstances.newStrictTimeCoreInstance(value, classifier, internalSyntheticId);
-    }
-
-    @Deprecated
-    static StringCoreInstance newStringCoreInstance(String value, CoreInstance classifier, int internalSyntheticId)
-    {
-        return SimplePrimitiveCoreInstances.newStringCoreInstance(value, classifier, internalSyntheticId);
-    }
 }
