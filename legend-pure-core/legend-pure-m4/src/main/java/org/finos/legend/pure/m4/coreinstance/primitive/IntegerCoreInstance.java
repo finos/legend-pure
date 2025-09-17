@@ -17,52 +17,10 @@ package org.finos.legend.pure.m4.coreinstance.primitive;
 import org.eclipse.collections.api.block.function.Function;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
-import java.math.BigInteger;
-
-public final class IntegerCoreInstance extends PrimitiveCoreInstance<Number>
+public interface IntegerCoreInstance extends PrimitiveCoreInstance<Number>
 {
-    public static final Function<CoreInstance, Number> FROM_CORE_INSTANCE_FN = IntegerCoreInstance::fromCoreInstance;
-
-    private String name = null;
-
-    private IntegerCoreInstance(Number value, CoreInstance classifier, int internalSyntheticId)
-    {
-        super(value, classifier, internalSyntheticId);
-    }
-
-    IntegerCoreInstance(Integer value, CoreInstance classifier, int internalSyntheticId)
-    {
-        this((Number) value, classifier, internalSyntheticId);
-    }
-
-    IntegerCoreInstance(Long value, CoreInstance classifier, int internalSyntheticId)
-    {
-        this((Number) value, classifier, internalSyntheticId);
-    }
-
-    IntegerCoreInstance(BigInteger value, CoreInstance classifier, int internalSyntheticId)
-    {
-        this((Number) value, classifier, internalSyntheticId);
-    }
+    Function<CoreInstance, Number> FROM_CORE_INSTANCE_FN = instance -> (instance == null) ? null : ((IntegerCoreInstance) instance).getValue();
 
     @Override
-    public String getName()
-    {
-        if (this.name == null)
-        {
-            this.name = getValue().toString();
-        }
-        return this.name;
-    }
-
-    @Override
-    public CoreInstance copy()
-    {
-        return new IntegerCoreInstance(getValue(), getClassifier(), getSyntheticId());
-    }
-
-    public static Number fromCoreInstance(CoreInstance instance)
-    {
-        return (instance == null) ? null : ((IntegerCoreInstance) instance).getValue();
-    }
+    IntegerCoreInstance copy();
 }

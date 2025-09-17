@@ -33,12 +33,12 @@ import org.finos.legend.pure.m4.coreinstance.primitive.DateCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.DecimalCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.FloatCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.IntegerCoreInstance;
-import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.StrictTimeCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.StringCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
+import org.finos.legend.pure.m4.coreinstance.primitive.simple.SimplePrimitiveCoreInstances;
 import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
 import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.StrictTimeFunctions;
 import org.finos.legend.pure.m4.coreinstance.simple.SimpleCoreInstance;
@@ -406,7 +406,7 @@ public class ModelRepository
         BooleanCoreInstance instance = cache.get();
         if (instance == null)
         {
-            cache.compareAndSet(null, PrimitiveCoreInstance.newBooleanCoreInstance(value, classifier, internalSyntheticId));
+            cache.compareAndSet(null, SimplePrimitiveCoreInstances.newBooleanCoreInstance(value, classifier, internalSyntheticId));
             instance = cache.get();
         }
         return instance;
@@ -507,7 +507,7 @@ public class ModelRepository
 
     private DateCoreInstance newDateCoreInstance(PureDate value, CoreInstance classifier, int internalSyntheticId)
     {
-        return PrimitiveCoreInstance.newDateCoreInstance(value, classifier, internalSyntheticId);
+        return SimplePrimitiveCoreInstances.newDateCoreInstance(value, classifier, internalSyntheticId);
     }
 
     private StrictTimeCoreInstance newStrictTimeCoreInstance(PureStrictTime value, String typeName)
@@ -517,7 +517,7 @@ public class ModelRepository
 
     private StrictTimeCoreInstance newStrictTimeCoreInstance(PureStrictTime value, CoreInstance classifier, int internalSyntheticId)
     {
-        return PrimitiveCoreInstance.newStrictTimeCoreInstance(value, classifier, internalSyntheticId);
+        return SimplePrimitiveCoreInstances.newStrictTimeCoreInstance(value, classifier, internalSyntheticId);
     }
 
     private PureStrictTime getPureStrictTime(String name)
@@ -562,7 +562,7 @@ public class ModelRepository
 
     private FloatCoreInstance newFloatCoreInstance(BigDecimal value, CoreInstance classifier, int internalSyntheticId)
     {
-        return PrimitiveCoreInstance.newFloatCoreInstance(value, classifier, internalSyntheticId);
+        return SimplePrimitiveCoreInstances.newFloatCoreInstance(value, classifier, internalSyntheticId);
     }
 
     public DecimalCoreInstance newDecimalCoreInstance(String name)
@@ -583,7 +583,7 @@ public class ModelRepository
 
     private DecimalCoreInstance newDecimalCoreInstance(BigDecimal value, CoreInstance classifier, int internalSyntheticId)
     {
-        return PrimitiveCoreInstance.newDecimalCoreInstance(value, classifier, internalSyntheticId);
+        return SimplePrimitiveCoreInstances.newDecimalCoreInstance(value, classifier, internalSyntheticId);
     }
 
     public IntegerCoreInstance newIntegerCoreInstance(String name)
@@ -606,7 +606,7 @@ public class ModelRepository
                 long l = Long.parseLong(name);
                 return ((Integer.MIN_VALUE <= l) && (l <= Integer.MAX_VALUE)) ?
                        newIntegerCoreInstance((int) l, classifier, internalSyntheticId) :
-                       PrimitiveCoreInstance.newIntegerCoreInstance(l, classifier, internalSyntheticId);
+                       SimplePrimitiveCoreInstances.newIntegerCoreInstance(l, classifier, internalSyntheticId);
             }
             catch (NumberFormatException ignore)
             {
@@ -614,7 +614,7 @@ public class ModelRepository
             }
         }
         BigInteger bigIntValue = new BigInteger(name);
-        return PrimitiveCoreInstance.newIntegerCoreInstance(bigIntValue, classifier, nextId());
+        return SimplePrimitiveCoreInstances.newIntegerCoreInstance(bigIntValue, classifier, nextId());
     }
 
     public IntegerCoreInstance newIntegerCoreInstance(int value)
@@ -635,7 +635,7 @@ public class ModelRepository
             IntegerCoreInstance instance = this.integerCache.get(index);
             if (instance == null)
             {
-                instance = PrimitiveCoreInstance.newIntegerCoreInstance(value, classifier, internalSyntheticId);
+                instance = SimplePrimitiveCoreInstances.newIntegerCoreInstance(value, classifier, internalSyntheticId);
                 if (!this.integerCache.compareAndSet(index, null, instance))
                 {
                     instance = this.integerCache.get(index);
@@ -643,7 +643,7 @@ public class ModelRepository
             }
             return instance;
         }
-        return PrimitiveCoreInstance.newIntegerCoreInstance(value, classifier, internalSyntheticId);
+        return SimplePrimitiveCoreInstances.newIntegerCoreInstance(value, classifier, internalSyntheticId);
     }
 
     public IntegerCoreInstance newIntegerCoreInstance(long value)
@@ -658,7 +658,7 @@ public class ModelRepository
         {
             return newIntegerCoreInstance((int)value, classifier);
         }
-        return PrimitiveCoreInstance.newIntegerCoreInstance(value, classifier, nextId());
+        return SimplePrimitiveCoreInstances.newIntegerCoreInstance(value, classifier, nextId());
     }
 
     public IntegerCoreInstance newIntegerCoreInstance(BigInteger value)
@@ -680,7 +680,7 @@ public class ModelRepository
         {
             return newIntegerCoreInstance(longValue, classifier);
         }
-        return PrimitiveCoreInstance.newIntegerCoreInstance(value, classifier, nextId());
+        return SimplePrimitiveCoreInstances.newIntegerCoreInstance(value, classifier, nextId());
     }
 
     public StringCoreInstance newStringCoreInstance(String value)
@@ -717,7 +717,7 @@ public class ModelRepository
 
     private StringCoreInstance newStringInstance(String value, CoreInstance classifier, int internalSyntheticId)
     {
-        return PrimitiveCoreInstance.newStringCoreInstance(value, classifier, internalSyntheticId);
+        return SimplePrimitiveCoreInstances.newStringCoreInstance(value, classifier, internalSyntheticId);
     }
 
     public ByteCoreInstance newByteCoreInstance(byte value)
@@ -737,7 +737,7 @@ public class ModelRepository
 
     private ByteCoreInstance newByteInstance(byte value, CoreInstance classifier, int internalSyntheticId)
     {
-        return PrimitiveCoreInstance.newByteCoreInstance(value, classifier, internalSyntheticId);
+        return SimplePrimitiveCoreInstances.newByteCoreInstance(value, classifier, internalSyntheticId);
     }
 
     private void registerNewInstanceInTransaction(CoreInstance newInstance)

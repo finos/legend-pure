@@ -19,35 +19,29 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 import java.math.BigDecimal;
 
-public final class FloatCoreInstance extends PrimitiveCoreInstance<BigDecimal>
+public interface FloatCoreInstance extends PrimitiveCoreInstance<BigDecimal>
 {
-    public static final Function<CoreInstance, BigDecimal> FROM_CORE_INSTANCE_FN = FloatCoreInstance::fromCoreInstance;
-
-    private String name = null;
-
-    FloatCoreInstance(BigDecimal value, CoreInstance classifier, int internalSyntheticId)
-    {
-        super(value, classifier, internalSyntheticId);
-    }
+    Function<CoreInstance, BigDecimal> FROM_CORE_INSTANCE_FN = instance -> (instance == null) ? null : ((FloatCoreInstance) instance).getValue();
 
     @Override
-    public String getName()
+    FloatCoreInstance copy();
+
+    static BigDecimal canonicalizeBigDecimal(BigDecimal value)
     {
-        if (this.name == null)
+        String plainString = value.toPlainString();
+        int decimalIndex = plainString.indexOf('.');
+        if (decimalIndex == -1)
         {
-            this.name = getValue().toPlainString();
+            return new BigDecimal(plainString + ".0");
         }
-        return this.name;
-    }
 
-    @Override
-    public CoreInstance copy()
-    {
-        return new FloatCoreInstance(getValue(), getClassifier(), getSyntheticId());
-    }
-
-    public static BigDecimal fromCoreInstance(CoreInstance instance)
-    {
-        return (instance == null) ? null : ((FloatCoreInstance) instance).getValue();
+        int index = plainString.length() - 1;
+        while ((index > decimalIndex) && (plainString.charAt(index) == '0'))
+        {
+            index--;
+        }
+        return (++index < plainString.length()) ?
+               new BigDecimal(plainString.substring(0, Math.max(index, decimalIndex + 2))) :
+               value;
     }
 }
