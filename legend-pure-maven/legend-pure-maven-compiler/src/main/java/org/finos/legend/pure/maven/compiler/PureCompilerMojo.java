@@ -53,7 +53,7 @@ import java.util.stream.Stream;
 
 @Mojo(name = "compile-pure",
         defaultPhase = LifecyclePhase.COMPILE,
-        requiresDependencyResolution = ResolutionScope.COMPILE,
+        requiresDependencyResolution = ResolutionScope.TEST,
         threadSafe = true)
 public class PureCompilerMojo extends AbstractMojo
 {
