@@ -86,6 +86,8 @@ public abstract class AbstractTestModuleMetadataSerializerExtension extends Abst
                         "model::classes::MySimpleClass",
                         "model::classes::MyOtherClass.properties['simple'].classifierGenericType.typeArguments[1]",
                         refUsage("model::classes::MyOtherClass.properties['simple'].classifierGenericType.typeArguments[1]", "rawType", 0, "/simple_module/model/classes.pure", 7, 7, 7, 19))
+                .withFunctionsByName("simpleFunc", "model::classes::simpleFunc_MySimpleClass_1__MyOtherClass_1_", "model::classes::simpleFunc_MySimpleClass_0_1__MyOtherClass_0_1_")
+                .withFunctionByName("otherFunc", "model::classes::otherFunc_MySimpleClass_MANY__MyOtherClass_MANY_")
                 .build());
     }
 
@@ -173,6 +175,10 @@ public abstract class AbstractTestModuleMetadataSerializerExtension extends Abst
                         "model::classes::MyThirdClass",
                         "model::associations::OtherToThird.properties['toThird'].classifierGenericType.typeArguments[1]",
                         refUsage("model::associations::OtherToThird.properties['toThird'].classifierGenericType.typeArguments[1]", "rawType"))
+                .withFunctionsByName("simpleFunc", "model::classes::simpleFunc_MySimpleClass_1__MyOtherClass_1_", "model::classes::simpleFunc_MySimpleClass_0_1__MyOtherClass_0_1_")
+                .withFunctionByName("otherFunc", "model::classes::otherFunc_MySimpleClass_MANY__MyOtherClass_MANY_")
+                .withFunctionsByName("firstType", "model::enums::firstType_String_1__MyFirstEnumeration_1_", "model::enums::firstType_String_0_1__MyFirstEnumeration_0_1_")
+                .withFunctionsByName("secondType", "model::enums::secondType_String_1__MySecondEnumeration_1_", "model::enums::secondType_String_0_1__MySecondEnumeration_0_1_")
                 .build());
     }
 
@@ -186,6 +192,7 @@ public abstract class AbstractTestModuleMetadataSerializerExtension extends Abst
         metadata.getBackReferenceMetadata()
                 .getBackReferences()
                 .forEach(br -> testSerializes(br, this.serializer::serializeBackReferenceMetadata, this.serializer::deserializeBackReferenceMetadata));
+        testSerializes(metadata.getFunctionNameMetadata(), this.serializer::serializeFunctionNameMetadata, this.serializer::deserializeFunctionNameMetadata);
     }
 
     private <M> void testSerializes(M metadata, BiConsumer<Writer, M> serializer, Function<Reader, M> deserializer)

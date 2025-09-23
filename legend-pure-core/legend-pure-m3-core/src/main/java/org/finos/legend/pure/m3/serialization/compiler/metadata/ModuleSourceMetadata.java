@@ -35,18 +35,18 @@ import java.util.function.Predicate;
 
 public class ModuleSourceMetadata
 {
-    private final String name;
+    private final String moduleName;
     private final ImmutableList<SourceMetadata> sources;
 
-    private ModuleSourceMetadata(String name, ImmutableList<SourceMetadata> sources)
+    private ModuleSourceMetadata(String moduleName, ImmutableList<SourceMetadata> sources)
     {
-        this.name = name;
+        this.moduleName = moduleName;
         this.sources = sources;
     }
 
     public String getModuleName()
     {
-        return this.name;
+        return this.moduleName;
     }
 
     public int getSourceCount()
@@ -78,21 +78,21 @@ public class ModuleSourceMetadata
         }
 
         ModuleSourceMetadata that = (ModuleSourceMetadata) other;
-        return this.name.equals(that.name) &&
+        return this.moduleName.equals(that.moduleName) &&
                 this.sources.equals(that.sources);
     }
 
     @Override
     public int hashCode()
     {
-        return this.name.hashCode();
+        return this.moduleName.hashCode();
     }
 
     @Override
     public String toString()
     {
         StringBuilder builder = new StringBuilder("<").append(getClass().getSimpleName())
-                .append(" moduleName='").append(this.name).append("' sources=[");
+                .append(" moduleName='").append(this.moduleName).append("' sources=[");
         this.sources.forEach(source ->
         {
             builder.append(source.getSourceId()).append('{');

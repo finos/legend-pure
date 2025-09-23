@@ -245,6 +245,8 @@ public class TestPureCompilerSerializer extends AbstractReferenceTest
             Assert.assertTrue(message, fileDeserializer.moduleElementBackReferenceMetadataExists(directory, moduleName, elementPath));
             Assert.assertEquals(message, ebr, fileDeserializer.deserializeModuleElementBackReferenceMetadata(directory, moduleName, elementPath));
         });
+        Assert.assertTrue(moduleName, fileDeserializer.moduleFunctionNameMetadataExists(directory, moduleName));
+        Assert.assertEquals(moduleName, metadata.getFunctionNameMetadata(), fileDeserializer.deserializeModuleFunctionNameMetadata(directory, moduleName));
     }
 
     private void assertModuleMetadataSerialized(ClassLoader classLoader, String moduleName, ModuleMetadata metadata)
@@ -262,6 +264,8 @@ public class TestPureCompilerSerializer extends AbstractReferenceTest
             Assert.assertTrue(message, fileDeserializer.moduleElementBackReferenceMetadataExists(classLoader, moduleName, elementPath));
             Assert.assertEquals(message, ebr, fileDeserializer.deserializeModuleElementBackReferenceMetadata(classLoader, moduleName, elementPath));
         });
+        Assert.assertTrue(moduleName, fileDeserializer.moduleFunctionNameMetadataExists(classLoader, moduleName));
+        Assert.assertEquals(moduleName, metadata.getFunctionNameMetadata(), fileDeserializer.deserializeModuleFunctionNameMetadata(classLoader, moduleName));
     }
 
     private ModuleInfo getModuleInfo(String moduleName)

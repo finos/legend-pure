@@ -19,6 +19,7 @@ import org.finos.legend.pure.m3.serialization.compiler.element.ConcreteElementSe
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ElementBackReferenceMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleBackReferenceMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleExternalReferenceMetadata;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleFunctionNameMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleManifest;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataSerializer;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleSourceMetadata;
@@ -552,6 +553,92 @@ public class FileSerializer
         {
             long end = System.nanoTime();
             LOGGER.debug("Finished serializing module {} element {} back reference metadata to zip entry '{}' in {}s", moduleName, elementBackRefMetadata.getElementPath(), entryName, (end - start) / 1_000_000_000.0);
+        }
+        return entryName;
+    }
+
+
+    // Serialize module function name metadata to directory
+
+    public Path serializeModuleFunctionNameMetadata(Path directory, ModuleFunctionNameMetadata moduleFunctionNameMetadata)
+    {
+        return serializeModuleFunctionNameMetadata(directory, moduleFunctionNameMetadata, this.filePathProvider.getDefaultVersion(), this.moduleSerializer.getDefaultVersion());
+    }
+
+    public Path serializeModuleFunctionNameMetadata(Path directory, ModuleFunctionNameMetadata moduleFunctionNameMetadata, int filePathVersion, int serializerVersion)
+    {
+        Objects.requireNonNull(directory, "directory is required");
+        Objects.requireNonNull(moduleFunctionNameMetadata, "module function name metadata is required");
+
+        long start = System.nanoTime();
+        Path filePath = this.filePathProvider.getModuleFunctionNameMetadataFilePath(directory, moduleFunctionNameMetadata.getModuleName(), filePathVersion);
+        LOGGER.debug("Serializing module {} function name metadata to {}", moduleFunctionNameMetadata.getModuleName(), filePath);
+        try
+        {
+            Files.createDirectories(filePath.getParent());
+            try (Writer writer = BinaryWriters.newBinaryWriter(new BufferedOutputStream(Files.newOutputStream(filePath))))
+            {
+                this.moduleSerializer.serializeFunctionNameMetadata(writer, moduleFunctionNameMetadata, serializerVersion);
+            }
+        }
+        catch (Exception e)
+        {
+            LOGGER.error("Error serializing module {} function name metadata to {}", moduleFunctionNameMetadata.getModuleName(), filePath, e);
+            StringBuilder builder = new StringBuilder("Error serializing function name metadata for module ").append(moduleFunctionNameMetadata.getModuleName()).append(" to ").append(filePath);
+            String eMessage = e.getMessage();
+            if (eMessage != null)
+            {
+                builder.append(": ").append(eMessage);
+            }
+            throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
+        }
+        finally
+        {
+            long end = System.nanoTime();
+            LOGGER.debug("Finished serializing module {} function name metadata to {} in {}s", moduleFunctionNameMetadata.getModuleName(), filePath, (end - start) / 1_000_000_000.0);
+        }
+        return filePath;
+    }
+
+    // Serialize module function name metadata to zip
+
+    public String serializeModuleFunctionNameMetadata(ZipOutputStream zipStream, ModuleFunctionNameMetadata moduleFunctionNameMetadata)
+    {
+        return serializeModuleFunctionNameMetadata(zipStream, moduleFunctionNameMetadata, this.filePathProvider.getDefaultVersion(), this.moduleSerializer.getDefaultVersion());
+    }
+
+    public String serializeModuleFunctionNameMetadata(ZipOutputStream zipStream, ModuleFunctionNameMetadata moduleFunctionNameMetadata, int filePathVersion, int serializerVersion)
+    {
+        Objects.requireNonNull(zipStream, "zip stream is required");
+        Objects.requireNonNull(moduleFunctionNameMetadata, "module function name metadata is required");
+
+        long start = System.nanoTime();
+        String entryName = this.filePathProvider.getModuleFunctionNameMetadataFilePath(moduleFunctionNameMetadata.getModuleName(), "/", filePathVersion);
+        LOGGER.debug("Serializing module {} function name metadata to zip entry '{}'", moduleFunctionNameMetadata.getModuleName(), entryName);
+        try
+        {
+            zipStream.putNextEntry(new ZipEntry(entryName));
+            try (Writer writer = BinaryWriters.newBinaryWriter(zipStream, false))
+            {
+                this.moduleSerializer.serializeFunctionNameMetadata(writer, moduleFunctionNameMetadata, serializerVersion);
+            }
+            zipStream.closeEntry();
+        }
+        catch (Exception e)
+        {
+            LOGGER.error("Error serializing module {} function name metadata to zip entry '{}'", moduleFunctionNameMetadata.getModuleName(), entryName, e);
+            StringBuilder builder = new StringBuilder("Error serializing function name metadata for module ").append(moduleFunctionNameMetadata.getModuleName()).append(" to ").append(entryName);
+            String eMessage = e.getMessage();
+            if (eMessage != null)
+            {
+                builder.append(": ").append(eMessage);
+            }
+            throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
+        }
+        finally
+        {
+            long end = System.nanoTime();
+            LOGGER.debug("Finished serializing module {} function name metadata to zip entry '{}' in {}s", moduleFunctionNameMetadata.getModuleName(), entryName, (end - start) / 1_000_000_000.0);
         }
         return entryName;
     }

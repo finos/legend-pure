@@ -14,9 +14,16 @@
 
 package org.finos.legend.pure.m3.serialization.compiler.metadata;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ImmutableList;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MutableMap;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 
 public class ModuleMetadata
 {
@@ -24,13 +31,15 @@ public class ModuleMetadata
     private final ModuleSourceMetadata sourceMetadata;
     private final ModuleExternalReferenceMetadata externalReferenceMetadata;
     private final ModuleBackReferenceMetadata backReferenceMetadata;
+    private final ModuleFunctionNameMetadata functionNameMetadata;
 
-    private ModuleMetadata(ModuleManifest manifest, ModuleSourceMetadata sourceMetadata, ModuleExternalReferenceMetadata externalReferenceMetadata, ModuleBackReferenceMetadata backReferenceMetadata)
+    private ModuleMetadata(ModuleManifest manifest, ModuleSourceMetadata sourceMetadata, ModuleExternalReferenceMetadata externalReferenceMetadata, ModuleBackReferenceMetadata backReferenceMetadata, ModuleFunctionNameMetadata functionNameMetadata)
     {
         this.manifest = manifest;
         this.sourceMetadata = sourceMetadata;
         this.externalReferenceMetadata = externalReferenceMetadata;
         this.backReferenceMetadata = backReferenceMetadata;
+        this.functionNameMetadata = functionNameMetadata;
     }
 
     public String getName()
@@ -58,6 +67,11 @@ public class ModuleMetadata
         return this.backReferenceMetadata;
     }
 
+    public ModuleFunctionNameMetadata getFunctionNameMetadata()
+    {
+        return this.functionNameMetadata;
+    }
+
     @Override
     public boolean equals(Object other)
     {
@@ -75,7 +89,8 @@ public class ModuleMetadata
         return this.manifest.equals(that.manifest) &&
                 this.sourceMetadata.equals(that.sourceMetadata) &&
                 this.externalReferenceMetadata.equals(that.externalReferenceMetadata) &&
-                this.backReferenceMetadata.equals(that.backReferenceMetadata);
+                this.backReferenceMetadata.equals(that.backReferenceMetadata) &&
+                this.functionNameMetadata.equals(that.functionNameMetadata);
     }
 
     @Override
@@ -116,6 +131,13 @@ public class ModuleMetadata
             backRefs.forEach(backRef -> backRef.appendString(builder.append('{')).append("}, "));
             builder.setLength(builder.length() - 2);
         }
+        builder.append("] functionsByName=[");
+        ImmutableList<FunctionsByName> functionsByNames = this.functionNameMetadata.getFunctionsByName();
+        if (functionsByNames.notEmpty())
+        {
+            functionsByNames.forEach(fbn -> fbn.appendString(builder.append('{')).append("}, "));
+            builder.setLength(builder.length() - 2);
+        }
         return builder.append("]>").toString();
     }
 
@@ -136,10 +158,12 @@ public class ModuleMetadata
 
     public static class Builder
     {
+        private String name;
         private final ModuleManifest.Builder manifestBuilder;
         private final ModuleSourceMetadata.Builder sourceMetadataBuilder;
         private final ModuleExternalReferenceMetadata.Builder extRefBuilder;
         private final ModuleBackReferenceMetadata.Builder backRefBuilder;
+        private final MutableMap<String, MutableList<String>> functionsByName;
 
         private Builder()
         {
@@ -147,22 +171,23 @@ public class ModuleMetadata
             this.sourceMetadataBuilder = ModuleSourceMetadata.builder();
             this.extRefBuilder = ModuleExternalReferenceMetadata.builder();
             this.backRefBuilder = ModuleBackReferenceMetadata.builder();
+            this.functionsByName = Maps.mutable.empty();
         }
 
         private Builder(ModuleMetadata metadata)
         {
+            this.name = metadata.getName();
             this.manifestBuilder = ModuleManifest.builder(metadata.manifest);
             this.sourceMetadataBuilder = ModuleSourceMetadata.builder(metadata.sourceMetadata);
             this.extRefBuilder = ModuleExternalReferenceMetadata.builder(metadata.externalReferenceMetadata);
             this.backRefBuilder = ModuleBackReferenceMetadata.builder(metadata.backReferenceMetadata);
+            this.functionsByName = Maps.mutable.ofInitialCapacity(metadata.functionNameMetadata.getFunctionsByName().size());
+            metadata.functionNameMetadata.getFunctionsByName().forEach(fbn -> this.functionsByName.put(fbn.getFunctionName(), fbn.getFunctions().toList()));
         }
 
         public void setName(String name)
         {
-            this.manifestBuilder.setModuleName(name);
-            this.sourceMetadataBuilder.setModuleName(name);
-            this.extRefBuilder.setModuleName(name);
-            this.backRefBuilder.setModuleName(name);
+            this.name = name;
         }
 
         public void setReferenceIdVersion(Integer version)
@@ -234,6 +259,24 @@ public class ModuleMetadata
         public void addBackReferences(String elementPath, String instanceReferenceId, BackReference... backReferences)
         {
             this.backRefBuilder.addBackReferences(elementPath, instanceReferenceId, backReferences);
+        }
+
+        public void addFunctionByName(String functionName, String function)
+        {
+            this.functionsByName.getIfAbsentPut(Objects.requireNonNull(functionName), Lists.mutable::empty).add(Objects.requireNonNull(function));
+        }
+
+        public void addFunctionsByName(String functionName, Iterable<? extends String> functions)
+        {
+            MutableList<String> functionsForName = this.functionsByName.getIfAbsentPut(Objects.requireNonNull(functionName), Lists.mutable::empty);
+            functions.forEach(f -> functionsForName.add(Objects.requireNonNull(f)));
+        }
+
+        public void addFunctionsByName(String functionName, String... functions)
+        {
+            List<String> functionsList = Arrays.asList(functions);
+            functionsList.forEach(Objects::requireNonNull);
+            this.functionsByName.getIfAbsentPut(Objects.requireNonNull(functionName), Lists.mutable::empty).addAll(functionsList);
         }
 
         public Builder withName(String name)
@@ -314,9 +357,36 @@ public class ModuleMetadata
             return this;
         }
 
+        public Builder withFunctionByName(String functionName, String function)
+        {
+            addFunctionByName(functionName, function);
+            return this;
+        }
+
+        public Builder withFunctionsByName(String functionName, Iterable<? extends String> functions)
+        {
+            addFunctionsByName(functionName, functions);
+            return this;
+        }
+
+        public Builder withFunctionsByName(String functionName, String... functions)
+        {
+            addFunctionsByName(functionName, functions);
+            return this;
+        }
+
         public ModuleMetadata build()
         {
-            return new ModuleMetadata(this.manifestBuilder.build(), this.sourceMetadataBuilder.build(), this.extRefBuilder.build(), this.backRefBuilder.build());
+            Objects.requireNonNull(this.name, "module name may not be null");
+            ModuleManifest manifest = this.manifestBuilder.withModuleName(this.name).build();
+            ModuleSourceMetadata sourceMetadata = this.sourceMetadataBuilder.withModuleName(this.name).build();
+            ModuleExternalReferenceMetadata extRefMetadata = this.extRefBuilder.withModuleName(this.name).build();
+            ModuleBackReferenceMetadata backRefMetadata = this.backRefBuilder.withModuleName(this.name).build();
+            ModuleFunctionNameMetadata funcNameMetadata = ModuleFunctionNameMetadata.builder(this.functionsByName.size())
+                    .withModuleName(this.name)
+                    .withFunctionsByName(this.functionsByName)
+                    .build();
+            return new ModuleMetadata(manifest, sourceMetadata, extRefMetadata, backRefMetadata, funcNameMetadata);
         }
     }
 }
