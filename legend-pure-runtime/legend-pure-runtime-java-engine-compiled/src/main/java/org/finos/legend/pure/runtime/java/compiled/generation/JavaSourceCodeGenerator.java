@@ -42,6 +42,7 @@ import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeReposito
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.VersionControlledCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
+import org.finos.legend.pure.m3.tools.JavaTools;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.exception.PureException;
@@ -65,6 +66,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.Comparator;
 
 public final class JavaSourceCodeGenerator
 {
@@ -484,19 +486,62 @@ public final class JavaSourceCodeGenerator
 
     private String buildFunctionClass(String name, RichIterable<String> functionDefinitions, MapIterable<String, String> lambdaFunctions, MapIterable<String, String> nativeFunctions)
     {
+        StringBuilder staticBlockContent = new StringBuilder();
+        StringBuilder helperMethodsContent = new StringBuilder();
+        MutableList<Pair<String, String>> allFunctions = Lists.mutable.empty();
+
+        if (lambdaFunctions != null)
+        {
+            lambdaFunctions.forEachKeyValue((key, value) -> allFunctions.add(Tuples.pair(key, value)));
+        }
+        if (nativeFunctions != null)
+        {
+            nativeFunctions.forEachKeyValue((key, value) -> allFunctions.add(Tuples.pair(key, value)));
+        }
+
+        allFunctions.sort(Comparator.comparing(Pair::getOne));
+
+        if (!allFunctions.isEmpty())
+        {
+            staticBlockContent.append("    public static MutableMap<String, SharedPureFunction<?>> __functions = Maps.mutable.empty();\n");
+            staticBlockContent.append("    static\n");
+            staticBlockContent.append("    {\n");
+
+            allFunctions.forEach(pair ->
+            {
+                String key = pair.getOne();
+                String methodName = JavaTools.makeValidJavaIdentifier(key);
+                staticBlockContent.append("        __functions.put(\"").append(key).append("\", ").append(methodName).append("());\n");
+            });
+
+            staticBlockContent.append("    }\n");
+        }
+        else
+        {
+            staticBlockContent.append("    public static MutableMap<String, SharedPureFunction<?>> __functions = Maps.fixedSize.empty();\n");
+        }
+
+        if (!allFunctions.isEmpty())
+        {
+            allFunctions.forEach(pair ->
+            {
+                String key = pair.getOne();
+                String value = pair.getTwo();
+                String methodName = JavaTools.makeValidJavaIdentifier(key);
+                helperMethodsContent.append("\n");
+                helperMethodsContent.append("    private static SharedPureFunction<?> ").append(methodName).append("()\n");
+                helperMethodsContent.append("    {\n");
+                helperMethodsContent.append("        return ").append(value).append(";\n");
+                helperMethodsContent.append("    }\n");
+            });
+        }
+
         return
                 "public class " + name + "\n" +
                         "{\n" +
-                        ((lambdaFunctions != null || nativeFunctions != null) ?
-                                "    public static MutableMap<String, SharedPureFunction<?>> __functions = Maps.mutable.empty();\n" +
-                                        "    static\n" +
-                                        "    {\n" +
-                                        (lambdaFunctions == null ? "" : lambdaFunctions.keyValuesView().collect(keyValuePair -> "        __functions.put(\"" + keyValuePair.getOne() + "\", " + keyValuePair.getTwo() + ");\n").makeString("")) +
-                                        (nativeFunctions == null ? "" : nativeFunctions.keyValuesView().collect(keyValuePair -> "        __functions.put(\"" + keyValuePair.getOne() + "\", " + keyValuePair.getTwo() + ");\n").makeString("")) +
-                                        "    }\n" :
-                                "    public static MutableMap<String, SharedPureFunction<?>> __functions = Maps.fixedSize.empty();\n"
-                        ) +
+                        staticBlockContent.toString() +
                         (functionDefinitions == null || functionDefinitions.isEmpty() ? "" : functionDefinitions.makeString("\n", "\n\n", "\n")) +
+                        helperMethodsContent.toString() +
                         "}";
     }
 
