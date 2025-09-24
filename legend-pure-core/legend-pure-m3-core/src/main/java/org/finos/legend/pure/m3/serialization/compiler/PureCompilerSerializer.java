@@ -442,6 +442,7 @@ public class PureCompilerSerializer
             this.fileSerializer.serializeModuleSourceMetadata(this.directory, moduleMetadata.getSourceMetadata());
             this.fileSerializer.serializeModuleExternalReferenceMetadata(this.directory, moduleMetadata.getExternalReferenceMetadata());
             this.fileSerializer.serializeModuleBackReferenceMetadata(this.directory, moduleMetadata.getBackReferenceMetadata());
+            this.fileSerializer.serializeModuleFunctionNameMetadata(this.directory, moduleMetadata.getFunctionNameMetadata());
         }
     }
 
@@ -469,6 +470,7 @@ public class PureCompilerSerializer
             this.fileSerializer.serializeModuleSourceMetadata(this.stream, moduleMetadata.getSourceMetadata());
             this.fileSerializer.serializeModuleExternalReferenceMetadata(this.stream, moduleMetadata.getExternalReferenceMetadata());
             this.fileSerializer.serializeModuleBackReferenceMetadata(this.stream, moduleMetadata.getBackReferenceMetadata());
+            this.fileSerializer.serializeModuleFunctionNameMetadata(this.stream, moduleMetadata.getFunctionNameMetadata());
         }
     }
 }

@@ -30,6 +30,7 @@ public class FilePathProviderExtensionV1 implements FilePathProviderExtension
     private static final String MODULE_SOURCE_METADATA_FILE_EXTENSION = ".psr";
     private static final String MODULE_EXT_REF_FILE_EXTENSION = ".pxr";
     private static final String MODULE_ELEMENT_BACK_REF_FILE_EXTENSION = ".pbr";
+    private static final String MODULE_FUNCTION_NAME_FILE_EXTENSION = ".pfn";
 
     @Override
     public int version()
@@ -69,6 +70,12 @@ public class FilePathProviderExtensionV1 implements FilePathProviderExtension
         StringBuilder builder = new StringBuilder(moduleName.length() + elementPath.length() + MODULE_ELEMENT_BACK_REF_FILE_EXTENSION.length() + (MODULE_FILE_DIR.size() * fsSeparator.length()) + 24);
         FilePathTools.appendFilePathName(appendModuleFileDir(builder, fsSeparator), moduleName).append(fsSeparator);
         return FilePathTools.toFilePath(builder, PackageableElement.DEFAULT_PATH_SEPARATOR.equals(elementPath) ? M3Paths.Root : elementPath, PackageableElement.DEFAULT_PATH_SEPARATOR, fsSeparator, MODULE_ELEMENT_BACK_REF_FILE_EXTENSION).toString();
+    }
+
+    @Override
+    public String getModuleFunctionNameMetadataFilePath(String moduleName, String fsSeparator)
+    {
+        return getModuleMetadataFilePath(moduleName, fsSeparator, MODULE_FUNCTION_NAME_FILE_EXTENSION);
     }
 
     private String getModuleMetadataFilePath(String moduleName, String fsSeparator, String extension)

@@ -30,6 +30,7 @@ public class ModuleMetadataSerializer extends ExtensibleSerializer<ModuleMetadat
     private static final long PURE_MODULE_SOURCE_METADATA_SIGNATURE = Long.parseLong("PureSource", 36);
     private static final long PURE_MODULE_EXT_REFS_SIGNATURE = Long.parseLong("PureExtRefs", 36);
     private static final long PURE_ELEMENT_BACK_REFS_SIGNATURE = Long.parseLong("PureBackRefs", 36);
+    private static final long PURE_FUNCTION_NAMES_SIGNATURE = Long.parseLong("PureFuncName", 36);
 
     private final StringIndexer stringIndexer;
 
@@ -170,6 +171,40 @@ public class ModuleMetadataSerializer extends ExtensibleSerializer<ModuleMetadat
         Reader stringIndexedReader = this.stringIndexer.readStringIndex(reader);
         return extension.deserializeBackReferenceMetadata(stringIndexedReader);
     }
+    
+    // Function name metadata
+    
+    public void serializeFunctionNameMetadata(Writer writer, ModuleFunctionNameMetadata functionNameMetadata)
+    {
+        serializeFunctionNameMetadata(writer, functionNameMetadata, getDefaultExtension());
+    }
+
+    public void serializeFunctionNameMetadata(Writer writer, ModuleFunctionNameMetadata sourceMetadata, int version)
+    {
+        serializeFunctionNameMetadata(writer, sourceMetadata, getExtension(version));
+    }
+
+    private void serializeFunctionNameMetadata(Writer writer, ModuleFunctionNameMetadata sourceMetadata, ModuleMetadataSerializerExtension extension)
+    {
+        writer.writeLong(PURE_FUNCTION_NAMES_SIGNATURE);
+        writer.writeInt(extension.version());
+        Writer stringIndexedWriter = this.stringIndexer.writeStringIndex(writer, collectStrings(sourceMetadata));
+        extension.serializeFunctionNameMetadata(stringIndexedWriter, sourceMetadata);
+    }
+
+    public ModuleFunctionNameMetadata deserializeFunctionNameMetadata(Reader reader)
+    {
+        long signature = reader.readLong();
+        if (signature != PURE_FUNCTION_NAMES_SIGNATURE)
+        {
+            throw new IllegalArgumentException("Invalid file format: not a Legend module function name metadata file");
+        }
+        int version = reader.readInt();
+        ModuleMetadataSerializerExtension extension = getExtension(version);
+        Reader stringIndexedReader = this.stringIndexer.readStringIndex(reader);
+        return extension.deserializeFunctionNameMetadata(stringIndexedReader);
+    }
+
 
     // Helpers
 
@@ -268,6 +303,19 @@ public class ModuleMetadataSerializer extends ExtensibleSerializer<ModuleMetadat
         });
         return stringSet;
     }
+
+    private static MutableSet<String> collectStrings(ModuleFunctionNameMetadata funcNames)
+    {
+        MutableSet<String> stringSet = Sets.mutable.empty();
+        stringSet.add(funcNames.getModuleName());
+        funcNames.getFunctionsByName().forEach(fbn ->
+        {
+            stringSet.add(fbn.getFunctionName());
+            stringSet.addAll(fbn.getFunctions().castToList());
+        });
+        return stringSet;
+    }
+
 
     public static Builder builder()
     {

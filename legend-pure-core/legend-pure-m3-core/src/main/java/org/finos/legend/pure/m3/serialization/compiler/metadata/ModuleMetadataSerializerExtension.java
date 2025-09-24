@@ -43,4 +43,10 @@ public interface ModuleMetadataSerializerExtension extends SerializerExtension
     void serializeBackReferenceMetadata(Writer writer, ElementBackReferenceMetadata backReferenceMetadata);
 
     ElementBackReferenceMetadata deserializeBackReferenceMetadata(Reader reader);
+
+    // Function name metadata
+
+    void serializeFunctionNameMetadata(Writer writer, ModuleFunctionNameMetadata functionNameMetadata);
+
+    ModuleFunctionNameMetadata deserializeFunctionNameMetadata(Reader reader);
 }

@@ -1065,6 +1065,7 @@ public class TestConcreteElementMetadataGenerator extends AbstractReferenceTest
                         "meta::pure::test::pct::PCT",
                         "meta::pure::test::pct::PCT.p_tags[value='grammarDoc']",
                         modelElement(path))
+                .withFunctionByName("compare", path)
                 .build();
         assertMetadata(expected, compare);
     }
@@ -1125,6 +1126,7 @@ public class TestConcreteElementMetadataGenerator extends AbstractReferenceTest
                         "meta::pure::functions::string::toString_Any_1__String_1_",
                         "meta::pure::functions::string::toString_Any_1__String_1_",
                         application(path + ".expressionSequence[0].parametersValues[1].parametersValues[1].values[0].expressionSequence[0].values[0].expressionSequence[0]"))
+                .withFunctionByName("testFunc", path)
                 .build();
         assertMetadata(expected, testFunction);
     }
@@ -1182,6 +1184,7 @@ public class TestConcreteElementMetadataGenerator extends AbstractReferenceTest
                         "test::model::Mass",
                         "test::model::Mass.nonCanonicalUnits['Pound']",
                         refUsage(path + ".expressionSequence[1].parametersValues[1]", "values"))
+                .withFunctionByName("testFunc2", path)
                 .build();
         assertMetadata(expected, testFunction);
     }
@@ -1214,6 +1217,7 @@ public class TestConcreteElementMetadataGenerator extends AbstractReferenceTest
                         "test::model",
                         refUsage(path + ".expressionSequence[0].values[0]", "values"),
                         refUsage(path + ".expressionSequence[0].values[4].expressionSequence[0].parametersValues[0]", "values"))
+                .withFunctionByName("testFunc3", path)
                 .build();
         assertMetadata(expected, testFunction);
     }

@@ -229,6 +229,18 @@ public class TestModuleMetadataSerializer
             {
                 throw new UnsupportedOperationException();
             }
+
+            @Override
+            public void serializeFunctionNameMetadata(Writer writer, ModuleFunctionNameMetadata functionNameMetadata)
+            {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public ModuleFunctionNameMetadata deserializeFunctionNameMetadata(Reader reader)
+            {
+                throw new UnsupportedOperationException();
+            }
         };
     }
 }

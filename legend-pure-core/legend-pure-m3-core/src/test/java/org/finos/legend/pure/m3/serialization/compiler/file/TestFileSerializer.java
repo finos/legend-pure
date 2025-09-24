@@ -148,6 +148,7 @@ public class TestFileSerializer extends AbstractPureTestWithCoreCompiled
             fileSerializer.serializeModuleSourceMetadata(directory, m.getSourceMetadata());
             fileSerializer.serializeModuleExternalReferenceMetadata(directory, m.getExternalReferenceMetadata());
             fileSerializer.serializeModuleBackReferenceMetadata(directory, m.getBackReferenceMetadata());
+            fileSerializer.serializeModuleFunctionNameMetadata(directory, m.getFunctionNameMetadata());
         });
 
         allModuleMetadata.forEach(m ->
@@ -157,6 +158,7 @@ public class TestFileSerializer extends AbstractPureTestWithCoreCompiled
             Assert.assertTrue(m.getName(), fileDeserializer.moduleExternalReferenceMetadataExists(directory, m.getName()));
             m.getBackReferenceMetadata().getBackReferences().forEach(ebr ->
                     Assert.assertTrue(m.getName() + " / " + ebr.getElementPath(), fileDeserializer.moduleElementBackReferenceMetadataExists(directory, m.getName(), ebr.getElementPath())));
+            Assert.assertTrue(m.getName(), fileDeserializer.moduleFunctionNameMetadataExists(directory, m.getName()));
         });
         allModuleMetadata.forEach(m ->
         {
@@ -165,6 +167,7 @@ public class TestFileSerializer extends AbstractPureTestWithCoreCompiled
             Assert.assertEquals(m.getName(), m.getExternalReferenceMetadata(), fileDeserializer.deserializeModuleExternalReferenceMetadata(directory, m.getName()));
             m.getBackReferenceMetadata().getBackReferences().forEach(ebr ->
                     Assert.assertEquals(m.getName() + " / " + ebr.getElementPath(), ebr, fileDeserializer.deserializeModuleElementBackReferenceMetadata(directory, m.getName(), ebr.getElementPath())));
+            Assert.assertEquals(m.getName(), m.getFunctionNameMetadata(), fileDeserializer.deserializeModuleFunctionNameMetadata(directory, m.getName()));
         });
         try (URLClassLoader classLoader = new URLClassLoader(new URL[]{directory.toUri().toURL()}, null))
         {
@@ -175,6 +178,7 @@ public class TestFileSerializer extends AbstractPureTestWithCoreCompiled
                 Assert.assertTrue(m.getName(), fileDeserializer.moduleExternalReferenceMetadataExists(classLoader, m.getName()));
                 m.getBackReferenceMetadata().getBackReferences().forEach(ebr ->
                         Assert.assertTrue(m.getName() + " / " + ebr.getElementPath(), fileDeserializer.moduleElementBackReferenceMetadataExists(classLoader, m.getName(), ebr.getElementPath())));
+                Assert.assertTrue(m.getName(), fileDeserializer.moduleFunctionNameMetadataExists(classLoader, m.getName()));
             });
             allModuleMetadata.forEach(m ->
             {
@@ -183,6 +187,7 @@ public class TestFileSerializer extends AbstractPureTestWithCoreCompiled
                 Assert.assertEquals(m.getName(), m.getExternalReferenceMetadata(), fileDeserializer.deserializeModuleExternalReferenceMetadata(classLoader, m.getName()));
                 m.getBackReferenceMetadata().getBackReferences().forEach(ebr ->
                         Assert.assertEquals(m.getName() + " / " + ebr.getElementPath(), ebr, fileDeserializer.deserializeModuleElementBackReferenceMetadata(classLoader, m.getName(), ebr.getElementPath())));
+                Assert.assertEquals(m.getName(), m.getFunctionNameMetadata(), fileDeserializer.deserializeModuleFunctionNameMetadata(classLoader, m.getName()));
             });
         }
 
@@ -196,6 +201,8 @@ public class TestFileSerializer extends AbstractPureTestWithCoreCompiled
         ModuleMetadataNotFoundException e3 = Assert.assertThrows(ModuleMetadataNotFoundException.class, () -> fileDeserializer.deserializeModuleExternalReferenceMetadata(directory, noSuchModule));
         Assert.assertEquals(noSuchModule, e3.getModuleName());
         Assert.assertEquals("Module '" + noSuchModule + "' external reference metadata not found: cannot find file " + filePathProvider.getModuleExternalReferenceMetadataFilePath(directory, noSuchModule), e3.getMessage());
+        ModuleMetadataNotFoundException e4 = Assert.assertThrows(ModuleMetadataNotFoundException.class, () -> fileDeserializer.deserializeModuleFunctionNameMetadata(directory, noSuchModule));
+        Assert.assertEquals(noSuchModule, e4.getModuleName());
     }
 
     @Test
@@ -212,6 +219,7 @@ public class TestFileSerializer extends AbstractPureTestWithCoreCompiled
                 fileSerializer.serializeModuleSourceMetadata(jarStream, m.getSourceMetadata());
                 fileSerializer.serializeModuleExternalReferenceMetadata(jarStream, m.getExternalReferenceMetadata());
                 fileSerializer.serializeModuleBackReferenceMetadata(jarStream, m.getBackReferenceMetadata());
+                fileSerializer.serializeModuleFunctionNameMetadata(jarStream, m.getFunctionNameMetadata());
             });
         }
 
@@ -224,6 +232,7 @@ public class TestFileSerializer extends AbstractPureTestWithCoreCompiled
                 Assert.assertTrue(m.getName(), fileDeserializer.moduleExternalReferenceMetadataExists(classLoader, m.getName()));
                 m.getBackReferenceMetadata().getBackReferences().forEach(ebr ->
                         Assert.assertTrue(m.getName() + " / " + ebr.getElementPath(), fileDeserializer.moduleElementBackReferenceMetadataExists(classLoader, m.getName(), ebr.getElementPath())));
+                Assert.assertTrue(m.getName(), fileDeserializer.moduleFunctionNameMetadataExists(classLoader, m.getName()));
             });
             allModuleMetadata.forEach(m ->
             {
@@ -232,6 +241,7 @@ public class TestFileSerializer extends AbstractPureTestWithCoreCompiled
                 Assert.assertEquals(m.getName(), m.getExternalReferenceMetadata(), fileDeserializer.deserializeModuleExternalReferenceMetadata(classLoader, m.getName()));
                 m.getBackReferenceMetadata().getBackReferences().forEach(ebr ->
                         Assert.assertEquals(m.getName() + " / " + ebr.getElementPath(), ebr, fileDeserializer.deserializeModuleElementBackReferenceMetadata(classLoader, m.getName(), ebr.getElementPath())));
+                Assert.assertEquals(m.getName(), m.getFunctionNameMetadata(), fileDeserializer.deserializeModuleFunctionNameMetadata(classLoader, m.getName()));
             });
 
             String noSuchModule = "no_such_module";
@@ -244,6 +254,8 @@ public class TestFileSerializer extends AbstractPureTestWithCoreCompiled
             ModuleMetadataNotFoundException e3 = Assert.assertThrows(ModuleMetadataNotFoundException.class, () -> fileDeserializer.deserializeModuleExternalReferenceMetadata(classLoader, noSuchModule));
             Assert.assertEquals(noSuchModule, e3.getModuleName());
             Assert.assertEquals("Module '" + noSuchModule + "' external reference metadata not found: cannot find resource " + filePathProvider.getModuleExternalReferenceMetadataResourceName(noSuchModule), e3.getMessage());
+            ModuleMetadataNotFoundException e4 = Assert.assertThrows(ModuleMetadataNotFoundException.class, () -> fileDeserializer.deserializeModuleFunctionNameMetadata(classLoader, noSuchModule));
+            Assert.assertEquals(noSuchModule, e4.getModuleName());
         }
     }
 }

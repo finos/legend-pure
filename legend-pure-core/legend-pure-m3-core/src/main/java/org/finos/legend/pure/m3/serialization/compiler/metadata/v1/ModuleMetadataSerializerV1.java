@@ -21,7 +21,9 @@ import org.finos.legend.pure.m3.serialization.compiler.metadata.ConcreteElementM
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ElementBackReferenceMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ElementBackReferenceMetadata.InstanceBackReferenceMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ElementExternalReferenceMetadata;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.FunctionsByName;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleExternalReferenceMetadata;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleFunctionNameMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleManifest;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataSerializerExtension;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleSourceMetadata;
@@ -218,6 +220,28 @@ public class ModuleMetadataSerializerV1 implements ModuleMetadataSerializerExten
                 backRefs[j] = readBackReference(reader);
             }
             builder.addInstanceBackReferenceMetadata(instanceRefId, backRefs);
+        }
+        return builder.build();
+    }
+
+    @Override
+    public void serializeFunctionNameMetadata(Writer writer, ModuleFunctionNameMetadata functionNameMetadata)
+    {
+        writer.writeString(functionNameMetadata.getModuleName());
+        ImmutableList<FunctionsByName> functionsByName = functionNameMetadata.getFunctionsByName();
+        writer.writeInt(functionsByName.size());
+        functionsByName.forEach(fbn -> writeFunctionsByName(writer, fbn));
+    }
+
+    @Override
+    public ModuleFunctionNameMetadata deserializeFunctionNameMetadata(Reader reader)
+    {
+        String moduleName = reader.readString();
+        int functionCount = reader.readInt();
+        ModuleFunctionNameMetadata.Builder builder = ModuleFunctionNameMetadata.builder(functionCount).withModuleName(moduleName);
+        for (int i = 0; i < functionCount; i++)
+        {
+            builder.addFunctionsByName(readFunctionsByName(reader));
         }
         return builder.build();
     }
@@ -434,6 +458,26 @@ public class ModuleMetadataSerializerV1 implements ModuleMetadataSerializerExten
                 throw new RuntimeException(String.format("Unknown back reference type code: %02x", code & BACK_REF_TYPE_MASK));
             }
         }
+    }
+
+    private void writeFunctionsByName(Writer writer, FunctionsByName functionsByName)
+    {
+        writer.writeString(functionsByName.getFunctionName());
+        ImmutableList<String> functions = functionsByName.getFunctions();
+        writer.writeInt(functions.size());
+        functions.forEach(writer::writeString);
+    }
+
+    private FunctionsByName readFunctionsByName(Reader reader)
+    {
+        String functionName = reader.readString();
+        int functionCount = reader.readInt();
+        FunctionsByName.Builder builder = FunctionsByName.builder(functionCount).withFunctionName(functionName);
+        for (int i = 0; i < functionCount; i++)
+        {
+            builder.addFunction(reader.readString());
+        }
+        return builder.build();
     }
 
     private static int getIntWidth(int... ints)

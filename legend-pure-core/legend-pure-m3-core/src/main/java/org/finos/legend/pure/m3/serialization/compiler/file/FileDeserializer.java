@@ -18,6 +18,7 @@ import org.finos.legend.pure.m3.serialization.compiler.element.ConcreteElementDe
 import org.finos.legend.pure.m3.serialization.compiler.element.DeserializedConcreteElement;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ElementBackReferenceMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleExternalReferenceMetadata;
+import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleFunctionNameMetadata;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleManifest;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleMetadataSerializer;
 import org.finos.legend.pure.m3.serialization.compiler.metadata.ModuleSourceMetadata;
@@ -840,6 +841,163 @@ public class FileDeserializer
         {
             long end = System.nanoTime();
             LOGGER.debug("Finished deserializing module {} element {} back reference metadata from resource '{}' in {}s", moduleName, elementPath, resourceName, (end - start) / 1_000_000_000.0);
+        }
+    }
+
+
+    // Deserialize module function name metadata from directory
+
+    public boolean moduleFunctionNameMetadataExists(Path directory, String moduleName)
+    {
+        return moduleFunctionNameMetadataExists(directory, moduleName, this.filePathProvider.getDefaultVersion());
+    }
+
+    public boolean moduleFunctionNameMetadataExists(Path directory, String moduleName, int filePathVersion)
+    {
+        Objects.requireNonNull(directory, "directory is required");
+        Objects.requireNonNull(moduleName, "module name is required");
+        return Files.exists(this.filePathProvider.getModuleFunctionNameMetadataFilePath(directory, moduleName, filePathVersion));
+    }
+
+    /**
+     * Deserialize module function name metadata from a file in a directory. Throws a
+     * {@link ModuleMetadataNotFoundException} if the module function name metadata cannot be found.
+     *
+     * @param directory  directory to search for the module function name metadata file
+     * @param moduleName module name
+     * @return module function name metadata
+     * @throws ModuleMetadataNotFoundException if the module function name metadata cannot be found
+     */
+    public ModuleFunctionNameMetadata deserializeModuleFunctionNameMetadata(Path directory, String moduleName)
+    {
+        return deserializeModuleFunctionNameMetadata(directory, moduleName, this.filePathProvider.getDefaultVersion());
+    }
+
+    /**
+     * Deserialize module function name metadata from a file in a directory using the given file path version. Throws a
+     * {@link ModuleMetadataNotFoundException} if the module function name metadata cannot be found.
+     *
+     * @param directory       directory to search for the module function name metadata file
+     * @param moduleName      module name
+     * @param filePathVersion file path version
+     * @return module function name metadata
+     * @throws ModuleMetadataNotFoundException if the module function name metadata cannot be found
+     */
+    public ModuleFunctionNameMetadata deserializeModuleFunctionNameMetadata(Path directory, String moduleName, int filePathVersion)
+    {
+        Objects.requireNonNull(directory, "directory is required");
+        Objects.requireNonNull(moduleName, "module name is required");
+
+        long start = System.nanoTime();
+        Path filePath = this.filePathProvider.getModuleFunctionNameMetadataFilePath(directory, moduleName, filePathVersion);
+        LOGGER.debug("Deserializing module {} function name metadata from {}", moduleName, filePath);
+        try (Reader reader = BinaryReaders.newBinaryReader(new BufferedInputStream(Files.newInputStream(filePath))))
+        {
+            return this.moduleSerializer.deserializeFunctionNameMetadata(reader);
+        }
+        catch (NoSuchFileException | FileNotFoundException e)
+        {
+            LOGGER.error("Error deserializing module {} function name metadata from {}", moduleName, filePath, e);
+            throw new ModuleMetadataNotFoundException(moduleName, "source metadata", "cannot find file " + filePath, e);
+        }
+        catch (Exception e)
+        {
+            LOGGER.error("Error deserializing module {} function name metadata from {}", moduleName, filePath, e);
+            if (Files.notExists(filePath))
+            {
+                throw new ModuleMetadataNotFoundException(moduleName, "source metadata", "cannot find file " + filePath, e);
+            }
+            StringBuilder builder = new StringBuilder("Error deserializing function name metadata for module ").append(moduleName).append(" from ").append(filePath);
+            String eMessage = e.getMessage();
+            if (eMessage != null)
+            {
+                builder.append(": ").append(eMessage);
+            }
+            throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
+        }
+        finally
+        {
+            long end = System.nanoTime();
+            LOGGER.debug("Finished deserializing module {} function name metadata from {} in {}s", moduleName, filePath, (end - start) / 1_000_000_000.0);
+        }
+    }
+
+    // Deserialize module function name metadata from ClassLoader
+
+    public boolean moduleFunctionNameMetadataExists(ClassLoader classLoader, String moduleName)
+    {
+        return moduleFunctionNameMetadataExists(classLoader, moduleName, this.filePathProvider.getDefaultVersion());
+    }
+
+    public boolean moduleFunctionNameMetadataExists(ClassLoader classLoader, String moduleName, int filePathVersion)
+    {
+        Objects.requireNonNull(classLoader, "class loader is required");
+        Objects.requireNonNull(moduleName, "module name is required");
+        return classLoader.getResource(this.filePathProvider.getModuleFunctionNameMetadataResourceName(moduleName, filePathVersion)) != null;
+    }
+
+    /**
+     * Deserialize module function name metadata from a resource in a class loader. Throws a
+     * {@link ModuleMetadataNotFoundException} if the module function name metadata cannot be found.
+     *
+     * @param classLoader class loader to search for the module function name metadata resource
+     * @param moduleName  module name
+     * @return module function name metadata
+     * @throws ModuleMetadataNotFoundException if the module source metadata cannot be found
+     */
+    public ModuleFunctionNameMetadata deserializeModuleFunctionNameMetadata(ClassLoader classLoader, String moduleName)
+    {
+        return deserializeModuleFunctionNameMetadata(classLoader, moduleName, this.filePathProvider.getDefaultVersion());
+    }
+
+    /**
+     * Deserialize module function name metadata from a resource in a class loader using the given file path version.
+     * Throws a {@link ModuleMetadataNotFoundException} if the module function name metadata cannot be found.
+     *
+     * @param classLoader     class loader to search for the module function name metadata resource
+     * @param moduleName      module name
+     * @param filePathVersion file path version
+     * @return module function name metadata
+     * @throws ModuleMetadataNotFoundException if the module function name metadata cannot be found
+     */
+    public ModuleFunctionNameMetadata deserializeModuleFunctionNameMetadata(ClassLoader classLoader, String moduleName, int filePathVersion)
+    {
+        Objects.requireNonNull(classLoader, "class loader is required");
+        Objects.requireNonNull(moduleName, "module name is required");
+
+        long start = System.nanoTime();
+        String resourceName = this.filePathProvider.getModuleFunctionNameMetadataResourceName(moduleName, filePathVersion);
+        LOGGER.debug("Deserializing module {} function name metadata from resource '{}'", moduleName, resourceName);
+        try
+        {
+            URL url = classLoader.getResource(resourceName);
+            if (url == null)
+            {
+                throw new ModuleMetadataNotFoundException(moduleName, "function name metadata", "cannot find resource " + resourceName);
+            }
+            LOGGER.debug("Deserializing module {} function name metadata from resource '{}': {}", moduleName, resourceName, url);
+            try (Reader reader = BinaryReaders.newBinaryReader(url.openStream()))
+            {
+                return this.moduleSerializer.deserializeFunctionNameMetadata(reader);
+            }
+            catch (Exception e)
+            {
+                LOGGER.error("Error deserializing module {} function name metadata from resource '{}'", moduleName, resourceName, e);
+                StringBuilder builder = new StringBuilder("Error deserializing function name metadata for module ").append(moduleName)
+                        .append(" from resource ").append(resourceName)
+                        .append(" (").append(url).append(")");
+                String eMessage = e.getMessage();
+                if (eMessage != null)
+                {
+                    builder.append(": ").append(eMessage);
+                }
+                throw (e instanceof IOException) ? new UncheckedIOException(builder.toString(), (IOException) e) : new RuntimeException(builder.toString(), e);
+            }
+        }
+        finally
+        {
+            long end = System.nanoTime();
+            LOGGER.debug("Finished deserializing module {} function name metadata from resource '{}' in {}s", moduleName, resourceName, (end - start) / 1_000_000_000.0);
         }
     }
 
