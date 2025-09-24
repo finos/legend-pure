@@ -49,9 +49,14 @@ public class M3CoreInstanceGenerator
         String fileNameStartsWith = args.length >= 4 ? args[3] : null;
 
         SetIterable<String> filePaths = fileNameStr == null ? Sets.immutable.empty() : Sets.mutable.with(fileNameStr.split("\\s*+,\\s*+"));
+        generate(outputDir, factoryNamePrefix, filePaths, fileNameStartsWith);
+    }
+
+    public static void generate(String outputDir, String factoryNamePrefix, SetIterable<String> filePaths, String fileNameStartsWith)
+    {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         RichIterable<CodeRepository> repositories = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true)).build().getRepositories();
-        PureRuntime runtime = new PureRuntimeBuilder(new CompositeCodeStorage(new ClassLoaderCodeStorage(repositories))).setTransactionalByDefault(false).build();
+        PureRuntime runtime = new PureRuntimeBuilder(new CompositeCodeStorage(new ClassLoaderCodeStorage(classLoader, repositories))).setTransactionalByDefault(false).build();
 
         ModelRepository repository = runtime.getModelRepository();
         runtime.loadAndCompileCore();
