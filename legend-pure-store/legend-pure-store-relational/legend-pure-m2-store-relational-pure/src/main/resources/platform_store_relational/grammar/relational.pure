@@ -97,6 +97,11 @@ Class meta::relational::metamodel::relation::Table extends NamedRelation, Annota
    temporaryTable : Boolean[0..1];
 }
 
+Class meta::relational::metamodel::relation::GeneratedAccessorTable extends Table
+{
+   sourceElement: PackageableElement[1];
+}
+
 Class meta::relational::metamodel::RelationalMappingSpecification
 {
     userDefinedPrimaryKey : Boolean[1];
