@@ -20,11 +20,11 @@ import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.CoreInstanceWithStandardPrinting;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
@@ -32,10 +32,9 @@ import org.finos.legend.pure.m4.coreinstance.indexing.IDConflictException;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecification;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.exception.PureException;
-import org.finos.legend.pure.m4.tools.SafeAppendable;
 import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
 
-public class SimpleCoreInstance extends AbstractCoreInstance
+public class SimpleCoreInstance extends AbstractCoreInstance implements CoreInstanceWithStandardPrinting
 {
     private final int internalSyntheticId;
 
@@ -405,165 +404,9 @@ public class SimpleCoreInstance extends AbstractCoreInstance
     }
 
 
-    //-------
-    // Print
-    //-------
-
     @Override
     public String toString()
     {
         return this.name + "(" + this.internalSyntheticId + ") instanceOf " + ((getClassifier() == null) ? null : getClassifier().getName());
-    }
-
-    @Override
-    public void printFull(Appendable appendable, String tab)
-    {
-        print(appendable, tab, true, true, DEFAULT_MAX_PRINT_DEPTH);
-    }
-
-    @Override
-    public void print(Appendable appendable, String tab, int max)
-    {
-        print(appendable, tab, false, true, max);
-    }
-
-    @Override
-    public void printWithoutDebug(Appendable appendable, String tab, int max)
-    {
-        print(appendable, tab, false, false, max);
-    }
-
-    private void print(Appendable appendable, String tab, boolean full, boolean addDebug, int max)
-    {
-        print(SafeAppendable.wrap(appendable), tab, Stacks.mutable.empty(), full, addDebug, max);
-    }
-
-    private void print(SafeAppendable appendable, String tab, MutableStack<CoreInstance> stack, boolean full, boolean addDebug, int max)
-    {
-        stack.push(this);
-        printNodeName(appendable.append(tab), this, full, addDebug);
-        printNodeName(appendable.append(" instance "), this.classifier, full, addDebug);
-        getState().getKeys().toSortedList().forEach(key -> printProperty(appendable.append('\n'), key, this.getState().getValues(key), tab, stack, full, addDebug, max));
-        stack.pop();
-    }
-
-    private void printNodeName(SafeAppendable appendable, CoreInstance node, boolean full, boolean addDebug)
-    {
-        if (node == null)
-        {
-            return;
-        }
-        String name = node.getName();
-        if (full)
-        {
-            appendable.append(name).append('_').append(node.getSyntheticId());
-        }
-        else
-        {
-            appendable.append(ModelRepository.possiblyReplaceAnonymousId(name));
-        }
-
-        if (addDebug)
-        {
-            SourceInformation sourceInfo = node.getSourceInformation();
-            if (sourceInfo != null)
-            {
-                appendable.append('(').append(sourceInfo.getSourceId()).append(':')
-                        .append(sourceInfo.getStartLine()).append(',')
-                        .append(sourceInfo.getStartColumn()).append(',')
-                        .append(sourceInfo.getLine()).append(',')
-                        .append(sourceInfo.getColumn()).append(',')
-                        .append(sourceInfo.getEndLine()).append(',')
-                        .append(sourceInfo.getEndColumn()).append(')');
-            }
-        }
-    }
-
-    private void printProperty(SafeAppendable appendable, String propertyName, ListIterable<CoreInstance> values, String tab, MutableStack<CoreInstance> stack, boolean full, boolean addDebug, int max)
-    {
-        appendable.append(tab).append("    ");
-        if (propertyName == null)
-        {
-            appendable.append("null:");
-        }
-        else
-        {
-            CoreInstance property = getKeyByName(propertyName);
-            CoreInstance propertyClassifier = property.getClassifier();
-
-            printNodeName(appendable, property, full, addDebug);
-            appendable.append('(');
-            if (propertyClassifier == null)
-            {
-                appendable.append("null");
-            }
-            else
-            {
-                printNodeName(appendable, propertyClassifier, full, addDebug);
-            }
-            appendable.append("):");
-        }
-
-        SetIterable<CoreInstance> excluded = this.repository.getExclusionSet();
-        for (CoreInstance value : values)
-        {
-            appendable.append('\n');
-
-            if (value == null)
-            {
-                appendable.append(tab);
-                appendable.append("        NULL");
-            }
-            else
-            {
-                // TODO remove reference to "package" property, which is an M3 thing
-                boolean excludeFlag = ((excluded != null) && (excluded.contains(value.getValueForMetaPropertyToOne("package")) || excluded.contains(value))) ||
-                        (this.repository.getTopLevel(value.getName()) != null);
-                if (full ? stack.contains(value) : (excludeFlag || (stack.size() > max) || stack.contains(value)))
-                {
-                    CoreInstance valueClassifier = value.getClassifier();
-
-                    appendable.append(tab).append("        ");
-                    printNodeName(appendable, value, full, addDebug);
-                    appendable.append(" instance ");
-                    if (valueClassifier == null)
-                    {
-                        appendable.append("null");
-                    }
-                    else
-                    {
-                        printNodeName(appendable, valueClassifier, full, addDebug);
-                        if (full)
-                        {
-                            appendable.append('\n').append(tab).append("            [...]");
-                        }
-                        else if (!excludeFlag && (stack.size() > max) && value.getKeys().notEmpty())
-                        {
-                            appendable.append('\n').append(tab).append("            [... >").append(max).append(']');
-                        }
-                    }
-                }
-                else
-                {
-                    String newTab = tab + "        ";
-                    if (value instanceof SimpleCoreInstance)
-                    {
-                        ((SimpleCoreInstance) value).print(appendable, newTab, stack, full, addDebug, max);
-                    }
-                    else if (full)
-                    {
-                        value.printFull(appendable, newTab);
-                    }
-                    else if (addDebug)
-                    {
-                        value.print(appendable, newTab, max);
-                    }
-                    else
-                    {
-                        value.printWithoutDebug(appendable, newTab, max);
-                    }
-                }
-            }
-        }
     }
 }
