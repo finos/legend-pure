@@ -107,7 +107,7 @@ public class CsvReader
 
     private static void skipStartLines(Reader csvReader, String recordSeparator, long skipStartLines) throws IOException
     {
-        byte[] separatorBytes = recordSeparator.getBytes();
+        byte[] separatorBytes = recordSeparator.getBytes(Charset.defaultCharset());
         for (int line = 0; line < skipStartLines; line++)
         {
             byte[] buffer = new byte[separatorBytes.length];
