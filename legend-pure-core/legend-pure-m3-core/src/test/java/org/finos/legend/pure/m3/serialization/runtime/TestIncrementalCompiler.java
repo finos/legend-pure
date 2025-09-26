@@ -156,6 +156,6 @@ public class TestIncrementalCompiler extends AbstractPureTestWithCoreCompiledPla
                 "                    idOrPath(Property):\n" +
                 "                        my::myEnum instance String\n" +
                 "                    importGroup(Property):\n" +
-                "                        import_1_pure_1 instance ImportGroup", runtime.getCoreInstance("instance").printWithoutDebug("", 1));
+                "                        import_1_pure_1 instance ImportGroup", runtime.getCoreInstance("instance").printWithoutDebug("", 2));
     }
 }
