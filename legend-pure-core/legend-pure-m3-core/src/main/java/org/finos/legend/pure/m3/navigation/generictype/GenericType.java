@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m3.navigation.generictype;
 
-import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
@@ -54,6 +53,7 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstanceWrapper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.tools.SafeAppendable;
@@ -1019,13 +1019,13 @@ public class GenericType
 
     private static void appendTypeVariableValue(SafeAppendable appendable, CoreInstance value, ProcessorSupport processorSupport)
     {
-        if (value instanceof VariableExpression)
+        if (org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification.isVariableExpression(value, processorSupport))
         {
-            appendable.append(((VariableExpression) value)._name());
+            appendable.append(PrimitiveUtilities.getStringValue(value.getValueForMetaPropertyToOne(M3Properties.name)));
         }
-        else if (value instanceof InstanceValue)
+        else if (org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification.isInstanceValue(value, processorSupport))
         {
-            RichIterable<?> values = ((InstanceValue) value)._values();
+            ListIterable<? extends CoreInstance> values = value.getValueForMetaPropertyToMany(M3Properties.values);
             if (values.size() == 1)
             {
                 appendTypeVariableValue(appendable, values.getAny(), processorSupport);
@@ -1033,14 +1033,9 @@ public class GenericType
             else
             {
                 appendable.append('[');
-                boolean[] first = {true};
-                values.forEach(v ->
+                values.forEachWithIndex((v, i) ->
                 {
-                    if (first[0])
-                    {
-                        first[0] = false;
-                    }
-                    else
+                    if (i > 0)
                     {
                         appendable.append(",");
                     }
@@ -1049,44 +1044,42 @@ public class GenericType
                 appendable.append(']');
             }
         }
+        else if (value instanceof PrimitiveCoreInstance)
+        {
+            Object primitiveValue = ((PrimitiveCoreInstance<?>) value).getValue();
+            if (primitiveValue instanceof String)
+            {
+                appendable.append('\'').append((String) primitiveValue).append('\'');
+            }
+            else if (primitiveValue instanceof PureDate)
+            {
+                ((PureDate) primitiveValue).appendString(appendable.append('%'));
+            }
+            else
+            {
+                appendable.append(primitiveValue);
+            }
+        }
+        else if (processorSupport.instance_instanceOf(value, M3Paths.String))
+        {
+            appendable.append('\'').append(value.getName()).append('\'');
+        }
+        else if (processorSupport.instance_instanceOf(value, M3Paths.Date))
+        {
+            appendable.append('%').append(value.getName());
+        }
+        else if (processorSupport.instance_instanceOf(value, M3Paths.Boolean) ||
+                processorSupport.instance_instanceOf(value, M3Paths.Byte) ||
+                processorSupport.instance_instanceOf(value, M3Paths.Number) ||
+                processorSupport.instance_instanceOf(value, M3Paths.StrictTime))
+        {
+            appendable.append(value.getName());
+        }
         else
         {
             throw new RuntimeException("Not managed " + value.getClass());
         }
     }
-
-    private static void appendTypeVariableValue(SafeAppendable appendable, Object value, ProcessorSupport processorSupport)
-    {
-        if (value instanceof String)
-        {
-            appendable.append('\'').append((String) value).append('\'');
-            return;
-        }
-        if (value instanceof PureDate)
-        {
-            ((PureDate) value).appendString(appendable.append('%'));
-            return;
-        }
-        if ((value instanceof CoreInstance) && processorSupport.instance_instanceOf((CoreInstance) value, M3Paths.String))
-        {
-            appendable.append('\'').append(PrimitiveUtilities.getStringValue((CoreInstance) value)).append('\'');
-        }
-        if (value instanceof CoreInstance)
-        {
-            if (processorSupport.instance_instanceOf((CoreInstance) value, M3Paths.String))
-            {
-                appendable.append('\'').append(PrimitiveUtilities.getStringValue((CoreInstance) value)).append('\'');
-                return;
-            }
-            if (processorSupport.instance_instanceOf((CoreInstance) value, M3Paths.Date))
-            {
-                appendable.append('%').append(((CoreInstance) value).getName());
-                return;
-            }
-        }
-        appendable.append(value);
-    }
-
 
     private static void printTypeAndMultiplicityArguments(SafeAppendable appendable, ListIterable<? extends CoreInstance> typeArguments, ListIterable<? extends CoreInstance> multiplicityArguments, boolean fullPaths, boolean markImportStubs, ProcessorSupport processorSupport)
     {
