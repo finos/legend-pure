@@ -17,6 +17,7 @@ package org.finos.legend.pure.m3.navigation.valuespecification;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -58,6 +59,19 @@ public class ValueSpecification
             return true;
         }
         return (!(instance instanceof Any) || (instance instanceof AbstractCoreInstanceWrapper)) && processorSupport.instance_instanceOf(instance, M3Paths.InstanceValue);
+    }
+
+    public static boolean isVariableExpression(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        if (instance == null)
+        {
+            return false;
+        }
+        if (instance instanceof VariableExpression)
+        {
+            return true;
+        }
+        return (!(instance instanceof Any) || (instance instanceof AbstractCoreInstanceWrapper)) && processorSupport.instance_instanceOf(instance, M3Paths.VariableExpression);
     }
 
     /**

@@ -112,8 +112,25 @@ public class CompiledProcessorSupport implements ProcessorSupport
         if (object instanceof ValCoreInstance)
         {
             String valType = ((ValCoreInstance) object).getType();
-            return typeName.equals(valType) ||
-                    (M3Paths.Date.equals(typeName) && (valType.equals(M3Paths.DateTime) || valType.equals(M3Paths.StrictDate) || valType.equals(M3Paths.LatestDate)));
+            if (typeName.equals(valType))
+            {
+                return true;
+            }
+            switch (typeName)
+            {
+                case M3Paths.Date:
+                {
+                    return valType.equals(M3Paths.DateTime) || valType.equals(M3Paths.StrictDate) || valType.equals(M3Paths.LatestDate);
+                }
+                case M3Paths.Number:
+                {
+                    return valType.equals(M3Paths.Integer) || valType.equals(M3Paths.Float) || valType.equals(M3Paths.Decimal);
+                }
+                default:
+                {
+                    return false;
+                }
+            }
         }
 
         return Instance.instanceOf(object, typeName, this);
