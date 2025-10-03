@@ -308,6 +308,8 @@ public class Reactivator
                     break;
                 }
                 case "cast_Any_m__T_1__T_m_":
+                case "to_Variant_$0_1$__T_$0_1$__T_$0_1$_":
+                case "toMany_Variant_$0_1$__T_$0_1$__T_MANY_":
                 {
                     //Have to get the second param from the generic type
                     paramValues.set(1, Lists.fixedSize.of(sfe._genericType()));

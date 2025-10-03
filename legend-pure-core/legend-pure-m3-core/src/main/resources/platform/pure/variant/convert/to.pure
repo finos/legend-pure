@@ -170,3 +170,10 @@ function <<PCT.test>> meta::pure::functions::variant::convert::tests::to::testTo
 {
     assertError(|$f->eval(|fromJson('"hello"')->to(@Any)), 'Any is not managed yet!');
 }
+
+//written as standard test as we are testing special handling of @type only triggered via reactivate
+function <<test.Test>> meta::pure::functions::variant::convert::tests::to::testReactivate():Boolean[1]
+{
+    let value = {|fromJson('1')->to(@Integer)}.expressionSequence->at(0)->reactivate();
+    assertEquals(1, $value);
+}

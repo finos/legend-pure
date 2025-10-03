@@ -551,6 +551,7 @@ public class NativeFunctionProcessor
         registerNative(map, new FromJson());
         registerNative(map, new ToJson());
         registerNative(map, new To());
+        registerNative(map, new ToMany());
         registerNative(map, new ToVariant());
     }
 }
