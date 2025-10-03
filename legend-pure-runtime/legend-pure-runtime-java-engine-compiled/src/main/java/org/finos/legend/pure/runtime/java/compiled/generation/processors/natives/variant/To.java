@@ -47,6 +47,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.SourceInfoProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.map.PureMap;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 import org.finos.legend.pure.runtime.java.shared.variant.VariantInstanceImpl;
 
@@ -57,11 +58,34 @@ public class To extends AbstractNative
 {
     public To()
     {
-        super("to_Variant_$0_1$__T_$0_1$__T_$0_1$_", "toMany_Variant_$0_1$__T_$0_1$__T_MANY_");
+        super("to_Variant_$0_1$__T_$0_1$__T_$0_1$_");
     }
 
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
+    {
+        return getString(topLevelElement, functionExpression, transformedParams, processorContext);
+    }
+
+    @Override
+    public String buildBody()
+    {
+        return buildBody(true);
+    }
+
+    protected static String buildBody(boolean isZeroOne)
+    {
+        return "new DefendedPureFunction2<Object, " + FullJavaPaths.GenericType + ", Object>()\n" +
+                "        {\n" +
+                "            @Override\n" +
+                "            public Object value(Object instances, " + FullJavaPaths.GenericType + " type, ExecutionSupport es)\n" +
+                "            {\n" +
+                "                return " + To.class.getCanonicalName() + ".to((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.variant.Variant) instances, " + isZeroOne + ", type, null, es);\n" +
+                "            }\n" +
+                "        }\n";
+    }
+
+    protected static String getString(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
         ProcessorSupport processorSupport = processorContext.getSupport();
         CoreInstance targetTypeParameter = Instance.getValueForMetaPropertyToManyResolved(functionExpression, M3Properties.parametersValues, processorSupport).get(1);
