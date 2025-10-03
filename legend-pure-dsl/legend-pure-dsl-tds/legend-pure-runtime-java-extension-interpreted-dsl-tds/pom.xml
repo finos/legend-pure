@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure-dsl-tds</artifactId>
-        <version>5.61.3-SNAPSHOT</version>
+        <version>5.62.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
