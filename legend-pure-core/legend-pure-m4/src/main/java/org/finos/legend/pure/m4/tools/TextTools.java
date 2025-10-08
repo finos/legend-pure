@@ -14,6 +14,8 @@
 
 package org.finos.legend.pure.m4.tools;
 
+import java.util.Locale;
+
 public class TextTools
 {
     /**
@@ -139,6 +141,122 @@ public class TextTools
     {
         checkRegionBounds(text, start, end);
         return indexOfNonWhitespace(text, start, end) == -1;
+    }
+
+    /**
+     * Convert a code point of a string to lower case using the rules of the default locale.
+     *
+     * @param string string
+     * @param index  code point index
+     * @return converted string
+     */
+    public static String toLowerCase(String string, int index)
+    {
+        return toLowerCase(string, index, Locale.getDefault());
+    }
+
+    /**
+     * Convert a code point of a string to lower case using the rules of the given locale.
+     *
+     * @param string string
+     * @param index  code point index
+     * @param locale locale for case transformation rules
+     * @return converted string
+     */
+    public static String toLowerCase(String string, int index, Locale locale)
+    {
+        return toLowerCase(string, index, index + Character.charCount(string.codePointAt(index)), locale);
+    }
+
+    /**
+     * Convert a region of a string to lower case using the rules of the default locale.
+     *
+     * @param string string
+     * @param start  region start (inclusive)
+     * @param end    region end (exclusive)
+     * @return converted string
+     */
+    public static String toLowerCase(String string, int start, int end)
+    {
+        return toLowerCase(string, start, end, Locale.getDefault());
+    }
+
+    /**
+     * Convert a region of a string to lower case using the rules of the given locale.
+     *
+     * @param string string
+     * @param start  region start (inclusive)
+     * @param end    region end (exclusive)
+     * @param locale locale for case transformation rules
+     * @return converted string
+     */
+    public static String toLowerCase(String string, int start, int end, Locale locale)
+    {
+        String substring = string.substring(start, end);
+        String replacement = substring.toLowerCase(locale);
+        return substring.equals(replacement) ?
+               string :
+               new StringBuilder(string)
+                       .replace(start, end, replacement)
+                       .toString();
+    }
+
+    /**
+     * Convert a code point of a string to upper case using the rules of the default locale.
+     *
+     * @param string string
+     * @param index  code point index
+     * @return converted string
+     */
+    public static String toUpperCase(String string, int index)
+    {
+        return toUpperCase(string, index, Locale.getDefault());
+    }
+
+    /**
+     * Convert a code point of a string to upper case using the rules of the given locale.
+     *
+     * @param string string
+     * @param index  code point index
+     * @param locale locale for case transformation rules
+     * @return converted string
+     */
+    public static String toUpperCase(String string, int index, Locale locale)
+    {
+        return toUpperCase(string, index, index + Character.charCount(string.codePointAt(index)), locale);
+    }
+
+    /**
+     * Convert a region of a string to upper case using the rules of the default locale.
+     *
+     * @param string string
+     * @param start  region start (inclusive)
+     * @param end    region end (exclusive)
+     * @return converted string
+     */
+    public static String toUpperCase(String string, int start, int end)
+    {
+        return toUpperCase(string, start, end, Locale.getDefault());
+    }
+
+    /**
+     * Convert a region of a string to upper case using the rules of the given locale.
+     *
+     * @param string string
+     * @param start  region start (inclusive)
+     * @param end    region end (exclusive)
+     * @param locale locale for case transformation rules
+     * @return converted string
+     */
+    public static String toUpperCase(String string, int start, int end, Locale locale)
+    {
+        String substring = string.substring(start, end);
+        String replacement = substring.toUpperCase(locale);
+        return substring.equals(replacement) ?
+               string :
+               new StringBuilder(string)
+                       .replace(start, end, replacement)
+                       .toString();
     }
 
     private static void checkRegionBounds(String text, int start, int end)

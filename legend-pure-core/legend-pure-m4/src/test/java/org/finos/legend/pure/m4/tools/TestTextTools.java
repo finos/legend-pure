@@ -17,6 +17,8 @@ package org.finos.legend.pure.m4.tools;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Arrays;
+
 public class TestTextTools
 {
     @Test
@@ -89,6 +91,48 @@ public class TestTextTools
         assertIsBlank(qbf, 9, 10);
         assertIsBlank(qbf, 15, 16);
         assertIsBlank(qbf, 19, 20);
+    }
+
+    @Test
+    public void testToLowerCase()
+    {
+        Assert.assertEquals("tHE QUICK BROWN FOX", TextTools.toLowerCase("THE QUICK BROWN FOX", 0));
+        Assert.assertEquals("the QUICK BROWN FOX", TextTools.toLowerCase("THE QUICK BROWN FOX", 0, 3));
+        Assert.assertEquals("the QUICK BROWN FOX", TextTools.toLowerCase("THE QUICK BROWN FOX", 0, 4));
+        Assert.assertEquals("the qUICK BROWN FOX", TextTools.toLowerCase("THE QUICK BROWN FOX", 0, 5));
+
+        Assert.assertEquals("THE QUICK bROWN FOX", TextTools.toLowerCase("THE QUICK BROWN FOX", 10));
+        Assert.assertEquals("THE quick brown FOX", TextTools.toLowerCase("THE QUICK BROWN FOX", 3, 15));
+        Assert.assertEquals("THE quick brown FOX", TextTools.toLowerCase("THE QUICK BROWN FOX", 3, 16));
+        Assert.assertEquals("THE quick brown FOX", TextTools.toLowerCase("THE QUICK BROWN FOX", 4, 15));
+        Assert.assertEquals("THE quick brown FOX", TextTools.toLowerCase("THE QUICK BROWN FOX", 4, 16));
+
+        Arrays.asList("no caps", "12345", "    ", "\n").forEach(s ->
+        {
+            Assert.assertSame(s, TextTools.toLowerCase(s, 0));
+            Assert.assertSame(s, TextTools.toLowerCase(s, 0, s.length()));
+        });
+    }
+
+    @Test
+    public void testToUpperCase()
+    {
+        Assert.assertEquals("The quick brown fox", TextTools.toUpperCase("the quick brown fox", 0));
+        Assert.assertEquals("THE quick brown fox", TextTools.toUpperCase("the quick brown fox", 0, 3));
+        Assert.assertEquals("THE quick brown fox", TextTools.toUpperCase("the quick brown fox", 0, 4));
+        Assert.assertEquals("THE Quick brown fox", TextTools.toUpperCase("the quick brown fox", 0, 5));
+
+        Assert.assertEquals("the quick Brown fox", TextTools.toUpperCase("the quick brown fox", 10));
+        Assert.assertEquals("the QUICK BROWN fox", TextTools.toUpperCase("the quick brown fox", 3, 15));
+        Assert.assertEquals("the QUICK BROWN fox", TextTools.toUpperCase("the quick brown fox", 3, 16));
+        Assert.assertEquals("the QUICK BROWN fox", TextTools.toUpperCase("the quick brown fox", 4, 15));
+        Assert.assertEquals("the QUICK BROWN fox", TextTools.toUpperCase("the quick brown fox", 4, 16));
+
+        Arrays.asList("NO LOWER", "12345", "    ", "\n\t\b\r\n").forEach(s ->
+        {
+            Assert.assertSame(s, TextTools.toUpperCase(s, 0));
+            Assert.assertSame(s, TextTools.toUpperCase(s, 0, s.length()));
+        });
     }
 
     private void assertIsNotBlank(String string, int start, int end)
