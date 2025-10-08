@@ -97,7 +97,8 @@ public class GraphSerializer
             return new Primitive(processPrimitiveTypeJava(value, processorSupport));
         }
         String classifierId = classifierCaches.getClassifierId(classifier);
-        return classifierCaches.isEnumeration(classifier) ? new EnumRef(classifierId, value.getName()) : new ObjRef(classifierId, idBuilder.buildId(value));
+        return classifierCaches.isEnumeration(classifier) ? new EnumRef(classifierId, value.getName()) : new ObjRef(classifierId, IdBuilder.hashToBase64String(idBuilder.buildId(value)));
+//        return classifierCaches.isEnumeration(classifier) ? new EnumRef(classifierId, value.getName()) : new ObjRef(classifierId, idBuilder.buildId(value));
     }
 
     private static Object processPrimitiveTypeJava(CoreInstance instance, ProcessorSupport processorSupport)

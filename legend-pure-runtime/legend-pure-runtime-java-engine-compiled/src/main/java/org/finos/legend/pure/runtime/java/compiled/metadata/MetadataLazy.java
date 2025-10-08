@@ -102,7 +102,8 @@ public class MetadataLazy implements Metadata
     @Override
     public CoreInstance getMetadata(String classifier, String id)
     {
-        return hasClassifier(classifier) ? toJavaObject(classifier, id) : null;
+        String hashedId = IdBuilder.hashToBase64String(id);
+        return hasClassifier(classifier) ? toJavaObject(classifier, hashedId) : null;
     }
 
     @Override
@@ -120,6 +121,7 @@ public class MetadataLazy implements Metadata
     @Override
     public CoreInstance getEnum(String enumerationName, String enumName)
     {
+        enumName = IdBuilder.hashToBase64String(enumName);
         if (!hasClassifier(enumerationName))
         {
             throw new RuntimeException("Cannot find enum '" + enumName + "' in enumeration '" + enumerationName + "': unknown enumeration");
@@ -280,8 +282,7 @@ public class MetadataLazy implements Metadata
 
     private CoreInstance toJavaObject(String classifier, String id)
     {
-        String hashedInstanceId = IdBuilder.hashToBase64String(id);
-        return getClassifierInstanceCache(classifier).getIfAbsentPut(hashedInstanceId, () -> newInstance(classifier, hashedInstanceId));
+        return getClassifierInstanceCache(classifier).getIfAbsentPut(id, () -> newInstance(classifier, id));
     }
 
     private ConcurrentMutableMap<String, CoreInstance> getClassifierInstanceCache(String classifier)

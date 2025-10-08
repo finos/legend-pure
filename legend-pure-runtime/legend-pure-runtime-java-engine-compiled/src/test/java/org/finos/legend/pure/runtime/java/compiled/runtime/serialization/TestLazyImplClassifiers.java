@@ -74,7 +74,7 @@ public class TestLazyImplClassifiers extends AbstractPureTestWithCoreCompiled
     public void testLazyMetaDataClassifierForEnums()
     {
         CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::Enumeration");
-        CoreInstance ci = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::PrimitiveType");
+        CoreInstance ci = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Enumeration", "Root::meta::pure::metamodel::function::property::AggregationKind");
         CoreInstance classifier = ci.getClassifier();
         Assert.assertEquals(expected, classifier);
     }

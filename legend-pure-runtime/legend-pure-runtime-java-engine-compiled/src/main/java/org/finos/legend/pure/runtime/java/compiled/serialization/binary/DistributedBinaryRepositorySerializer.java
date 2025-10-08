@@ -48,6 +48,7 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
 import org.finos.legend.pure.m4.tools.GraphWalkFilterResult;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.EnumRef;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.ObjRef;
@@ -314,7 +315,9 @@ class DistributedBinaryRepositorySerializer extends DistributedBinaryGraphSerial
         {
             String classifierId = buildClassifierId(instance);
             String identifier = buildInstanceId(instance);
-            return new ObjRef(classifierId, identifier);
+//            System.out.printf("=====> 2 SEAN %s", identifier);
+            String hashedId = IdBuilder.hashToBase64String(identifier);
+            return new ObjRef(classifierId, hashedId);
         }
 
         private EnumRef buildEnumRef(CoreInstance enumValue)
