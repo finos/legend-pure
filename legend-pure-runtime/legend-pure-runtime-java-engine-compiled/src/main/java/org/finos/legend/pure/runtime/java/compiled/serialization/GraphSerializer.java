@@ -72,6 +72,15 @@ public class GraphSerializer
         return Obj.newObj(classifierString, identifier, instance.getName(), propertyValues, sourceInformation, isEnum);
     }
 
+    public static Obj buildObj(CoreInstance instance, IdBuilder idBuilder, String identifier, ClassifierCaches classifierCaches, ProcessorSupport processorSupport)
+    {
+        SourceInformation sourceInformation = instance.getSourceInformation();
+        String classifierString = classifierCaches.getClassifierId(instance.getClassifier());
+        ListIterable<PropertyValue> propertyValues = collectProperties(instance, idBuilder, classifierCaches, processorSupport);
+        boolean isEnum = classifierCaches.isEnum(instance);
+        return Obj.newObj(classifierString, identifier, instance.getName(), propertyValues, sourceInformation, isEnum);
+    }
+
     private static ListIterable<PropertyValue> collectProperties(CoreInstance instance, IdBuilder idBuilder, ClassifierCaches classifierCaches, ProcessorSupport processorSupport)
     {
         MutableList<PropertyValue> propertyValues = Lists.mutable.empty();
@@ -98,7 +107,6 @@ public class GraphSerializer
         }
         String classifierId = classifierCaches.getClassifierId(classifier);
         return classifierCaches.isEnumeration(classifier) ? new EnumRef(classifierId, value.getName()) : new ObjRef(classifierId, IdBuilder.hashToBase64String(idBuilder.buildId(value)));
-//        return classifierCaches.isEnumeration(classifier) ? new EnumRef(classifierId, value.getName()) : new ObjRef(classifierId, idBuilder.buildId(value));
     }
 
     private static Object processPrimitiveTypeJava(CoreInstance instance, ProcessorSupport processorSupport)

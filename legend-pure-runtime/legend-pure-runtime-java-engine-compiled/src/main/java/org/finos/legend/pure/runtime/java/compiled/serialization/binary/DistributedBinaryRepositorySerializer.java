@@ -315,7 +315,6 @@ class DistributedBinaryRepositorySerializer extends DistributedBinaryGraphSerial
         {
             String classifierId = buildClassifierId(instance);
             String identifier = buildInstanceId(instance);
-//            System.out.printf("=====> 2 SEAN %s", identifier);
             String hashedId = IdBuilder.hashToBase64String(identifier);
             return new ObjRef(classifierId, hashedId);
         }
