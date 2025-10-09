@@ -132,20 +132,21 @@ public class MetadataLazy implements Metadata
     @Override
     public CoreInstance getEnum(String enumerationName, String enumName)
     {
-        enumName = IdBuilder.hashToBase64String(enumName);
+//        enumName = IdBuilder.hashToBase64String(enumName);
         if (!hasClassifier(enumerationName))
         {
             throw new RuntimeException("Cannot find enum '" + enumName + "' in enumeration '" + enumerationName + "': unknown enumeration");
         }
 
         String enumId = enumerationName + "." + M3Properties.values + "['" + enumName + "']";
+        String hashedEnumId = IdBuilder.hashToBase64String(enumId);
         ConcurrentMutableMap<String, CoreInstance> cache = getClassifierInstanceCache(enumerationName);
-        CoreInstance result = cache.get(enumId);
+        CoreInstance result = cache.get(hashedEnumId);
         if (result == null)
         {
             //might not have loaded yet, so request full load and try again:
             loadAllClassifierInstances(enumerationName);
-            result = cache.get(enumId);
+            result = cache.get(hashedEnumId);
             if (result == null)
             {
                 StringBuilder builder = new StringBuilder("Cannot find enum '").append(enumName).append("' in enumeration '").append(enumerationName).append("' unknown enum value");

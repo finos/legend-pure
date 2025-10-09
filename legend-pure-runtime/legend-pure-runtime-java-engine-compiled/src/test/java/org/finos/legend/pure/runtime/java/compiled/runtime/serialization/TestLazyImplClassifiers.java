@@ -82,7 +82,7 @@ public class TestLazyImplClassifiers extends AbstractPureTestWithCoreCompiled
     @Test
     public void testLazyMetaDataClassifierForGenericTypes()
     {
-        CoreInstance alpha = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::PrimitiveType");
+//        CoreInstance alpha = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::PrimitiveType");
         MapIterable<String, CoreInstance> bravo = this.metadataLazy.getMetadata("meta::pure::metamodel::type::generics::GenericType");
         System.out.println();
 
