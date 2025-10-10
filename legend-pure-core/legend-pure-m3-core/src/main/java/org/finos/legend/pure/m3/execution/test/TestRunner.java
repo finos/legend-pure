@@ -14,6 +14,8 @@
 
 package org.finos.legend.pure.m3.execution.test;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
@@ -193,7 +195,7 @@ public class TestRunner implements Runnable
             try
             {
                 executeTestFunc(test, testCollection.getTestFunctionParam(), testCollection.getTestFunctionParamCustomizer());
-                this.testCallBack.executedTest(test, testCollection.getTestParameterizationId(), stream.toString(), TestStatus.SUCCESS);
+                this.testCallBack.executedTest(test, testCollection.getTestParameterizationId(), stream.toString("UTF8"), TestStatus.SUCCESS);
                 this.passedTests.add(PackageableElement.getUserPathForPackageableElement(test) + (testCollection.getTestParameterizationId() == null ? "" : "[" + testCollection.getTestParameterizationId() + "]"));
             }
             catch (Throwable t)
@@ -201,11 +203,11 @@ public class TestRunner implements Runnable
                 PureException exception = PureException.findPureException(t);
                 if ((exception != null) && (exception instanceof PureAssertFailException))
                 {
-                    this.testCallBack.executedTest(test, testCollection.getTestParameterizationId(), stream.toString(), new AssertFailTestStatus((PureAssertFailException) exception));
+                    this.testCallBack.executedTest(test, testCollection.getTestParameterizationId(), stream.toString("UTF8"), new AssertFailTestStatus((PureAssertFailException) exception));
                 }
                 else
                 {
-                    this.testCallBack.executedTest(test, testCollection.getTestParameterizationId(), stream.toString(), new ErrorTestStatus(t));
+                    this.testCallBack.executedTest(test, testCollection.getTestParameterizationId(), stream.toString("UTF8"), new ErrorTestStatus(t));
                 }
                 this.failedTests.add(PackageableElement.getUserPathForPackageableElement(test) + (testCollection.getTestParameterizationId() == null ? "" : "[" + testCollection.getTestParameterizationId() + "]"));
             }

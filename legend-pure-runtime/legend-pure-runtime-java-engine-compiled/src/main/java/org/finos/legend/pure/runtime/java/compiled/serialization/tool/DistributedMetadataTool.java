@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.tool;
 
+import java.nio.charset.Charset;
 import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphDeserializer;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.EnumRef;
@@ -63,7 +64,7 @@ public class DistributedMetadataTool
     private DistributedMetadataTool(DistributedBinaryGraphDeserializer deserializer)
     {
         this.deserializer = deserializer;
-        this.in = new BufferedReader(new InputStreamReader(System.in));
+        this.in = new BufferedReader(new InputStreamReader(System.in, Charset.defaultCharset()));
         this.out = System.out;
     }
 

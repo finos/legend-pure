@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.serialization.runtime.binary;
 
+import java.nio.charset.Charset;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
@@ -100,7 +101,7 @@ class PureRepositoryJarBuilder implements Closeable
     private void writeInstanceDefinitionIndex(MapIterable<String, String> instanceDefinitionIndex) throws IOException
     {
         this.jarStream.putNextEntry(new JarEntry(PureRepositoryJarTools.DEFINITION_INDEX_NAME));
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(this.jarStream), 256);
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(this.jarStream, Charset.defaultCharset()), 256);
         writer.append("{\n");
         boolean first = true;
         for (String instancePath : instanceDefinitionIndex.keysView().toSortedList())
@@ -127,7 +128,7 @@ class PureRepositoryJarBuilder implements Closeable
     private void writeExternalReferenceIndex(ListIterable<String> paths, SetMultimap<String, String> externalReferenceIndex) throws IOException
     {
         this.jarStream.putNextEntry(new JarEntry(PureRepositoryJarTools.REFERENCE_INDEX_NAME));
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(this.jarStream));
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(this.jarStream, Charset.defaultCharset()));
         writer.append("{\n");
         boolean first = true;
         for (String binPath : paths)
