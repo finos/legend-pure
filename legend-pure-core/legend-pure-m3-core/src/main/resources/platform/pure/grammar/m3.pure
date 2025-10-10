@@ -3586,7 +3586,6 @@
                                                     Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[specific] : Root.children[meta].children[pure].children[metamodel].children[relation].children[Column]
                                                }
       ]
-
 }
 
 ^Root.children[meta].children[pure].children[metamodel].children[extension].children[Profile] ProtocolInfo @Root.children[meta].children[pure].children[metamodel].children
