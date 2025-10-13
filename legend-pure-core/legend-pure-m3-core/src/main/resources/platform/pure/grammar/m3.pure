@@ -3546,7 +3546,8 @@
                 }
         ]
         ,
-      Root.children[meta].children[pure].children[metamodel].children[type].children[Type].properties[generalizations] : ^Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization]
+      Root.children[meta].children[pure].children[metamodel].children[type].children[Type].properties[generalizations] : [
+                                                ^Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization]
                                                 {
                                                     Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[general] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]   {
                                                                                                             Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[function].children[Function],
@@ -3578,7 +3579,13 @@
                                                                                                                 }
                                                                                                         },
                                                     Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[specific] : Root.children[meta].children[pure].children[metamodel].children[relation].children[Column]
-                                                }
+                                                },
+                                               ^Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization]
+                                               {
+                                                    Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[general] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[extension].children[AnnotatedElement]},
+                                                    Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[specific] : Root.children[meta].children[pure].children[metamodel].children[relation].children[Column]
+                                               }
+      ]
 }
 
 ^Root.children[meta].children[pure].children[metamodel].children[extension].children[Profile] ProtocolInfo @Root.children[meta].children[pure].children[metamodel].children
