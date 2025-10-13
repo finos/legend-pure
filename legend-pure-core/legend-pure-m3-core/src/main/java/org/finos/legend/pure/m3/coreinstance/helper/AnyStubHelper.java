@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.coreinstance.helper;
 
+import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
@@ -61,6 +62,11 @@ public class AnyStubHelper
             return GrammarInfoStubHelper.fromGrammarInfoStub((GrammarInfoStub) instance);
         }
         return instance;
+    }
+
+    public static <T> RichIterable<T> fromStubsAndThen(RichIterable<? extends CoreInstance> instances, java.util.function.Function<? super CoreInstance, ? extends T> function)
+    {
+        return instances.collect(instance -> function.apply(fromStub(instance)));
     }
 
     public static boolean isUnresolvedStub(CoreInstance instance)

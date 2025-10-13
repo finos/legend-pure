@@ -23,6 +23,7 @@ import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
 import org.finos.legend.pure.m3.bootstrap.generator.StubDef;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.helper.PropertyTypeHelper;
+import org.finos.legend.pure.m3.coreinstance.lazy.generator.M3LazyCoreInstanceGenerator;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -38,6 +39,8 @@ import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
+import java.nio.file.Paths;
+
 
 public class M3CoreInstanceGenerator
 {
@@ -52,7 +55,7 @@ public class M3CoreInstanceGenerator
         generate(outputDir, factoryNamePrefix, filePaths, fileNameStartsWith);
     }
 
-    public static void generate(String outputDir, String factoryNamePrefix, SetIterable<String> filePaths, String fileNameStartsWith)
+    public static void generate(String outputDir, String factoryNamePrefix, SetIterable<String> filePaths, String fileNamePrefix)
     {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         RichIterable<CodeRepository> repositories = CodeRepositorySet.newBuilder().withCodeRepositories(CodeRepositoryProviderHelper.findCodeRepositories(classLoader, true)).build().getRepositories();
@@ -63,7 +66,9 @@ public class M3CoreInstanceGenerator
         runtime.loadAndCompileSystem();
 
         M3ToJavaGenerator m3ToJavaGenerator = generator(outputDir, factoryNamePrefix, repository);
-        m3ToJavaGenerator.generate(repository, filePaths, fileNameStartsWith);
+        m3ToJavaGenerator.generate(repository, filePaths, fileNamePrefix);
+
+        M3LazyCoreInstanceGenerator.generate(Paths.get(outputDir), filePaths, fileNamePrefix, runtime.getProcessorSupport());
     }
 
     public static M3ToJavaGenerator generator(String outputDir, String factoryNamePrefix, ModelRepository repository)
