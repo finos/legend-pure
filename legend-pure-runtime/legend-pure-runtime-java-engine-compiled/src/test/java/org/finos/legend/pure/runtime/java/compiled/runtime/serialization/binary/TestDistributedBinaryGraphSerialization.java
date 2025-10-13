@@ -62,7 +62,7 @@ public abstract class TestDistributedBinaryGraphSerialization extends AbstractPu
         GraphSerializer.ClassifierCaches classifierCaches = new GraphSerializer.ClassifierCaches(processorSupport);
         return GraphNodeIterable.fromModelRepository(repository)
                 .reject(i -> ignoredClassifiers.contains(i.getClassifier()))
-                .collect(i -> GraphSerializer.buildObj(i, idBuilder, classifierCaches, processorSupport), Lists.mutable.empty());
+                .collect(i -> GraphSerializer.buildObj(i, idBuilder, IdBuilder.hashToBase64String(idBuilder.buildId(i)), classifierCaches, processorSupport), Lists.mutable.empty());
     }
 
     private void testSerialization(DistributedBinaryGraphSerializer serializer, ListIterable<Obj> expectedObjs, String... metadataNames) throws IOException

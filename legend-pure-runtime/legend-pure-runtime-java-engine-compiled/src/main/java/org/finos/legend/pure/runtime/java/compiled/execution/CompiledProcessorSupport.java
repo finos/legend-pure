@@ -299,7 +299,7 @@ public class CompiledProcessorSupport implements ProcessorSupport
             // An element in Root - probably a package
             try
             {
-                CoreInstance element = this.metadataAccessor.getPackage(M3Paths.Root + "::" + path);
+                CoreInstance element = this.metadataAccessor.getPackage(path);
                 if (element != null)
                 {
                     return element;
@@ -322,7 +322,7 @@ public class CompiledProcessorSupport implements ProcessorSupport
         // Perhaps the element is a class?
         try
         {
-            CoreInstance element = this.metadataAccessor.getClass(M3Paths.Root + "::" + path);
+            CoreInstance element = this.metadataAccessor.getClass(path);
             if (element != null)
             {
                 return element;
@@ -337,7 +337,7 @@ public class CompiledProcessorSupport implements ProcessorSupport
         Package pkg;
         try
         {
-            pkg = this.metadataAccessor.getPackage(M3Paths.Root + "::" + path.substring(0, lastColon - 1));
+            pkg = this.metadataAccessor.getPackage(path.substring(0, lastColon - 1));
         }
         catch (Exception ignore)
         {

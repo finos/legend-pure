@@ -2087,7 +2087,8 @@ public class CompiledSupport
     public static Type getType(Any val, MetadataAccessor metadata)
     {
         String fullSystemPath = val.getFullSystemPath();
-        return val instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum ? metadata.getEnumeration(fullSystemPath) : metadata.getClass(fullSystemPath);
+        String metadataId = fullSystemPath.startsWith("Root::") ? fullSystemPath.substring(6) : fullSystemPath;
+        return val instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum ? metadata.getEnumeration(metadataId) : metadata.getClass(metadataId);
     }
 
     private static MutableList<String> getUserObjectPathForPackageableElement(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement packageableElement, boolean includeRoot)

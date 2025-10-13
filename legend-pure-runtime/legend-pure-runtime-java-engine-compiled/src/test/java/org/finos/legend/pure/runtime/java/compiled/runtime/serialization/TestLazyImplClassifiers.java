@@ -17,6 +17,7 @@ package org.finos.legend.pure.runtime.java.compiled.runtime.serialization;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -29,6 +30,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.nio.charset.StandardCharsets;
 
 public class TestLazyImplClassifiers extends AbstractPureTestWithCoreCompiled
 {
@@ -52,7 +55,7 @@ public class TestLazyImplClassifiers extends AbstractPureTestWithCoreCompiled
     @Test
     public void testLazyMetaDataClassifierPrimitiveType()
     {
-        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::PrimitiveType");
+        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "meta::pure::metamodel::type::PrimitiveType");
         MutableList<String> invalidPrimitiveTypes = this.metadataLazy.getClassifierInstances("meta::pure::metamodel::type::PrimitiveType")
                 .collectIf(ci -> ci.getClassifier() != expected, CoreInstance::getName, Lists.mutable.empty());
         Assert.assertEquals("primitive types with the wrong classifier", Lists.fixedSize.empty(), invalidPrimitiveTypes);
@@ -61,8 +64,8 @@ public class TestLazyImplClassifiers extends AbstractPureTestWithCoreCompiled
     @Test
     public void testLazyMetaDataClassifierForClasses()
     {
-        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::Class");
-        CoreInstance ci = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::function::property::Property");
+        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "meta::pure::metamodel::type::Class");
+        CoreInstance ci = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "meta::pure::metamodel::function::property::Property");
         CoreInstance classifier = ci.getClassifier();
         Assert.assertEquals(expected, classifier);
     }
@@ -70,9 +73,27 @@ public class TestLazyImplClassifiers extends AbstractPureTestWithCoreCompiled
     @Test
     public void testLazyMetaDataClassifierForEnums()
     {
-        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::Enumeration");
-        CoreInstance ci = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Enumeration", "Root::meta::pure::metamodel::function::property::AggregationKind");
+        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "meta::pure::metamodel::type::Enumeration");
+        CoreInstance ci = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Enumeration", "meta::pure::metamodel::function::property::AggregationKind");
         CoreInstance classifier = ci.getClassifier();
         Assert.assertEquals(expected, classifier);
+    }
+
+    @Test
+    public void testLazyMetaDataClassifierForGenericTypes()
+    {
+//        CoreInstance alpha = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::PrimitiveType");
+        MapIterable<String, CoreInstance> bravo = this.metadataLazy.getMetadata("meta::pure::metamodel::type::generics::GenericType");
+        System.out.println();
+
+        long count = bravo.keysView().sumOfInt(k -> k.getBytes(StandardCharsets.UTF_8).length);
+        long size = bravo.keysView().size();
+
+        System.out.println("GenericType keys size = " + size + ", bytes = " + count);
+        //GenericType keys size = 44788, bytes = 237039     <-synthId - hash
+        //GenericType keys size = 44788, bytes = 492668     <-synthId + hash
+
+        //GenericType keys size = 43683, bytes = 7,436,293  <-kevId - hash
+        //GenericType keys size = 43683, bytes = 480513     <-kevId + hash
     }
 }

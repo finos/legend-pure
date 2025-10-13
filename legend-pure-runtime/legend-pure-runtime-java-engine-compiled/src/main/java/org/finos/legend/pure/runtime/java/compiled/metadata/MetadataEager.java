@@ -15,204 +15,287 @@
 package org.finos.legend.pure.runtime.java.compiled.metadata;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.list.ImmutableList;
+import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.ConcurrentMutableMap;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.finos.legend.pure.m3.coreinstance.Package;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
+import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.serialization.compiler.reference.ReferenceIdResolver;
+import org.finos.legend.pure.m3.serialization.compiler.reference.v1.ReferenceIdExtensionV1;
+import org.finos.legend.pure.m3.tools.GraphTools;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.tools.GraphNodeIterable;
+import org.finos.legend.pure.m4.tools.GraphWalkFilterResult;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ReflectiveCoreInstance;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.MetadataJavaPaths;
-
-import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class MetadataEager implements Metadata
 {
-    private final MetamodelByClassifier metamodelByClassifier = new MetamodelByClassifier();
+    private static final Logger LOGGER = LoggerFactory.getLogger(MetadataEager.class);
 
-    private final ThreadLocal<MetamodelByClassifier> added = new ThreadLocal<>();
+    private final ProcessorSupport processorSupport;
+    private final ReferenceIdResolver resolver;
+    private final Cache cache;
+    private final ThreadLocal<Cache> transaction = new ThreadLocal<>();
+
+    MetadataEager(MapIterable<CoreInstance, ? extends ListIterable<? extends CoreInstance>> classifierInstances, ProcessorSupport processorSupport)
+    {
+        this.processorSupport = processorSupport;
+        this.resolver = new ReferenceIdExtensionV1().newResolver(this.processorSupport::package_getByUserPath);
+        this.cache = newCache(classifierInstances);
+    }
+
+    public MetadataEager(ProcessorSupport processorSupport)
+    {
+        this(null, processorSupport);
+    }
 
     @Override
     public void startTransaction()
     {
-        this.added.set(new MetamodelByClassifier());
+        this.transaction.set(newCache(this.cache));
     }
 
     @Override
     public void commitTransaction()
     {
-        MetamodelByClassifier trans = this.added.get();
-        if (trans != null)
+        Cache fromTransaction = this.transaction.get();
+        if (fromTransaction != null)
         {
-            this.added.remove();
-            this.metamodelByClassifier.commitChanges(trans);
+            this.cache.clear();
+            this.transaction.remove();
         }
     }
 
     @Override
     public void rollbackTransaction()
     {
-        this.added.remove();
-    }
-
-    public void clear()
-    {
-        this.metamodelByClassifier.clear();
-        this.added.remove();
-    }
-
-    public void addChild(String packageClassifier, String packageId, String objectClassifier, String instanceId)
-    {
-        if (this.isInTransaction())
-        {
-            if (this.added.get().getMetadata(packageClassifier, packageId) == null)
-            {
-                CoreInstance packageInstance = Objects.requireNonNull(this.metamodelByClassifier.getMetadata(packageClassifier, packageId));
-                CoreInstance copy = ((ReflectiveCoreInstance) packageInstance).copy();
-
-                this.added.get().add(packageClassifier, packageId, copy);
-            }
-        }
-
-        this.getMetamodel().addChild(packageClassifier, packageId, objectClassifier, instanceId);
+        this.transaction.remove();
     }
 
     @Override
     public CoreInstance getEnum(String enumerationName, String enumName)
     {
-        return getMetadata(enumerationName, enumName);
-    }
-
-    @Deprecated
-    public void invalidateCoreInstances(RichIterable<? extends CoreInstance> instances, ProcessorSupport processorSupport)
-    {
-        IdBuilder idBuilder = IdBuilder.newIdBuilder(processorSupport);
-        for (CoreInstance coreInstance : instances)
+        try
         {
-            String identifier = idBuilder.buildId(coreInstance);
-            String classifier = MetadataJavaPaths.buildMetadataKeyFromType(coreInstance.getClassifier()).intern();
-
-            CoreInstance pack = coreInstance.getValueForMetaPropertyToOne(M3Properties._package);
-            if (pack != null)
-            {
-                String packIdentifier = idBuilder.buildId(pack);
-                String packClassifier = MetadataJavaPaths.buildMetadataKeyFromType(pack.getClassifier()).intern();
-
-                this.getMetamodel().remove(classifier, identifier, packClassifier, packIdentifier);
-            }
+            return getCache().getById(enumerationName + "." + M3Properties.values + "['" + enumName + "']");
+        }
+        catch (Exception e)
+        {
+            throw new PureExecutionException("Enum " + enumName + " of Enumeration " + enumerationName + " does not exist", e);
         }
     }
-
-    public void add(String classifier, String id, CoreInstance instance)
-    {
-        this.getMetamodel().add(classifier, id, instance);
-    }
-
 
     @Override
     public CoreInstance getMetadata(String classifier, String id)
     {
-        CoreInstance coreInstance = this.metamodelByClassifier.getMetadata(classifier, id);
-        if (coreInstance == null && this.isInTransaction())
+        // for backward compatibility
+        String resolvedId = id.startsWith("Root::") ? id.substring(6) : id;
+        try
         {
-            coreInstance = this.added.get().getMetadata(classifier, id);
+            return getCache().getById(resolvedId);
         }
-
-        if (coreInstance == null)
+        catch (Exception e)
         {
-            throw new PureExecutionException("Element " + id + " of type " + classifier + " does not exist");
+            throw new PureExecutionException("Element " + id + " of type " + classifier + " does not exist", e);
         }
-
-        return coreInstance;
     }
 
     @Override
     public MapIterable<String, CoreInstance> getMetadata(String classifier)
     {
-        MapIterable<String, CoreInstance> instances = this.metamodelByClassifier.getMetadata(classifier);
-        if (isInTransaction())
+        ImmutableList<CoreInstance> instances = getCache().getClassifierInstances(classifier);
+        if (instances.isEmpty())
         {
-            MapIterable<String, CoreInstance> addedInstances = this.added.get().getMetadata(classifier);
-            if (addedInstances.notEmpty())
-            {
-                MutableMap<String, CoreInstance> allInstances = Maps.mutable.ofInitialCapacity(instances.size());
-                instances.forEachKeyValue(allInstances::put);
-                addedInstances.forEachKeyValue(allInstances::put);
-                return allInstances;
-            }
+            return Maps.immutable.empty();
         }
-        return instances;
+
+        IdBuilder idBuilder = IdBuilder.newIdBuilder(this.processorSupport, true);
+        MutableMap<String, CoreInstance> byId = Maps.mutable.ofInitialCapacity(instances.size());
+        instances.forEach(inst -> byId.put(idBuilder.buildId(inst), inst));
+        return byId;
     }
 
+    @Override
+    public RichIterable<CoreInstance> getClassifierInstances(String classifier)
+    {
+        return getCache().getClassifierInstances(classifier);
+    }
+
+    public void addInstances(RichIterable<? extends CoreInstance> instances)
+    {
+        getCache().addInstances(instances);
+    }
+
+    public void invalidateCoreInstances(RichIterable<? extends CoreInstance> instances)
+    {
+        getCache().invalidateInstances(instances);
+    }
+
+    @Deprecated
     public int getSize()
     {
-        return this.getMetamodel().metadata.valuesView().size();
+        return getCache().idCache.size();
     }
 
-    private boolean isInTransaction()
+    private Cache getCache()
     {
-        return this.added.get() != null;
+        Cache fromTransaction = this.transaction.get();
+        return (fromTransaction == null) ? this.cache : fromTransaction;
     }
 
-
-    private MetamodelByClassifier getMetamodel()
+    private Cache newCache()
     {
-        return this.isInTransaction() ? this.added.get() : this.metamodelByClassifier;
+        return new Cache(ConcurrentHashMap.newMap(), ConcurrentHashMap.newMap());
     }
 
-    private static class MetamodelByClassifier
+    private Cache newCache(Cache source)
     {
-        private final MutableMap<String, MutableMap<String, CoreInstance>> metadata = Maps.mutable.empty();
+        return new Cache(ConcurrentHashMap.newMap(source.idCache), ConcurrentHashMap.newMap(source.classifierCache));
+    }
 
-        private void clear()
+    private Cache newCache(MapIterable<CoreInstance, ? extends ListIterable<? extends CoreInstance>> classifierInstances)
+    {
+        if ((classifierInstances == null) || classifierInstances.isEmpty())
         {
-            this.metadata.clear();
+            return newCache();
         }
 
-        private void add(String classifier, String id, CoreInstance coreInstance)
+        LOGGER.debug("Initializing cache with {} classifiers", classifierInstances.size());
+        ConcurrentMutableMap<String, ImmutableList<CoreInstance>> classifierCache = ConcurrentHashMap.newMap(classifierInstances.size());
+        classifierInstances.forEachKeyValue((classifier, instances) ->
         {
-            this.metadata.getIfAbsentPut(classifier, Maps.mutable::empty).put(id, coreInstance);
-        }
-
-        private void commitChanges(MetamodelByClassifier toBeAdded)
-        {
-            toBeAdded.metadata.forEachKeyValue((classifier, instancesById) -> this.metadata.getIfAbsentPut(classifier, Maps.mutable::empty).putAll(instancesById));
-        }
-
-        private CoreInstance getMetadata(String classifier, String id)
-        {
-            MutableMap<String, CoreInstance> instancesForClassifier = this.metadata.get(classifier);
-            return instancesForClassifier == null ? null : instancesForClassifier.get(id);
-        }
-
-        private MapIterable<String, CoreInstance> getMetadata(String classifier)
-        {
-            return this.metadata.getIfAbsentValue(classifier, Maps.fixedSize.empty());
-        }
-
-        private void addChild(String packageClassifier, String packageId, String objectClassifier, String instanceId)
-        {
-            Package _package = (Package) Objects.requireNonNull(getMetadata(packageClassifier, packageId));
-            PackageableElement child = (PackageableElement) Objects.requireNonNull(getMetadata(objectClassifier, instanceId));
-            _package._childrenAdd(child);
-        }
-
-        private void remove(String classifier, String identifier, String packClassifier, String packIdentifier)
-        {
-            MutableMap<String, CoreInstance> classifierMetaData = this.metadata.get(classifier);
-            if (classifierMetaData != null)
+            String classifierId = PackageableElement.getUserPathForPackageableElement(classifier);
+            if (instances.notEmpty())
             {
-                CoreInstance o = classifierMetaData.remove(identifier);
-                if (o instanceof PackageableElement)
-                {
-                    Package _package = (Package) Objects.requireNonNull(this.getMetadata(packClassifier, packIdentifier));
-                    _package._childrenRemove((PackageableElement) o);
-                }
+                LOGGER.debug("Classifier {} has {} instances in cache", classifierId, instances.size());
             }
+            classifierCache.put(classifierId, Lists.immutable.withAll(instances));
+        });
+        return new Cache(ConcurrentHashMap.newMap(), classifierCache);
+    }
+
+    private class Cache
+    {
+        private final ConcurrentMutableMap<String, CoreInstance> idCache;
+        private final ConcurrentMutableMap<String, ImmutableList<CoreInstance>> classifierCache;
+
+        private Cache(ConcurrentMutableMap<String, CoreInstance> idCache, ConcurrentMutableMap<String, ImmutableList<CoreInstance>> classifierCache)
+        {
+            this.idCache = idCache;
+            this.classifierCache = classifierCache;
+        }
+
+        CoreInstance getById(String id)
+        {
+            return this.idCache.getIfAbsentPutWithKey(id, this::resolveId);
+        }
+
+        ImmutableList<CoreInstance> getClassifierInstances(String classifierPath)
+        {
+            return this.classifierCache.getIfAbsentPutWithKey(classifierPath, this::computeClassifierInstances);
+        }
+
+        void clear()
+        {
+            clearIdCache();
+            clearClassifierCache();
+        }
+
+        void clearIdCache()
+        {
+            this.idCache.clear();
+        }
+
+        void clearClassifierCache()
+        {
+            this.classifierCache.clear();
+        }
+
+        void clearClassifierCache(String classifierId)
+        {
+            this.classifierCache.remove(classifierId);
+        }
+
+        void addInstances(Iterable<? extends CoreInstance> newInstances)
+        {
+            MutableMap<CoreInstance, MutableList<CoreInstance>> byClassifier = Maps.mutable.empty();
+            newInstances.forEach(i -> byClassifier.getIfAbsentPut(getClassifier(i), Lists.mutable::empty).add(i));
+            byClassifier.forEachKeyValue((classifier, classifierInstances) ->
+            {
+                String classifierId = PackageableElement.getUserPathForPackageableElement(classifier);
+                ImmutableList<CoreInstance> cachedInstances = this.classifierCache.get(classifierId);
+                if (cachedInstances != null)
+                {
+                    this.classifierCache.put(classifierId, cachedInstances.newWithAll(classifierInstances));
+                }
+            });
+        }
+
+        void invalidateInstances(RichIterable<? extends CoreInstance> toRemove)
+        {
+            clearIdCache();
+            toRemove.collect(this::getClassifier, Sets.mutable.empty()).forEach(classifier ->
+            {
+                String classifierId = PackageableElement.getUserPathForPackageableElement(classifier);
+                clearClassifierCache(classifierId);
+            });
+        }
+
+        private CoreInstance resolveId(String id)
+        {
+            return MetadataEager.this.resolver.resolveReference(id);
+        }
+
+        private ImmutableList<CoreInstance> computeClassifierInstances(String classifierPath)
+        {
+            long start = System.nanoTime();
+            LOGGER.debug("Computing instances for classifier {}", classifierPath);
+            try
+            {
+                CoreInstance classifierInstance;
+                try
+                {
+                    classifierInstance = getById(classifierPath);
+                }
+                catch (Exception e)
+                {
+                    // unknown classifier
+                    return Lists.immutable.empty();
+                }
+
+                return GraphNodeIterable.builder()
+                        .withStartingNodes(GraphTools.getTopLevels(MetadataEager.this.processorSupport))
+                        .withNodeFilter(node -> GraphWalkFilterResult.cont(classifierInstance == getClassifier(node)))
+                        .build()
+                        .toList()
+                        .toImmutable();
+            }
+            catch (Exception e)
+            {
+                LOGGER.error("Error computing instances for classifier {}", classifierPath, e);
+                throw e;
+            }
+            finally
+            {
+                long end = System.nanoTime();
+                LOGGER.debug("Finished computing instances for classifier {} ({}s)", classifierPath, (end - start) / 1_000_000_000.0);
+            }
+        }
+
+        private CoreInstance getClassifier(CoreInstance instance)
+        {
+            return MetadataEager.this.processorSupport.getClassifier(instance);
         }
     }
 }

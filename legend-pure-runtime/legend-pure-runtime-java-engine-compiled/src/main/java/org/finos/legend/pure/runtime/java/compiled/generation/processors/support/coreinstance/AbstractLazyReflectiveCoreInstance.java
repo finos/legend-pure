@@ -92,7 +92,9 @@ public abstract class AbstractLazyReflectiveCoreInstance extends PersistentRefle
         CoreInstance result = this.classifier;
         if (result == null)
         {
-            this.classifier = result = this.metadataLazy.getMetadata((this instanceof Enum) ? M3Paths.Enumeration : M3Paths.Class, getFullSystemPath());
+            String classifierSystemPath = getFullSystemPath();
+            String classifierId = classifierSystemPath.startsWith("Root::") ? classifierSystemPath.substring(6) : classifierSystemPath;
+            this.classifier = result = this.metadataLazy.getMetadata((this instanceof Enum) ? M3Paths.Enumeration : M3Paths.Class, classifierId);
         }
         return result;
     }
