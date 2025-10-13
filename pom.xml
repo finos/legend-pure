@@ -63,7 +63,7 @@
         <bouncycastle.version>1.67</bouncycastle.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-csv.version>1.5</commons-csv.version>
-        <commons-io.version>2.7</commons-io.version>
+        <commons-io.version>2.14.0</commons-io.version>
         <commons-lang.version>3.5</commons-lang.version>
         <commons-text.version>1.10.0</commons-text.version>
         <eclipsecollections.version>10.2.0</eclipsecollections.version>
