@@ -14,9 +14,9 @@
 
 package org.finos.legend.pure.m2.inlinedsl.graph.processor;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m2.inlinedsl.graph.M2GraphPaths;
 import org.finos.legend.pure.m2.inlinedsl.graph.M2GraphProperties;
 import org.finos.legend.pure.m3.compiler.Context;
@@ -34,8 +34,6 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.Propert
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
@@ -49,6 +47,7 @@ import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
+import org.finos.legend.pure.m3.navigation.enumeration.Enumeration;
 import org.finos.legend.pure.m3.navigation.functionexpression.FunctionExpression;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
@@ -71,12 +70,9 @@ public class RootGraphFetchTreeProcessor extends Processor<RootGraphFetchTree<?>
         CoreInstance _class = ImportStub.withImportStubByPass(instance._classCoreInstance(), processorSupport);
         PostProcessor.processElement(matcher, _class, state, processorSupport);
 
-        ClassInstance type = (ClassInstance) processorSupport.package_getByUserPath(M2GraphPaths.RootGraphFetchTree);
-        GenericType classifierGT = GenericTypeInstance.createPersistent(repository);
-        GenericType typeArg = GenericTypeInstance.createPersistent(repository);
-        typeArg._rawType((Type) _class);
-        classifierGT._rawType(type);
-        classifierGT._typeArgumentsAdd(typeArg);
+        GenericType classifierGT = GenericTypeInstance.createPersistent(repository)
+                ._rawType((Type) processorSupport.package_getByUserPath(M2GraphPaths.RootGraphFetchTree))
+                ._typeArgumentsAdd(GenericTypeInstance.createPersistent(repository)._rawType((Type) _class));
         instance._classifierGenericType(classifierGT);
 
         for (GraphFetchTree subTree : instance._subTrees())
@@ -87,9 +83,8 @@ public class RootGraphFetchTreeProcessor extends Processor<RootGraphFetchTree<?>
 
     private void processPropertyGraphFetchTree(PropertyGraphFetchTree propertyGraphFetchTree, CoreInstance _class, ProcessorState state, Matcher matcher, ModelRepository repository, ProcessorSupport processorSupport)
     {
-        ClassInstance type = (ClassInstance) processorSupport.package_getByUserPath(M2GraphPaths.PropertyGraphFetchTree);
-        GenericType classifierGT = GenericTypeInstance.createPersistent(repository);
-        classifierGT._rawTypeCoreInstance(type);
+        GenericType classifierGT = GenericTypeInstance.createPersistent(repository)
+                ._rawType((Type) processorSupport.package_getByUserPath(M2GraphPaths.PropertyGraphFetchTree));
         propertyGraphFetchTree._classifierGenericType(classifierGT);
 
         PropertyStub propertyStubNonResolved = (PropertyStub) propertyGraphFetchTree._propertyCoreInstance();
@@ -106,12 +101,11 @@ public class RootGraphFetchTreeProcessor extends Processor<RootGraphFetchTree<?>
                     if (value instanceof EnumStub)
                     {
                         EnumStub enumStub = (EnumStub) value;
-                        Enumeration<?> enumerationCoreInstance = (Enumeration<?>) ImportStub.withImportStubByPass(enumStub._enumerationCoreInstance(), processorSupport);
-                        org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum enumValue = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum) org.finos.legend.pure.m3.navigation.enumeration.Enumeration.findEnum(enumerationCoreInstance, enumStub._enumName());
-
+                        CoreInstance enumeration = ImportStub.withImportStubByPass(enumStub._enumerationCoreInstance(), processorSupport);
+                        CoreInstance enumValue = Enumeration.findEnum(enumeration, enumStub._enumName());
                         if (enumValue == null)
                         {
-                            throw new PureCompilationException(enumStub.getSourceInformation(), "The enum value '" + enumStub._enumName() + "' can't be found in the enumeration " + PackageableElement.getUserPathForPackageableElement(enumerationCoreInstance, "::"));
+                            throw new PureCompilationException(enumStub.getSourceInformation(), "The enum value '" + enumStub._enumName() + "' can't be found in the enumeration " + PackageableElement.getUserPathForPackageableElement(enumeration, "::"));
                         }
                     }
                 }
@@ -137,12 +131,7 @@ public class RootGraphFetchTreeProcessor extends Processor<RootGraphFetchTree<?>
             VariableExpression firstParam = (VariableExpression) processorSupport.newAnonymousCoreInstance(null, M3Paths.VariableExpression);
             firstParam._genericType((GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(_class, processorSupport));
             firstParam._multiplicity((Multiplicity) processorSupport.package_getByUserPath(M3Paths.PureOne));
-            MutableList<ValueSpecification> params = FastList.newList();
-            params.add(firstParam);
-            for (ValueSpecification vs : propertyGraphFetchTree._parameters())
-            {
-                params.add(vs);
-            }
+            MutableList<ValueSpecification> params = Lists.mutable.<ValueSpecification>with(firstParam).withAll(propertyGraphFetchTree._parameters());
 
             ListIterable<QualifiedProperty<?>> qualifiedProperties = _Class.findQualifiedPropertiesUsingGeneralization(_class, propertyName, processorSupport);
             ListIterable<QualifiedProperty<?>> foundQualifiedProperties = FunctionExpressionMatcher.getFunctionMatches(qualifiedProperties, params, propertyName, propertyStubNonResolved.getSourceInformation(), true, processorSupport);
@@ -151,14 +140,11 @@ public class RootGraphFetchTreeProcessor extends Processor<RootGraphFetchTree<?>
             {
                 StringBuilder message = new StringBuilder("The system can't find a match for the property / qualified property: ");
                 FunctionExpression.printFunctionSignatureFromExpression(message, propertyName, params.without(firstParam), processorSupport);
-                if (qualifiedProperties.notEmpty())
+                if (qualifiedProperties.notEmpty() && MilestoningFunctions.isGeneratedQualifiedProperty(qualifiedProperties.getFirst(), processorSupport))
                 {
-                    if (MilestoningFunctions.isGeneratedQualifiedProperty(qualifiedProperties.getFirst(), processorSupport))
-                    {
-                        CoreInstance noArgPropertyReturnType = ImportStub.withImportStubByPass(qualifiedProperties.getFirst()._genericType()._rawTypeCoreInstance(), processorSupport);
-                        ListIterable<String> temporalPropertyNames = MilestoningFunctions.getTemporalStereoTypePropertyNamesFromTopMostNonTopTypeGeneralizations(noArgPropertyReturnType, processorSupport);
-                        message.append(". No-Arg milestoned property: '").append(propertyName).append("' is not supported yet in graph fetch flow! It needs to be supplied with ").append(temporalPropertyNames.makeString("[", ",", "]")).append(" parameters");
-                    }
+                    CoreInstance noArgPropertyReturnType = ImportStub.withImportStubByPass(qualifiedProperties.getFirst()._genericType()._rawTypeCoreInstance(), processorSupport);
+                    ListIterable<String> temporalPropertyNames = MilestoningFunctions.getTemporalStereoTypePropertyNamesFromTopMostNonTopTypeGeneralizations(noArgPropertyReturnType, processorSupport);
+                    message.append(". No-Arg milestoned property: '").append(propertyName).append("' is not supported yet in graph fetch flow! It needs to be supplied with ").append(temporalPropertyNames.makeString("[", ",", "]")).append(" parameters");
                 }
                 throw new PureCompilationException(propertyStubNonResolved.getSourceInformation(), message.toString());
             }

@@ -300,7 +300,7 @@ public class AntlrContextToM3CoreInstance
                 if (oldPaths.equals(newPaths))
                 {
                     hasImportChanged = false;
-                    Package systemImports = (PackageInstance) this.processorSupport.package_getByUserPath("system::imports");
+                    Package systemImports = (Package) this.processorSupport.package_getByUserPath("system::imports");
                     systemImports._children(systemImports._children().reject(e -> importGroupID.equals(e._name())));
                     systemImports._childrenAdd(oldImportGroup);
                     oldImportGroup._package(systemImports);
@@ -3897,10 +3897,10 @@ public class AntlrContextToM3CoreInstance
         return Source.importForSourceName(fileName) + "_" + count;
     }
 
-    private static CoreInstance findEnum(String enumerationFullPath, final String enumName, ModelRepository repository)
+    private static CoreInstance findEnum(String enumerationFullPath, String enumName, ModelRepository repository)
     {
-        EnumerationInstance enumerationInstance = (EnumerationInstance) org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.findPackageableElement(enumerationFullPath, repository);
-        return enumerationInstance._values().detect(each -> enumName.equals(each.getName()));
+        CoreInstance enumeration = org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.findPackageableElement(enumerationFullPath, repository);
+        return org.finos.legend.pure.m3.navigation.enumeration.Enumeration.findEnum(enumeration, enumName);
     }
 
     private InstanceValue doWrap(ListIterable<? extends CoreInstance> content, int beginLine, int beginColumn, int endLine, int endColumn)
