@@ -57,7 +57,7 @@ import java.util.stream.Stream;
         threadSafe = true)
 public class PureCompilerMojo extends AbstractMojo
 {
-    @Parameter(readonly = true, required = true, defaultValue = "${project.build.outputDirectory}")
+    @Parameter(readonly = false, required = true, defaultValue = "${project.build.outputDirectory}")
     private File outputDirectory;
 
     @Parameter
