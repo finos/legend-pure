@@ -45,11 +45,11 @@ import org.finos.legend.pure.m3.compiler.unload.Unbinder;
 import org.finos.legend.pure.m3.compiler.unload.unbind.UnbindState;
 import org.finos.legend.pure.m3.compiler.visibility.Visibility;
 import org.finos.legend.pure.m3.coreinstance.Package;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.KeyExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.KeyExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.PackageableFunction;
@@ -59,7 +59,6 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.proper
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.Column;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relation.RelationType;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassProjection;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
@@ -600,8 +599,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                 }
 
                 // Manage return type in any case
-                ClassInstance functionClass = (ClassInstance) processorSupport.package_getByUserPath(M3Paths.Function);
-                if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(templateGenericType) && org.finos.legend.pure.m3.navigation.type.Type.subTypeOf(ImportStub.withImportStubByPass(templateGenericType._rawTypeCoreInstance(), processorSupport), functionClass, processorSupport))
+                if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(templateGenericType) && org.finos.legend.pure.m3.navigation.type.Type.subTypeOf(ImportStub.withImportStubByPass(templateGenericType._rawTypeCoreInstance(), processorSupport), processorSupport.package_getByUserPath(M3Paths.Function), processorSupport))
                 {
                     GenericType templateGenFunctionType = ListHelper.wrapListIterable(templateGenericType._typeArguments()).get(0);
                     if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(templateGenFunctionType) && !org.finos.legend.pure.m3.navigation.type.Type.isTopType(Instance.getValueForMetaPropertyToOneResolved(templateGenFunctionType, M3Properties.rawType, processorSupport), processorSupport))
@@ -1110,8 +1108,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
         GenericType functionTypeGt = (GenericType) repository.newAnonymousCoreInstance(functionExpression.getSourceInformation(), processorSupport.package_getByUserPath(M3Paths.GenericType), true);
         functionTypeGt._rawTypeCoreInstance(functionType);
 
-        ClassInstance lambdaFunctionClass = (ClassInstance) processorSupport.package_getByUserPath(M3Paths.LambdaFunction);
-        GenericType lambdaGenericType = (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(lambdaFunctionClass, processorSupport);
+        GenericType lambdaGenericType = (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(processorSupport.package_getByUserPath(M3Paths.LambdaFunction), processorSupport);
         lambdaGenericType._typeArguments(Lists.immutable.with(functionTypeGt));
 
         VariableExpression paramVarExpr = buildLambdaVariableExpression(functionExpression, repository, processorSupport);
@@ -1136,11 +1133,9 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
         propertySfe._importGroup(functionExpression._importGroup());
         propertySfe._parametersValues(Lists.immutable.<ValueSpecification>with(paramVarExpr).newWithAll(qualifierParams));
 
-        LambdaFunctionInstance lambdaFunctionInst = LambdaFunctionInstance.createPersistent(repository, lambdaContextName, functionExpression.getSourceInformation());
-        lambdaFunctionInst._expressionSequence(Lists.immutable.with(propertySfe));
-        lambdaFunctionInst._classifierGenericType(lambdaGenericType);
-
-        return lambdaFunctionInst;
+        return LambdaFunctionInstance.createPersistent(repository, lambdaContextName, functionExpression.getSourceInformation())
+                ._expressionSequence(Lists.immutable.with(propertySfe))
+                ._classifierGenericType(lambdaGenericType);
     }
 
     private static VariableExpression buildLambdaVariableExpression(FunctionExpression functionExpression, ModelRepository repository, ProcessorSupport processorSupport)
