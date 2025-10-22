@@ -14,10 +14,16 @@
 
 package org.finos.legend.pure.m2.relational;
 
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.store.RelationStoreAccessorInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.DatabaseInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.Table;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public class TestRelationAccessor extends AbstractPureRelationalTestWithCoreCompiled
@@ -174,6 +180,33 @@ public class TestRelationAccessor extends AbstractPureRelationalTestWithCoreComp
                         "   )\n" +
                         ")\n";
         createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
+    }
+
+    @Test
+    public void testRelationAccessorProperties()
+    {
+        String sourceCode =
+                "###Pure\n" +
+                        "function f():meta::pure::metamodel::relation::Relation<Any>[1]" +
+                        "{" +
+                        "   #>{my::mainDb.PersonTable}#" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database my::mainDb\n" +
+                        "( \n" +
+                        "   Table PersonTable(firstName VARCHAR(200))\n" +
+                        ")\n";
+        createAndCompileSourceCode(this.runtime, "myFile.pure", sourceCode);
+
+        ConcreteFunctionDefinition<?> function = (ConcreteFunctionDefinition<?>) this.runtime.getFunction("f__Relation_1_");
+        InstanceValue iv = (InstanceValue) function._expressionSequence().getOnly();
+        RelationStoreAccessorInstance accessor = (RelationStoreAccessorInstance) iv._values().getOnly();
+
+        DatabaseInstance database = (DatabaseInstance) this.runtime.getCoreInstance("my::mainDb");
+        Table table = database._schemas().getOnly()._tables().getOnly();
+
+        assertEquals(database, accessor._sourceElementContainer());
+        assertEquals(table, accessor._sourceElement());
     }
 
     private static void createAndCompileSourceCode(PureRuntime runtime, String sourceId, String sourceCode)
