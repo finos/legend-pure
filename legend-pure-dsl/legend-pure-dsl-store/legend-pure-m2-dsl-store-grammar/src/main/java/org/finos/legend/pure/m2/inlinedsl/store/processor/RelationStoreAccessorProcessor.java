@@ -56,6 +56,7 @@ public class RelationStoreAccessorProcessor extends Processor<RelationStoreAcces
         Pair<?, RelationType<?>> result = state.getParserLibrary().resolveRelationElementAccessor(store, path, instance.getSourceInformation(), repository, processorSupport);
 
         instance._sourceElement(result.getOne());
+        instance._sourceElementContainer(store);
 
         Class<?> relationDatabaseAccessorType = (Class<?>) processorSupport.package_getByUserPath(M2StorePaths.RelationStoreAccessor);
         GenericType genericType = (GenericType) processorSupport.type_wrapGenericType(relationDatabaseAccessorType);
