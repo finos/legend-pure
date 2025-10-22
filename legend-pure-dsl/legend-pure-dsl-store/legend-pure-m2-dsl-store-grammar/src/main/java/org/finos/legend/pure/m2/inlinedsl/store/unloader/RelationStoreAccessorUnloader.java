@@ -41,6 +41,7 @@ public class RelationStoreAccessorUnloader implements MatchRunner<RelationStoreA
         ReferenceUsage.removeReferenceUsagesForUser(modelElement._store(), modelElement, state.getProcessorSupport());
         modelElement._storeRemove();
         modelElement._sourceElementRemove();
+        modelElement._sourceElementContainerRemove();
         Shared.cleanUpGenericType(modelElement._classifierGenericType(), (UnbindState) state, state.getProcessorSupport());
         modelElement._classifierGenericTypeRemove();
     }
