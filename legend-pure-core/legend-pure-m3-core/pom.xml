@@ -220,20 +220,6 @@
                             </arguments>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>Generate PCT Variant Type</id>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
-                        <configuration>
-                            <mainClass>org.finos.legend.pure.m3.pct.functions.generation.FunctionsGeneration</mainClass>
-                            <arguments>
-                                <argument>${project.build.directory}/classes/pct-reports/</argument>
-                                <argument>org.finos.legend.pure.m3.PlatformCodeRepositoryProvider.variantFunctions</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
                 </executions>
             </plugin>
             <plugin>
