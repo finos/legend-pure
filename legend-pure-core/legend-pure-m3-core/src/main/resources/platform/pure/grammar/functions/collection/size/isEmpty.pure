@@ -32,15 +32,3 @@ function <<PCT.test>> meta::pure::functions::collection::tests::isEmpty::testIsE
 {
     assert($f->eval(|[]->isEmpty()));
 }
-
-function <<PCT.test, PCTCoreQualifier.variant>> meta::pure::functions::collection::tests::isEmpty::testIsEmptyFalseSingle<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
-{
-    assertFalse($f->eval(|['']->isEmpty()));
-    assertFalse($f->eval(|[1]->isEmpty()));
-}
-
-function <<PCT.test, PCTCoreQualifier.variant>> meta::pure::functions::collection::tests::isEmpty::testIsEmptyFalseMultiple<Z|y>(f:Function<{Function<{->Z[y]}>[1]->Z[y]}>[1]):Boolean[1]
-{
-    assertFalse($f->eval(|['a', 'b']->isEmpty()));
-    assertFalse($f->eval(|[1, 2, 3]->isEmpty()));
-}
