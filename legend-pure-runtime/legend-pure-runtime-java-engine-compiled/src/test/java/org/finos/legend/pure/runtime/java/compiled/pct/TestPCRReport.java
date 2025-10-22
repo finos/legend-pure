@@ -29,7 +29,6 @@ public class TestPCRReport
     {
         MutableList<AdapterReport> adapterReports = PCTReportProviderLoader.gatherReports();
         Assert.assertEquals("Native", adapterReports.collect(c -> c.adapterKey.adapter.name).distinct().sortThis().makeString(", "));
-        Assert.assertEquals(Lists.fixedSize.of("essential", "grammar", "variant"), adapterReports.collect(x -> x.reportScope.module).sortThis());
-        Assert.assertTrue(adapterReports.getAny().functionTests.stream().flatMap(x -> x.tests.stream()).anyMatch(x -> x.qualifiers.contains("variant")));
+        Assert.assertEquals(Lists.fixedSize.of("essential", "grammar"), adapterReports.collect(x -> x.reportScope.module).sortThis());
     }
 }

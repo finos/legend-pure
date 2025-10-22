@@ -307,6 +307,7 @@ public class Reactivator
                     paramValues.set(0, Lists.fixedSize.of(sfe._genericType()._rawType()));
                     break;
                 }
+                // can we generalize the @{type} so we can avoid hardcoding here?
                 case "cast_Any_m__T_1__T_m_":
                 case "to_Variant_$0_1$__T_$0_1$__T_$0_1$_":
                 case "toMany_Variant_$0_1$__T_$0_1$__T_MANY_":

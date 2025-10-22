@@ -34,8 +34,7 @@ public class Core_Interpreted_PCTReportProvider implements PCTReportProvider
     {
         return PCTReportProviderTool.load(Core_Interpreted_PCTReportProvider.class.getClassLoader(), AdapterReport.class,
                 "pct-reports/ADAPTER_essential_interpreted_Native.json",
-                "pct-reports/ADAPTER_grammar_interpreted_Native.json",
-                "pct-reports/ADAPTER_variant_interpreted_Native.json"
+                "pct-reports/ADAPTER_grammar_interpreted_Native.json"
         );
     }
 }
