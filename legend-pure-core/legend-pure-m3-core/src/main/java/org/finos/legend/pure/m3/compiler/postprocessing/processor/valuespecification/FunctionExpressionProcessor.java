@@ -230,7 +230,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
 
         if (finalFunction != null)
         {
-            finalFunction._applications(Lists.immutable.<FunctionExpression>withAll(finalFunction._applications()).newWith(functionExpression));
+            finalFunction._applicationsAdd(functionExpression);
 
             // Update the function in the function expression in the reverse
             if ("new_Class_1__String_1__KeyExpression_MANY__T_1_".equals(finalFunction.getName()) || "new_Class_1__String_1__T_1_".equals(finalFunction.getName()))
