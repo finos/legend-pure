@@ -285,5 +285,8 @@ public interface CoreInstance
 
     void setCompileStatesFrom(CompileStateSet states);
 
-    void validate(MutableSet<CoreInstance> doneList) throws PureCompilationException;
+    default void validate(MutableSet<CoreInstance> doneList) throws PureCompilationException
+    {
+        CoreInstanceStandardValidator.validate(this, doneList);
+    }
 }

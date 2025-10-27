@@ -16,13 +16,10 @@ package org.finos.legend.pure.m3.coreinstance;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
-import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstance;
@@ -33,8 +30,6 @@ import org.finos.legend.pure.m4.coreinstance.indexing.IDConflictException;
 import org.finos.legend.pure.m4.coreinstance.indexing.IDIndex;
 import org.finos.legend.pure.m4.coreinstance.indexing.Index;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecification;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
-import org.finos.legend.pure.m4.exception.PureException;
 
 import java.util.Objects;
 
@@ -193,81 +188,6 @@ public abstract class BaseCoreInstance extends AbstractCoreInstance implements C
     protected <V extends CoreInstance, K> ListIterable<V> getValuesByIndexFromToManyPropertyValues(ToManyPropertyValues<V> values, IndexSpecification<K> indexSpec, K keyInIndex)
     {
         return (values == null) ? Lists.immutable.empty() : values.getValuesByIndex(indexSpec, keyInIndex);
-    }
-
-
-    //------------
-    // Validation
-    //------------
-
-    @Override
-    public void validate(MutableSet<CoreInstance> doneList) throws PureCompilationException
-    {
-        this.validate(doneList, Stacks.mutable.with(this));
-    }
-
-    private void validate(MutableSet<CoreInstance> doneList, MutableStack<BaseCoreInstance> stack) throws PureCompilationException
-    {
-        while (stack.notEmpty())
-        {
-            BaseCoreInstance element = stack.pop();
-            doneList.add(element);
-
-            if (element.getClassifier() == null)
-            {
-                SourceInformation foundSourceInformation = element.sourceInformation;
-                if (stack.size() > 1)
-                {
-                    SourceInformation cursorSourceInformation = element.sourceInformation;
-                    int cursor = stack.size() - 1;
-                    while (cursorSourceInformation == null && cursor >= 0)
-                    {
-                        cursorSourceInformation = stack.peekAt(cursor--).sourceInformation;
-                    }
-                    foundSourceInformation = stack.peekAt(cursor + 1).sourceInformation;
-                }
-                throw new PureCompilationException(foundSourceInformation, element.getName() + " has not been defined!");
-            }
-
-            try
-            {
-                element.getKeys().forEach(keyName ->
-                {
-                    ListIterable<String> realKey = element.getRealKeyByName(keyName);
-                    if (realKey == null)
-                    {
-                        throw new RuntimeException("No real key can be found for '" + keyName + "' in\n" + element.getName() + " (" + element + ")");
-                    }
-
-                    CoreInstance key = element.getKeyByName(keyName);
-                    if (key.getClassifier() == null)
-                    {
-                        throw new RuntimeException("'" + key.getName() + "' used in '" + element.name + "' has not been defined!\n" + element.print("   "));
-                    }
-
-                    ListIterable<? extends CoreInstance> values = element.getValueForMetaPropertyToMany(keyName);
-                    if (values != null)
-                    {
-                        values.forEach(childElement ->
-                        {
-                            if ((!doneList.contains(childElement) || (childElement.getClassifier() == null)) && (childElement instanceof BaseCoreInstance))
-                            {
-                                stack.push((BaseCoreInstance) childElement);
-                            }
-                        });
-                    }
-                });
-            }
-            catch (Exception e)
-            {
-                PureException pe = PureException.findPureException(e);
-                if (pe != null)
-                {
-                    throw pe;
-                }
-                throw e;
-            }
-        }
     }
 
     @Override
