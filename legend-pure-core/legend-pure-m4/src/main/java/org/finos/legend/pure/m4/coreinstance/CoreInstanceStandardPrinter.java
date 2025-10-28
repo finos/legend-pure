@@ -23,57 +23,59 @@ import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class CoreInstanceStandardPrinter
 {
-    public static <T extends Appendable> T printFull(T appendable, CoreInstance instance, String tab)
+    private final SafeAppendable appendable;
+    private final boolean full;
+    private final boolean addDebug;
+    private final boolean printEmptyProperties;
+    private final int max;
+    private final MutableStack<CoreInstance> stack = Stacks.mutable.empty();
+
+    private CoreInstanceStandardPrinter(SafeAppendable appendable, boolean full, boolean addDebug, boolean printEmptyProperties, int max)
     {
-        return print(appendable, instance, tab, true, true, CoreInstance.DEFAULT_MAX_PRINT_DEPTH);
+        this.appendable = appendable;
+        this.full = full;
+        this.addDebug = addDebug;
+        this.printEmptyProperties = printEmptyProperties;
+        this.max = max;
     }
 
-    public static <T extends Appendable> T print(T appendable, CoreInstance instance, String tab, int max)
+    private void print(CoreInstance instance, String tab)
     {
-        return print(appendable, instance, tab, false, true, max);
-    }
-
-    public static <T extends Appendable> T printWithoutDebug(T appendable, CoreInstance instance, String tab, int max)
-    {
-        return print(appendable, instance, tab, false, false, max);
-    }
-
-    public static <T extends Appendable> T print(T appendable, CoreInstance instance, String tab, boolean full, boolean addDebug, int max)
-    {
-        print(SafeAppendable.wrap(appendable), instance, tab, Stacks.mutable.empty(), full, addDebug, max);
-        return appendable;
-    }
-
-    private static void print(SafeAppendable appendable, CoreInstance instance, String tab, MutableStack<CoreInstance> stack, boolean full, boolean addDebug, int max)
-    {
-        stack.push(instance);
-        printNodeName(appendable.append(tab), instance, full, addDebug);
-        printNodeName(appendable.append(" instance "), instance.getClassifier(), full, addDebug);
+        this.stack.push(instance);
+        this.appendable.append(tab);
+        printNodeName(instance);
+        this.appendable.append(" instance ");
+        printNodeName(instance.getClassifier());
         for (String key : instance.getKeys().toSortedList())
         {
-            printProperty(appendable.append('\n'), instance, key, instance.getValueForMetaPropertyToMany(key), tab, stack, full, addDebug, max);
+            ListIterable<? extends CoreInstance> values = instance.getValueForMetaPropertyToMany(key);
+            if (this.printEmptyProperties || values.notEmpty())
+            {
+                this.appendable.append('\n');
+                printProperty(instance, key, values, tab);
+            }
         }
-        stack.pop();
+        this.stack.pop();
     }
 
-    private static void printNodeName(SafeAppendable appendable, CoreInstance node, boolean full, boolean addDebug)
+    private void printNodeName(CoreInstance node)
     {
         String name = node.getName();
-        if (full)
+        if (this.full)
         {
-            appendable.append(name).append('_').append(node.getSyntheticId());
+            this.appendable.append(name).append('_').append(node.getSyntheticId());
         }
         else
         {
-            appendable.append(ModelRepository.possiblyReplaceAnonymousId(name));
+            this.appendable.append(ModelRepository.possiblyReplaceAnonymousId(name));
         }
 
-        if (addDebug)
+        if (this.addDebug)
         {
             SourceInformation sourceInfo = node.getSourceInformation();
             if (sourceInfo != null)
             {
-                appendable.append('(').append(sourceInfo.getSourceId()).append(':')
+                this.appendable.append('(').append(sourceInfo.getSourceId()).append(':')
                         .append(sourceInfo.getStartLine()).append(',')
                         .append(sourceInfo.getStartColumn()).append(',')
                         .append(sourceInfo.getLine()).append(',')
@@ -84,66 +86,66 @@ public class CoreInstanceStandardPrinter
         }
     }
 
-    private static void printProperty(SafeAppendable appendable, CoreInstance instance, String propertyName, ListIterable<? extends CoreInstance> values, String tab, MutableStack<CoreInstance> stack, boolean full, boolean addDebug, int max)
+    private void printProperty(CoreInstance instance, String propertyName, ListIterable<? extends CoreInstance> values, String tab)
     {
-        appendable.append(tab).append("    ");
+        this.appendable.append(tab).append("    ");
         if (propertyName == null)
         {
-            appendable.append("null:");
+            this.appendable.append("null:");
         }
         else
         {
             CoreInstance property = instance.getKeyByName(propertyName);
             CoreInstance propertyClassifier = property.getClassifier();
 
-            printNodeName(appendable, property, full, addDebug);
-            appendable.append('(');
+            printNodeName(property);
+            this.appendable.append('(');
             if (propertyClassifier == null)
             {
-                appendable.append("null");
+                this.appendable.append("null");
             }
             else
             {
-                printNodeName(appendable, propertyClassifier, full, addDebug);
+                printNodeName(propertyClassifier);
             }
-            appendable.append("):");
+            this.appendable.append("):");
         }
 
         SetIterable<CoreInstance> excluded = instance.getRepository().getExclusionSet();
         for (CoreInstance value : values)
         {
-            appendable.append('\n');
+            this.appendable.append('\n');
 
             if (value == null)
             {
-                appendable.append(tab).append("        NULL");
+                this.appendable.append(tab).append("        NULL");
             }
             else
             {
                 // TODO remove reference to "package" property, which is an M3 thing
                 boolean excludeFlag = ((excluded != null) && (excluded.contains(value.getValueForMetaPropertyToOne("package")) || excluded.contains(value))) ||
                         (instance.getRepository().getTopLevel(value.getName()) != null);
-                if (full ? stack.contains(value) : (excludeFlag || (stack.size() > max) || stack.contains(value)))
+                if (this.full ? this.stack.contains(value) : (excludeFlag || (this.stack.size() > this.max) || this.stack.contains(value)))
                 {
                     CoreInstance valueClassifier = value.getClassifier();
 
-                    appendable.append(tab).append("        ");
-                    printNodeName(appendable, value, full, addDebug);
-                    appendable.append(" instance ");
+                    this.appendable.append(tab).append("        ");
+                    printNodeName(value);
+                    this.appendable.append(" instance ");
                     if (valueClassifier == null)
                     {
-                        appendable.append("null");
+                        this.appendable.append("null");
                     }
                     else
                     {
-                        printNodeName(appendable, valueClassifier, full, addDebug);
-                        if (full)
+                        printNodeName(valueClassifier);
+                        if (this.full)
                         {
-                            appendable.append('\n').append(tab).append("            [...]");
+                            this.appendable.append('\n').append(tab).append("            [...]");
                         }
-                        else if (!excludeFlag && (stack.size() > max) && value.getKeys().notEmpty())
+                        else if (!excludeFlag && (this.stack.size() > this.max) && value.getKeys().notEmpty())
                         {
-                            appendable.append('\n').append(tab).append("            [... >").append(max).append(']');
+                            this.appendable.append('\n').append(tab).append("            [... >").append(this.max).append(']');
                         }
                     }
                 }
@@ -152,22 +154,43 @@ public class CoreInstanceStandardPrinter
                     String newTab = tab + "        ";
                     if (value instanceof CoreInstanceWithStandardPrinting)
                     {
-                        print(appendable, value, newTab, stack, full, addDebug, max);
+                        print(value, newTab);
                     }
-                    else if (full)
+                    else if (this.full)
                     {
-                        value.printFull(appendable, newTab);
+                        value.printFull(this.appendable, newTab);
                     }
-                    else if (addDebug)
+                    else if (this.addDebug)
                     {
-                        value.print(appendable, newTab, max - stack.size());
+                        value.print(this.appendable, newTab, this.max - this.stack.size());
                     }
                     else
                     {
-                        value.printWithoutDebug(appendable, newTab, max - stack.size());
+                        value.printWithoutDebug(this.appendable, newTab, this.max - this.stack.size());
                     }
                 }
             }
         }
+    }
+
+    public static <T extends Appendable> T printFull(T appendable, CoreInstance instance, String tab)
+    {
+        return print(appendable, instance, tab, true, true, true, CoreInstance.DEFAULT_MAX_PRINT_DEPTH);
+    }
+
+    public static <T extends Appendable> T print(T appendable, CoreInstance instance, String tab, int max)
+    {
+        return print(appendable, instance, tab, false, true, false, max);
+    }
+
+    public static <T extends Appendable> T printWithoutDebug(T appendable, CoreInstance instance, String tab, int max)
+    {
+        return print(appendable, instance, tab, false, false, false, max);
+    }
+
+    public static <T extends Appendable> T print(T appendable, CoreInstance instance, String tab, boolean full, boolean addDebug, boolean printEmptyProperties, int max)
+    {
+        new CoreInstanceStandardPrinter(SafeAppendable.wrap(appendable), full, addDebug, printEmptyProperties, max).print(instance, tab);
+        return appendable;
     }
 }
