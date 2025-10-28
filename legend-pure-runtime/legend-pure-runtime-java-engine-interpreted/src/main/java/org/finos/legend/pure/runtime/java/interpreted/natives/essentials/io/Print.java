@@ -14,24 +14,23 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.natives.essentials.io;
 
-import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.api.stack.MutableStack;
-import org.eclipse.collections.impl.factory.Lists;
+import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.execution.Console;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.Printer;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.navigation.measure.Measure;
-import org.finos.legend.pure.m3.execution.Console;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.ExecutionSupport;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.VariableContext;
@@ -43,8 +42,8 @@ import java.util.Stack;
 
 public class Print extends NativeFunction
 {
-    private ModelRepository repository;
-    private Console console;
+    private final ModelRepository repository;
+    private final Console console;
 
     public Print(FunctionExecutionInterpreted functionExecution, ModelRepository repository)
     {
@@ -59,27 +58,25 @@ public class Print extends NativeFunction
         {
             ListIterable<? extends CoreInstance> toPrint = Instance.getValueForMetaPropertyToManyResolved(params.get(0), M3Properties.values, processorSupport);
             CoreInstance stringType = processorSupport.package_getByUserPath(M3Paths.String);
-            ImmutableSet<CoreInstance> primitiveTypeClassifiers = ModelRepository.PRIMITIVE_TYPE_NAMES.collect(new Function<String, CoreInstance>()
-            {
-                @Override
-                public CoreInstance valueOf(String s)
-                {
-                    return repository.getTopLevel(s);
-                }
-            });
             int max = PrimitiveUtilities.getIntegerValue(Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport)).intValue();
             if (toPrint.size() == 1)
             {
                 CoreInstance toPrintVal = toPrint.get(0);
                 String result;
-                if (this.console.isConsole())
+                if (Measure.isUnitOrMeasureInstance(params.getFirst(), processorSupport))
+                {
+                    CoreInstance potentialUnitType = Instance.getValueForMetaPropertyToOneResolved(params.getFirst(), M3Properties.genericType, M3Properties.rawType, processorSupport);
+                    CoreInstance numericValue = Instance.getValueForMetaPropertyToOneResolved(params.getFirst(), M3Properties.values, M3Properties.values, processorSupport);
+                    result = (numericValue == null) ? potentialUnitType.getName() : (numericValue.getName() + " " + potentialUnitType.getName());
+                }
+                else if (this.console.isConsole())
                 {
                     if (Instance.instanceOf(toPrintVal, stringType, processorSupport))
                     {
                         String name = toPrintVal.getName();
                         result = ("\n".equals(name) || name.isEmpty()) ? name : '\'' + name + '\'';
                     }
-                    else if (primitiveTypeClassifiers.contains(processorSupport.getClassifier(toPrintVal)))
+                    else if (Type.isPrimitiveType(processorSupport.getClassifier(toPrintVal), processorSupport))
                     {
                         result = toPrintVal.getName();
                     }
@@ -91,12 +88,6 @@ public class Print extends NativeFunction
                 else
                 {
                     result = toPrintVal.getName();
-                }
-                CoreInstance potentialUnitType = Instance.getValueForMetaPropertyToOneResolved(params.getFirst(), M3Properties.genericType, M3Properties.rawType, processorSupport);
-                if (Measure.isUnitOrMeasureInstance(params.getFirst(), processorSupport))
-                {
-                    CoreInstance numericValue = Instance.getValueForMetaPropertyToOneResolved(params.getFirst(), M3Properties.values, M3Properties.values, processorSupport);
-                    result = null == numericValue ? potentialUnitType.getName() : numericValue.getName() + " " + potentialUnitType.getName();
                 }
                 this.console.print(result);
             }
@@ -119,15 +110,12 @@ public class Print extends NativeFunction
                         }
                         else
                         {
-                            builder.append('\'');
-                            builder.append(name);
-                            builder.append('\'');
+                            builder.append('\'').append(name).append('\'');
                         }
                     }
-                    else if (primitiveTypeClassifiers.contains(processorSupport.getClassifier(instance)))
+                    else if (Type.isPrimitiveType(processorSupport.getClassifier(instance), processorSupport))
                     {
-                        builder.append("   ");
-                        builder.append(instance.getName());
+                        builder.append("   ").append(instance.getName());
                     }
                     else
                     {
@@ -142,7 +130,7 @@ public class Print extends NativeFunction
                 this.console.print(builder);
             }
         }
-        return ValueSpecificationBootstrap.wrapValueSpecification(Lists.immutable.<CoreInstance>with(), true, processorSupport);
+        return ValueSpecificationBootstrap.wrapValueSpecification(Lists.immutable.with(), true, processorSupport);
     }
 
     public Console getConsole()

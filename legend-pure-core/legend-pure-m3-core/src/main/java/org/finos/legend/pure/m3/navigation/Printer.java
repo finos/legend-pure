@@ -15,14 +15,13 @@
 package org.finos.legend.pure.m3.navigation;
 
 import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.api.stack.MutableStack;
-import org.eclipse.collections.impl.stack.mutable.ArrayStack;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-
-import java.io.IOException;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class Printer
 {
@@ -40,14 +39,7 @@ public class Printer
      */
     public static void print(Appendable appendable, CoreInstance instance, String linePrefix, int maxDepth, ProcessorSupport processorSupport)
     {
-        try
-        {
-            print(appendable, instance, linePrefix, 0, new ArrayStack<CoreInstance>(maxDepth + 1), instance.getRepository() == null ? Sets.immutable.empty() : instance.getRepository().getExclusionSet(), 0, maxDepth, processorSupport);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        print(SafeAppendable.wrap(appendable), instance, linePrefix, 0, Stacks.mutable.empty(), instance.getRepository() == null ? Sets.immutable.empty() : instance.getRepository().getExclusionSet(), 0, maxDepth, processorSupport);
     }
 
     /**
@@ -56,7 +48,6 @@ public class Printer
      * @param appendable appendable to print to
      * @param instance   Pure instance to print
      * @param linePrefix string printed at the start of every line
-     * @throws IOException
      */
     public static void print(Appendable appendable, CoreInstance instance, String linePrefix, ProcessorSupport processorSupport)
     {
@@ -136,7 +127,7 @@ public class Printer
         return print(instance, null, processorSupport);
     }
 
-    private static void print(Appendable appendable, CoreInstance instance, String linePrefix, int indentLevel, MutableStack<CoreInstance> processed, SetIterable<CoreInstance> exclude, int depth, int maxDepth, ProcessorSupport processorSupport) throws IOException
+    private static void print(SafeAppendable appendable, CoreInstance instance, String linePrefix, int indentLevel, MutableStack<CoreInstance> processed, SetIterable<CoreInstance> exclude, int depth, int maxDepth, ProcessorSupport processorSupport)
     {
         processed.push(instance);
 
@@ -145,63 +136,56 @@ public class Printer
         for (String propertyName : instance.getKeys().toSortedList())
         {
             ListIterable<? extends CoreInstance> values = instance.getValueForMetaPropertyToMany(propertyName);
-
-            appendable.append('\n');
-            indent(appendable, linePrefix, indentLevel + 1);
-            appendable.append(propertyName);
-            appendable.append("(Property)");
-            appendable.append(':');
-
-            for (CoreInstance value : values)
+            if (values.notEmpty())
             {
                 appendable.append('\n');
-                if (processorSupport != null && processorSupport.getClassifier(value) != null && "ImportStub".equals(processorSupport.getClassifier(value).getName()))
+                indent(appendable, linePrefix, indentLevel + 1);
+                appendable.append(propertyName).append("(Property):");
+
+                for (CoreInstance value : values)
                 {
-                    indent(appendable, linePrefix, indentLevel + 2);
-                    appendable.append("[~>] ");
-                    appendable.append(value.getValueForMetaPropertyToOne(M3Properties.idOrPath).getName());
-                    CoreInstance resolvedNode = value.getValueForMetaPropertyToOne(M3Properties.resolvedNode);
-                    if (resolvedNode == null)
+                    appendable.append('\n');
+                    if (processorSupport != null && processorSupport.getClassifier(value) != null && "ImportStub".equals(processorSupport.getClassifier(value).getName()))
                     {
-                        appendable.append("'UNRESOLVED'");
+                        indent(appendable, linePrefix, indentLevel + 2);
+                        appendable.append("[~>] ").append(value.getValueForMetaPropertyToOne(M3Properties.idOrPath).getName());
+                        CoreInstance resolvedNode = value.getValueForMetaPropertyToOne(M3Properties.resolvedNode);
+                        if (resolvedNode == null)
+                        {
+                            appendable.append("'UNRESOLVED'");
+                        }
+                        else
+                        {
+                            appendable.append(" instance ").append(processorSupport.getClassifier(resolvedNode).getName());
+                        }
+                    }
+                    else if (exclude.contains(value) || exclude.contains(value.getValueForMetaPropertyToOne(M3Properties._package)))
+                    {
+                        indent(appendable, linePrefix, indentLevel + 2);
+                        printInstanceName(appendable.append("[X] "), value, processorSupport);
+                    }
+                    else if (depth >= maxDepth)
+                    {
+                        indent(appendable, linePrefix, indentLevel + 2);
+                        appendable.append("[>").append(maxDepth).append("] ");
+                        printInstanceName(appendable, value, processorSupport);
+                    }
+                    else if (processed.contains(value))
+                    {
+                        indent(appendable, linePrefix, indentLevel + 2);
+                        printInstanceName(appendable.append("[_] "), value, processorSupport);
                     }
                     else
                     {
-                        //appendable.append("_"+resolvedNode.getSyntheticId());
-                        appendable.append(" instance ");
-                        appendable.append(processorSupport.getClassifier(resolvedNode).getName());//+"_"+resolvedNode.getClassifier().getSyntheticId());
+                        print(appendable, value, linePrefix, indentLevel + 2, processed, exclude, depth + 1, maxDepth, processorSupport);
                     }
-                }
-                else if (exclude.contains(value) || exclude.contains(value.getValueForMetaPropertyToOne(M3Properties._package)))
-                {
-                    indent(appendable, linePrefix, indentLevel + 2);
-                    appendable.append("[X] ");
-                    printInstanceName(appendable, value, processorSupport);
-                }
-                else if (depth >= maxDepth)
-                {
-                    indent(appendable, linePrefix, indentLevel + 2);
-                    appendable.append("[>");
-                    appendable.append(String.valueOf(maxDepth));
-                    appendable.append("] ");
-                    printInstanceName(appendable, value, processorSupport);
-                }
-                else if (processed.contains(value))
-                {
-                    indent(appendable, linePrefix, indentLevel + 2);
-                    appendable.append("[_] ");
-                    printInstanceName(appendable, value, processorSupport);
-                }
-                else
-                {
-                    print(appendable, value, linePrefix, indentLevel + 2, processed, exclude, depth + 1, maxDepth, processorSupport);
                 }
             }
         }
         processed.pop();
     }
 
-    private static void indent(Appendable appendable, String prefix, int level) throws IOException
+    private static void indent(SafeAppendable appendable, String prefix, int level)
     {
         if (prefix != null)
         {
@@ -213,12 +197,12 @@ public class Printer
         }
     }
 
-    private static void printInstanceName(Appendable appendable, CoreInstance instance, ProcessorSupport processorSupport) throws IOException
+    private static void printInstanceName(SafeAppendable appendable, CoreInstance instance, ProcessorSupport processorSupport)
     {
         String name = instance.getName();
-        appendable.append(ModelRepository.possiblyReplaceAnonymousId(name));
-        appendable.append(" instance ");
-        CoreInstance classifier = processorSupport == null ? instance.getClassifier() : processorSupport.getClassifier(instance);
-        appendable.append((classifier == null) ? "null" : classifier.getName());
+        CoreInstance classifier = (processorSupport == null) ? instance.getClassifier() : processorSupport.getClassifier(instance);
+        appendable.append(ModelRepository.possiblyReplaceAnonymousId(name))
+                .append(" instance ")
+                .append((classifier == null) ? "null" : classifier.getName());
     }
 }
