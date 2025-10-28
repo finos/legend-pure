@@ -16,11 +16,7 @@ package org.finos.legend.pure.m4.coreinstance.simple;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Stacks;
-import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.api.stack.MutableStack;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -30,8 +26,6 @@ import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
 import org.finos.legend.pure.m4.coreinstance.indexing.IDConflictException;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecification;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
-import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
 
 public class SimpleCoreInstance extends AbstractCoreInstance implements CoreInstanceWithStandardPrinting
@@ -313,81 +307,11 @@ public class SimpleCoreInstance extends AbstractCoreInstance implements CoreInst
         return this.getState().hasValuesDefined(keyName);
     }
 
-
-    //------------
-    // Validation
-    //------------
-
     @Override
-    public void validate(MutableSet<CoreInstance> doneList) throws PureCompilationException
+    public String toString()
     {
-        validate(doneList, Stacks.mutable.with(this));
+        return this.name + "(" + this.internalSyntheticId + ") instanceOf " + ((getClassifier() == null) ? null : getClassifier().getName());
     }
-
-    private void validate(MutableSet<CoreInstance> doneList, MutableStack<SimpleCoreInstance> stack) throws PureCompilationException
-    {
-        while (!stack.isEmpty())
-        {
-            SimpleCoreInstance element = stack.pop();
-            doneList.add(element);
-
-            if (element.getClassifier() == null)
-            {
-                SourceInformation foundSourceInformation = element.sourceInformation;
-                if (stack.size() > 1)
-                {
-                    SourceInformation cursorSourceInformation = element.sourceInformation;
-                    int cursor = stack.size() - 1;
-                    while (cursorSourceInformation == null && cursor >= 0)
-                    {
-                        cursorSourceInformation = stack.peekAt(cursor--).sourceInformation;
-                    }
-                    foundSourceInformation = stack.peekAt(cursor + 1).sourceInformation;
-                }
-                throw new PureCompilationException(foundSourceInformation, element.getName() + " has not been defined!");
-            }
-
-            try
-            {
-                element.getState().getKeys().forEach(keyName ->
-                {
-                    ImmutableList<String> realKey = element.getState().getRealKeyByName(keyName);
-                    if (realKey == null)
-                    {
-                        throw new RuntimeException("No real key can be found for '" + keyName + "' in\n" + element.getName() + " (" + element + ")");
-                    }
-
-                    CoreInstance key = element.getKeyByName(keyName);
-                    if (key.getClassifier() == null)
-                    {
-                        throw new RuntimeException("'" + key.getName() + "' used in '" + element.name + "' has not been defined!\n" + element.print("   "));
-                    }
-
-                    ListIterable<CoreInstance> values = element.getState().getValues(keyName);
-                    if (values != null)
-                    {
-                        values.forEach(childElement ->
-                        {
-                            if ((!doneList.contains(childElement) || (childElement.getClassifier() == null)) && (childElement instanceof SimpleCoreInstance))
-                            {
-                                stack.push((SimpleCoreInstance) childElement);
-                            }
-                        });
-                    }
-                });
-            }
-            catch (Exception e)
-            {
-                PureException pe = PureException.findPureException(e);
-                if (pe != null)
-                {
-                    throw pe;
-                }
-                throw e;
-            }
-        }
-    }
-
 
     private SimpleCoreInstanceMutableState getState()
     {
@@ -401,12 +325,5 @@ public class SimpleCoreInstance extends AbstractCoreInstance implements CoreInst
             }
         }
         return this.state;
-    }
-
-
-    @Override
-    public String toString()
-    {
-        return this.name + "(" + this.internalSyntheticId + ") instanceOf " + ((getClassifier() == null) ? null : getClassifier().getName());
     }
 }
