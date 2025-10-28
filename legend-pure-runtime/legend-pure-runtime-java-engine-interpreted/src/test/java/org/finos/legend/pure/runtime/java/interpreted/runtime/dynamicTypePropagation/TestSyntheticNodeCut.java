@@ -14,9 +14,9 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.runtime.dynamicTypePropagation;
 
-import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.tests.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.After;
@@ -230,7 +230,6 @@ public class TestSyntheticNodeCut extends AbstractPureTestWithCoreCompiled
                         "                                                        Anonymous_StripedId instance GenericType\n" +
                         "                                                    propertyName(Property):\n" +
                         "                                                        typeArguments instance String\n" +
-                        "                                            typeVariableValues(Property):\n" +
                         "                            multiplicity(Property):\n" +
                         "                                PureOne instance PackageableMultiplicity\n" +
                         "                            usageContext(Property):\n" +
@@ -239,7 +238,6 @@ public class TestSyntheticNodeCut extends AbstractPureTestWithCoreCompiled
                         "                                        Anonymous_StripedId instance SimpleFunctionExpression\n" +
                         "                                    offset(Property):\n" +
                         "                                        0 instance Integer\n" +
-                        "                            values(Property):\n" +
                         "                        Anonymous_StripedId instance InstanceValue\n" +
                         "                            genericType(Property):\n" +
                         "                                Anonymous_StripedId instance GenericType\n" +

@@ -112,7 +112,6 @@ public class TestPureRuntimeClass_AsPointer extends AbstractPureTestWithCoreComp
                 "        Root instance Package\n" +
                 "    referenceUsages(Property):\n" +
                 "        Anonymous_StripedId instance ReferenceUsage\n" +
-                "            [... >0]\n" +
-                "    typeVariables(Property):", runtime.getCoreInstance("A").printWithoutDebug("", 0));
+                "            [... >0]", runtime.getCoreInstance("A").printWithoutDebug("", 0));
     }
 }
