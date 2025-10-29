@@ -97,17 +97,43 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
     {
         compileInferenceTest(
                 "import meta::pure::metamodel::relation::*;\n" +
+                        "Primitive x::Numeric(x:Integer[1], y:Integer[1]) extends Integer\n" +
                         "Class Firm\n" +
                         "{\n" +
                         "   legalName:String[1];\n" +
+                        "   numeric:x::Numeric(1, 2)[1];\n" +
                         "}\n" +
                         "\n" +
-                        "function f():Relation<(legal:String)>[1]\n" +
+                        "function f():Relation<(legal:String, numeric:x::Numeric(1, 2))>[1]\n" +
                         "{\n" +
-                        "   Firm.all()->project(~[legal:x|$x.legalName]);\n" +
+                        "   Firm.all()->project(~[legal:x|$x.legalName, numeric:x|$x.numeric]);\n" +
                         "}\n" +
                         "\n" +
                         "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];"
+        );
+    }
+
+    @Test
+    public void testColumnFunctionCollectionInference2()
+    {
+        compileInferenceTest(
+                "import meta::pure::metamodel::relation::*;\n" +
+                        "Primitive x::Numeric(x:Integer[1], y:Integer[1]) extends Integer\n" +
+                        "Class Firm\n" +
+                        "{\n" +
+                        "   legalName:String[1];\n" +
+                        "   numeric:x::Numeric(1, 2)[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "function f():Relation<(numeric:x::Numeric(1, 2))>[1]\n" +
+                        "{\n" +
+                        "   Firm.all()->project(~[legal:x|$x.legalName, numeric:x|$x.numeric])->groupBy(~[legal], ~[sum:x|$x.numeric : y|$y->sum()])->project(~[numeric:x|$x.sum]);\n" +
+                        "}\n" +
+                        "\n" +
+                        "native function project<Z,T>(cl:Z[*], x:FuncColSpecArray<{Z[1]->Any[*]},T>[1]):Relation<T>[1];\n" +
+                        "native function groupBy<T,Z,K,V,R>(r:Relation<T>[1], cols:ColSpecArray<Z⊆T>[1], agg:AggColSpecArray<{T[1]->K[0..1]},{K[*]->V[0..1]}, R>[1]):Relation<Z+R>[1];\n" +
+                        "native function sum(values:Integer[*]):x::Numeric(1, 2)[1];\n" +
+                        "native function project<T,Z>(r:Relation<T>[1], fs:FuncColSpecArray<{T[1]->Any[*]},Z>[1]):Relation<Z>[1];"
         );
     }
 

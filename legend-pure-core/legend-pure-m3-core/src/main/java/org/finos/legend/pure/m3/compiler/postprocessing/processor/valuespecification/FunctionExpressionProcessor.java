@@ -414,6 +414,11 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                 {
                     CoreInstance columnGenericType = _Column.getColumnType((Column<?, ?>) columns.get(i));
                     columnGenericType.setKeyValues(Lists.mutable.with("rawType"), Lists.mutable.with(lambdaReturnType.getValueForMetaPropertyToOne("rawType")));
+                    ListIterable<? extends CoreInstance> typeVariableValues = lambdaReturnType.getValueForMetaPropertyToMany("typeVariableValues");
+                    if (typeVariableValues != null)
+                    {
+                        columnGenericType.setKeyValues(Lists.mutable.with("typeVariableValues"), typeVariableValues);
+                    }
                     ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(2).getValueForMetaPropertyToOne("genericType"), (GenericType) parameters.get(2).getValueForMetaPropertyToOne("genericType"), ctx, observer);
                 }
                 else
@@ -432,6 +437,11 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
             {
                 CoreInstance columnGenericType = _Column.getColumnType((Column<?, ?>) column);
                 columnGenericType.setKeyValues(Lists.mutable.with("rawType"), Lists.mutable.with(lambdaReturnType.getValueForMetaPropertyToOne("rawType")));
+                ListIterable<? extends CoreInstance> typeVariableValues = lambdaReturnType.getValueForMetaPropertyToMany("typeVariableValues");
+                if (typeVariableValues != null)
+                {
+                    columnGenericType.setKeyValues(Lists.mutable.with("typeVariableValues"), typeVariableValues);
+                }
                 ctx.register((GenericType) processorSupport.function_getFunctionType(foundFunction).getValueForMetaPropertyToMany("parameters").get(3).getValueForMetaPropertyToOne("genericType"), (GenericType) parameters.get(3).getValueForMetaPropertyToOne("genericType"), ctx, observer);
                 columnTypeInferenceSuccess = true;
             }
