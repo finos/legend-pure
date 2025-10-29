@@ -91,6 +91,7 @@ public class TestRelationTypeInference extends AbstractPureTestWithCoreCompiledP
                         "native function project<Z,T>(cl:Z[*], x:FuncColSpec<{Z[1]->Any[*]},T>[1]):Relation<T>[1];"
         );
     }
+
     @Test
     public void testColumnFunctionCollectionInference()
     {
