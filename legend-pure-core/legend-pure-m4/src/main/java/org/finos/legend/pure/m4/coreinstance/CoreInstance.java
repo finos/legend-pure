@@ -128,6 +128,21 @@ public interface CoreInstance
 
     ListIterable<String> getRealKeyByName(String name);
 
+    default CoreInstance getKeyByName(String name)
+    {
+        ModelRepository repository = getRepository();
+        if (repository == null)
+        {
+            throw new RuntimeException("Cannot resolve key '" + name + "': no model repository (class: " + getClass().getName() + ")");
+        }
+        ListIterable<String> realKey = getRealKeyByName(name);
+        if (realKey == null)
+        {
+            throw new RuntimeException("Cannot resolve key '" + name + "': cannot find real key (class: " + getClass().getName() + ")");
+        }
+        return repository.resolve(realKey);
+    }
+
     void addKeyWithEmptyList(ListIterable<String> key);
 
     void modifyValueForToManyMetaProperty(String key, int offset, CoreInstance value);
@@ -138,8 +153,6 @@ public interface CoreInstance
     }
 
     void removeProperty(String propertyNameKey);
-
-    CoreInstance getKeyByName(String name);
 
     CoreInstance getValueForMetaPropertyToOne(String propertyName);
 
