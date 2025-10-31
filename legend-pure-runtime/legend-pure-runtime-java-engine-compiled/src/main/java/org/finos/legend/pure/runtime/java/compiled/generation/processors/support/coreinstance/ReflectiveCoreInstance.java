@@ -23,7 +23,6 @@ import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.coreinstance.helper.AnyHelper;
 import org.finos.legend.pure.m3.coreinstance.helper.AnyStubHelper;
-import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -59,11 +58,6 @@ public abstract class ReflectiveCoreInstance extends AbstractCompiledCoreInstanc
     public String toString()
     {
         return this.toString(null);
-    }
-
-    public String toString(ExecutionSupport executionSupport)
-    {
-        return ModelRepository.possiblyReplaceAnonymousId(this.__id);
     }
 
     @Override
