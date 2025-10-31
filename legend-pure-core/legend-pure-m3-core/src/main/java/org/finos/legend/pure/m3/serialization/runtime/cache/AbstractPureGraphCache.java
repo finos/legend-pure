@@ -64,7 +64,7 @@ abstract class AbstractPureGraphCache implements PureGraphCache
             {
                 clearCaches();
             }
-            catch (Exception ee)
+            catch (Exception ignore)
             {
                 // Ignore
             }

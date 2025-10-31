@@ -20,6 +20,9 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 abstract class AbstractFSDirectoryPureGraphCache extends AbstractPureGraphCache implements FSPureGraphCache
 {
@@ -64,5 +67,27 @@ abstract class AbstractFSDirectoryPureGraphCache extends AbstractPureGraphCache 
     public CacheType getCacheType()
     {
         return CacheType.DIRECTORY;
+    }
+
+    @Override
+    protected long getCacheSize()
+    {
+        if (Files.notExists(getCacheLocation()))
+        {
+            return -1L;
+        }
+
+        try (Stream<Path> stream = Files.walk(getCacheLocation()))
+        {
+            return stream.map(FileTools::getBasicFileAttributes)
+                    .filter(Objects::nonNull)
+                    .filter(BasicFileAttributes::isRegularFile)
+                    .mapToLong(BasicFileAttributes::size)
+                    .sum();
+        }
+        catch (Exception ignore)
+        {
+            return -1L;
+        }
     }
 }

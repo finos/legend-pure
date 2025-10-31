@@ -17,7 +17,6 @@ package org.finos.legend.pure.m3.serialization.runtime.cache;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.procedure.Procedure;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.utility.internal.IterableIterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
@@ -134,34 +133,11 @@ public class FSGraphLoaderPureGraphCache extends AbstractFSDirectoryPureGraphCac
 
         try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(getCacheLocation()))
         {
-            return IterableIterate.notEmpty(dirStream);
+            return dirStream.iterator().hasNext();
         }
         catch (Exception e)
         {
             return false;
-        }
-    }
-
-    @Override
-    protected long getCacheSize()
-    {
-        if (Files.notExists(getCacheLocation()))
-        {
-            return -1L;
-        }
-
-        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(getCacheLocation()))
-        {
-            long size = 0;
-            for (Path entry : dirStream)
-            {
-                size += Files.size(entry);
-            }
-            return size;
-        }
-        catch (Exception e)
-        {
-            return -1L;
         }
     }
 
