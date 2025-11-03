@@ -1179,13 +1179,13 @@ public class CompiledSupport
         {
             return pureToString((String) instance, es);
         }
-        if (instance instanceof ReflectiveCoreInstance)
+        if (instance instanceof JavaCompiledCoreInstance)
         {
-            return ((ReflectiveCoreInstance) instance).toString(es);
+            return ((JavaCompiledCoreInstance) instance).toString(es);
         }
         if (instance instanceof BaseCoreInstance)
         {
-            String id = ((BaseCoreInstance) instance).getName();
+            String id = ((CoreInstance) instance).getName();
             return ModelRepository.possiblyReplaceAnonymousId(id);
         }
 
