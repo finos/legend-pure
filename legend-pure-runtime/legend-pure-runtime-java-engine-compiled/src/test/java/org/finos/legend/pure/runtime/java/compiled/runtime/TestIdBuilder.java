@@ -152,4 +152,23 @@ public class TestIdBuilder
             Assert.fail(builder.toString());
         }
     }
+
+    @Test
+    public void testSameInputProducesSameHash()
+    {
+        String input = "Root::meta::pure::metamodel::type::Class";
+        String hash1 = IdBuilder.hashToBase64String(input);
+        String hash2 = IdBuilder.hashToBase64String(input);
+        Assert.assertEquals(hash1, hash2);
+    }
+
+    @Test
+    public void testDifferentInputProducesDifferentHash()
+    {
+        String input1 = "Root::meta::pure::metamodel::type::Class";
+        String input2 = "Root::meta::pure::metamodel::type::Package";
+        String hash1 = IdBuilder.hashToBase64String(input1);
+        String hash2 = IdBuilder.hashToBase64String(input2);
+        Assert.assertNotEquals(hash1, hash2);
+    }
 }

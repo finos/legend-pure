@@ -54,7 +54,7 @@ public abstract class DistributedBinaryGraphSerializer
         this.metadataSpecification = metadataSpecification;
         this.runtime = runtime;
         this.processorSupport = runtime.getProcessorSupport();
-        this.idBuilder = newIdBuilder(this.metadataSpecification, this.processorSupport);
+        this.idBuilder = newIdBuilder(this.metadataSpecification, this.processorSupport, true);
         this.classifierCaches = new GraphSerializer.ClassifierCaches(this.processorSupport);
     }
 
@@ -282,17 +282,30 @@ public abstract class DistributedBinaryGraphSerializer
 
     public static IdBuilder newIdBuilder(String metadataName, ProcessorSupport processorSupport)
     {
-        return newIdBuilder_internal(DistributedMetadataHelper.validateMetadataNameIfPresent(metadataName), processorSupport);
+        return newIdBuilder(metadataName, processorSupport, false);
     }
 
     public static IdBuilder newIdBuilder(DistributedMetadataSpecification metadataSpec, ProcessorSupport processorSupport)
     {
-        return newIdBuilder_internal((metadataSpec == null) ? null : metadataSpec.getName(), processorSupport);
+        return newIdBuilder(metadataSpec, processorSupport, false);
     }
 
-    private static IdBuilder newIdBuilder_internal(String metadataName, ProcessorSupport processorSupport)
+    public static IdBuilder newIdBuilder(String metadataName, ProcessorSupport processorSupport, boolean hashIds)
     {
-        return IdBuilder.newIdBuilder(DistributedMetadataHelper.getMetadataIdPrefix(metadataName), processorSupport);
+        return newIdBuilder_internal(DistributedMetadataHelper.validateMetadataNameIfPresent(metadataName), processorSupport, hashIds);
+    }
+
+    public static IdBuilder newIdBuilder(DistributedMetadataSpecification metadataSpec, ProcessorSupport processorSupport, boolean hashIds)
+    {
+        return newIdBuilder_internal((metadataSpec == null) ? null : metadataSpec.getName(), processorSupport, hashIds);
+    }
+
+    private static IdBuilder newIdBuilder_internal(String metadataName, ProcessorSupport processorSupport, boolean hashIds)
+    {
+        return IdBuilder.builder(processorSupport)
+                .withDefaultIdPrefix(DistributedMetadataHelper.getMetadataIdPrefix(metadataName))
+                .withHashIds(hashIds)
+                .build();
     }
 
     protected class SerializationCollector
