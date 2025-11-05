@@ -317,7 +317,6 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
                 "    referenceUsages(Property):\n" +
                 "        [>0] Anonymous_StripedId instance ReferenceUsage\n" +
                 "        [>0] Anonymous_StripedId instance ReferenceUsage\n" +
-                "        [>0] Anonymous_StripedId instance ReferenceUsage\n" +
-                "    typeVariables(Property):", functionExecution.getConsole().getLine(0));
+                "        [>0] Anonymous_StripedId instance ReferenceUsage", functionExecution.getConsole().getLine(0));
     }
 }

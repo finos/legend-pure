@@ -1064,7 +1064,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            type(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Integer\n" +
-                "                    milestoning(Property):\n" +
                 "                    name(Property):\n" +
                 "                        employeeTable instance String\n" +
                 "                    primaryKey(Property):\n" +
@@ -1087,7 +1086,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            tables(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Table\n" +
-                "                            views(Property):\n" +
                 "                    setColumns(Property):\n" +
                 "                        Anonymous_StripedId instance Column\n" +
                 "                            name(Property):\n" +
@@ -1164,7 +1162,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            type(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Integer\n" +
-                "                    milestoning(Property):\n" +
                 "                    name(Property):\n" +
                 "                        employeeTable instance String\n" +
                 "                    primaryKey(Property):\n" +
@@ -1187,7 +1184,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            tables(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Table\n" +
-                "                            views(Property):\n" +
                 "                    setColumns(Property):\n" +
                 "                        Anonymous_StripedId instance Column\n" +
                 "                            name(Property):\n" +
@@ -1246,7 +1242,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Column\n" +
                 "                                [>3] Anonymous_StripedId instance Column\n" +
                 "                                [>3] Anonymous_StripedId instance Column\n" +
-                "                            milestoning(Property):\n" +
                 "                            name(Property):\n" +
                 "                                [>3] employeeTable instance String\n" +
                 "                            primaryKey(Property):\n" +
@@ -1432,7 +1427,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            type(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Integer\n" +
-                "                    milestoning(Property):\n" +
                 "                    name(Property):\n" +
                 "                        employeeTable instance String\n" +
                 "                    primaryKey(Property):\n" +
@@ -1455,7 +1449,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            tables(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Table\n" +
-                "                            views(Property):\n" +
                 "                    setColumns(Property):\n" +
                 "                        Anonymous_StripedId instance Column\n" +
                 "                            name(Property):\n" +
@@ -1534,7 +1527,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            type(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Integer\n" +
-                "                    milestoning(Property):\n" +
                 "                    name(Property):\n" +
                 "                        employeeTable instance String\n" +
                 "                    primaryKey(Property):\n" +
@@ -1549,7 +1541,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            tables(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Table\n" +
-                "                            views(Property):\n" +
                 "                    setColumns(Property):\n" +
                 "                        [_] Anonymous_StripedId instance Column\n" +
                 "                        Anonymous_StripedId instance Column\n" +
@@ -1606,7 +1597,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Column\n" +
                 "                                [>3] Anonymous_StripedId instance Column\n" +
                 "                                [>3] Anonymous_StripedId instance Column\n" +
-                "                            milestoning(Property):\n" +
                 "                            name(Property):\n" +
                 "                                [>3] employeeTable instance String\n" +
                 "                            primaryKey(Property):\n" +
@@ -1792,7 +1782,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            type(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Integer\n" +
-                "                    milestoning(Property):\n" +
                 "                    name(Property):\n" +
                 "                        employeeTable instance String\n" +
                 "                    primaryKey(Property):\n" +
@@ -1815,7 +1804,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            tables(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Table\n" +
-                "                            views(Property):\n" +
                 "                    setColumns(Property):\n" +
                 "                        Anonymous_StripedId instance Column\n" +
                 "                            name(Property):\n" +
@@ -1892,7 +1880,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            type(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Integer\n" +
-                "                    milestoning(Property):\n" +
                 "                    name(Property):\n" +
                 "                        employeeTable instance String\n" +
                 "                    primaryKey(Property):\n" +
@@ -1915,7 +1902,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Table\n" +
                 "                            tables(Property):\n" +
                 "                                [>3] Anonymous_StripedId instance Table\n" +
-                "                            views(Property):\n" +
                 "                    setColumns(Property):\n" +
                 "                        Anonymous_StripedId instance Column\n" +
                 "                            name(Property):\n" +
@@ -1974,7 +1960,6 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                                [>3] Anonymous_StripedId instance Column\n" +
                 "                                [>3] Anonymous_StripedId instance Column\n" +
                 "                                [>3] Anonymous_StripedId instance Column\n" +
-                "                            milestoning(Property):\n" +
                 "                            name(Property):\n" +
                 "                                [>3] employeeTable instance String\n" +
                 "                            primaryKey(Property):\n" +
