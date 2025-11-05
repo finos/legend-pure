@@ -220,6 +220,23 @@
                             </arguments>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>Compile Pure Test Repos</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>org.finos.legend.pure.m3.generator.compiler.PureCompilerBinaryGenerator</mainClass>
+                            <arguments>
+                                <argument>${project.build.testOutputDirectory}</argument>
+                                <argument>test_generic_repository</argument>
+                                <argument>other_test_generic_repository</argument>
+                            </arguments>
+                            <classpathScope>test</classpathScope>
+                            <useMavenLogger>true</useMavenLogger>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
