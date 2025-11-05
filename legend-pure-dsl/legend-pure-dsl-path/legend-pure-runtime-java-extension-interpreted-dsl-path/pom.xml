@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure-dsl-path</artifactId>
-        <version>5.64.1-SNAPSHOT</version>
+        <version>5.64.1</version>
     </parent>
 
     <artifactId>legend-pure-runtime-java-extension-interpreted-dsl-path</artifactId>
