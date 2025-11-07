@@ -191,7 +191,6 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.cast.ToOneManyWithMessage;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.lang.cast.ToOneWithMessage;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.grammar.string.operation.JoinStrings;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.variant.*;
 
 public class NativeFunctionProcessor
 {
@@ -546,12 +545,5 @@ public class NativeFunctionProcessor
         //Tests
         registerNative(map, new Assert());
         registerNative(map, new AssetError());
-
-        //Variant
-        registerNative(map, new FromJson());
-        registerNative(map, new ToJson());
-        registerNative(map, new To());
-        registerNative(map, new ToMany());
-        registerNative(map, new ToVariant());
     }
 }
