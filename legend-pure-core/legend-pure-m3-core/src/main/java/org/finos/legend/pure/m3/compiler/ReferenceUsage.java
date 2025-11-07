@@ -14,8 +14,12 @@
 
 package org.finos.legend.pure.m3.compiler;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.block.factory.Comparators;
+import org.finos.legend.pure.m3.coreinstance.lazy.LazyCoreInstance;
+import org.finos.legend.pure.m3.coreinstance.lazy.resolution.LazyResolutionListIterable;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -110,6 +114,20 @@ public class ReferenceUsage
      */
     public static int removeReferenceUsagesForUser(CoreInstance used, CoreInstance user, ProcessorSupport processorSupport)
     {
+        if ((used instanceof LazyCoreInstance) && !(user instanceof LazyCoreInstance))
+        {
+            LazyCoreInstance lazyUsed = (LazyCoreInstance) used;
+            if (!lazyUsed.isInitialized())
+            {
+                return 0;
+            }
+
+            ListIterable<? extends CoreInstance> refUsages = lazyUsed.getValueForMetaPropertyToMany(M3Properties.referenceUsages);
+            MutableList<? extends CoreInstance> toRemove = ((refUsages instanceof LazyResolutionListIterable) ? ((LazyResolutionListIterable<? extends CoreInstance>) refUsages).resolvedOnly() : refUsages).select(ru -> (!(ru instanceof LazyCoreInstance) || ((LazyCoreInstance) ru).isFullyResolved(M3Properties.owner)) && (ru.getValueForMetaPropertyToOne(M3Properties.owner) == user), Lists.mutable.empty());
+            toRemove.forEach(ru -> used.removeValueForMetaPropertyToMany(M3Properties.referenceUsages, ru));
+            return toRemove.size();
+        }
+
         ListIterable<? extends CoreInstance> userReferenceUsages = used.getValueInValueForMetaPropertyToManyByIndex(M3Properties.referenceUsages, IndexSpecifications.getPropertyValueIndexSpec(M3Properties.owner), user);
         int size = userReferenceUsages.size();
         if (size != 0)
