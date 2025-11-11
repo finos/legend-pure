@@ -567,7 +567,7 @@ public final class JavaSourceCodeGenerator
                 "        super(executionSupport, lambdaId, pureFunction);\n" +
                 "    }\n" +
                 "\n" +
-                "    @Override" +
+                "    @Override\n" +
                 "    public PureCompiledLambda copy()\n" +
                 "    {\n" +
                 "        LambdaFunction<Object> lambda = lambdaFunction();\n" +
