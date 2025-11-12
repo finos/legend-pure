@@ -36,6 +36,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecificat
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.router.RoutedValueSpecification;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m4.exception.PureException;
@@ -163,6 +164,10 @@ public class Reactivator
         try
         {
             return reactivateWithoutJavaCompilationImpl(valueSpecification, lambdaOpenVariablesMap, es, true, bridge);
+        }
+        catch (PureExecutionException e)
+        {
+            throw e;
         }
         catch (PureException e)
         {

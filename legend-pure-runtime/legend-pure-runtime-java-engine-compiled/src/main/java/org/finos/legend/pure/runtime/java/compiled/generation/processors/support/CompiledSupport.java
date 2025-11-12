@@ -29,6 +29,8 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.map.primitive.IntObjectMap;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
+import org.eclipse.collections.impl.tuple.Tuples;
+import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
@@ -100,6 +102,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.function.BiFunction;
 
@@ -1987,6 +1990,99 @@ public class CompiledSupport
                 throw new RuntimeException("Unexpected error executing function _validate", ex);
             }
         }
+    }
+
+    //TODO extend this for all types, currently only handles precise primitives.
+    public static void validate(RichIterable<?> instances, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType type, SourceInformation si, ExecutionSupport es)
+    {
+        instances.forEach(instance -> validate(instance, type, si, es));
+    }
+
+    public static void validate(Object instance, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType type, SourceInformation si, ExecutionSupport es)
+    {
+        try
+        {
+            CoreInstance rawType = type.getValueForMetaPropertyToOne("rawType");
+            ProcessorSupport processorSupport = ((CompiledExecutionSupport) es).getProcessorSupport();
+            boolean isPrecisePrimitive = org.finos.legend.pure.m3.navigation.type.Type.isExtendedPrimitiveType(rawType, processorSupport);
+
+            if (isPrecisePrimitive)
+            {
+                Optional<Pair<Type, ListIterable<Object>>> p = detectValidatingExtendedPrimitive(type, null);
+
+                if (!p.isPresent())
+                {
+                    return;
+                }
+
+                MutableList<Object> values = p.get().getTwo().toList();
+                values.add(instance);
+                values.add(si);
+                values.add(es);
+
+                String className = JavaPackageAndImportBuilder.buildImplClassReferenceFromType(p.get().getOne(), processorSupport);
+
+                Method method = getMethod(Class.forName(className), "_validate");
+                method.invoke(null, values.toArray());
+            }
+        }
+        catch (InvocationTargetException e)
+        {
+            if (e.getTargetException() instanceof PureExecutionException)
+            {
+                throw (PureExecutionException) e.getTargetException();
+            }
+            else
+            {
+                throw new RuntimeException("Unexpected error validating object", e.getTargetException());
+            }
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Unexpected error validating object", e);
+        }
+    }
+
+    private static Optional<Pair<Type, ListIterable<Object>>> detectValidatingExtendedPrimitive(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType type, ListIterable<? extends CoreInstance> variableValues)
+    {
+        CoreInstance rawType = type.getValueForMetaPropertyToOne("rawType");
+
+        ListIterable<? extends CoreInstance> typeVariableValues = variableValues != null ? variableValues : type.getValueForMetaPropertyToMany("typeVariableValues");
+
+        boolean hasConstraints = rawType.getValueForMetaPropertyToMany(M3Properties.constraints).notEmpty();
+
+        if (hasConstraints)
+        {
+            return Optional.of(Tuples.pair((Type) rawType, typeVariableValues.flatCollect(v -> v.getValueForMetaPropertyToMany("values")).collect(v -> ((ValCoreInstance) v).getValue())));
+        }
+
+        CoreInstance generalizations = rawType.getValueForMetaPropertyToOne("generalizations");
+        CoreInstance general = generalizations == null ? null : generalizations.getValueForMetaPropertyToOne("general");
+
+        if (general == null)
+        {
+            return Optional.empty();
+        }
+
+        return detectValidatingExtendedPrimitive((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) general, general.getValueForMetaPropertyToMany("typeVariableValues"));
+    }
+
+    public static Method getMethod(Class<?> clazz, String methodName)
+    {
+        Method[] methods = clazz.getMethods();
+        MutableList<Method> candidates = ArrayIterate.select(methods, m -> methodName.equals(m.getName()));
+
+        if (candidates.size() > 1)
+        {
+            throw new IllegalArgumentException("multiple functions found for  " + clazz.getSimpleName() + "." + methodName);
+        }
+
+        if (candidates.isEmpty())
+        {
+            throw new IllegalArgumentException("cannot find function for " + clazz.getSimpleName() + "." + methodName);
+        }
+
+        return candidates.get(0);
     }
 
     private static String buildFunctionExecutionErrorMessage(CoreInstance functionDefinition, Object[] params, String reason, ExecutionSupport es)

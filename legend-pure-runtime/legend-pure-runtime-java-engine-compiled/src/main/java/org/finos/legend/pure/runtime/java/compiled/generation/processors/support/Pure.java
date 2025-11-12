@@ -940,7 +940,10 @@ public class Pure
         }
         if (type instanceof PrimitiveType)
         {
-            switch (type.getName())
+            ProcessorSupport processorSupport = ((CompiledExecutionSupport) es).getProcessorSupport();
+            CoreInstance primitiveType = org.finos.legend.pure.m3.navigation.type.Type.isExtendedPrimitiveType(type, processorSupport) ? org.finos.legend.pure.m3.navigation.type.Type.findPrimitiveTypeFromExtendedPrimitiveType(type, processorSupport) : type;
+
+            switch (primitiveType.getName())
             {
                 case "Integer":
                 {
@@ -1083,6 +1086,10 @@ public class Pure
             catch (PureDynamicReactivateException e)
             {
                 throw new RuntimeException("Out of sync state between can reactivate and actual reactive without Java source code", e);
+            }
+            catch (RuntimeException e)
+            {
+                throw e;
             }
         }
         else

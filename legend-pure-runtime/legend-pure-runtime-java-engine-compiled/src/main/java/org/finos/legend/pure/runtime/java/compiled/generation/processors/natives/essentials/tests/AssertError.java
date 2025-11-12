@@ -21,9 +21,9 @@ import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.NativeFunctionProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
 
-public class AssetError extends AbstractNative
+public class AssertError extends AbstractNative
 {
-    public AssetError()
+    public AssertError()
     {
         super("assertError_Function_1__String_1__Integer_$0_1$__Integer_$0_1$__Boolean_1_");
     }

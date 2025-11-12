@@ -30,6 +30,11 @@ function <<test.Test>> meta::pure::functions::lang::tests::cast::testPrimitiveEx
   assertEquals(1, ^Container(val=1->cast(@P8)).val);
 }
 
+function <<test.Test>> meta::pure::functions::lang::tests::cast::testPrimitiveExtensionCastReactivate():Boolean[1]
+{
+  assertEquals(1, {|^Container(val=1->cast(@P8)).val}.expressionSequence->evaluateAndDeactivate()->at(0)->reactivate());
+}
+
 
 Primitive meta::pure::functions::lang::tests::cast::P(x:Integer[1]) extends Integer
 [
@@ -49,6 +54,11 @@ function <<test.Test>> meta::pure::functions::lang::tests::cast::testPrimitiveEx
 function <<test.Test>> meta::pure::functions::lang::tests::cast::testPrimitiveExtensionCastWithConstraintError():Boolean[1]
 {
     assertError(|^Container2(val=10->cast(@P(8))), 'Constraint :[0] violated in the Class P');
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::cast::testPrimitiveExtensionCastWithConstraintErrorReactivate():Boolean[1]
+{
+    assertError({|{|^Container2(val=10->cast(@P(8)))}.expressionSequence->evaluateAndDeactivate()->at(0)->reactivate()->toOne()}, 'Constraint :[0] violated in the Class P');
 }
 
 function <<test.Test>> meta::pure::functions::lang::tests::cast::testPrimitiveExtensionCastWithAdd():Boolean[1]
@@ -71,6 +81,11 @@ function <<test.Test>> meta::pure::functions::lang::tests::cast::testPrimitiveEx
    assertError(|^Container3(val=10->cast(@NP(8))), 'Constraint :[id] violated in the Class NP, Message: the value is greater than 8');
 }
 
+function <<test.Test>> meta::pure::functions::lang::tests::cast::testPrimitiveExtensionCastWithConstraintErrorMessageReactivate():Boolean[1]
+{
+   assertError({|{|^Container3(val=10->cast(@NP(8)))}.expressionSequence->evaluateAndDeactivate()->at(0)->reactivate()->toOne()}, 'Constraint :[id] violated in the Class NP, Message: the value is greater than 8');
+}
+
 
 Primitive meta::pure::functions::lang::tests::cast::OP(x:Integer[1]) extends Integer
 [
@@ -84,6 +99,11 @@ Class meta::pure::functions::lang::tests::cast::Container4 {val : OP8[1];}
 function <<test.Test>> meta::pure::functions::lang::tests::cast::testSimpleConstraintCastErrorWithMessageSimpleInheritance():Any[*]
 {
    assertError(|^Container4(val=10->cast(@OP8)), 'Constraint :[id] violated in the Class OP, Message: the value is greater than 8')
+}
+
+function <<test.Test>> meta::pure::functions::lang::tests::cast::testSimpleConstraintCastErrorWithMessageSimpleInheritanceReactivate():Any[*]
+{
+   assertError({|{|^Container4(val=10->cast(@OP8))}.expressionSequence->evaluateAndDeactivate()->at(0)->reactivate()->toOne()}, 'Constraint :[id] violated in the Class OP, Message: the value is greater than 8')
 }
 
 Primitive meta::pure::functions::lang::tests::cast::StringP extends String
