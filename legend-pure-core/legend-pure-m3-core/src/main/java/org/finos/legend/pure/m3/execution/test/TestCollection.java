@@ -15,25 +15,26 @@
 package org.finos.legend.pure.m3.execution.test;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.block.factory.Predicates;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.execution.ExecutionPlatformRegistry;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.pct.shared.PCTTools;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.StringCoreInstance;
+
+import java.util.function.Function;
+
 import static org.finos.legend.pure.m3.pct.shared.PCTTools.isPCTTest;
 
 public class TestCollection
@@ -45,9 +46,9 @@ public class TestCollection
     private Object testFunctionParam;
     private CoreInstance testFunctionParamCustomizer;
     private final Predicate<? super CoreInstance> testFilter;
-    private MutableList<CoreInstance> beforeFunctions = Lists.mutable.with();
+    private final MutableList<CoreInstance> beforeFunctions = Lists.mutable.with();
     private final MutableList<CoreInstance> testFunctions = Lists.mutable.with();
-    private MutableList<CoreInstance> afterFunctions = Lists.mutable.with();
+    private final MutableList<CoreInstance> afterFunctions = Lists.mutable.with();
     private final MutableList<CoreInstance> toFixFunctions = Lists.mutable.with();
     private final MutableList<CoreInstance> alloyOnlyFunctions = Lists.mutable.with();
     private final MutableList<TestCollection> subCollections = Lists.mutable.with();
@@ -55,7 +56,7 @@ public class TestCollection
     private TestCollection(CoreInstance testPackage, ProcessorSupport processorSupport, Function<CoreInstance, TestCollection> pureTestCollectionGenerator, Predicate<? super CoreInstance> testFilter, boolean getBeforeAfterFromParents)
     {
         this.pkg = testPackage;
-        this.testFilter = testFilter;
+        this.testFilter = (testFilter == null) ? DEFAULT_FILTER_PREDICATE : testFilter;
         findPackageTests(processorSupport, pureTestCollectionGenerator);
         if (getBeforeAfterFromParents)
         {
@@ -322,11 +323,11 @@ public class TestCollection
         if (Instance.getValueForMetaPropertyToOneResolved(node, M3Properties._package, processorSupport) != null)
         {
             MutableList<CoreInstance> packages = PackageableElement.getUserObjectPathForPackageableElement(Instance.getValueForMetaPropertyToOneResolved(node, M3Properties._package, processorSupport));
-            for (CoreInstance pkg : packages.toReversed())
+            for (CoreInstance pkg : packages.asReversed())
             {
                 for (CoreInstance child : Instance.getValueForMetaPropertyToManyResolved(pkg, M3Properties.children, processorSupport))
                 {
-                    if (Instance.instanceOf(child, M3Paths.FunctionDefinition, processorSupport))
+                    if (org.finos.legend.pure.m3.navigation.function.Function.isFunctionDefinition(child, processorSupport))
                     {
                         if (TestTools.hasBeforePackageStereotype(child, processorSupport))
                         {
@@ -345,40 +346,33 @@ public class TestCollection
 
     private void pruneBeforeAfters(ProcessorSupport processorSupport)
     {
-        Predicates<CoreInstance> isParentOfAnIncludedTest = new Predicates<CoreInstance>()
-        {
-            @Override
-            public boolean accept(CoreInstance coreInstance)
-            {
-                CoreInstance pkg = Instance.getValueForMetaPropertyToOneResolved(coreInstance, M3Properties._package, processorSupport);
-                String packageName = PackageableElement.getUserPathForPackageableElement(pkg);
-                return !containsTestInPackage(packageName, processorSupport);
-            }
-        };
-
-        this.beforeFunctions = this.beforeFunctions.reject(isParentOfAnIncludedTest);
-        this.afterFunctions = this.afterFunctions.reject(isParentOfAnIncludedTest);
+        this.beforeFunctions.removeIf(f -> !containsTestInPackage(getPackageName(f, processorSupport), processorSupport));
+        this.afterFunctions.removeIf(f -> !containsTestInPackage(getPackageName(f, processorSupport), processorSupport));
     }
 
     private boolean containsTestInPackage(String packageName, ProcessorSupport processorSupport)
     {
-        Predicate<CoreInstance> functionIsInOrBelowPackage = testFunction ->
-        {
-            CoreInstance pkg = Instance.getValueForMetaPropertyToOneResolved(testFunction, M3Properties._package, processorSupport);
-            String functionPackageName = PackageableElement.getUserPathForPackageableElement(pkg);
-            return functionPackageName.startsWith(packageName);
-        };
-
-        return this.testFunctions.anySatisfy(functionIsInOrBelowPackage) ||
-                this.alloyOnlyFunctions.anySatisfy(functionIsInOrBelowPackage) ||
+        return this.testFunctions.anySatisfy(f -> isInOrBelowPackage(f, packageName, processorSupport)) ||
+                this.alloyOnlyFunctions.anySatisfy(f -> isInOrBelowPackage(f, packageName, processorSupport)) ||
                 this.subCollections.anySatisfy(child -> child.containsTestInPackage(packageName, processorSupport));
+    }
+
+    private boolean isInOrBelowPackage(CoreInstance testFunction, String packageName, ProcessorSupport processorSupport)
+    {
+        return getPackageName(testFunction, processorSupport).startsWith(packageName);
+    }
+
+    private String getPackageName(CoreInstance function, ProcessorSupport processorSupport)
+    {
+        CoreInstance pkg = Instance.getValueForMetaPropertyToOneResolved(function, M3Properties._package, processorSupport);
+        return PackageableElement.getUserPathForPackageableElement(pkg);
     }
 
     private void findPackageTests(ProcessorSupport processorSupport, Function<CoreInstance, TestCollection> pureTestCollectionGenerator)
     {
         for (CoreInstance child : Instance.getValueForMetaPropertyToManyResolved(this.pkg, M3Properties.children, processorSupport))
         {
-            if (Instance.instanceOf(child, M3Paths.FunctionDefinition, processorSupport))
+            if (org.finos.legend.pure.m3.navigation.function.Function.isFunctionDefinition(child, processorSupport))
             {
                 if (TestTools.hasBeforePackageStereotype(child, processorSupport))
                 {
@@ -412,7 +406,7 @@ public class TestCollection
                     }
                 }
             }
-            else if (Instance.instanceOf(child, M3Paths.Package, processorSupport))
+            else if (_Package.isPackage(child, processorSupport))
             {
                 TestCollection subCollection = new TestCollection(child, processorSupport, pureTestCollectionGenerator, this.testFilter, false);
                 // only add the sub-collection if it has some test content
@@ -443,18 +437,9 @@ public class TestCollection
         testCollection.testFunctionParam = Instance.getValueForMetaPropertyToOneResolved(pureTestCollection, TestTools.TEST_COLLECTION_TEST_FUNCTION_PARAM, processorSupport);
         testCollection.testFunctionParamCustomizer = Instance.getValueForMetaPropertyToOneResolved(pureTestCollection, TestTools.TEST_COLLECTION_TEST_FUNCTION_PARAM_CUSTOMIZER, processorSupport);
 
-        for (CoreInstance testFunction : Instance.getValueForMetaPropertyToManyResolved(pureTestCollection, TestTools.TEST_COLLECTION_TEST_FUNCTIONS, processorSupport))
-        {
-            testCollection.testFunctions.add(testFunction);
-        }
-        for (CoreInstance beforeFunction : Instance.getValueForMetaPropertyToManyResolved(pureTestCollection, TestTools.TEST_COLLECTION_BEFORE_FUNCTIONS, processorSupport))
-        {
-            testCollection.beforeFunctions.add(beforeFunction);
-        }
-        for (CoreInstance afterFunction : Instance.getValueForMetaPropertyToManyResolved(pureTestCollection, TestTools.TEST_COLLECTION_AFTER_FUNCTIONS, processorSupport))
-        {
-            testCollection.afterFunctions.add(afterFunction);
-        }
+        testCollection.testFunctions.addAllIterable(Instance.getValueForMetaPropertyToManyResolved(pureTestCollection, TestTools.TEST_COLLECTION_TEST_FUNCTIONS, processorSupport));
+        testCollection.beforeFunctions.addAllIterable(Instance.getValueForMetaPropertyToManyResolved(pureTestCollection, TestTools.TEST_COLLECTION_BEFORE_FUNCTIONS, processorSupport));
+        testCollection.afterFunctions.addAllIterable(Instance.getValueForMetaPropertyToManyResolved(pureTestCollection, TestTools.TEST_COLLECTION_AFTER_FUNCTIONS, processorSupport));
         for (CoreInstance subCollection : Instance.getValueForMetaPropertyToManyResolved(pureTestCollection, TestTools.TEST_COLLECTION_SUB_COLLECTIONS, processorSupport))
         {
             testCollection.subCollections.add(collectTestsFromPureRecursive(subCollection, processorSupport));
@@ -501,7 +486,7 @@ public class TestCollection
         {
             return obj.getClass().getMethod("_" + fieldName).invoke(obj);
         }
-        catch (Exception e)
+        catch (ReflectiveOperationException e)
         {
             throw new RuntimeException(e);
         }
@@ -522,13 +507,9 @@ public class TestCollection
         {
             throw new NullPointerException("Test package cannot be null");
         }
-        if (!Instance.instanceOf(pkg, M3Paths.Package, processorSupport))
+        if (!_Package.isPackage(pkg, processorSupport))
         {
             throw new IllegalArgumentException("Initial node must be a package, got: " + pkg);
-        }
-        if (testFilter == null)
-        {
-            testFilter = DEFAULT_FILTER_PREDICATE;
         }
         return new TestCollection(pkg, processorSupport, pureTestCollectionGenerator, testFilter, true);
     }
@@ -708,14 +689,7 @@ public class TestCollection
         {
             throw new IllegalArgumentException("Execution platform name cannot be null");
         }
-        return new Predicate<CoreInstance>()
-        {
-            @Override
-            public boolean accept(CoreInstance function)
-            {
-                return !TestTools.hasPlatformExclusionTaggedValue(function, executionPlatformName, processorSupport);
-            }
-        };
+        return function -> !TestTools.hasPlatformExclusionTaggedValue(function, executionPlatformName, processorSupport);
     }
 
     public static Predicate<? super CoreInstance> getFilterPredicateForAlloyExclusion(ProcessorSupport processorSupport)
