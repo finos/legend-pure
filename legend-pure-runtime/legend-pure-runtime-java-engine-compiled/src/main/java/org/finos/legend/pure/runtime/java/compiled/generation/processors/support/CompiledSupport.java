@@ -2004,9 +2004,9 @@ public class CompiledSupport
         {
             CoreInstance rawType = type.getValueForMetaPropertyToOne("rawType");
             ProcessorSupport processorSupport = ((CompiledExecutionSupport) es).getProcessorSupport();
-            boolean isPrecisePrimitive = org.finos.legend.pure.m3.navigation.type.Type.isExtendedPrimitiveType(rawType, processorSupport);
+            boolean isExtendedPrimitive = org.finos.legend.pure.m3.navigation.type.Type.isExtendedPrimitiveType(rawType, processorSupport);
 
-            if (isPrecisePrimitive)
+            if (isExtendedPrimitive)
             {
                 Optional<Pair<Type, ListIterable<Object>>> p = detectValidatingExtendedPrimitive(type, null);
 
