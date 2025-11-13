@@ -81,7 +81,7 @@ function <<test.Test>> meta::pure::functions::string::tests::toRepresentation::t
     assertEq('\'\'', ''->toRepresentation());
     assertEq('\'\\\\\'', '\\'->toRepresentation());
     assertEq('\'\\n\'', '\n'->toRepresentation());
-    assertEq('\'the quick brown fox jumps over the lazy \\ \\\'dog\\\'\'', 'the quick brown fox jumps over the lazy \\ \'dog\''->toRepresentation());
+    assertEq('\'the quick brown fox jumps over the lazy \\\\ \\\'dog\\\'\'', 'the quick brown fox jumps over the lazy \\ \'dog\''->toRepresentation());
 }
 
 function <<test.Test>> meta::pure::functions::string::tests::toRepresentation::testSimpleDateToRepresentation():Boolean[1]
