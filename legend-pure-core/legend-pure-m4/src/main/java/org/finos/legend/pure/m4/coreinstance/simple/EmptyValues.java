@@ -21,7 +21,7 @@ import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecification;
 
 final class EmptyValues<T extends CoreInstance> implements Values<T>
 {
-    static final EmptyValues<? extends CoreInstance> EMPTY_VALUES = new EmptyValues<>();
+    private static final EmptyValues<? extends CoreInstance> EMPTY_VALUES = new EmptyValues<>();
 
     private EmptyValues()
     {
@@ -86,5 +86,11 @@ final class EmptyValues<T extends CoreInstance> implements Values<T>
     public Values<T> copy()
     {
         return this;
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T extends CoreInstance> Values<T> emptyValues()
+    {
+        return (Values<T>) EMPTY_VALUES;
     }
 }

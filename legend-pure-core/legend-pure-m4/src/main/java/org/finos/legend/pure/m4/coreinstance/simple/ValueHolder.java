@@ -154,7 +154,6 @@ public class ValueHolder
         return newValues((ListIterable<? extends T>) values);
     }
 
-    @SuppressWarnings("unchecked")
     public static <T extends CoreInstance> Values<T> newValues(ListIterable<? extends T> values)
     {
         if (values == null)
@@ -165,7 +164,7 @@ public class ValueHolder
         int size = values.size();
         if (size == 0)
         {
-            return (Values<T>) EmptyValues.EMPTY_VALUES;
+            return EmptyValues.emptyValues();
         }
         if (size == 1)
         {
