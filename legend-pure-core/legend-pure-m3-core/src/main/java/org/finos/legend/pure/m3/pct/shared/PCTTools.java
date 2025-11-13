@@ -86,7 +86,7 @@ public class PCTTools
             else
             {
                 debugHelper(testFunction, pctExecutor, true, e);
-                fail("The PCT test runner expected an error containing: \"" + message + "\" but the the error was: \"" + checkNullMessage(e.getMessage()).replace("\"", "\\\"").replace("\n", "\\n") + "\"\nTrace:\n" + ExceptionUtils.getStackTrace(e))
+                fail("The PCT test runner expected an error containing: \"" + message + "\" but the the error was: \"" + getMessageFromError(e).replace("\"", "\\\"").replace("\n", "\\n") + "\"\nTrace:\n" + ExceptionUtils.getStackTrace(e))
                 ;
             }
         }
@@ -101,18 +101,40 @@ public class PCTTools
         }
         else
         {
-            System.out.println("Or " + (replace ? "replace" : "add to") + " expected failure:\n   one(\"" + PackageableElement.getUserPathForPackageableElement(testFunction, "::") + "\", \"" + cleanMessage(e.getMessage()) + "\"),");
+            System.out.println("Or " + (replace ? "replace" : "add to") + " expected failure:\n   one(\"" + PackageableElement.getUserPathForPackageableElement(testFunction, "::") + "\", \"" + cleanMessage(e) + "\"),");
         }
     }
 
-    public static String checkNullMessage(String message)
+    public static String getMessageFromError(Throwable e)
     {
-        return message == null ? "NullPointer exception" : message;
+        String message = e.getMessage();
+        if (message == null)
+        {
+            return "NullPointer exception";
+        }
+        else
+        {
+            int expectedStarts = message.indexOf("expected: '");
+            int expectedEnds = message.indexOf("'\nactual:");
+            int actualStarts = message.indexOf("'", expectedEnds);
+            int actualEnds = message.lastIndexOf("'");
+
+            if (expectedStarts >= 0 && actualStarts > 0 && expectedEnds > 0 && actualEnds > 0)
+            {
+                String before = message.substring(0, expectedStarts);
+                String expectedValue = message.substring(expectedStarts, expectedEnds);
+                String actualValue = message.substring(actualStarts, actualEnds);
+                String after = message.substring(actualEnds);
+                return before + expectedValue.replace("\\n", "\n") + actualValue.replace("\\n", "\n") + after;
+            }
+
+            return message;
+        }
     }
 
-    private static String cleanMessage(String message)
+    private static String cleanMessage(Throwable e)
     {
-        message = checkNullMessage(message);
+        String message = getMessageFromError(e);
         int quotes = message.indexOf("\"");
         boolean shouldCut = quotes > -1 && (message.contains("Execution error at ") || message.contains("Assert failure at "));
         message = shouldCut ? message.substring(quotes) : message;

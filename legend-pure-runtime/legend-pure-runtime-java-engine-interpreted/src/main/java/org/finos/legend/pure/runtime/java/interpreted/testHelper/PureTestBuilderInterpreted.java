@@ -120,7 +120,7 @@ public class PureTestBuilderInterpreted
             {
                 // Check if the error was expected
                 String message = expectedFailures.get(PackageableElement.getUserPathForPackageableElement(a, "::"));
-                if (message != null && PCTTools.checkNullMessage(e.getMessage()).contains(message))
+                if (message != null && PCTTools.getMessageFromError(e).contains(message))
                 {
                     return null;
                 }
