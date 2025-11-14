@@ -16,6 +16,9 @@ package org.finos.legend.pure.m3.navigation.function;
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -23,6 +26,7 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
+import org.finos.legend.pure.m4.coreinstance.AbstractCoreInstanceWrapper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.exception.PureException;
@@ -32,6 +36,32 @@ import static org.finos.legend.pure.m3.navigation.function.FunctionDescriptor.wr
 
 public class Function
 {
+    public static boolean isFunctionDefinition(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        if (instance == null)
+        {
+            return false;
+        }
+        if (instance instanceof FunctionDefinition)
+        {
+            return true;
+        }
+        return (!(instance instanceof Any) || (instance instanceof AbstractCoreInstanceWrapper)) && processorSupport.instance_instanceOf(instance, M3Paths.FunctionDefinition);
+    }
+
+    public static boolean isLambda(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        if (instance == null)
+        {
+            return false;
+        }
+        if (instance instanceof LambdaFunction)
+        {
+            return true;
+        }
+        return (!(instance instanceof Any) || (instance instanceof AbstractCoreInstanceWrapper)) && processorSupport.instance_instanceOf(instance, M3Paths.LambdaFunction);
+    }
+
     public static CoreInstance getFunctionType(CoreInstance function, Context context, ProcessorSupport processorSupport)
     {
         return (context == null) ? computeFunctionType(function, processorSupport) : context.getIfAbsentPutFunctionType(function, func -> computeFunctionType(func, processorSupport));
@@ -81,11 +111,6 @@ public class Function
             }
             throw new PureCompilationException(function.getSourceInformation(), builder.toString(), e);
         }
-    }
-
-    public static boolean isLambda(CoreInstance function, ProcessorSupport processorSupport)
-    {
-        return Instance.instanceOf(function, M3Paths.LambdaFunction, processorSupport);
     }
 
     public static CoreInstance getParameterGenericType(CoreInstance function, int parameterIndex, ProcessorSupport processorSupport)
