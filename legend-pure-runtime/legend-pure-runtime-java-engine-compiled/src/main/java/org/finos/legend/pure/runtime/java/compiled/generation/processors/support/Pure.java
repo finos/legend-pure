@@ -1087,10 +1087,6 @@ public class Pure
             {
                 throw new RuntimeException("Out of sync state between can reactivate and actual reactive without Java source code", e);
             }
-            catch (RuntimeException e)
-            {
-                throw e;
-            }
         }
         else
         {

@@ -37,9 +37,12 @@ import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
 import org.finos.legend.pure.m3.coreinstance.BaseCoreInstance;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.GeneralizationAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
@@ -2008,7 +2011,7 @@ public class CompiledSupport
 
             if (isExtendedPrimitive)
             {
-                Optional<Pair<Type, ListIterable<Object>>> p = detectValidatingExtendedPrimitive(type, null);
+                Optional<Pair<Type, RichIterable<Object>>> p = detectValidatingExtendedPrimitive(type, null);
 
                 if (!p.isPresent())
                 {
@@ -2022,7 +2025,7 @@ public class CompiledSupport
 
                 String className = JavaPackageAndImportBuilder.buildImplClassReferenceFromType(p.get().getOne(), processorSupport);
 
-                Method method = getMethod(Class.forName(className), "_validate");
+                Method method = getMethod(((CompiledExecutionSupport) es).getClassLoader().loadClass(className), "_validate");
                 method.invoke(null, values.toArray());
             }
         }
@@ -2043,28 +2046,33 @@ public class CompiledSupport
         }
     }
 
-    private static Optional<Pair<Type, ListIterable<Object>>> detectValidatingExtendedPrimitive(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType type, ListIterable<? extends CoreInstance> variableValues)
+    private static Optional<Pair<Type, RichIterable<Object>>> detectValidatingExtendedPrimitive(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType type, RichIterable<? extends CoreInstance> variableValues)
     {
-        CoreInstance rawType = type.getValueForMetaPropertyToOne("rawType");
+        Type rawType = type._rawType();
 
-        ListIterable<? extends CoreInstance> typeVariableValues = variableValues != null ? variableValues : type.getValueForMetaPropertyToMany("typeVariableValues");
+        RichIterable<? extends CoreInstance> typeVariableValues = variableValues != null ? variableValues : type._typeVariableValues();
 
         boolean hasConstraints = rawType.getValueForMetaPropertyToMany(M3Properties.constraints).notEmpty();
 
         if (hasConstraints)
         {
-            return Optional.of(Tuples.pair((Type) rawType, typeVariableValues.flatCollect(v -> v.getValueForMetaPropertyToMany("values")).collect(v -> ((ValCoreInstance) v).getValue())));
+            return Optional.of(Tuples.pair(rawType, typeVariableValues.flatCollect(v -> v.getValueForMetaPropertyToMany(M3Properties.values)).collect(v -> ((ValCoreInstance) v).getValue())));
         }
 
-        CoreInstance generalizations = rawType.getValueForMetaPropertyToOne("generalizations");
-        CoreInstance general = generalizations == null ? null : generalizations.getValueForMetaPropertyToOne("general");
+        RichIterable<? extends Generalization> generalizations = rawType._generalizations();
+        RichIterable<GenericType> general = generalizations == null ? Lists.mutable.of() : generalizations.collect(GeneralizationAccessor::_general);
 
-        if (general == null)
+        if (general.isEmpty())
         {
             return Optional.empty();
         }
 
-        return detectValidatingExtendedPrimitive((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType) general, general.getValueForMetaPropertyToMany("typeVariableValues"));
+        if (general.size() > 1)
+        {
+            throw new IllegalStateException("Multiple generalizations not currently supported " + rawType);
+        }
+
+        return detectValidatingExtendedPrimitive(general.getFirst(), general.getFirst()._typeVariableValues());
     }
 
     public static Method getMethod(Class<?> clazz, String methodName)
