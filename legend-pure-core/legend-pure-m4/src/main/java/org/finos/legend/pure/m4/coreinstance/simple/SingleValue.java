@@ -14,13 +14,12 @@
 
 package org.finos.legend.pure.m4.coreinstance.simple;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.block.factory.Comparators;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecification;
+
+import java.util.Objects;
 
 final class SingleValue<V extends CoreInstance> implements Values<V>
 {
@@ -32,7 +31,7 @@ final class SingleValue<V extends CoreInstance> implements Values<V>
     }
 
     @Override
-    public V getOneValue() throws OneValueException
+    public V getOneValue()
     {
         return this.value;
     }
@@ -46,13 +45,13 @@ final class SingleValue<V extends CoreInstance> implements Values<V>
     @Override
     public <K> V getValueByIDIndex(IndexSpecification<K> indexSpec, K key)
     {
-        return Comparators.nullSafeEquals(key, indexSpec.getIndexKey(this.value)) ? this.value : null;
+        return Objects.equals(key, indexSpec.getIndexKey(this.value)) ? this.value : null;
     }
 
     @Override
     public <K> ListIterable<V> getValuesByIndex(IndexSpecification<K> indexSpec, K key)
     {
-        return Comparators.nullSafeEquals(key, indexSpec.getIndexKey(this.value)) ? Lists.immutable.with(this.value) : Lists.immutable.<V>empty();
+        return Objects.equals(key, indexSpec.getIndexKey(this.value)) ? Lists.immutable.with(this.value) : Lists.immutable.empty();
     }
 
     @Override
@@ -70,21 +69,17 @@ final class SingleValue<V extends CoreInstance> implements Values<V>
     @Override
     public Values<V> addValues(ListIterable<V> values)
     {
-        if (values.isEmpty())
-        {
-            return this;
-        }
-
-        MutableList<V> newValues = FastList.newList(values.size() + 1);
-        newValues.add(this.value);
-        newValues.addAllIterable(values);
-        return ValueHolder.newValues(newValues);
+        return values.isEmpty() ?
+               this :
+               ValueHolder.newValues(Lists.mutable.<V>withInitialCapacity(values.size() + 1)
+                       .with(this.value)
+                       .withAll(values));
     }
 
     @Override
     public Values<V> removeValue(V value)
     {
-        return this.value.equals(value) ? (Values<V>)EmptyValues.EMPTY_VALUES : this;
+        return this.value.equals(value) ? EmptyValues.emptyValues() : this;
     }
 
     @Override

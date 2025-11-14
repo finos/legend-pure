@@ -14,17 +14,17 @@
 
 package org.finos.legend.pure.m4.coreinstance.indexing;
 
-import org.eclipse.collections.api.block.function.Function2;
-import org.eclipse.collections.api.block.procedure.Procedure2;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.ConcurrentMutableMap;
-import org.eclipse.collections.api.multimap.list.MutableListMultimap;
+import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.block.factory.Functions0;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
-import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public abstract class Index<K, V extends CoreInstance>
@@ -41,15 +41,45 @@ public abstract class Index<K, V extends CoreInstance>
         return this.spec;
     }
 
-    public abstract ListIterable<V> get(Object key);
+    public ListIterable<V> get(Object key)
+    {
+        ListIterable<V> values = tryGet(key);
+        return (values == null) ? Lists.immutable.empty() : values;
+    }
 
-    public abstract void add(Iterable<? extends V> values);
+    public void add(Iterable<? extends V> values)
+    {
+        MutableMap<K, MutableList<V>> toAdd = Maps.mutable.empty();
+        values.forEach(v -> toAdd.getIfAbsentPut(this.spec.getIndexKey(v), Lists.mutable::empty).add(v));
+        toAdd.forEachKeyValue(this::add);
+    }
 
-    public abstract void add(V value);
+    public final void add(V value)
+    {
+        add(this.spec.getIndexKey(value), value);
+    }
 
-    public abstract void remove(Iterable<? extends V> values);
+    public final void remove(Iterable<? extends V> values)
+    {
+        MutableMap<K, MutableSet<V>> toRemove = Maps.mutable.empty();
+        values.forEach(v -> toRemove.getIfAbsentPut(this.spec.getIndexKey(v), Sets.mutable::empty).add(v));
+        toRemove.forEachKeyValue(this::remove);
+    }
 
-    public abstract void remove(V value);
+    public final void remove(V value)
+    {
+        remove(this.spec.getIndexKey(value), value);
+    }
+
+    protected abstract ListIterable<V> tryGet(Object key);
+
+    protected abstract void add(K key, MutableList<V> values);
+
+    protected abstract void add(K key, V value);
+
+    protected abstract void remove(K key, MutableSet<V> values);
+
+    protected abstract void remove(K key, V value);
 
     public static <K, V extends CoreInstance> Index<K, V> newIndex(IndexSpecification<K> spec)
     {
@@ -58,7 +88,7 @@ public abstract class Index<K, V extends CoreInstance>
 
     public static <K, V extends CoreInstance> Index<K, V> newIndex(IndexSpecification<K> spec, boolean concurrent)
     {
-        return concurrent ? new ConcurrentIndex<K, V>(spec) : new SimpleIndex<K, V>(spec);
+        return concurrent ? new ConcurrentIndex<>(spec) : new SimpleIndex<>(spec);
     }
 
     public static <K, V extends CoreInstance> Index<K, V> newIndex(IndexSpecification<K> spec, Iterable<? extends V> values)
@@ -75,7 +105,7 @@ public abstract class Index<K, V extends CoreInstance>
 
     private static class SimpleIndex<K, V extends CoreInstance> extends Index<K, V>
     {
-        private final MutableListMultimap<Object, V> index = Multimaps.mutable.list.empty();
+        private final MutableMap<K, MutableList<V>> index = Maps.mutable.empty();
 
         private SimpleIndex(IndexSpecification<K> spec)
         {
@@ -83,41 +113,41 @@ public abstract class Index<K, V extends CoreInstance>
         }
 
         @Override
-        public ListIterable<V> get(Object key)
+        protected ListIterable<V> tryGet(Object key)
         {
             return this.index.get(key);
         }
 
         @Override
-        public void add(Iterable<? extends V> values)
+        protected void add(K key, MutableList<V> values)
         {
-            for (V value : values)
+            this.index.getIfAbsentPut(key, Lists.mutable::empty).addAll(values);
+        }
+
+        @Override
+        protected void add(K key, V value)
+        {
+            this.index.getIfAbsentPut(key, Lists.mutable::empty).add(value);
+        }
+
+        @Override
+        protected void remove(K key, MutableSet<V> values)
+        {
+            MutableList<V> currentValues = this.index.get(key);
+            if (currentValues != null)
             {
-                add(value);
+                currentValues.removeIf(values::contains);
             }
         }
 
         @Override
-        public void add(V value)
+        protected void remove(K key, V value)
         {
-            K key = this.spec.getIndexKey(value);
-            this.index.put(key, value);
-        }
-
-        @Override
-        public void remove(Iterable<? extends V> values)
-        {
-            for (V value : values)
+            MutableList<V> currentValues = this.index.get(key);
+            if (currentValues != null)
             {
-                remove(value);
+                currentValues.remove(value);
             }
-        }
-
-        @Override
-        public void remove(V value)
-        {
-            K key = this.spec.getIndexKey(value);
-            this.index.remove(key, value);
         }
     }
 
@@ -125,100 +155,51 @@ public abstract class Index<K, V extends CoreInstance>
     {
         private final ConcurrentMutableMap<K, ImmutableList<V>> index = ConcurrentHashMap.newMap();
 
-        private final Function2<ImmutableList<V>, V, ImmutableList<V>> addValue = new Function2<ImmutableList<V>, V, ImmutableList<V>>()
-        {
-            @Override
-            public ImmutableList<V> value(ImmutableList<V> values, V newValue)
-            {
-                return (values == null) ? Lists.immutable.with(newValue) : values.newWith(newValue);
-            }
-        };
-
-        private final Function2<ImmutableList<V>, Iterable<? extends V>, ImmutableList<V>> addValues = new Function2<ImmutableList<V>, Iterable<? extends V>, ImmutableList<V>>()
-        {
-            @Override
-            public ImmutableList<V> value(ImmutableList<V> values, Iterable<? extends V> newValues)
-            {
-                return (values == null) ? Lists.immutable.withAll(newValues) : values.newWithAll(newValues);
-            }
-        };
-
-        private final Function2<ImmutableList<V>, V, ImmutableList<V>> removeValue = new Function2<ImmutableList<V>, V, ImmutableList<V>>()
-        {
-            @Override
-            public ImmutableList<V> value(ImmutableList<V> values, V newValue)
-            {
-                return (values == null) ? null : values.newWithout(newValue);
-            }
-        };
-
-        private final Function2<ImmutableList<V>, Iterable<? extends V>, ImmutableList<V>> removeValues = new Function2<ImmutableList<V>, Iterable<? extends V>, ImmutableList<V>>()
-        {
-            @Override
-            public ImmutableList<V> value(ImmutableList<V> values, Iterable<? extends V> newValues)
-            {
-                return (values == null) ? null : values.newWithoutAll(newValues);
-            }
-        };
-
         private ConcurrentIndex(IndexSpecification<K> spec)
         {
             super(spec);
         }
 
         @Override
-        public ListIterable<V> get(Object key)
+        protected ListIterable<V> tryGet(Object key)
         {
             return this.index.get(key);
         }
 
         @Override
-        public void add(Iterable<? extends V> values)
+        protected void add(K key, MutableList<V> values)
         {
-            Iterate.groupBy(values, this.spec).forEachKeyMultiValues(new Procedure2<K, Iterable<? extends V>>()
-            {
-                @Override
-                public void value(K key, Iterable<? extends V> keyValues)
-                {
-                    ConcurrentIndex.this.index.updateValueWith(key, Functions0.<ImmutableList<V>>nullValue(), ConcurrentIndex.this.addValues, keyValues);
-                }
-            });
+            this.index.updateValue(key, Functions0.nullValue(), current -> (current == null) ? values.toImmutable() : current.newWithAll(values));
         }
 
         @Override
-        public void add(V value)
+        protected void add(K key, V value)
         {
-            K key = this.spec.getIndexKey(value);
-            this.index.updateValueWith(key, Functions0.<ImmutableList<V>>nullValue(), this.addValue, value);
+            this.index.updateValue(key, Functions0.nullValue(), values -> (values == null) ? Lists.immutable.with(value) : values.newWith(value));
         }
 
         @Override
-        public void remove(Iterable<? extends V> values)
+        protected void remove(K key, MutableSet<V> values)
         {
-            Iterate.groupBy(values, this.spec).forEachKeyMultiValues(new Procedure2<K, Iterable<? extends V>>()
-            {
-                @Override
-                public void value(K key, Iterable<? extends V> keyValues)
-                {
-                    ImmutableList<V> newValues = ConcurrentIndex.this.index.updateValueWith(key, Functions0.<ImmutableList<V>>nullValue(), ConcurrentIndex.this.removeValues, keyValues);
-                    if (newValues == null)
-                    {
-                        ConcurrentIndex.this.index.remove(key, null);
-                    }
-                }
-            });
-        }
-
-        @Override
-        public void remove(V value)
-        {
-            K key = this.spec.getIndexKey(value);
             if (this.index.containsKey(key))
             {
-                ImmutableList<V> newValues = this.index.updateValueWith(key, Functions0.<ImmutableList<V>>nullValue(), this.removeValue, value);
-                if (newValues == null)
+                ImmutableList<V> updated = this.index.updateValue(key, Functions0.nullValue(), current -> (current == null) ? null : (current.anySatisfy(values::contains) ? current.newWithoutAll(values) : current));
+                if ((updated == null) || updated.isEmpty())
                 {
-                    this.index.remove(key, null);
+                    this.index.remove(key, updated);
+                }
+            }
+        }
+
+        @Override
+        protected void remove(K key, V value)
+        {
+            if (this.index.containsKey(key))
+            {
+                ImmutableList<V> updated = this.index.updateValue(key, Functions0.nullValue(), current -> (current == null) ? null : current.newWithout(value));
+                if ((updated == null) || updated.isEmpty())
+                {
+                    this.index.remove(key, updated);
                 }
             }
         }

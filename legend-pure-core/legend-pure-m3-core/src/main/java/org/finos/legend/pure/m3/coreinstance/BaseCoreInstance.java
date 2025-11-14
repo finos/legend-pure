@@ -530,19 +530,7 @@ public abstract class BaseCoreInstance extends AbstractCoreInstance implements C
         {
             if (this.idIndexes != null)
             {
-                MutableList<IDIndex<?, V>> invalidIdIndexes = Lists.mutable.empty();
-                this.idIndexes.forEachValue(idIndex ->
-                {
-                    try
-                    {
-                        idIndex.add(value);
-                    }
-                    catch (IDConflictException e)
-                    {
-                        invalidIdIndexes.add(idIndex);
-                    }
-                });
-                invalidIdIndexes.forEach(invalidIdIndex -> this.idIndexes.remove(invalidIdIndex.getSpecification()));
+                this.idIndexes.removeIf((key, idIndex) -> !idIndex.tryAdd(value));
             }
             if (this.indexes != null)
             {
@@ -554,19 +542,7 @@ public abstract class BaseCoreInstance extends AbstractCoreInstance implements C
         {
             if (this.idIndexes != null)
             {
-                MutableList<IDIndex<?, V>> invalidIdIndexes = Lists.mutable.empty();
-                this.idIndexes.forEachValue(idIndex ->
-                {
-                    try
-                    {
-                        idIndex.add(values);
-                    }
-                    catch (IDConflictException e)
-                    {
-                        invalidIdIndexes.add(idIndex);
-                    }
-                });
-                invalidIdIndexes.forEach(invalidIdIndex -> this.idIndexes.remove(invalidIdIndex.getSpecification()));
+                this.idIndexes.removeIf((key, idIndex) -> !idIndex.tryAdd(values));
             }
             if (this.indexes != null)
             {
@@ -602,20 +578,11 @@ public abstract class BaseCoreInstance extends AbstractCoreInstance implements C
         {
             if (this.idIndexes != null)
             {
-                MutableList<IDIndex<?, V>> invalidIdIndexes = Lists.mutable.empty();
-                this.idIndexes.forEachValue(idIndex ->
+                this.idIndexes.removeIf((key, idIndex) ->
                 {
                     idIndex.remove(oldValue);
-                    try
-                    {
-                        idIndex.add(newValue);
-                    }
-                    catch (IDConflictException e)
-                    {
-                        invalidIdIndexes.add(idIndex);
-                    }
+                    return !idIndex.tryAdd(newValue);
                 });
-                invalidIdIndexes.forEach(invalidIdIndex -> this.idIndexes.remove(invalidIdIndex.getSpecification()));
             }
             if (this.indexes != null)
             {

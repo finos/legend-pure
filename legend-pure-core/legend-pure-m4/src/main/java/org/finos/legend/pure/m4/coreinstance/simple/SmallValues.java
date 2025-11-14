@@ -14,11 +14,10 @@
 
 package org.finos.legend.pure.m4.coreinstance.simple;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.indexing.IDConflictException;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecification;
@@ -67,15 +66,7 @@ final class SmallValues<V extends CoreInstance> implements Values<V>
     @Override
     public <K> ListIterable<V> getValuesByIndex(IndexSpecification<K> indexSpec, K key)
     {
-        MutableList<V> results = Lists.mutable.empty();
-        for (V value : this.values)
-        {
-            if (key.equals(indexSpec.getIndexKey(value)))
-            {
-                results.add(value);
-            }
-        }
-        return results;
+        return this.values.select(v -> key.equals(indexSpec.getIndexKey(v)), Lists.mutable.empty());
     }
 
     @Override
@@ -89,10 +80,9 @@ final class SmallValues<V extends CoreInstance> implements Values<V>
     {
         if (this.values.size() >= MAX_SIZE)
         {
-            MutableList<V> newValues = FastList.newList(this.values.size() + 1);
-            newValues.addAllIterable(this.values);
-            newValues.add(value);
-            return new ValuesWithIndexing<>(newValues);
+            return new ValuesWithIndexing<>(Lists.mutable.<V>withInitialCapacity(this.values.size() + 1)
+                    .withAll(this.values)
+                    .with(value));
         }
         this.values = this.values.newWith(value);
         return this;
@@ -104,10 +94,9 @@ final class SmallValues<V extends CoreInstance> implements Values<V>
         int newSize = this.values.size() + values.size();
         if (newSize > MAX_SIZE)
         {
-            MutableList<V> newValues = FastList.newList(newSize);
-            newValues.addAllIterable(this.values);
-            newValues.addAllIterable(values);
-            return new ValuesWithIndexing<>(newValues);
+            return new ValuesWithIndexing<>(Lists.mutable.<V>withInitialCapacity(newSize)
+                    .withAll(this.values)
+                    .withAll(values));
         }
 
         if (values.notEmpty())
