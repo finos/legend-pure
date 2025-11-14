@@ -163,39 +163,7 @@ public class CoreGen extends CoreHelper
 
     public static String toRepresentation(Object any, ExecutionSupport es)
     {
-        if (any instanceof String)
-        {
-            return "'" + CompiledSupport.replace((String) any, "'", "\\'") + "'";
-        }
-        if (any instanceof org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate)
-        {
-            return "%" + CompiledSupport.pureToString((PureDate) any, es);
-        }
-        if (any instanceof BigDecimal)
-        {
-            return CompiledSupport.pureToString((BigDecimal) any, es) + "D";
-        }
-        if (any instanceof Number)
-        {
-            return CompiledSupport.pureToString((Number) any, es);
-        }
-        if (any instanceof Boolean)
-        {
-            return CompiledSupport.pureToString(((Boolean) any).booleanValue(), es);
-        }
-        if (any instanceof PackageableElement)
-        {
-            PackageableElement p = (PackageableElement) any;
-            if (p._name() != null)
-            {
-                return Pure.elementToPath(p, "::");
-            }
-        }
-        if (any instanceof QuantityCoreInstance)
-        {
-            return ((QuantityCoreInstance) any).getName();
-        }
-        return "<" + Pure.manageId(any) + " instanceOf " + Pure.elementToPath((PackageableElement) CoreGen.safeGetGenericType(any, es)._rawType(), "::") + ">";
+        return org.finos.legend.pure.generated.platform_pure_essential_string_toString_toRepresentation.Root_meta_pure_functions_string_toRepresentation_Any_1__String_1_(any, es);
     }
 
     public static RichIterable<? extends Root_meta_pure_functions_lang_KeyValue> processKeyExpressions(java.lang.Class<?> _class, Object instance, RichIterable<? extends Root_meta_pure_functions_lang_KeyValue> keyExpressions, ExecutionSupport es)

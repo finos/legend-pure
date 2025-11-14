@@ -18,7 +18,7 @@ import meta::pure::test::pct::*;
 function <<PCT.function, PCT.platformOnly>> meta::pure::functions::string::toRepresentation(any:Any[1]):String[1]
 {
     $any->match([
-                 s:String[1] | '\'' + $s->replace('\'', '\\\'') + '\'',
+                 s:String[1] | '\'' + $s->replace('\\', '\\\\')->replace('\'', '\\\'')->replace('\n', '\\n') + '\'',
                  t:StrictTime[1] | '%' + $t->toString(),
                  d:Date[1] | '%' + $d->toString(),
                  d:Decimal[1] | $d->toString() + 'D',
@@ -79,7 +79,9 @@ function <<test.Test>> meta::pure::functions::string::tests::toRepresentation::t
 {
     assertEq('\'the quick brown fox jumps over the lazy dog\'', 'the quick brown fox jumps over the lazy dog'->toRepresentation());
     assertEq('\'\'', ''->toRepresentation());
-    assertEq('\'the quick brown fox jumps over the lazy \\ \\\'dog\\\'\'', 'the quick brown fox jumps over the lazy \\ \'dog\''->toRepresentation());
+    assertEq('\'\\\\\'', '\\'->toRepresentation());
+    assertEq('\'\\n\'', '\n'->toRepresentation());
+    assertEq('\'the quick brown fox jumps over the lazy \\\\ \\\'dog\\\'\'', 'the quick brown fox jumps over the lazy \\ \'dog\''->toRepresentation());
 }
 
 function <<test.Test>> meta::pure::functions::string::tests::toRepresentation::testSimpleDateToRepresentation():Boolean[1]
