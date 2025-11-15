@@ -30,6 +30,11 @@ function <<test.Test>> meta::pure::functions::lang::tests::cast::testPrimitiveEx
   assertEquals(1, ^Container(val=1->cast(@P8)).val);
 }
 
+function <<test.Test>> meta::pure::functions::lang::tests::cast::testPrimitiveExtensionCastReactivate():Boolean[1]
+{
+  assertEquals(1, {|^Container(val=1->cast(@P8)).val}.expressionSequence->evaluateAndDeactivate()->at(0)->reactivate());
+}
+
 
 Primitive meta::pure::functions::lang::tests::cast::P(x:Integer[1]) extends Integer
 [
