@@ -58,7 +58,7 @@ public abstract class TestDistributedBinaryGraphSerialization extends AbstractPu
     {
         MutableSet<CoreInstance> ignoredClassifiers = PrimitiveUtilities.getPrimitiveTypes(repository).toSet();
         ArrayAdapter.adapt(M3Paths.EnumStub, M3Paths.ImportStub, M3Paths.PropertyStub, M3Paths.RouteNodePropertyStub).collect(processorSupport::package_getByUserPath, ignoredClassifiers);
-        IdBuilder idBuilder = IdBuilder.newIdBuilder(processorSupport);
+        IdBuilder idBuilder = IdBuilder.builder(processorSupport).withHashIds(true).build();
         GraphSerializer.ClassifierCaches classifierCaches = new GraphSerializer.ClassifierCaches(processorSupport);
         return GraphNodeIterable.fromModelRepository(repository)
                 .reject(i -> ignoredClassifiers.contains(i.getClassifier()))
